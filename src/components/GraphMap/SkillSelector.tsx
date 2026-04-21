@@ -26,7 +26,7 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
   return (
     <div className="space-y-4">
       {selectedGraphCount > 0 && (
-        <div className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 p-3 rounded-lg text-sm">
+        <div className="bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 p-3 rounded-lg text-sm">
           {t('graphMap.skillSelector.selectedForAnalysis', { count: selectedGraphCount })}
         </div>
       )}
@@ -38,9 +38,9 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
           <button
             key={skill.id}
             onClick={() => onSelect(skill)}
-            className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left group"
+            className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all text-left group"
           >
-            <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/60 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:bg-primary-200 dark:group-hover:bg-primary-900/60 transition-colors">
               {SKILL_ICONS[skill.id] || <Network className="w-5 h-5" />}
             </div>
             <div className="flex-1 min-w-0">

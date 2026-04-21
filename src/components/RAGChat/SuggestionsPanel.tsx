@@ -32,7 +32,7 @@ export const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({
     <div className={`border-t p-4 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-sm font-semibold flex items-center ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-          <Sparkles size={16} className="mr-2 text-purple-500" />
+          <Sparkles size={16} className="mr-2 text-primary-500" />
           学习建议
         </h3>
         <button

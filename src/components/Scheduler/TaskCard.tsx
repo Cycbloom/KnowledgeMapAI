@@ -37,12 +37,12 @@ interface TaskCardProps {
 
 const QUEUE_COLORS = {
   0: {
-    border: "border-cyan-300 dark:border-cyan-400",
-    glow: "shadow-cyan-500/30",
-    bg: "bg-cyan-100 dark:bg-cyan-500/10",
-    text: "text-cyan-600 dark:text-cyan-400",
-    badge: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
-    accent: "bg-cyan-500",
+    border: "border-primary-300 dark:border-primary-400",
+    glow: "shadow-primary-500/30",
+    bg: "bg-primary-100 dark:bg-primary-500/10",
+    text: "text-primary-600 dark:text-primary-400",
+    badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
+    accent: "bg-primary-500",
   },
   1: {
     border: "border-emerald-300 dark:border-emerald-400",
@@ -72,7 +72,7 @@ const STATUS_CONFIG = {
   },
   in_progress: {
     label: "进行中",
-    color: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+    color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
   },
   paused: {
     label: "已暂停",
@@ -97,7 +97,7 @@ const getTaskTypeBadge = (taskType?: string) => {
     long_term: {
       label: "长期",
       color:
-        "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+        "bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300",
     },
     periodic: {
       label: "周期",
@@ -200,7 +200,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     if (days === 1)
       return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
     if (days <= 7)
-      return { text: `${days}天后`, color: "text-blue-500 dark:text-blue-400" };
+      return { text: `${days}天后`, color: "text-primary-500 dark:text-primary-400" };
     return {
       text: d.toLocaleDateString(),
       color: "text-slate-500 dark:text-slate-400",
@@ -350,7 +350,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                 <div
-                  className="bg-blue-500 h-1.5 rounded-full transition-all"
+                  className="bg-primary-500 h-1.5 rounded-full transition-all"
                   style={{ width: `${task.progress_percentage}%` }}
                 />
               </div>
@@ -380,7 +380,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               <div className="flex items-center gap-2 flex-1 ml-3">
                 <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                    className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
                     initial={{ width: 0 }}
                     animate={{ width: `${subtaskProgress}%` }}
                     transition={{ duration: 0.3 }}
@@ -402,7 +402,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
                     {loadingSubtasks ? (
                       <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-500" />
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500" />
                       </div>
                     ) : subtasks.length > 0 ? (
                       subtasks.slice(0, 5).map((subtask) => (
@@ -424,7 +424,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                             {subtask.status === "completed" ? (
                               <CheckCircle className="w-4 h-4 text-green-500" />
                             ) : (
-                              <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 hover:text-cyan-500" />
+                              <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 hover:text-primary-500" />
                             )}
                           </button>
                           <span
@@ -476,8 +476,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {task.tags && task.tags.length > 0 && (
             <div className="flex items-center gap-1">
-              <Tag size={12} className="text-indigo-500 dark:text-indigo-400" />
-              <span className="text-indigo-500 dark:text-indigo-400">
+              <Tag size={12} className="text-primary-500 dark:text-primary-400" />
+              <span className="text-primary-500 dark:text-primary-400">
                 {task.tags.slice(0, 2).join(", ")}
                 {task.tags.length > 2 ? "..." : ""}
               </span>
@@ -565,7 +565,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onViewDetail();
               }}
-              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px]"
+              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px]"
               title="详情"
             >
               <Info size={16} />

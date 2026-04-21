@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useSchedulerStats, useHeatmap, useExecutions } from '../hooks';
 import type { ExecutionFilters, TaskExecution } from '@shared/types';
 import {
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 const QUEUE_COLORS = {
-  q0: { main: '#06b6d4', glow: 'rgba(6, 182, 212, 0.3)', bg: 'bg-cyan-500' },
+  q0: { main: '#06b6d4', glow: 'rgba(6, 182, 212, 0.3)', bg: 'bg-primary-500' },
   q1: { main: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.3)', bg: 'bg-violet-500' },
   q2: { main: '#f59e0b', glow: 'rgba(245, 158, 11, 0.3)', bg: 'bg-amber-500' },
 };
@@ -83,7 +83,7 @@ const QueueDistributionChart = ({ data }: { data: { q0: number; q1: number; q2: 
   return (
     <TechCard className="p-6">
       <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-        <Zap size={20} className="text-cyan-400" />
+        <Zap size={20} className="text-primary-400" />
         队列分布
       </h3>
       <div className="flex items-center justify-center">
@@ -272,10 +272,10 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
 
   const getColor = (count: number) => {
     if (count === 0) return 'bg-slate-700/50';
-    if (count <= 2) return 'bg-cyan-900';
-    if (count <= 5) return 'bg-cyan-700';
-    if (count <= 10) return 'bg-cyan-500';
-    return 'bg-cyan-400';
+    if (count <= 2) return 'bg-primary-900';
+    if (count <= 5) return 'bg-primary-700';
+    if (count <= 10) return 'bg-primary-500';
+    return 'bg-primary-400';
   };
 
   const getGlow = (count: number) => {
@@ -300,7 +300,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
     <TechCard className="p-6" glow>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Calendar size={20} className="text-cyan-400" />
+          <Calendar size={20} className="text-primary-400" />
           任务执行热力图
         </h3>
         <div className="flex items-center gap-4">
@@ -322,7 +322,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
           <select
             value={currentMonth ?? ''}
             onChange={(e) => onMonthChange(e.target.value ? parseInt(e.target.value) : undefined)}
-            className="bg-slate-700 text-white rounded-lg px-3 py-1 border border-slate-600 focus:outline-none focus:border-cyan-500"
+            className="bg-slate-700 text-white rounded-lg px-3 py-1 border border-slate-600 focus:outline-none focus:border-primary-500"
           >
             <option value="">全年</option>
             {months.map((m, i) => (
@@ -352,10 +352,10 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
           <span>活跃度:</span>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-slate-700/50 rounded-sm"></div>
-            <div className="w-3 h-3 bg-cyan-900 rounded-sm"></div>
-            <div className="w-3 h-3 bg-cyan-700 rounded-sm"></div>
-            <div className="w-3 h-3 bg-cyan-500 rounded-sm"></div>
-            <div className="w-3 h-3 bg-cyan-400 rounded-sm"></div>
+            <div className="w-3 h-3 bg-primary-900 rounded-sm"></div>
+            <div className="w-3 h-3 bg-primary-700 rounded-sm"></div>
+            <div className="w-3 h-3 bg-primary-500 rounded-sm"></div>
+            <div className="w-3 h-3 bg-primary-400 rounded-sm"></div>
           </div>
         </div>
         <div className="text-xs text-slate-500">
@@ -393,7 +393,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
     const styles: Record<string, string> = {
       completed: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
       interrupted: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      time_slice_ended: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      time_slice_ended: 'bg-primary-500/20 text-primary-400 border-primary-500/30',
     };
     const labels: Record<string, string> = {
       completed: '已完成',
@@ -408,7 +408,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
   };
 
   const getQueueBadge = (level: number) => {
-    const colors = ['text-cyan-400', 'text-violet-400', 'text-amber-400'];
+    const colors = ['text-primary-400', 'text-violet-400', 'text-amber-400'];
     return (
       <span className={`font-mono ${colors[level]}`}>
         Q{level}
@@ -420,7 +420,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
     <TechCard className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <ListTodo size={20} className="text-cyan-400" />
+          <ListTodo size={20} className="text-primary-400" />
           执行历史
         </h3>
         <div className="flex items-center gap-3">
@@ -429,7 +429,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
             <select
               value={filters.status || ''}
               onChange={(e) => onFiltersChange({ ...filters, status: e.target.value || undefined })}
-              className="bg-slate-700 text-white rounded-lg px-3 py-1 border border-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+              className="bg-slate-700 text-white rounded-lg px-3 py-1 border border-slate-600 focus:outline-none focus:border-primary-500 text-sm"
             >
               <option value="">全部状态</option>
               <option value="completed">已完成</option>
@@ -580,7 +580,7 @@ export const SchedulerStats = () => {
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-16 h-16 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-400">加载统计数据中...</p>
         </div>
       </div>
@@ -619,7 +619,7 @@ export const SchedulerStats = () => {
             onClick={() => setPeriod(p)}
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               period === p
-                ? 'bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.5)]'
+                ? 'bg-primary-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.5)]'
                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
             }`}
           >

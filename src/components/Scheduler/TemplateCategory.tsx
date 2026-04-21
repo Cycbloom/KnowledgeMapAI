@@ -21,7 +21,7 @@ export const TemplateCategory: React.FC<TemplateCategoryProps> = ({
         onClick={() => onSelectCategory(null)}
         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
           !selectedCategory
-            ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 ring-1 ring-cyan-300 dark:ring-cyan-500/50'
+            ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-500/50'
             : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
         }`}
       >
@@ -134,14 +134,14 @@ export const TemplateCategoryGrid: React.FC<TemplateCategoryGridProps> = ({
         onClick={() => onSelectCategory(null)}
         className={`p-4 rounded-xl border text-left transition-all ${
           !selectedCategory
-            ? 'border-cyan-500 dark:border-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
+            ? 'border-primary-500 dark:border-primary-400 bg-primary-50 dark:bg-primary-500/10 text-primary-700 dark:text-primary-300'
             : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
         }`}
       >
         <div className="flex items-center justify-between mb-2">
           <span className="text-2xl">📋</span>
           {!selectedCategory && (
-            <span className="w-2 h-2 rounded-full bg-cyan-500" />
+            <span className="w-2 h-2 rounded-full bg-primary-500" />
           )}
         </div>
         <h3 className={`font-medium mb-1 ${

@@ -774,7 +774,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
               </>
             ) : (
               <>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
                 <p className="text-gray-600 dark:text-gray-400">
                   {t("graphMap.empty.loading")}
                 </p>
@@ -929,7 +929,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             {fromGraphId && onReturnToGraph && (
               <button
                 onClick={onReturnToGraph}
-                className="p-2 bg-blue-500 dark:bg-blue-600 rounded shadow-lg hover:bg-blue-600 dark:hover:bg-blue-700 text-white transition-colors"
+                className="p-2 bg-primary-500 dark:bg-primary-600 rounded shadow-lg hover:bg-primary-600 dark:hover:bg-primary-700 text-white transition-colors"
                 title={`返回 ${fromGraphTitle || "来源图谱"}`}
               >
                 <svg
@@ -1046,7 +1046,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
               onClick={() => setShowLegend(!showLegend)}
               className={`p-2 rounded shadow-lg transition-colors ${
                 showLegend
-                  ? "bg-blue-500 dark:bg-blue-600 text-white"
+                  ? "bg-primary-500 dark:bg-primary-600 text-white"
                   : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
               }`}
               title={showLegend ? "隐藏图例" : "显示关系类型图例"}

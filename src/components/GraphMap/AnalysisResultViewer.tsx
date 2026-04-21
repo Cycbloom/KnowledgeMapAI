@@ -44,7 +44,7 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
     if (module.status === 'loading') {
       return (
         <div className="flex flex-col items-center justify-center py-16">
-          <Loader2 className="w-10 h-10 text-purple-500 animate-spin mb-4" />
+          <Loader2 className="w-10 h-10 text-primary-500 animate-spin mb-4" />
           <p className="text-gray-500 dark:text-gray-400">正在分析中...</p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             预计需要 {module.estimatedTime}

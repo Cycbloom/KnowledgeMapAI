@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { useStatistics, useUser, useGraphs } from '../hooks/queries';
 import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
@@ -206,7 +206,7 @@ const FocusStatsCard = ({ stats, isDark, t }: { stats: any, isDark: boolean, t: 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className={`p-3 md:p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
           <div className="flex items-center gap-2 mb-2">
-            <Clock size={16} className="text-blue-500" />
+            <Clock size={16} className="text-primary-500" />
             <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.today')}</span>
           </div>
           <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
@@ -317,7 +317,7 @@ export const LearningStatsCenter = () => {
               value={stats.metrics.totalCards}
               subtext={t('learningStats.cards.totalCardsDesc')}
               icon={BookOpen}
-              color="bg-blue-500"
+              color="bg-primary-500"
               isDark={isDark}
             />
             <MetricCard
@@ -341,7 +341,7 @@ export const LearningStatsCenter = () => {
               value={stats.metrics.avgStability}
               subtext={`${t('learningStats.cards.days')} (FSRS)`}
               icon={TrendingUp}
-              color="bg-indigo-500"
+              color="bg-primary-500"
               isDark={isDark}
             />
           </div>

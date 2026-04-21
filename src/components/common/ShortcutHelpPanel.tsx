@@ -91,7 +91,7 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
       `}>
         <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
-            <Keyboard className="w-5 h-5 text-blue-500" />
+            <Keyboard className="w-5 h-5 text-primary-500" />
             <h2 className="text-lg font-semibold">快捷键设置</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -182,7 +182,7 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
                               setPressedKeys({});
                             }}
                             className={`
-                              w-32 px-2 py-1 text-sm text-center rounded border-2 border-blue-500
+                              w-32 px-2 py-1 text-sm text-center rounded border-2 border-primary-500
                               ${isDark ? 'bg-slate-800' : 'bg-white'}
                               focus:outline-none
                             `}

@@ -168,10 +168,10 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border border-cyan-200 dark:border-cyan-800/50"
+          className="p-4 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-500/5 border border-primary-200 dark:border-primary-800/50"
         >
           <div className="flex items-center gap-2 mb-2">
-            <Clock size={16} className="text-cyan-500" />
+            <Clock size={16} className="text-primary-500" />
             <span className="text-xs text-slate-600 dark:text-slate-300">
               总专注时长
             </span>
@@ -307,7 +307,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
                     transition={{ delay: 0.7 + index * 0.1, duration: 0.5 }}
-                    className="h-full bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-primary-500 to-violet-500 rounded-full"
                   />
                   <span className="absolute inset-0 flex items-center justify-end pr-2 text-xs font-medium text-slate-700 dark:text-slate-200">
                     {weekHours.toFixed(1)}h

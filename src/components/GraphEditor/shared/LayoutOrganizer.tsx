@@ -205,7 +205,7 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
       title="整理布局"
     >
       {isApplying ? (
-        <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+        <Loader2 className="w-5 h-5 animate-spin text-primary-500" />
       ) : (
         <LayoutGrid className="w-5 h-5" />
       )}

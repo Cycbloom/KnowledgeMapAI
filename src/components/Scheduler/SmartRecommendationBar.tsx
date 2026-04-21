@@ -178,7 +178,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
       default:
         return {
           label: t("scheduler.recommendation.normalEfficiency"),
-          color: "text-blue-500 bg-blue-100 dark:bg-blue-500/20",
+          color: "text-primary-500 bg-primary-100 dark:bg-primary-500/20",
         };
     }
   };
@@ -290,13 +290,13 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/10 rounded-xl p-4 border border-cyan-200 dark:border-cyan-500/30">
+      <div className="bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-500/10 dark:to-primary-500/10 rounded-xl p-4 border border-primary-200 dark:border-primary-500/30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center animate-pulse">
-            <Brain className="w-4 h-4 text-cyan-500" />
+          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center animate-pulse">
+            <Brain className="w-4 h-4 text-primary-500" />
           </div>
           <div className="flex-1">
-            <div className="h-4 bg-cyan-200 dark:bg-cyan-500/30 rounded w-48 animate-pulse" />
+            <div className="h-4 bg-primary-200 dark:bg-primary-500/30 rounded w-48 animate-pulse" />
           </div>
         </div>
       </div>
@@ -331,11 +331,11 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
       layout
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 dark:from-cyan-500/10 dark:via-blue-500/10 dark:to-indigo-500/10 rounded-xl border border-cyan-200 dark:border-cyan-500/30 overflow-hidden"
+      className="bg-gradient-to-r from-primary-50 via-primary-50 to-primary-50 dark:from-primary-500/10 dark:via-primary-500/10 dark:to-primary-500/10 rounded-xl border border-primary-200 dark:border-primary-500/30 overflow-hidden"
     >
-      <div className="flex items-center justify-between px-4 py-3 bg-white/50 dark:bg-slate-900/50 border-b border-cyan-100 dark:border-cyan-500/20">
+      <div className="flex items-center justify-between px-4 py-3 bg-white/50 dark:bg-slate-900/50 border-b border-primary-100 dark:border-primary-500/20">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-500 flex items-center justify-center shadow-lg shadow-primary-500/30">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -362,14 +362,14 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
           </div>
           <button
             onClick={loadRecommendation}
-            className="p-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 transition-colors"
+            className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors"
             title="刷新推荐"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={handleToggleExpand}
-            className="p-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 transition-colors"
+            className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors"
           >
             <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
               <ChevronRight className="w-4 h-4 rotate-90" />
@@ -422,13 +422,13 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleViewTask}
-                        className="px-3 py-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-500/20 rounded-lg transition-colors"
                       >
                         {t("scheduler.recommendation.viewDetails")}
                       </button>
                       <button
                         onClick={handleAcceptRecommendation}
-                        className="px-4 py-1.5 text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
+                        className="px-4 py-1.5 text-sm bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30"
                       >
                         {t("scheduler.recommendation.startTask")}
                       </button>
@@ -447,10 +447,10 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                   </div>
 
                   {recommendationDetails.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-cyan-100 dark:border-cyan-500/20">
+                    <div className="mt-4 pt-3 border-t border-primary-100 dark:border-primary-500/20">
                       <button
                         onClick={() => setShowDetails(!showDetails)}
-                        className="flex items-center gap-2 text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors mb-3"
+                        className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors mb-3"
                       >
                         <Lightbulb className="w-4 h-4" />
                         {t("scheduler.recommendation.recommendationDetails")}
@@ -472,7 +472,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                                 key={index}
                                 className="flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
                               >
-                                <div className="text-cyan-500 mt-0.5">
+                                <div className="text-primary-500 mt-0.5">
                                   {detail.icon}
                                 </div>
                                 <div className="flex-1">
@@ -481,7 +481,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                                       {detail.title}
                                     </h5>
                                     {detail.score !== undefined && (
-                                      <span className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+                                      <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">
                                         {Math.round(detail.score * 100)}%
                                       </span>
                                     )}
@@ -499,7 +499,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                   )}
 
                   {bestTimeSlots.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-cyan-100 dark:border-cyan-500/20">
+                    <div className="mt-4 pt-3 border-t border-primary-100 dark:border-primary-500/20">
                       <h5 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         最佳执行时段建议
@@ -514,7 +514,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                                 : slot.label === "低效时段"
                                   ? "bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-300 dark:border-yellow-500/30"
                                   : slot.efficiency > 0.7
-                                    ? "bg-blue-100 dark:bg-blue-500/20 border border-blue-300 dark:border-blue-500/30"
+                                    ? "bg-primary-100 dark:bg-primary-500/20 border border-primary-300 dark:border-primary-500/30"
                                     : "bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
                             }`}
                           >
@@ -547,10 +547,10 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
 
               {/* Alternative Tasks */}
               {alternativeTasks.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-cyan-100 dark:border-cyan-500/20">
+                <div className="mt-4 pt-4 border-t border-primary-100 dark:border-primary-500/20">
                   <button
                     onClick={() => setShowAlternatives(!showAlternatives)}
-                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                   >
                     <ChevronRight
                       className={`w-4 h-4 transition-transform ${showAlternatives ? "rotate-90" : ""}`}
@@ -586,7 +586,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                             </div>
                             <button
                               onClick={() => onStartTask?.(alt.task.id)}
-                              className="px-3 py-1 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
+                              className="px-3 py-1 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
                             >
                               开始
                             </button>

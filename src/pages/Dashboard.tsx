@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+﻿import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useGraphs, useDashboardStats, queryKeys } from "../hooks/queries";
@@ -347,7 +347,7 @@ export const Dashboard = () => {
           {/* Row 1: Title + Stats Overview */}
           <div className="flex flex-col gap-4 lg:gap-6">
             <div className="space-y-1 flex-shrink-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary-600 to-primary-600 bg-clip-text text-transparent">
                 {t("dashboard.title")}
               </h1>
               <p
@@ -367,7 +367,7 @@ export const Dashboard = () => {
                 }`}
               >
                 <div
-                  className={`p-2 sm:p-2.5 rounded-lg ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"} flex-shrink-0`}
+                  className={`p-2 sm:p-2.5 rounded-lg ${isDark ? "bg-primary-500/10 text-primary-400" : "bg-primary-50 text-primary-600"} flex-shrink-0`}
                 >
                   <BarChart size={isMobile ? 18 : 20} />
                 </div>
@@ -409,8 +409,8 @@ export const Dashboard = () => {
                   to="/statistics"
                   className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 sm:gap-1.5 flex-shrink-0 ${
                     isDark
-                      ? "bg-blue-600 text-white hover:bg-blue-500"
-                      : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      ? "bg-primary-600 text-white hover:bg-primary-500"
+                      : "bg-primary-50 text-primary-700 hover:bg-primary-100"
                   }`}
                 >
                   {t("dashboard.stats.statistics")}
@@ -439,8 +439,8 @@ export const Dashboard = () => {
                 }
                 className={`w-full pl-10 pr-20 sm:pr-24 py-2.5 sm:py-2.5 rounded-xl border outline-none transition-all text-sm ${
                   isDark
-                    ? "bg-slate-800 border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white placeholder:text-slate-500"
-                    : "bg-white border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm placeholder:text-gray-400"
+                    ? "bg-slate-800 border-slate-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-white placeholder:text-slate-500"
+                    : "bg-white border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 shadow-sm placeholder:text-gray-400"
                 }`}
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 sm:gap-1">
@@ -448,7 +448,7 @@ export const Dashboard = () => {
                   onClick={() => setSearchMode("keyword")}
                   className={`px-2 py-1.5 sm:py-1 text-xs rounded-md transition-colors min-h-[32px] min-w-[44px] sm:min-w-0 ${
                     searchMode === "keyword"
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                      ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
                       : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   }`}
                 >
@@ -458,7 +458,7 @@ export const Dashboard = () => {
                   onClick={() => setSearchMode("semantic")}
                   className={`px-2 py-1.5 sm:py-1 text-xs rounded-md transition-colors flex items-center gap-1 min-h-[32px] min-w-[44px] sm:min-w-0 justify-center ${
                     searchMode === "semantic"
-                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                      ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
                       : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   }`}
                 >
@@ -515,8 +515,8 @@ export const Dashboard = () => {
                     className={`p-2.5 min-h-[44px] min-w-[44px] transition-all ${
                       viewMode === "card"
                         ? isDark
-                          ? "bg-blue-600 text-white"
-                          : "bg-blue-500 text-white"
+                          ? "bg-primary-600 text-white"
+                          : "bg-primary-500 text-white"
                         : isDark
                           ? "text-slate-400 hover:text-slate-300"
                           : "text-gray-400 hover:text-gray-600"
@@ -530,8 +530,8 @@ export const Dashboard = () => {
                     className={`p-2.5 min-h-[44px] min-w-[44px] transition-all ${
                       viewMode === "list"
                         ? isDark
-                          ? "bg-blue-600 text-white"
-                          : "bg-blue-500 text-white"
+                          ? "bg-primary-600 text-white"
+                          : "bg-primary-500 text-white"
                         : isDark
                           ? "text-slate-400 hover:text-slate-300"
                           : "text-gray-400 hover:text-gray-600"
@@ -611,7 +611,7 @@ export const Dashboard = () => {
 
                 <button
                   onClick={handleOpenAIGenerator}
-                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
+                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
                   title={t("dashboard.actions.aiGenerate")}
                 >
                   <Sparkles size={16} />
@@ -635,7 +635,7 @@ export const Dashboard = () => {
 
                 <button
                   onClick={handleOpenAIGenerator}
-                  className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium"
+                  className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-white shadow-md transition-all text-sm font-medium"
                 >
                   <Sparkles size={18} />
                   <span>{t("dashboard.actions.aiGenerate")}</span>
@@ -786,10 +786,10 @@ export const Dashboard = () => {
               }`}
             >
               {isAllSelected ? (
-                <CheckSquare className="w-5 h-5 text-blue-500" />
+                <CheckSquare className="w-5 h-5 text-primary-500" />
               ) : isPartialSelected ? (
-                <div className="w-5 h-5 rounded border-2 border-blue-500 bg-blue-500/30 flex items-center justify-center">
-                  <div className="w-2.5 h-0.5 bg-blue-500 rounded" />
+                <div className="w-5 h-5 rounded border-2 border-primary-500 bg-primary-500/30 flex items-center justify-center">
+                  <div className="w-2.5 h-0.5 bg-primary-500 rounded" />
                 </div>
               ) : (
                 <Square className="w-5 h-5" />
@@ -871,7 +871,7 @@ export const Dashboard = () => {
               {!searchQuery && (
                 <button
                   onClick={handleOpenAIGenerator}
-                  className="min-h-[48px] px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium hover:from-purple-600 hover:to-blue-600 transition-colors shadow-lg"
+                  className="min-h-[48px] px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-600 hover:to-primary-600 transition-colors shadow-lg"
                 >
                   {t("dashboard.empty.createFirst")}
                 </button>
@@ -897,9 +897,9 @@ export const Dashboard = () => {
                             onClick={toggleSelectAll}
                             className={`flex items-center justify-center w-5 h-5 rounded ${
                               isAllSelected
-                                ? "bg-blue-500 text-white"
+                                ? "bg-primary-500 text-white"
                                 : isPartialSelected
-                                  ? "bg-blue-500/30 border-2 border-blue-500"
+                                  ? "bg-primary-500/30 border-2 border-primary-500"
                                   : isDark
                                     ? "border border-slate-600"
                                     : "border border-gray-300"
@@ -907,7 +907,7 @@ export const Dashboard = () => {
                           >
                             {isAllSelected && <Check size={14} />}
                             {isPartialSelected && (
-                              <div className="w-2 h-0.5 bg-blue-500 rounded" />
+                              <div className="w-2 h-0.5 bg-primary-500 rounded" />
                             )}
                           </button>
                         </th>
@@ -956,8 +956,8 @@ export const Dashboard = () => {
                         } ${
                           isSelectMode && selectedIds.has(graph.id)
                             ? isDark
-                              ? "bg-blue-900/20"
-                              : "bg-blue-50"
+                              ? "bg-primary-900/20"
+                              : "bg-primary-50"
                             : ""
                         }`}
                         onClick={() => {
@@ -977,10 +977,10 @@ export const Dashboard = () => {
                               onClick={() => toggleSelect(graph.id)}
                               className={`flex items-center justify-center w-5 h-5 rounded ${
                                 selectedIds.has(graph.id)
-                                  ? "bg-blue-500 text-white"
+                                  ? "bg-primary-500 text-white"
                                   : isDark
-                                    ? "border border-slate-600 hover:border-blue-500"
-                                    : "border border-gray-300 hover:border-blue-500"
+                                    ? "border border-slate-600 hover:border-primary-500"
+                                    : "border border-gray-300 hover:border-primary-500"
                               }`}
                             >
                               {selectedIds.has(graph.id) && <Check size={14} />}
@@ -992,8 +992,8 @@ export const Dashboard = () => {
                             <div
                               className={`p-2 rounded-lg flex-shrink-0 ${
                                 isDark
-                                  ? "bg-indigo-900/30 text-indigo-400"
-                                  : "bg-indigo-50 text-indigo-600"
+                                  ? "bg-primary-900/30 text-primary-400"
+                                  : "bg-primary-50 text-primary-600"
                               }`}
                             >
                               <BookOpen size={16} />
@@ -1070,8 +1070,8 @@ export const Dashboard = () => {
                               onClick={(e) => e.stopPropagation()}
                               className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                                 isDark
-                                  ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
-                                  : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
+                                  ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
+                                  : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
                               }`}
                               title={t("dashboard.card.openMindMap")}
                             >
@@ -1136,8 +1136,8 @@ export const Dashboard = () => {
                       className={`p-3 sm:p-4 transition-colors ${
                         isSelectMode && selectedIds.has(graph.id)
                           ? isDark
-                            ? "bg-blue-900/20"
-                            : "bg-blue-50"
+                            ? "bg-primary-900/20"
+                            : "bg-primary-50"
                           : ""
                       }`}
                       onClick={() => {
@@ -1157,7 +1157,7 @@ export const Dashboard = () => {
                             }}
                             className={`flex items-center justify-center w-6 h-6 rounded mt-1 ${
                               selectedIds.has(graph.id)
-                                ? "bg-blue-500 text-white"
+                                ? "bg-primary-500 text-white"
                                 : isDark
                                   ? "border border-slate-600"
                                   : "border border-gray-300"
@@ -1217,8 +1217,8 @@ export const Dashboard = () => {
                             onClick={(e) => e.stopPropagation()}
                             className={`p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center ${
                               isDark
-                                ? "text-slate-400 hover:bg-indigo-900/30"
-                                : "text-gray-400 hover:bg-indigo-50"
+                                ? "text-slate-400 hover:bg-primary-900/30"
+                                : "text-gray-400 hover:bg-primary-50"
                             }`}
                           >
                             <Network size={18} />
@@ -1252,8 +1252,8 @@ export const Dashboard = () => {
                   isSelectMode
                     ? selectedIds.has(graph.id)
                       ? isDark
-                        ? "bg-blue-900/20 border-2 border-blue-500"
-                        : "bg-blue-50 border-2 border-blue-400"
+                        ? "bg-primary-900/20 border-2 border-primary-500"
+                        : "bg-primary-50 border-2 border-primary-400"
                       : isDark
                         ? "bg-slate-800 border border-slate-700 hover:border-slate-600"
                         : "bg-white border border-gray-100 hover:border-gray-200"
@@ -1262,7 +1262,7 @@ export const Dashboard = () => {
                   !isSelectMode &&
                   (isDark
                     ? "bg-slate-800 border border-slate-700 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20"
-                    : "bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/5")
+                    : "bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-xl hover:shadow-primary-500/5")
                 }`}
               >
                 {/* Selection Checkbox - Select Mode */}
@@ -1277,10 +1277,10 @@ export const Dashboard = () => {
                     <div
                       className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
                         selectedIds.has(graph.id)
-                          ? "bg-blue-500 text-white"
+                          ? "bg-primary-500 text-white"
                           : isDark
-                            ? "bg-slate-700 border border-slate-600 hover:border-blue-500"
-                            : "bg-white border border-gray-300 hover:border-blue-500"
+                            ? "bg-slate-700 border border-slate-600 hover:border-primary-500"
+                            : "bg-white border border-gray-300 hover:border-primary-500"
                       }`}
                     >
                       {selectedIds.has(graph.id) && <Check size={14} />}
@@ -1314,10 +1314,10 @@ export const Dashboard = () => {
                     <div
                       className={`p-2.5 sm:p-3.5 rounded-xl transition-colors ${
                         isSelectMode && selectedIds.has(graph.id)
-                          ? "bg-blue-500 text-white"
+                          ? "bg-primary-500 text-white"
                           : isDark
-                            ? "bg-indigo-900/30 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white"
-                            : "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"
+                            ? "bg-primary-900/30 text-primary-400 group-hover:bg-primary-600 group-hover:text-white"
+                            : "bg-primary-50 text-primary-600 group-hover:bg-primary-600 group-hover:text-white"
                       }`}
                     >
                       <BookOpen size={isMobile ? 20 : 24} />
@@ -1332,8 +1332,8 @@ export const Dashboard = () => {
                             onClick={(e) => e.stopPropagation()}
                             className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                               isDark
-                                ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
-                                : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
+                                ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
+                                : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
                             }`}
                             title={t("dashboard.card.openMindMap")}
                           >
@@ -1382,8 +1382,8 @@ export const Dashboard = () => {
                             onClick={(e) => e.stopPropagation()}
                             className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                               isDark
-                                ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
-                                : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
+                                ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
+                                : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
                             }`}
                             title={t("dashboard.card.openMindMap")}
                           >
@@ -1425,7 +1425,7 @@ export const Dashboard = () => {
                   </div>
 
                   <h3
-                    className={`text-base sm:text-xl font-bold mb-2 line-clamp-1 group-hover:text-blue-500 transition-colors ${
+                    className={`text-base sm:text-xl font-bold mb-2 line-clamp-1 group-hover:text-primary-500 transition-colors ${
                       isDark ? "text-slate-100" : "text-gray-900"
                     }`}
                   >
@@ -1461,8 +1461,8 @@ export const Dashboard = () => {
                     <div
                       className={`flex items-center gap-1 text-xs font-bold transition-colors ${
                         isDark
-                          ? "text-indigo-400 group-hover:text-indigo-300"
-                          : "text-indigo-600 group-hover:text-indigo-700"
+                          ? "text-primary-400 group-hover:text-primary-300"
+                          : "text-primary-600 group-hover:text-primary-700"
                       }`}
                     >
                       <span>{t("dashboard.card.enterOutline")}</span>
@@ -1511,7 +1511,7 @@ export const Dashboard = () => {
                           onClick={() => setCurrentPage(page)}
                           className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
                             currentPage === page
-                              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                              ? "bg-primary-600 text-white shadow-lg shadow-primary-600/20"
                               : isDark
                                 ? "hover:bg-slate-800 text-slate-400"
                                 : "hover:bg-gray-100 text-gray-500"
@@ -1584,7 +1584,7 @@ export const Dashboard = () => {
                   isDark ? "bg-slate-700 text-white" : "bg-white text-gray-900"
                 }`}
               >
-                <div className="p-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+                <div className="p-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white">
                   <Sparkles size={16} />
                 </div>
                 <span className="text-sm font-medium">AI 生成</span>
@@ -1613,7 +1613,7 @@ export const Dashboard = () => {
             className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
               showFABMenu
                 ? "rotate-45 bg-red-500 text-white"
-                : "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                : "bg-gradient-to-r from-primary-500 to-primary-500 text-white"
             }`}
           >
             <Plus size={24} />
@@ -1625,13 +1625,13 @@ export const Dashboard = () => {
 };
 
 const TAG_COLORS = [
-  "bg-blue-500",
+  "bg-primary-500",
   "bg-green-500",
-  "bg-purple-500",
+  "bg-primary-500",
   "bg-amber-500",
   "bg-pink-500",
-  "bg-cyan-500",
-  "bg-indigo-500",
+  "bg-primary-500",
+  "bg-primary-500",
   "bg-rose-500",
   "bg-teal-500",
   "bg-orange-500",
@@ -1708,7 +1708,7 @@ const TagCloudSection = ({
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2 sm:gap-3">
           <div
-            className={`p-2 sm:p-2.5 rounded-xl ${isDark ? "bg-purple-900/30 text-purple-400" : "bg-purple-50 text-purple-600"}`}
+            className={`p-2 sm:p-2.5 rounded-xl ${isDark ? "bg-primary-900/30 text-primary-400" : "bg-primary-50 text-primary-600"}`}
           >
             <Tag size={isMobile ? 18 : 20} />
           </div>

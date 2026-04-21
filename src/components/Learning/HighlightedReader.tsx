@@ -214,9 +214,9 @@ const getHighlightClassName = (importance?: number, isDark?: boolean): string =>
         hover: "hover:bg-emerald-500/40",
       },
       1: {
-        bg: "bg-cyan-500/20",
-        border: "border-cyan-400",
-        hover: "hover:bg-cyan-500/40",
+        bg: "bg-primary-500/20",
+        border: "border-primary-400",
+        hover: "hover:bg-primary-500/40",
       },
     };
 
@@ -253,9 +253,9 @@ const getHighlightClassName = (importance?: number, isDark?: boolean): string =>
       hover: "hover:bg-emerald-200",
     },
     1: {
-      bg: "bg-cyan-100",
-      border: "border-cyan-400",
-      hover: "hover:bg-cyan-200",
+      bg: "bg-primary-100",
+      border: "border-primary-400",
+      hover: "hover:bg-primary-200",
     },
   };
 
@@ -607,7 +607,7 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
               return (
                 <a
                   {...props}
-                  className="text-blue-600 hover:underline"
+                  className="text-primary-600 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 />

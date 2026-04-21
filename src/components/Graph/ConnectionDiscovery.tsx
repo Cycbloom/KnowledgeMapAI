@@ -171,7 +171,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
     <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Network size={18} className="text-purple-500" />
+          <Network size={18} className="text-primary-500" />
           <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
             关联发现
           </h3>
@@ -231,7 +231,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
                         {suggestion.reason}
                       </span>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        isDark ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-600'
+                        isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-100 text-primary-600'
                       }`}>
                         相关度 {suggestion.score}
                       </span>
@@ -247,7 +247,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
                         transition-all
                         ${isConnecting
                           ? isDark ? 'bg-slate-600 text-slate-400' : 'bg-gray-200 text-gray-400'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'}
+                          : 'bg-primary-500 text-white hover:bg-primary-600'}
                       `}
                     >
                       {isConnecting ? (
@@ -329,7 +329,7 @@ export const NodeConnectionSuggestions: React.FC<{
   return (
     <div className={`mt-4 p-4 rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-gray-50'}`}>
       <div className="flex items-center gap-2 mb-3">
-        <Sparkles size={14} className="text-purple-500" />
+        <Sparkles size={14} className="text-primary-500" />
         <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
           建议关联
         </span>

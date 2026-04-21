@@ -28,7 +28,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'text-green-500';
-      case 'in_progress': return 'text-blue-500';
+      case 'in_progress': return 'text-primary-500';
       case 'paused': return 'text-yellow-500';
       case 'cancelled': return 'text-red-500';
       default: return 'text-gray-500';
@@ -98,7 +98,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           {task.status === 'pending' && onStart && (
             <button
               onClick={onStart}
-              className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="flex-1 py-2 px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
             >
               开始任务
             </button>

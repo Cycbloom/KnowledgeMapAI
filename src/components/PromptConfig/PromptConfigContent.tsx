@@ -102,7 +102,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                 onClick={() => setSelectedScenario(scenario)}
                 className={`w-full p-3 rounded-lg border text-left transition-all ${
                   isSelected
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
@@ -110,7 +110,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                   <div
                     className={`p-1.5 rounded ${
                       isSelected
-                        ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400'
+                        ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}
                   >
@@ -120,7 +120,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
                     {scenario.name}
                   </span>
                   {hasCustomConfig && (
-                    <span className="ml-auto text-xs text-purple-600 dark:text-purple-400">
+                    <span className="ml-auto text-xs text-primary-600 dark:text-primary-400">
                       已配置
                     </span>
                   )}
@@ -139,7 +139,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded text-purple-600 dark:text-purple-400">
+                <div className="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded text-primary-600 dark:text-primary-400">
                   {editingScenario.icon}
                 </div>
                 <div>
@@ -172,7 +172,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded text-purple-600 dark:text-purple-400">
+                <div className="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded text-primary-600 dark:text-primary-400">
                   {selectedScenario.icon}
                 </div>
                 <div>
@@ -186,7 +186,7 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
               </div>
               <button
                 onClick={() => handleStartEdit(selectedScenario)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
                 <Edit size={16} />
                 编辑

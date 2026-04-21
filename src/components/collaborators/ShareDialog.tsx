@@ -98,7 +98,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               <div className="pt-4 border-t dark:border-gray-700 space-y-3">
                 <button
                   onClick={() => setShowInvite(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
                 >
                   <UserPlus className="w-4 h-4" />
                   邀请协作者

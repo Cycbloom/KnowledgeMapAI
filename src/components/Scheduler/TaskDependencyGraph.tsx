@@ -113,7 +113,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
       case 'completed':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'in_progress':
-        return <Clock className="w-4 h-4 text-blue-500" />;
+        return <Clock className="w-4 h-4 text-primary-500" />;
       default:
         return <Clock className="w-4 h-4 text-gray-400" />;
     }
@@ -124,7 +124,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
       case 'completed':
         return 'border-green-500 bg-green-50 dark:bg-green-900/20';
       case 'in_progress':
-        return 'border-blue-500 bg-blue-50 dark:bg-blue-900/20';
+        return 'border-primary-500 bg-primary-50 dark:bg-primary-900/20';
       default:
         return 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800';
     }
@@ -191,7 +191,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
           key={node.id}
           className={`absolute p-2 rounded-lg border-2 cursor-pointer transition-all hover:shadow-lg ${
             node.isCurrent
-              ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-300'
+              ? 'border-primary-500 bg-primary-100 dark:bg-primary-900/30 ring-2 ring-primary-300'
               : getStatusColor(node.status)
           }`}
           style={{
@@ -209,7 +209,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
             {node.title}
           </p>
           {node.isCurrent && (
-            <span className="absolute -top-2 -right-2 px-1 text-xs bg-blue-500 text-white rounded">
+            <span className="absolute -top-2 -right-2 px-1 text-xs bg-primary-500 text-white rounded">
               当前
             </span>
           )}
@@ -218,7 +218,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
 
       <div className="absolute bottom-0 right-0 flex items-center gap-4 text-xs text-gray-500 bg-white dark:bg-gray-800 p-2 rounded">
         <div className="flex items-center gap-1">
-          <div className="w-6 h-0.5 bg-blue-500" />
+          <div className="w-6 h-0.5 bg-primary-500" />
           <span>严格依赖</span>
         </div>
         <div className="flex items-center gap-1">

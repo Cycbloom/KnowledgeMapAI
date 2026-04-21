@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { TermTooltip } from "../components/common";
@@ -40,7 +40,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { useTheme, useSpeechRecognition, useNetworkStatus } from "../hooks";
+import {
+  useTheme,
+  useSpeechRecognition,
+  useNetworkStatus,
+  useAILanguage,
+} from "../hooks";
 import { useGraph, useGraphData, useGraphNodeStatus } from "../hooks/queries";
 import { useUnifiedTimer } from "../hooks/scheduler";
 import { preprocessMarkdown } from "../utils/markdownUtils";
@@ -76,6 +81,7 @@ type OutlineMode = "graph" | "learning-path";
 export const LearningMode = () => {
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
+  const { language: aiLanguage } = useAILanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nodeId = searchParams.get("node_id");
@@ -323,6 +329,7 @@ export const LearningMode = () => {
           context: node.content,
           level: node.level,
           graph_id: graphId || undefined,
+          language: aiLanguage,
         });
 
         if (response.content) {
@@ -603,6 +610,7 @@ export const LearningMode = () => {
         context: node.content,
         level: node.level,
         graph_id: graphId,
+        language: aiLanguage,
       });
 
       if (response.content) {
@@ -1213,7 +1221,7 @@ export const LearningMode = () => {
 
           <div className="flex items-center space-x-2">
             <div
-              className={`p-1 rounded-lg ${isDark ? "bg-indigo-900/50 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}
+              className={`p-1 rounded-lg ${isDark ? "bg-primary-900/50 text-primary-400" : "bg-primary-50 text-primary-600"}`}
             >
               <BookOpen size={isMobile ? 16 : 20} />
             </div>
@@ -1249,7 +1257,7 @@ export const LearningMode = () => {
           >
             <MessageSquare
               size={isMobile ? 18 : 20}
-              className={isChatOpen ? "text-indigo-500" : ""}
+              className={isChatOpen ? "text-primary-500" : ""}
             />
           </button>
         </div>
@@ -1266,7 +1274,7 @@ export const LearningMode = () => {
             } ${
               isDark
                 ? "hover:bg-slate-800 text-amber-400"
-                : "hover:bg-gray-100 text-indigo-600"
+                : "hover:bg-gray-100 text-primary-600"
             }`}
             title={
               isDark
@@ -1316,8 +1324,8 @@ export const LearningMode = () => {
                   !nodeId || !articleContent
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
                     : isDark
-                      ? "bg-cyan-900/30 text-cyan-400 hover:bg-cyan-900/50 border border-cyan-500/30"
-                      : "bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border border-cyan-200"
+                      ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
+                      : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
                 }`}
                 title={
                   !nodeId || !articleContent
@@ -1337,7 +1345,7 @@ export const LearningMode = () => {
                 }}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
                   rightPanelMode === "learning-path" && isChatOpen
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-primary-600 text-white"
                     : isDark
                       ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -1375,8 +1383,8 @@ export const LearningMode = () => {
                   !isOnline || generateProgress?.isGenerating
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700"
                     : isDark
-                      ? "bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30"
-                      : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
+                      ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
+                      : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
                 }`}
                 title={
                   isOnline
@@ -1401,7 +1409,7 @@ export const LearningMode = () => {
             <div className="flex flex-col items-end">
               {generateProgress?.isGenerating && (
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
+                  <span className="text-[10px] text-primary-500 animate-pulse flex items-center gap-1">
                     <Sparkles size={10} />{" "}
                     {t("learning.cards.generatingProgress", {
                       current: generateProgress.current,
@@ -1419,7 +1427,7 @@ export const LearningMode = () => {
               {isGeneratingCards &&
                 !generateProgress?.isGenerating &&
                 !isMobile && (
-                  <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
+                  <span className="text-[10px] text-primary-500 animate-pulse flex items-center gap-1">
                     <Sparkles size={10} />{" "}
                     {t("learning.cards.generatingChallenge")}
                   </span>
@@ -1427,7 +1435,7 @@ export const LearningMode = () => {
               <button
                 onClick={handleStartChallenge}
                 disabled={isGeneratingCards}
-                className={`flex items-center justify-center ${isMobile ? "p-2" : "space-x-2 px-3 lg:px-6 py-2"} bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all ${isMobile ? "" : "hover:scale-105 active:scale-95"} ${
+                className={`flex items-center justify-center ${isMobile ? "p-2" : "space-x-2 px-3 lg:px-6 py-2"} bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-primary-200 dark:shadow-none transition-all ${isMobile ? "" : "hover:scale-105 active:scale-95"} ${
                   isGeneratingCards ? "opacity-70 cursor-not-allowed" : ""
                 }`}
                 title={t("learning.challenge.start")}
@@ -1503,11 +1511,11 @@ export const LearningMode = () => {
                     className={`flex flex-col items-center justify-center h-full space-y-6 text-center ${isMobile ? "pt-8" : ""}`}
                   >
                     <div className="relative">
-                      <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                      <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <Sparkles
                           size={24}
-                          className="text-indigo-600 animate-pulse"
+                          className="text-primary-600 animate-pulse"
                         />
                       </div>
                     </div>
@@ -1559,8 +1567,8 @@ export const LearningMode = () => {
                                   key={idx}
                                   className={`px-2 py-0.5 text-xs rounded-full ${
                                     isDark
-                                      ? "bg-indigo-900/30 text-indigo-300"
-                                      : "bg-indigo-50 text-indigo-600"
+                                      ? "bg-primary-900/30 text-primary-300"
+                                      : "bg-primary-50 text-primary-600"
                                   }`}
                                 >
                                   {kw.term}
@@ -1578,8 +1586,8 @@ export const LearningMode = () => {
                             isGenerating || !isOnline
                               ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
                               : isDark
-                                ? "bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30"
-                                : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
+                                ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
+                                : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
                           }`}
                           title={
                             isOnline
@@ -1647,7 +1655,7 @@ export const LearningMode = () => {
                               return (
                                 <a
                                   {...props}
-                                  className="text-blue-600 hover:underline"
+                                  className="text-primary-600 hover:underline"
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 />
@@ -1706,7 +1714,7 @@ export const LearningMode = () => {
                 {/* Chat Header */}
                 <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                    <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400">
                       {rightPanelMode === "chat" ? (
                         <Bot size={18} />
                       ) : (
@@ -1733,7 +1741,7 @@ export const LearningMode = () => {
                         onClick={() => setRightPanelMode("chat")}
                         className={`p-1.5 rounded-md transition-colors ${
                           rightPanelMode === "chat"
-                            ? "bg-indigo-500 text-white"
+                            ? "bg-primary-500 text-white"
                             : isDark
                               ? "hover:bg-slate-700 text-slate-400"
                               : "hover:bg-gray-100 text-gray-500"
@@ -1746,7 +1754,7 @@ export const LearningMode = () => {
                         onClick={() => setRightPanelMode("learning-path")}
                         className={`p-1.5 rounded-md transition-colors ${
                           rightPanelMode === "learning-path"
-                            ? "bg-indigo-500 text-white"
+                            ? "bg-primary-500 text-white"
                             : isDark
                               ? "hover:bg-slate-700 text-slate-400"
                               : "hover:bg-gray-100 text-gray-500"
@@ -1814,10 +1822,10 @@ export const LearningMode = () => {
                             <div
                               className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                                 msg.role === "user"
-                                  ? "bg-indigo-600 text-white"
+                                  ? "bg-primary-600 text-white"
                                   : isDark
-                                    ? "bg-slate-800 text-indigo-400 border border-slate-700"
-                                    : "bg-white text-indigo-600 border border-gray-100 shadow-sm"
+                                    ? "bg-slate-800 text-primary-400 border border-slate-700"
+                                    : "bg-white text-primary-600 border border-gray-100 shadow-sm"
                               }`}
                             >
                               {msg.role === "user" ? (
@@ -1829,7 +1837,7 @@ export const LearningMode = () => {
                             <div
                               className={`p-3 rounded-2xl text-sm leading-relaxed ${
                                 msg.role === "user"
-                                  ? "bg-indigo-600 text-white rounded-tr-none"
+                                  ? "bg-primary-600 text-white rounded-tr-none"
                                   : isDark
                                     ? "bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700"
                                     : "bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100"
@@ -1838,15 +1846,15 @@ export const LearningMode = () => {
                               {msg.isStreaming && !msg.content ? (
                                 <div className="flex items-center space-x-2">
                                   <div
-                                    className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                                    className="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce"
                                     style={{ animationDelay: "0ms" }}
                                   ></div>
                                   <div
-                                    className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                                    className="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce"
                                     style={{ animationDelay: "150ms" }}
                                   ></div>
                                   <div
-                                    className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                                    className="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce"
                                     style={{ animationDelay: "300ms" }}
                                   ></div>
                                 </div>
@@ -1890,7 +1898,7 @@ export const LearningMode = () => {
                                         return (
                                           <a
                                             {...props}
-                                            className="text-blue-600 hover:underline"
+                                            className="text-primary-600 hover:underline"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                           />
@@ -1927,7 +1935,7 @@ export const LearningMode = () => {
                           }
                         }}
                         placeholder={t("learning.chat.placeholder")}
-                        className={`w-full p-3 pr-20 pl-4 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all ${
+                        className={`w-full p-3 pr-20 pl-4 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${
                           isDark
                             ? "bg-slate-800 text-white placeholder-slate-500 border-slate-700"
                             : "bg-white text-gray-900 placeholder-gray-400 border-gray-200"
@@ -1942,8 +1950,8 @@ export const LearningMode = () => {
                             isListening
                               ? "bg-red-500 text-white animate-pulse"
                               : isDark
-                                ? "text-slate-400 hover:bg-slate-700 hover:text-indigo-400"
-                                : "text-gray-400 hover:bg-gray-100 hover:text-indigo-600"
+                                ? "text-slate-400 hover:bg-slate-700 hover:text-primary-400"
+                                : "text-gray-400 hover:bg-gray-100 hover:text-primary-600"
                           }`}
                           title={
                             isListening
@@ -1962,7 +1970,7 @@ export const LearningMode = () => {
                           disabled={!input.trim() || isChatLoading}
                           className={`p-2 rounded-lg transition-all ${
                             input.trim() && !isChatLoading
-                              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                              ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
                               : "bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500"
                           }`}
                         >
@@ -2029,7 +2037,7 @@ export const LearningMode = () => {
                     value={newNodeTitle}
                     onChange={(e) => setNewNodeTitle(e.target.value)}
                     placeholder={t("learning.node.titlePlaceholder")}
-                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all ${
                       isDark
                         ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -2048,7 +2056,7 @@ export const LearningMode = () => {
                     onChange={(e) => setNewNodeContent(e.target.value)}
                     placeholder={t("learning.node.contentPlaceholder")}
                     rows={4}
-                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all resize-none ${
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all resize-none ${
                       isDark
                         ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -2067,7 +2075,7 @@ export const LearningMode = () => {
                     onChange={(e) =>
                       setNewNodeLevel(e.target.value as NodeLevel)
                     }
-                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all ${
                       isDark
                         ? "bg-slate-700 border-slate-600 text-white"
                         : "bg-white border-gray-300 text-gray-900"
@@ -2092,7 +2100,7 @@ export const LearningMode = () => {
                   <select
                     value={selectedParentNodeId}
                     onChange={(e) => setSelectedParentNodeId(e.target.value)}
-                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all ${
                       isDark
                         ? "bg-slate-700 border-slate-600 text-white"
                         : "bg-white border-gray-300 text-gray-900"
@@ -2125,7 +2133,7 @@ export const LearningMode = () => {
                   className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
                     !newNodeTitle.trim()
                       ? "opacity-50 cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700"
+                      : "bg-primary-600 text-white hover:bg-primary-700"
                   }`}
                 >
                   <Plus size={18} />

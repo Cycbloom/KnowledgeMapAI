@@ -4,8 +4,8 @@
 当前主题预设系统已建立（7 个主题配色方案），但 100 个组件文件中仅 1 个使用了主题感知的 `primary-*` 颜色类，其余 99 个全部硬编码 `blue-*` 颜色。导致用户切换主题后，大部分 UI 元素仍然显示蓝色，无法跟随主题变化，视觉体验不一致。
 
 ## What Changes
-- 将所有组件中硬编码的 `blue-*` Tailwind 颜色类替换为主题感知的 `primary-*` 类
-- 涉及约 100 个组件文件，共约 1183 处 `blue-*` 类需要迁移
+- 将所有组件中硬编码的 `blue-*`、`purple-*`、`indigo-*`、`cyan-*` Tailwind 颜色类替换为主题感知的 `primary-*` 类
+- 涉及约 100 个组件文件，共约 1183+ 处颜色类需要迁移
 - 确保亮色和暗色模式下颜色表现一致
 
 ## Impact
@@ -20,6 +20,8 @@
 系统 SHALL 将所有组件中硬编码的 `blue-*` 颜色类替换为主题感知的 `primary-*` 类，使 UI 元素随主题切换而变化。
 
 #### 迁移映射规则
+
+**通用规则**：将 `blue-*`、`purple-*`、`indigo-*`、`cyan-*` 颜色类统一替换为 `primary-*`，保持色阶数字不变。
 
 | 硬编码类 | 替换为 |
 |----------|--------|
@@ -46,6 +48,23 @@
 | `shadow-blue-600/20` | `shadow-primary-600/20` |
 | `from-blue-500/10` | `from-primary-500/10` |
 | `to-blue-500/10` | `to-primary-500/10` |
+| `bg-purple-600` | `bg-primary-600` |
+| `bg-purple-500` | `bg-primary-500` |
+| `text-purple-600` | `text-primary-600` |
+| `text-purple-500` | `text-primary-500` |
+| `border-purple-500` | `border-primary-500` |
+| `bg-indigo-600` | `bg-primary-600` |
+| `bg-indigo-500` | `bg-primary-500` |
+| `text-indigo-600` | `text-primary-600` |
+| `text-indigo-500` | `text-primary-500` |
+| `border-indigo-500` | `border-primary-500` |
+| `bg-cyan-600` | `bg-primary-600` |
+| `bg-cyan-500` | `bg-primary-500` |
+| `text-cyan-600` | `text-primary-600` |
+| `text-cyan-500` | `text-primary-500` |
+| `border-cyan-500` | `border-primary-500` |
+
+**适用于所有 Tailwind 前缀**：`bg-`、`text-`、`border-`、`ring-`、`hover:`、`focus:`、`shadow-`、`from-`、`to-`、`via-`、`dark:` 等。
 
 #### Scenario: 主题切换后 UI 颜色同步变化
 - **WHEN** 用户切换到 Forest（绿色）主题
@@ -90,7 +109,20 @@
 
 1. **Settings.tsx 主题选择器 UI** — 展示各主题预览色的色块需要保留硬编码颜色以准确展示各主题的特色
 2. **第三方库组件** — 如果组件颜色由第三方库控制，不在本次迁移范围
-3. **功能性颜色** — 如错误红（red-*）、成功绿（green-*）、警告黄（yellow-*）等语义化颜色保持不变
+3. **功能性/语义化颜色** — 以下颜色保持不变：
+   - `red-*`（错误/危险）
+   - `green-*`（成功）
+   - `yellow-*`（警告）
+   - `amber-*`（警告/注意）
+   - `emerald-*`（成功/生态）
+   - `orange-*`（警告/强调）
+   - `pink-*`（特殊标记）
+   - `teal-*`（信息/辅助）
+   - `slate-*`（中性/暗色系背景）
+   - `gray-*`（中性色）
+   - `zinc-*`（中性色）
+   - `neutral-*`（中性色）
+   - `stone-*`（中性色）
 
 ## MODIFIED Requirements
 无修改项，此为新增功能。

@@ -14,12 +14,12 @@ interface ActiveTaskPanelProps {
 const QUEUE_CONFIG = {
   0: {
     icon: Zap,
-    gradient: "from-cyan-500 to-blue-500",
-    border: "border-cyan-400",
-    glow: "shadow-cyan-500/20",
-    bg: "bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/10",
-    accentColor: "text-cyan-600 dark:text-cyan-400",
-    ringColor: "ring-cyan-500/30",
+    gradient: "from-primary-500 to-primary-500",
+    border: "border-primary-400",
+    glow: "shadow-primary-500/20",
+    bg: "bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-500/10 dark:to-primary-500/10",
+    accentColor: "text-primary-600 dark:text-primary-400",
+    ringColor: "ring-primary-500/30",
   },
   1: {
     icon: Target,
@@ -150,7 +150,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                   ${
                     isActive
                       ? "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30"
-                      : "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/30"
+                      : "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30"
                   }
                 `}
                 title={isActive ? "暂停" : "继续"}

@@ -38,8 +38,8 @@ const MOOD_CONFIG: Record<
   good: {
     icon: <Sun size={24} />,
     label: "不错",
-    color: "text-blue-500",
-    bg: "bg-blue-100 dark:bg-blue-500/20 border-blue-300 dark:border-blue-500/50",
+    color: "text-primary-500",
+    bg: "bg-primary-100 dark:bg-primary-500/20 border-primary-300 dark:border-primary-500/50",
   },
   neutral: {
     icon: <Meh size={24} />,
@@ -178,7 +178,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
             <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-6 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Calendar size={24} className="text-cyan-500" />
+                  <Calendar size={24} className="text-primary-500" />
                   每日回顾
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -200,7 +200,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
 
             {loading ? (
               <div className="p-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
               </div>
             ) : (
               <div className="p-6 space-y-6">
@@ -211,7 +211,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
-                      <div className="text-2xl font-bold text-cyan-500">
+                      <div className="text-2xl font-bold text-primary-500">
                         {completedTasks.length}
                       </div>
                       <div className="text-xs text-slate-500">任务</div>
@@ -266,14 +266,14 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
 
                 <div>
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
-                    <Brain size={16} className="text-purple-500" />
+                    <Brain size={16} className="text-primary-500" />
                     今日心得
                   </h3>
                   <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="记录今天的收获和感受..."
-                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
 
@@ -287,7 +287,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                       value={difficulties}
                       onChange={(e) => setDifficulties(e.target.value)}
                       placeholder="今天遇到了什么困难？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                   <div>
@@ -299,21 +299,21 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                       value={improvements}
                       onChange={(e) => setImprovements(e.target.value)}
                       placeholder="明天可以怎么改进？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </div>
 
                 <div>
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
-                    <Zap size={16} className="text-cyan-500" />
+                    <Zap size={16} className="text-primary-500" />
                     学到了什么
                   </h3>
                   <textarea
                     value={learnings}
                     onChange={(e) => setLearnings(e.target.value)}
                     placeholder="记录今天学到的新知识或技能..."
-                    className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
 
@@ -329,7 +329,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   <motion.button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:from-cyan-600 hover:to-blue-600 transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-600 hover:to-primary-600 transition-all disabled:opacity-50"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

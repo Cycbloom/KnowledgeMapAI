@@ -105,7 +105,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{t('aiAction.title')}</h3>
-        <button onClick={startCreate} className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700">
+        <button onClick={startCreate} className="flex items-center px-3 py-1.5 bg-primary-600 text-white rounded hover:bg-primary-700">
             <Plus size={16} className="mr-1"/> {t('aiAction.createAction')}
         </button>
       </div>
@@ -155,7 +155,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                     ...editingAction,
                                     variables: { ...editingAction.variables, includeParent: e.target.checked }
                                 })}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                             />
                             <span className="text-sm">{t('aiAction.includeParent')} ({'{{parents}}'})</span>
                         </label>
@@ -167,7 +167,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                     ...editingAction,
                                     variables: { ...editingAction.variables, includeSiblings: e.target.checked }
                                 })}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                             />
                             <span className="text-sm">{t('aiAction.includeSiblings')} ({'{{siblings}}'})</span>
                         </label>
@@ -179,7 +179,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                     ...editingAction,
                                     variables: { ...editingAction.variables, includeChildren: e.target.checked }
                                 })}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                             />
                             <span className="text-sm">{t('aiAction.includeChildren')} ({'{{children}}'})</span>
                         </label>
@@ -203,15 +203,15 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                 return (
                 <div key={action.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800 flex justify-between items-center hover:shadow-md transition-shadow">
                     <div className="flex items-start">
-                        <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg mr-3">
-                            <Zap size={20} className="text-purple-600 dark:text-purple-300"/>
+                        <div className="p-2 bg-primary-100 dark:bg-primary-900 rounded-lg mr-3">
+                            <Zap size={20} className="text-primary-600 dark:text-primary-300"/>
                         </div>
                         <div>
                             <div className="font-medium flex items-center">
                                 {action.name}
                                 <span className={`ml-2 text-xs px-2 py-0.5 rounded ${
                                     action.scope === 'system' ? 'bg-gray-200 text-gray-700' :
-                                    action.scope === 'user' ? 'bg-blue-100 text-blue-700' :
+                                    action.scope === 'user' ? 'bg-primary-100 text-primary-700' :
                                     'bg-green-100 text-green-700'
                                 }`}>
                                     {getScopeText(action.scope, t)}
@@ -226,7 +226,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                              <>
                                 <button 
                                     onClick={() => setEditingAction(action)}
-                                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                                     title={t('aiAction.edit')}
                                 >
                                     <Edit size={18} />

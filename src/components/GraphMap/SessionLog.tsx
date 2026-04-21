@@ -36,10 +36,10 @@ export const SessionLog: React.FC<SessionLogProps> = ({ session }) => {
                 className={`flex items-start gap-2 p-2 rounded text-xs ${
                   message.role === 'tool'
                     ? 'bg-gray-50 dark:bg-slate-800'
-                    : 'bg-indigo-50 dark:bg-indigo-900/20'
+                    : 'bg-primary-50 dark:bg-primary-900/20'
                 }`}
               >
-                {message.role === 'assistant' && <Bot className="w-3 h-3 text-indigo-600 dark:text-indigo-400 mt-0.5" />}
+                {message.role === 'assistant' && <Bot className="w-3 h-3 text-primary-600 dark:text-primary-400 mt-0.5" />}
                 {message.role === 'tool' && <Wrench className="w-3 h-3 text-gray-500 dark:text-gray-400 mt-0.5" />}
                 {message.role === 'user' && <span className="w-3 h-3 text-gray-400">👤</span>}
                 
@@ -66,7 +66,7 @@ export const SessionLog: React.FC<SessionLogProps> = ({ session }) => {
                   {tc.status === 'completed' ? (
                     <CheckCircle2 className="w-3 h-3 text-green-500" />
                   ) : (
-                    <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />
+                    <Loader2 className="w-3 h-3 animate-spin text-primary-500" />
                   )}
                   <span className="text-gray-600 dark:text-gray-300">{tc.toolName}</span>
                 </div>

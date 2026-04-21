@@ -5,8 +5,7 @@ import { getAIConfig, injectAIConfig } from "../api/client";
 import type { AIAction } from "@shared/types";
 import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
-import i18n from "../../i18n";
-import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
+import { getAILanguage } from "../../hooks/useAILanguage";
 import { getMobileSupabaseClient } from "./client";
 
 const getCloudApiBaseUrl = (): string => {
@@ -51,17 +50,6 @@ const createMobileAiApiClient = (): AxiosInstance => {
 };
 
 const mobileAiClient = createMobileAiApiClient();
-
-const getCurrentLanguage = (): string => {
-  const aiLanguage = useLearningSettingsStore.getState().aiLanguage;
-  if (aiLanguage === "auto") {
-    const lang = i18n.language || "zh-CN";
-    if (lang.startsWith("en")) return "en-US";
-    if (lang.startsWith("zh")) return "zh-CN";
-    return "zh-CN";
-  }
-  return aiLanguage;
-};
 
 const createStreamHandler = async (
   url: string,
@@ -168,7 +156,7 @@ export const mobileAiApi = {
   }) => {
     const isMobile = isCapacitorMobile();
     const isConfigured = mobileAIService.isConfigured();
-    const language = data.language || getCurrentLanguage();
+    const language = data.language || getAILanguage();
 
     if (isMobile && isConfigured) {
       try {

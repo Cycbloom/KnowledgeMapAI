@@ -37,10 +37,10 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
       exit={{ opacity: 0, scale: 0.9 }}
       className={`group p-4 md:p-5 rounded-2xl border transition-all hover:shadow-xl flex flex-col h-full relative ${
         selected 
-          ? (isDark ? 'bg-indigo-900/20 border-indigo-500' : 'bg-indigo-50 border-indigo-200')
+          ? (isDark ? 'bg-primary-900/20 border-primary-500' : 'bg-primary-50 border-primary-200')
           : (isDark 
-              ? 'bg-slate-800 border-slate-700 hover:border-indigo-500/50' 
-              : 'bg-white border-gray-100 hover:border-indigo-200 shadow-sm')
+              ? 'bg-slate-800 border-slate-700 hover:border-primary-500/50' 
+              : 'bg-white border-gray-100 hover:border-primary-200 shadow-sm')
       }`}
       onClick={() => { if (selectionMode && onSelect) onSelect(card); }}
     >
@@ -51,7 +51,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
               e.stopPropagation();
               if (onSelect) onSelect(card);
             }}
-            className={`min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${selected ? 'text-indigo-500' : 'text-gray-300 hover:text-gray-400'}`}
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${selected ? 'text-primary-500' : 'text-gray-300 hover:text-gray-400'}`}
           >
              {selected ? <CheckSquare size={20} /> : <Square size={20} />}
           </button>
@@ -83,7 +83,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
       <div className="mt-5 pt-4 border-t border-gray-50 dark:border-slate-700/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
-            <Tag size={12} className="text-indigo-400" />
+            <Tag size={12} className="text-primary-400" />
           </div>
           <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
             {card.card_type === 'choice' ? '单选题' : 
@@ -103,8 +103,8 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
               }}
               className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all ${
                 isDark 
-                  ? 'text-slate-400 hover:text-indigo-400 hover:bg-slate-700' 
-                  : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
+                  ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700' 
+                  : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100'
               }`}
               title="预览内容"
             >
@@ -154,8 +154,8 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
               }}
               className={`ml-1 min-w-[64px] min-h-[44px] text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
                 isDark 
-                  ? 'text-indigo-400 hover:bg-indigo-500/10' 
-                  : 'text-indigo-600 hover:bg-indigo-50'
+                  ? 'text-primary-400 hover:bg-primary-500/10' 
+                  : 'text-primary-600 hover:bg-primary-50'
               }`}
             >
               <Play size={12} />

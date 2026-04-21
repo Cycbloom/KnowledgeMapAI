@@ -318,7 +318,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         );
       case "completed":
         return (
-          <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+          <span className="px-2 py-0.5 text-xs rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
             {t("learning.learningPath.statusCompleted")}
           </span>
         );
@@ -336,7 +336,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   if (isLoadingPaths && graphPaths.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+        <RefreshCw className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -354,8 +354,8 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
-              <RefreshCw className="w-12 h-12 animate-spin text-indigo-500" />
-              <Sparkles className="w-5 h-5 text-purple-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              <RefreshCw className="w-12 h-12 animate-spin text-primary-500" />
+              <Sparkles className="w-5 h-5 text-primary-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
             <div className="text-center">
               <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
@@ -367,15 +367,15 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             </div>
             <div className="flex items-center gap-1">
               <div
-                className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary-500 rounded-full animate-bounce"
                 style={{ animationDelay: "0ms" }}
               />
               <div
-                className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary-500 rounded-full animate-bounce"
                 style={{ animationDelay: "150ms" }}
               />
               <div
-                className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary-500 rounded-full animate-bounce"
                 style={{ animationDelay: "300ms" }}
               />
             </div>
@@ -392,7 +392,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-primary-500 to-pink-500 rounded-lg">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -405,9 +405,9 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
           </div>
 
           {tempPath.aiGenerated && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex-shrink-0">
-              <Sparkles size={14} className="text-purple-500" />
-              <span className="text-xs text-purple-600 dark:text-purple-400">
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex-shrink-0">
+              <Sparkles size={14} className="text-primary-500" />
+              <span className="text-xs text-primary-600 dark:text-primary-400">
                 {t("learning.learningPath.aiGeneratedTarget", { goal: tempPath.targetGoal })}
               </span>
             </div>
@@ -415,7 +415,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
           <div className="grid grid-cols-3 gap-4 flex-shrink-0">
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-blue-500">
+              <div className="text-2xl font-bold text-primary-500">
                 {tempPath.totalNodes}
               </div>
               <div className="text-xs text-gray-500">{t("learning.learningPath.totalNodes")}</div>
@@ -427,7 +427,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               <div className="text-xs text-gray-500">{t("learning.learningPath.mastered")}</div>
             </div>
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-purple-500">
+              <div className="text-2xl font-bold text-primary-500">
                 {Math.round(tempPath.estimatedTotalTime / 60)}h
               </div>
               <div className="text-xs text-gray-500">{t("learning.learningPath.estimatedTime")}</div>
@@ -470,7 +470,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             <button
               onClick={handleSavePath}
               disabled={isGenerating}
-              className="flex-1 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-2 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isGenerating ? (
                 <>
@@ -490,7 +490,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-500 rounded-lg">
                 <Route className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -507,7 +507,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setViewMode("wizard")}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600"
+                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600"
               >
                 <Wand2 size={14} />
                 {t("learning.learningPath.aiPlan")}
@@ -540,7 +540,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                         onClick={() => setSelectedStyle(style.value as any)}
                         className={`px-3 py-1.5 text-sm rounded-lg ${
                           selectedStyle === style.value
-                            ? "bg-blue-500 text-white"
+                            ? "bg-primary-500 text-white"
                             : "bg-white dark:bg-slate-600 text-gray-700 dark:text-gray-200"
                         }`}
                       >
@@ -565,7 +565,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 </div>
                 <button
                   onClick={() => generateTempPath()}
-                  className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  className="w-full py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
                 >
                   {t("learning.learningPath.generatePreview")}
                 </button>
@@ -583,13 +583,13 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                     <div
                       key={path.id}
                       className={`bg-white dark:bg-slate-700 rounded-lg transition-all ${
-                        isSelected ? "ring-2 ring-indigo-500" : ""
+                        isSelected ? "ring-2 ring-primary-500" : ""
                       }`}
                     >
                     <div className="p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Route className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                          <Route className="w-4 h-4 text-primary-500 flex-shrink-0" />
                           <span className="font-medium text-gray-900 dark:text-white truncate">
                             {path.title}
                           </span>
@@ -624,7 +624,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                         path.progress_percentage > 0 && (
                           <div className="h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-3">
                             <div
-                              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                              className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
                               style={{ width: `${path.progress_percentage}%` }}
                             />
                           </div>
@@ -642,7 +642,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                           className={`flex-1 py-1.5 text-xs rounded flex items-center justify-center gap-1 transition-colors ${
                             isSelected
                               ? "bg-gray-500 text-white hover:bg-gray-600"
-                              : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
+                              : "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50"
                           }`}
                         >
                           <Route className="w-3 h-3" />
@@ -702,7 +702,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                                       isCompleted
                                         ? "bg-green-500 text-white"
                                         : isInProgress
-                                          ? "bg-blue-500 text-white"
+                                          ? "bg-primary-500 text-white"
                                           : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
                                     }`}
                                   >
@@ -746,7 +746,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               </p>
               <button
                 onClick={() => setViewMode("wizard")}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-sm hover:from-indigo-600 hover:to-purple-600 flex items-center gap-2 mx-auto"
+                className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg text-sm hover:from-primary-600 hover:to-primary-600 flex items-center gap-2 mx-auto"
               >
                 <Wand2 className="w-4 h-4" />
                 {t("learning.learningPath.startAIPlan")}
@@ -767,14 +767,14 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                   {t("learning.learningPath.clear")}
                 </button>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+              <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                  <Sparkles className="w-4 h-4 text-primary-500" />
+                  <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
                     {tempPath.targetGoal || t("learning.learningPath.aiGeneratedPath")}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-purple-600 dark:text-purple-400 mb-2">
+                <div className="flex items-center gap-4 text-xs text-primary-600 dark:text-primary-400 mb-2">
                   <span>{t("learning.learningPath.knowledgePoints", { count: tempPath.totalNodes })}</span>
                   <span>
                     {t("learning.learningPath.hours", { hours: Math.round(tempPath.estimatedTotalTime / 60) })}
@@ -783,7 +783,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 <button
                   onClick={handleSavePath}
                   disabled={isGenerating}
-                  className="w-full py-1.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600 disabled:opacity-50"
+                  className="w-full py-1.5 bg-primary-500 text-white rounded text-xs hover:bg-primary-600 disabled:opacity-50"
                 >
                   {isGenerating ? t("learning.learningPath.saving") : t("learning.learningPath.saveThisPath")}
                 </button>

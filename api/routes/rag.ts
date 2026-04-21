@@ -19,6 +19,7 @@ const ragChatSchema = z.object({
   })).optional(),
   provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
   model: z.string().optional(),
+  language: z.string().optional(),
 });
 
 const ragSearchSchema = z.object({
@@ -33,7 +34,7 @@ const analyzeGapsSchema = z.object({
 });
 
 router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, current_node_id, history, provider, model } = req.body;
+  const { message, graph_id, current_node_id, history, provider, model, language } = req.body;
 
   try {
     const result = await ragService.chat(message, req.user.id, {
@@ -41,7 +42,8 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
       currentNodeId: current_node_id,
       history,
       provider,
-      model
+      model,
+      language
     });
 
     res.json(result);
@@ -52,7 +54,7 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
 });
 
 router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, current_node_id, history, provider, model } = req.body;
+  const { message, graph_id, current_node_id, history, provider, model, language } = req.body;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -70,7 +72,8 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
         currentNodeId: current_node_id,
         history,
         provider,
-        model
+        model,
+        language
       }
     );
 

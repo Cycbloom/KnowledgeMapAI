@@ -158,7 +158,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
             e.stopPropagation();
             setIsAdding(true);
           }}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
         >
           <Plus size={14} />
           添加
@@ -180,7 +180,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                       }
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         newLink.link_type === type
-                          ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
+                          ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
                           : "text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                       }`}
                     >
@@ -203,7 +203,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                       ? "file:///path/to/file"
                       : "https://api.example.com"
                 }
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
               <input
@@ -213,7 +213,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                   setNewLink({ ...newLink, title: e.target.value })
                 }
                 placeholder="标题（可选，默认使用链接地址）"
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <input
                 type="text"
@@ -222,7 +222,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                   setNewLink({ ...newLink, description: e.target.value })
                 }
                 placeholder="描述（可选）"
-                className="w-full px-3 py-2 mb-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 mb-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -241,7 +241,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                 </button>
                 <button
                   onClick={handleAddLink}
-                  className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all"
+                  className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all"
                 >
                   添加
                 </button>
@@ -255,15 +255,15 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
               return (
                 <div
                   key={link.id}
-                  className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-500/50 transition-all group"
+                  className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-500/50 transition-all group"
                 >
                   <div
                     className={`p-2 rounded-lg ${
                       link.link_type === "web"
-                        ? "bg-blue-100 dark:bg-blue-500/20 text-blue-500"
+                        ? "bg-primary-100 dark:bg-primary-500/20 text-primary-500"
                         : link.link_type === "file"
                           ? "bg-amber-100 dark:bg-amber-500/20 text-amber-500"
-                          : "bg-purple-100 dark:bg-purple-500/20 text-purple-500"
+                          : "bg-primary-100 dark:bg-primary-500/20 text-primary-500"
                     }`}
                   >
                     <Icon size={16} />
@@ -284,7 +284,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleOpenLink(link)}
-                      className="p-1.5 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
                     >
                       <ExternalLink size={16} />
                     </button>
@@ -305,7 +305,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
                 <p>暂无链接</p>
                 <button
                   onClick={() => setIsAdding(true)}
-                  className="mt-2 text-sm text-cyan-500 hover:text-cyan-600"
+                  className="mt-2 text-sm text-primary-500 hover:text-primary-600"
                 >
                   添加第一个链接
                 </button>

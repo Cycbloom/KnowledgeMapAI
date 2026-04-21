@@ -51,15 +51,15 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
       label: t('graphMap.analysisConfirm.mode.deep'),
       description: t('graphMap.analysisConfirm.mode.deepDesc'),
       icon: <Target className="w-4 h-4" />,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-100 dark:bg-purple-900/40',
+      color: 'text-primary-500',
+      bgColor: 'bg-primary-100 dark:bg-primary-900/40',
     },
     custom: {
       label: t('graphMap.analysisConfirm.mode.custom'),
       description: t('graphMap.analysisConfirm.mode.customDesc'),
       icon: <FileText className="w-4 h-4" />,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-100 dark:bg-blue-900/40',
+      color: 'text-primary-500',
+      bgColor: 'bg-primary-100 dark:bg-primary-900/40',
     },
   };
 
@@ -86,7 +86,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
           <ArrowLeft className="w-4 h-4" />
         </button>
         <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Target className="w-5 h-5 text-indigo-500" />
+          <Target className="w-5 h-5 text-primary-500" />
           {t('graphMap.analysisConfirm.title')}
         </h3>
       </div>
@@ -118,7 +118,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
             onChange={e => onCustomPromptChange(e.target.value)}
             disabled={isLoading}
             rows={3}
-            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 resize-none"
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 resize-none"
             placeholder={t('graphMap.analysisConfirm.analysisGoalPlaceholder')}
           />
           {!customPrompt?.trim() && (
@@ -129,7 +129,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
 
       <div>
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          <BarChart3 className="w-4 h-4 text-indigo-500" />
+          <BarChart3 className="w-4 h-4 text-primary-500" />
           <span>{t('graphMap.analysisConfirm.analysisScope', { count: selectedGraphIds.length })}</span>
         </div>
         {selectedGraphIds.length === 0 && (
@@ -155,7 +155,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
                   key={index} 
                   className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
                   <span className="truncate">{title}</span>
                 </li>
               ))}
@@ -190,7 +190,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
         <button
           onClick={onConfirm}
           disabled={isLoading || (mode === 'custom' && !customPrompt?.trim())}
-          className="flex-1 px-4 py-2.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {isLoading ? (
             <>

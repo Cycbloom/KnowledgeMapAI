@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, CheckSquare } from "lucide-react";
 import { useTheme } from "../hooks";
@@ -43,7 +43,7 @@ export const StatisticsCenter: React.FC = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-3 md:py-2.5 rounded-xl text-sm md:text-base font-medium transition-all flex-shrink-0 min-h-[44px] ${
                 activeTab === tab.id
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+                  ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
                   : isDark
                     ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                     : "bg-white text-gray-700 hover:bg-gray-100 shadow-sm"

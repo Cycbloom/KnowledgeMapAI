@@ -123,7 +123,7 @@ export const FocusTimer: React.FC = () => {
             onClick={() => setIsExpanded(!isExpanded)}
           >
             <div
-              className={`p-2 rounded-full ${isActive ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"}`}
+              className={`p-2 rounded-full ${isActive ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"}`}
             >
               {mode === "focus" ? <Brain size={20} /> : <Coffee size={20} />}
             </div>
@@ -150,7 +150,7 @@ export const FocusTimer: React.FC = () => {
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-2 pointer-events-none">
-                <Brain className="text-blue-500" size={18} />
+                <Brain className="text-primary-500" size={18} />
                 <span className="font-semibold text-gray-700 dark:text-gray-200 select-none">
                   {t("focusTimer.focusMode")}
                 </span>
@@ -190,7 +190,7 @@ export const FocusTimer: React.FC = () => {
                         focusDuration: parseInt(e.target.value),
                       })
                     }
-                    className="w-full accent-blue-500"
+                    className="w-full accent-primary-500"
                   />
                   <div className="flex justify-between text-xs text-gray-400">
                     <span>1</span>
@@ -237,7 +237,7 @@ export const FocusTimer: React.FC = () => {
                     onClick={() =>
                       updateSettings({ soundEnabled: !soundEnabled })
                     }
-                    className={`p-2 rounded-lg ${soundEnabled ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400"}`}
+                    className={`p-2 rounded-lg ${soundEnabled ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400"}`}
                   >
                     {soundEnabled ? (
                       <Volume2 size={18} />
@@ -299,7 +299,7 @@ export const FocusTimer: React.FC = () => {
                         2 * Math.PI * 88 * (1 - progress / 100)
                       }
                       className={`${
-                        mode === "focus" ? "text-blue-500" : "text-emerald-500"
+                        mode === "focus" ? "text-primary-500" : "text-emerald-500"
                       } transition-all duration-1000 ease-linear`}
                       strokeLinecap="round"
                     />
@@ -327,7 +327,7 @@ export const FocusTimer: React.FC = () => {
                     className={`p-4 rounded-full shadow-lg transform transition-transform active:scale-95 ${
                       isActive
                         ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-primary-600 text-white hover:bg-primary-700"
                     }`}
                   >
                     {isActive ? (

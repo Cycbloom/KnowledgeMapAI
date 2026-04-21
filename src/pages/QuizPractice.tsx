@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+﻿import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -263,7 +263,7 @@ export const QuizPractice: React.FC = () => {
         <p className="text-red-500 mb-4">加载测验失败</p>
         <button
           onClick={handleBack}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           返回测验列表
         </button>
@@ -281,7 +281,7 @@ export const QuizPractice: React.FC = () => {
         <p className="mb-4">测验中没有卡片</p>
         <button
           onClick={handleBack}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           返回测验列表
         </button>
@@ -405,11 +405,11 @@ export const QuizPractice: React.FC = () => {
                       } else {
                         btnClass += isSelected
                           ? isDark
-                            ? 'bg-indigo-900/40 border-indigo-500 text-indigo-300'
-                            : 'bg-indigo-50 border-indigo-400 text-indigo-700'
+                            ? 'bg-primary-900/40 border-primary-500 text-primary-300'
+                            : 'bg-primary-50 border-primary-400 text-primary-700'
                           : isDark
-                            ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 text-slate-200 cursor-pointer'
-                            : 'bg-white border-gray-200 hover:border-indigo-300 text-gray-700 cursor-pointer';
+                            ? 'bg-slate-800 border-slate-700 hover:border-primary-500 text-slate-200 cursor-pointer'
+                            : 'bg-white border-gray-200 hover:border-primary-300 text-gray-700 cursor-pointer';
                       }
 
                       return (
@@ -422,7 +422,7 @@ export const QuizPractice: React.FC = () => {
                           <span
                             className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
                               isSelected
-                                ? 'bg-indigo-500 text-white'
+                                ? 'bg-primary-500 text-white'
                                 : isDark
                                   ? 'bg-slate-700 text-slate-400'
                                   : 'bg-gray-100 text-gray-500'
@@ -474,11 +474,11 @@ export const QuizPractice: React.FC = () => {
                       } else {
                         btnClass += isSelected
                           ? isDark
-                            ? 'bg-indigo-900/40 border-indigo-500 text-indigo-300'
-                            : 'bg-indigo-50 border-indigo-400 text-indigo-700'
+                            ? 'bg-primary-900/40 border-primary-500 text-primary-300'
+                            : 'bg-primary-50 border-primary-400 text-primary-700'
                           : isDark
-                            ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 text-slate-200 cursor-pointer'
-                            : 'bg-white border-gray-200 hover:border-indigo-300 text-gray-700 cursor-pointer';
+                            ? 'bg-slate-800 border-slate-700 hover:border-primary-500 text-slate-200 cursor-pointer'
+                            : 'bg-white border-gray-200 hover:border-primary-300 text-gray-700 cursor-pointer';
                       }
 
                       return (
@@ -491,7 +491,7 @@ export const QuizPractice: React.FC = () => {
                           <span
                             className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
                               isSelected
-                                ? 'bg-indigo-500 text-white'
+                                ? 'bg-primary-500 text-white'
                                 : isDark
                                   ? 'bg-slate-700 text-slate-400'
                                   : 'bg-gray-100 text-gray-500'
@@ -536,11 +536,11 @@ export const QuizPractice: React.FC = () => {
                       } else {
                         btnClass += isSelected
                           ? isDark
-                            ? 'bg-indigo-900/40 border-indigo-500 text-indigo-300'
-                            : 'bg-indigo-50 border-indigo-400 text-indigo-700'
+                            ? 'bg-primary-900/40 border-primary-500 text-primary-300'
+                            : 'bg-primary-50 border-primary-400 text-primary-700'
                           : isDark
-                            ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 text-slate-200 cursor-pointer'
-                            : 'bg-white border-gray-200 hover:border-indigo-300 text-gray-700 cursor-pointer';
+                            ? 'bg-slate-800 border-slate-700 hover:border-primary-500 text-slate-200 cursor-pointer'
+                            : 'bg-white border-gray-200 hover:border-primary-300 text-gray-700 cursor-pointer';
                       }
 
                       return (
@@ -598,10 +598,10 @@ export const QuizPractice: React.FC = () => {
                     className={`mt-6 p-5 rounded-2xl border ${
                       isDark
                         ? 'bg-slate-900/50 border-slate-700'
-                        : 'bg-indigo-50/30 border-indigo-100'
+                        : 'bg-primary-50/30 border-primary-100'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-3 text-indigo-500">
+                    <div className="flex items-center gap-2 mb-3 text-primary-500">
                       <Brain size={18} />
                       <h4 className="font-bold text-sm uppercase tracking-wider">题目解析</h4>
                     </div>
@@ -625,7 +625,7 @@ export const QuizPractice: React.FC = () => {
                   (isQA || isEssay || isFillBlank) ? (
                     <button
                       onClick={handleShowAnswer}
-                      className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 flex items-center justify-center gap-2"
                     >
                       <BookOpen size={20} />
                       显示答案
@@ -634,7 +634,7 @@ export const QuizPractice: React.FC = () => {
                     <button
                       onClick={handleSubmitMultiChoice}
                       disabled={!selectedOption || JSON.parse(selectedOption).length === 0}
-                      className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 disabled:opacity-50 disabled:shadow-none"
+                      className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 disabled:opacity-50 disabled:shadow-none"
                     >
                       提交答案
                     </button>
@@ -665,7 +665,7 @@ export const QuizPractice: React.FC = () => {
                     </button>
                     <button
                       onClick={handleNext}
-                      className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 flex items-center justify-center gap-2"
+                      className="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 flex items-center justify-center gap-2"
                     >
                       {currentIndex === cards.length - 1 ? '完成测验' : '下一题'}
                       {currentIndex < cards.length - 1 && <ChevronRight size={20} />}

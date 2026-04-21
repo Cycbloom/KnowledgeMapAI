@@ -215,7 +215,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
     <div className={className}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-cyan-500" />
+          <TrendingUp className="w-5 h-5 text-primary-500" />
           进度详情
         </h3>
         <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -238,7 +238,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
             initial={{ width: 0 }}
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+            className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
           />
         </div>
         {analysis && (
@@ -261,9 +261,9 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
 
       {/* 智能分析 */}
       {analysis && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/10 rounded-xl border border-cyan-200 dark:border-cyan-500/30">
+        <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-500/10 dark:to-primary-500/10 rounded-xl border border-primary-200 dark:border-primary-500/30">
           <div className="flex items-start gap-3">
-            <Lightbulb className="w-5 h-5 text-cyan-500 mt-0.5" />
+            <Lightbulb className="w-5 h-5 text-primary-500 mt-0.5" />
             <div>
               <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
                 进度分析
@@ -274,7 +274,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     analysis.status === "ahead"
                       ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
                       : analysis.status === "on_track"
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+                        ? "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-400"
                         : "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"
                   }`}
                 >
@@ -295,7 +295,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     key={index}
                     className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1"
                   >
-                    <span className="text-cyan-500 mt-1">•</span>
+                    <span className="text-primary-500 mt-1">•</span>
                     {suggestion}
                   </li>
                 ))}
@@ -448,7 +448,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     max="100"
                     defaultValue={selectedPlan.actual_percentage}
                     id="actual-progress-input"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
@@ -470,7 +470,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                         key={option.value}
                         className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                           selectedPlan.status === option.value
-                            ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-500/10"
+                            ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"
                             : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                         }`}
                       >
@@ -484,14 +484,14 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                         <option.icon
                           className={`w-4 h-4 ${
                             selectedPlan.status === option.value
-                              ? "text-cyan-500"
+                              ? "text-primary-500"
                               : "text-slate-400"
                           }`}
                         />
                         <span
                           className={`text-sm ${
                             selectedPlan.status === option.value
-                              ? "text-cyan-600 dark:text-cyan-400 font-medium"
+                              ? "text-primary-600 dark:text-primary-400 font-medium"
                               : "text-slate-600 dark:text-slate-400"
                           }`}
                         >
@@ -510,7 +510,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                     id="notes-input"
                     defaultValue={selectedPlan.notes || ""}
                     rows={3}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
                     placeholder="添加备注..."
                   />
                 </div>
@@ -560,7 +560,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
                         notes,
                       });
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all"
+                    className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all"
                   >
                     保存
                   </button>
@@ -731,13 +731,13 @@ const ProgressChart: React.FC<{
       <div className="absolute top-0 right-0 flex items-center gap-4 text-xs">
         <div className="flex items-center gap-1">
           <div
-            className="w-3 h-0.5 bg-cyan-400"
+            className="w-3 h-0.5 bg-primary-400"
             style={{ borderTop: "2px dashed rgb(34, 211, 238)" }}
           />
           <span className="text-slate-500 dark:text-slate-400">计划</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-0.5 bg-blue-500" />
+          <div className="w-3 h-0.5 bg-primary-500" />
           <span className="text-slate-500 dark:text-slate-400">实际</span>
         </div>
       </div>

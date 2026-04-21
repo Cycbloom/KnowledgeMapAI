@@ -13,8 +13,8 @@ interface StreakMilestone {
 const STREAK_MILESTONES: StreakMilestone[] = [
   { minutes: 25, label: '专注达人', icon: <Star size={16} />, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
   { minutes: 50, label: '持续专注', icon: <Zap size={16} />, color: 'text-orange-400', bgColor: 'bg-orange-500/20' },
-  { minutes: 100, label: '深度专注', icon: <Target size={16} />, color: 'text-cyan-400', bgColor: 'bg-cyan-500/20' },
-  { minutes: 150, label: '超级专注', icon: <Trophy size={16} />, color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
+  { minutes: 100, label: '深度专注', icon: <Target size={16} />, color: 'text-primary-400', bgColor: 'bg-primary-500/20' },
+  { minutes: 150, label: '超级专注', icon: <Trophy size={16} />, color: 'text-primary-400', bgColor: 'bg-primary-500/20' },
   { minutes: 200, label: '传奇专注', icon: <Flame size={16} />, color: 'text-red-400', bgColor: 'bg-red-500/20' },
 ];
 
@@ -113,7 +113,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
                 <motion.span
                   animate={{ opacity: [1, 0.5, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
-                  className="text-xs text-cyan-400"
+                  className="text-xs text-primary-400"
                 >
                   专注中
                 </motion.span>
@@ -151,7 +151,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-700/30">
-            <Clock size={14} className="text-cyan-400" />
+            <Clock size={14} className="text-primary-400" />
             <div>
               <div className="text-xs text-slate-400">当前连续</div>
               <div className="text-sm font-medium text-white">{currentStreakMinutes}分钟</div>

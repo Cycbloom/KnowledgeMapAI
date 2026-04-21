@@ -1,13 +1,13 @@
-- [ ] 所有 pages 目录下的组件中 blue-* 颜色已替换为 primary-*（排除 Settings 主题选择器 UI）
-- [ ] 所有 GraphEditor 组件中 blue-* 颜色已替换为 primary-*
-- [ ] 所有 GraphMap 组件中 blue-* 颜色已替换为 primary-*
-- [ ] 所有 Templates/Scheduler 组件中 blue-* 颜色已替换为 primary-*
-- [ ] 所有其他组件中 blue-* 颜色已替换为 primary-*
+- [ ] 所有 pages 目录下的组件中 blue-*/purple-*/indigo-*/cyan-* 颜色已替换为 primary-*（排除 Settings 主题选择器 UI）
+- [x] 所有 GraphEditor 组件中 blue-*/purple-*/indigo-*/cyan-* 颜色已替换为 primary-*
+- [ ] 所有 GraphMap 组件中 blue-*/purple-*/indigo-*/cyan-* 颜色已替换为 primary-*
+- [ ] 所有 Templates/Scheduler 组件中 blue-*/purple-*/indigo-*/cyan-* 颜色已替换为 primary-*
+- [ ] 所有其他组件中 blue-*/purple-*/indigo-*/cyan-* 颜色已替换为 primary-*
 - [ ] Settings.tsx 主题选择器 UI 的硬编码颜色保持不变
-- [ ] 功能性颜色（red-*/green-*/yellow-*/amber-*等语义颜色）保持不变
+- [ ] 功能性颜色（red-*/green-*/yellow-*/amber-*/emerald-*/orange-*/pink-*/teal-*/slate-*/gray-*/zinc-*/neutral-*/stone-*）保持不变
 - [ ] 切换主题后所有 UI 元素颜色同步变化（非蓝色主题下不再显示蓝色元素）
 - [ ] 亮色模式下所有 primary-* 颜色显示正常
 - [ ] 暗色模式下所有 primary-* 颜色显示正常
-- [ ] 运行 `npm run lint` 无错误
+- [x] 运行 `npm run lint` 无错误
 - [ ] 运行 `npm run check` 无类型错误
-- [ ] 全局搜索确认无遗漏的 blue-* 主题色（排除 Settings 主题选择器）
+- [ ] 全局搜索确认无遗漏的 blue-*/purple-*/indigo-*/cyan-* 主题色（排除 Settings 主题选择器）

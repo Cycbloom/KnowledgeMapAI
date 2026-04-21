@@ -28,9 +28,9 @@ const URGENCY_CONFIG = {
   },
   medium: {
     label: '中等',
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-500/20',
-    border: 'border-blue-300 dark:border-blue-500/50',
+    color: 'text-primary-600 dark:text-primary-400',
+    bg: 'bg-primary-100 dark:bg-primary-500/20',
+    border: 'border-primary-300 dark:border-primary-500/50',
     icon: TrendingUp,
   },
   low: {
@@ -43,7 +43,7 @@ const URGENCY_CONFIG = {
 };
 
 const QUEUE_COLORS = {
-  0: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300',
+  0: 'bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300',
   1: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
   2: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
 };
@@ -153,7 +153,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
                       {rec.reasons.map((reason, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded-full text-xs bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                          className="px-2 py-0.5 rounded-full text-xs bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400"
                         >
                           {reason}
                         </span>
@@ -170,9 +170,9 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
                     }}
                     className={`
                       flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium
-                      bg-gradient-to-r from-cyan-500 to-blue-500 text-white
-                      hover:from-cyan-400 hover:to-blue-400
-                      transition-all shadow-lg shadow-cyan-500/20
+                      bg-gradient-to-r from-primary-500 to-primary-500 text-white
+                      hover:from-primary-400 hover:to-primary-400
+                      transition-all shadow-lg shadow-primary-500/20
                     `}
                   >
                     开始

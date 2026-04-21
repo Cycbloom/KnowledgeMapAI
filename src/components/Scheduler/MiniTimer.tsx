@@ -17,7 +17,7 @@ interface MiniTimerProps {
 }
 
 const QUEUE_COLORS = {
-  0: { bg: 'from-cyan-500 to-blue-500', progress: '#06b6d4' },
+  0: { bg: 'from-primary-500 to-primary-500', progress: '#06b6d4' },
   1: { bg: 'from-emerald-500 to-green-500', progress: '#10b981' },
   2: { bg: 'from-amber-500 to-orange-500', progress: '#f59e0b' },
 };

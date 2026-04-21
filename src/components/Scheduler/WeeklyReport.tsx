@@ -129,10 +129,10 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border border-cyan-200 dark:border-cyan-800/50"
+          className="p-4 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-500/5 border border-primary-200 dark:border-primary-800/50"
         >
           <div className="flex items-center gap-2 mb-2">
-            <Clock size={18} className="text-cyan-500" />
+            <Clock size={18} className="text-primary-500" />
             <span className="text-sm text-slate-600 dark:text-slate-300">总专注时长</span>
           </div>
           <p className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -235,17 +235,17 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
                 className={`
                   p-2 rounded-lg text-center transition-all
                   ${isToday 
-                    ? 'bg-cyan-100 dark:bg-cyan-500/20 ring-2 ring-cyan-500' 
+                    ? 'bg-primary-100 dark:bg-primary-500/20 ring-2 ring-primary-500' 
                     : isFuture 
                       ? 'bg-slate-50 dark:bg-slate-800/30 opacity-50' 
                       : 'bg-slate-50 dark:bg-slate-800/30'
                   }
                 `}
               >
-                <p className={`text-xs ${isToday ? 'text-cyan-600 dark:text-cyan-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
+                <p className={`text-xs ${isToday ? 'text-primary-600 dark:text-primary-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
                   {day}
                 </p>
-                <p className={`text-sm font-medium ${isToday ? 'text-cyan-700 dark:text-cyan-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                <p className={`text-sm font-medium ${isToday ? 'text-primary-700 dark:text-primary-300' : 'text-slate-700 dark:text-slate-300'}`}>
                   {date.getDate()}
                 </p>
               </div>

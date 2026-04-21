@@ -96,7 +96,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
       case "interrupted":
         return <PauseCircle className="w-4 h-4 text-yellow-500" />;
       case "time_slice_ended":
-        return <Timer className="w-4 h-4 text-blue-500" />;
+        return <Timer className="w-4 h-4 text-primary-500" />;
       default:
         return <Clock className="w-4 h-4 text-slate-400" />;
     }
@@ -154,7 +154,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
     <div className={className}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-          <Clock className="w-5 h-5 text-cyan-500" />
+          <Clock className="w-5 h-5 text-primary-500" />
           执行记录
         </h3>
         <span className="text-sm text-slate-500 dark:text-slate-400">

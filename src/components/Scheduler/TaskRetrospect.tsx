@@ -121,7 +121,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
             className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 p-6 text-white">
+            <div className="bg-gradient-to-r from-emerald-500 to-primary-500 p-6 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white/20 rounded-xl">
@@ -164,14 +164,14 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
 
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                  <MessageSquare size={16} className="text-cyan-500" />
+                  <MessageSquare size={16} className="text-primary-500" />
                   完成心得
                 </label>
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="这个任务完成得怎么样？有什么感受？"
-                  className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -185,7 +185,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     value={difficulties}
                     onChange={(e) => setDifficulties(e.target.value)}
                     placeholder="有什么阻碍？"
-                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 <div>
@@ -197,21 +197,21 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     value={improvements}
                     onChange={(e) => setImprovements(e.target.value)}
                     placeholder="如何解决的？"
-                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                  <Brain size={16} className="text-purple-500" />
+                  <Brain size={16} className="text-primary-500" />
                   学到了什么
                 </label>
                 <textarea
                   value={learnings}
                   onChange={(e) => setLearnings(e.target.value)}
                   placeholder="从这个任务中学到了什么新知识或技能？"
-                  className="w-full h-16 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full h-16 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -230,7 +230,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                 <motion.button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium hover:from-emerald-600 hover:to-cyan-600 transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-primary-500 text-white font-medium hover:from-emerald-600 hover:to-primary-600 transition-all disabled:opacity-50"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

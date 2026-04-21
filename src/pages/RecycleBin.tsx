@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useTrashGraphs } from "../hooks/queries";
 import {
@@ -242,10 +242,10 @@ export const RecycleBin = () => {
               }`}
             >
               {isAllSelected ? (
-                <CheckSquare className="w-5 h-5 text-blue-500" />
+                <CheckSquare className="w-5 h-5 text-primary-500" />
               ) : isPartialSelected ? (
-                <div className="w-5 h-5 rounded border-2 border-blue-500 bg-blue-500/30 flex items-center justify-center">
-                  <div className="w-2.5 h-0.5 bg-blue-500 rounded" />
+                <div className="w-5 h-5 rounded border-2 border-primary-500 bg-primary-500/30 flex items-center justify-center">
+                  <div className="w-2.5 h-0.5 bg-primary-500 rounded" />
                 </div>
               ) : (
                 <Square className="w-5 h-5" />
@@ -336,8 +336,8 @@ export const RecycleBin = () => {
                 className={`group relative rounded-2xl p-6 border transition-all duration-300 ${
                   selectedIds.has(graph.id)
                     ? isDark
-                      ? "bg-blue-900/20 border-blue-700"
-                      : "bg-blue-50 border-blue-300"
+                      ? "bg-primary-900/20 border-primary-700"
+                      : "bg-primary-50 border-primary-300"
                     : isDark
                       ? "bg-slate-800 border-slate-700 hover:border-red-900/50"
                       : "bg-white border-gray-100 hover:border-red-100 shadow-sm"
@@ -349,11 +349,11 @@ export const RecycleBin = () => {
                     className={`p-3.5 rounded-xl transition-colors ${
                       selectedIds.has(graph.id)
                         ? isDark
-                          ? "bg-blue-900/40 text-blue-400"
-                          : "bg-blue-100 text-blue-600"
+                          ? "bg-primary-900/40 text-primary-400"
+                          : "bg-primary-100 text-primary-600"
                         : isDark
-                          ? "bg-red-900/20 text-red-400 hover:bg-blue-900/20 hover:text-blue-400"
-                          : "bg-red-50 text-red-500 hover:bg-blue-50 hover:text-blue-600"
+                          ? "bg-red-900/20 text-red-400 hover:bg-primary-900/20 hover:text-primary-400"
+                          : "bg-red-50 text-red-500 hover:bg-primary-50 hover:text-primary-600"
                     }`}
                   >
                     {selectedIds.has(graph.id) ? (

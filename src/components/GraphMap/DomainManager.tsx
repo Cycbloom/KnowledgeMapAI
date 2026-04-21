@@ -138,7 +138,7 @@ function SortableDomainItem({
         </span>
 
         {domain.graphCount !== undefined && domain.graphCount > 0 && (
-          <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+          <span className="px-2 py-0.5 text-xs font-medium bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full">
             {domain.graphCount}
           </span>
         )}
@@ -148,7 +148,7 @@ function SortableDomainItem({
             <>
               <button
                 onClick={() => onEdit(domain)}
-                className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
+                className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
                 title="Edit"
               >
                 <Pencil className="w-4 h-4" />
@@ -423,7 +423,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         type="button"
         onClick={handleAIGenerateColor}
         disabled={isGeneratingColor || !formData.name}
-        className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 transition-all"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-primary-500 to-pink-500 text-white hover:from-primary-600 hover:to-pink-600 disabled:opacity-50 transition-all"
       >
         {isGeneratingColor ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -433,7 +433,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         {t('graphMap.domainManager.aiRecommend')}
       </button>
       {aiColorRecommendation && (
-        <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+        <div className="mt-3 p-3 bg-gradient-to-r from-primary-50 to-pink-50 dark:from-primary-900/20 dark:to-pink-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
           <div className="flex items-center gap-3 mb-2">
             <div
               className="w-8 h-8 rounded-full border-2 border-white shadow-md"
@@ -451,7 +451,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           <div className="flex gap-2 mt-2">
             <button
               onClick={handleApplyAiColor}
-              className="flex-1 px-3 py-1.5 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
+              className="flex-1 px-3 py-1.5 text-sm bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
             >
               {t('graphMap.domainManager.applyColor')}
             </button>
@@ -471,7 +471,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder="#000000"
-          className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500"
+          className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500"
         />
       </div>
     </div>
@@ -488,7 +488,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           value={formData.name}
           onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
           placeholder={t('graphMap.domainManager.descriptionPlaceholder')}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           autoFocus
         />
       </div>
@@ -502,7 +502,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
           placeholder={t('graphMap.domainManager.descriptionPlaceholder')}
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
         />
       </div>
 
@@ -520,7 +520,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         <select
           value={formData.parent_id || ''}
           onChange={e => setFormData(prev => ({ ...prev, parent_id: e.target.value || null }))}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         >
           <option value="">{t('graphMap.domainManager.noParent')}</option>
           {getAllDomainsFlat(domains)
@@ -543,7 +543,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           value={formData.icon}
           onChange={e => setFormData(prev => ({ ...prev, icon: e.target.value }))}
           placeholder={t('graphMap.domainManager.iconPlaceholder')}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         />
       </div>
 
@@ -558,7 +558,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         <button
           onClick={isEdit ? handleUpdate : handleCreate}
           disabled={!formData.name.trim() || submitting}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
           {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
           {isEdit ? t('common.save') : t('common.create')}
@@ -618,7 +618,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           </span>
 
           {node.graphCount !== undefined && node.graphCount > 0 && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full">
               {node.graphCount}
             </span>
           )}
@@ -628,7 +628,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
               <>
                 <button
                   onClick={() => handleEdit(node)}
-                  className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
+                  className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded"
                   title={t('common.edit')}
                 >
                   <Pencil className="w-4 h-4" />
@@ -735,7 +735,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                 setEditingId(null);
                 setFormData(initialFormData);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
               {t('graphMap.domainManager.createDomain')}
@@ -747,7 +747,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           <div className={`${isMobile ? 'flex-1' : 'max-h-[500px]'} overflow-y-auto`}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
               </div>
             ) : domains.length === 0 ? (
               <div className="text-center py-12 text-gray-500 dark:text-gray-400">

@@ -272,9 +272,10 @@ export class RAGService {
       history?: Array<{ role: "user" | "assistant"; content: string }>;
       provider?: string;
       model?: string;
+      language?: string;
     } = {},
   ): Promise<RAGResponse> {
-    const { graphId, currentNodeId, history = [], model } = options;
+    const { graphId, currentNodeId, history = [], model, language } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
@@ -295,6 +296,9 @@ export class RAGService {
       };
     }
 
+    const isEnglish = language === "en-US" || language === "en" || (language && language.startsWith("en"));
+    const languageInstruction = isEnglish ? "Please respond in English." : "请用中文回答";
+
     const systemPrompt = `你是一个智能知识图谱助手，专门帮助用户理解和探索知识图谱中的内容。
 
 你的能力：
@@ -309,7 +313,7 @@ export class RAGService {
 3. 使用清晰的 Markdown 格式组织回答
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
 5. 在回答末尾，可以建议 1-3 个相关的后续问题
-6. 用中文回答
+6. ${languageInstruction}
 
 知识上下文：
 ${context || "(暂无相关上下文)"}`;
@@ -439,9 +443,10 @@ ${context || "(暂无相关上下文)"}`;
       history?: Array<{ role: "user" | "assistant"; content: string }>;
       provider?: string;
       model?: string;
+      language?: string;
     } = {},
   ): Promise<RAGSearchResult[]> {
-    const { graphId, currentNodeId, history = [], model } = options;
+    const { graphId, currentNodeId, history = [], model, language } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
@@ -459,6 +464,9 @@ ${context || "(暂无相关上下文)"}`;
       return sources.slice(0, 3);
     }
 
+    const isEnglish = language === "en-US" || language === "en" || (language && language.startsWith("en"));
+    const languageInstruction = isEnglish ? "Please respond in English." : "请用中文回答";
+
     const systemPrompt = `你是一个智能知识图谱助手，专门帮助用户理解和探索知识图谱中的内容。
 
 你的能力：
@@ -472,7 +480,7 @@ ${context || "(暂无相关上下文)"}`;
 2. 如果上下文不足以回答，可以补充你的知识，但要说明"根据我的知识..."
 3. 使用清晰的 Markdown 格式组织回答
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
-5. 用中文回答
+5. ${languageInstruction}
 
 知识上下文：
 ${context || "(暂无相关上下文)"}`;

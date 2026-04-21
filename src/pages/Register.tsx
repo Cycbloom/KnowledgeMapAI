@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../hooks/mutations';
@@ -62,7 +62,7 @@ export const Register = () => {
               autoComplete="name"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
               required
             />
           </div>
@@ -74,7 +74,7 @@ export const Register = () => {
               autoComplete="username"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
               required
             />
           </div>
@@ -86,19 +86,19 @@ export const Register = () => {
               autoComplete="new-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
               required
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+            className="w-full bg-primary-600 text-white p-2 rounded-md hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 transition-colors"
           >
             {t('register.submit')}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          {t('register.alreadyHaveAccount')} <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">{t('register.login')}</Link>
+          {t('register.alreadyHaveAccount')} <Link to="/login" className="text-primary-600 dark:text-primary-400 hover:underline">{t('register.login')}</Link>
         </p>
       </div>
       

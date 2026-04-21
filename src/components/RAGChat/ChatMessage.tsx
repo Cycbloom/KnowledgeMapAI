@@ -28,7 +28,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       return (
         <code 
           className={`px-1.5 py-0.5 rounded text-xs ${
-            isDark ? 'bg-slate-700 text-cyan-300' : 'bg-gray-200 text-indigo-600'
+            isDark ? 'bg-slate-700 text-primary-300' : 'bg-gray-200 text-primary-600'
           }`} 
           {...props}
         >
@@ -58,7 +58,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         message.role === 'user'
           ? isTutorMode 
             ? isDark ? 'bg-amber-600' : 'bg-amber-500'
-            : isDark ? 'bg-indigo-600' : 'bg-indigo-500'
+            : isDark ? 'bg-primary-600' : 'bg-primary-500'
           : isDark ? 'bg-slate-700' : 'bg-gray-200'
       }`}>
         {message.role === 'user' ? (
@@ -66,7 +66,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         ) : (
           <Bot size={16} className={isTutorMode 
             ? isDark ? 'text-amber-400' : 'text-amber-600'
-            : isDark ? 'text-indigo-400' : 'text-indigo-600'
+            : isDark ? 'text-primary-400' : 'text-primary-600'
           } />
         )}
       </div>
@@ -76,7 +76,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           message.role === 'user'
             ? isTutorMode 
               ? 'bg-amber-500 text-white rounded-tr-sm'
-              : 'bg-indigo-600 text-white rounded-tr-sm'
+              : 'bg-primary-600 text-white rounded-tr-sm'
             : isDark 
               ? 'bg-slate-700 text-white rounded-tl-sm' 
               : 'bg-gray-100 text-gray-800 rounded-tl-sm'
@@ -155,7 +155,7 @@ export const LoadingMessage: React.FC<LoadingMessageProps> = ({ isDark, isTutorM
     }`}>
       <Loader2 size={16} className={`animate-spin ${isTutorMode 
         ? isDark ? 'text-amber-400' : 'text-amber-600'
-        : isDark ? 'text-indigo-400' : 'text-indigo-600'
+        : isDark ? 'text-primary-400' : 'text-primary-600'
       }`} />
     </div>
     <div className={`p-3 rounded-2xl rounded-tl-sm ${

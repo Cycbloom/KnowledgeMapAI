@@ -33,7 +33,7 @@ export const DependencySection: React.FC<DependencySectionProps> = ({
               >
                 <div className={`w-2 h-2 rounded-full ${
                   dep.depends_on_task?.status === 'completed' ? 'bg-green-500' :
-                  dep.depends_on_task?.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-400'
+                  dep.depends_on_task?.status === 'in_progress' ? 'bg-primary-500' : 'bg-gray-400'
                 }`} />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">

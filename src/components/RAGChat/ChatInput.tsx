@@ -34,7 +34,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <div className={`mb-2 text-xs px-2 py-1 rounded inline-block ${
           isTutorMode 
             ? isDark ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-600'
-            : isDark ? 'bg-indigo-900/30 text-indigo-300' : 'bg-indigo-50 text-indigo-600'
+            : isDark ? 'bg-primary-900/30 text-primary-300' : 'bg-primary-50 text-primary-600'
         }`}>
           已选中 {selectedNodeCount} 个节点作为上下文
         </div>
@@ -61,7 +61,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             input.trim() && !isLoading
               ? isTutorMode 
                 ? 'bg-amber-500 text-white hover:bg-amber-600'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-primary-600 text-white hover:bg-primary-700'
               : isDark 
                 ? 'bg-slate-700 text-slate-500' 
                 : 'bg-gray-200 text-gray-400'
@@ -94,8 +94,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               onClick={onSuggestNextTopics}
               className={`flex-1 p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
                 isDark 
-                  ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-900/50' 
-                  : 'bg-purple-500 text-white hover:bg-purple-600'
+                  ? 'bg-primary-900/30 text-primary-300 hover:bg-primary-900/50' 
+                  : 'bg-primary-500 text-white hover:bg-primary-600'
               }`}
             >
               <Sparkles size={14} />

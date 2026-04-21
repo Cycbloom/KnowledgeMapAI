@@ -116,7 +116,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
         </h3>
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30 min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30 min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
           添加时间段
@@ -143,7 +143,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                       : null,
                   })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               >
                 <option value="">每天</option>
                 {DAYS_OF_WEEK.map((day) => (
@@ -164,7 +164,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                   setNewSlot({ ...newSlot, label: e.target.value })
                 }
                 placeholder="如：上午专注时间"
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
             <div>
@@ -177,7 +177,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                 onChange={(e) =>
                   setNewSlot({ ...newSlot, start_time: e.target.value })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
             <div>
@@ -190,7 +190,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                 onChange={(e) =>
                   setNewSlot({ ...newSlot, end_time: e.target.value })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
           </div>
@@ -203,7 +203,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
             </button>
             <button
               onClick={handleAddSlot}
-              className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30 min-h-[44px]"
+              className="px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30 min-h-[44px]"
             >
               保存
             </button>
@@ -213,9 +213,9 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
       <div className="space-y-4">
         {getSlotsByDay(null).length > 0 && (
-          <div className="p-4 bg-cyan-50 dark:bg-cyan-500/10 rounded-xl border border-cyan-200 dark:border-cyan-500/30">
+          <div className="p-4 bg-primary-50 dark:bg-primary-500/10 rounded-xl border border-primary-200 dark:border-primary-500/30">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-4 h-4 text-cyan-500" />
+              <Calendar className="w-4 h-4 text-primary-500" />
               <span className="font-medium text-slate-900 dark:text-white">
                 每天
               </span>

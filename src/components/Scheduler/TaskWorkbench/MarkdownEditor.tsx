@@ -113,7 +113,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           );
           processedLine = processedLine.replace(
             /\[(.+?)\]\((.+?)\)/g,
-            '<a href="$2" class="text-cyan-500 hover:underline" target="_blank">$1</a>',
+            '<a href="$2" class="text-primary-500 hover:underline" target="_blank">$1</a>',
           );
 
           return (
@@ -140,7 +140,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               onClick={() => setIsEditing(true)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 isEditing
-                  ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
+                  ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
                   : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
@@ -151,7 +151,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               onClick={() => setIsEditing(false)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 !isEditing
-                  ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
+                  ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
                   : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
@@ -164,7 +164,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg text-sm font-medium hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 transition-all"
               >
                 <Save size={14} />
                 {isSaving ? "保存中..." : "保存"}
@@ -186,7 +186,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="w-full h-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400"
+              className="w-full h-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400"
             />
           ) : (
             <div className="h-full overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">

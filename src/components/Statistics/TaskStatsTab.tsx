@@ -370,7 +370,7 @@ const QueueEfficiencyChart: React.FC<{
                   className={`h-2 rounded-full ${isDark ? "bg-slate-600" : "bg-gray-200"}`}
                 >
                   <div
-                    className="h-full rounded-full bg-blue-500"
+                    className="h-full rounded-full bg-primary-500"
                     style={{ width: `${queue.completionRate}%` }}
                   />
                 </div>
@@ -582,7 +582,7 @@ const SmartInsightsPanel: React.FC<{
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             loading
               ? "bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
-              : "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-primary-600 text-white hover:bg-primary-700"
           }`}
         >
           {loading ? (
@@ -611,7 +611,7 @@ const SmartInsightsPanel: React.FC<{
                   ? "bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30"
                   : insight.type === "negative"
                     ? "bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30"
-                    : "bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30"
+                    : "bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/30"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -620,7 +620,7 @@ const SmartInsightsPanel: React.FC<{
                 ) : insight.type === "negative" ? (
                   <TrendingDown className="text-red-500 mt-0.5" size={16} />
                 ) : (
-                  <Activity className="text-blue-500 mt-0.5" size={16} />
+                  <Activity className="text-primary-500 mt-0.5" size={16} />
                 )}
                 <div>
                   <h4
@@ -629,7 +629,7 @@ const SmartInsightsPanel: React.FC<{
                         ? "text-green-700 dark:text-green-400"
                         : insight.type === "negative"
                           ? "text-red-700 dark:text-red-400"
-                          : "text-blue-700 dark:text-blue-400"
+                          : "text-primary-700 dark:text-primary-400"
                     }`}
                   >
                     {insight.title}
@@ -640,7 +640,7 @@ const SmartInsightsPanel: React.FC<{
                         ? "text-green-600 dark:text-green-300"
                         : insight.type === "negative"
                           ? "text-red-600 dark:text-red-300"
-                          : "text-blue-600 dark:text-blue-300"
+                          : "text-primary-600 dark:text-primary-300"
                     }`}
                   >
                     {insight.description}
@@ -652,7 +652,7 @@ const SmartInsightsPanel: React.FC<{
                           ? "text-green-500 dark:text-green-400"
                           : insight.type === "negative"
                             ? "text-red-500 dark:text-red-400"
-                            : "text-blue-500 dark:text-blue-400"
+                            : "text-primary-500 dark:text-primary-400"
                       }`}
                     >
                       💡 {insight.recommendation}
@@ -715,7 +715,7 @@ export const TaskStatsTab: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
       </div>
     );
   }
@@ -758,14 +758,14 @@ export const TaskStatsTab: React.FC = () => {
           value={overview.weekCompleted}
           subtext={t('stats.metric.tasks')}
           icon={<Calendar size={18} className="text-white" />}
-          color="bg-blue-500"
+          color="bg-primary-500"
         />
         <MetricCard
           title={t('stats.metric.monthCompleted')}
           value={overview.monthCompleted}
           subtext={t('stats.metric.tasks')}
           icon={<Target size={18} className="text-white" />}
-          color="bg-purple-500"
+          color="bg-primary-500"
         />
         <MetricCard
           title={t('stats.metric.avgDuration')}

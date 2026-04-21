@@ -70,9 +70,9 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
       case "success":
         return "bg-emerald-600";
       case "loading":
-        return "bg-blue-600";
+        return "bg-primary-600";
       default:
-        return isDark ? "bg-slate-900" : "bg-blue-600";
+        return isDark ? "bg-slate-900" : "bg-primary-600";
     }
   };
 

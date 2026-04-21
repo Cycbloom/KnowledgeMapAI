@@ -72,10 +72,10 @@ const categoryColorMap: Record<
   { border: string; bg: string; text: string; iconBg: string }
 > = {
   knowledge: {
-    border: "border-blue-500",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    text: "text-blue-600 dark:text-blue-400",
-    iconBg: "bg-blue-100 dark:bg-blue-800/40",
+    border: "border-primary-500",
+    bg: "bg-primary-50 dark:bg-primary-900/20",
+    text: "text-primary-600 dark:text-primary-400",
+    iconBg: "bg-primary-100 dark:bg-primary-800/40",
   },
   project: {
     border: "border-green-500",
@@ -90,23 +90,23 @@ const categoryColorMap: Record<
     iconBg: "bg-amber-100 dark:bg-amber-800/40",
   },
   architecture: {
-    border: "border-purple-500",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
-    text: "text-purple-600 dark:text-purple-400",
-    iconBg: "bg-purple-100 dark:bg-purple-800/40",
+    border: "border-primary-500",
+    bg: "bg-primary-50 dark:bg-primary-900/20",
+    text: "text-primary-600 dark:text-primary-400",
+    iconBg: "bg-primary-100 dark:bg-primary-800/40",
   },
 };
 
 const getLevelColor = (level?: string) => {
   switch (level) {
     case "root":
-      return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300";
+      return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
     case "core":
       return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300";
     case "sub":
       return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300";
     case "normal":
-      return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300";
+      return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
     case "leaf":
       return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300";
     default:
@@ -211,7 +211,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
             <button
               onClick={handleExpand}
               disabled={node.isLoading || isExpanding}
-              className={`${isMobile ? "p-1" : "p-1.5"} bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 transition-colors`}
+              className={`${isMobile ? "p-1" : "p-1.5"} bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50 transition-colors`}
               title={t("autoGraph.aiExpandNode")}
             >
               {node.isLoading || isExpanding ? (
@@ -590,7 +590,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
   const renderTemplateSelector = () => (
     <div
-      className={`rounded-xl border ${isMobile ? "" : ""} ${isTemplateSelectorOpen ? "border-blue-300 dark:border-blue-700" : "border-gray-200 dark:border-gray-700"}`}
+      className={`rounded-xl border ${isMobile ? "" : ""} ${isTemplateSelectorOpen ? "border-primary-300 dark:border-primary-700" : "border-gray-200 dark:border-gray-700"}`}
     >
       <button
         onClick={() => setIsTemplateSelectorOpen(!isTemplateSelectorOpen)}
@@ -605,7 +605,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           </span>
           {selectedTemplateType !== "blank" ? (
             <span
-              className={`${isMobile ? "text-[10px]" : "text-xs"} px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300`}
+              className={`${isMobile ? "text-[10px]" : "text-xs"} px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300`}
             >
               {t(`templates.templateType.${selectedTemplateType}`)}
             </span>
@@ -648,7 +648,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             className="overflow-hidden"
           >
             <div
-              className={`p-3 border-t ${isTemplateSelectorOpen ? "border-blue-200 dark:border-blue-800" : "border-gray-200 dark:border-gray-700"}`}
+              className={`p-3 border-t ${isTemplateSelectorOpen ? "border-primary-200 dark:border-primary-800" : "border-gray-200 dark:border-gray-700"}`}
             >
               <div className="grid grid-cols-2 gap-2 mb-2">
                 {CATEGORIES.map((cat) => {
@@ -696,7 +696,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                                   onClick={() => handleSelectTemplateType(type)}
                                   className={`w-full p-2 rounded-lg text-left transition-all ${
                                     selectedTemplateType === type
-                                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
+                                      ? "bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-300 dark:border-primary-700"
                                       : "hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400"
                                   }`}
                                 >
@@ -727,7 +727,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 onClick={() => handleSelectTemplateType("blank")}
                 className={`w-full p-2 rounded-lg border-2 border-dashed text-center transition-all ${
                   selectedTemplateType === "blank"
-                    ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                    ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
                     : "border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500"
                 }`}
               >
@@ -768,12 +768,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             className={`w-full ${isMobile ? "px-3 py-2 text-sm" : "px-4 py-3"} border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
               isDuplicate
                 ? "border-amber-500 focus:ring-amber-500"
-                : "border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                : "border-gray-300 dark:border-gray-600 focus:ring-primary-500"
             }`}
             disabled={isInitializing}
           />
           {isChecking && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary-500" />
           )}
         </div>
         {isDuplicate && similarGraphs.length > 0 && !graphId && (
@@ -829,7 +829,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 disabled={isInitializing}
                 className={`${isMobile ? "p-2" : "p-2"} rounded-lg border-2 transition-all text-left ${
                   style === option.value
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                    ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
                     : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
                 }`}
               >
@@ -838,13 +838,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 >
                   <Icon
                     className={`${isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} ${
-                      style === option.value ? "text-blue-500" : "text-gray-400"
+                      style === option.value ? "text-primary-500" : "text-gray-400"
                     }`}
                   />
                   <span
                     className={`${isMobile ? "text-[10px]" : "text-xs"} font-medium ${
                       style === option.value
-                        ? "text-blue-600 dark:text-blue-400"
+                        ? "text-primary-600 dark:text-primary-400"
                         : "text-gray-700 dark:text-gray-300"
                     }`}
                   >
@@ -904,7 +904,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                     }
                   }}
                   disabled={isInitializing}
-                  className={`flex items-center gap-1 px-2 py-1 ${isMobile ? "text-[10px]" : "text-xs"} bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:opacity-50`}
+                  className={`flex items-center gap-1 px-2 py-1 ${isMobile ? "text-[10px]" : "text-xs"} bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded hover:bg-primary-200 dark:hover:bg-primary-900/50 disabled:opacity-50`}
                 >
                   <Sparkles size={isMobile ? 10 : 12} />
                   {t("autoGraph.aiOptimize")}
@@ -989,7 +989,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       <button
         onClick={handleInitialize}
         disabled={isInitializing || !topic.trim() || isChecking || isDuplicate}
-        className={`w-full ${isMobile ? "py-2.5 px-3 text-sm" : "py-3 px-4"} bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+        className={`w-full ${isMobile ? "py-2.5 px-3 text-sm" : "py-3 px-4"} bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
       >
         {isInitializing ? (
           <>
@@ -1015,7 +1015,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <div className="flex items-center gap-2 md:gap-3">
           <div
-            className={`${isMobile ? "p-1.5" : "p-2"} bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg`}
+            className={`${isMobile ? "p-1.5" : "p-2"} bg-gradient-to-br from-primary-500 to-primary-500 rounded-lg`}
           >
             <Layers
               className={`${isMobile ? "w-5 h-5" : "w-6 h-6"} text-white`}
@@ -1072,7 +1072,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 </span>
                 {selectedTemplateType !== "blank" && (
                   <span
-                    className={`${isMobile ? "text-[10px]" : "text-xs"} px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded`}
+                    className={`${isMobile ? "text-[10px]" : "text-xs"} px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded`}
                   >
                     {t(`templates.templateType.${selectedTemplateType}`)}
                   </span>
@@ -1082,7 +1082,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 onClick={() => {
                   setIsInputCollapsed(false);
                 }}
-                className={`${isMobile ? "text-[10px]" : "text-xs"} text-blue-500 hover:text-blue-600 flex items-center gap-1`}
+                className={`${isMobile ? "text-[10px]" : "text-xs"} text-primary-500 hover:text-primary-600 flex items-center gap-1`}
               >
                 <ChevronDown size={isMobile ? 12 : 14} />
                 {t("autoGraph.modify")}

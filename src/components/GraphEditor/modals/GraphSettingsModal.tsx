@@ -62,7 +62,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
         {/* Header */}
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+            <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
               <Settings size={24} />
             </div>
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">图谱设置</h2>
@@ -78,7 +78,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             onClick={() => setActiveTab('general')}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center min-h-[44px] touch-target ${
               activeTab === 'general'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -89,7 +89,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             onClick={() => setActiveTab('prompts')}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center min-h-[44px] touch-target ${
               activeTab === 'prompts'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -100,7 +100,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             onClick={() => setActiveTab('actions')}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center min-h-[44px] touch-target ${
               activeTab === 'actions'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -124,8 +124,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setQuality('high')}
                     className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center min-h-[60px] touch-target ${
                       quality === 'high' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-primary-100 dark:hover:border-primary-900/30'
                     }`}
                   >
                     <Zap size={16} className="mb-1" />
@@ -135,8 +135,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setQuality('medium')}
                     className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center min-h-[60px] touch-target ${
                       quality === 'medium' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-primary-100 dark:hover:border-primary-900/30'
                     }`}
                   >
                     <Activity size={16} className="mb-1" />
@@ -146,8 +146,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setQuality('low')}
                     className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center min-h-[60px] touch-target ${
                       quality === 'low' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-primary-100 dark:hover:border-primary-900/30'
                     }`}
                   >
                     <Gauge size={16} className="mb-1" />
@@ -159,7 +159,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                   <span className="text-sm text-gray-600 dark:text-gray-300">显示性能统计 (FPS)</span>
                   <button 
                     onClick={toggleStats}
-                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${showStats ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-600'}`}
+                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${showStats ? 'bg-primary-600' : 'bg-gray-300 dark:bg-slate-600'}`}
                   >
                     <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${showStats ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
@@ -182,7 +182,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                   </div>
                   <button 
                     onClick={() => setGamificationEnabled(!gamificationEnabled)}
-                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${gamificationEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-600'}`}
+                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${gamificationEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-slate-600'}`}
                   >
                     <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${gamificationEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
@@ -203,8 +203,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setTextDisplayLevel('all')}
                     className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all min-h-[44px] touch-target ${
                       textDisplayLevel === 'all' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-primary-100 dark:hover:border-primary-900/30'
                     }`}
                   >
                     全部显示
@@ -213,8 +213,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setTextDisplayLevel('important')}
                     className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all min-h-[44px] touch-target ${
                       textDisplayLevel === 'important' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-primary-100 dark:hover:border-primary-900/30'
                     }`}
                   >
                     核心节点
@@ -223,8 +223,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setTextDisplayLevel('root_only')}
                     className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all min-h-[44px] touch-target ${
                       textDisplayLevel === 'root_only' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-primary-100 dark:hover:border-primary-900/30'
                     }`}
                   >
                     仅根节点
@@ -250,8 +250,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setLearningDirection('top_down')}
                     className={`p-3 rounded-xl border-2 flex flex-col items-center text-center transition-all min-h-[100px] touch-target ${
                       learningDirection === 'top_down' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-200 dark:border-slate-600 hover:border-indigo-200 dark:hover:border-indigo-900/30 hover:bg-gray-50 dark:hover:bg-slate-700'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-200 dark:border-slate-600 hover:border-primary-200 dark:hover:border-primary-900/30 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     <ArrowDown size={24} className="mb-2" />
@@ -263,8 +263,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     onClick={() => setLearningDirection('bottom_up')}
                     className={`p-3 rounded-xl border-2 flex flex-col items-center text-center transition-all min-h-[100px] touch-target ${
                       learningDirection === 'bottom_up' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                        : 'border-gray-200 dark:border-slate-600 hover:border-indigo-200 dark:hover:border-indigo-900/30 hover:bg-gray-50 dark:hover:bg-slate-700'
+                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/30 dark:text-primary-300' 
+                        : 'border-gray-200 dark:border-slate-600 hover:border-primary-200 dark:hover:border-primary-900/30 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     <ArrowUp size={24} className="mb-2" />
@@ -292,7 +292,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             <button
               onClick={handleSave}
               disabled={updateGraphMutation.isPending}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center min-h-[44px] touch-target"
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition-colors flex items-center min-h-[44px] touch-target"
             >
               <Save size={18} className="mr-2" />
               {updateGraphMutation.isPending ? '保存中...' : '保存设置'}

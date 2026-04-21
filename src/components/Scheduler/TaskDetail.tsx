@@ -32,9 +32,9 @@ interface TaskDetailProps {
 const QUEUE_CONFIG = {
   0: {
     label: "Q0 紧急队列",
-    color: "text-cyan-400",
-    bg: "bg-cyan-500/20",
-    border: "border-cyan-500/30",
+    color: "text-primary-400",
+    bg: "bg-primary-500/20",
+    border: "border-primary-500/30",
   },
   1: {
     label: "Q1 重要队列",
@@ -54,8 +54,8 @@ const STATUS_CONFIG = {
   pending: { label: "待处理", color: "text-slate-400", bg: "bg-slate-500/20" },
   in_progress: {
     label: "进行中",
-    color: "text-blue-400",
-    bg: "bg-blue-500/20",
+    color: "text-primary-400",
+    bg: "bg-primary-500/20",
   },
   paused: { label: "已暂停", color: "text-amber-400", bg: "bg-amber-500/20" },
   completed: {
@@ -79,8 +79,8 @@ const EXECUTION_STATUS_CONFIG = {
   },
   time_slice_ended: {
     label: "时间片结束",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
+    color: "text-primary-400",
+    bg: "bg-primary-500/10",
   },
 };
 
@@ -240,7 +240,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   {task.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-sm"
+                      className="px-3 py-1 rounded-lg bg-primary-500/20 text-primary-300 text-sm"
                     >
                       {tag}
                     </span>
@@ -341,7 +341,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               {task.status === "pending" && onStart && (
                 <button
                   onClick={onStart}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500/20 text-primary-400 hover:bg-primary-500/30 transition-colors"
                 >
                   <Play size={16} />
                   开始

@@ -207,7 +207,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <Bot className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {step === 'execute' && selectedSkill ? selectedSkill.name : t('graphMap.agentAnalysis.title')}
             </h2>

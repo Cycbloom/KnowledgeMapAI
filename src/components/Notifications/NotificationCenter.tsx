@@ -8,13 +8,13 @@ import { useNavigate } from 'react-router-dom';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
-  task_start: <Timer className="text-blue-500" size={16} />,
+  task_start: <Timer className="text-primary-500" size={16} />,
   task_complete: <CheckCircle className="text-green-500" size={16} />,
   time_slice_end: <Clock className="text-orange-500" size={16} />,
   deadline: <AlertCircle className="text-red-500" size={16} />,
-  break_start: <Coffee className="text-purple-500" size={16} />,
-  break_end: <Coffee className="text-purple-500" size={16} />,
-  daily_summary: <CheckCircle className="text-cyan-500" size={16} />,
+  break_start: <Coffee className="text-primary-500" size={16} />,
+  break_end: <Coffee className="text-primary-500" size={16} />,
+  daily_summary: <CheckCircle className="text-primary-500" size={16} />,
   system: <Bell className="text-slate-500" size={16} />,
 };
 
@@ -196,7 +196,7 @@ export const NotificationCenter: React.FC = () => {
                   通知
                 </h3>
                 {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-full">
+                  <span className="px-2 py-0.5 bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 text-xs font-medium rounded-full">
                     {unreadCount} 条未读
                   </span>
                 )}
@@ -236,7 +236,7 @@ export const NotificationCenter: React.FC = () => {
             <div className="max-h-[400px] overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                 </div>
               ) : notifications.length === 0 ? (
                 <div className={`text-center py-10 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
@@ -252,10 +252,10 @@ export const NotificationCenter: React.FC = () => {
                         <div
                           key={notification.id}
                           onClick={() => handleNotificationClick(notification)}
-                          className={`px-4 py-3 cursor-pointer transition-colors border-l-2 border-blue-500 ${
+                          className={`px-4 py-3 cursor-pointer transition-colors border-l-2 border-primary-500 ${
                             isDark
                               ? 'bg-slate-700/50 hover:bg-slate-700'
-                              : 'bg-blue-50/50 hover:bg-blue-50'
+                              : 'bg-primary-50/50 hover:bg-primary-50'
                           }`}
                         >
                           <div className="flex items-start gap-3">
@@ -357,8 +357,8 @@ export const NotificationCenter: React.FC = () => {
                   }}
                   className={`w-full text-center text-sm font-medium ${
                     isDark
-                      ? 'text-blue-400 hover:text-blue-300'
-                      : 'text-blue-600 hover:text-blue-700'
+                      ? 'text-primary-400 hover:text-primary-300'
+                      : 'text-primary-600 hover:text-primary-700'
                   }`}
                 >
                   查看全部通知

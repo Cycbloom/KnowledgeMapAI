@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStatistics, useUser, useGraphs } from '../hooks/queries';
 import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
@@ -212,7 +212,7 @@ export const Statistics = () => {
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             activeTab === 'overview'
-              ? 'bg-blue-500 text-white'
+              ? 'bg-primary-500 text-white'
               : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
           }`}
         >
@@ -222,7 +222,7 @@ export const Statistics = () => {
           onClick={() => setActiveTab('graphs')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             activeTab === 'graphs'
-              ? 'bg-blue-500 text-white'
+              ? 'bg-primary-500 text-white'
               : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
           }`}
         >
@@ -238,7 +238,7 @@ export const Statistics = () => {
               value={stats.metrics.totalCards} 
               subtext={t('statistics.metrics.totalCardsSubtext')}
               icon={BookOpen} 
-              color="bg-blue-500" 
+              color="bg-primary-500" 
             />
             <MetricCard 
               title={t('statistics.metrics.dueToday')} 
@@ -259,7 +259,7 @@ export const Statistics = () => {
               value={stats.metrics.avgStability} 
               subtext={t('statistics.metrics.avgStabilitySubtext')}
               icon={TrendingUp} 
-              color="bg-indigo-500" 
+              color="bg-primary-500" 
             />
           </div>
 

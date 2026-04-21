@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -35,10 +35,10 @@ const QUEUE_CONFIG = {
   0: {
     name: "紧急队列",
     color: "#06b6d4",
-    gradient: "from-cyan-400 to-blue-500",
-    bgClass: "bg-cyan-100 dark:bg-cyan-500/10",
-    textClass: "text-cyan-600 dark:text-cyan-400",
-    borderClass: "border-cyan-200 dark:border-cyan-500/30",
+    gradient: "from-primary-400 to-primary-500",
+    bgClass: "bg-primary-100 dark:bg-primary-500/10",
+    textClass: "text-primary-600 dark:text-primary-400",
+    borderClass: "border-primary-200 dark:border-primary-500/30",
     glowColor: "rgba(6, 182, 212, 0.4)",
   },
   1: {
@@ -261,7 +261,7 @@ export const CurrentTask: React.FC = () => {
     return (
       <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-500 dark:text-slate-400">加载中...</p>
         </div>
       </div>
@@ -288,7 +288,7 @@ export const CurrentTask: React.FC = () => {
           </p>
           <Link
             to="/scheduler"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:opacity-90 transition-opacity"
           >
             <Target size={18} />
             前往任务队列
@@ -315,7 +315,7 @@ export const CurrentTask: React.FC = () => {
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-2 rounded-lg transition-colors ${
                 soundEnabled
-                  ? "bg-slate-100 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400"
+                  ? "bg-slate-100 dark:bg-slate-800 text-primary-600 dark:text-primary-400"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
               }`}
               title={soundEnabled ? "关闭声音" : "开启声音"}
@@ -326,7 +326,7 @@ export const CurrentTask: React.FC = () => {
               onClick={() => setNotificationEnabled(!notificationEnabled)}
               className={`p-2 rounded-lg transition-colors ${
                 notificationEnabled
-                  ? "bg-slate-100 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400"
+                  ? "bg-slate-100 dark:bg-slate-800 text-primary-600 dark:text-primary-400"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
               }`}
               title={notificationEnabled ? "关闭通知" : "开启通知"}
@@ -481,7 +481,7 @@ export const CurrentTask: React.FC = () => {
               ) : (
                 <motion.button
                   onClick={handleResume}
-                  className="flex items-center gap-2 px-8 py-4 rounded-xl bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30 hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all"
+                  className="flex items-center gap-2 px-8 py-4 rounded-xl bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-500/30 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -584,9 +584,9 @@ export const CurrentTask: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Tag
                       size={14}
-                      className="text-indigo-500 dark:text-indigo-400"
+                      className="text-primary-500 dark:text-primary-400"
                     />
-                    <span className="text-indigo-500 dark:text-indigo-400">
+                    <span className="text-primary-500 dark:text-primary-400">
                       {currentTask.tags.join(", ")}
                     </span>
                   </div>
@@ -640,8 +640,8 @@ export const CurrentTask: React.FC = () => {
                 时间片设置
               </h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20">
-                  <div className="text-xs text-cyan-600 dark:text-cyan-400 mb-1">
+                <div className="text-center p-3 rounded-xl bg-primary-100 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/20">
+                  <div className="text-xs text-primary-600 dark:text-primary-400 mb-1">
                     Q0 紧急
                   </div>
                   <div className="text-lg font-bold text-slate-900 dark:text-white">
@@ -705,7 +705,7 @@ export const CurrentTask: React.FC = () => {
                     <>
                       <motion.button
                         onClick={handleContinueWork}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium"
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >

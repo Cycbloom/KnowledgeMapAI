@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLoginMutation } from '../hooks/mutations';
@@ -105,7 +105,7 @@ export const Login = () => {
               autoComplete="username"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
               required
             />
           </div>
@@ -117,7 +117,7 @@ export const Login = () => {
               autoComplete="current-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
               required
             />
           </div>
@@ -127,7 +127,7 @@ export const Login = () => {
               id="rememberMe"
               checked={rememberMe}
               onChange={e => handleRememberMeChange(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded cursor-pointer"
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-slate-600 rounded cursor-pointer"
             />
             <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
               {t('auth.rememberMe')}
@@ -135,13 +135,13 @@ export const Login = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+            className="w-full bg-primary-600 text-white p-2 rounded-md hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 transition-colors"
           >
             {t('auth.login')}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          {t('auth.noAccount')} <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline">{t('auth.register')}</Link>
+          {t('auth.noAccount')} <Link to="/register" className="text-primary-600 dark:text-primary-400 hover:underline">{t('auth.register')}</Link>
         </p>
       </div>
       

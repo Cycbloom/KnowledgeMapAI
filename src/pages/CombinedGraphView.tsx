@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+﻿import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
@@ -246,7 +246,7 @@ export const CombinedGraphView: React.FC = () => {
           <p className="text-red-600 dark:text-red-400">缺少图谱 ID 参数</p>
           <button
             onClick={handleBack}
-            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
           >
             返回图谱地图
           </button>
@@ -262,7 +262,7 @@ export const CombinedGraphView: React.FC = () => {
           <p className="text-red-600 dark:text-red-400">加载图谱数据失败</p>
           <button
             onClick={handleBack}
-            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
           >
             返回图谱地图
           </button>
@@ -293,7 +293,7 @@ export const CombinedGraphView: React.FC = () => {
         {isLoading ? (
           <div className="h-full flex items-center justify-center bg-white dark:bg-slate-800">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">加载中...</p>
             </div>
           </div>

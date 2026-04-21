@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect, useState, useMemo } from "react";
+﻿import { useLayoutEffect, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStudyCards } from "../hooks/queries";
@@ -520,8 +520,8 @@ export const Study = () => {
                     isMobile ? "shrink-0" : ""
                   } ${
                     isDark
-                      ? "bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60"
-                      : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                      ? "bg-primary-900/40 text-primary-300 hover:bg-primary-900/60"
+                      : "bg-primary-50 text-primary-700 hover:bg-primary-100"
                   }`}
                 >
                   <LayoutGrid size={18} />
@@ -571,7 +571,7 @@ export const Study = () => {
                       }`}
                     >
                       <div
-                        className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}
+                        className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? "bg-primary-900/40 text-primary-400" : "bg-primary-50 text-primary-600"}`}
                       >
                         <LayoutGrid size={isMobile ? 16 : 18} />
                       </div>
@@ -688,7 +688,7 @@ export const Study = () => {
                       }`}
                     >
                       <div
-                        className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? "bg-blue-900/40 text-blue-400" : "bg-blue-50 text-blue-600"}`}
+                        className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? "bg-primary-900/40 text-primary-400" : "bg-primary-50 text-primary-600"}`}
                       >
                         <Activity size={isMobile ? 16 : 18} />
                       </div>
@@ -720,8 +720,8 @@ export const Study = () => {
                       className={`flex flex-col items-center text-center ${isMobile ? "p-5 rounded-2xl" : "p-8 rounded-[2.5rem]"} border-2 transition-all group relative overflow-hidden ${
                         dueCards.length > 0
                           ? isDark
-                            ? "bg-indigo-900/20 border-indigo-800/50 hover:border-indigo-500 shadow-lg shadow-indigo-900/20"
-                            : "bg-indigo-50 border-indigo-100 hover:border-indigo-400 shadow-xl shadow-indigo-100/50"
+                            ? "bg-primary-900/20 border-primary-800/50 hover:border-primary-500 shadow-lg shadow-primary-900/20"
+                            : "bg-primary-50 border-primary-100 hover:border-primary-400 shadow-xl shadow-primary-100/50"
                           : isDark
                             ? "bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed"
                             : "bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed"
@@ -729,33 +729,33 @@ export const Study = () => {
                     >
                       {dueCards.length > 0 && (
                         <div className="absolute top-4 right-4 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
                         </div>
                       )}
                       <div
                         className={`${isMobile ? "p-4 rounded-xl" : "p-6 rounded-[2rem]"} mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-500 ${
                           isDark
-                            ? "bg-indigo-900/40 text-indigo-400"
-                            : "bg-white text-indigo-600 shadow-md"
+                            ? "bg-primary-900/40 text-primary-400"
+                            : "bg-white text-primary-600 shadow-md"
                         }`}
                       >
                         <Brain size={isMobile ? 36 : 48} />
                       </div>
                       <h3
-                        className={`${isMobile ? "text-xl" : "text-2xl"} font-black mb-1 md:mb-2 ${isDark ? "text-indigo-300" : "text-indigo-900"}`}
+                        className={`${isMobile ? "text-xl" : "text-2xl"} font-black mb-1 md:mb-2 ${isDark ? "text-primary-300" : "text-primary-900"}`}
                       >
                         {t("study.todayDue")}
                       </h3>
                       <p
-                        className={`mb-4 md:mb-8 max-w-[280px] ${isMobile ? "text-xs" : "text-sm"} font-medium ${isDark ? "text-indigo-400/80" : "text-indigo-700/70"}`}
+                        className={`mb-4 md:mb-8 max-w-[280px] ${isMobile ? "text-xs" : "text-sm"} font-medium ${isDark ? "text-primary-400/80" : "text-primary-700/70"}`}
                       >
                         {t("study.fsrsDescription")}
                       </p>
                       <div
                         className={`${isMobile ? "px-5 py-2" : "px-8 py-3"} rounded-2xl font-black ${isMobile ? "text-base" : "text-lg"} transition-all ${
                           dueCards.length > 0
-                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-300 group-hover:bg-indigo-700 group-hover:-translate-y-1"
+                            ? "bg-primary-600 text-white shadow-lg shadow-primary-300 group-hover:bg-primary-700 group-hover:-translate-y-1"
                             : "bg-gray-300 text-gray-500"
                         }`}
                       >
@@ -774,8 +774,8 @@ export const Study = () => {
                       className={`flex flex-col items-center text-center ${isMobile ? "p-5 rounded-2xl" : "p-8 rounded-[2.5rem]"} border-2 transition-all group ${
                         allCards.length > 0
                           ? isDark
-                            ? "bg-slate-800 border-slate-700 hover:border-indigo-500 shadow-lg"
-                            : "bg-white border-gray-100 hover:border-indigo-400 shadow-xl shadow-gray-100/50"
+                            ? "bg-slate-800 border-slate-700 hover:border-primary-500 shadow-lg"
+                            : "bg-white border-gray-100 hover:border-primary-400 shadow-xl shadow-gray-100/50"
                           : isDark
                             ? "bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed"
                             : "bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed"
@@ -805,7 +805,7 @@ export const Study = () => {
                           allCards.length > 0
                             ? isDark
                               ? "bg-slate-700 text-white border border-slate-600 group-hover:bg-slate-600 group-hover:-translate-y-1"
-                              : "bg-white text-gray-700 border-2 border-gray-100 shadow-sm group-hover:border-indigo-200 group-hover:-translate-y-1"
+                              : "bg-white text-gray-700 border-2 border-gray-100 shadow-sm group-hover:border-primary-200 group-hover:-translate-y-1"
                             : "bg-gray-200 text-gray-500"
                         }`}
                       >
@@ -895,7 +895,7 @@ export const Study = () => {
                   className={`p-6 rounded-2xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
                 >
                   <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                    <TrendingUp className="text-blue-500" size={20} />
+                    <TrendingUp className="text-primary-500" size={20} />
                     {t("study.predictions.title")}
                   </h3>
                   {predictions.length === 0 ? (
@@ -926,20 +926,20 @@ export const Study = () => {
                             className={`text-center p-2 rounded-xl ${
                               isToday
                                 ? isDark
-                                  ? "bg-indigo-900/30 ring-2 ring-indigo-500"
-                                  : "bg-indigo-50 ring-2 ring-indigo-300"
+                                  ? "bg-primary-900/30 ring-2 ring-primary-500"
+                                  : "bg-primary-50 ring-2 ring-primary-300"
                                 : isDark
                                   ? "bg-slate-700/50"
                                   : "bg-gray-50"
                             }`}
                           >
                             <p
-                              className={`text-xs font-medium ${isToday ? "text-indigo-500" : isDark ? "text-slate-400" : "text-gray-500"}`}
+                              className={`text-xs font-medium ${isToday ? "text-primary-500" : isDark ? "text-slate-400" : "text-gray-500"}`}
                             >
                               {dayName}
                             </p>
                             <p
-                              className={`text-lg font-bold ${isToday ? "text-indigo-500" : ""}`}
+                              className={`text-lg font-bold ${isToday ? "text-primary-500" : ""}`}
                             >
                               {pred.reviewCount}
                             </p>
@@ -969,7 +969,7 @@ export const Study = () => {
                     className={`${isMobile ? "text-lg" : "text-xl"} font-bold flex items-center gap-2`}
                   >
                     <BookOpen
-                      className="text-indigo-500"
+                      className="text-primary-500"
                       size={isMobile ? 20 : 24}
                     />
                     {t("study.cardList.title")}
@@ -986,8 +986,8 @@ export const Study = () => {
                         className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all ${
                           tableMode === "due"
                             ? isDark
-                              ? "bg-indigo-600 text-white shadow-lg"
-                              : "bg-white text-indigo-600 shadow-sm"
+                              ? "bg-primary-600 text-white shadow-lg"
+                              : "bg-white text-primary-600 shadow-sm"
                             : isDark
                               ? "text-slate-400 hover:text-slate-200"
                               : "text-gray-500 hover:text-gray-700"
@@ -1000,8 +1000,8 @@ export const Study = () => {
                         className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? "text-sm" : "text-sm"} font-medium transition-all ${
                           tableMode === "all"
                             ? isDark
-                              ? "bg-indigo-600 text-white shadow-lg"
-                              : "bg-white text-indigo-600 shadow-sm"
+                              ? "bg-primary-600 text-white shadow-lg"
+                              : "bg-white text-primary-600 shadow-sm"
                             : isDark
                               ? "text-slate-400 hover:text-slate-200"
                               : "text-gray-500 hover:text-gray-700"
@@ -1021,7 +1021,7 @@ export const Study = () => {
                         placeholder={t("study.cardList.searchPlaceholder")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className={`pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isMobile ? "w-full" : "w-full md:w-64"} ${
+                        className={`pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all ${isMobile ? "w-full" : "w-full md:w-64"} ${
                           isDark
                             ? "bg-slate-800 border-slate-700 text-white"
                             : "bg-white border-gray-200 text-gray-900 shadow-sm"
@@ -1098,7 +1098,7 @@ export const Study = () => {
                                 onClick={() => setCurrentPage(page)}
                                 className={`${isMobile ? "w-11 h-11 text-base" : "w-10 h-10 text-sm"} rounded-xl font-bold transition-all min-w-[44px] min-h-[44px] ${
                                   currentPage === page
-                                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                                    ? "bg-primary-600 text-white shadow-lg shadow-primary-200"
                                     : isDark
                                       ? "hover:bg-slate-800 text-slate-400"
                                       : "hover:bg-gray-100 text-gray-500"
@@ -1206,7 +1206,7 @@ export const Study = () => {
           <div className="space-y-3">
             <button
               onClick={handleBackToDashboard}
-              className={`w-full bg-indigo-600 text-white ${isMobile ? "py-4" : "py-3"} rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center ${isMobile ? "text-lg" : ""}`}
+              className={`w-full bg-primary-600 text-white ${isMobile ? "py-4" : "py-3"} rounded-xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 flex items-center justify-center ${isMobile ? "text-lg" : ""}`}
             >
               {from === "learning"
                 ? t("study.completed.backToLearning")
@@ -1356,8 +1356,8 @@ export const Study = () => {
                         <h3
                           className={`uppercase tracking-widest text-[10px] font-bold mb-2 px-2 py-0.5 rounded-md inline-block ${
                             isDark
-                              ? "bg-indigo-900/30 text-indigo-400"
-                              : "bg-indigo-50 text-indigo-600"
+                              ? "bg-primary-900/30 text-primary-400"
+                              : "bg-primary-50 text-primary-600"
                           }`}
                         >
                           {t("study.quiz.question")}
@@ -1571,8 +1571,8 @@ export const Study = () => {
                   <h3
                     className={`uppercase tracking-widest text-[10px] md:text-[11px] font-bold mb-2 md:mb-3 px-2 md:px-3 py-0.5 md:py-1 rounded-md ${
                       isDark
-                        ? "bg-indigo-900/30 text-indigo-400"
-                        : "bg-indigo-50 text-indigo-600"
+                        ? "bg-primary-900/30 text-primary-400"
+                        : "bg-primary-50 text-primary-600"
                     }`}
                   >
                     {t("study.quiz.question")}
@@ -1615,7 +1615,7 @@ export const Study = () => {
                         <div
                           className={`border-t ${isMobile ? "pt-4" : "pt-8"} ${isDark ? "border-slate-700" : "border-gray-100"}`}
                         >
-                          <div className="flex items-center gap-2 mb-3 md:mb-4 text-indigo-500">
+                          <div className="flex items-center gap-2 mb-3 md:mb-4 text-primary-500">
                             <Brain size={isMobile ? 16 : 18} />
                             <h4 className="font-bold tracking-wider text-xs md:text-sm uppercase">
                               {t("study.quiz.explanation")}
@@ -1625,7 +1625,7 @@ export const Study = () => {
                             className={`p-3 md:p-5 rounded-2xl text-sm leading-relaxed border ${
                               isDark
                                 ? "bg-slate-900/50 text-slate-400 border-slate-700"
-                                : "bg-indigo-50/30 text-gray-600 border-indigo-100"
+                                : "bg-primary-50/30 text-gray-600 border-primary-100"
                             }`}
                           >
                             {currentCard.explanation}
@@ -1658,8 +1658,8 @@ export const Study = () => {
                               : "bg-gray-50 border-gray-200 text-gray-400";
                         } else {
                           btnClass += isDark
-                            ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-indigo-900/30 hover:to-slate-800/50 hover:border-indigo-500 cursor-pointer text-slate-200 hover:shadow-md"
-                            : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-indigo-50 hover:to-white hover:border-indigo-300 cursor-pointer text-gray-700 hover:shadow-md";
+                            ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-primary-900/30 hover:to-slate-800/50 hover:border-primary-500 cursor-pointer text-slate-200 hover:shadow-md"
+                            : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-primary-50 hover:to-white hover:border-primary-300 cursor-pointer text-gray-700 hover:shadow-md";
                         }
 
                         return (
@@ -1672,10 +1672,10 @@ export const Study = () => {
                             <span
                               className={`flex-shrink-0 ${isMobile ? "w-8 h-8" : "w-7 h-7"} rounded-lg flex items-center justify-center font-bold ${isMobile ? "text-base" : "text-sm"} transition-all ${
                                 isSelected
-                                  ? "bg-indigo-500 text-white shadow-sm scale-105"
+                                  ? "bg-primary-500 text-white shadow-sm scale-105"
                                   : isDark
                                     ? "bg-slate-700 text-slate-400 group-hover:bg-slate-600"
-                                    : "bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600"
+                                    : "bg-slate-100 text-slate-500 group-hover:bg-primary-100 group-hover:text-primary-600"
                               }`}
                             >
                               {String.fromCharCode(65 + idx)}
@@ -1735,11 +1735,11 @@ export const Study = () => {
                         } else {
                           btnClass += isSelected
                             ? isDark
-                              ? "bg-gradient-to-r from-indigo-900/40 to-indigo-900/20 border-indigo-500 text-indigo-300 shadow-md"
-                              : "bg-gradient-to-r from-indigo-100 to-indigo-50 border-indigo-400 text-indigo-700 shadow-md"
+                              ? "bg-gradient-to-r from-primary-900/40 to-primary-900/20 border-primary-500 text-primary-300 shadow-md"
+                              : "bg-gradient-to-r from-primary-100 to-primary-50 border-primary-400 text-primary-700 shadow-md"
                             : isDark
-                              ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-indigo-900/30 hover:to-slate-800/50 hover:border-indigo-500 cursor-pointer text-slate-200 hover:shadow-md"
-                              : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-indigo-50 hover:to-white hover:border-indigo-300 cursor-pointer text-gray-700 hover:shadow-md";
+                              ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-primary-900/30 hover:to-slate-800/50 hover:border-primary-500 cursor-pointer text-slate-200 hover:shadow-md"
+                              : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-primary-50 hover:to-white hover:border-primary-300 cursor-pointer text-gray-700 hover:shadow-md";
                         }
 
                         return (
@@ -1752,10 +1752,10 @@ export const Study = () => {
                             <span
                               className={`flex-shrink-0 ${isMobile ? "w-8 h-8" : "w-7 h-7"} rounded-lg flex items-center justify-center font-bold ${isMobile ? "text-base" : "text-sm"} transition-all ${
                                 isSelected
-                                  ? "bg-indigo-500 text-white shadow-sm scale-105"
+                                  ? "bg-primary-500 text-white shadow-sm scale-105"
                                   : isDark
                                     ? "bg-slate-700 text-slate-400 group-hover:bg-slate-600"
-                                    : "bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600"
+                                    : "bg-slate-100 text-slate-500 group-hover:bg-primary-100 group-hover:text-primary-600"
                               }`}
                             >
                               {String.fromCharCode(65 + idx)}
@@ -1807,8 +1807,8 @@ export const Study = () => {
                               : "bg-gray-50 border-gray-200 text-gray-400";
                         } else {
                           btnClass += isDark
-                            ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-indigo-900/30 hover:to-slate-800/50 hover:border-indigo-500 cursor-pointer text-slate-200 hover:shadow-md"
-                            : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-indigo-50 hover:to-white hover:border-indigo-300 cursor-pointer text-gray-700 hover:shadow-md";
+                            ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-primary-900/30 hover:to-slate-800/50 hover:border-primary-500 cursor-pointer text-slate-200 hover:shadow-md"
+                            : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-primary-50 hover:to-white hover:border-primary-300 cursor-pointer text-gray-700 hover:shadow-md";
                         }
 
                         return (
@@ -1866,7 +1866,7 @@ export const Study = () => {
                       {isQA || isEssay || isFillBlank ? (
                         <button
                           onClick={() => setShowAnswer(true)}
-                          className={`w-full ${isMobile ? "py-4" : "py-4"} bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2`}
+                          className={`w-full ${isMobile ? "py-4" : "py-4"} bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 flex items-center justify-center gap-2`}
                         >
                           <BookOpen size={isMobile ? 22 : 20} />
                           <span className={isMobile ? "text-lg" : ""}>
@@ -1880,7 +1880,7 @@ export const Study = () => {
                             !selectedOption ||
                             JSON.parse(selectedOption).length === 0
                           }
-                          className={`w-full ${isMobile ? "py-4" : "py-4"} bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none ${isMobile ? "text-lg" : ""}`}
+                          className={`w-full ${isMobile ? "py-4" : "py-4"} bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 disabled:opacity-50 disabled:shadow-none ${isMobile ? "text-lg" : ""}`}
                         >
                           {t("study.quiz.submitAnswer")}
                         </button>
@@ -1945,8 +1945,8 @@ export const Study = () => {
                           onClick={() => handleRate(3)}
                           className={`flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
                             isDark
-                              ? "bg-blue-900/20 text-blue-400 hover:bg-blue-900/40"
-                              : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                              ? "bg-primary-900/20 text-primary-400 hover:bg-primary-900/40"
+                              : "bg-primary-50 text-primary-700 hover:bg-primary-100"
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >

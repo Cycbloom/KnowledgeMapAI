@@ -51,7 +51,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
           <div
-            className="bg-gradient-to-r from-blue-500 via-blue-400 to-green-500 h-4 transition-all duration-500"
+            className="bg-gradient-to-r from-primary-500 via-primary-400 to-green-500 h-4 transition-all duration-500"
             style={{ width: `${currentPercentage}%` }}
           />
         </div>
@@ -61,7 +61,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
         <div className="absolute top-8 left-0 right-0 h-2 bg-gray-200 dark:bg-gray-700 rounded-full" />
         
         <div
-          className="absolute top-8 left-0 h-2 bg-blue-500 rounded-full transition-all duration-500"
+          className="absolute top-8 left-0 h-2 bg-primary-500 rounded-full transition-all duration-500"
           style={{ width: `${(completedDays / totalDays) * 100}%` }}
         />
 
@@ -83,7 +83,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
                 <div
                   className={`text-xs mb-2 ${
                     isToday
-                      ? 'text-blue-500 font-bold'
+                      ? 'text-primary-500 font-bold'
                       : isPast
                       ? 'text-gray-600 dark:text-gray-400'
                       : 'text-gray-400 dark:text-gray-500'
@@ -99,7 +99,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
                       : isSkipped
                       ? 'bg-gray-400 text-white'
                       : isToday
-                      ? 'bg-blue-500 text-white ring-4 ring-blue-200 dark:ring-blue-800'
+                      ? 'bg-primary-500 text-white ring-4 ring-primary-200 dark:ring-primary-800'
                       : isPast
                       ? 'bg-gray-300 dark:bg-gray-600 text-gray-500'
                       : 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600'
@@ -153,7 +153,7 @@ export const ProgressTimeline: React.FC<ProgressTimelineProps> = ({
           <span>已完成</span>
         </div>
         <div className="flex items-center gap-1">
-          <Clock className="w-4 h-4 text-blue-500" />
+          <Clock className="w-4 h-4 text-primary-500" />
           <span>进行中</span>
         </div>
         <div className="flex items-center gap-1">

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+﻿import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -66,12 +66,12 @@ interface TodayStats {
 
 const QUEUE_COLORS = {
   0: {
-    border: "border-cyan-300 dark:border-cyan-400",
-    glow: "shadow-cyan-500/30",
-    bg: "bg-cyan-100 dark:bg-cyan-500/10",
-    text: "text-cyan-600 dark:text-cyan-400",
-    badge: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
-    accent: "bg-cyan-500",
+    border: "border-primary-300 dark:border-primary-400",
+    glow: "shadow-primary-500/30",
+    bg: "bg-primary-100 dark:bg-primary-500/10",
+    text: "text-primary-600 dark:text-primary-400",
+    badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
+    accent: "bg-primary-500",
   },
   1: {
     border: "border-emerald-300 dark:border-emerald-400",
@@ -98,7 +98,7 @@ const STATUS_CONFIG = {
   },
   in_progress: {
     label: "进行中",
-    color: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+    color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
   },
   paused: {
     label: "已暂停",
@@ -127,8 +127,8 @@ const URGENCY_CONFIG = {
   },
   upcoming: {
     label: "即将到期",
-    color: "text-blue-500 dark:text-blue-400",
-    bg: "bg-blue-100 dark:bg-blue-500/20",
+    color: "text-primary-500 dark:text-primary-400",
+    bg: "bg-primary-100 dark:bg-primary-500/20",
   },
   future: {
     label: "计划中",
@@ -402,7 +402,7 @@ export const UnifiedWorkbench: React.FC = () => {
     if (days < 0) return { text: "已过期", color: "text-red-500 dark:text-red-400" };
     if (days === 0) return { text: "今天", color: "text-amber-500 dark:text-amber-400" };
     if (days === 1) return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
-    if (days <= 7) return { text: `${days}天后`, color: "text-blue-500 dark:text-blue-400" };
+    if (days <= 7) return { text: `${days}天后`, color: "text-primary-500 dark:text-primary-400" };
     return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
   };
 
@@ -507,7 +507,7 @@ export const UnifiedWorkbench: React.FC = () => {
 
             <button
               onClick={() => setLinkingTaskId(task.id)}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all hover:scale-110"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
               title="关联知识点"
             >
               <Link2 size={14} />
@@ -568,7 +568,7 @@ export const UnifiedWorkbench: React.FC = () => {
           {tasks.length > 5 && (
             <button
               onClick={() => navigate("/scheduler")}
-              className="w-full py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors flex items-center justify-center gap-1"
+              className="w-full py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-1"
             >
               查看更多 {tasks.length - 5} 个任务
               <ChevronRight size={12} />
@@ -599,8 +599,8 @@ export const UnifiedWorkbench: React.FC = () => {
         onClick={() => navigate(`/knowledge/${kp.id}`)}
       >
         <div className="flex items-start gap-2">
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
-            <BookOpen size={14} className="text-indigo-500 dark:text-indigo-400" />
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
+            <BookOpen size={14} className="text-primary-500 dark:text-primary-400" />
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
@@ -652,7 +652,7 @@ export const UnifiedWorkbench: React.FC = () => {
               </div>
             </div>
           </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:text-cyan-500 transition-colors" />
+          <ChevronRight size={16} className="text-slate-400 group-hover:text-primary-500 transition-colors" />
         </div>
       </motion.div>
     );
@@ -661,12 +661,12 @@ export const UnifiedWorkbench: React.FC = () => {
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse" />
         <div
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
         />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/5 dark:bg-blue-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary-500/5 dark:bg-primary-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 h-full flex flex-col">
@@ -680,13 +680,13 @@ export const UnifiedWorkbench: React.FC = () => {
                   className="flex items-center gap-3"
                 >
                   <div className="relative">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
+                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30">
                       <Layers size={24} className="text-white" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
                   </div>
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-500 via-primary-500 to-pink-500 dark:from-primary-400 dark:via-primary-400 dark:to-pink-400 bg-clip-text text-transparent">
                       统一工作台
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -711,7 +711,7 @@ export const UnifiedWorkbench: React.FC = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => openAddTaskForm(2)}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all"
                 >
                   <Plus size={18} />
                   <span className="hidden sm:inline">新建任务</span>
@@ -734,14 +734,14 @@ export const UnifiedWorkbench: React.FC = () => {
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
                 <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">待处理</span>
-                <span className="text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400">{taskStats.pending}</span>
+                <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.pending}</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
                 <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">进行中</span>
-                <span className="text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400">{taskStats.inProgress}</span>
+                <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.inProgress}</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
@@ -774,14 +774,14 @@ export const UnifiedWorkbench: React.FC = () => {
 
         {activeTask && (
           <div className="flex-shrink-0 p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800/50">
-            <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 border border-blue-200 dark:border-blue-500/30">
+            <div className="p-4 rounded-xl bg-gradient-to-r from-primary-500/10 to-primary-500/10 dark:from-primary-500/20 dark:to-primary-500/20 border border-primary-200 dark:border-primary-500/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/20">
-                    <Zap size={20} className="text-blue-500 dark:text-blue-400" />
+                  <div className="p-2 rounded-lg bg-primary-500/20">
+                    <Zap size={20} className="text-primary-500 dark:text-primary-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-blue-500 dark:text-blue-400 font-medium">当前任务</p>
+                    <p className="text-xs text-primary-500 dark:text-primary-400 font-medium">当前任务</p>
                     <h3 className="font-bold text-slate-900 dark:text-white">{activeTask.title}</h3>
                   </div>
                 </div>
@@ -809,10 +809,10 @@ export const UnifiedWorkbench: React.FC = () => {
             <div className="flex-1 flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
-                  <div className="w-16 h-16 border-4 border-indigo-500/30 rounded-full animate-spin border-t-indigo-500" />
+                  <div className="w-16 h-16 border-4 border-primary-500/30 rounded-full animate-spin border-t-primary-500" />
                   <Sparkles
                     size={24}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-500 dark:text-indigo-400"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500 dark:text-primary-400"
                   />
                 </div>
                 <p className="text-slate-500 dark:text-slate-400">加载工作台...</p>
@@ -825,8 +825,8 @@ export const UnifiedWorkbench: React.FC = () => {
                   <div className="p-3 border-b border-slate-200 dark:border-slate-800/50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-cyan-500/20">
-                          <Target size={16} className="text-cyan-500 dark:text-cyan-400" />
+                        <div className="p-1.5 rounded-lg bg-primary-500/20">
+                          <Target size={16} className="text-primary-500 dark:text-primary-400" />
                         </div>
                         <h2 className="font-bold text-slate-900 dark:text-white">任务看板</h2>
                         <span className="text-xs text-slate-500 dark:text-slate-400">三层反馈队列</span>
@@ -847,14 +847,14 @@ export const UnifiedWorkbench: React.FC = () => {
                   <div className="flex-shrink-0 p-3 border-b border-slate-200 dark:border-slate-800/50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-indigo-500/20">
-                          <BookOpen size={16} className="text-indigo-500 dark:text-indigo-400" />
+                        <div className="p-1.5 rounded-lg bg-primary-500/20">
+                          <BookOpen size={16} className="text-primary-500 dark:text-primary-400" />
                         </div>
                         <h2 className="font-bold text-slate-900 dark:text-white">知识图谱概览</h2>
                       </div>
                       <button
                         onClick={() => navigate("/graphs")}
-                        className="text-xs text-indigo-500 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                        className="text-xs text-primary-500 dark:text-primary-400 hover:underline flex items-center gap-1"
                       >
                         查看全部
                         <ChevronRight size={12} />
@@ -921,9 +921,9 @@ export const UnifiedWorkbench: React.FC = () => {
 
                   <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3">
                     <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 dark:from-cyan-500/20 dark:to-blue-500/20 border border-cyan-200 dark:border-cyan-500/30">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-500/10 dark:from-primary-500/20 dark:to-primary-500/20 border border-primary-200 dark:border-primary-500/30">
                         <div className="flex items-center gap-2 mb-2">
-                          <Timer size={14} className="text-cyan-500 dark:text-cyan-400" />
+                          <Timer size={14} className="text-primary-500 dark:text-primary-400" />
                           <span className="text-xs text-slate-500 dark:text-slate-400">今日学习</span>
                         </div>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -941,9 +941,9 @@ export const UnifiedWorkbench: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 border border-purple-200 dark:border-purple-500/30">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500/10 to-pink-500/10 dark:from-primary-500/20 dark:to-pink-500/20 border border-primary-200 dark:border-primary-500/30">
                         <div className="flex items-center gap-2 mb-2">
-                          <Brain size={14} className="text-purple-500 dark:text-purple-400" />
+                          <Brain size={14} className="text-primary-500 dark:text-primary-400" />
                           <span className="text-xs text-slate-500 dark:text-slate-400">复习完成</span>
                         </div>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -978,7 +978,7 @@ export const UnifiedWorkbench: React.FC = () => {
                             <span className="font-bold text-slate-900 dark:text-white">{reviewStats.today}</span>
                           </div>
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-blue-500 dark:text-blue-400">即将到期</span>
+                            <span className="text-primary-500 dark:text-primary-400">即将到期</span>
                             <span className="font-bold text-slate-900 dark:text-white">{reviewStats.upcoming}</span>
                           </div>
                           <div className="flex items-center justify-between text-xs">
@@ -1046,7 +1046,7 @@ export const UnifiedWorkbench: React.FC = () => {
               <div className="p-4 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Link2 size={18} className="text-indigo-500 dark:text-indigo-400" />
+                    <Link2 size={18} className="text-primary-500 dark:text-primary-400" />
                     <h3 className="font-bold text-slate-900 dark:text-white">关联知识点</h3>
                   </div>
                   <button
@@ -1074,7 +1074,7 @@ export const UnifiedWorkbench: React.FC = () => {
                       searchKnowledgePoints(e.target.value);
                     }}
                     placeholder="搜索知识点..."
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     autoFocus
                   />
                   <BookOpen size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1091,7 +1091,7 @@ export const UnifiedWorkbench: React.FC = () => {
                       <button
                         key={kp.id}
                         onClick={() => handleLinkKnowledgePoint(linkingTaskId, kp.id)}
-                        className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all text-left"
+                        className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-500/50 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-all text-left"
                       >
                         <h4 className="font-medium text-slate-900 dark:text-white">{kp.title}</h4>
                         {kp.content && (

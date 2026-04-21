@@ -122,7 +122,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2">
-                <BarChart3 className="text-blue-500" size={20} />
+                <BarChart3 className="text-primary-500" size={20} />
                 <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">图谱分析</h2>
               </div>
               <button
@@ -139,7 +139,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'overview'
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -149,7 +149,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                 onClick={() => setActiveTab('structure')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'structure'
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -159,7 +159,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                 onClick={() => setActiveTab('connections')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'connections'
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -171,7 +171,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
             <div className="flex-1 overflow-y-auto p-4">
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                 </div>
               ) : analysis ? (
                 <>
@@ -225,7 +225,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                       {/* Level Distribution */}
                       <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-3">
-                          <Layers className="text-blue-500" size={18} />
+                          <Layers className="text-primary-500" size={18} />
                           <span className="font-semibold text-slate-800 dark:text-slate-200">层级分布</span>
                         </div>
                         <div className="grid grid-cols-5 gap-2">
@@ -245,7 +245,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                       {/* Central Nodes */}
                       <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-3">
-                          <Network className="text-blue-500" size={18} />
+                          <Network className="text-primary-500" size={18} />
                           <span className="font-semibold text-slate-800 dark:text-slate-200">核心节点 (按连接度排序)</span>
                         </div>
                         <div className="space-y-2">
@@ -259,7 +259,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                                 <span className="text-xs text-slate-500">#{idx + 1}</span>
                                 <span className="text-sm text-slate-800 dark:text-slate-200">{node.title}</span>
                               </div>
-                              <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{node.degree} 连接</span>
+                              <span className="text-xs font-medium text-primary-600 dark:text-primary-400">{node.degree} 连接</span>
                             </div>
                           ))}
                         </div>
@@ -269,7 +269,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                       {analysis.nodesWithManyChildren.length > 0 && (
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
                           <div className="flex items-center gap-2 mb-3">
-                            <TrendingUp className="text-blue-500" size={18} />
+                            <TrendingUp className="text-primary-500" size={18} />
                             <span className="font-semibold text-slate-800 dark:text-slate-200">子节点较多的节点</span>
                           </div>
                           <div className="space-y-2">
@@ -280,7 +280,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                                 onClick={() => onNodeClick?.(node.id)}
                               >
                                 <span className="text-sm text-slate-800 dark:text-slate-200">{node.title}</span>
-                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{node.childrenCount} 个子节点</span>
+                                <span className="text-xs font-medium text-primary-600 dark:text-primary-400">{node.childrenCount} 个子节点</span>
                               </div>
                             ))}
                           </div>
@@ -328,21 +328,21 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => onNodeClick?.(conn.sourceId)}
-                                  className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                  className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
                                 >
                                   {nodes.find(n => n.id === conn.sourceId)?.title || '未知节点'}
                                 </button>
                                 <span className="text-slate-400">→</span>
                                 <button
                                   onClick={() => onNodeClick?.(conn.targetId)}
-                                  className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                  className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
                                 >
                                   {nodes.find(n => n.id === conn.targetId)?.title || '未知节点'}
                                 </button>
                               </div>
                               <button
                                 onClick={() => handleCreateConnection(conn.sourceId, conn.targetId)}
-                                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                className="px-3 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
                               >
                                 创建连接
                               </button>

@@ -147,7 +147,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
             e.stopPropagation();
             setIsAdding(true);
           }}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
         >
           <Plus size={14} />
           添加
@@ -161,7 +161,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-primary-500 to-primary-500 transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -181,7 +181,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   setNewSubtask({ ...newSubtask, title: e.target.value })
                 }
                 placeholder="子任务标题"
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
               <textarea
@@ -190,7 +190,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   setNewSubtask({ ...newSubtask, description: e.target.value })
                 }
                 placeholder="描述（可选）"
-                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 rows={2}
               />
               <div className="flex items-center gap-2 mb-3">
@@ -207,7 +207,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                     })
                   }
                   placeholder="预计时长（分钟）"
-                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -226,7 +226,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 </button>
                 <button
                   onClick={handleAddSubtask}
-                  className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all"
+                  className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all"
                 >
                   添加
                 </button>
@@ -251,7 +251,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   {subtask.status === "completed" ? (
                     <CheckCircle className="w-5 h-5 text-green-500" />
                   ) : (
-                    <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600 hover:text-cyan-500 transition-colors" />
+                    <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600 hover:text-primary-500 transition-colors" />
                   )}
                 </button>
                 <div className="flex-1 min-w-0">
@@ -290,7 +290,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 <p>暂无子任务</p>
                 <button
                   onClick={() => setIsAdding(true)}
-                  className="mt-2 text-sm text-cyan-500 hover:text-cyan-600"
+                  className="mt-2 text-sm text-primary-500 hover:text-primary-600"
                 >
                   添加第一个子任务
                 </button>

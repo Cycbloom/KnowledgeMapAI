@@ -22,10 +22,10 @@ interface TreeNode {
 }
 
 const levelColors: Record<string, string> = {
-  root: 'bg-purple-500',
+  root: 'bg-primary-500',
   core: 'bg-red-500',
   sub: 'bg-orange-500',
-  normal: 'bg-blue-500',
+  normal: 'bg-primary-500',
   leaf: 'bg-green-500',
 };
 
@@ -165,8 +165,8 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
           className={`flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-colors ${
             isSelected
               ? isDark
-                ? 'bg-indigo-900/30'
-                : 'bg-indigo-50'
+                ? 'bg-primary-900/30'
+                : 'bg-primary-50'
               : isDark
                 ? 'hover:bg-slate-700/50'
                 : 'hover:bg-gray-100'
@@ -192,7 +192,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
             onClick={() => toggleSelect(node.id)}
             className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
               isSelected
-                ? 'bg-indigo-600 border-indigo-600 text-white'
+                ? 'bg-primary-600 border-primary-600 text-white'
                 : isDark
                   ? 'border-slate-600'
                   : 'border-gray-300'
@@ -251,8 +251,8 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
               className={`flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors ${
                 isSelected
                   ? isDark
-                    ? 'bg-indigo-900/30'
-                    : 'bg-indigo-50'
+                    ? 'bg-primary-900/30'
+                    : 'bg-primary-50'
                   : isDark
                     ? 'hover:bg-slate-700/50'
                     : 'hover:bg-gray-100'
@@ -261,7 +261,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
               <div
                 className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
                   isSelected
-                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    ? 'bg-primary-600 border-primary-600 text-white'
                     : isDark
                       ? 'border-slate-600'
                       : 'border-gray-300'
@@ -301,7 +301,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-800">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
               <BookOpen size={24} />
               <h3 className="text-xl font-bold">{t('nodeSelector.title')}</h3>
             </div>
@@ -317,7 +317,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
         <div className="p-6 space-y-4">
           {nodesLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 size={32} className="animate-spin text-indigo-600" />
+              <Loader2 size={32} className="animate-spin text-primary-600" />
             </div>
           ) : nodeCount === 0 ? (
             <div className={`text-center py-12 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
@@ -351,7 +351,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
                 </div>
                 <button
                   onClick={toggleSelectAll}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   {selectedIds.length === nodeCount ? t('nodeSelector.deselectAll') : t('nodeSelector.selectAll')}
                 </button>
@@ -390,7 +390,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
             <button
               onClick={handleConfirm}
               disabled={selectedIds.length === 0}
-              className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
+              className="px-8 py-2.5 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
             >
               {t('nodeSelector.confirm')}
               {selectedIds.length > 0 && (

@@ -32,8 +32,8 @@ export const SSEStatusIndicator = () => {
       case 'connecting':
         return {
           icon: Loader2,
-          color: 'text-blue-500',
-          bgColor: 'bg-blue-100 dark:bg-blue-900/30',
+          color: 'text-primary-500',
+          bgColor: 'bg-primary-100 dark:bg-primary-900/30',
           label: t('layout.sse.connecting'),
           tooltip: error || t('layout.sse.connectingTooltip')
         };

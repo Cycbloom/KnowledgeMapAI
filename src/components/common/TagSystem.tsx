@@ -190,7 +190,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
         className={`
           flex items-center gap-2 px-3 py-2 rounded-lg transition-colors
           ${selectedTags.length > 0
-            ? 'bg-blue-500 text-white'
+            ? 'bg-primary-500 text-white'
             : isDark 
               ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
@@ -239,7 +239,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
                     w-full text-left px-3 py-2 rounded-lg flex items-center justify-between
                     transition-colors
                     ${isSelected
-                      ? isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'
+                      ? isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-50 text-primary-600'
                       : isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-gray-50 text-gray-700'}
                   `}
                 >
@@ -308,7 +308,7 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
   return (
     <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
       <div className="flex items-center gap-2 mb-2">
-        <Sparkles size={14} className="text-purple-500" />
+        <Sparkles size={14} className="text-primary-500" />
         <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
           建议标签
         </span>
@@ -329,8 +329,8 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
                 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs
                 transition-colors
                 ${isDark 
-                  ? 'bg-slate-600 text-slate-300 hover:bg-purple-600 hover:text-white' 
-                  : 'bg-gray-200 text-gray-600 hover:bg-purple-500 hover:text-white'}
+                  ? 'bg-slate-600 text-slate-300 hover:bg-primary-600 hover:text-white' 
+                  : 'bg-gray-200 text-gray-600 hover:bg-primary-500 hover:text-white'}
               `}
             >
               <Plus size={12} />

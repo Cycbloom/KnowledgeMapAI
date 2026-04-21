@@ -135,10 +135,10 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
               {hourlyData.map((data, i) => {
                 const height = (data.duration / maxDuration) * 100;
                 const hour = i;
-                let bgColor = 'bg-indigo-500';
+                let bgColor = 'bg-primary-500';
                 if (hour >= 6 && hour < 12) bgColor = 'bg-amber-500';
-                else if (hour >= 12 && hour < 18) bgColor = 'bg-cyan-500';
-                else if (hour >= 18 && hour < 24) bgColor = 'bg-purple-500';
+                else if (hour >= 12 && hour < 18) bgColor = 'bg-primary-500';
+                else if (hour >= 18 && hour < 24) bgColor = 'bg-primary-500';
 
                 return (
                   <motion.div

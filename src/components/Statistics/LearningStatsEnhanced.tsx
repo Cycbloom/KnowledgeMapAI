@@ -393,8 +393,8 @@ export const QuickStatsCards: React.FC<{
       label: t('learningStats.quickStats.totalNodes'),
       value: totalNodes,
       icon: BookOpen,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10'
+      color: 'text-primary-500',
+      bgColor: 'bg-primary-500/10'
     },
     {
       label: t('learningStats.quickStats.mastered'),
@@ -415,8 +415,8 @@ export const QuickStatsCards: React.FC<{
       label: t('learningStats.quickStats.streak'),
       value: streak,
       icon: TrendingUp,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
+      color: 'text-primary-500',
+      bgColor: 'bg-primary-500/10',
       subtext: t('learningStats.quickStats.days')
     }
   ];

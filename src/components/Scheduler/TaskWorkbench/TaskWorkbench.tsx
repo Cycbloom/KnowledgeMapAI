@@ -126,7 +126,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       case "completed":
         return "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400";
       case "in_progress":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400";
+        return "bg-primary-100 text-primary-800 dark:bg-primary-500/20 dark:text-primary-400";
       case "paused":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400";
       case "cancelled":
@@ -228,7 +228,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
       </div>
     );
   }
@@ -242,7 +242,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
         </h2>
         <button
           onClick={onBack}
-          className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
         >
           返回
         </button>
@@ -283,7 +283,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               )}
               <button
                 onClick={() => setShowSaveAsTemplate(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
               >
                 <Bookmark className="w-4 h-4" />
                 保存为模板
@@ -391,7 +391,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 </h3>
                 <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-300"
+                    className="bg-gradient-to-r from-primary-500 to-primary-500 h-full transition-all duration-300"
                     style={{ width: `${task.progress_percentage}%` }}
                   />
                 </div>
@@ -411,7 +411,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 {task.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 rounded-full text-sm"
+                    className="px-3 py-1 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 rounded-full text-sm"
                   >
                     {tag}
                   </span>
@@ -447,7 +447,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${
                     activeTab === tab.id
-                      ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
+                      ? "border-primary-500 text-primary-600 dark:text-primary-400"
                       : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
@@ -495,7 +495,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {task.status === "pending" && (
             <button
               onClick={handleStartTask}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-medium hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-xl font-medium hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30"
             >
               <Play className="w-5 h-5" />
               开始任务
@@ -522,7 +522,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {task.status === "paused" && (
             <button
               onClick={handleStartTask}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-medium hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-xl font-medium hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30"
             >
               <Play className="w-5 h-5" />
               继续任务

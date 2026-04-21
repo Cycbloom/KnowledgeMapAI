@@ -32,7 +32,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
           <div
-            className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all"
+            className="bg-gradient-to-r from-primary-500 to-green-500 h-3 rounded-full transition-all"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -61,7 +61,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
                   ) : isSkipped ? (
                     <Circle className="w-5 h-5 text-gray-400" />
                   ) : (
-                    <Clock className="w-5 h-5 text-blue-500" />
+                    <Clock className="w-5 h-5 text-primary-500" />
                   )}
 
                   <div className="w-16 text-sm text-gray-600 dark:text-gray-400">
@@ -72,7 +72,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
                     <div className="flex items-center gap-2">
                       <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded h-2">
                         <div
-                          className="bg-blue-500 h-2 rounded"
+                          className="bg-primary-500 h-2 rounded"
                           style={{ width: `${plan.planned_percentage}%` }}
                         />
                       </div>

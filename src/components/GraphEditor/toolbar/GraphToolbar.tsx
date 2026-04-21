@@ -145,11 +145,11 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     container: isDark ? 'bg-slate-800/90 border-slate-700 text-gray-100' : 'bg-white/90 border-gray-200 text-gray-800',
     button: {
       default: isDark ? 'text-gray-300 hover:bg-slate-700' : 'text-gray-600 hover:bg-gray-100',
-      active: isDark ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-50 text-blue-600',
+      active: isDark ? 'bg-primary-900/50 text-primary-400' : 'bg-primary-50 text-primary-600',
       disabled: isDark ? 'text-slate-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed'
     },
     divider: isDark ? 'bg-slate-600' : 'bg-gray-300',
-    input: isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:ring-blue-500' : 'bg-white border-gray-300 text-gray-800',
+    input: isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:ring-primary-500' : 'bg-white border-gray-300 text-gray-800',
     dropdown: isDark ? 'bg-slate-800 border-slate-700 text-gray-100' : 'bg-white border-gray-200 text-gray-800',
     itemHover: isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-50'
   };
@@ -190,7 +190,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
               onClick={item.onClick}
               className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${
                 item.active || (mobileMenuOpen !== null && navItems.find(n => n.label === item.label)?.onClick === item.onClick)
-                  ? (isDark ? 'text-blue-400 bg-slate-800' : 'text-blue-600 bg-blue-50')
+                  ? (isDark ? 'text-primary-400 bg-slate-800' : 'text-primary-600 bg-primary-50')
                   : (isDark ? 'text-gray-400 active:bg-slate-800' : 'text-gray-600 active:bg-gray-100')
               }`}
               title={item.label}
@@ -218,19 +218,19 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   const MobileBottomSheet = ({ type, onClose }: { type: 'ai' | 'view' | 'more'; onClose: () => void }) => {
     const menuItems: Record<'ai' | 'view' | 'more', MobileMenuItem[]> = {
       ai: [
-        { icon: Sparkles, label: '文本/文档生成', onClick: () => { onTextToGraph(); onClose(); }, color: 'text-purple-500' },
+        { icon: Sparkles, label: '文本/文档生成', onClick: () => { onTextToGraph(); onClose(); }, color: 'text-primary-500' },
         { icon: Navigation, label: '智能拓展', onClick: () => { if (selectedNodeIds.size === 1 && onAIExpand) { onAIExpand(); } onClose(); }, disabled: selectedNodeIds.size !== 1, color: 'text-green-500' },
-        { icon: MessageSquare, label: '智能问答', onClick: () => { setIsChatOpen(!isChatOpen); onClose(); }, active: isChatOpen, color: 'text-purple-500' },
+        { icon: MessageSquare, label: '智能问答', onClick: () => { setIsChatOpen(!isChatOpen); onClose(); }, active: isChatOpen, color: 'text-primary-500' },
         { icon: Navigation, label: isPathfindingMode ? '退出路径导航' : '路径导航', onClick: () => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); onClose(); }, active: isPathfindingMode },
       ],
       view: [
-        { icon: GraduationCap, label: '大纲学习模式', onClick: () => { navigate(`/learning?graph_id=${id}`); onClose(); }, color: 'text-indigo-600' },
-        { icon: Network, label: '思维导图', onClick: () => { setViewMode('mindmap'); onClose(); }, active: viewMode === 'mindmap', color: 'text-blue-600' },
-        { icon: Clock, label: '时间线', onClick: () => { setViewMode('timeline'); onClose(); }, active: viewMode === 'timeline', color: 'text-blue-600' },
-        { icon: GitBranch, label: '树形视图', onClick: () => { setViewMode('tree'); onClose(); }, active: viewMode === 'tree', color: 'text-blue-600' },
-        { icon: Globe, label: '知识星球', onClick: () => { setViewMode('planet'); onClose(); }, active: viewMode === 'planet', color: 'text-blue-600' },
+        { icon: GraduationCap, label: '大纲学习模式', onClick: () => { navigate(`/learning?graph_id=${id}`); onClose(); }, color: 'text-primary-600' },
+        { icon: Network, label: '思维导图', onClick: () => { setViewMode('mindmap'); onClose(); }, active: viewMode === 'mindmap', color: 'text-primary-600' },
+        { icon: Clock, label: '时间线', onClick: () => { setViewMode('timeline'); onClose(); }, active: viewMode === 'timeline', color: 'text-primary-600' },
+        { icon: GitBranch, label: '树形视图', onClick: () => { setViewMode('tree'); onClose(); }, active: viewMode === 'tree', color: 'text-primary-600' },
+        { icon: Globe, label: '知识星球', onClick: () => { setViewMode('planet'); onClose(); }, active: viewMode === 'planet', color: 'text-primary-600' },
         { icon: List, label: '侧边栏大纲', onClick: () => { setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline'); onClose(); }, active: sidebarMode === 'outline' },
-        { icon: GitBranch, label: isExplorationMode ? '退出探索模式' : '探索分支模式', onClick: () => { setIsExplorationMode(!isExplorationMode); onClose(); }, active: isExplorationMode, color: 'text-purple-600' },
+        { icon: GitBranch, label: isExplorationMode ? '退出探索模式' : '探索分支模式', onClick: () => { setIsExplorationMode(!isExplorationMode); onClose(); }, active: isExplorationMode, color: 'text-primary-600' },
         { icon: Grid, label: showGrid ? '隐藏网格' : '显示网格', onClick: () => { setShowGrid(!showGrid); onClose(); }, active: showGrid },
         { icon: Maximize, label: '专注模式', onClick: () => { setIsFocusMode(true); onClose(); } },
       ],
@@ -299,7 +299,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                     item.disabled
                       ? 'opacity-50 cursor-not-allowed'
                       : item.active
-                        ? (isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600')
+                        ? (isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-50 text-primary-600')
                         : (isDark ? 'hover:bg-slate-800 active:bg-slate-700' : 'hover:bg-gray-50 active:bg-gray-100')
                   } ${item.color || (isDark ? 'text-gray-300' : 'text-gray-700')}`}
                   aria-label={item.label}
@@ -327,8 +327,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
           className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
             isBatchMenuOpen
-              ? 'bg-indigo-600 text-white'
-              : (isDark ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-800/50 hover:bg-indigo-800/60' : 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100')
+              ? 'bg-primary-600 text-white'
+              : (isDark ? 'bg-primary-900/40 text-primary-300 border border-primary-800/50 hover:bg-primary-800/60' : 'bg-primary-50 text-primary-600 border border-primary-100 hover:bg-primary-100')
           }`}
           title="批量操作"
         >
@@ -348,7 +348,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             {/* Batch Color */}
             <div className="px-4 py-3">
               <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
-                <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
+                <div className="w-1 h-3 bg-primary-500 rounded-full"></div>
                 修改颜色
               </div>
               <div className="flex flex-wrap gap-2.5">
@@ -441,7 +441,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           onClick={() => setIsFocusMode(false)}
           className={`p-2 rounded-full backdrop-blur-sm transition-all shadow-sm ${
             isDark 
-              ? 'bg-slate-800/20 hover:bg-slate-800/90 text-white hover:text-blue-400' 
+              ? 'bg-slate-800/20 hover:bg-slate-800/90 text-white hover:text-primary-400' 
               : 'bg-white/20 hover:bg-white/90 text-white hover:text-gray-800'
           }`}
           title="退出专注模式 (Esc)"
@@ -458,7 +458,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
         className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
           active || openDropdown === id
-            ? (isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-50 text-blue-600')
+            ? (isDark ? 'bg-primary-900/40 text-primary-400' : 'bg-primary-50 text-primary-600')
             : (isDark ? 'text-gray-300 hover:bg-slate-700' : 'text-gray-600 hover:bg-gray-100')
         }`}
       >
@@ -492,7 +492,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all ${
             disabled ? themeClasses.button.disabled :
             active 
-              ? (activeClass || (isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'))
+              ? (activeClass || (isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-50 text-primary-600'))
               : `${themeClasses.itemHover} ${colorClass || (isDark ? 'text-gray-300' : 'text-gray-700')}`
           }`}
         >
@@ -557,7 +557,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       {!isReadOnly && (
         <div className="flex items-center space-x-2">
           <DropdownButton id="edit" icon={Plus} label={t('graphEditor.toolbar.edit')} active={isDeleteMode || selectedNodeIds.size > 0}>
-            <MenuItem onClick={onAddNode} icon={Plus} label={t('graphEditor.toolbar.addNode')} colorClass="text-blue-500" />
+            <MenuItem onClick={onAddNode} icon={Plus} label={t('graphEditor.toolbar.addNode')} colorClass="text-primary-500" />
             <MenuItem 
               onClick={() => setIsDeleteMode(!isDeleteMode)} 
               icon={Eraser} 
@@ -596,8 +596,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                onClick={onAIExpand}
                className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
                  isDark 
-                   ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50 hover:bg-purple-800/60' 
-                   : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
+                   ? 'bg-primary-900/40 text-primary-300 border border-primary-700/50 hover:bg-primary-800/60' 
+                   : 'bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100'
                }`}
                title={t('graphEditor.toolbar.aiExpandTitle')}
             >
@@ -612,8 +612,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                onClick={onBranchExplore}
                className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
                  isDark 
-                   ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-800/60' 
-                   : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+                   ? 'bg-primary-900/40 text-primary-300 border border-primary-700/50 hover:bg-primary-800/60' 
+                   : 'bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100'
                }`}
                title={t('graphEditor.toolbar.branchSuggestionTitle')}
             >
@@ -652,7 +652,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       {/* 3. AI Tools Dropdown - Hidden in read-only mode */}
       {!isReadOnly && (
         <DropdownButton id="ai" icon={Sparkles} label={t('graphEditor.toolbar.aiAssistant')} active={isChatOpen || isPathfindingMode}>
-          <MenuItem onClick={onTextToGraph} icon={Sparkles} label={t('graphEditor.toolbar.textToGraph')} colorClass="text-purple-500" />
+          <MenuItem onClick={onTextToGraph} icon={Sparkles} label={t('graphEditor.toolbar.textToGraph')} colorClass="text-primary-500" />
           <MenuItem 
             onClick={() => {
               if (selectedNodeIds.size === 1 && onAIExpand) {
@@ -673,9 +673,9 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             disabled={selectedNodeIds.size !== 1 || !onBackgroundTask}
             icon={Sparkles} 
             label={t('graphEditor.toolbar.backgroundExpand')} 
-            colorClass="text-blue-500"
+            colorClass="text-primary-500"
           />
-          <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label={t('graphEditor.toolbar.intelligentQnA')} active={isChatOpen} colorClass="text-purple-500" />
+          <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label={t('graphEditor.toolbar.intelligentQnA')} active={isChatOpen} colorClass="text-primary-500" />
           <MenuItem 
             onClick={() => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); }} 
             icon={Navigation} 
@@ -689,7 +689,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       {/* 4. View Tools Dropdown */}
       <DropdownButton id="view" icon={List} label={t('graphEditor.toolbar.view')}>
-        <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label={t('graphEditor.toolbar.outlineLearningMode')} colorClass="text-indigo-600" />
+        <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label={t('graphEditor.toolbar.outlineLearningMode')} colorClass="text-primary-600" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <div className="px-3 py-2">
           <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase">{t('graphEditor.toolbar.viewModes')}</div>
@@ -707,7 +707,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                   icon={Icon}
                   label={label}
                   active={viewMode === mode}
-                  colorClass="text-blue-600"
+                  colorClass="text-primary-600"
                 />
               ))
             }
@@ -717,17 +717,17 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label={t('graphEditor.toolbar.sidebarOutline')} active={sidebarMode === 'outline'} />
         <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label={t('graphEditor.toolbar.searchNodes')} />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <MenuItem onClick={() => setIsExplorationMode(!isExplorationMode)} icon={GitBranch} label={isExplorationMode ? t('graphEditor.toolbar.exitExplorationMode') : t('graphEditor.toolbar.explorationMode')} active={isExplorationMode} colorClass="text-purple-600" />
+        <MenuItem onClick={() => setIsExplorationMode(!isExplorationMode)} icon={GitBranch} label={isExplorationMode ? t('graphEditor.toolbar.exitExplorationMode') : t('graphEditor.toolbar.explorationMode')} active={isExplorationMode} colorClass="text-primary-600" />
         
         <MenuItem 
           onClick={() => setColoringMode(coloringMode === 'level' ? 'status' : 'level')} 
           icon={coloringMode === 'level' ? Layers : Activity} 
           label={coloringMode === 'level' ? t('graphEditor.toolbar.coloringModeLevel') : t('graphEditor.toolbar.coloringModeHeatmap')} 
-          colorClass={coloringMode === 'level' ? "text-blue-500" : "text-orange-500"}
+          colorClass={coloringMode === 'level' ? "text-primary-500" : "text-orange-500"}
         />
 
         {isExplorationMode && (
-          <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? t('graphEditor.toolbar.hideTimeline') : t('graphEditor.toolbar.showTimeline')} active={isTimelineVisible} colorClass="text-blue-500" />
+          <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? t('graphEditor.toolbar.hideTimeline') : t('graphEditor.toolbar.showTimeline')} active={isTimelineVisible} colorClass="text-primary-500" />
         )}
         {isExplorationMode && <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>}
         <MenuItem onClick={onTogglePresentation} icon={MonitorPlay} label={t('graphEditor.toolbar.presentationMode')} colorClass="text-orange-500" disabled={!onTogglePresentation} />

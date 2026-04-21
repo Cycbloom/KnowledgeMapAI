@@ -50,7 +50,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
           <div className="text-xs text-gray-500 dark:text-gray-400">学习路径</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
             {result.analysis_summary.avg_path_length.toFixed(1)}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">平均长度</div>
@@ -119,7 +119,7 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
                           {onGraphClick && path.path[i] ? (
                             <button
                               onClick={() => onGraphClick(path.path[i])}
-                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                              className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
                             >
                               {title}
                               <ExternalLink className="w-2.5 h-2.5" />
@@ -143,8 +143,8 @@ export const LearningPathSuggestionsSection: React.FC<LearningPathSuggestionsSec
         </div>
       )}
 
-      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-        <p className="text-xs text-blue-700 dark:text-blue-300">
+      <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
+        <p className="text-xs text-primary-700 dark:text-primary-300">
           <span className="font-medium">提示：</span>
           学习路径基于图谱间的前置关系和知识依赖分析生成，建议按照推荐顺序学习以获得最佳效果
         </p>

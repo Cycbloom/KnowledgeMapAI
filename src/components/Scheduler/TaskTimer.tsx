@@ -181,7 +181,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
         ) : (
           <motion.button
             onClick={onResume}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30 hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-500/30 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -203,7 +203,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
 
       <div className="mt-4 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400" />
+          <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400" />
           <span>已用: {formatTime(displayTime)}</span>
         </div>
         <div className="flex items-center gap-1">

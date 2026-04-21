@@ -31,11 +31,11 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
   const { t } = useTranslation();
 
   const menuItems = [
-    { key: 'edit', icon: Edit3, labelKey: 'nodeDetail.editNode', color: 'text-blue-500' },
-    { key: 'aiExpand', icon: Sparkles, labelKey: 'nodeDetail.aiExpand', color: 'text-purple-500' },
+    { key: 'edit', icon: Edit3, labelKey: 'nodeDetail.editNode', color: 'text-primary-500' },
+    { key: 'aiExpand', icon: Sparkles, labelKey: 'nodeDetail.aiExpand', color: 'text-primary-500' },
     { key: 'generateContent', icon: Wand2, labelKey: 'nodeDetail.generateContent', color: 'text-amber-500' },
     { key: 'generateCards', icon: Layers, labelKey: 'nodeDetail.generateCards', color: 'text-emerald-500' },
-    { key: 'startLearning', icon: GraduationCap, labelKey: 'nodeDetail.startLearning', color: 'text-cyan-500' },
+    { key: 'startLearning', icon: GraduationCap, labelKey: 'nodeDetail.startLearning', color: 'text-primary-500' },
   ] as const;
 
   const handleAction = (action: () => void) => {

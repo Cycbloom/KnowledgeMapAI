@@ -133,7 +133,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           {prevSidebarMode === "outline" && (
             <button
               onClick={onBack}
-              className={`text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all ${isMobile ? "mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center" : "mr-1 p-1.5"}`}
+              className={`text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-all ${isMobile ? "mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center" : "mr-1 p-1.5"}`}
               title={t("nodeDetail.backToOutline")}
             >
               <ArrowLeft size={isMobile ? 20 : 18} />
@@ -182,7 +182,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             <div
               className={`flex items-center bg-gray-50 dark:bg-gray-800 rounded ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
             >
-              <Activity size={14} className="mr-1.5 text-blue-500" />
+              <Activity size={14} className="mr-1.5 text-primary-500" />
               <span>{levelLabels[getLevel(node, edges)] || t("nodeDetail.normalNode")}</span>
             </div>
 
@@ -200,7 +200,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             {onShowVersionHistory && (
               <button
                 onClick={onShowVersionHistory}
-                className={`flex items-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors cursor-pointer ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
+                className={`flex items-center bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors cursor-pointer ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
               >
                 <History size={14} className="mr-1.5" />
                 <span>{t("nodeDetail.versionHistory")}</span>
@@ -312,7 +312,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 return (
                   <a
                     {...props}
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-primary-600 dark:text-primary-400 hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   />
@@ -329,10 +329,10 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           <button
             onClick={onGenerateNodeContent}
             disabled={isGeneratingContent}
-            className={`w-full flex items-center justify-center bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl transition-colors text-sm font-bold ${isMobile ? "p-3.5 min-h-[48px]" : "p-2.5"} ${
+            className={`w-full flex items-center justify-center bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-xl transition-colors text-sm font-bold ${isMobile ? "p-3.5 min-h-[48px]" : "p-2.5"} ${
               isGeneratingContent
                 ? "opacity-60 cursor-not-allowed"
-                : "hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                : "hover:bg-primary-100 dark:hover:bg-primary-900/30"
             }`}
           >
             {isGeneratingContent ? (
@@ -356,7 +356,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           >
             <button
               onClick={onStartLearningMode}
-              className={`flex items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] ${isMobile ? "p-4 min-h-[52px]" : "col-span-2 p-3"}`}
+              className={`flex items-center justify-center bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] ${isMobile ? "p-4 min-h-[52px]" : "col-span-2 p-3"}`}
             >
               <Navigation size={isMobile ? 20 : 18} className="mr-2" />
               <span className={`font-bold ${isMobile ? "text-base" : ""}`}>
@@ -370,7 +370,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             >
               <GraduationCap
                 size={isMobile ? 20 : 18}
-                className="mr-2 text-indigo-500"
+                className="mr-2 text-primary-500"
               />
               <span className="font-medium">{t("nodeDetail.levelTest")}</span>
             </button>
@@ -390,19 +390,19 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
 
         {/* AI Analysis Section */}
         {!isReadOnly && (
-          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-4 border border-purple-100 dark:border-purple-800">
+          <div className="bg-gradient-to-br from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20 rounded-2xl p-4 border border-primary-100 dark:border-primary-800">
             <div className="flex items-center justify-between mb-3">
               <h3
-                className={`font-bold text-purple-900 dark:text-purple-300 flex items-center ${isMobile ? "text-base" : ""}`}
+                className={`font-bold text-primary-900 dark:text-primary-300 flex items-center ${isMobile ? "text-base" : ""}`}
               >
                 <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
                 {t("nodeDetail.aiDeepExplore")}
               </h3>
-              <span className="text-[10px] bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] bg-primary-200 dark:bg-primary-800 text-primary-800 dark:text-primary-300 px-2 py-0.5 rounded-full">
                 Beta
               </span>
             </div>
-            <p className="text-xs text-purple-700 dark:text-purple-400 mb-4 leading-relaxed">
+            <p className="text-xs text-primary-700 dark:text-primary-400 mb-4 leading-relaxed">
               {t("nodeDetail.aiDeepExploreDesc")}
             </p>
             <div
@@ -410,19 +410,19 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             >
               <button
                 onClick={onDeepAnalysis}
-                className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
+                className={`bg-white dark:bg-gray-800 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
               >
                 {t("nodeDetail.deepAnalysis")}
               </button>
               <button
                 onClick={onGenerateQuiz}
-                className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
+                className={`bg-white dark:bg-gray-800 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
               >
                 {t("nodeDetail.generateQuiz")}
               </button>
               <button
                 onClick={onBackgroundGenerate}
-                className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
+                className={`bg-white dark:bg-gray-800 text-primary-700 dark:text-primary-300 text-xs font-bold rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
               >
                 {t("nodeDetail.backgroundGenerate")}
               </button>
@@ -440,7 +440,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               </div>
               <button
                 onClick={() => onRelatedNodeClick(parentNode)}
-                className="w-full text-left p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 font-medium flex items-center transition-colors border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:text-blue-700 dark:hover:text-blue-400"
+                className="w-full text-left p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 font-medium flex items-center transition-colors border border-gray-100 dark:border-gray-700 hover:border-primary-200 dark:hover:border-primary-700 hover:text-primary-700 dark:hover:text-primary-400"
               >
                 <ArrowLeft size={14} className="mr-2 text-gray-400" />
                 {parentNode.title}
@@ -461,7 +461,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                     onClick={() => onRelatedNodeClick(child)}
                     className="w-full text-left p-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 flex items-center transition-colors group border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
                   >
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2 group-hover:scale-125 transition-transform" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-400 mr-2 group-hover:scale-125 transition-transform" />
                     <span className="truncate">{child.title}</span>
                     <ChevronRight
                       size={14}
@@ -475,15 +475,15 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         </div>
 
         {/* Related Nodes Section */}
-        <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
+        <div className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800">
           <div className="flex justify-between items-center mb-2">
-            <h5 className="text-xs font-bold text-purple-700 dark:text-purple-400">
+            <h5 className="text-xs font-bold text-primary-700 dark:text-primary-400">
               🔗 {t("nodeDetail.semanticRelatedNodes")}
             </h5>
             {!showRelatedSection && (
               <button
                 onClick={onFetchRelatedNodes}
-                className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                className="text-[10px] bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 px-2 py-1 rounded hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
               >
                 {t("nodeDetail.loadRelated")}
               </button>
@@ -494,7 +494,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-2 min-h-[60px]">
               {isRelatedLoading ? (
                 <div className="flex justify-center py-2">
-                  <Loader2 className="animate-spin text-purple-400" size={16} />
+                  <Loader2 className="animate-spin text-primary-400" size={16} />
                 </div>
               ) : relatedNodes.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -502,7 +502,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                     <button
                       key={rNode.id}
                       onClick={() => onRelatedNodeClick(rNode)}
-                      className="text-xs bg-white dark:bg-gray-700 border border-purple-100 dark:border-purple-800 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-md shadow-sm hover:bg-purple-50 dark:hover:bg-gray-600 transition-colors truncate max-w-full"
+                      className="text-xs bg-white dark:bg-gray-700 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-400 px-2 py-1 rounded-md shadow-sm hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors truncate max-w-full"
                     >
                       {rNode.title}
                     </button>
@@ -519,9 +519,9 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
 
         {/* Branch Status Section */}
         {isExplorationMode && (
-          <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
+          <div className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800">
             <div className="flex justify-between items-center mb-2">
-              <h5 className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center">
+              <h5 className="text-xs font-bold text-primary-700 dark:text-primary-400 flex items-center">
                 <GitBranch size={14} className="mr-1" />
                 {t("nodeDetail.branchStatus")}
               </h5>
@@ -546,7 +546,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                     className={`px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap ${
                       isAccepted
                         ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-primary-500 text-white hover:bg-primary-600"
                     }`}
                   >
                     {isAccepted ? t("nodeDetail.cancelSelection") : t("nodeDetail.selectBranch")}
@@ -573,7 +573,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         >
           <button
             onClick={onEdit}
-            className={`flex-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 dark:shadow-blue-900/30 transition-all active:scale-95 ${isMobile ? "py-3.5 min-h-[52px]" : "py-2.5"}`}
+            className={`flex-1 bg-primary-600 text-white rounded-xl hover:bg-primary-700 flex items-center justify-center font-bold shadow-lg shadow-primary-100 dark:shadow-primary-900/30 transition-all active:scale-95 ${isMobile ? "py-3.5 min-h-[52px]" : "py-2.5"}`}
           >
             <Edit3 size={isMobile ? 20 : 18} className="mr-2" />
             {t("nodeDetail.editNode")}

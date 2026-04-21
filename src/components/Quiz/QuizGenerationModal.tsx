@@ -214,7 +214,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       >
         <div
           className={`p-6 border-b ${
-            isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-gradient-to-r from-indigo-50 to-white'
+            isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-gradient-to-r from-primary-50 to-white'
           }`}
         >
           <div className="flex justify-between items-center">
@@ -224,8 +224,8 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   onClick={() => setShowPromptConfig(false)}
                   className={`p-2 rounded-xl transition-colors ${
                     isDark
-                      ? 'bg-indigo-900/50 text-indigo-400 hover:bg-indigo-900/70'
-                      : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                      ? 'bg-primary-900/50 text-primary-400 hover:bg-primary-900/70'
+                      : 'bg-primary-100 text-primary-600 hover:bg-primary-200'
                   }`}
                 >
                   <ArrowLeft size={20} />
@@ -233,7 +233,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
               ) : (
                 <div
                   className={`p-2 rounded-xl ${
-                    isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-100 text-indigo-600'
+                    isDark ? 'bg-primary-900/50 text-primary-400' : 'bg-primary-100 text-primary-600'
                   }`}
                 >
                   <BrainCircuit size={24} />
@@ -288,7 +288,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <Route size={18} className={isDark ? 'text-indigo-400' : 'text-indigo-600'} />
+                    <Route size={18} className={isDark ? 'text-primary-400' : 'text-primary-600'} />
                     <label
                       className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
                     >
@@ -315,8 +315,8 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                           className={`w-full p-3 rounded-lg border text-left transition-all ${
                             isSelected
                               ? isDark
-                                ? 'border-indigo-500 bg-indigo-900/30'
-                                : 'border-indigo-500 bg-indigo-50'
+                                ? 'border-primary-500 bg-primary-900/30'
+                                : 'border-primary-500 bg-primary-50'
                               : isDark
                                 ? 'border-slate-700 hover:border-slate-600'
                                 : 'border-gray-200 hover:border-gray-300'
@@ -332,7 +332,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                               </span>
                             </div>
                             {isSelected && (
-                              <span className={`text-xs font-medium ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                              <span className={`text-xs font-medium ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
                                 已选择
                               </span>
                             )}
@@ -384,8 +384,8 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                       disabled={isGenerating}
                       className={`w-full px-4 py-2.5 pr-10 rounded-xl border text-sm transition-colors ${
                         isDark
-                          ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
-                          : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
+                          ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-primary-500'
+                          : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500'
                       } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                     />
                     <PenLine
@@ -413,8 +413,8 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border text-sm resize-none transition-colors ${
                       isDark
-                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
-                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
+                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-primary-500'
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500'
                     } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
                 </div>
@@ -452,24 +452,24 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
               {isGenerating && progress && (
                 <div
                   className={`p-4 rounded-xl ${
-                    isDark ? 'bg-indigo-900/30' : 'bg-indigo-50'
+                    isDark ? 'bg-primary-900/30' : 'bg-primary-50'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Loader2 size={18} className="animate-spin text-indigo-600" />
-                      <span className={`font-medium ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>
+                      <Loader2 size={18} className="animate-spin text-primary-600" />
+                      <span className={`font-medium ${isDark ? 'text-primary-300' : 'text-primary-700'}`}>
                         正在生成测验...
                       </span>
                     </div>
-                    <span className={`text-sm font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                    <span className={`text-sm font-bold ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
                       {progressPercent}%
                     </span>
                   </div>
 
-                  <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-indigo-100'}`}>
+                  <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-primary-100'}`}>
                     <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-300"
+                      className="h-full bg-gradient-to-r from-primary-500 to-violet-500 transition-all duration-300"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -495,8 +495,8 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
               <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                 {selectedKnowledgePoints.length > 0 ? (
                   <span>
-                    已选择 <span className="font-bold text-indigo-600">{selectedKnowledgePoints.length}</span> 个知识点，
-                    预计生成 <span className="font-bold text-indigo-600">{totalQuestions}</span> 道题目
+                    已选择 <span className="font-bold text-primary-600">{selectedKnowledgePoints.length}</span> 个知识点，
+                    预计生成 <span className="font-bold text-primary-600">{totalQuestions}</span> 道题目
                   </span>
                 ) : (
                   <span>请选择知识点</span>
@@ -521,7 +521,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   disabled={!canGenerate || isGenerating || (aiStatus && !aiStatus.enabled)}
                   className={`flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all ${
                     canGenerate && !isGenerating && aiStatus?.enabled
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]'
+                      ? 'bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]'
                       : isDark
                         ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'

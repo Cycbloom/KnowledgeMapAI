@@ -35,9 +35,9 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
   if (!hasSupport) return null;
 
   return (
-    <div className={`px-4 py-3 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-indigo-50 border-indigo-100'}`}>
+    <div className={`px-4 py-3 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-primary-50 border-primary-100'}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-medium ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>语音设置</span>
+        <span className={`text-xs font-medium ${isDark ? 'text-primary-300' : 'text-primary-600'}`}>语音设置</span>
         <button
           onClick={onClose}
           className={`transition-colors ${isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
@@ -48,7 +48,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
       
       <div className="mb-3">
         <div className="flex items-center gap-2">
-          <span className={`text-xs ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>语音引擎：</span>
+          <span className={`text-xs ${isDark ? 'text-primary-300' : 'text-primary-600'}`}>语音引擎：</span>
           <div className="flex gap-1">
             <button
               onClick={() => {
@@ -57,10 +57,10 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               }}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-all ${
                 ttsEngine === 'browser'
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : isDark 
-                    ? 'bg-slate-700 text-indigo-300 hover:bg-slate-600' 
-                    : 'bg-white text-indigo-600 hover:bg-indigo-100'
+                    ? 'bg-slate-700 text-primary-300 hover:bg-slate-600' 
+                    : 'bg-white text-primary-600 hover:bg-primary-100'
               }`}
             >
               <Globe size={12} />
@@ -73,10 +73,10 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               }}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-all ${
                 ttsEngine === 'qwen3'
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : isDark 
-                    ? 'bg-slate-700 text-indigo-300 hover:bg-slate-600' 
-                    : 'bg-white text-indigo-600 hover:bg-indigo-100'
+                    ? 'bg-slate-700 text-primary-300 hover:bg-slate-600' 
+                    : 'bg-white text-primary-600 hover:bg-primary-100'
               }`}
             >
               <Cpu size={12} />
@@ -94,10 +94,10 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               onClick={() => handleVoiceChange(voice)}
               className={`w-full text-left px-2 py-1.5 text-xs rounded-md transition-all ${
                 typeof selectedVoice === 'object' && selectedVoice?.name === voice.name
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : isDark 
                     ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
-                    : 'bg-white text-indigo-600 hover:bg-indigo-100'
+                    : 'bg-white text-primary-600 hover:bg-primary-100'
               }`}
             >
               <div className="font-medium">{voice.name}</div>

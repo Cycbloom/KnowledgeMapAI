@@ -68,7 +68,7 @@ export const KnowledgePointReuseDialog: React.FC<KnowledgePointReuseDialogProps>
                     </div>
                   </div>
                   <div className="ml-3 flex-shrink-0">
-                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
                       {Math.round(point.similarity * 100)}% 相似
                     </span>
                   </div>

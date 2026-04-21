@@ -81,7 +81,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
         </button>
       </div>
 
-      <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 text-sm text-gray-700 dark:text-gray-300 max-h-[300px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-li:text-gray-700 dark:prose-li:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-indigo-600 dark:prose-code:text-indigo-400 prose-pre:bg-gray-100 dark:prose-pre:bg-slate-900">
+      <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 text-sm text-gray-700 dark:text-gray-300 max-h-[300px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-li:text-gray-700 dark:prose-li:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-primary-600 dark:prose-code:text-primary-400 prose-pre:bg-gray-100 dark:prose-pre:bg-slate-900">
         <ReactMarkdown>{result}</ReactMarkdown>
       </div>
 
@@ -95,7 +95,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
             <div className="flex items-center gap-2">
               <button
                 onClick={selectAll}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
               >
                 {t('common.selectAll')}
               </button>
@@ -119,8 +119,8 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
                     isApplied
                       ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
                       : isSelected
-                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
-                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700'
+                        ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
+                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-700'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -131,7 +131,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
                         <div
                           className={`w-4 h-4 rounded border flex-shrink-0 ${
                             isSelected
-                              ? 'bg-indigo-500 border-indigo-500'
+                              ? 'bg-primary-500 border-primary-500'
                               : 'border-gray-300 dark:border-gray-600'
                           }`}
                         >
@@ -166,7 +166,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
             <button
               onClick={applySelected}
               disabled={isApplying}
-              className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isApplying ? (
                 <>

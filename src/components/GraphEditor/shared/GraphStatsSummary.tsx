@@ -24,16 +24,16 @@ export const GraphStatsSummary: React.FC<GraphStatsSummaryProps> = ({
     <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800 mb-3 text-xs">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
-          <PieChart size={14} className="text-blue-500" />
+          <PieChart size={14} className="text-primary-500" />
           <span>掌握进度</span>
         </div>
-        <span className="font-bold text-blue-600 dark:text-blue-400">{progress}%</span>
+        <span className="font-bold text-primary-600 dark:text-primary-400">{progress}%</span>
       </div>
       
       {/* Progress Bar */}
       <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
         <div 
-          className="h-full bg-blue-500 rounded-full transition-all duration-500"
+          className="h-full bg-primary-500 rounded-full transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>

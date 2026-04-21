@@ -139,7 +139,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
+              <Sparkles className="w-5 h-5 text-primary-500" />
               模块化分析
             </h2>
             <button
@@ -175,7 +175,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
                     if (!m.selected) onToggleModule(m.id);
                   });
                 }}
-                className="text-purple-500 hover:text-purple-600 dark:hover:text-purple-400 text-xs"
+                className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 text-xs"
               >
                 全选
               </button>
@@ -231,7 +231,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
               <button
                 onClick={handleExecute}
                 disabled={selectedIds.length === 0 || isAnyLoading}
-                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 {isAnyLoading ? (
                   <>

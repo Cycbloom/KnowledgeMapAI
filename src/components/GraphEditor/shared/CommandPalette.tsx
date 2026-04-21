@@ -202,7 +202,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       onMouseEnter={() => setSelectedIndex(globalIndex)}
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
                         isSelected 
-                          ? isDark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                          ? isDark ? 'bg-primary-600 text-white' : 'bg-primary-500 text-white'
                           : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -212,7 +212,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       </div>
                       {cmd.shortcut && (
                         <span className={`text-xs ${
-                          isSelected ? 'text-blue-100' : isDark ? 'text-slate-500' : 'text-gray-400'
+                          isSelected ? 'text-primary-100' : isDark ? 'text-slate-500' : 'text-gray-400'
                         }`}>
                           {cmd.shortcut}
                         </span>

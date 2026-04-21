@@ -56,7 +56,7 @@ export const RelatedResourcesSection: React.FC<RelatedResourcesSectionProps> = (
         onClick={() => onKnowledgePointClick?.(knowledgePointId)}
       >
         <div className="flex items-start gap-3">
-          <BookOpen className="w-5 h-5 text-blue-500 mt-0.5" />
+          <BookOpen className="w-5 h-5 text-primary-500 mt-0.5" />
           <div className="flex-1">
             <h4 className="font-medium text-gray-900 dark:text-white">
               {knowledgePoint.title}

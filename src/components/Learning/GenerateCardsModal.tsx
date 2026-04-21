@@ -93,7 +93,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-800">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex justify-between items-center">
-             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+             <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
                <BrainCircuit size={24} />
                <h3 className="text-xl font-bold">{t('learning.generateCards.title')}</h3>
              </div>
@@ -110,7 +110,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
           {/* Types */}
           <div className="space-y-4">
             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+              <span className="w-1.5 h-4 bg-primary-500 rounded-full"></span>
               {t('learning.generateCards.typeSelect')}
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -120,11 +120,11 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   onClick={() => handleToggleType(type.id)}
                   className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-all text-center flex items-center justify-center gap-2
                     ${types.includes(type.id) 
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:border-indigo-400 dark:text-indigo-300 shadow-sm' 
+                      ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300 shadow-sm' 
                       : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {type.label}
-                  {types.includes(type.id) && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                  {types.includes(type.id) && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
                 </button>
               ))}
             </div>
@@ -134,10 +134,10 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+                  <span className="w-1.5 h-4 bg-primary-500 rounded-full"></span>
                   {t('learning.generateCards.countLabel')}
                 </label>
-                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-bold">{t('learning.generateCards.countUnit', { count })}</span>
+                <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 rounded-full text-sm font-bold">{t('learning.generateCards.countUnit', { count })}</span>
             </div>
             <div className="px-2">
               <input 
@@ -146,7 +146,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 max="30" 
                 value={count} 
                 onChange={(e) => setCount(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
               <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
                 <span>1</span>
@@ -172,16 +172,16 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
           ) : (
             <div className={`p-4 rounded-xl border text-xs flex gap-3 ${
               isMobile 
-                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/30 text-blue-700 dark:text-blue-400' 
+                ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-100 dark:border-primary-900/30 text-primary-700 dark:text-primary-400' 
                 : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-700 dark:text-amber-400'
             }`}>
               <div className={`p-1 rounded-full h-fit mt-0.5 ${
                 isMobile 
-                  ? 'bg-blue-100 dark:bg-blue-800' 
+                  ? 'bg-primary-100 dark:bg-primary-800' 
                   : 'bg-amber-100 dark:bg-amber-800'
               }`}>
                 {isMobile 
-                  ? <CloudUpload size={12} className="text-blue-600 dark:text-blue-300" /> 
+                  ? <CloudUpload size={12} className="text-primary-600 dark:text-primary-300" /> 
                   : <Cloud size={12} className="text-amber-600 dark:text-amber-300" />
                 }
               </div>
@@ -202,13 +202,13 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     {t('learning.generateCards.generating')}
                   </span>
-                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
                     {t('learning.generateCards.progress', { current: generateProgress.current, total: generateProgress.total })}
                   </span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
                   <div 
-                    className="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
+                    className="bg-gradient-to-r from-primary-500 to-violet-500 h-full rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -235,7 +235,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
               {isMobile && !isMobileAIConfigured ? (
                 <button
                   onClick={handleGoToSettings}
-                  className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
+                  className="px-8 py-2.5 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Settings size={18} />
                   {t('learning.generateCards.goToSettings')}
@@ -244,7 +244,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 <button
                   onClick={handleConfirm}
                   disabled={isLoading || types.length === 0}
-                  className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
+                  className="px-8 py-2.5 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
                   {t('learning.generateCards.startGenerate')}

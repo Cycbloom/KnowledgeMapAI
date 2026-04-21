@@ -1,5 +1,6 @@
 import { request, getAIConfig, getApiUrl } from './client';
 import { useStore } from '../../store/useStore';
+import { getAILanguage } from '../../hooks/useAILanguage';
 
 interface Source {
   id: string;
@@ -16,9 +17,10 @@ export const ragApi = {
     history?: Array<{ role: 'user' | 'assistant'; content: string }>;
     provider?: string; 
     model?: string; 
+    language?: string;
   }) => {
     const config = getAIConfig('text');
-    const payload = { ...data };
+    const payload = { ...data, language: data.language || getAILanguage() };
     if (!payload.provider && config.provider) payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
     return request('/rag/chat', { method: 'POST', body: JSON.stringify(payload) });
@@ -32,12 +34,13 @@ export const ragApi = {
       history?: Array<{ role: 'user' | 'assistant'; content: string }>;
       provider?: string; 
       model?: string; 
+      language?: string;
     }, 
     onChunk: (content: string) => void,
     onSources?: (sources: Source[]) => void
   ) => {
     const config = getAIConfig('text');
-    const payload = { ...data };
+    const payload = { ...data, language: data.language || getAILanguage() };
     if (!payload.provider && config.provider) payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
 

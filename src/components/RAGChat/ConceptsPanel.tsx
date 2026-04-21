@@ -53,7 +53,7 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
               </div>
               <button
                 onClick={() => onAddConcept(concept)}
-                className="ml-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="ml-2 p-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 title="添加到图谱"
               >
                 <Plus size={14} />
@@ -65,7 +65,7 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
       {onAddAll && (
         <button
           onClick={onAddAll}
-          className="w-full mt-3 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+          className="w-full mt-3 p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
         >
           全部添加到图谱
         </button>

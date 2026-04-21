@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+﻿import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -182,7 +182,7 @@ export const QuizPreview: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Loader2 size={48} className={`animate-spin mx-auto mb-4 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
+          <Loader2 size={48} className={`animate-spin mx-auto mb-4 ${isDark ? 'text-primary-400' : 'text-primary-600'}`} />
           <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>加载测验中...</p>
         </div>
       </div>
@@ -197,7 +197,7 @@ export const QuizPreview: React.FC = () => {
           <p className="text-red-500 mb-4">加载测验失败</p>
           <button
             onClick={() => navigate('/study')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
             返回学习页面
           </button>
@@ -249,7 +249,7 @@ export const QuizPreview: React.FC = () => {
                 )}
                 <div className="flex flex-wrap gap-4 text-sm">
                   <div className={`flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                    <Layers size={16} className="text-indigo-400" />
+                    <Layers size={16} className="text-primary-400" />
                     <span>{cards.length} 道题目</span>
                   </div>
                   <div className={`flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
@@ -271,7 +271,7 @@ export const QuizPreview: React.FC = () => {
                 {isReady && (
                   <button
                     onClick={handleStartPractice}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                   >
                     <Play size={18} />
                     开始练习
@@ -335,7 +335,7 @@ export const QuizPreview: React.FC = () => {
         {regeneratingCardId && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className={`p-6 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
-              <Loader2 size={32} className="animate-spin mx-auto mb-3 text-indigo-500" />
+              <Loader2 size={32} className="animate-spin mx-auto mb-3 text-primary-500" />
               <p className={isDark ? 'text-slate-300' : 'text-gray-600'}>正在重新生成题目...</p>
             </div>
           </div>

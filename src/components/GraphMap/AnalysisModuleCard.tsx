@@ -23,16 +23,16 @@ const moduleIcons = {
 
 const moduleColors = {
   relations: {
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    border: 'border-blue-200 dark:border-blue-800',
-    icon: 'text-blue-500',
-    check: 'bg-blue-500',
+    bg: 'bg-primary-50 dark:bg-primary-900/20',
+    border: 'border-primary-200 dark:border-primary-800',
+    icon: 'text-primary-500',
+    check: 'bg-primary-500',
   },
   crossDomain: {
-    bg: 'bg-purple-50 dark:bg-purple-900/20',
-    border: 'border-purple-200 dark:border-purple-800',
-    icon: 'text-purple-500',
-    check: 'bg-purple-500',
+    bg: 'bg-primary-50 dark:bg-primary-900/20',
+    border: 'border-primary-200 dark:border-primary-800',
+    icon: 'text-primary-500',
+    check: 'bg-primary-500',
   },
   learningPaths: {
     bg: 'bg-green-50 dark:bg-green-900/20',
@@ -121,7 +121,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
             </div>
 
             {isLoading && (
-              <div className="flex items-center gap-1 text-xs text-purple-500">
+              <div className="flex items-center gap-1 text-xs text-primary-500">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 <span>分析中...</span>
               </div>

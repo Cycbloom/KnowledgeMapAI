@@ -28,40 +28,40 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         <div className="p-6 overflow-y-auto max-h-[70vh] grid grid-cols-1 md:grid-cols-2 gap-8">
           
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-blue-600 mb-2">
+            <div className="flex items-center gap-2 text-primary-600 mb-2">
               <MousePointer2 size={20} />
               <h3 className="font-bold text-lg">{t('helpGuide.mouseControls.title')}</h3>
             </div>
-            <div className="bg-blue-50/50 rounded-xl p-4 space-y-3 border border-blue-100">
+            <div className="bg-primary-50/50 rounded-xl p-4 space-y-3 border border-primary-100">
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.rotateView')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-blue-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.rotateViewShortcut')}</span>
+                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.rotateViewShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.panCanvas')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-blue-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.panCanvasShortcut')}</span>
+                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.panCanvasShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.zoomView')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-blue-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.zoomViewShortcut')}</span>
+                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.zoomViewShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.selectNode')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-blue-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.selectNodeShortcut')}</span>
+                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.selectNodeShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.boxSelect')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-blue-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.boxSelectShortcut')}</span>
+                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.boxSelectShortcut')}</span>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-purple-600 mb-2">
+            <div className="flex items-center gap-2 text-primary-600 mb-2">
               <Keyboard size={20} />
               <h3 className="font-bold text-lg">{t('helpGuide.keyboardShortcuts.title')}</h3>
             </div>
-            <div className="bg-purple-50/50 rounded-xl p-4 space-y-3 border border-purple-100">
+            <div className="bg-primary-50/50 rounded-xl p-4 space-y-3 border border-primary-100">
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-medium">{t('helpGuide.keyboardShortcuts.undo')}</span>
                 <div className="flex gap-1">
@@ -92,21 +92,21 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-2 text-indigo-600 mb-2">
+            <div className="flex items-center gap-2 text-primary-600 mb-2">
               <Sparkles size={20} />
               <h3 className="font-bold text-lg">{t('helpGuide.aiFeatures.title')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                  <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+               <div className="bg-primary-50/50 p-4 rounded-xl border border-primary-100">
+                  <h4 className="font-bold text-primary-800 mb-2 flex items-center gap-2">
                     <Command size={16} /> {t('helpGuide.aiFeatures.smartExpand.title')}
                   </h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
                     {t('helpGuide.aiFeatures.smartExpand.description')}
                   </p>
                </div>
-               <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                  <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+               <div className="bg-primary-50/50 p-4 rounded-xl border border-primary-100">
+                  <h4 className="font-bold text-primary-800 mb-2 flex items-center gap-2">
                     <Command size={16} /> {t('helpGuide.aiFeatures.autoQuestion.title')}
                   </h4>
                   <p className="text-sm text-gray-600 leading-relaxed">

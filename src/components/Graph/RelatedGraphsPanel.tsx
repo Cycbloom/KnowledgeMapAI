@@ -142,7 +142,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleNavigate(relation.targetGraphId)}
-                        className="p-1.5 text-gray-400 hover:text-indigo-500 rounded"
+                        className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
                         title="打开图谱"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -186,7 +186,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleNavigate(relation.targetGraphId)}
-                        className="p-1.5 text-gray-400 hover:text-indigo-500 rounded"
+                        className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
                         title="打开图谱"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -230,7 +230,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleNavigate(relation.targetGraphId)}
-                        className="p-1.5 text-gray-400 hover:text-indigo-500 rounded"
+                        className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
                         title="打开图谱"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />

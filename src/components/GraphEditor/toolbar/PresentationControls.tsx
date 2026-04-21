@@ -42,7 +42,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
   return (
     <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 rounded-full shadow-xl border border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-4 z-50 transition-all duration-300 animate-in slide-in-from-bottom-10 fade-in">
       <div className="flex items-center gap-2 mr-2">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
+        <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-full text-primary-600 dark:text-primary-400">
           <MonitorPlay size={20} />
         </div>
         <div className="flex flex-col">
@@ -68,7 +68,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
         {onTogglePlay && (
           <button
             onClick={onTogglePlay}
-            className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors shadow-md mx-1"
+            className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors shadow-md mx-1"
             title={isPlaying ? "暂停" : "自动播放"}
           >
             {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}

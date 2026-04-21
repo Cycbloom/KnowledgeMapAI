@@ -271,7 +271,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
         <div 
           className={`w-full flex items-center pr-2 py-1.5 cursor-pointer text-sm transition-colors group
             ${isSelected
-              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
+              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           style={{ paddingLeft: `${paddingLeft}px` }}
@@ -295,7 +295,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
           
           {node.level && (
             <span className={`text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block
-               ${isSelected ? 'bg-blue-100 dark:bg-blue-800 text-blue-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+               ${isSelected ? 'bg-primary-100 dark:bg-primary-800 text-primary-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
               {node.level}
             </span>
           )}
@@ -327,7 +327,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
         key={node.id}
         className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group cursor-pointer
           ${isSelected
-            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
+            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
             : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         onClick={() => onNodeClick(node)}
@@ -375,7 +375,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
       style={{ width: sidebarWidth }}
     >
       <div
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-blue-500 transition-colors"
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-primary-500 transition-colors"
         onMouseDown={startResizing}
       />
       
@@ -387,7 +387,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                 onClick={() => setSidebarMode('outline')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   sidebarMode === 'outline'
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                     : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
@@ -398,14 +398,14 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                 onClick={handleSwitchToConnections}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   sidebarMode === 'connections'
-                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                     : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <Link size={14} />
                 连接
                 {crossGraphConnections.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-purple-500 text-white rounded-full">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-500 text-white rounded-full">
                     {crossGraphConnections.length}
                   </span>
                 )}
@@ -429,7 +429,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                     placeholder="搜索节点..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-md text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                    className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-md text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -513,7 +513,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
               <div className="p-3">
                 <button
                   onClick={() => aiOps?.handleAnalyzeCrossGraphConnections?.()}
-                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Sparkles size={16} />
                   AI 分析连接
@@ -524,17 +524,17 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                   {crossGraphConnections.map((conn) => (
                     <div
                       key={conn.id}
-                      className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800"
+                      className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <div className="w-2 h-2 rounded-full bg-primary-500" />
                         <span className="text-sm font-medium truncate flex-1">{conn.node1.title}</span>
                       </div>
                       <div className="flex items-center justify-center my-1">
-                        <svg className="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-4 h-4 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M7 17L17 7M17 7H7M17 7V17" />
                         </svg>
-                        <span className="text-xs text-purple-600 dark:text-purple-400 ml-1">相同知识点</span>
+                        <span className="text-xs text-primary-600 dark:text-primary-400 ml-1">相同知识点</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />

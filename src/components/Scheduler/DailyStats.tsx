@@ -153,7 +153,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
         className="mb-6"
       >
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-          <TrendingUp size={20} className="text-cyan-500" />
+          <TrendingUp size={20} className="text-primary-500" />
           每日统计
         </h3>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -163,11 +163,11 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard
-          icon={<Clock size={20} className="text-cyan-500" />}
+          icon={<Clock size={20} className="text-primary-500" />}
           label="专注时长"
           value={formatDuration(stats.total_duration)}
           subValue={formatDurationDetailed(stats.total_duration)}
-          color="bg-cyan-500"
+          color="bg-primary-500"
           delay={0.1}
         />
         <StatCard
@@ -200,11 +200,11 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="relative p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border border-cyan-200 dark:border-cyan-800/50"
+        className="relative p-4 rounded-xl bg-gradient-to-r from-primary-500/10 to-violet-500/10 border border-primary-200 dark:border-primary-800/50"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-500">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-primary-500 to-violet-500">
               <Zap size={20} className="text-white" />
             </div>
             <div>
@@ -222,7 +222,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
               initial={{ width: 0 }}
               animate={{ width: `${productivityScore}%` }}
               transition={{ delay: 0.7, duration: 0.5 }}
-              className="h-full bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full"
+              className="h-full bg-gradient-to-r from-primary-500 to-violet-500 rounded-full"
             />
           </div>
         </div>

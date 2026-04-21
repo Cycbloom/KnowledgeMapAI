@@ -30,11 +30,11 @@ const getNodeLevelColor = (level: NodeLevel, isDark: boolean) => {
   if (isDark) {
     switch (level) {
       case "root":
-        return "bg-blue-600 text-white";
+        return "bg-primary-600 text-white";
       case "core":
-        return "bg-indigo-600 text-white";
+        return "bg-primary-600 text-white";
       case "sub":
-        return "bg-purple-600 text-white";
+        return "bg-primary-600 text-white";
       case "normal":
         return "bg-slate-600 text-white";
       case "leaf":
@@ -45,11 +45,11 @@ const getNodeLevelColor = (level: NodeLevel, isDark: boolean) => {
   }
   switch (level) {
     case "root":
-      return "bg-blue-500 text-white";
+      return "bg-primary-500 text-white";
     case "core":
-      return "bg-indigo-500 text-white";
+      return "bg-primary-500 text-white";
     case "sub":
-      return "bg-purple-500 text-white";
+      return "bg-primary-500 text-white";
     case "normal":
       return "bg-gray-500 text-white";
     case "leaf":
@@ -118,8 +118,8 @@ const TreeNodeItem: React.FC<{
               placeholder={t("templates.node.title")}
               className={`flex-1 px-2 py-1 text-sm rounded border outline-none transition-all ${
                 isDark
-                  ? "bg-slate-800 border-slate-600 text-white focus:border-blue-500"
-                  : "bg-white border-gray-200 text-gray-900 focus:border-blue-500"
+                  ? "bg-slate-800 border-slate-600 text-white focus:border-primary-500"
+                  : "bg-white border-gray-200 text-gray-900 focus:border-primary-500"
               }`}
             />
             <select
@@ -156,8 +156,8 @@ const TreeNodeItem: React.FC<{
             rows={2}
             className={`w-full px-2 py-1 text-xs rounded border outline-none transition-all resize-none ${
               isDark
-                ? "bg-slate-800 border-slate-600 text-slate-300 placeholder-slate-500 focus:border-blue-500"
-                : "bg-white border-gray-200 text-gray-600 placeholder-gray-400 focus:border-blue-500"
+                ? "bg-slate-800 border-slate-600 text-slate-300 placeholder-slate-500 focus:border-primary-500"
+                : "bg-white border-gray-200 text-gray-600 placeholder-gray-400 focus:border-primary-500"
             }`}
           />
 
@@ -166,8 +166,8 @@ const TreeNodeItem: React.FC<{
               onClick={() => onAddChild(node.id)}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 isDark
-                  ? "text-blue-400 hover:bg-blue-900/30"
-                  : "text-blue-600 hover:bg-blue-50"
+                  ? "text-primary-400 hover:bg-primary-900/30"
+                  : "text-primary-600 hover:bg-primary-50"
               }`}
             >
               <Plus size={12} />
@@ -464,8 +464,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     placeholder={t("templates.form.name")}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all ${
                       isDark
-                        ? "bg-slate-800 border-slate-600 text-white focus:border-blue-500"
-                        : "bg-white border-gray-200 text-gray-900 focus:border-blue-500"
+                        ? "bg-slate-800 border-slate-600 text-white focus:border-primary-500"
+                        : "bg-white border-gray-200 text-gray-900 focus:border-primary-500"
                     }`}
                   />
                 </div>
@@ -484,8 +484,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     rows={2}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all resize-none ${
                       isDark
-                        ? "bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500"
-                        : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500"
+                        ? "bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-primary-500"
+                        : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500"
                     }`}
                   />
                 </div>
@@ -544,8 +544,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   onClick={() => handleAddNode()}
                   className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     isDark
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-blue-500 text-white hover:bg-blue-600"
+                      ? "bg-primary-600 text-white hover:bg-primary-700"
+                      : "bg-primary-500 text-white hover:bg-primary-600"
                   }`}
                 >
                   <Plus size={14} />
@@ -606,8 +606,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   disabled={nodes.length < 2}
                   className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                     isDark
-                      ? "bg-purple-600 text-white hover:bg-purple-700"
-                      : "bg-purple-500 text-white hover:bg-purple-600"
+                      ? "bg-primary-600 text-white hover:bg-primary-700"
+                      : "bg-primary-500 text-white hover:bg-primary-600"
                   }`}
                 >
                   <Plus size={14} />
@@ -663,8 +663,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           <button
             onClick={handleSave}
             disabled={!isValid}
-            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-              isMobile ? "w-full shadow-lg shadow-blue-600/20" : ""
+            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-medium bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+              isMobile ? "w-full shadow-lg shadow-primary-600/20" : ""
             }`}
           >
             {t("templates.button.save")}

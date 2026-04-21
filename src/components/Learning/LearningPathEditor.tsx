@@ -108,14 +108,14 @@ const SortableNode: React.FC<SortableNodeProps> = ({
 
   const statusIcons = {
     pending: <Circle className="w-5 h-5 text-gray-400" />,
-    in_progress: <Play className="w-5 h-5 text-blue-500" />,
+    in_progress: <Play className="w-5 h-5 text-primary-500" />,
     completed: <CheckCircle2 className="w-5 h-5 text-green-500" />,
     skipped: <SkipForward className="w-5 h-5 text-orange-500" />,
   };
 
   const statusColors = {
     pending: isDark ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-200',
-    in_progress: isDark ? 'bg-blue-900/20 border-blue-700' : 'bg-blue-50 border-blue-200',
+    in_progress: isDark ? 'bg-primary-900/20 border-primary-700' : 'bg-primary-50 border-primary-200',
     completed: isDark ? 'bg-green-900/20 border-green-700' : 'bg-green-50 border-green-200',
     skipped: isDark ? 'bg-orange-900/20 border-orange-700' : 'bg-orange-50 border-orange-200',
   };
@@ -365,7 +365,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       `}>
         <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
-            <Target className="w-5 h-5 text-indigo-500" />
+            <Target className="w-5 h-5 text-primary-500" />
             <div>
               <h2 className="text-lg font-semibold">学习路径编辑器</h2>
               {learningPath && (
@@ -393,12 +393,12 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                     {learningPath.completed_nodes ?? 0} 已完成
                   </span>
                   <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4 text-blue-500" />
+                    <Clock className="w-4 h-4 text-primary-500" />
                     {learningPath.estimated_hours?.toFixed(1) ?? '-'} 小时
                   </span>
                   {learningPath.target_completion_date && (
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4 text-purple-500" />
+                      <Calendar className="w-4 h-4 text-primary-500" />
                       {new Date(learningPath.target_completion_date).toLocaleDateString()}
                     </span>
                   )}
@@ -406,7 +406,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 <div className="flex-1 mx-4">
                   <div className={`h-2 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
                     <div 
-                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                      className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-500"
                       style={{ width: `${learningPath.progress_percentage ?? 0}%` }}
                     />
                   </div>
@@ -457,7 +457,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                     <button
                       onClick={handleAddNode}
                       disabled={!selectedNewNode || isSaving}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
                     >
                       {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : '添加'}
                     </button>
@@ -483,7 +483,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
               <button
                 onClick={handleGeneratePath}
                 disabled={isGenerating}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-lg hover:from-primary-700 hover:to-primary-700 disabled:opacity-50"
               >
                 {isGenerating ? (
                   <>
@@ -518,7 +518,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
               <button
                 onClick={handleGeneratePath}
                 disabled={isGenerating}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-gradient-to-r from-primary-600 to-primary-600 text-white hover:from-primary-700 hover:to-primary-700 disabled:opacity-50`}
               >
                 {isGenerating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -538,7 +538,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
               <button
                 onClick={handleSaveOrder}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 保存更改

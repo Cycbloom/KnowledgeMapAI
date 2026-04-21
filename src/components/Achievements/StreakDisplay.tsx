@@ -20,8 +20,8 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
   
   const streakConfig = [
     { key: 'daily', label: t('achievements.streak.daily'), icon: Calendar, color: 'from-orange-500 to-red-500', milestones: [7, 14, 30, 60, 100] },
-    { key: 'weekly', label: t('achievements.streak.weekly'), icon: Flame, color: 'from-blue-500 to-cyan-500', milestones: [4, 8, 12] },
-    { key: 'monthly', label: t('achievements.streak.monthly'), icon: Award, color: 'from-purple-500 to-pink-500', milestones: [3, 6, 12] },
+    { key: 'weekly', label: t('achievements.streak.weekly'), icon: Flame, color: 'from-primary-500 to-primary-500', milestones: [4, 8, 12] },
+    { key: 'monthly', label: t('achievements.streak.monthly'), icon: Award, color: 'from-primary-500 to-pink-500', milestones: [3, 6, 12] },
     { key: 'quarterly', label: t('achievements.streak.quarterly'), icon: Award, color: 'from-green-500 to-emerald-500', milestones: [2, 4] },
   ];
   const streaks = [

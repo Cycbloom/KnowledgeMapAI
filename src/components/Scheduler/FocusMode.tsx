@@ -202,9 +202,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                 className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/30">
-                    <Shield size={16} className="text-cyan-400" />
-                    <span className="text-sm text-cyan-300">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-500/20 border border-primary-500/30">
+                    <Shield size={16} className="text-primary-400" />
+                    <span className="text-sm text-primary-300">
                       专注模式已开启
                     </span>
                   </div>
@@ -223,7 +223,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                       </span>
                       <div className="w-16 h-1.5 bg-slate-600 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-cyan-400 rounded-full transition-all duration-1000"
+                          className="h-full bg-primary-400 rounded-full transition-all duration-1000"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
@@ -294,7 +294,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                             onClick={() => handlePresetClick(preset)}
                             className={`px-3 py-1 rounded-lg text-xs transition-all ${
                               activePresetId === preset.id
-                                ? "bg-cyan-500/30 text-cyan-300 border border-cyan-500/50"
+                                ? "bg-primary-500/30 text-primary-300 border border-primary-500/50"
                                 : "bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent"
                             }`}
                             whileHover={{ scale: 1.05 }}
@@ -329,7 +329,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                                   parseFloat(e.target.value),
                                 )
                               }
-                              className="w-16 accent-cyan-500"
+                              className="w-16 accent-primary-500"
                             />
                             <button
                               onClick={() => removeNoise(noise.type)}
@@ -362,7 +362,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                                 onClick={() => handleNoiseToggle(option.id)}
                                 className={`p-2 rounded-lg flex flex-col items-center gap-1 transition-all ${
                                   isActive
-                                    ? "bg-cyan-500/30 text-cyan-300 border border-cyan-500/50"
+                                    ? "bg-primary-500/30 text-primary-300 border border-primary-500/50"
                                     : "bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent"
                                 }`}
                                 title={option.label}
@@ -383,7 +383,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
 
                   <button
                     onClick={() => setShowNoiseSelector(!showNoiseSelector)}
-                    className="text-xs text-cyan-400 hover:text-cyan-300 mb-4 w-full text-center"
+                    className="text-xs text-primary-400 hover:text-primary-300 mb-4 w-full text-center"
                   >
                     {showNoiseSelector ? "收起" : "展开更多声音"}
                   </button>
@@ -412,9 +412,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
               ease: "linear",
             }}
           >
-            <div className="absolute inset-0 rounded-full border border-cyan-500/10" />
-            <div className="absolute inset-4 rounded-full border border-cyan-500/5" />
-            <div className="absolute inset-8 rounded-full border border-cyan-500/10" />
+            <div className="absolute inset-0 rounded-full border border-primary-500/10" />
+            <div className="absolute inset-4 rounded-full border border-primary-500/5" />
+            <div className="absolute inset-8 rounded-full border border-primary-500/10" />
           </motion.div>
         </motion.div>
       )}

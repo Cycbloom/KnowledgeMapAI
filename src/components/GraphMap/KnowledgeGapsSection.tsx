@@ -188,7 +188,7 @@ export const KnowledgeGapsSection: React.FC<KnowledgeGapsSectionProps> = ({
                                 {onGraphClick && gap.related_graphs[i] ? (
                                   <button
                                     onClick={() => onGraphClick(gap.related_graphs[i])}
-                                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                                    className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
                                   >
                                     {title}
                                     <ExternalLink className="w-2.5 h-2.5" />

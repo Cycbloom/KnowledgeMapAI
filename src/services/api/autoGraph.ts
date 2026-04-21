@@ -1,14 +1,10 @@
-import { request, getAIConfig } from './client';
-import type { TemplateCategory, LayoutSuggestion, NodeLevel } from '@shared/types/graph';
-import { useLearningSettingsStore } from '../../store/useLearningSettingsStore';
-
-const getCurrentAILanguage = (): string => {
-  const aiLanguage = useLearningSettingsStore.getState().aiLanguage;
-  if (aiLanguage === 'auto') {
-    return 'en-US';
-  }
-  return aiLanguage;
-};
+import { request, getAIConfig } from "./client";
+import type {
+  TemplateCategory,
+  LayoutSuggestion,
+  NodeLevel,
+} from "@shared/types/graph";
+import { getAILanguage } from "../../hooks/useAILanguage";
 
 export interface GenerateTemplatesData {
   topic: string;
@@ -47,7 +43,7 @@ export interface GeneratedTemplate {
   edges: TemplateEdgeData[];
   layoutSuggestion: LayoutSuggestion;
   estimatedNodes?: number;
-  difficulty?: 'easy' | 'medium' | 'hard';
+  difficulty?: "easy" | "medium" | "hard";
   tags?: string[];
   reasoning?: string;
 }
@@ -67,7 +63,7 @@ export interface ApplyTemplateData {
   template?: GeneratedTemplate;
   templateId?: string;
   topic: string;
-  style?: 'academic' | 'practical' | 'beginner' | 'custom';
+  style?: "academic" | "practical" | "beginner" | "custom";
   customPrompt?: string;
   graph_id: string;
   provider?: string;
@@ -106,7 +102,7 @@ export interface ApplyTemplateResult {
 export const autoGraphApi = {
   init: (data: {
     topic: string;
-    style?: 'academic' | 'practical' | 'beginner' | 'custom';
+    style?: "academic" | "practical" | "beginner" | "custom";
     customPrompt?: string;
     sources?: string[];
     graph_id?: string;
@@ -114,71 +110,102 @@ export const autoGraphApi = {
     model?: string;
     language?: string;
   }) => {
-    const config = getAIConfig('text');
-    const payload = { style: 'academic', ...data, language: data.language || getCurrentAILanguage() };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
+    const config = getAIConfig("text");
+    const payload = {
+      style: "academic",
+      ...data,
+      language: data.language || getAILanguage(),
+    };
+    if (!payload.provider && config.provider)
+      payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
-    return request('/auto-graph/init', { method: 'POST', body: JSON.stringify(payload) });
+    return request("/auto-graph/init", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
-  
+
   expand: (data: {
     node_id: string;
     node_title: string;
     node_content?: string;
     node_level?: string;
     graph_id: string;
-    style?: 'academic' | 'practical' | 'beginner' | 'custom';
+    style?: "academic" | "practical" | "beginner" | "custom";
     customPrompt?: string;
     existing_children?: Array<{ title: string; content?: string }>;
     provider?: string;
     model?: string;
     language?: string;
   }) => {
-    const config = getAIConfig('text');
-    const payload = { style: 'academic', ...data, language: data.language || getCurrentAILanguage() };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
+    const config = getAIConfig("text");
+    const payload = {
+      style: "academic",
+      ...data,
+      language: data.language || getAILanguage(),
+    };
+    if (!payload.provider && config.provider)
+      payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
-    return request('/auto-graph/expand', { method: 'POST', body: JSON.stringify(payload) });
+    return request("/auto-graph/expand", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
-  
+
   saveNodes: (data: {
     graph_id: string;
-    nodes: Array<{ 
+    nodes: Array<{
       id?: string;
-      title: string; 
-      content?: string; 
+      title: string;
+      content?: string;
       level?: string;
       parentId?: string;
     }>;
-  }) => request('/auto-graph/save-nodes', { method: 'POST', body: JSON.stringify(data) }),
-  
-  optimizePrompt: (data: {
-    topic: string;
-    currentPrompt?: string;
-  }) => request('/auto-graph/optimize-prompt', { method: 'POST', body: JSON.stringify(data) }),
-
-  generateEmbeddings: (limit?: number) => 
-    request('/auto-graph/generate-embeddings', { 
-      method: 'POST', 
-      body: JSON.stringify({ limit }) 
+  }) =>
+    request("/auto-graph/save-nodes", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 
-  getEmbeddingStatus: () => 
-    request('/auto-graph/embedding-status', { method: 'GET' }),
+  optimizePrompt: (data: { topic: string; currentPrompt?: string }) =>
+    request("/auto-graph/optimize-prompt", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
-  generateTemplates: (data: GenerateTemplatesData): Promise<GenerateTemplatesResult> => {
-    const config = getAIConfig('text');
+  generateEmbeddings: (limit?: number) =>
+    request("/auto-graph/generate-embeddings", {
+      method: "POST",
+      body: JSON.stringify({ limit }),
+    }),
+
+  getEmbeddingStatus: () =>
+    request("/auto-graph/embedding-status", { method: "GET" }),
+
+  generateTemplates: (
+    data: GenerateTemplatesData,
+  ): Promise<GenerateTemplatesResult> => {
+    const config = getAIConfig("text");
     const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.provider && config.provider)
+      payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
-    return request('/auto-graph/generate-templates', { method: 'POST', body: JSON.stringify(payload) });
+    return request("/auto-graph/generate-templates", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 
   applyTemplate: (data: ApplyTemplateData): Promise<ApplyTemplateResult> => {
-    const config = getAIConfig('text');
-    const payload = { style: 'academic', ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
+    const config = getAIConfig("text");
+    const payload = { style: "academic", ...data };
+    if (!payload.provider && config.provider)
+      payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
-    return request('/auto-graph/apply-template', { method: 'POST', body: JSON.stringify(payload) });
+    return request("/auto-graph/apply-template", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 };

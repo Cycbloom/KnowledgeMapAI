@@ -213,7 +213,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <Zap className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {t("promptConfig.title")}
             </h2>
@@ -245,7 +245,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                     }}
                     className={`w-full p-3 rounded-lg border text-left transition-all ${
                       isSelected
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
                         : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                     }`}
                   >
@@ -253,7 +253,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                       <div
                         className={`p-1.5 rounded ${
                           isSelected
-                            ? "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400"
+                            ? "bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400"
                             : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                         }`}
                       >
@@ -263,7 +263,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                         {scenario.name}
                       </span>
                       {effective.scope !== "system" && (
-                        <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
+                        <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400">
                           {getScopeLabel(effective.scope)}
                         </span>
                       )}
@@ -286,7 +286,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
               <div className="h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded text-purple-600 dark:text-purple-400">
+                    <div className="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded text-primary-600 dark:text-primary-400">
                       {selectedScenario?.icon}
                     </div>
                     <div>
@@ -320,7 +320,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
               <div className="h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded text-purple-600 dark:text-purple-400">
+                    <div className="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded text-primary-600 dark:text-primary-400">
                       {selectedScenario.icon}
                     </div>
                     <div>
@@ -356,14 +356,14 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                       </p>
                       <ul className="space-y-1 text-xs">
                         <li className="flex items-center gap-2">
-                          <Network size={12} className="text-purple-500" />
+                          <Network size={12} className="text-primary-500" />
                           <span>
                             <strong>图谱级</strong>
                             ：仅对当前图谱生效，优先级最高
                           </span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <User size={12} className="text-blue-500" />
+                          <User size={12} className="text-primary-500" />
                           <span>
                             <strong>用户级</strong>：对您的所有图谱生效
                           </span>
@@ -398,16 +398,16 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                 <div className="flex-1 overflow-y-auto space-y-4">
                   {graphId && (
                     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                      <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20">
+                      <div className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20">
                         <div className="flex items-center gap-2">
                           <Network
                             size={16}
-                            className="text-purple-600 dark:text-purple-400"
+                            className="text-primary-600 dark:text-primary-400"
                           />
                           <span className="font-medium text-gray-900 dark:text-white">
                             图谱级模板
                           </span>
-                          <span className="text-xs text-purple-600 dark:text-purple-400">
+                          <span className="text-xs text-primary-600 dark:text-primary-400">
                             最高优先级
                           </span>
                         </div>
@@ -422,7 +422,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                           )}
                           <button
                             onClick={() => handleStartEdit("graph")}
-                            className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
                           >
                             <Edit size={12} />
                             {getTemplateContent(selectedScenario.id, "graph")
@@ -442,16 +442,16 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                   )}
 
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20">
+                    <div className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20">
                       <div className="flex items-center gap-2">
                         <User
                           size={16}
-                          className="text-blue-600 dark:text-blue-400"
+                          className="text-primary-600 dark:text-primary-400"
                         />
                         <span className="font-medium text-gray-900 dark:text-white">
                           用户级模板
                         </span>
-                        <span className="text-xs text-blue-600 dark:text-blue-400">
+                        <span className="text-xs text-primary-600 dark:text-primary-400">
                           全局生效
                         </span>
                       </div>
@@ -466,7 +466,7 @@ export const PromptConfigPanel: React.FC<PromptConfigPanelProps> = ({
                         )}
                         <button
                           onClick={() => handleStartEdit("user")}
-                          className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                          className="flex items-center gap-1 px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
                         >
                           <Edit size={12} />
                           {getTemplateContent(selectedScenario.id, "user")

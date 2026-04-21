@@ -142,9 +142,9 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
       label: t("graphMap.analysis.custom"),
       description: t("graphMap.analysis.customDesc"),
       icon: <Settings2 className="w-4 h-4" />,
-      color: "text-purple-600 dark:text-purple-400",
-      bgColor: "bg-purple-100 dark:bg-purple-900/40",
-      hoverBgColor: "hover:bg-purple-50 dark:hover:bg-purple-900/20",
+      color: "text-primary-600 dark:text-primary-400",
+      bgColor: "bg-primary-100 dark:bg-primary-900/40",
+      hoverBgColor: "hover:bg-primary-50 dark:hover:bg-primary-900/20",
     },
   ];
 
@@ -200,7 +200,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
                   }}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-sm first:rounded-t-lg last:rounded-b-lg ${
                     filterMode === option.value
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                      ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600"
                   }`}
                 >
@@ -236,7 +236,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
                   }}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-sm first:rounded-t-lg last:rounded-b-lg ${
                     filterMode === option.value
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                      ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600"
                   }`}
                 >
@@ -276,7 +276,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={onCreateRelation}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500 text-white rounded-lg text-sm font-medium"
           >
             <Network className="w-4 h-4" />
             <span>{t("graphMap.toolbar.createRelation")}</span>
@@ -308,7 +308,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
                     onDomainGenerate();
                     setShowMoreMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30"
                 >
                   <Globe className="w-4 h-4" />
                   {t("graphMap.toolbar.domainGenerate")}
@@ -380,7 +380,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
           </button>
           <button
             onClick={onDomainGenerate}
-            className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg"
+            className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg"
             title={t("graphMap.toolbar.domainGenerate")}
           >
             <Globe className="w-5 h-5" />
@@ -388,7 +388,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
           <div className="relative" ref={analyzeMenuRef}>
             <button
               onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
-              className="p-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200"
+              className="p-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-200"
               title={t("graphMap.analysis.title")}
             >
               <Sparkles className="w-5 h-5" />
@@ -444,7 +444,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
           </button>
           <button
             onClick={onCreateRelation}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500 text-white rounded-lg text-sm font-medium"
           >
             <Network className="w-4 h-4" />
             <span>{t("graphMap.toolbar.createRelation")}</span>
@@ -466,7 +466,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
         <button
           onClick={onDomainGenerate}
-          className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+          className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
           title={t("graphMap.toolbar.domainGenerate")}
         >
           <Globe className="w-5 h-5" />
@@ -475,7 +475,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
         <div className="relative" ref={analyzeMenuRef}>
           <button
             onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-200"
             title={t("graphMap.analysis.title")}
           >
             <Sparkles className="w-4 h-4" />
@@ -539,7 +539,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
         <button
           onClick={onCreateRelation}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
           <Network className="w-4 h-4" />
           <span className="text-sm font-medium">
@@ -562,7 +562,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
         </button>
 
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
-          <Network className="w-5 h-5 text-blue-500 flex-shrink-0" />
+          <Network className="w-5 h-5 text-primary-500 flex-shrink-0" />
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
             {t("graphMap.title")}
           </h1>
@@ -587,7 +587,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
                 <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden xl:block flex-shrink-0" />
                 <button
                   onClick={onReturnToGraph}
-                  className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium max-w-[120px]"
+                  className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors text-sm font-medium max-w-[120px]"
                   title={fromGraphTitle || ""}
                 >
                   <ArrowRightLeft className="w-4 h-4 flex-shrink-0" />
@@ -612,7 +612,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
         {onManageDomains && domains && domains.length > 0 && (
           <button
             onClick={onManageDomains}
-            className="px-2 py-1 text-xs text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            className="px-2 py-1 text-xs text-gray-400 dark:text-gray-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
             title={t("graphMap.toolbar.manageDomains")}
           >
             {t("graphMap.toolbar.manage")}

@@ -93,7 +93,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex justify-between items-center">
-             <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+             <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
                <Sparkles size={20} />
                <h3 className="text-lg font-semibold">批量生成题目</h3>
              </div>
@@ -117,14 +117,14 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                   onClick={() => handleSelectPreset(preset)}
                   className={`cursor-pointer p-3 rounded-lg border transition-all
                     ${packTemplate === preset.id 
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400' 
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 dark:border-primary-400' 
                       : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <span className={`font-semibold text-sm ${packTemplate === preset.id ? 'text-blue-600 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                    <span className={`font-semibold text-sm ${packTemplate === preset.id ? 'text-primary-600 dark:text-primary-300' : 'text-slate-700 dark:text-slate-200'}`}>
                       {preset.label}
                     </span>
-                    {packTemplate === preset.id && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                    {packTemplate === preset.id && <div className="w-2 h-2 rounded-full bg-primary-500" />}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{preset.desc}</p>
                 </div>
@@ -133,7 +133,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                 onClick={() => setPackTemplate(null)}
                 className={`cursor-pointer p-3 rounded-lg border transition-all text-center text-xs font-medium
                   ${packTemplate === null 
-                    ? 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300' 
+                    ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300' 
                     : 'border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700'}`}
               >
                 自定义设置
@@ -160,7 +160,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                       onClick={() => handleToggleType(type.id)}
                       className={`cursor-pointer px-2 py-2 rounded-md border text-xs font-medium transition-all text-center
                         ${types.includes(type.id) 
-                          ? 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300' 
+                          ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:border-primary-400 dark:text-primary-300' 
                           : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400'}`}
                     >
                       {type.label}
@@ -173,7 +173,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
               <div className="space-y-3">
                 <div className="flex justify-between">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">每节点生成数量</label>
-                    <span className="text-sm text-blue-600 font-medium">{count}</span>
+                    <span className="text-sm text-primary-600 font-medium">{count}</span>
                 </div>
                 <input 
                   type="range" 
@@ -192,7 +192,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
           )}
 
           {/* Info */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-xs text-blue-600 dark:text-blue-400">
+          <div className="bg-primary-50 dark:bg-primary-900/20 p-3 rounded text-xs text-primary-600 dark:text-primary-400">
              预计生成: <span className="font-bold">{selectedNodeIds.length * count}</span> 道题目
           </div>
         </div>
@@ -208,7 +208,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
           <button
             onClick={handleGenerate}
             disabled={isLoading || types.length === 0}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] justify-center"
+            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] justify-center"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
             开始生成

@@ -75,8 +75,8 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-100 dark:bg-cyan-500/20 rounded-xl">
-            <TrendingUp size={20} className="text-cyan-500" />
+          <div className="p-2 bg-primary-100 dark:bg-primary-500/20 rounded-xl">
+            <TrendingUp size={20} className="text-primary-500" />
           </div>
           <div>
             <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -92,7 +92,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
               onClick={() => {}}
               className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 period === p
-                  ? "bg-white dark:bg-slate-700 text-cyan-500 shadow-sm"
+                  ? "bg-white dark:bg-slate-700 text-primary-500 shadow-sm"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
@@ -104,7 +104,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
 
       {loading ? (
         <div className="h-40 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500" />
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
         </div>
       ) : (
         <>
@@ -120,7 +120,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
                   transition={{ delay: i * 0.03 }}
                 >
                   <motion.div
-                    className="w-full rounded-t bg-gradient-to-t from-cyan-500 to-blue-500"
+                    className="w-full rounded-t bg-gradient-to-t from-primary-500 to-primary-500"
                     initial={{ height: 0 }}
                     animate={{ height: `${Math.max(height, 2)}%` }}
                     transition={{ delay: i * 0.03, duration: 0.3 }}
@@ -134,7 +134,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
           <div className="flex items-center justify-between text-sm">
             <div className="text-slate-500">
               平均:{" "}
-              <span className="font-medium text-cyan-500">
+              <span className="font-medium text-primary-500">
                 {formatDuration(avgDuration)}
               </span>
             </div>
@@ -149,7 +149,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
           <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-4 text-xs text-slate-500">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-gradient-to-r from-cyan-500 to-blue-500" />
+                <div className="w-3 h-3 rounded bg-gradient-to-r from-primary-500 to-primary-500" />
                 <span>专注时长</span>
               </div>
               <div className="flex items-center gap-1">

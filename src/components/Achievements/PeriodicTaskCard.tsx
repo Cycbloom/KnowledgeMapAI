@@ -18,9 +18,9 @@ interface PeriodicTaskCardProps {
 }
 
 const taskTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string; unit: string }> = {
-  focus: { label: '专注时间', icon: Clock, color: 'from-blue-500 to-indigo-500', unit: '分钟' },
+  focus: { label: '专注时间', icon: Clock, color: 'from-primary-500 to-primary-500', unit: '分钟' },
   study: { label: '学习卡片', icon: BookOpen, color: 'from-green-500 to-emerald-500', unit: '张' },
-  create: { label: '创建节点', icon: Zap, color: 'from-purple-500 to-pink-500', unit: '个' },
+  create: { label: '创建节点', icon: Zap, color: 'from-primary-500 to-pink-500', unit: '个' },
   tasks: { label: '完成任务', icon: ListTodo, color: 'from-orange-500 to-amber-500', unit: '个' },
 };
 
@@ -88,7 +88,7 @@ export const PeriodicTaskCard: React.FC<PeriodicTaskCardProps> = ({ task }) => {
               {task.xp_reward} XP
             </span>
             <span className="flex items-center gap-1">
-              <span className="text-purple-500">🎫</span>
+              <span className="text-primary-500">🎫</span>
               {task.pass_points} 积分
             </span>
           </div>

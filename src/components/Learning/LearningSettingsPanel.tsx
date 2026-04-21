@@ -264,8 +264,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
     <>
       <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/20">
-            <Settings size={18} className="text-cyan-600 dark:text-cyan-400" />
+          <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-500/20">
+            <Settings size={18} className="text-primary-600 dark:text-primary-400" />
           </div>
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
             设置
@@ -286,7 +286,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           onClick={() => setActiveTab("reading")}
           className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all ${
             activeTab === "reading"
-              ? "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500"
+              ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 border-b-2 border-primary-500"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
           }`}
         >
@@ -297,7 +297,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           onClick={() => setActiveTab("prompt")}
           className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all ${
             activeTab === "prompt"
-              ? "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-b-2 border-purple-500"
+              ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 border-b-2 border-primary-500"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
           }`}
         >
@@ -318,7 +318,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {t("learning.settings.fontSize")}
                 </span>
-                <span className="ml-auto text-sm font-mono text-cyan-600 dark:text-cyan-400">
+                <span className="ml-auto text-sm font-mono text-primary-600 dark:text-primary-400">
                   {fontSize}px
                 </span>
               </div>
@@ -330,7 +330,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   step="1"
                   value={fontSize}
                   onChange={(e) => setFontSize(parseInt(e.target.value))}
-                  className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-cyan-500"
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-primary-500"
                 />
                 <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500">
                   <span>12px</span>
@@ -384,7 +384,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     whileTap={{ scale: 0.98 }}
                     className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                       readingMode === mode.id
-                        ? "border-cyan-500 bg-gradient-to-br " + mode.color
+                        ? "border-primary-500 bg-gradient-to-br " + mode.color
                         : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                     }`}
                   >
@@ -392,14 +392,14 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       size={20}
                       className={
                         readingMode === mode.id
-                          ? "text-cyan-600 dark:text-cyan-400"
+                          ? "text-primary-600 dark:text-primary-400"
                           : "text-slate-400 dark:text-slate-500"
                       }
                     />
                     <span
                       className={`text-xs font-medium ${
                         readingMode === mode.id
-                          ? "text-cyan-700 dark:text-cyan-300"
+                          ? "text-primary-700 dark:text-primary-300"
                           : "text-slate-600 dark:text-slate-400"
                       }`}
                     >
@@ -442,7 +442,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     whileTap={{ scale: 0.98 }}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                       paginationMode === mode.id
-                        ? "bg-white dark:bg-slate-600 text-cyan-600 dark:text-cyan-400 shadow-sm"
+                        ? "bg-white dark:bg-slate-600 text-primary-600 dark:text-primary-400 shadow-sm"
                         : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                   >
@@ -471,14 +471,14 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       label: t("learning.settings.widthFull"),
                       icon: Maximize2,
                       color:
-                        "from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20",
+                        "from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20",
                     },
                     {
                       id: "comfortable",
                       label: t("learning.settings.widthComfortable"),
                       icon: FileText,
                       color:
-                        "from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20",
+                        "from-violet-50 to-primary-50 dark:from-violet-900/20 dark:to-primary-900/20",
                     },
                     {
                       id: "narrow",
@@ -496,7 +496,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     whileTap={{ scale: 0.98 }}
                     className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                       contentWidthMode === mode.id
-                        ? "border-cyan-500 bg-gradient-to-br " + mode.color
+                        ? "border-primary-500 bg-gradient-to-br " + mode.color
                         : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                     }`}
                   >
@@ -504,14 +504,14 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       size={20}
                       className={
                         contentWidthMode === mode.id
-                          ? "text-cyan-600 dark:text-cyan-400"
+                          ? "text-primary-600 dark:text-primary-400"
                           : "text-slate-400 dark:text-slate-500"
                       }
                     />
                     <span
                       className={`text-xs font-medium ${
                         contentWidthMode === mode.id
-                          ? "text-cyan-700 dark:text-cyan-300"
+                          ? "text-primary-700 dark:text-primary-300"
                           : "text-slate-600 dark:text-slate-400"
                       }`}
                     >
@@ -556,7 +556,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       }}
                       className={`w-full p-3 rounded-lg border text-left transition-all ${
                         isSelected
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                          ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
                           : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                       }`}
                     >
@@ -564,7 +564,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                         <div
                           className={`p-1.5 rounded ${
                             isSelected
-                              ? "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400"
+                              ? "bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400"
                               : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                           }`}
                         >
@@ -574,7 +574,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                           {scenario.name}
                         </span>
                         {effective.scope !== "system" && (
-                          <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
+                          <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400">
                             {getScopeLabel(effective.scope)}
                           </span>
                         )}
@@ -597,7 +597,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 <div className="h-full flex flex-col">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded text-purple-600 dark:text-purple-400">
+                      <div className="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded text-primary-600 dark:text-primary-400">
                         {selectedScenario?.icon}
                       </div>
                       <div>
@@ -631,7 +631,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 <div className="h-full flex flex-col">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded text-purple-600 dark:text-purple-400">
+                      <div className="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded text-primary-600 dark:text-primary-400">
                         {selectedScenario.icon}
                       </div>
                       <div>
@@ -667,7 +667,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                         </p>
                         <ul className="space-y-1 text-xs">
                           <li className="flex items-center gap-2">
-                            <Network size={12} className="text-purple-500" />
+                            <Network size={12} className="text-primary-500" />
                             <span>
                               <strong>
                                 {t("learning.settings.scopeGraph")}
@@ -676,7 +676,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                             </span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <User size={12} className="text-blue-500" />
+                            <User size={12} className="text-primary-500" />
                             <span>
                               <strong>
                                 {t("learning.settings.scopeUser")}
@@ -717,16 +717,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   <div className="flex-1 overflow-y-auto space-y-4">
                     {graphId && (
                       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                        <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20">
+                        <div className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20">
                           <div className="flex items-center gap-2">
                             <Network
                               size={16}
-                              className="text-purple-600 dark:text-purple-400"
+                              className="text-primary-600 dark:text-primary-400"
                             />
                             <span className="font-medium text-gray-900 dark:text-white">
                               {t("learning.settings.graphLevelTemplate")}
                             </span>
-                            <span className="text-xs text-purple-600 dark:text-purple-400">
+                            <span className="text-xs text-primary-600 dark:text-primary-400">
                               {t("learning.settings.highestPriority")}
                             </span>
                           </div>
@@ -744,7 +744,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                             )}
                             <button
                               onClick={() => handleStartEdit("graph")}
-                              className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
                             >
                               <Edit size={12} />
                               {getTemplateContent(selectedScenario.id, "graph")
@@ -764,16 +764,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     )}
 
                     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                      <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20">
+                      <div className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20">
                         <div className="flex items-center gap-2">
                           <User
                             size={16}
-                            className="text-blue-600 dark:text-blue-400"
+                            className="text-primary-600 dark:text-primary-400"
                           />
                           <span className="font-medium text-gray-900 dark:text-white">
                             {t("learning.settings.userLevelTemplate")}
                           </span>
-                          <span className="text-xs text-blue-600 dark:text-blue-400">
+                          <span className="text-xs text-primary-600 dark:text-primary-400">
                             {t("learning.settings.globalEffect")}
                           </span>
                         </div>
@@ -788,7 +788,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                           )}
                           <button
                             onClick={() => handleStartEdit("user")}
-                            className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700"
                           >
                             <Edit size={12} />
                             {getTemplateContent(selectedScenario.id, "user")

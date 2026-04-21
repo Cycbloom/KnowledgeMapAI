@@ -90,8 +90,8 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       onClick={() => onClick?.(quiz)}
       className={`group p-5 rounded-2xl border transition-all hover:shadow-xl flex flex-col h-full cursor-pointer ${
         isDark
-          ? 'bg-slate-800 border-slate-700 hover:border-indigo-500/50'
-          : 'bg-white border-gray-100 hover:border-indigo-200 shadow-sm'
+          ? 'bg-slate-800 border-slate-700 hover:border-primary-500/50'
+          : 'bg-white border-gray-100 hover:border-primary-200 shadow-sm'
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -121,7 +121,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
 
       <div className="flex flex-wrap gap-2 mb-4">
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
-          <Layers size={12} className="text-indigo-400" />
+          <Layers size={12} className="text-primary-400" />
           <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>{quiz.card_count} 张卡片</span>
         </div>
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
@@ -180,8 +180,8 @@ export const QuizCard: React.FC<QuizCardProps> = ({
               }}
               className={`ml-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
                 isDark
-                  ? 'text-indigo-400 hover:bg-indigo-500/10'
-                  : 'text-indigo-600 hover:bg-indigo-50'
+                  ? 'text-primary-400 hover:bg-primary-500/10'
+                  : 'text-primary-600 hover:bg-primary-50'
               }`}
             >
               <Play size={12} />

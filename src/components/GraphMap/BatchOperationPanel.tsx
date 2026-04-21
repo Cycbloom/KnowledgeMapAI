@@ -31,14 +31,14 @@ export const BatchOperationPanel: React.FC<BatchOperationPanelProps> = ({
       <div className="h-6 w-px bg-gray-200 dark:bg-slate-600" />
       <button
         onClick={onBatchCreateRelation}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/60 transition-colors"
       >
         <Link2 className="w-4 h-4" />
         {t('graphMap.batch.createRelation')}
       </button>
       <button
         onClick={onBatchAnalyze}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/60 transition-colors"
       >
         <Sparkles className="w-4 h-4" />
         {t('graphMap.batch.analyze')}

@@ -159,8 +159,8 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
       className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}
     >
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
-          <PieChart size={20} className="text-purple-500" />
+        <div className="p-2 bg-primary-100 dark:bg-primary-500/20 rounded-xl">
+          <PieChart size={20} className="text-primary-500" />
         </div>
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -172,7 +172,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
 
       {loading ? (
         <div className="h-48 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500" />
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
         </div>
       ) : distribution.length === 0 ? (
         <div className="h-48 flex items-center justify-center text-slate-400">

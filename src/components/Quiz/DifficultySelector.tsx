@@ -58,11 +58,11 @@ const difficultyOptions: DifficultyOption[] = [
     label: '混合',
     description: '综合各难度层次的题目',
     icon: <Layers size={20} />,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-500',
-    darkBgColor: 'dark:bg-purple-900/20',
-    darkBorderColor: 'dark:border-purple-500',
+    color: 'text-primary-600',
+    bgColor: 'bg-primary-50',
+    borderColor: 'border-primary-500',
+    darkBgColor: 'dark:bg-primary-900/20',
+    darkBorderColor: 'dark:border-primary-500',
   },
 ];
 
@@ -124,7 +124,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                       <div className={`w-2 h-2 rounded-full ${
                         option.id === 'easy' ? 'bg-green-500' :
                         option.id === 'medium' ? 'bg-orange-500' :
-                        option.id === 'hard' ? 'bg-red-500' : 'bg-purple-500'
+                        option.id === 'hard' ? 'bg-red-500' : 'bg-primary-500'
                       }`} />
                     )}
                   </div>
@@ -143,7 +143,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                   className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center ${
                     option.id === 'easy' ? 'bg-green-500' :
                     option.id === 'medium' ? 'bg-orange-500' :
-                    option.id === 'hard' ? 'bg-red-500' : 'bg-purple-500'
+                    option.id === 'hard' ? 'bg-red-500' : 'bg-primary-500'
                   }`}
                 >
                   <svg

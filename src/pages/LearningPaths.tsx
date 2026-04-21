@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
@@ -41,8 +41,8 @@ const statusConfig: Record<
   },
   active: {
     labelKey: "learningPaths.status.active",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    color: "text-primary-600 dark:text-primary-400",
+    bgColor: "bg-primary-50 dark:bg-primary-900/20",
     icon: <Play size={16} />,
   },
   completed: {
@@ -188,7 +188,7 @@ export const LearningPaths = () => {
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return "bg-green-500";
-    if (percentage >= 50) return "bg-blue-500";
+    if (percentage >= 50) return "bg-primary-500";
     if (percentage >= 25) return "bg-yellow-500";
     return "bg-gray-300";
   };
@@ -200,7 +200,7 @@ export const LearningPaths = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
+            <div className="p-2.5 bg-gradient-to-br from-primary-500 to-primary-500 rounded-xl">
               <Route className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -221,7 +221,7 @@ export const LearningPaths = () => {
               setNewPathTargetDate("");
               setIsCreating(true);
             }}
-            className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
+            className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
           >
             <Plus size={20} />
             <span>{t("learningPaths.actions.newPath")}</span>
@@ -241,8 +241,8 @@ export const LearningPaths = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
                 isDark
-                  ? "bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  : "bg-white border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                  : "bg-white border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
               }`}
             />
           </div>
@@ -254,7 +254,7 @@ export const LearningPaths = () => {
                 onClick={() => setSelectedStatus(status)}
                 className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-medium transition-all ${
                   selectedStatus === status
-                    ? "bg-blue-600 text-white"
+                    ? "bg-primary-600 text-white"
                     : isDark
                       ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                       : "bg-white text-gray-700 hover:bg-gray-100"
@@ -269,7 +269,7 @@ export const LearningPaths = () => {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           </div>
         ) : filteredPaths.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">
@@ -287,7 +287,7 @@ export const LearningPaths = () => {
             {!searchQuery && selectedStatus === "all" && (
               <button
                 onClick={() => setIsCreating(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors"
               >
                 {t("learningPaths.actions.createPath")}
               </button>
@@ -327,7 +327,7 @@ export const LearningPaths = () => {
                           {t(statusConfig[path.status].labelKey)}
                         </span>
                         {path.ai_generated && (
-                          <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
+                          <span className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400">
                             <Sparkles size={12} />
                             AI
                           </span>
@@ -422,7 +422,7 @@ export const LearningPaths = () => {
                       e.stopPropagation();
                       handleStatusChange(path, "active");
                     }}
-                    className="w-full py-2 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                    className="w-full py-2 rounded-xl font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
                   >
                     {t("learningPaths.actions.continue")}
                   </button>
@@ -468,8 +468,8 @@ export const LearningPaths = () => {
                   placeholder={t("learningPaths.createDialog.pathNamePlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                   autoFocus
                 />
@@ -487,8 +487,8 @@ export const LearningPaths = () => {
                   placeholder={t("learningPaths.createDialog.descriptionPlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                   rows={3}
                 />
@@ -507,8 +507,8 @@ export const LearningPaths = () => {
                   placeholder={t("learningPaths.createDialog.goalPlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                 />
               </div>
@@ -525,8 +525,8 @@ export const LearningPaths = () => {
                     onChange={(e) => setNewPathDailyMinutes(Number(e.target.value))}
                     className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                       isDark
-                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                     }`}
                   >
                     <option value={15}>{t("learningPaths.time.minutes", { count: 15 })}</option>
@@ -551,8 +551,8 @@ export const LearningPaths = () => {
                     min={new Date().toISOString().split("T")[0]}
                     className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                       isDark
-                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                     }`}
                   />
                 </div>
@@ -572,7 +572,7 @@ export const LearningPaths = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                   disabled={createMutation.isPending || !newPathTitle.trim()}
                 >
                   {createMutation.isPending ? t("learningPaths.createDialog.creating") : t("learningPaths.createDialog.createNow")}

@@ -164,7 +164,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
             className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700"
             onClick={e => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-indigo-500 p-6 text-white">
+            <div className="sticky top-0 bg-gradient-to-r from-primary-500 to-primary-500 p-6 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white/20 rounded-xl">
@@ -206,13 +206,13 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
 
             {loading ? (
               <div className="p-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
               </div>
             ) : (
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
-                    <div className="text-3xl font-bold text-cyan-500">{weekStats?.completed_tasks || 0}</div>
+                    <div className="text-3xl font-bold text-primary-500">{weekStats?.completed_tasks || 0}</div>
                     <div className="text-xs text-slate-500 mt-1">完成任务</div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
@@ -222,7 +222,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     <div className="text-xs text-slate-500 mt-1">专注时长</div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
-                    <div className="text-3xl font-bold text-purple-500">{weekReviews.length}</div>
+                    <div className="text-3xl font-bold text-primary-500">{weekReviews.length}</div>
                     <div className="text-xs text-slate-500 mt-1">每日回顾</div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
@@ -236,7 +236,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                 {weekStats?.daily && weekStats.daily.length > 0 && (
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
-                      <BarChart3 size={16} className="text-purple-500" />
+                      <BarChart3 size={16} className="text-primary-500" />
                       每日完成趋势
                     </h3>
                     <div className="flex items-end gap-1 h-20">
@@ -247,7 +247,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                         return (
                           <div key={i} className="flex-1 flex flex-col items-center">
                             <motion.div
-                              className="w-full bg-gradient-to-t from-purple-500 to-indigo-500 rounded-t"
+                              className="w-full bg-gradient-to-t from-primary-500 to-primary-500 rounded-t"
                               initial={{ height: 0 }}
                               animate={{ height: `${Math.max(height, 5)}%` }}
                               transition={{ delay: i * 0.1 }}
@@ -264,14 +264,14 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
 
                 <div>
                   <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
-                    <Target size={16} className="text-cyan-500" />
+                    <Target size={16} className="text-primary-500" />
                     本周总结
                   </h3>
                   <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="这周整体感觉如何？有什么收获？"
-                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
 
@@ -285,19 +285,19 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                       value={improvements}
                       onChange={(e) => setImprovements(e.target.value)}
                       placeholder="下周想要改进什么？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
-                      <Brain size={16} className="text-purple-500" />
+                      <Brain size={16} className="text-primary-500" />
                       本周学习收获
                     </h3>
                     <textarea
                       value={learnings}
                       onChange={(e) => setLearnings(e.target.value)}
                       placeholder="这周学到了什么新东西？"
-                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </div>
@@ -314,7 +314,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                   <motion.button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-medium hover:from-purple-600 hover:to-indigo-600 transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-600 hover:to-primary-600 transition-all disabled:opacity-50"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

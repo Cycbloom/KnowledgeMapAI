@@ -47,9 +47,9 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
     },
     upcoming: {
       label: t('scheduler.review.upcoming'),
-      color: "text-blue-500 dark:text-blue-400",
-      bg: "bg-blue-100 dark:bg-blue-500/20",
-      border: "border-blue-300 dark:border-blue-400",
+      color: "text-primary-500 dark:text-primary-400",
+      bg: "bg-primary-100 dark:bg-primary-500/20",
+      border: "border-primary-300 dark:border-primary-400",
       icon: Calendar,
     },
     future: {
@@ -72,10 +72,10 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
 
   const getMasteryLabel = (level: number): { label: string; color: string } => {
     if (level < 0.2) return { label: t('scheduler.review.mastery.beginner'), color: "text-slate-500" };
-    if (level < 0.4) return { label: t('scheduler.review.mastery.introductory'), color: "text-blue-500" };
-    if (level < 0.6) return { label: t('scheduler.review.mastery.familiar'), color: "text-cyan-500" };
+    if (level < 0.4) return { label: t('scheduler.review.mastery.introductory'), color: "text-primary-500" };
+    if (level < 0.6) return { label: t('scheduler.review.mastery.familiar'), color: "text-primary-500" };
     if (level < 0.8) return { label: t('scheduler.review.mastery.proficient'), color: "text-emerald-500" };
-    return { label: t('scheduler.review.mastery.master'), color: "text-purple-500" };
+    return { label: t('scheduler.review.mastery.master'), color: "text-primary-500" };
   };
 
   const formatNextReviewDate = (dateStr: string): string => {
@@ -168,14 +168,14 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
 
         <div className="flex items-center gap-4 mb-4 text-sm">
           <div className="flex items-center gap-1.5">
-            <Brain size={14} className="text-purple-500" />
+            <Brain size={14} className="text-primary-500" />
             <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.masteryLevel')}:</span>
             <span className={`font-medium ${masteryInfo.color}`}>
               {masteryInfo.label}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <TrendingUp size={14} className="text-cyan-500" />
+            <TrendingUp size={14} className="text-primary-500" />
             <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.interval')}:</span>
             <span className="font-medium text-slate-700 dark:text-slate-300">
               {t('scheduler.review.days', { count: task.interval_days })}
@@ -236,7 +236,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             className="mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50"
           >
             <div className="flex items-center gap-2 text-sm">
-              <Calendar size={14} className="text-cyan-500" />
+              <Calendar size={14} className="text-primary-500" />
               <span className="text-slate-600 dark:text-slate-400">
                 {t('scheduler.review.estimatedNextReview')}:
               </span>

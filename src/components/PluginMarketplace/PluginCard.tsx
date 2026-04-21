@@ -40,7 +40,7 @@ export const PluginCard = ({ plugin, isInstalled, onInstall, onUninstall, instal
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 transition-colors hover:shadow-md">
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
           {getPluginLabel(plugin.name).charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
@@ -52,7 +52,7 @@ export const PluginCard = ({ plugin, isInstalled, onInstall, onUninstall, instal
               v{plugin.version}
             </span>
             {plugin.category && (
-              <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded">
+              <span className="text-xs text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-2 py-0.5 rounded">
                 {getCategoryLabel(plugin.category)}
               </span>
             )}
@@ -92,7 +92,7 @@ export const PluginCard = ({ plugin, isInstalled, onInstall, onUninstall, instal
           <button
             onClick={onInstall}
             disabled={installing}
-            className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
           >
             {installing ? t("pluginMarketplace.installing") : t("pluginMarketplace.install")}
           </button>

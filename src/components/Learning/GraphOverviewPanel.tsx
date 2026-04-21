@@ -78,7 +78,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
     <div className="graph-overview-panel h-full w-full flex flex-col p-6 overflow-hidden">
       <div className="flex items-center justify-between flex-shrink-0 mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+          <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-500 rounded-lg">
             <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -115,7 +115,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
           {onEdit && (
             <button
               onClick={onEdit}
-              className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-sm hover:from-indigo-600 hover:to-purple-600 flex items-center gap-1 mx-auto"
+              className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg text-sm hover:from-primary-600 hover:to-primary-600 flex items-center gap-1 mx-auto"
             >
               <Edit3 className="w-4 h-4" />
               {t("learning.overview.addInfo")}
@@ -127,7 +127,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
           {graph.description && (
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Info className="w-4 h-4 text-indigo-500" />
+                <Info className="w-4 h-4 text-primary-500" />
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                   {t("learning.overview.description")}
                 </h3>
@@ -141,7 +141,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
           {graph.reference_books && graph.reference_books.length > 0 && (
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
-                <BookMarked className="w-4 h-4 text-indigo-500" />
+                <BookMarked className="w-4 h-4 text-primary-500" />
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                   {t("learning.overview.referenceBooks")}
                 </h3>
@@ -153,7 +153,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                 {graph.reference_books.map((book: ReferenceBook, index: number) => (
                   <div
                     key={index}
-                    className="border-l-2 border-indigo-200 dark:border-indigo-700 pl-3 py-1"
+                    className="border-l-2 border-primary-200 dark:border-primary-700 pl-3 py-1"
                   >
                     <div className="flex items-start justify-between gap-1">
                       <div className="flex-1 min-w-0">
@@ -174,7 +174,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                           href={book.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-shrink-0 p-1.5 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
+                          className="flex-shrink-0 p-1.5 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
                           title={t("learning.overview.viewLink")}
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
           {graph.external_links && graph.external_links.length > 0 && (
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
-                <ExternalLink className="w-4 h-4 text-indigo-500" />
+                <ExternalLink className="w-4 h-4 text-primary-500" />
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                   {t("learning.overview.externalLinks")}
                 </h3>
@@ -214,12 +214,12 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors group"
                     >
-                      <div className="flex-shrink-0 w-8 h-8 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                        <LinkIcon className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary-50 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                        <LinkIcon className="w-4 h-4 text-primary-500 dark:text-primary-400" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 truncate">
                             {link.title}
                           </span>
                           <span className="flex-shrink-0 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300 rounded">
@@ -232,7 +232,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                           </p>
                         )}
                       </div>
-                      <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 flex-shrink-0" />
+                      <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 flex-shrink-0" />
                     </a>
                   );
                 })}
@@ -243,7 +243,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
           {graph.learning_guide && (
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
-                <GraduationCap className="w-4 h-4 text-indigo-500" />
+                <GraduationCap className="w-4 h-4 text-primary-500" />
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                   {t("learning.overview.learningGuide")}
                 </h3>
@@ -293,7 +293,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                        className="text-primary-600 dark:text-primary-400 hover:underline"
                       >
                         {children}
                       </a>
@@ -314,7 +314,7 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                       );
                     },
                     blockquote: ({ children }) => (
-                      <blockquote className="border-l-2 border-indigo-300 dark:border-indigo-700 pl-3 my-2 text-gray-600 dark:text-gray-300 italic">
+                      <blockquote className="border-l-2 border-primary-300 dark:border-primary-700 pl-3 my-2 text-gray-600 dark:text-gray-300 italic">
                         {children}
                       </blockquote>
                     ),

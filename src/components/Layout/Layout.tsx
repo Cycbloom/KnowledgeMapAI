@@ -351,8 +351,8 @@ export const Layout = () => {
                   onClick={() => setIsHelpOpen(true)}
                   className={`p-1.5 rounded-full transition-colors ${
                     isDark
-                      ? "text-slate-400 hover:text-blue-400 hover:bg-slate-800"
-                      : "text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                      ? "text-slate-400 hover:text-primary-400 hover:bg-slate-800"
+                      : "text-gray-500 hover:text-primary-600 hover:bg-primary-50"
                   }`}
                   title={t('layout.helpGuide')}
                 >
@@ -369,8 +369,8 @@ export const Layout = () => {
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                         isDark
-                          ? "bg-indigo-900/50 text-indigo-400"
-                          : "bg-indigo-100 text-indigo-600"
+                          ? "bg-primary-900/50 text-primary-400"
+                          : "bg-primary-100 text-primary-600"
                       }`}
                     >
                       {user.email?.charAt(0).toUpperCase()}

@@ -52,7 +52,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="user@example.com"
                 required
               />
@@ -64,7 +64,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as CollaboratorRole)}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="editor">{COLLABORATOR_ROLE_LABELS.editor}</option>
                 <option value="viewer">{COLLABORATOR_ROLE_LABELS.viewer}</option>
@@ -81,7 +81,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95"
+              className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95"
             >
               邀请
             </button>

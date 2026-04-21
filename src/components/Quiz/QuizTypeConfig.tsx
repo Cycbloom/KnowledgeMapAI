@@ -103,7 +103,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
           题型配置
         </label>
         <div className={`px-3 py-1 rounded-full text-sm font-bold ${
-          isDark ? 'bg-indigo-900/50 text-indigo-300' : 'bg-indigo-100 text-indigo-600'
+          isDark ? 'bg-primary-900/50 text-primary-300' : 'bg-primary-100 text-primary-600'
         }`}>
           预计 {totalCount} 题
         </div>
@@ -130,8 +130,8 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
               className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all ${
                 isSelected
                   ? isDark
-                    ? 'border-indigo-500 bg-indigo-900/20'
-                    : 'border-indigo-500 bg-indigo-50'
+                    ? 'border-primary-500 bg-primary-900/20'
+                    : 'border-primary-500 bg-primary-50'
                   : isDark
                     ? 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                     : 'border-gray-200 bg-white hover:border-gray-300'
@@ -141,8 +141,8 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
                 <div className={`p-2 rounded-lg ${
                   isSelected
                     ? isDark
-                      ? 'bg-indigo-500/20 text-indigo-400'
-                      : 'bg-indigo-100 text-indigo-600'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'bg-primary-100 text-primary-600'
                     : isDark
                       ? 'bg-slate-700 text-slate-400'
                       : 'bg-gray-100 text-gray-500'
@@ -158,7 +158,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
                       {type.label}
                     </span>
                     {isSelected && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />
                     )}
                   </div>
                   <p className={`text-xs mt-0.5 line-clamp-1 ${

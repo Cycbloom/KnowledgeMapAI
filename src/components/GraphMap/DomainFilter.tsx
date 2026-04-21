@@ -41,7 +41,7 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
         onClick={() => onToggle(domain.id)}
         className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-sm rounded-md transition-colors ${
           isSelected
-            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -70,7 +70,7 @@ const DomainTreeItem: React.FC<DomainTreeItemProps> = ({
           </span>
         )}
         {isSelected && (
-          <Check className="w-4 h-4 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+          <Check className="w-4 h-4 flex-shrink-0 text-primary-500 dark:text-primary-400" />
         )}
       </button>
       {hasChildren && isExpanded && (
@@ -203,7 +203,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
         <Globe className="w-4 h-4" />
         <span>领域</span>
         {selectedCount > 0 && (
-          <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-blue-500 text-white text-xs rounded-full">
+          <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-primary-500 text-white text-xs rounded-full">
             {selectedCount}
           </span>
         )}
@@ -220,14 +220,14 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
             onClick={handleSelectAll}
             className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md mb-1 ${
               selectedCount === 0
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
             }`}
           >
             <span className="w-3.5" />
             <span>全部</span>
             {selectedCount === 0 && (
-              <Check className="w-4 h-4 ml-auto text-blue-500 dark:text-blue-400" />
+              <Check className="w-4 h-4 ml-auto text-primary-500 dark:text-primary-400" />
             )}
           </button>
 
@@ -237,7 +237,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索领域..."
-              className="w-full pl-7 pr-3 py-1.5 text-sm border border-gray-200 dark:border-slate-500 rounded-md bg-white dark:bg-slate-600 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
+              className="w-full pl-7 pr-3 py-1.5 text-sm border border-gray-200 dark:border-slate-500 rounded-md bg-white dark:bg-slate-600 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-400 dark:focus:ring-primary-500"
               autoFocus={isOpen}
             />
             <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

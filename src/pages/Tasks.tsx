@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTasks } from "../hooks/queries";
@@ -37,7 +37,7 @@ const getStatusBadgeClass = (status: string) => {
     case "cancelled":
       return "bg-red-50 text-red-700 border-red-200";
     case "in_progress":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "bg-primary-50 text-primary-700 border-primary-200";
     case "pending":
     default:
       return "bg-slate-50 text-slate-700 border-slate-200";
@@ -94,7 +94,7 @@ const FilterTab = ({
     onClick={() => onClick(value)}
     className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
       current === value
-        ? "bg-blue-100 text-blue-700"
+        ? "bg-primary-100 text-primary-700"
         : "text-gray-600 hover:bg-gray-100"
     }`}
   >
@@ -233,7 +233,7 @@ export const Tasks = () => {
           </button>
           <Link
             to="/dashboard"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
+            className="bg-primary-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-primary-700 transition-colors"
           >
             <span>{t("tasks.returnToDashboard")}</span>
             <ArrowRight className="w-4 h-4" />
@@ -280,7 +280,7 @@ export const Tasks = () => {
           <p>{t("tasks.loadTasksFailed", { error: (error as Error).message })}</p>
           <button
             onClick={() => refetch()}
-            className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
+            className="mt-4 text-primary-600 dark:text-primary-400 hover:underline"
           >
             {t("tasks.retry")}
           </button>
@@ -356,7 +356,7 @@ export const Tasks = () => {
                               <button
                                 onClick={() => handleRetry(task.id)}
                                 disabled={retryMutation.isPending}
-                                className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                                className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors"
                                 title={t("tasks.retry")}
                               >
                                 <RotateCw
@@ -396,7 +396,7 @@ export const Tasks = () => {
                                   `/study?node_id=${encodeURIComponent(nodeId)}`,
                                 )
                               }
-                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-primary-200 dark:border-primary-800/50 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
                             >
                               {t("tasks.reviewQuestions")}
                             </button>
@@ -485,7 +485,7 @@ export const Tasks = () => {
                               onClick={() => setPage(p)}
                               className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
                                 page === p
-                                  ? "bg-blue-600 text-white"
+                                  ? "bg-primary-600 text-white"
                                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700"
                               }`}
                             >

@@ -39,7 +39,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; color: string }> = [
-    { value: 'prerequisite', label: '前置知识', color: 'bg-blue-500' },
+    { value: 'prerequisite', label: '前置知识', color: 'bg-primary-500' },
     { value: 'extension', label: '扩展知识', color: 'bg-green-500' },
     { value: 'related', label: '相关知识', color: 'bg-amber-500' },
   ];
@@ -97,14 +97,14 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
+              <Sparkles className="w-5 h-5 text-primary-500" />
               AI 无限扩展知识网络
             </h2>
             <div className="flex items-center gap-2">
               {onEditPrompt && (
                 <button
                   onClick={onEditPrompt}
-                  className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded transition-colors"
                   title="编辑提示词"
                 >
                   <Settings2 className="w-4 h-4" />
@@ -120,13 +120,13 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
           </div>
 
           <div className="p-4 space-y-4">
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300">
+            <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-primary-700 dark:text-primary-300">
                 <Network className="w-4 h-4" />
                 <span className="font-medium">源图谱：</span>
                 <span>{sourceGraphTitle}</span>
               </div>
-              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+              <p className="text-xs text-primary-600 dark:text-primary-400 mt-1">
                 AI 将分析此图谱并自动生成相关的知识图谱
               </p>
             </div>
@@ -143,7 +143,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                     disabled={isRunning}
                     className={`flex-1 p-2 rounded-lg border-2 transition-all text-center ${
                       selectedRelationTypes.includes(option.value)
-                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
                         : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
@@ -244,7 +244,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
             {(isRunning || isSubmitting) && progress && (
               <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
-                  <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                  <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     正在扩展知识网络...
                   </span>
@@ -279,7 +279,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                       {progress.created_graphs.slice(-5).map((g, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs">
                           <div className={`w-2 h-2 rounded-full ${
-                            g.relation_type === 'prerequisite' ? 'bg-blue-500' :
+                            g.relation_type === 'prerequisite' ? 'bg-primary-500' :
                             g.relation_type === 'extension' ? 'bg-green-500' : 'bg-amber-500'
                           }`} />
                           <span className="text-gray-700 dark:text-gray-300 truncate">{g.title}</span>
@@ -316,7 +316,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={selectedRelationTypes.length === 0 || isSubmitting || isRunning}
-                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>

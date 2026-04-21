@@ -184,7 +184,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                 rounded-2xl border transition-all duration-300
                 ${
                   level === 0
-                    ? "border-cyan-300 dark:border-cyan-400/50"
+                    ? "border-primary-300 dark:border-primary-400/50"
                     : level === 1
                       ? "border-emerald-300 dark:border-emerald-400/50"
                       : "border-amber-300 dark:border-amber-400/50"
@@ -198,7 +198,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                     p-4 flex items-center justify-between cursor-pointer
                     ${
                       level === 0
-                        ? "bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20"
+                        ? "bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20"
                         : level === 1
                           ? "bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/20"
                           : "bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/20"
@@ -266,7 +266,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                       transition-all duration-300 whitespace-nowrap min-h-[44px]
                       ${
                         isActive
-                          ? "text-white bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/30"
+                          ? "text-white bg-gradient-to-r from-primary-500 to-primary-500 shadow-lg shadow-primary-500/30"
                           : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
                       }
                     `}
@@ -282,20 +282,20 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
 
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
                 <span className="text-slate-500 dark:text-slate-400">
                   {t('scheduler.queue.pending')}
                 </span>
-                <span className="font-bold text-cyan-600 dark:text-cyan-400">
+                <span className="font-bold text-primary-600 dark:text-primary-400">
                   {stats.pending}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
                 <span className="text-slate-500 dark:text-slate-400">
                   {t('scheduler.queue.inProgress')}
                 </span>
-                <span className="font-bold text-blue-600 dark:text-blue-400">
+                <span className="font-bold text-primary-600 dark:text-primary-400">
                   {stats.inProgress}
                 </span>
               </div>

@@ -27,7 +27,7 @@ const DURATION_OPTIONS = [
 
 const PRIORITY_OPTIONS = [
   { value: 1, label: '低', color: 'text-slate-500 dark:text-slate-400' },
-  { value: 2, label: '中', color: 'text-blue-600 dark:text-blue-400' },
+  { value: 2, label: '中', color: 'text-primary-600 dark:text-primary-400' },
   { value: 3, label: '高', color: 'text-amber-600 dark:text-amber-400' },
   { value: 4, label: '紧急', color: 'text-red-600 dark:text-red-400' },
 ];
@@ -155,7 +155,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="例如：深度学习模板"
-              className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
+              className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
                 errors.name ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
               }`}
             />
@@ -203,9 +203,9 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               </button>
             </div>
             {showHelp && (
-              <div className="mb-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30">
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
-                  使用 <code className="px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20">{'{{变量名}}'}</code> 格式创建可替换的占位符
+              <div className="mb-2 p-3 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/30">
+                <p className="text-xs text-primary-700 dark:text-primary-300 mb-2">
+                  使用 <code className="px-1 py-0.5 rounded bg-primary-100 dark:bg-primary-500/20">{'{{变量名}}'}</code> 格式创建可替换的占位符
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {['topic', 'project', 'task', 'name'].map(p => (
@@ -213,7 +213,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
                       key={p}
                       type="button"
                       onClick={() => insertPlaceholder(p)}
-                      className="px-2 py-1 rounded text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-500/30"
+                      className="px-2 py-1 rounded text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-500/30"
                     >
                       {`{{${p}}}`}
                     </button>
@@ -226,7 +226,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               value={titleTemplate}
               onChange={e => setTitleTemplate(e.target.value)}
               placeholder="例如：学习：{{topic}}"
-              className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
+              className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
                 errors.titleTemplate ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
               }`}
             />
@@ -247,7 +247,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               onChange={e => setDescriptionTemplate(e.target.value)}
               placeholder="可选的描述模板，支持 {{占位符}}..."
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none"
             />
           </div>
 
@@ -260,7 +260,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               <select
                 value={estimatedDuration}
                 onChange={e => setEstimatedDuration(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
               >
                 {DURATION_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -301,7 +301,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               {tags.map(tag => (
                 <span
                   key={tag}
-                  className="px-2.5 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-sm flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 text-sm flex items-center gap-1"
                 >
                   {tag}
                   <button
@@ -334,7 +334,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               onKeyDown={handleKeyDown}
               placeholder="输入自定义标签，按 Enter 添加..."
               disabled={tags.length >= 5}
-              className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
+              className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 disabled:opacity-50"
             />
           </div>
 
@@ -344,7 +344,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               id="isDefault"
               checked={isDefault}
               onChange={e => setIsDefault(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-cyan-500 focus:ring-cyan-500"
+              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-500 focus:ring-primary-500"
             />
             <label htmlFor="isDefault" className="text-sm text-slate-700 dark:text-slate-300">
               设为该分类的默认模板
@@ -362,7 +362,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:from-cyan-400 hover:to-blue-400 transition-all shadow-lg shadow-cyan-500/20 min-h-[44px] touch-target"
+            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target"
           >
             {isEditing ? '保存修改' : '创建模板'}
           </button>

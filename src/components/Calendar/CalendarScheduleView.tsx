@@ -97,9 +97,9 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
   const getEventColor = (event: CalendarEvent) => {
     switch (event.type) {
       case 'task':
-        return { bg: 'bg-blue-500', border: 'border-blue-600', light: 'bg-blue-100 dark:bg-blue-500/20' };
+        return { bg: 'bg-primary-500', border: 'border-primary-600', light: 'bg-primary-100 dark:bg-primary-500/20' };
       case 'study':
-        return { bg: 'bg-purple-500', border: 'border-purple-600', light: 'bg-purple-100 dark:bg-purple-500/20' };
+        return { bg: 'bg-primary-500', border: 'border-primary-600', light: 'bg-primary-100 dark:bg-primary-500/20' };
       case 'review':
         return { bg: 'bg-green-500', border: 'border-green-600', light: 'bg-green-100 dark:bg-green-500/20' };
       default:
@@ -238,7 +238,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
 
           <button
             onClick={() => onAddEvent(currentDate)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <Plus size={16} />
             添加任务
@@ -248,7 +248,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
         {/* Statistics */}
         <div className="flex items-center gap-6 mt-3">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <div className="w-3 h-3 rounded-full bg-primary-500" />
             <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               计划: {formatDuration(scheduleData.stats.plannedMinutes)}
             </span>
@@ -294,8 +294,8 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               key={slot.hour}
               className={`flex h-[80px] border-b ${
                 isDark ? 'border-slate-700/50' : 'border-gray-100'
-              } ${hoveredSlot?.hour === slot.hour ? 'bg-blue-50/50 dark:bg-blue-500/5' : ''} ${
-                dragOverHour === slot.hour ? 'bg-blue-100/50 dark:bg-blue-500/20' : ''
+              } ${hoveredSlot?.hour === slot.hour ? 'bg-primary-50/50 dark:bg-primary-500/5' : ''} ${
+                dragOverHour === slot.hour ? 'bg-primary-100/50 dark:bg-primary-500/20' : ''
               }`}
               onMouseEnter={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -379,8 +379,8 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                   <div className="absolute inset-1 flex items-center justify-center z-10">
                     <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-dashed ${
                       isDark
-                        ? 'border-blue-400 text-blue-400'
-                        : 'border-blue-300 text-blue-500'
+                        ? 'border-primary-400 text-primary-400'
+                        : 'border-primary-300 text-primary-500'
                     }`}>
                       <Move size={14} />
                       <span className="text-sm">移动到 {slot.hour}:00</span>
@@ -393,8 +393,8 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                   <div className="absolute inset-1 flex items-center justify-center">
                     <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-dashed ${
                       isDark
-                        ? 'border-blue-400/50 text-blue-400'
-                        : 'border-blue-300 text-blue-500'
+                        ? 'border-primary-400/50 text-primary-400'
+                        : 'border-primary-300 text-primary-500'
                     }`}>
                       <Plus size={14} />
                       <span className="text-sm">添加任务</span>

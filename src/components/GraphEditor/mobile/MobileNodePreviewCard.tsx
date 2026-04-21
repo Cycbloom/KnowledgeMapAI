@@ -254,8 +254,8 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
             onClick={onOpenDetail}
             className={`flex-1 text-sm px-4 py-3 min-h-[44px] rounded-xl font-medium transition-colors ${
               isDark 
-                ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800' 
-                : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
+                ? 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800' 
+                : 'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700'
             }`}
             aria-label={t("nodeDetail.viewDetails")}
           >

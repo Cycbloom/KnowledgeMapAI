@@ -229,7 +229,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mb-4" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500 mb-4" />
         <p className="text-sm text-gray-500">AI 正在分析图谱内容...</p>
       </div>
     );
@@ -241,7 +241,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     <div className="learning-path-wizard">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Wand2 className="w-5 h-5 text-indigo-500" />
+          <Wand2 className="w-5 h-5 text-primary-500" />
           AI 学习路径规划
         </h3>
         <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             <div
               key={s}
               className={`w-8 h-1 rounded-full transition-colors ${
-                s <= step ? 'bg-indigo-500' : 'bg-gray-200 dark:bg-gray-700'
+                s <= step ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
               }`}
             />
           ))}
@@ -266,7 +266,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Target className="w-4 h-4 text-indigo-500" />
+              <Target className="w-4 h-4 text-primary-500" />
               <span>第 1 步：选择学习目标</span>
             </div>
             
@@ -281,14 +281,14 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                   onClick={() => setSelectedGoal(goal)}
                   className={`w-full p-3 rounded-lg text-left text-sm transition-all ${
                     selectedGoal === goal
-                      ? 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500 text-indigo-700 dark:text-indigo-300'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 text-primary-700 dark:text-primary-300'
                       : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                       selectedGoal === goal
-                        ? 'border-indigo-500 bg-indigo-500'
+                        ? 'border-primary-500 bg-primary-500'
                         : 'border-gray-300 dark:border-gray-600'
                     }`}>
                       {selectedGoal === goal && <Check className="w-3 h-3 text-white" />}
@@ -302,14 +302,14 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                 onClick={() => setSelectedGoal('custom')}
                 className={`w-full p-3 rounded-lg text-left text-sm transition-all ${
                   selectedGoal === 'custom'
-                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500'
+                    ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500'
                     : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                     selectedGoal === 'custom'
-                      ? 'border-indigo-500 bg-indigo-500'
+                      ? 'border-primary-500 bg-primary-500'
                       : 'border-gray-300 dark:border-gray-600'
                   }`}>
                     {selectedGoal === 'custom' && <Check className="w-3 h-3 text-white" />}
@@ -340,7 +340,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <BookOpen className="w-4 h-4 text-indigo-500" />
+              <BookOpen className="w-4 h-4 text-primary-500" />
               <span>第 2 步：评估前置知识</span>
             </div>
             
@@ -389,7 +389,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                             knowledgeAnswers[question.topic] === level
                               ? level === '不了解' 
                                 ? 'bg-red-500 text-white' 
-                                : 'bg-indigo-500 text-white'
+                                : 'bg-primary-500 text-white'
                               : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                           }`}
                         >
@@ -413,7 +413,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <FolderPlus className="w-4 h-4 text-indigo-500" />
+              <FolderPlus className="w-4 h-4 text-primary-500" />
               <span>第 3 步：创建前置知识图谱</span>
             </div>
             
@@ -433,13 +433,13 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                     onClick={() => togglePrerequisite(topic)}
                     className={`w-full p-3 rounded-lg text-left text-sm transition-all flex items-center gap-3 ${
                       selectedPrerequisites.has(topic)
-                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500'
+                        ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500'
                         : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded flex items-center justify-center ${
                       selectedPrerequisites.has(topic)
-                        ? 'bg-indigo-500 text-white'
+                        ? 'bg-primary-500 text-white'
                         : 'border-2 border-gray-300 dark:border-gray-600'
                     }`}>
                       {selectedPrerequisites.has(topic) && <Check className="w-3 h-3" />}
@@ -522,7 +522,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Settings2 className="w-4 h-4 text-indigo-500" />
+              <Settings2 className="w-4 h-4 text-primary-500" />
               <span>{unknownPrerequisites.length > 0 ? '第 4 步' : '第 3 步'}：学习偏好</span>
             </div>
 
@@ -541,7 +541,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                     onChange={(e) => setDailyTime(parseInt(e.target.value))}
                     className="flex-1"
                   />
-                  <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 w-16 text-right">
+                  <span className="text-sm font-medium text-primary-600 dark:text-primary-400 w-16 text-right">
                     {dailyTime} 分钟
                   </span>
                 </div>
@@ -558,7 +558,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
                       onClick={() => setLearningStyle(style.value as any)}
                       className={`w-full p-3 rounded-lg text-left transition-all ${
                         learningStyle === style.value
-                          ? 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500'
+                          ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500'
                           : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
                       }`}
                     >
@@ -585,7 +585,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           <button
             onClick={handleNext}
             disabled={!canProceed()}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             下一步
             <ChevronRight className="w-4 h-4" />
@@ -594,7 +594,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           <button
             onClick={handleComplete}
             disabled={isGenerating}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 disabled:opacity-50"
           >
             {isGenerating ? (
               <>

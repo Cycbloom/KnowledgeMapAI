@@ -100,12 +100,12 @@ const parseAsciiTable = (text: string): ParsedAsciiTable | null => {
 const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean): React.ReactNode => {
   const { headers, rows, isSubRow = [] } = table;
   return (
-    <div className={`overflow-x-auto rounded-lg my-2 ${isDark ? 'border-2 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'border-2 border-blue-300 shadow-md'}`}>
+    <div className={`overflow-x-auto rounded-lg my-2 ${isDark ? 'border-2 border-primary-500/40 shadow-lg shadow-primary-500/10' : 'border-2 border-primary-300 shadow-md'}`}>
       <table className="min-w-full text-sm">
         <thead className={isDark ? 'bg-slate-800/90' : 'bg-gray-100'}>
           <tr>
             {headers.map((header, i) => (
-              <th key={i} className={`px-3 py-1.5 text-left font-semibold text-xs uppercase tracking-wide ${isDark ? 'text-blue-300 border-b border-blue-500/30' : 'text-blue-700 border-b border-blue-200'} whitespace-nowrap`}>
+              <th key={i} className={`px-3 py-1.5 text-left font-semibold text-xs uppercase tracking-wide ${isDark ? 'text-primary-300 border-b border-primary-500/30' : 'text-primary-700 border-b border-primary-200'} whitespace-nowrap`}>
                 {header}
               </th>
             ))}
@@ -118,7 +118,7 @@ const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean): React.R
               <tr key={rowIndex} className={`transition-colors ${
                 isSub
                   ? (isDark ? 'bg-slate-800/30 hover:bg-slate-700/30' : 'bg-gray-50/80 hover:bg-gray-100')
-                  : (isDark ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50')
+                  : (isDark ? 'hover:bg-primary-900/20' : 'hover:bg-primary-50')
               }`}>
                 {row.map((cell, cellIndex) => (
                   <td key={cellIndex} className={`px-3 py-1.5 text-xs font-mono whitespace-nowrap ${
@@ -296,7 +296,7 @@ const OutputItemComponent: React.FC<{
     if (isSuccess) {
       return <CheckCircle size={14} className={isDark ? 'text-green-400' : 'text-green-600'} />;
     }
-    return <Info size={14} className={isDark ? 'text-blue-400' : 'text-blue-600'} />;
+    return <Info size={14} className={isDark ? 'text-primary-400' : 'text-primary-600'} />;
   };
 
   return (
@@ -314,8 +314,8 @@ const OutputItemComponent: React.FC<{
               ? 'border-green-500 bg-green-900/10'
               : 'border-green-500 bg-green-50'
             : isDark
-              ? 'border-blue-500 bg-blue-900/10'
-              : 'border-blue-500 bg-blue-50'
+              ? 'border-primary-500 bg-primary-900/10'
+              : 'border-primary-500 bg-primary-50'
       }`}
     >
       <div className="flex items-start gap-2">

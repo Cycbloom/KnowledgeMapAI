@@ -136,7 +136,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   };
 
   return (
-    <div className={`p-4 sm:p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-indigo-50/50'}`}>
+    <div className={`p-4 sm:p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-primary-50/50'}`}>
       <div className="space-y-4 max-w-2xl">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -244,7 +244,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                     })}
                     <button 
                         onClick={addOption}
-                        className="text-sm text-indigo-500 hover:text-indigo-600 font-medium flex items-center gap-1 min-h-[44px] touch-target"
+                        className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1 min-h-[44px] touch-target"
                     >
                         <Plus size={16} /> 添加选项
                     </button>
@@ -269,7 +269,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                               value={val}
                               checked={formData.answer === val}
                               onChange={e => setFormData({...formData, answer: e.target.value})}
-                              className="w-5 h-5 text-indigo-600"
+                              className="w-5 h-5 text-primary-600"
                           />
                           <span className="text-base">{val === 'True' ? '正确 (True)' : '错误 (False)'}</span>
                       </label>
@@ -315,7 +315,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           <button 
             onClick={handleSubmit}
             disabled={!formData.question || !formData.answer || isSubmitting}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 min-h-[44px] touch-target font-medium"
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 min-h-[44px] touch-target font-medium"
           >
             {isSubmitting ? '保存中...' : '保存'}
           </button>

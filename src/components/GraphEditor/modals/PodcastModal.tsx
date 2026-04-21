@@ -134,11 +134,11 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
           className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-slate-800 dark:to-slate-800">
+          <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-slate-800 dark:to-slate-800">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+              <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-full">
                 <Volume2
-                  className="text-purple-600 dark:text-purple-400"
+                  className="text-primary-600 dark:text-primary-400"
                   size={24}
                 />
               </div>
@@ -163,7 +163,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
           <div className="flex-1 overflow-hidden flex flex-col relative">
             {isGenerating ? (
               <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
                 <p className="text-slate-600 dark:text-slate-300 animate-pulse">
                   正在为您撰写播客脚本...
                 </p>
@@ -198,7 +198,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                     <p>暂无脚本内容</p>
                     <button
                       onClick={generateScript}
-                      className="mt-4 text-purple-600 hover:underline"
+                      className="mt-4 text-primary-600 hover:underline"
                     >
                       点击生成
                     </button>
@@ -209,9 +209,9 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
 
             {/* Audio Visualization (Fake/Simple for now) */}
             {isSpeaking && !isPaused && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-100 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-100 dark:bg-slate-700 overflow-hidden">
                 <motion.div
-                  className="h-full bg-purple-500"
+                  className="h-full bg-primary-500"
                   animate={{
                     width: ["0%", "100%"],
                     x: ["-100%", "100%"],
@@ -249,7 +249,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
               <button
                 onClick={generateScript}
                 disabled={isGenerating || isSpeaking}
-                className="p-2 text-slate-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-50"
+                className="p-2 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-50"
                 title="重新生成脚本"
               >
                 <RefreshCw size={20} />
@@ -258,7 +258,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
               {isSpeaking && !isPaused ? (
                 <button
                   onClick={pause}
-                  className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg transition-transform active:scale-95"
+                  className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-transform active:scale-95"
                 >
                   <Pause size={24} fill="currentColor" />
                 </button>
@@ -266,7 +266,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                 <button
                   onClick={handlePlay}
                   disabled={!script || isGenerating}
-                  className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg transition-transform active:scale-95 disabled:bg-slate-400"
+                  className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-transform active:scale-95 disabled:bg-slate-400"
                 >
                   <Play size={24} fill="currentColor" className="ml-1" />
                 </button>

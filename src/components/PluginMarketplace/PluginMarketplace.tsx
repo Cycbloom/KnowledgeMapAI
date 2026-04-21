@@ -58,11 +58,11 @@ const pluginIcons: Record<string, LucideIcon> = {
 
 const pluginIconColors: Record<string, string> = {
   core: "from-emerald-500 to-teal-600",
-  graph: "from-blue-500 to-indigo-600",
-  ai: "from-purple-500 to-pink-600",
+  graph: "from-primary-500 to-primary-600",
+  ai: "from-primary-500 to-pink-600",
   study: "from-orange-500 to-amber-600",
-  scheduler: "from-cyan-500 to-blue-600",
-  agent: "from-violet-500 to-purple-600",
+  scheduler: "from-primary-500 to-primary-600",
+  agent: "from-violet-500 to-primary-600",
 };
 
 export const PluginMarketplace = () => {
@@ -168,7 +168,7 @@ export const PluginMarketplace = () => {
 
   const getPluginIcon = (name: string): LucideIcon | null => pluginIcons[name] ?? null;
 
-  const getPluginIconColor = (name: string): string => pluginIconColors[name] ?? "from-blue-500 to-purple-600";
+  const getPluginIconColor = (name: string): string => pluginIconColors[name] ?? "from-primary-500 to-primary-600";
 
   return (
     <div className="space-y-4">
@@ -177,7 +177,7 @@ export const PluginMarketplace = () => {
           onClick={() => setActiveTab("browse")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "browse"
-              ? "bg-blue-600 text-white"
+              ? "bg-primary-600 text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
           }`}
         >
@@ -188,7 +188,7 @@ export const PluginMarketplace = () => {
           onClick={() => setActiveTab("installed")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "installed"
-              ? "bg-blue-600 text-white"
+              ? "bg-primary-600 text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
           }`}
         >
@@ -207,13 +207,13 @@ export const PluginMarketplace = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("pluginMarketplace.searchPlaceholder")}
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">{t("pluginMarketplace.allCategories")}</option>
               {categories.map((cat) => (
@@ -280,7 +280,7 @@ export const PluginMarketplace = () => {
                             </span>
                             <span className="text-xs text-gray-500 dark:text-gray-400">v{plugin.version ?? plugin.manifest?.version ?? "?"}</span>
                             {builtin && (
-                              <span className="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                              <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
                                 系统
                               </span>
                             )}

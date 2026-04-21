@@ -95,10 +95,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 max-h-[60vh] overflow-y-auto"
       >
         {results?.answer && (
-          <div className="p-2 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+          <div className="p-2 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20">
             <div className="flex items-center gap-1.5 mb-1">
-              <Sparkles className="w-3 h-3 text-purple-500" />
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">AI 回答</span>
+              <Sparkles className="w-3 h-3 text-primary-500" />
+              <span className="text-xs font-medium text-primary-700 dark:text-primary-300">AI 回答</span>
             </div>
             <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">{results.answer}</p>
           </div>
@@ -107,7 +107,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         {results?.graphs && results.graphs.length > 0 && (
           <div className="py-1.5 border-b border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
-              <Network className="w-3 h-3 text-blue-500" />
+              <Network className="w-3 h-3 text-primary-500" />
               <span>图谱 {results.graphs.length}</span>
             </div>
             <div>
@@ -125,7 +125,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                         className="text-sm text-gray-900 dark:text-white truncate font-medium"
                       />
                       {graph.similarity !== undefined && (
-                        <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
+                        <span className="text-[10px] px-1 py-0.5 rounded bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300">
                           {(graph.similarity * 100).toFixed(0)}%
                         </span>
                       )}
@@ -150,7 +150,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                       )}
                     </div>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 flex-shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 flex-shrink-0" />
                 </button>
               ))}
             </div>

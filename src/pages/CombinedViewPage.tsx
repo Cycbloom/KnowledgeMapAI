@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import { useCombinedView } from '../hooks';
 import { CombinedViewCanvas } from '../components/CombinedView/CombinedViewCanvas';
 import { api } from '../services/api';
@@ -45,7 +45,7 @@ const GraphSelector: React.FC<GraphSelectorProps> = ({ selectedIds, onToggle, on
               type="checkbox"
               checked={selectedIds.includes(graph.id)}
               onChange={() => onToggle(graph.id)}
-              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
             />
             <div className="ml-3">
               <span className="font-medium text-gray-900 dark:text-white">{graph.title}</span>
@@ -62,7 +62,7 @@ const GraphSelector: React.FC<GraphSelectorProps> = ({ selectedIds, onToggle, on
         <button
           onClick={onConfirm}
           disabled={selectedIds.length < 2}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           开始联立视图 ({selectedIds.length} 个图谱)
         </button>
@@ -201,7 +201,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">加载联立视图...</p>
         </div>
       </div>
@@ -215,7 +215,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
           <p className="text-red-600 dark:text-red-400">{error}</p>
           <button
             onClick={() => setShowSelector(true)}
-            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
           >
             重新选择图谱
           </button>
@@ -307,7 +307,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
         <div className="absolute top-4 left-4 bg-gray-800/80 backdrop-blur-sm rounded-lg p-3 text-sm">
           <div className="text-gray-300 space-y-1">
             <p>总知识点: <span className="text-white font-medium">{stats.totalNodes}</span></p>
-            <p>共享知识点: <span className="text-blue-400 font-medium">{stats.sharedNodes}</span></p>
+            <p>共享知识点: <span className="text-primary-400 font-medium">{stats.sharedNodes}</span></p>
             <p>边数量: <span className="text-white font-medium">{stats.totalEdges}</span></p>
           </div>
         </div>
@@ -351,7 +351,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
             <div className="mt-2">
               <span className={`text-xs px-2 py-0.5 rounded ${
                 selectedNode.isShared 
-                  ? 'bg-blue-900/50 text-blue-300' 
+                  ? 'bg-primary-900/50 text-primary-300' 
                   : 'bg-gray-700 text-gray-300'
               }`}>
                 {selectedNode.isShared ? '共享知识点' : '独立知识点'}

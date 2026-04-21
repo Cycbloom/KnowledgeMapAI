@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from "react";
+﻿import { useState, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
@@ -229,7 +229,7 @@ export const Settings = () => {
           <div>
             <button
               onClick={handleSaveAllSettings}
-              className="px-4 py-3 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm min-h-[44px]"
+              className="px-4 py-3 rounded-md bg-primary-600 text-white hover:bg-primary-700 flex items-center gap-2 transition-colors shadow-sm min-h-[44px]"
               disabled={updateProfileMutation.isPending}
             >
               <Save className="w-4 h-4" />
@@ -255,7 +255,7 @@ export const Settings = () => {
               onClick={() => setTheme("light")}
               className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 themeMode === "light"
-                  ? "bg-blue-50 border-blue-200 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300"
+                  ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
                   : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
               }`}
             >
@@ -269,7 +269,7 @@ export const Settings = () => {
               onClick={() => setTheme("dark")}
               className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 themeMode === "dark"
-                  ? "bg-slate-800 border-slate-700 text-white ring-1 ring-slate-600 dark:bg-blue-600 dark:border-blue-500"
+                  ? "bg-slate-800 border-slate-700 text-white ring-1 ring-slate-600 dark:bg-primary-600 dark:border-primary-500"
                   : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
               }`}
             >
@@ -283,7 +283,7 @@ export const Settings = () => {
               onClick={() => setTheme("system")}
               className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 themeMode === "system"
-                  ? "bg-purple-50 border-purple-200 text-purple-700 ring-1 ring-purple-200 dark:bg-purple-900/30 dark:border-purple-800 dark:text-purple-300"
+                  ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
                   : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
               }`}
             >
@@ -392,7 +392,7 @@ export const Settings = () => {
                   onClick={() => setAILanguage("auto")}
                   className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
                     aiLanguage === "auto"
-                      ? "bg-cyan-50 border-cyan-200 text-cyan-700 ring-1 ring-cyan-200 dark:bg-cyan-900/30 dark:border-cyan-800 dark:text-cyan-300"
+                      ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
                       : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
                   }`}
                 >
@@ -420,7 +420,7 @@ export const Settings = () => {
                   onClick={() => setAILanguage("en-US")}
                   className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
                     aiLanguage === "en-US"
-                      ? "bg-blue-50 border-blue-200 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300"
+                      ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
                       : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
                   }`}
                 >
@@ -437,16 +437,16 @@ export const Settings = () => {
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <Cpu className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                 {t("settings.aiStatus")}
               </h2>
             </div>
           </div>
 
-          <div className="mb-8 p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50">
+          <div className="mb-8 p-4 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800/50">
             <div className="flex items-center gap-2 mb-4">
-              <Brain className="w-4 h-4 text-indigo-700 dark:text-indigo-400" />
+              <Brain className="w-4 h-4 text-primary-700 dark:text-primary-400" />
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                 {t("settings.modelManagement")}
               </h3>
@@ -459,7 +459,7 @@ export const Settings = () => {
               <select
                 value={selectedProviderForAdd}
                 onChange={(e) => setSelectedProviderForAdd(e.target.value)}
-                className="p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                className="p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
               >
                 <option value="deepseek">Deepseek</option>
                 <option value="volcengine">火山引擎 (Volcengine)</option>
@@ -471,12 +471,12 @@ export const Settings = () => {
                   value={newModelName}
                   onChange={(e) => setNewModelName(e.target.value)}
                   placeholder={t("settings.inputModelName")}
-                  className="flex-1 p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                  className="flex-1 p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                 />
                 <button
                   onClick={handleAddModel}
                   disabled={!newModelName.trim()}
-                  className="px-4 py-3 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1 transition-colors whitespace-nowrap min-h-[44px]"
+                  className="px-4 py-3 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 disabled:opacity-50 flex items-center gap-1 transition-colors whitespace-nowrap min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" /> {t("settings.addModel")}
                 </button>
@@ -523,7 +523,7 @@ export const Settings = () => {
           <div className="space-y-6">
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
               <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-700 dark:text-blue-400">
+                <div className="p-1.5 bg-primary-100 dark:bg-primary-900/30 rounded text-primary-700 dark:text-primary-400">
                   <Brain className="w-4 h-4" />
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
@@ -544,7 +544,7 @@ export const Settings = () => {
                         model: availableModels[e.target.value]?.[0] || "",
                       })
                     }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
                     <option value="deepseek">Deepseek</option>
                     <option value="volcengine">火山引擎 (Volcengine)</option>
@@ -560,7 +560,7 @@ export const Settings = () => {
                     onChange={(e) =>
                       setTextConfig({ ...textConfig, model: e.target.value })
                     }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
                     {availableModels[textConfig.provider]?.map((m) => (
                       <option key={m} value={m}>
@@ -600,7 +600,7 @@ export const Settings = () => {
                         model: availableModels[e.target.value]?.[0] || "",
                       })
                     }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
                     <option value="volcengine">火山引擎 (Volcengine)</option>
                     <option value="aliyun">阿里云 (Aliyun)</option>
@@ -619,7 +619,7 @@ export const Settings = () => {
                         model: e.target.value,
                       })
                     }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
                     {availableModels[embeddingConfig.provider]?.map((m) => (
                       <option key={m} value={m}>
@@ -659,7 +659,7 @@ export const Settings = () => {
                         model: availableModels[e.target.value]?.[0] || "",
                       })
                     }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
                     <option value="aliyun">阿里云 (Aliyun)</option>
                     <option value="deepseek">Deepseek</option>
@@ -678,7 +678,7 @@ export const Settings = () => {
                         model: e.target.value,
                       })
                     }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
                     {availableModels[reasoningConfig.provider]?.map((m) => (
                       <option key={m} value={m}>
@@ -819,7 +819,7 @@ export const Settings = () => {
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <Brain className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                 {t("settings.fsrsConfig")}
               </h2>
@@ -843,7 +843,7 @@ export const Settings = () => {
                     if (!isNaN(val) && val >= 0.7 && val <= 0.99)
                       setRetention(val);
                   }}
-                  className="w-20 p-2 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500 min-h-[44px]"
+                  className="w-20 p-2 text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 min-h-[44px]"
                 />
               </div>
               <input
@@ -853,7 +853,7 @@ export const Settings = () => {
                 step="0.01"
                 value={retention}
                 onChange={(e) => setRetention(Number(e.target.value))}
-                className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 {t("settings.requestRetentionDesc")}
@@ -875,7 +875,7 @@ export const Settings = () => {
                     if (!isNaN(val) && val >= 1 && val <= 36500)
                       setMaxInterval(val);
                   }}
-                  className="w-24 p-2 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500 min-h-[44px]"
+                  className="w-24 p-2 text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 min-h-[44px]"
                 />
               </div>
               <input
@@ -885,7 +885,7 @@ export const Settings = () => {
                 step="10"
                 value={maxInterval}
                 onChange={(e) => setMaxInterval(Number(e.target.value))}
-                className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 {t("settings.maxIntervalDesc")}
@@ -896,7 +896,7 @@ export const Settings = () => {
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
-            <Puzzle className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+            <Puzzle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               插件市场
             </h2>

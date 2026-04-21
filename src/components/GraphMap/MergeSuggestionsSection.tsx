@@ -41,16 +41,16 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
     merge: {
       label: t('graphMap.mergeSuggestions.actions.merge'),
       icon: GitMerge,
-      color: 'text-purple-600 dark:text-purple-400',
-      bg: 'bg-purple-100 dark:bg-purple-900/30',
-      border: 'border-purple-200 dark:border-purple-800',
+      color: 'text-primary-600 dark:text-primary-400',
+      bg: 'bg-primary-100 dark:bg-primary-900/30',
+      border: 'border-primary-200 dark:border-primary-800',
     },
     link: {
       label: t('graphMap.mergeSuggestions.actions.link'),
       icon: Link2,
-      color: 'text-blue-600 dark:text-blue-400',
-      bg: 'bg-blue-100 dark:bg-blue-900/30',
-      border: 'border-blue-200 dark:border-blue-800',
+      color: 'text-primary-600 dark:text-primary-400',
+      bg: 'bg-primary-100 dark:bg-primary-900/30',
+      border: 'border-primary-200 dark:border-primary-800',
     },
     keep_separate: {
       label: t('graphMap.mergeSuggestions.actions.keepSeparate'),
@@ -111,9 +111,9 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+        <Layers className="w-4 h-4 text-primary-600 dark:text-primary-400" />
         <h4 className="font-medium text-gray-900 dark:text-white">{t('graphMap.mergeSuggestions.title')}</h4>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
           {t('graphMap.mergeSuggestions.itemCount', { count: suggestions.length })}
         </span>
       </div>
@@ -147,7 +147,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                     {completed ? (
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                     ) : (
-                      <GitMerge className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                      <GitMerge className="w-4 h-4 text-primary-500 flex-shrink-0" />
                     )}
                     <div className="flex items-center gap-1 flex-1 min-w-0">
                       {suggestion.graph_titles.slice(0, 2).map((title, i) => (
@@ -231,7 +231,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                         className={`px-3 py-1.5 text-xs rounded transition-colors flex items-center gap-1 ${
                           processing
                             ? 'bg-gray-100 dark:bg-slate-600 text-gray-400 cursor-wait'
-                            : 'bg-purple-500 text-white hover:bg-purple-600'
+                            : 'bg-primary-500 text-white hover:bg-primary-600'
                         }`}
                       >
                         {processing ? (
@@ -250,7 +250,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                         className={`px-3 py-1.5 text-xs rounded transition-colors flex items-center gap-1 ${
                           processing
                             ? 'bg-gray-100 dark:bg-slate-600 text-gray-400 cursor-wait'
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                            : 'bg-primary-500 text-white hover:bg-primary-600'
                         }`}
                       >
                         {processing ? (
@@ -291,8 +291,8 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
         })}
       </div>
 
-      <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-        <p className="text-xs text-purple-700 dark:text-purple-300">
+      <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
+        <p className="text-xs text-primary-700 dark:text-primary-300">
           <span className="font-medium">{t('graphMap.mergeSuggestions.tip')}</span>
           {t('graphMap.mergeSuggestions.tipContent')}
         </p>

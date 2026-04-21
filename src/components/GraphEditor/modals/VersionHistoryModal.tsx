@@ -154,7 +154,7 @@ export const VersionHistoryModal = ({
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-fade-in-up">
         <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+            <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
               <History size={24} />
             </div>
             <div>
@@ -177,7 +177,7 @@ export const VersionHistoryModal = ({
             onClick={() => { setCompareMode(false); setCompareVersions([null, null]); setCompareResult(null); }}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
               !compareMode 
-                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' 
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
             }`}
           >
@@ -187,7 +187,7 @@ export const VersionHistoryModal = ({
             onClick={() => { setCompareMode(true); setCompareResult(null); }}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center ${
               compareMode 
-                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' 
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
             }`}
           >
@@ -199,7 +199,7 @@ export const VersionHistoryModal = ({
         <div className="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="animate-spin text-indigo-500" size={32} />
+              <Loader2 className="animate-spin text-primary-500" size={32} />
             </div>
           ) : compareMode ? (
             <div>
@@ -207,7 +207,7 @@ export const VersionHistoryModal = ({
                 <div className="space-y-6">
                   <button
                     onClick={() => setCompareResult(null)}
-                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
                   >
                     ← 返回选择
                   </button>
@@ -248,8 +248,8 @@ export const VersionHistoryModal = ({
                         onClick={() => handleCompareSelect(version.version_number)}
                         className={`w-full p-3 rounded-lg border text-left transition-all ${
                           compareVersions.includes(version.version_number)
-                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
                         }`}
                       >
                         <div className="flex justify-between items-center">
@@ -271,7 +271,7 @@ export const VersionHistoryModal = ({
                   {compareVersions[0] !== null && compareVersions[1] !== null && (
                     <button
                       onClick={executeCompare}
-                      className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                      className="w-full py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
                     >
                       对比版本 {compareVersions[0]} 和 {compareVersions[1]}
                     </button>
@@ -283,7 +283,7 @@ export const VersionHistoryModal = ({
             <div>
               <button
                 onClick={() => setSelectedVersion(null)}
-                className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline mb-4"
+                className="text-sm text-primary-600 dark:text-primary-400 hover:underline mb-4"
               >
                 ← 返回列表
               </button>
@@ -361,14 +361,14 @@ export const VersionHistoryModal = ({
                     <button
                       key={version.id}
                       onClick={() => setSelectedVersion(version)}
-                      className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all text-left group"
+                      className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-all text-left group"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center">
-                          <span className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-bold mr-3">
+                          <span className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center text-sm font-bold mr-3">
                             {version.version_number}
                           </span>
-                          <span className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                          <span className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-primary-600 dark:group-hover:text-primary-400">
                             {version.title}
                           </span>
                         </div>
@@ -405,7 +405,7 @@ export const VersionHistoryModal = ({
                   <button
                     onClick={() => setOffset(Math.max(0, offset - pageSize))}
                     disabled={offset === 0}
-                    className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft size={16} className="mr-1" />
                     上一页
@@ -416,7 +416,7 @@ export const VersionHistoryModal = ({
                   <button
                     onClick={() => setOffset(offset + pageSize)}
                     disabled={offset + pageSize >= total}
-                    className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     下一页
                     <ChevronRight size={16} className="ml-1" />

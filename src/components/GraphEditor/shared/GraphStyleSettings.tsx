@@ -10,7 +10,7 @@ const ToggleSwitch: React.FC<{
   <button
     onClick={() => onChange(!checked)}
     className={`relative w-11 h-6 rounded-full transition-colors ${
-      checked ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
+      checked ? 'bg-primary-600' : 'bg-gray-300 dark:bg-slate-600'
     }`}
   >
     <span
@@ -105,7 +105,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             onClick={() => setActiveTab('colors')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'colors'
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
@@ -115,7 +115,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             onClick={() => setActiveTab('links')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'links'
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
@@ -125,7 +125,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             onClick={() => setActiveTab('animations')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'animations'
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
@@ -135,7 +135,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             onClick={() => setActiveTab('nodes')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'nodes'
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
@@ -145,7 +145,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             onClick={() => setActiveTab('edges')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'edges'
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
@@ -155,7 +155,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             onClick={() => setActiveTab('edgeSettings')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === 'edgeSettings'
-                ? 'text-blue-600 border-b-2 border-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
@@ -193,7 +193,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                         disabled={coloringMode === 'level'}
                         className={`p-4 rounded-lg border-2 transition-all ${
                           currentColorScheme === scheme.key
-                            ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                            ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
                             : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
                         } ${coloringMode === 'level' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
@@ -257,7 +257,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       onClick={() => onLinkStyleChange(style.key)}
                       className={`p-4 rounded-lg border-2 transition-all ${
                         currentLinkStyle === style.key
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
                           : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
@@ -296,7 +296,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       onClick={() => onLinkAnimationChange(animation.key)}
                       className={`p-4 rounded-lg border-2 transition-all ${
                         currentLinkAnimation === animation.key
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
                           : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
@@ -319,9 +319,9 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               </div>
 
               <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">动画说明</h4>
-                  <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">动画说明</h4>
+                  <ul className="text-xs text-primary-800 dark:text-primary-200 space-y-1">
                     <li>• <strong>流动</strong>: 连接线上的虚线会持续流动</li>
                     <li>• <strong>脉冲</strong>: 连接线会有呼吸般的明暗变化</li>
                     <li>• <strong>虚线</strong>: 显示为虚线样式</li>
@@ -348,7 +348,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       onClick={() => onNodeSizeModeChange?.(mode.key)}
                       className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
                         nodeSizeMode === mode.key
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
                           : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
@@ -376,7 +376,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       onClick={() => onEdgeWidthModeChange?.(mode.key)}
                       className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
                         edgeWidthMode === mode.key
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
                           : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
@@ -422,7 +422,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                     </div>
                     <button
                       onClick={onOpenRelationshipTypeSettings}
-                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                     >
                       管理
                     </button>
@@ -457,7 +457,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
           >
             确定
           </button>

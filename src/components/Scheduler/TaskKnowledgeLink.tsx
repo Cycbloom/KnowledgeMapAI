@@ -143,7 +143,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
         <button
           type="button"
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
         >
           <Plus size={14} />
           {t('scheduler.taskLink.add')}
@@ -162,12 +162,12 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('scheduler.taskLink.searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
               autoFocus
             />
             {isSearching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Loader2 size={16} className="animate-spin text-cyan-500" />
+                <Loader2 size={16} className="animate-spin text-primary-500" />
               </div>
             )}
           </div>
@@ -188,7 +188,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
                   onClick={() => handleAddKnowledgePoint(kp)}
                   className="w-full flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-slate-700 text-left transition-colors border-b border-slate-100 dark:border-slate-700 last:border-b-0"
                 >
-                  <BookOpen size={16} className="text-cyan-500 flex-shrink-0" />
+                  <BookOpen size={16} className="text-primary-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-900 dark:text-white truncate">
                       {kp.title}
@@ -233,18 +233,18 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
             key={kp.id}
             className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${
               kp.is_primary
-                ? "bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30"
+                ? "bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/30"
                 : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
             }`}
           >
-            <BookOpen size={18} className="text-cyan-500 flex-shrink-0" />
+            <BookOpen size={18} className="text-primary-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-medium text-slate-900 dark:text-white truncate">
                   {kp.knowledge_point?.title || t('scheduler.taskLink.unknownKnowledge')}
                 </p>
                 {kp.is_primary && (
-                  <span className="px-1.5 py-0.5 text-xs bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 rounded">
+                  <span className="px-1.5 py-0.5 text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 rounded">
                     {t('scheduler.taskLink.primary')}
                   </span>
                 )}
@@ -290,7 +290,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
             <button
               type="button"
               onClick={() => setIsAdding(true)}
-              className="mt-2 text-sm text-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+              className="mt-2 text-sm text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
             >
               {t('scheduler.taskLink.addLink')}
             </button>

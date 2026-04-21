@@ -20,7 +20,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
     <div className="w-full space-y-3">
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">
-          第 <span className="text-indigo-600 font-bold">{current + 1}</span> / {total} 题
+          第 <span className="text-primary-600 font-bold">{current + 1}</span> / {total} 题
         </span>
         <span className="text-gray-500">
           已答 {answered.filter(Boolean).length} 题
@@ -29,7 +29,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
 
       <div className="relative h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
         <div
-          className="absolute h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all duration-300"
+          className="absolute h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -46,7 +46,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
               className={`
                 w-8 h-8 rounded-lg text-xs font-bold transition-all relative
                 ${isCurrent
-                  ? 'bg-indigo-600 text-white ring-2 ring-indigo-300 ring-offset-2 dark:ring-offset-slate-900'
+                  ? 'bg-primary-600 text-white ring-2 ring-primary-300 ring-offset-2 dark:ring-offset-slate-900'
                   : isAnswered
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
@@ -60,7 +60,7 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
                 index + 1
               )}
               {isCurrent && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-600 rounded-full" />
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary-600 rounded-full" />
               )}
             </button>
           );

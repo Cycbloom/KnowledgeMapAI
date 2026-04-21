@@ -149,7 +149,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   };
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; description: string; color: string }> = [
-    { value: 'prerequisite', label: t('quickCreate.relation.prerequisite'), description: t('quickCreate.relation.prerequisiteDesc'), color: 'bg-blue-500' },
+    { value: 'prerequisite', label: t('quickCreate.relation.prerequisite'), description: t('quickCreate.relation.prerequisiteDesc'), color: 'bg-primary-500' },
     { value: 'extension', label: t('quickCreate.relation.extension'), description: t('quickCreate.relation.extensionDesc'), color: 'bg-green-500' },
     { value: 'related', label: t('quickCreate.relation.related'), description: t('quickCreate.relation.relatedDesc'), color: 'bg-amber-500' },
   ];
@@ -207,12 +207,12 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                   className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent ${
                     isDuplicate 
                       ? 'border-amber-500 focus:ring-amber-500' 
-                      : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500'
                   }`}
                   autoFocus
                 />
                 {isChecking && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary-500" />
                 )}
               </div>
               {isDuplicate && similarGraphs.length > 0 && (
@@ -237,7 +237,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                 onChange={e => setDescription(e.target.value)}
                 placeholder={t('quickCreate.descriptionPlaceholder')}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
               />
             </div>
 
@@ -246,7 +246,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <span className="truncate max-w-[150px]">{relatedGraphTitle}</span>
                   <ArrowRight className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">{t('quickCreate.newGraph')}</span>
+                  <span className="text-primary-600 dark:text-primary-400 font-medium">{t('quickCreate.newGraph')}</span>
                 </div>
 
                 <div>
@@ -260,7 +260,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                         onClick={() => setRelationType(option.value)}
                         className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
                           relationType === option.value
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         }`}
                       >
@@ -280,30 +280,30 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
               </>
             )}
 
-            <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
               <input
                 type="checkbox"
                 id="autoGenerate"
                 checked={autoGenerate}
                 onChange={e => setAutoGenerate(e.target.checked)}
-                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
               />
               <label htmlFor="autoGenerate" className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                <Sparkles className="w-4 h-4 text-purple-500" />
+                <Sparkles className="w-4 h-4 text-primary-500" />
                 <span>{t('quickCreate.autoGenerate')}</span>
               </label>
             </div>
 
             {showRecommendations && (
-              <div className="mb-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="mb-3 p-3 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                  <span className="text-sm font-medium text-primary-700 dark:text-primary-300 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4" />
                     {t('quickCreate.aiRecommendDomains')}
                   </span>
                   <button
                     onClick={() => setShowRecommendations(false)}
-                    className="text-xs text-blue-500 hover:text-blue-700"
+                    className="text-xs text-primary-500 hover:text-primary-700"
                   >
                     {t('quickCreate.ignore')}
                   </button>
@@ -311,8 +311,8 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
 
                 {isLoadingRecommendations ? (
                   <div className="flex items-center gap-2 py-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                    <span className="text-sm text-blue-600 dark:text-blue-400">{t('quickCreate.analyzing')}</span>
+                    <Loader2 className="w-4 h-4 animate-spin text-primary-500" />
+                    <span className="text-sm text-primary-600 dark:text-primary-400">{t('quickCreate.analyzing')}</span>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
@@ -326,16 +326,16 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                           onClick={() => toggleRecommendedDomain(rec.id)}
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
                             isSelected
-                              ? 'bg-blue-500 text-white ring-2 ring-blue-300'
+                              ? 'bg-primary-500 text-white ring-2 ring-primary-300'
                               : confidencePercent >= 80
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 hover:bg-blue-200'
+                                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 hover:bg-primary-200'
                                 : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200'
                           }`}
                           title={rec.reason}
                         >
                           {rec.name}
                           <span className={`text-[10px] ${
-                            isSelected ? 'text-blue-100' : 'text-gray-400'
+                            isSelected ? 'text-primary-100' : 'text-gray-400'
                           }`}>
                             {confidencePercent}%
                           </span>
@@ -370,7 +370,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition-colors ${
                           isSelected
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
                         }`}
                       >
@@ -397,7 +397,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
             <button
               onClick={handleSubmit}
               disabled={!title.trim() || isSubmitting || isChecking || isDuplicate}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {t('quickCreate.create')}

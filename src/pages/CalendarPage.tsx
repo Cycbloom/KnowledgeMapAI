@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -320,7 +320,7 @@ export const CalendarPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleAddEvent(currentDate)}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors min-h-[44px]"
+                className="flex items-center gap-2 px-3 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors min-h-[44px]"
               >
                 <Plus size={18} />
                 <span className="hidden md:inline">添加任务</span>
@@ -383,7 +383,7 @@ export const CalendarPage: React.FC = () => {
                     onClick={() => setViewType(type)}
                     className={`px-3 md:px-4 py-2 md:py-1.5 text-sm font-medium rounded-md transition-colors min-h-[44px] flex-shrink-0 ${
                       viewType === type
-                        ? "bg-blue-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : isDark
                           ? "text-slate-400 hover:text-white"
                           : "text-gray-600 hover:text-gray-900"
@@ -415,7 +415,7 @@ export const CalendarPage: React.FC = () => {
       <div className="flex-1 overflow-hidden p-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -713,7 +713,7 @@ export const CalendarPage: React.FC = () => {
                       }}
                       className={`px-3 py-2 rounded text-sm min-h-[40px] ${
                         taskForm.tags.includes(tag)
-                          ? "bg-blue-600 text-white"
+                          ? "bg-primary-600 text-white"
                           : isDark
                             ? "bg-slate-700 text-slate-400 hover:bg-slate-600"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -740,7 +740,7 @@ export const CalendarPage: React.FC = () => {
                 <button
                   onClick={handleCreateTask}
                   disabled={saving}
-                  className="px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
+                  className="px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
                 >
                   {saving && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -798,7 +798,7 @@ export const CalendarPage: React.FC = () => {
                       : "border-gray-200 hover:bg-gray-50"
                   }`}
                 >
-                  <Download size={20} className="text-blue-500" />
+                  <Download size={20} className="text-primary-500" />
                   <div className="text-left">
                     <p
                       className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}

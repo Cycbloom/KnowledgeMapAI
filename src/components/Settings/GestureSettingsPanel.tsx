@@ -104,7 +104,7 @@ export const GestureSettingsPanel: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
       </div>
     );
   }
@@ -131,7 +131,7 @@ export const GestureSettingsPanel: React.FC = () => {
             <div className="ml-8">
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>0.1</span>
-                <span className={`text-sm font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                <span className={`text-sm font-medium ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>
                   {settings.sensitivity.toFixed(1)}
                 </span>
                 <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>2.0</span>
@@ -143,7 +143,7 @@ export const GestureSettingsPanel: React.FC = () => {
                 step="0.1"
                 value={settings.sensitivity}
                 onChange={(e) => updateSetting('sensitivity', parseFloat(e.target.value))}
-                className="w-full max-w-md h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full max-w-md h-2 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export const GestureSettingsPanel: React.FC = () => {
             <button
               onClick={() => updateSetting('pinchZoomEnabled', !settings.pinchZoomEnabled)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.pinchZoomEnabled ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                settings.pinchZoomEnabled ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
               }`}
             >
               <motion.div
@@ -196,7 +196,7 @@ export const GestureSettingsPanel: React.FC = () => {
             <button
               onClick={() => updateSetting('pinchRotateEnabled', !settings.pinchRotateEnabled)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.pinchRotateEnabled ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                settings.pinchRotateEnabled ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
               }`}
             >
               <motion.div
@@ -222,7 +222,7 @@ export const GestureSettingsPanel: React.FC = () => {
             <button
               onClick={() => updateSetting('flingInertiaEnabled', !settings.flingInertiaEnabled)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.flingInertiaEnabled ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                settings.flingInertiaEnabled ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
               }`}
             >
               <motion.div
@@ -248,7 +248,7 @@ export const GestureSettingsPanel: React.FC = () => {
             <button
               onClick={() => updateSetting('edgeSwipeBackEnabled', !settings.edgeSwipeBackEnabled)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.edgeSwipeBackEnabled ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                settings.edgeSwipeBackEnabled ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
               }`}
             >
               <motion.div
@@ -284,7 +284,7 @@ export const GestureSettingsPanel: React.FC = () => {
                 onClick={() => updateSetting('rotationSnapAngle', option.value as GestureSettings['rotationSnapAngle'])}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   settings.rotationSnapAngle === option.value
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary-600 text-white'
                     : isDark
                       ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -332,7 +332,7 @@ export const GestureSettingsPanel: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={saving || !hasChanges}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTemplates } from "../hooks/queries";
@@ -205,7 +205,7 @@ export const Templates = () => {
             onClick={() => setActiveTab("knowledge")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
               activeTab === "knowledge"
-                ? "bg-blue-600 text-white shadow-md"
+                ? "bg-primary-600 text-white shadow-md"
                 : isDark
                   ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   : "bg-white text-gray-700 hover:bg-gray-100"
@@ -218,7 +218,7 @@ export const Templates = () => {
             onClick={() => setActiveTab("task")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
               activeTab === "task"
-                ? "bg-blue-600 text-white shadow-md"
+                ? "bg-primary-600 text-white shadow-md"
                 : isDark
                   ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   : "bg-white text-gray-700 hover:bg-gray-100"
@@ -241,7 +241,7 @@ export const Templates = () => {
                   setNewTemplateCategory("knowledge");
                   setIsCreating(true);
                 }}
-                className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
+                className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
               >
                 <Plus size={20} />
                 <span>{t("templates.createTemplate")}</span>
@@ -261,8 +261,8 @@ export const Templates = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
                     isDark
-                      ? "bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-white border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-white border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                 />
               </div>
@@ -282,7 +282,7 @@ export const Templates = () => {
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-4 py-2.5 rounded-xl font-medium transition-all ${
                       selectedCategory === cat
-                        ? "bg-blue-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : isDark
                           ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                           : "bg-white text-gray-700 hover:bg-gray-100"
@@ -298,7 +298,7 @@ export const Templates = () => {
 
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
               </div>
             ) : filteredTemplates.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-500">
@@ -325,12 +325,12 @@ export const Templates = () => {
                         <div
                           className={`p-2.5 rounded-xl ${
                             template.category === "knowledge"
-                              ? "bg-blue-50 text-blue-600"
+                              ? "bg-primary-50 text-primary-600"
                               : template.category === "project"
                                 ? "bg-green-50 text-green-600"
                                 : template.category === "analysis"
                                   ? "bg-amber-50 text-amber-600"
-                                  : "bg-purple-50 text-purple-600"
+                                  : "bg-primary-50 text-primary-600"
                           }`}
                         >
                           {categoryIcons[template.category as TemplateCategory]}
@@ -401,7 +401,7 @@ export const Templates = () => {
 
                     <button
                       onClick={() => handleUseTemplate(template)}
-                      className="w-full px-4 py-2.5 rounded-xl font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      className="w-full px-4 py-2.5 rounded-xl font-medium bg-primary-600 hover:bg-primary-700 text-white transition-colors"
                     >
                       {t("templates.button.use")}
                     </button>
@@ -452,8 +452,8 @@ export const Templates = () => {
                   placeholder={t("templates.form.namePlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                   autoFocus
                 />
@@ -473,8 +473,8 @@ export const Templates = () => {
                   placeholder={t("templates.form.descriptionPlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                   rows={4}
                 />
@@ -495,8 +495,8 @@ export const Templates = () => {
                   }
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                 >
                   <option value="knowledge">
@@ -528,7 +528,7 @@ export const Templates = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                   disabled={
                     createTemplateMutation.isPending || !newTemplateName
                   }
@@ -585,8 +585,8 @@ export const Templates = () => {
                   placeholder={editingTemplate.name}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                   autoFocus
                 />
@@ -609,8 +609,8 @@ export const Templates = () => {
                   }
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                   rows={4}
                 />
@@ -631,8 +631,8 @@ export const Templates = () => {
                   }
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   }`}
                 >
                   <option value="knowledge">
@@ -667,7 +667,7 @@ export const Templates = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                   disabled={
                     updateTemplateMutation.isPending || !newTemplateName
                   }

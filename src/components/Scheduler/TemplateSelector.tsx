@@ -169,8 +169,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full pl-9 pr-3 py-2 rounded-lg border text-sm ${
                     isDark
-                      ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                      ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
                   }`}
                 />
               </div>
@@ -182,7 +182,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                       onClick={() => setSelectedCategory(cat)}
                       className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors ${
                         selectedCategory === cat
-                          ? "bg-blue-600 text-white"
+                          ? "bg-primary-600 text-white"
                           : isDark
                             ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -198,7 +198,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             <div className="overflow-y-auto h-[calc(100%-100px)]">
               {loading ? (
                 <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                 </div>
               ) : filteredTemplates.length === 0 ? (
                 <div className="text-center py-10 text-slate-400">
@@ -212,7 +212,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                       onClick={() => handleSelectTemplate(template)}
                       className={`w-full text-left p-3 rounded-lg transition-colors ${
                         selectedTemplate?.id === template.id
-                          ? "bg-blue-100 dark:bg-blue-500/20 border border-blue-300 dark:border-blue-500/50"
+                          ? "bg-primary-100 dark:bg-primary-500/20 border border-primary-300 dark:border-primary-500/50"
                           : isDark
                             ? "hover:bg-slate-700"
                             : "hover:bg-slate-50"
@@ -222,9 +222,9 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                         <span
                           className={`p-1 rounded ${
                             template.category === "study"
-                              ? "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                              ? "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400"
                               : template.category === "work"
-                                ? "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400"
+                                ? "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400"
                                 : template.category === "life"
                                   ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
                                   : template.category === "health"
@@ -304,8 +304,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                                 placeholder={`输入 ${placeholder}`}
                                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                                   isDark
-                                    ? "bg-slate-800 border-slate-700 text-white focus:border-blue-500"
-                                    : "bg-white border-slate-200 text-slate-900 focus:border-blue-500"
+                                    ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500"
+                                    : "bg-white border-slate-200 text-slate-900 focus:border-primary-500"
                                 }`}
                               />
                             </div>
@@ -352,7 +352,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                   <button
                     onClick={handleApply}
-                    className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Check size={18} />
                     使用此模板

@@ -39,13 +39,13 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
   const QUEUE_CONFIG = {
     0: {
       icon: Zap,
-      gradient: "from-cyan-500 to-blue-500",
-      border: "border-cyan-300 dark:border-cyan-400/50",
-      glow: "shadow-cyan-500/20",
+      gradient: "from-primary-500 to-primary-500",
+      border: "border-primary-300 dark:border-primary-400/50",
+      glow: "shadow-primary-500/20",
       headerBg:
-        "bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20",
-      accentColor: "text-cyan-600 dark:text-cyan-400",
-      badgeBg: "bg-cyan-100 dark:bg-cyan-500/20",
+        "bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20",
+      accentColor: "text-primary-600 dark:text-primary-400",
+      badgeBg: "bg-primary-100 dark:bg-primary-500/20",
       description: t("scheduler.queue.urgentDesc"),
       arrowColor: "#06b6d4",
     },
@@ -182,8 +182,8 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
 
         {inProgressTasks.length > 0 && (
           <div className="mt-2 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
-            <span className="text-xs text-blue-600 dark:text-blue-400">
+            <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
+            <span className="text-xs text-primary-600 dark:text-primary-400">
               {t("scheduler.queue.tasksInProgress", { count: inProgressTasks.length })}
             </span>
           </div>
@@ -211,16 +211,16 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
               <div
                 className={`
                 rounded-xl border shadow-2xl ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 opacity-95
-                border-cyan-300 dark:border-cyan-400 shadow-cyan-500/30
+                border-primary-300 dark:border-primary-400 shadow-primary-500/30
                 bg-white dark:bg-slate-900/80 backdrop-blur-sm
                 overflow-hidden flex-shrink-0
               `}
                 style={{ width: "180px" }}
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-500" />
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-500" />
                 <div className="p-3 pl-4">
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300">
                       Q{task.queue_level}
                     </span>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400">
@@ -255,7 +255,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
               relative min-h-[140px] p-4 transition-all duration-300
               ${
                 snapshot.isDraggingOver
-                  ? "bg-slate-100/50 dark:bg-slate-800/50 ring-2 ring-inset ring-cyan-400/30"
+                  ? "bg-slate-100/50 dark:bg-slate-800/50 ring-2 ring-inset ring-primary-400/30"
                   : "bg-white/50 dark:bg-slate-900/30"
               }
               border-x ${config.border}
@@ -274,7 +274,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                     />
                     <p className="text-sm">{t("scheduler.queue.noTasks")}</p>
                     {snapshot.isDraggingOver && (
-                      <p className="text-xs mt-2 text-cyan-500 dark:text-cyan-400">
+                      <p className="text-xs mt-2 text-primary-500 dark:text-primary-400">
                         {t("scheduler.queue.dropToPlace")}
                       </p>
                     )}
@@ -361,7 +361,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute inset-0 pointer-events-none border-2 border-dashed border-cyan-400/50 rounded-lg bg-cyan-500/5"
+                className="absolute inset-0 pointer-events-none border-2 border-dashed border-primary-400/50 rounded-lg bg-primary-500/5"
               />
             )}
           </div>

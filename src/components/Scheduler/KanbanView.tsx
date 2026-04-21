@@ -38,10 +38,10 @@ export const KanbanView: React.FC<{
         icon: PlayCircle,
         color: "blue",
         gradient:
-          "from-blue-400 to-cyan-400 dark:from-blue-500 dark:to-cyan-500",
-        border: "border-blue-300 dark:border-blue-500/30",
-        bg: "bg-blue-100 dark:bg-blue-500/10",
-        text: "text-blue-600 dark:text-blue-400",
+          "from-primary-400 to-primary-400 dark:from-primary-500 dark:to-primary-500",
+        border: "border-primary-300 dark:border-primary-500/30",
+        bg: "bg-primary-100 dark:bg-primary-500/10",
+        text: "text-primary-600 dark:text-primary-400",
       },
       {
         id: "paused",

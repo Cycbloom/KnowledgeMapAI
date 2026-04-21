@@ -55,9 +55,9 @@ const CATEGORY_CONFIG: Record<
   knowledge: {
     icon: <GraduationCap size={16} />,
     labelKey: "templates.category.knowledge",
-    color: "text-blue-600 dark:text-blue-400",
-    iconBg: "bg-blue-100 dark:bg-blue-800/40",
-    textColor: "text-blue-600 dark:text-blue-400",
+    color: "text-primary-600 dark:text-primary-400",
+    iconBg: "bg-primary-100 dark:bg-primary-800/40",
+    textColor: "text-primary-600 dark:text-primary-400",
   },
   project: {
     icon: <Briefcase size={16} />,
@@ -76,9 +76,9 @@ const CATEGORY_CONFIG: Record<
   architecture: {
     icon: <Layers size={16} />,
     labelKey: "templates.category.architecture",
-    color: "text-purple-600 dark:text-purple-400",
-    iconBg: "bg-purple-100 dark:bg-purple-800/40",
-    textColor: "text-purple-600 dark:text-purple-400",
+    color: "text-primary-600 dark:text-primary-400",
+    iconBg: "bg-primary-100 dark:bg-primary-800/40",
+    textColor: "text-primary-600 dark:text-primary-400",
   },
 };
 
@@ -206,7 +206,7 @@ export const TemplatePromptConfigPanel: React.FC<
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <FileText className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {t("autoGraph.templatePromptConfig")}
             </h2>
@@ -249,12 +249,12 @@ export const TemplatePromptConfigPanel: React.FC<
                           onClick={() => handleSelectType(type)}
                           className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all text-sm ${
                             isSelected
-                              ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                              ? "bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800"
                               : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
                           }`}
                         >
                           {isCustom && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0" />
                           )}
                           {!isCustom && (
                             <span className="w-1.5 h-1.5 flex-shrink-0" />
@@ -285,12 +285,12 @@ export const TemplatePromptConfigPanel: React.FC<
                   onClick={() => handleSelectType("blank")}
                   className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all text-sm ${
                     selectedType === "blank"
-                      ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                      ? "bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800"
                       : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
                   }`}
                 >
                   {hasCustomPrompt("blank") && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0" />
                   )}
                   {!hasCustomPrompt("blank") && (
                     <span className="w-1.5 h-1.5 flex-shrink-0" />
@@ -307,7 +307,7 @@ export const TemplatePromptConfigPanel: React.FC<
             {selectedType ? (
               <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                  <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded text-purple-600 dark:text-purple-400">
+                  <div className="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded text-primary-600 dark:text-primary-400">
                     <FileText size={16} />
                   </div>
                   <div>
@@ -319,7 +319,7 @@ export const TemplatePromptConfigPanel: React.FC<
                     </p>
                   </div>
                   {hasCustomPrompt(selectedType) && (
-                    <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
+                    <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400">
                       {graphId
                         ? t("autoGraph.graphLevel")
                         : t("autoGraph.userLevel")}

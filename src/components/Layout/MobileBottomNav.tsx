@@ -88,8 +88,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200 min-w-[56px] ${
       active
         ? isDark
-          ? "text-indigo-400 bg-indigo-950/50"
-          : "text-indigo-600 bg-indigo-50"
+          ? "text-primary-400 bg-primary-950/50"
+          : "text-primary-600 bg-primary-50"
         : isDark
           ? "text-slate-400 hover:text-slate-200"
           : "text-gray-500 hover:text-gray-700"
@@ -100,8 +100,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     return `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200 min-w-[56px] ${
       isMoreActive
         ? isDark
-          ? "text-indigo-400 bg-indigo-950/50"
-          : "text-indigo-600 bg-indigo-50"
+          ? "text-primary-400 bg-primary-950/50"
+          : "text-primary-600 bg-primary-50"
         : isDark
           ? "text-slate-400 hover:text-slate-200"
           : "text-gray-500 hover:text-gray-700"
@@ -152,8 +152,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                     className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
                       isActive(item.to)
                         ? isDark
-                          ? "bg-indigo-950/50 text-indigo-400"
-                          : "bg-indigo-50 text-indigo-600"
+                          ? "bg-primary-950/50 text-primary-400"
+                          : "bg-primary-50 text-primary-600"
                         : isDark
                           ? "text-slate-300 hover:bg-slate-800"
                           : "text-gray-700 hover:bg-gray-50"

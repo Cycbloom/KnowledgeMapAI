@@ -360,7 +360,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             
             <button
               onClick={handlePlayPause}
-              className={`p-3 rounded-full ${isDark ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-indigo-500 hover:bg-indigo-400'} text-white transition-colors`}
+              className={`p-3 rounded-full ${isDark ? 'bg-primary-600 hover:bg-primary-500' : 'bg-primary-500 hover:bg-primary-400'} text-white transition-colors`}
               title={isPlaying ? '暂停' : '播放'}
             >
               {isPlaying ? (
@@ -412,8 +412,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 className={`px-2 py-1 text-xs rounded transition-colors ${
                   playSpeed === speed
                     ? isDark 
-                      ? 'bg-indigo-600 text-white' 
-                      : 'bg-indigo-500 text-white'
+                      ? 'bg-primary-600 text-white' 
+                      : 'bg-primary-500 text-white'
                     : isDark 
                       ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'

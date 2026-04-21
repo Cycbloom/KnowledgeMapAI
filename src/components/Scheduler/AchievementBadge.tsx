@@ -36,20 +36,20 @@ const SIZE_CONFIG = {
 };
 
 const CATEGORY_COLORS = {
-  focus: "from-cyan-500 to-blue-500",
+  focus: "from-primary-500 to-primary-500",
   tasks: "from-emerald-500 to-teal-500",
   streak: "from-amber-500 to-orange-500",
   special: "from-violet-500 to-pink-500",
-  study: "from-indigo-500 to-purple-500",
+  study: "from-primary-500 to-primary-500",
   creation: "from-rose-500 to-red-500",
 };
 
 const CATEGORY_GLOW = {
-  focus: "shadow-cyan-500/50",
+  focus: "shadow-primary-500/50",
   tasks: "shadow-emerald-500/50",
   streak: "shadow-amber-500/50",
   special: "shadow-violet-500/50",
-  study: "shadow-indigo-500/50",
+  study: "shadow-primary-500/50",
   creation: "shadow-rose-500/50",
 };
 

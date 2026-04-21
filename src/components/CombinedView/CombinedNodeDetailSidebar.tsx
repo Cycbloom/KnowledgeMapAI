@@ -95,7 +95,7 @@ export const CombinedNodeDetailSidebar: React.FC<
           {prevSidebarMode === "outline" && (
             <button
               onClick={onBack}
-              className="mr-1 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+              className="mr-1 p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
               title={t("nodeDetail.backToOutline")}
             >
               <ArrowLeft size={18} />
@@ -134,7 +134,7 @@ export const CombinedNodeDetailSidebar: React.FC<
 
           <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
-              <Activity size={14} className="mr-1.5 text-blue-500" />
+              <Activity size={14} className="mr-1.5 text-primary-500" />
               <span>{levelLabels[getLevel(node, edges)] || t("nodeDetail.normalNode")}</span>
             </div>
 
@@ -234,7 +234,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                 return (
                   <a
                     {...props}
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-primary-600 dark:text-primary-400 hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   />
@@ -250,7 +250,7 @@ export const CombinedNodeDetailSidebar: React.FC<
           <>
             <button
               onClick={() => aiOps.handleGenerateContent()}
-              className="w-full flex items-center justify-center p-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-sm font-bold"
+              className="w-full flex items-center justify-center p-2.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors text-sm font-bold"
             >
               <Wand2 size={16} className="mr-2" />
               {t("nodeDetail.generateContent")}
@@ -259,7 +259,7 @@ export const CombinedNodeDetailSidebar: React.FC<
             <section className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => aiOps.handleStartLearningMode()}
-                className="col-span-2 flex items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                className="col-span-2 flex items-center justify-center p-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
               >
                 <Navigation size={18} className="mr-2" />
                 <span className="font-bold">{t("nodeDetail.startImmersiveLearning")}</span>
@@ -269,7 +269,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                 onClick={() => aiOps.handleStartLevelTest()}
                 className="flex items-center justify-center p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <GraduationCap size={18} className="mr-2 text-indigo-500" />
+                <GraduationCap size={18} className="mr-2 text-primary-500" />
                 <span className="font-medium">{t("nodeDetail.levelTest")}</span>
               </button>
 
@@ -292,7 +292,7 @@ export const CombinedNodeDetailSidebar: React.FC<
               </div>
               <button
                 onClick={() => onNodeClick(parentNode)}
-                className="w-full text-left p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 font-medium flex items-center transition-colors border border-gray-100 dark:border-gray-700 hover:border-blue-200 hover:text-blue-700"
+                className="w-full text-left p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 font-medium flex items-center transition-colors border border-gray-100 dark:border-gray-700 hover:border-primary-200 hover:text-primary-700"
               >
                 <ArrowLeft size={14} className="mr-2 text-gray-400" />
                 {parentNode.title}
@@ -332,7 +332,7 @@ export const CombinedNodeDetailSidebar: React.FC<
       <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center space-x-3 bg-white dark:bg-gray-900 sticky bottom-0 z-10">
         <button
           onClick={onEdit}
-          className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 dark:shadow-blue-900/30 transition-all active:scale-95"
+          className="flex-1 bg-primary-600 text-white py-2.5 rounded-xl hover:bg-primary-700 flex items-center justify-center font-bold shadow-lg shadow-primary-100 dark:shadow-primary-900/30 transition-all active:scale-95"
         >
           <Edit3 size={18} className="mr-2" />
           {t("nodeDetail.editNode")}

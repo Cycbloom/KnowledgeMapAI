@@ -114,7 +114,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           <button
             key={v}
             onClick={() => handleInsertVariable(v)}
-            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded dark:text-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded dark:text-primary-400 dark:bg-primary-900/30 dark:hover:bg-primary-900/50 transition-colors whitespace-nowrap"
             title={`插入 {{${v}}}`}
           >
             <Variable size={12} />
@@ -147,14 +147,14 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
                   value={optimizeInstruction}
                   onChange={(e) => setOptimizeInstruction(e.target.value)}
                   placeholder={t("promptEditor.optimizePlaceholder")}
-                  className="flex-1 px-3 py-2 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3 py-2 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-primary-500"
                   onKeyDown={(e) => e.key === "Enter" && handleOptimize()}
                   autoFocus
                 />
                 <button
                   onClick={handleOptimize}
                   disabled={isOptimizing}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 font-medium"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2 font-medium"
                 >
                   {isOptimizing ? (
                     t("promptEditor.optimizing")
@@ -182,7 +182,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           {!showOptimizeInput && (
             <button
               onClick={() => setShowOptimizeInput(true)}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-md dark:text-purple-400 dark:hover:bg-purple-900/20 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-md dark:text-primary-400 dark:hover:bg-primary-900/20 transition-colors"
             >
               <Sparkles size={16} />
               {t("promptEditor.aiOptimize")}
@@ -199,7 +199,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-700"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700"
           >
             <Save size={16} />
             {isSaving

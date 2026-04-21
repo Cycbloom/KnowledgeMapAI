@@ -97,8 +97,8 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
         ? 'text-gray-300 hover:bg-slate-700' 
         : 'text-gray-600 hover:bg-gray-100',
       active: isDark 
-        ? 'bg-blue-900/50 text-blue-400' 
-        : 'bg-blue-50 text-blue-600',
+        ? 'bg-primary-900/50 text-primary-400' 
+        : 'bg-primary-50 text-primary-600',
     },
     divider: isDark ? 'bg-slate-600' : 'bg-gray-300',
     dropdown: isDark 
@@ -115,7 +115,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
       <Divider className={themeClasses.divider} />
       
       <div className="flex items-center gap-2 px-2">
-        <div className="w-2 h-2 rounded-full bg-blue-500" />
+        <div className="w-2 h-2 rounded-full bg-primary-500" />
         <span className="text-sm font-medium max-w-[100px] truncate">{graph1Title}</span>
         <span className="text-gray-400">+</span>
         <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -129,7 +129,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
           onClick={onToggleColoringMode} 
           icon={coloringMode === 'level' ? Layers : Activity} 
           title={coloringMode === 'level' ? '着色模式: 结构' : '着色模式: 热力图'}
-          colorClass={coloringMode === 'level' ? 'text-blue-500' : 'text-orange-500'}
+          colorClass={coloringMode === 'level' ? 'text-primary-500' : 'text-orange-500'}
           buttonClasses={themeClasses.button}
           isDark={isDark}
         />
@@ -181,8 +181,8 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
       {selectedNode && (
         <>
           <Divider className={themeClasses.divider} />
-          <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-            <span className="text-xs text-blue-600 dark:text-blue-400">
+          <div className="flex items-center gap-2 px-2 py-1 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
+            <span className="text-xs text-primary-600 dark:text-primary-400">
               已选: {selectedNode.title}
             </span>
           </div>

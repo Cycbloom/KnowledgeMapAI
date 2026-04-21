@@ -107,7 +107,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   }>({ status: 'idle', currentStep: '', nodesCreated: 0 });
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; color: string }> = [
-    { value: 'prerequisite', label: '前置知识', color: 'bg-blue-500' },
+    { value: 'prerequisite', label: '前置知识', color: 'bg-primary-500' },
     { value: 'extension', label: '扩展知识', color: 'bg-green-500' },
     { value: 'related', label: '相关知识', color: 'bg-amber-500' },
   ];
@@ -228,14 +228,14 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
+              <Sparkles className="w-5 h-5 text-primary-500" />
               {t('graphEditor.graphMap.aiExpansion.title')}
             </h2>
             <div className="flex items-center gap-2">
               {onEditPrompt && (
                 <button
                   onClick={() => onEditPrompt(mode)}
-                  className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded transition-colors"
                   title={t('graphEditor.graphMap.aiExpansion.editPrompt')}
                 >
                   <Settings2 className="w-4 h-4" />
@@ -251,13 +251,13 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
           </div>
 
           <div className="p-4 space-y-4">
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300">
+            <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-primary-700 dark:text-primary-300">
                 <Network className="w-4 h-4" />
                 <span className="font-medium">{t('graphEditor.graphMap.aiExpansion.sourceGraph')}</span>
                 <span>{sourceGraphTitle}</span>
               </div>
-              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+              <p className="text-xs text-primary-600 dark:text-primary-400 mt-1">
                 {t('graphEditor.graphMap.aiExpansion.expansionHint')}
               </p>
             </div>
@@ -272,12 +272,12 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   disabled={isRunning}
                   className={`p-3 rounded-lg border-2 transition-all text-left ${
                     mode === 'depth'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <Layers className="w-4 h-4 text-blue-500" />
+                    <Layers className="w-4 h-4 text-primary-500" />
                     <span className="font-medium text-gray-900 dark:text-white">{t('graphEditor.graphMap.aiExpansion.depthExpansion')}</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -323,7 +323,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         disabled={isRunning}
                         className={`p-2 rounded-lg border-2 transition-all text-left ${
                           depthStyle === option.value
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
@@ -347,7 +347,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       onChange={e => setCustomPrompt(e.target.value)}
                       disabled={isRunning}
                       rows={3}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
                       placeholder="描述你希望如何生成知识点..."
                     />
                   </div>
@@ -365,7 +365,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         onChange={e => setNewSource(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleAddSource()}
                         disabled={isRunning}
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
                         placeholder="输入 URL 或文本..."
                       />
                       <button
@@ -406,7 +406,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     value={depthLevel}
                     onChange={e => setDepthLevel(Number(e.target.value))}
                     disabled={isRunning}
-                    className="w-full h-2 bg-blue-200 dark:bg-blue-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                    className="w-full h-2 bg-primary-200 dark:bg-primary-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <span>1 层</span>
@@ -414,8 +414,8 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   </div>
                 </div>
 
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                  <p className="text-xs text-primary-600 dark:text-primary-400">
                     {depthLevel === 1 && '生成根节点和核心节点，适合快速构建知识框架。'}
                     {depthLevel === 2 && '生成根节点、核心节点和一级子节点，适合中等详细程度的知识图谱。'}
                     {depthLevel === 3 && '生成根节点、核心节点和两级子节点，适合详细的知识图谱。'}
@@ -429,7 +429,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       {depthProgress.status === 'completed' ? (
                         <Check className="w-5 h-5 text-green-500" />
                       ) : (
-                        <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                        <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                       )}
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {depthProgress.status === 'completed' ? '生成完成' : depthProgress.currentStep}
@@ -556,7 +556,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                           value={nodeDepth}
                           onChange={e => setNodeDepth(Number(e.target.value))}
                           disabled={isRunning}
-                          className="w-full h-2 bg-blue-200 dark:bg-blue-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                          className="w-full h-2 bg-primary-200 dark:bg-primary-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                         />
                       </div>
                     )}
@@ -583,7 +583,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
             {(isRunning || isSubmitting) && progress && (
               <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
-                  <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                  <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     正在拓展...
                   </span>
@@ -618,7 +618,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       {progress.created_graphs.slice(-5).map((g, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs">
                           <div className={`w-2 h-2 rounded-full ${
-                            g.relation_type === 'prerequisite' ? 'bg-blue-500' :
+                            g.relation_type === 'prerequisite' ? 'bg-primary-500' :
                             g.relation_type === 'extension' ? 'bg-green-500' : 'bg-amber-500'
                           }`} />
                           <span className="text-gray-700 dark:text-gray-300 truncate">{g.title}</span>
@@ -655,7 +655,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={(mode === 'depth' && depthStyle === 'custom' && !customPrompt.trim()) || (mode === 'width' && selectedRelationTypes.length === 0) || isSubmitting || isRunning}
-                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>

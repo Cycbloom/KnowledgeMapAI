@@ -25,7 +25,7 @@ export const FocusStats = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard 
-          icon={<Clock className="text-blue-500" />} 
+          icon={<Clock className="text-primary-500" />} 
           label={t('study.focusStats.todayFocus')} 
           value={t('study.focusStats.minutes', { count: stats.today.minutes })}
           subValue={t('study.focusStats.sessions', { count: stats.today.sessions })}

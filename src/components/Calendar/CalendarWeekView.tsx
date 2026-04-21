@@ -91,9 +91,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   const getEventColor = (event: CalendarEvent) => {
     switch (event.type) {
       case 'task':
-        return 'bg-blue-500 border-blue-600';
+        return 'bg-primary-500 border-primary-600';
       case 'study':
-        return 'bg-purple-500 border-purple-600';
+        return 'bg-primary-500 border-primary-600';
       case 'review':
         return 'bg-green-500 border-green-600';
       default:
@@ -182,14 +182,14 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           <div
             key={index}
             className={`flex-1 text-center py-2 border-l border-slate-200 dark:border-slate-700 cursor-pointer ${
-              day.isToday ? 'bg-blue-50 dark:bg-blue-500/10' : ''
+              day.isToday ? 'bg-primary-50 dark:bg-primary-500/10' : ''
             }`}
             onClick={() => onDateSelect(day.date)}
           >
             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               {WEEKDAYS[index]}
             </div>
-            <div className={`text-sm font-medium ${day.isToday ? 'text-blue-500' : isDark ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`text-sm font-medium ${day.isToday ? 'text-primary-500' : isDark ? 'text-white' : 'text-gray-900'}`}>
               {day.label}
             </div>
           </div>
@@ -217,7 +217,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
             <div
               key={dayIndex}
               className={`flex-1 relative border-l border-slate-200 dark:border-slate-700 ${
-                day.isToday ? 'bg-blue-50/30 dark:bg-blue-500/5' : ''
+                day.isToday ? 'bg-primary-50/30 dark:bg-primary-500/5' : ''
               }`}
             >
               {/* Hour lines */}
@@ -226,7 +226,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   key={hour}
                   className={`absolute w-full border-t ${
                     isDark ? 'border-slate-700/50' : 'border-gray-100'
-                  } ${dragOverCell?.dayIndex === dayIndex && dragOverCell?.hour === hour ? 'bg-blue-100/50 dark:bg-blue-500/20' : ''}`}
+                  } ${dragOverCell?.dayIndex === dayIndex && dragOverCell?.hour === hour ? 'bg-primary-100/50 dark:bg-primary-500/20' : ''}`}
                   style={{ top: `${hour * 60}px`, height: '60px' }}
                   onDragOver={(e) => handleDragOver(e, dayIndex, hour)}
                   onDragLeave={handleDragLeave}
@@ -292,13 +292,13 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {/* Drop indicator */}
               {dragOverCell?.dayIndex === dayIndex && draggedEvent && (
                 <div
-                  className="absolute left-1 right-1 bg-blue-400/30 border-2 border-blue-400 border-dashed rounded pointer-events-none"
+                  className="absolute left-1 right-1 bg-primary-400/30 border-2 border-primary-400 border-dashed rounded pointer-events-none"
                   style={{ 
                     top: `${(dragOverCell.hour - Math.floor(dragOffset)) * 60}px`, 
                     height: `${getEventPosition(draggedEvent).height}` 
                   }}
                 >
-                  <div className="flex items-center justify-center h-full text-blue-500 text-xs font-medium">
+                  <div className="flex items-center justify-center h-full text-primary-500 text-xs font-medium">
                     <Move size={14} className="mr-1" />
                     移动到 {dragOverCell.hour}:00
                   </div>

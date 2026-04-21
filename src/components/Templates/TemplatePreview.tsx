@@ -31,11 +31,11 @@ const getNodeLevelColor = (level: string, isDark: boolean) => {
   if (isDark) {
     switch (level) {
       case 'root':
-        return 'bg-blue-600 text-white';
+        return 'bg-primary-600 text-white';
       case 'core':
-        return 'bg-indigo-600 text-white';
+        return 'bg-primary-600 text-white';
       case 'sub':
-        return 'bg-purple-600 text-white';
+        return 'bg-primary-600 text-white';
       case 'leaf':
         return 'bg-emerald-600 text-white';
       default:
@@ -44,11 +44,11 @@ const getNodeLevelColor = (level: string, isDark: boolean) => {
   }
   switch (level) {
     case 'root':
-      return 'bg-blue-500 text-white';
+      return 'bg-primary-500 text-white';
     case 'core':
-      return 'bg-indigo-500 text-white';
+      return 'bg-primary-500 text-white';
     case 'sub':
-      return 'bg-purple-500 text-white';
+      return 'bg-primary-500 text-white';
     case 'leaf':
       return 'bg-emerald-500 text-white';
     default:
@@ -109,8 +109,8 @@ const TreeNode: React.FC<{
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded ${
                 isDark
-                  ? 'bg-blue-900/50 text-blue-400'
-                  : 'bg-blue-50 text-blue-500'
+                  ? 'bg-primary-900/50 text-primary-400'
+                  : 'bg-primary-50 text-primary-500'
               }`}
             >
               AI
@@ -322,7 +322,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
           {onSelect && (
             <button
               onClick={onSelect}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
             >
               <Check size={16} />
               {t("templates.select")}

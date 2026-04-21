@@ -147,7 +147,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
             className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 p-6 text-white">
+            <div className="bg-gradient-to-r from-primary-500 to-primary-500 p-6 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white/20 rounded-xl">
@@ -169,7 +169,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
 
             {loading ? (
               <div className="p-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
               </div>
             ) : (
               <div className="p-6 space-y-6">
@@ -181,7 +181,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                     min={5}
                     max={60}
                     step={5}
-                    icon={<Clock size={16} className="text-cyan-500" />}
+                    icon={<Clock size={16} className="text-primary-500" />}
                     color="cyan"
                   />
 
@@ -203,7 +203,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                     min={10}
                     max={30}
                     step={5}
-                    icon={<Coffee size={16} className="text-purple-500" />}
+                    icon={<Coffee size={16} className="text-primary-500" />}
                     color="purple"
                   />
 
@@ -235,7 +235,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                         type="checkbox"
                         checked={autoStartPomodoro}
                         onChange={(e) => setAutoStartPomodoro(e.target.checked)}
-                        className="w-5 h-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
                       />
                     </label>
 
@@ -247,7 +247,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                         type="checkbox"
                         checked={autoStartBreak}
                         onChange={(e) => setAutoStartBreak(e.target.checked)}
-                        className="w-5 h-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
                       />
                     </label>
 
@@ -259,7 +259,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                         type="checkbox"
                         checked={soundEnabled}
                         onChange={(e) => setSoundEnabled(e.target.checked)}
-                        className="w-5 h-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
                       />
                     </label>
 
@@ -273,7 +273,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                         onChange={(e) =>
                           setNotificationEnabled(e.target.checked)
                         }
-                        className="w-5 h-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
                       />
                     </label>
                   </div>
@@ -291,7 +291,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                   <motion.button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:from-cyan-600 hover:to-blue-600 transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-600 hover:to-primary-600 transition-all disabled:opacity-50"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

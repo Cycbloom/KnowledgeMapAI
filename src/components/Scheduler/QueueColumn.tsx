@@ -36,15 +36,15 @@ interface QueueColumnProps {
 const QUEUE_CONFIG = {
   0: {
     icon: Zap,
-    gradient: "from-cyan-500 to-blue-500",
-    border: "border-cyan-300 dark:border-cyan-400/50",
-    glow: "shadow-cyan-500/20",
+    gradient: "from-primary-500 to-primary-500",
+    border: "border-primary-300 dark:border-primary-400/50",
+    glow: "shadow-primary-500/20",
     headerBg:
-      "bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20",
-    accentColor: "text-cyan-600 dark:text-cyan-400",
-    badgeBg: "bg-cyan-100 dark:bg-cyan-500/20",
+      "bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20",
+    accentColor: "text-primary-600 dark:text-primary-400",
+    badgeBg: "bg-primary-100 dark:bg-primary-500/20",
     description: "紧急重要任务",
-    ringColor: "ring-cyan-400",
+    ringColor: "ring-primary-400",
   },
   1: {
     icon: Target,
@@ -200,8 +200,8 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
 
         {inProgressTasks.length > 0 && (
           <div className="mt-2 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
-            <span className="text-xs text-blue-600 dark:text-blue-400">
+            <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
+            <span className="text-xs text-primary-600 dark:text-primary-400">
               {inProgressTasks.length} 个任务进行中
             </span>
           </div>
@@ -226,7 +226,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                   />
                   <p className="text-sm">暂无任务</p>
                   {isOver && (
-                    <p className="text-xs mt-2 text-cyan-500 dark:text-cyan-400">
+                    <p className="text-xs mt-2 text-primary-500 dark:text-primary-400">
                       释放以放置任务
                     </p>
                   )}

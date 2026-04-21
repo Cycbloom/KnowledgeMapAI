@@ -277,7 +277,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                   onClick={() => setSelectedCategory(category)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     selectedCategory === category
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -296,7 +296,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
 
             {loading && !isCreating && !editingType && (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
               </div>
             )}
 
@@ -308,7 +308,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                   </p>
                   <button
                     onClick={handleCreate}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
@@ -381,7 +381,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                   <>
                                     <button
                                       onClick={() => handleEdit(type)}
-                                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                      className="p-1.5 text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                                       title="编辑"
                                     >
                                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -428,7 +428,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
                       disabled={!!editingType}
                       placeholder="例如：leads_to"
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                         editingType ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     />
@@ -446,7 +446,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                       value={formData.display_name}
                       onChange={e => setFormData({ ...formData, display_name: e.target.value })}
                       placeholder="例如：Leads To"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
 
@@ -457,7 +457,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                     <select
                       value={formData.category}
                       onChange={e => setFormData({ ...formData, category: e.target.value as RelationshipCategory })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       {CATEGORY_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>
@@ -482,7 +482,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                         type="text"
                         value={formData.color}
                         onChange={e => setFormData({ ...formData, color: e.target.value })}
-                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                     </div>
                     <div className="flex gap-2 mt-2">
@@ -493,7 +493,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                           onClick={() => setFormData({ ...formData, color })}
                           className={`w-6 h-6 rounded-full border-2 ${
                             formData.color === color
-                              ? 'border-blue-500 ring-2 ring-blue-200'
+                              ? 'border-primary-500 ring-2 ring-primary-200'
                               : 'border-transparent'
                           }`}
                           style={{ backgroundColor: color }}
@@ -509,7 +509,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                     <select
                       value={formData.line_style}
                       onChange={e => setFormData({ ...formData, line_style: e.target.value as EdgeLineStyle })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       {LINE_STYLE_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>
@@ -532,7 +532,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                           show_arrow: value === 'auto' ? 'auto' : value === 'true',
                         });
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       {ARROW_OPTIONS.map(option => (
                         <option
@@ -595,7 +595,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                   <button
                     onClick={isCreating ? createRelationshipType : updateRelationshipType}
                     disabled={loading || !formData.name || !formData.display_name}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? '保存中...' : '保存'}
                   </button>

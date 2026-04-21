@@ -329,7 +329,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             <div className="text-red-500 font-bold mb-2">侧边栏组件出错</div>
             <button
               onClick={handleCloseSidebar}
-              className="text-blue-600 hover:underline"
+              className="text-primary-600 hover:underline"
             >
               关闭侧边栏
             </button>
@@ -342,10 +342,10 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           style={{ width: sidebarWidth }}
         >
           <div
-            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 z-50 flex items-center justify-center group transition-colors"
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary-400 z-50 flex items-center justify-center group transition-colors"
             onMouseDown={startResizing}
           >
-            <div className="h-8 w-1 bg-gray-300 dark:bg-gray-600 rounded-full group-hover:bg-blue-500 transition-colors" />
+            <div className="h-8 w-1 bg-gray-300 dark:bg-gray-600 rounded-full group-hover:bg-primary-500 transition-colors" />
           </div>
           {renderSidebarContent()}
         </div>

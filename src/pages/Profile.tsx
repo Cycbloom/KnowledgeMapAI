@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '../hooks/queries';
@@ -203,7 +203,7 @@ export const Profile = () => {
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
-            <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.accountInfo.title')}</h2>
           </div>
 
@@ -246,14 +246,14 @@ export const Profile = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <MessageSquare className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                         <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.promptManagement.title')}</h2>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('profile.promptManagement.description')}</p>
                 </div>
                 <button
                     onClick={() => setIsPromptSettingsOpen(true)}
-                    className="px-4 py-2 rounded-md bg-purple-50 dark:bg-slate-700 text-purple-700 dark:text-white hover:bg-purple-100 dark:hover:bg-slate-600 flex items-center gap-2 transition-colors"
+                    className="px-4 py-2 rounded-md bg-primary-50 dark:bg-slate-700 text-primary-700 dark:text-white hover:bg-primary-100 dark:hover:bg-slate-600 flex items-center gap-2 transition-colors"
                 >
                     <span>{t('profile.promptManagement.managePrompts')}</span>
                     <ExternalLink className="w-4 h-4" />
@@ -293,7 +293,7 @@ export const Profile = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 disabled:opacity-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:border-primary-500 dark:hover:text-primary-400 disabled:opacity-50 transition-colors"
               >
                 <Upload className="w-5 h-5" />
                 <span>{isImporting ? t('profile.backup.importing') : t('profile.backup.importBackup')}</span>
@@ -311,7 +311,7 @@ export const Profile = () => {
                   value="replace"
                   checked={importMode === 'replace'}
                   onChange={() => setImportMode('replace')}
-                  className="w-4 h-4 text-blue-600"
+                  className="w-4 h-4 text-primary-600"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   <span className="font-medium">{t('profile.backup.snapshotRestore')}</span>
@@ -325,7 +325,7 @@ export const Profile = () => {
                   value="merge"
                   checked={importMode === 'merge'}
                   onChange={() => setImportMode('merge')}
-                  className="w-4 h-4 text-blue-600"
+                  className="w-4 h-4 text-primary-600"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   <span className="font-medium">{t('profile.backup.mergeImport')}</span>
@@ -362,7 +362,7 @@ export const Profile = () => {
                 <button
                   onClick={handleCreateSnapshot}
                   disabled={isCreatingSnapshot}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{isCreatingSnapshot ? t('profile.backup.creating') : t('profile.backup.createSnapshot')}</span>
@@ -387,7 +387,7 @@ export const Profile = () => {
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                           snapshot.type === 'manual' 
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
                             : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
                         }`}>
                           {getTypeLabel(snapshot.type)}
@@ -431,7 +431,7 @@ export const Profile = () => {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in-up">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700 shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-50 rounded-lg text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                <div className="p-2 bg-primary-50 rounded-lg text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
                   <MessageSquare size={24} />
                 </div>
                 <div>
@@ -446,18 +446,18 @@ export const Profile = () => {
             
             <div className="flex border-b border-gray-100 dark:border-gray-700 px-6 bg-gray-50/50 dark:bg-gray-800/50">
                 <button 
-                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'prompts' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'prompts' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                     onClick={() => setActiveTab('prompts')}
                 >
                     {t('profile.promptSettings.promptTemplates')}
-                    {activeTab === 'prompts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
+                    {activeTab === 'prompts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 dark:bg-primary-400 rounded-t-full" />}
                 </button>
                 <button 
-                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'actions' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'actions' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                     onClick={() => setActiveTab('actions')}
                 >
                     {t('profile.promptSettings.customActions')}
-                    {activeTab === 'actions' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
+                    {activeTab === 'actions' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 dark:bg-primary-400 rounded-t-full" />}
                 </button>
             </div>
 

@@ -39,7 +39,7 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
           }`}
         >
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <span className="text-blue-500">✨</span>
+            <span className="text-primary-500">✨</span>
             {title}
           </h2>
           <button
@@ -78,7 +78,7 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
                   return (
                     <a
                       {...props}
-                      className="text-blue-600 hover:underline"
+                      className="text-primary-600 hover:underline"
                       target="_blank"
                       rel="noopener noreferrer"
                     />
@@ -99,7 +99,7 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
         >
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             关闭
           </button>

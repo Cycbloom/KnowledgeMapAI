@@ -19,11 +19,11 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.05 }}
-      className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800"
+      className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800"
     >
       <div className="flex items-center gap-2 mb-3">
-        <Layers className="w-4 h-4 text-purple-500" />
-        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+        <Layers className="w-4 h-4 text-primary-500" />
+        <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
           {insight.domains.join(' × ')}
         </span>
       </div>
@@ -42,7 +42,7 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
             {insight.intersection_topics.map((topic, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded"
+                className="px-2 py-0.5 text-xs bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300 rounded"
               >
                 {topic}
               </span>
@@ -65,7 +65,7 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
                 disabled={!onGraphClick}
                 className={`text-xs flex items-center gap-1 ${
                   onGraphClick
-                    ? 'text-blue-600 dark:text-blue-400 hover:underline'
+                    ? 'text-primary-600 dark:text-primary-400 hover:underline'
                     : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
@@ -88,7 +88,7 @@ export const CrossDomainInsightsSection: React.FC<CrossDomainInsightsSectionProp
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
         <div className="text-center">
-          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
             {result.analysis_summary.total_domains}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">涉及领域</div>

@@ -187,7 +187,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             onClick={() => setActiveTab('collaborate')}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               activeTab === 'collaborate'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -198,7 +198,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             onClick={() => setActiveTab('public')}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               activeTab === 'public'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -221,7 +221,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+                        <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium">
                           {collaborator.user?.name?.[0] || collaborator.user?.email?.[0] || '?'}
                         </div>
                         <div>
@@ -275,7 +275,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <button
                       type="submit"
                       disabled={inviteLoading || !inviteEmail}
-                      className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 text-sm"
+                      className="px-3 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 text-sm"
                     >
                       <UserPlus size={16} />
                     </button>
@@ -330,7 +330,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <button 
                       onClick={handleToggle}
                       disabled={loading}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                         isPublic ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-600'
                       }`}
                     >
@@ -358,7 +358,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     </div>
                     <button
                       onClick={handleCopy}
-                      className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors border border-blue-200 dark:border-blue-800"
+                      className="p-2 bg-primary-50 dark:bg-primary-900/30 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/50 rounded-lg transition-colors border border-primary-200 dark:border-primary-800"
                       title="复制链接"
                     >
                       {copied ? <Check size={20} /> : <Copy size={20} />}

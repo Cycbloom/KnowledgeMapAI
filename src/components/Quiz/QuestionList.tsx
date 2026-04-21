@@ -29,11 +29,11 @@ interface QuestionListProps {
 type CardType = StudyCard['card_type'];
 
 const cardTypeConfig: Record<CardType, { label: string; icon: React.ReactNode; color: string }> = {
-  qa: { label: '问答题', icon: <MessageSquare size={16} />, color: 'text-blue-500' },
+  qa: { label: '问答题', icon: <MessageSquare size={16} />, color: 'text-primary-500' },
   choice: { label: '单选题', icon: <CheckSquare size={16} />, color: 'text-green-500' },
-  multi_choice: { label: '多选题', icon: <CheckSquare size={16} />, color: 'text-purple-500' },
+  multi_choice: { label: '多选题', icon: <CheckSquare size={16} />, color: 'text-primary-500' },
   true_false: { label: '判断题', icon: <ToggleLeft size={16} />, color: 'text-amber-500' },
-  fill_in_the_blank: { label: '填空题', icon: <FileText size={16} />, color: 'text-cyan-500' },
+  fill_in_the_blank: { label: '填空题', icon: <FileText size={16} />, color: 'text-primary-500' },
   essay: { label: '论述题', icon: <FileText size={16} />, color: 'text-rose-500' },
 };
 
@@ -306,8 +306,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                             <div
                               className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
                                 isDark
-                                  ? 'bg-indigo-900/50 text-indigo-300'
-                                  : 'bg-indigo-100 text-indigo-600'
+                                  ? 'bg-primary-900/50 text-primary-300'
+                                  : 'bg-primary-100 text-primary-600'
                               }`}
                             >
                               {(cardWithIndex._index ?? idx) + 1}
@@ -328,8 +328,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                       onClick={() => toggleAnswer(card.id)}
                                       className={`p-1.5 rounded-lg transition-colors ${
                                         isDark
-                                          ? 'text-slate-400 hover:text-indigo-400 hover:bg-slate-700'
-                                          : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
+                                          ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700'
+                                          : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100'
                                       }`}
                                       title={isAnswerExpanded ? '隐藏答案' : '显示答案'}
                                     >
@@ -350,8 +350,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                       onClick={() => onRegenerate(card.id)}
                                       className={`p-1.5 rounded-lg transition-colors ${
                                         isDark
-                                          ? 'text-slate-400 hover:text-cyan-400 hover:bg-slate-700'
-                                          : 'text-gray-400 hover:text-cyan-600 hover:bg-gray-100'
+                                          ? 'text-slate-400 hover:text-primary-400 hover:bg-slate-700'
+                                          : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100'
                                       }`}
                                       title="重新生成"
                                     >

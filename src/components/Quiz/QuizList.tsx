@@ -98,7 +98,7 @@ export const QuizList: React.FC<QuizListProps> = ({
           isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'
         }`}
       >
-        <Loader2 size={32} className={`animate-spin ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
+        <Loader2 size={32} className={`animate-spin ${isDark ? 'text-primary-400' : 'text-primary-600'}`} />
         <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>{t('study.quizList.loading')}</p>
       </div>
     );
@@ -115,7 +115,7 @@ export const QuizList: React.FC<QuizListProps> = ({
         <p className="text-red-500">{t('study.quizList.loadFailed')}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           {t('study.quizList.retry')}
         </button>
@@ -153,7 +153,7 @@ export const QuizList: React.FC<QuizListProps> = ({
             onClick={() => setShowFilters(!showFilters)}
             className={`p-2 rounded-lg border transition-colors ${
               showFilters
-                ? 'bg-indigo-100 border-indigo-200 text-indigo-600'
+                ? 'bg-primary-100 border-primary-200 text-primary-600'
                 : isDark
                   ? 'bg-slate-800 border-slate-700 text-gray-400 hover:text-white'
                   : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'
@@ -173,8 +173,8 @@ export const QuizList: React.FC<QuizListProps> = ({
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   selectedStatus === status
                     ? isDark
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white text-indigo-600 shadow-sm'
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-primary-600 shadow-sm'
                     : isDark
                       ? 'text-slate-400 hover:text-slate-200'
                       : 'text-gray-500 hover:text-gray-700'
@@ -189,7 +189,7 @@ export const QuizList: React.FC<QuizListProps> = ({
           {onCreateQuiz && (
             <button
               onClick={onCreateQuiz}
-              className="flex items-center gap-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
               <PlusCircle size={18} />
               <span>{t('study.quizList.newQuiz')}</span>
@@ -238,7 +238,7 @@ export const QuizList: React.FC<QuizListProps> = ({
             {onCreateQuiz && (
               <button
                 onClick={onCreateQuiz}
-                className="mt-2 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="mt-2 flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
                 <PlusCircle size={18} />
                 {t('study.quizList.createFirstQuiz')}
@@ -310,7 +310,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                     onClick={() => setCurrentPage(pageNum)}
                     className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                       currentPage === pageNum
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-primary-600 text-white'
                         : isDark
                           ? 'text-slate-400 hover:bg-slate-800'
                           : 'text-gray-600 hover:bg-gray-100'

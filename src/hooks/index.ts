@@ -6,3 +6,4 @@ export * from "./graphAI";
 export * from "./graphEditor";
 export * from "./useConsole";
 export * from "./useScrollDirection";
+export * from "./useAILanguage";

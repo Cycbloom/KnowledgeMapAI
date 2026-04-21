@@ -34,8 +34,8 @@ const SimpleRAGChatButton: React.FC<SimpleRAGChatButtonProps> = ({
             ? 'bg-amber-600 hover:bg-amber-500 text-white' 
             : 'bg-amber-500 hover:bg-amber-600 text-white'
           : isDark 
-            ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
-            : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+            ? 'bg-primary-600 hover:bg-primary-500 text-white' 
+            : 'bg-primary-500 hover:bg-primary-600 text-white'
       }`}
       title={isTutorMode ? 'AI 助教' : '智能问答'}
     >

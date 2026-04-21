@@ -22,17 +22,17 @@ const getCategoryColors = (
 ): Record<TemplateCategory, string> => {
   if (isDark) {
     return {
-      knowledge: "bg-blue-900/50 text-blue-400 border-blue-800",
+      knowledge: "bg-primary-900/50 text-primary-400 border-primary-800",
       project: "bg-green-900/50 text-green-400 border-green-800",
       analysis: "bg-amber-900/50 text-amber-400 border-amber-800",
-      architecture: "bg-purple-900/50 text-purple-400 border-purple-800",
+      architecture: "bg-primary-900/50 text-primary-400 border-primary-800",
     };
   }
   return {
-    knowledge: "bg-blue-50 text-blue-600 border-blue-200",
+    knowledge: "bg-primary-50 text-primary-600 border-primary-200",
     project: "bg-green-50 text-green-600 border-green-200",
     analysis: "bg-amber-50 text-amber-600 border-amber-200",
-    architecture: "bg-purple-50 text-purple-600 border-purple-200",
+    architecture: "bg-primary-50 text-primary-600 border-primary-200",
   };
 };
 
@@ -52,11 +52,11 @@ const TemplateCardComponent: React.FC<TemplateCardProps> = ({
       className={`relative ${isMobile ? "p-3" : "p-5"} rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
         isSelected
           ? isDark
-            ? "border-blue-500 bg-blue-900/30 shadow-lg shadow-blue-500/20"
-            : "border-blue-500 bg-blue-50/50 shadow-lg shadow-blue-500/20"
+            ? "border-primary-500 bg-primary-900/30 shadow-lg shadow-primary-500/20"
+            : "border-primary-500 bg-primary-50/50 shadow-lg shadow-primary-500/20"
           : isDark
             ? "border-slate-700 bg-slate-800 hover:border-slate-600 hover:shadow-md"
-            : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md"
+            : "border-gray-200 bg-white hover:border-primary-300 hover:shadow-md"
       }`}
     >
       {template.is_system && (

@@ -12,7 +12,7 @@ interface TimelineViewProps {
 }
 
 const QUEUE_COLORS = {
-  0: { border: 'border-cyan-400 dark:border-cyan-400', glow: 'shadow-cyan-500/30', bg: 'bg-cyan-100 dark:bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400' },
+  0: { border: 'border-primary-400 dark:border-primary-400', glow: 'shadow-primary-500/30', bg: 'bg-primary-100 dark:bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400' },
   1: { border: 'border-emerald-400 dark:border-emerald-400', glow: 'shadow-emerald-500/30', bg: 'bg-emerald-100 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400' },
   2: { border: 'border-amber-400 dark:border-amber-400', glow: 'shadow-amber-500/30', bg: 'bg-amber-100 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
 };
@@ -125,7 +125,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           </button>
           <button
             onClick={() => setCurrentDate(new Date())}
-            className="px-4 py-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-sm font-medium hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all min-h-[44px]"
+            className="px-4 py-2 rounded-lg bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 text-sm font-medium hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all min-h-[44px]"
           >
             {t('scheduler.timeline.today')}
           </button>
@@ -151,7 +151,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 className={`
                   flex-shrink-0 w-64 sm:w-72 rounded-2xl border transition-all duration-300 flex flex-col
                   ${day.isToday 
-                    ? 'border-cyan-500/50 shadow-lg shadow-cyan-500/20' 
+                    ? 'border-primary-500/50 shadow-lg shadow-primary-500/20' 
                     : day.isPast 
                       ? 'border-slate-200 dark:border-slate-700/30 opacity-60' 
                       : 'border-slate-200 dark:border-slate-700/50'
@@ -164,16 +164,16 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 <div className={`
                   p-3 border-b
                   ${day.isToday 
-                    ? 'bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20 border-cyan-300 dark:border-cyan-500/30' 
+                    ? 'bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20 border-primary-300 dark:border-primary-500/30' 
                     : 'border-slate-200 dark:border-slate-700/50'
                   }
                 `}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {day.isToday && (
-                        <span className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
                       )}
-                      <span className={`font-semibold ${day.isToday ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-800 dark:text-white'}`}>
+                      <span className={`font-semibold ${day.isToday ? 'text-primary-600 dark:text-primary-400' : 'text-slate-800 dark:text-white'}`}>
                         {day.label}
                       </span>
                     </div>

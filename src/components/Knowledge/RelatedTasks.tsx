@@ -34,9 +34,9 @@ const STATUS_CONFIG: Record<
   },
   in_progress: {
     label: "进行中",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-100 dark:bg-blue-500/20",
-    borderColor: "border-blue-200 dark:border-blue-500/50",
+    color: "text-primary-600 dark:text-primary-400",
+    bgColor: "bg-primary-100 dark:bg-primary-500/20",
+    borderColor: "border-primary-200 dark:border-primary-500/50",
   },
   paused: {
     label: "已暂停",
@@ -60,9 +60,9 @@ const STATUS_CONFIG: Record<
 
 const QUEUE_COLORS = {
   0: {
-    accent: "bg-cyan-500",
-    text: "text-cyan-600 dark:text-cyan-400",
-    badge: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
+    accent: "bg-primary-500",
+    text: "text-primary-600 dark:text-primary-400",
+    badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
   },
   1: {
     accent: "bg-emerald-500",
@@ -96,7 +96,7 @@ const formatDeadline = (date?: string): { text: string; color: string } | null =
   if (days < 0) return { text: "已过期", color: "text-red-500 dark:text-red-400" };
   if (days === 0) return { text: "今天", color: "text-amber-500 dark:text-amber-400" };
   if (days === 1) return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
-  if (days <= 7) return { text: `${days}天后`, color: "text-blue-500 dark:text-blue-400" };
+  if (days <= 7) return { text: `${days}天后`, color: "text-primary-500 dark:text-primary-400" };
   return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
 };
 
@@ -105,7 +105,7 @@ const getStatusIcon = (status: TaskStatus) => {
     case "completed":
       return <CheckCircle size={16} className="text-emerald-500" />;
     case "in_progress":
-      return <Play size={16} className="text-blue-500" />;
+      return <Play size={16} className="text-primary-500" />;
     case "paused":
       return <Pause size={16} className="text-amber-500" />;
     default:
@@ -138,7 +138,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 size={24} className="animate-spin text-cyan-500" />
+        <Loader2 size={24} className="animate-spin text-primary-500" />
         <span className="ml-2 text-slate-500 dark:text-slate-400">加载任务中...</span>
       </div>
     );
@@ -151,7 +151,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
         <span>加载任务失败</span>
         <button
           onClick={() => refetch()}
-          className="mt-2 text-sm text-cyan-500 hover:text-cyan-600"
+          className="mt-2 text-sm text-primary-500 hover:text-primary-600"
         >
           重试
         </button>
@@ -163,7 +163,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30">
             <ListTodo size={18} className="text-white" />
           </div>
           <div>
@@ -180,7 +180,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onCreateTask}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-medium shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white text-sm font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all"
           >
             <Plus size={16} />
             <span>新建</span>
@@ -197,7 +197,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
+            <div className="w-2 h-2 rounded-full bg-primary-500" />
             <span className="text-sm text-slate-600 dark:text-slate-400">
               进行中: {taskStats.inProgress}
             </span>
@@ -232,7 +232,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
             {onCreateTask && (
               <button
                 onClick={onCreateTask}
-                className="mt-3 text-sm text-cyan-500 hover:text-cyan-600 flex items-center gap-1"
+                className="mt-3 text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
               >
                 <Plus size={14} />
                 创建新任务
@@ -304,7 +304,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
                           </div>
                           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
                             <motion.div
-                              className="bg-blue-500 h-1.5 rounded-full"
+                              className="bg-primary-500 h-1.5 rounded-full"
                               initial={{ width: 0 }}
                               animate={{ width: `${task.progress_percentage}%` }}
                               transition={{ duration: 0.5, delay: index * 0.05 }}

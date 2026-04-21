@@ -67,9 +67,9 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   const getEventColor = (event: CalendarEvent) => {
     switch (event.type) {
       case 'task':
-        return 'bg-blue-500 border-blue-600';
+        return 'bg-primary-500 border-primary-600';
       case 'study':
-        return 'bg-purple-500 border-purple-600';
+        return 'bg-primary-500 border-primary-600';
       case 'review':
         return 'bg-green-500 border-green-600';
       default:
@@ -158,7 +158,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
           </div>
           <button
             onClick={() => onAddEvent(currentDate)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <Plus size={16} />
             添加任务
@@ -189,8 +189,8 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
               key={hour}
               className={`flex min-h-[80px] border-b ${
                 isDark ? 'border-slate-700/50' : 'border-gray-100'
-              } ${hoveredHour === hour ? 'bg-blue-50/50 dark:bg-blue-500/5' : ''} ${
-                dragOverHour === hour ? 'bg-blue-100/50 dark:bg-blue-500/20' : ''
+              } ${hoveredHour === hour ? 'bg-primary-50/50 dark:bg-primary-500/5' : ''} ${
+                dragOverHour === hour ? 'bg-primary-100/50 dark:bg-primary-500/20' : ''
               }`}
               onMouseEnter={() => setHoveredHour(hour)}
               onMouseLeave={() => setHoveredHour(null)}
@@ -262,8 +262,8 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                   <div className="absolute inset-1 flex items-center justify-center">
                     <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-dashed ${
                       isDark
-                        ? 'border-blue-400 text-blue-400'
-                        : 'border-blue-300 text-blue-500'
+                        ? 'border-primary-400 text-primary-400'
+                        : 'border-primary-300 text-primary-500'
                     }`}>
                       <Move size={14} />
                       <span className="text-sm">移动到 {hour}:00</span>
@@ -276,8 +276,8 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                   <div className="absolute inset-1 flex items-center justify-center">
                     <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-dashed ${
                       isDark
-                        ? 'border-blue-400/50 text-blue-400'
-                        : 'border-blue-300 text-blue-500'
+                        ? 'border-primary-400/50 text-primary-400'
+                        : 'border-primary-300 text-primary-500'
                     }`}>
                       <Plus size={14} />
                       <span className="text-sm">添加任务</span>

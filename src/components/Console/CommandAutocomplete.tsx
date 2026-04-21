@@ -26,9 +26,9 @@ const getIcon = (type: AutocompleteSuggestion['type']) => {
 const getTypeColor = (type: AutocompleteSuggestion['type'], isDark: boolean): string => {
   switch (type) {
     case 'command':
-      return isDark ? 'text-blue-400 bg-blue-900/30' : 'text-blue-600 bg-blue-50';
+      return isDark ? 'text-primary-400 bg-primary-900/30' : 'text-primary-600 bg-primary-50';
     case 'option':
-      return isDark ? 'text-purple-400 bg-purple-900/30' : 'text-purple-600 bg-purple-50';
+      return isDark ? 'text-primary-400 bg-primary-900/30' : 'text-primary-600 bg-primary-50';
     case 'value':
       return isDark ? 'text-green-400 bg-green-900/30' : 'text-green-600 bg-green-50';
     default:

@@ -49,8 +49,8 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
       case "in_progress":
         return {
           label: t("learning.pathOutline.statusInProgress"),
-          color: "text-blue-500",
-          bgColor: "bg-blue-100 dark:bg-blue-900/30",
+          color: "text-primary-500",
+          bgColor: "bg-primary-100 dark:bg-primary-900/30",
           icon: <Play className="w-4 h-4" />,
         };
       case "completed":
@@ -92,7 +92,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
         className={`flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 ${className}`}
       >
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       </div>
     );
@@ -144,7 +144,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
         )}
 
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+          <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-500 rounded-lg">
             <Route className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -171,7 +171,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
               initial={{ width: 0 }}
               animate={{ width: `${progress.progress_percentage || 0}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+              className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
             />
           </div>
         </div>
@@ -230,9 +230,9 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                     transition-all duration-200 group
                     ${
                       isCurrentNode
-                        ? "bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 ring-2 ring-indigo-500 shadow-lg shadow-indigo-200/50 dark:shadow-indigo-900/30"
+                        ? "bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-900/40 dark:to-primary-900/40 ring-2 ring-primary-500 shadow-lg shadow-primary-200/50 dark:shadow-primary-900/30"
                         : isClicked
-                          ? "bg-indigo-100 dark:bg-indigo-900/30 scale-[0.98]"
+                          ? "bg-primary-100 dark:bg-primary-900/30 scale-[0.98]"
                           : status === "completed"
                             ? "bg-green-50/50 dark:bg-green-900/10 hover:bg-green-50 dark:hover:bg-green-900/20"
                             : "hover:bg-gray-50 dark:hover:bg-slate-800"
@@ -247,9 +247,9 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                           status === "completed"
                             ? "bg-green-500 text-white"
                             : status === "in_progress"
-                              ? "bg-blue-500 text-white"
+                              ? "bg-primary-500 text-white"
                               : isCurrentNode
-                                ? "bg-indigo-500 text-white"
+                                ? "bg-primary-500 text-white"
                                 : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                         }
                       `}
@@ -261,8 +261,8 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                       )}
                       {isCurrentNode && (
                         <>
-                          <span className="absolute inset-0 rounded-full bg-indigo-400 animate-ping opacity-75" />
-                          <span className="absolute inset-0 rounded-full bg-indigo-500 animate-pulse opacity-50" />
+                          <span className="absolute inset-0 rounded-full bg-primary-400 animate-ping opacity-75" />
+                          <span className="absolute inset-0 rounded-full bg-primary-500 animate-pulse opacity-50" />
                         </>
                       )}
                     </div>
@@ -339,7 +339,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
             </div>
           </div>
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
-            <div className="text-lg font-bold text-blue-500">
+            <div className="text-lg font-bold text-primary-500">
               {nodes.filter((n: any) => n.status === "in_progress").length}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">

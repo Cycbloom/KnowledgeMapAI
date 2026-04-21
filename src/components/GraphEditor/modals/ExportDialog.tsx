@@ -95,7 +95,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <FileText className="text-blue-600" size={20} />
+            <FileText className="text-primary-600" size={20} />
             {t('graphEditor.export.title')}
           </h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
@@ -150,9 +150,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
           <div className="space-y-3">
              <h3 className="text-sm font-semibold text-gray-700">{t('graphEditor.export.options')}</h3>
              
-             <label className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-colors">
+             <label className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-primary-300 cursor-pointer transition-colors">
                <div className="flex items-center gap-3">
-                 <div className={`p-2 rounded-md ${includeScreenshot ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                 <div className={`p-2 rounded-md ${includeScreenshot ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-400'}`}>
                    <Image size={18} />
                  </div>
                  <div className="text-sm">
@@ -160,15 +160,15 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                    <div className="text-gray-500 text-xs">{t('graphEditor.export.screenshotDesc')}</div>
                  </div>
                </div>
-               <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${includeScreenshot ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+               <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${includeScreenshot ? 'bg-primary-600 border-primary-600' : 'border-gray-300'}`}>
                  {includeScreenshot && <Check size={12} className="text-white" />}
                </div>
                <input type="checkbox" className="hidden" checked={includeScreenshot} onChange={() => setIncludeScreenshot(!includeScreenshot)} />
              </label>
 
-             <label className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-colors">
+             <label className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-primary-300 cursor-pointer transition-colors">
                <div className="flex items-center gap-3">
-                 <div className={`p-2 rounded-md ${includeDetails ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                 <div className={`p-2 rounded-md ${includeDetails ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-400'}`}>
                    <List size={18} />
                  </div>
                  <div className="text-sm">
@@ -176,7 +176,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                    <div className="text-gray-500 text-xs">{t('graphEditor.export.detailsDesc')}</div>
                  </div>
                </div>
-               <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${includeDetails ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+               <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${includeDetails ? 'bg-primary-600 border-primary-600' : 'border-gray-300'}`}>
                  {includeDetails && <Check size={12} className="text-white" />}
                </div>
                <input type="checkbox" className="hidden" checked={includeDetails} onChange={() => setIncludeDetails(!includeDetails)} />
@@ -195,7 +195,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
           <button 
             onClick={handleExport}
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
             {loading ? t('graphEditor.export.generating') : t('graphEditor.export.download')}

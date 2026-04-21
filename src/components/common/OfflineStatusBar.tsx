@@ -116,8 +116,8 @@ export const OfflineStatusBar: React.FC = () => {
     }
     if (syncState === 'syncing') {
       return isDark
-        ? 'bg-blue-900/95 border-blue-700'
-        : 'bg-blue-500/95 border-blue-600';
+        ? 'bg-primary-900/95 border-primary-700'
+        : 'bg-primary-500/95 border-primary-600';
     }
     if (syncState === 'error') {
       return isDark

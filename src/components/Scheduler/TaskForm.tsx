@@ -113,7 +113,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const PRIORITY_OPTIONS = [
     { value: 1, label: t("scheduler.taskForm.priorityLow"), color: "text-slate-500 dark:text-slate-400" },
-    { value: 2, label: t("scheduler.taskForm.priorityMedium"), color: "text-blue-600 dark:text-blue-400" },
+    { value: 2, label: t("scheduler.taskForm.priorityMedium"), color: "text-primary-600 dark:text-primary-400" },
     { value: 3, label: t("scheduler.taskForm.priorityHigh"), color: "text-amber-600 dark:text-amber-400" },
     { value: 4, label: t("scheduler.taskForm.priorityUrgent"), color: "text-red-600 dark:text-red-400" },
   ];
@@ -477,7 +477,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <button
               type="button"
               onClick={() => setShowTemplateSelector(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors min-h-[44px] touch-target"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors min-h-[44px] touch-target"
             >
               <FileText size={18} />
               <span>{t("scheduler.taskForm.createFromTemplate")}</span>
@@ -498,7 +498,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   flex-1 px-4 py-2.5 rounded-xl
                   bg-slate-50 dark:bg-slate-800 border transition-all
                   text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
                   ${errors.title ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500"}
                 `}
               />
@@ -512,7 +512,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   ${
                     isGenerating
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/20"
+                      : "bg-gradient-to-r from-primary-500 to-pink-500 text-white hover:from-primary-400 hover:to-pink-400 shadow-lg shadow-primary-500/20"
                   }
                 `}
                 title={t("scheduler.taskForm.aiGenerateHint")}
@@ -546,7 +546,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 w-full px-4 py-2.5 rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 resize-none
               "
             />
@@ -564,7 +564,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 w-full px-4 py-2.5 rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                 text-slate-900 dark:text-white
-                focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                focus:outline-none focus:ring-2 focus:ring-primary-500/50
               "
             >
               <option value="one_time">{t("scheduler.taskForm.typeOneTime")}</option>
@@ -598,7 +598,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   w-full px-4 py-2.5 rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               />
               {totalDuration > 0 && timeSliceSettings && (
@@ -623,7 +623,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   w-full px-4 py-2.5 rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               >
                 <option value="average">{t("scheduler.taskForm.progressAverage")}</option>
@@ -633,7 +633,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               </select>
               <div className="mt-2 flex items-center gap-2">
                 {progressMode === "average" && (
-                  <Minus size={14} className="text-blue-500" />
+                  <Minus size={14} className="text-primary-500" />
                 )}
                 {progressMode === "decreasing" && (
                   <TrendingDown size={14} className="text-amber-500" />
@@ -666,7 +666,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white text-left
                   flex items-center justify-between
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               >
                 <span
@@ -713,7 +713,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                                 );
                               }
                             }}
-                            className="rounded border-slate-300 dark:border-slate-600 text-cyan-500 focus:ring-cyan-500/50"
+                            className="rounded border-slate-300 dark:border-slate-600 text-primary-500 focus:ring-primary-500/50"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
@@ -736,7 +736,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   return t ? (
                     <span
                       key={depId}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 rounded-lg text-sm"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 rounded-lg text-sm"
                     >
                       {t.title}
                       <button
@@ -746,7 +746,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                             selectedDependencies.filter((id) => id !== depId),
                           )
                         }
-                        className="hover:text-cyan-900 dark:hover:text-cyan-100"
+                        className="hover:text-primary-900 dark:hover:text-primary-100"
                       >
                         <X size={12} />
                       </button>
@@ -771,7 +771,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 w-full px-4 py-2.5 rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 resize-none
               "
             />
@@ -793,7 +793,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   w-full px-4 py-2.5 rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               >
                 {DURATION_OPTIONS.map((opt) => (
@@ -817,7 +817,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   w-full px-4 py-2.5 rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               />
             </div>
@@ -853,18 +853,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="mt-2 p-2 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-500/10 dark:to-pink-500/10 border border-purple-200 dark:border-purple-500/30"
+                  className="mt-2 p-2 rounded-lg bg-gradient-to-r from-primary-50 to-pink-50 dark:from-primary-500/10 dark:to-pink-500/10 border border-primary-200 dark:border-primary-500/30"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Zap
                         size={14}
-                        className="text-purple-500 dark:text-purple-400"
+                        className="text-primary-500 dark:text-primary-400"
                       />
-                      <span className="text-xs text-purple-700 dark:text-purple-300">
+                      <span className="text-xs text-primary-700 dark:text-primary-300">
                         {t("scheduler.taskForm.suggestion")}: P{prioritySuggestion.suggestedPriority} / Q
                         {prioritySuggestion.suggestedQueue}
-                        <span className="ml-1 text-purple-400 dark:text-purple-500">
+                        <span className="ml-1 text-primary-400 dark:text-primary-500">
                           ({Math.round(prioritySuggestion.confidence * 100)}%)
                         </span>
                       </span>
@@ -873,7 +873,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       <button
                         type="button"
                         onClick={applyPrioritySuggestion}
-                        className="px-2 py-0.5 rounded text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-colors"
+                        className="px-2 py-0.5 rounded text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-colors"
                       >
                         {t("scheduler.taskForm.apply")}
                       </button>
@@ -911,7 +911,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       ${
                         queueLevel === level
                           ? level === 0
-                            ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 ring-1 ring-cyan-300 dark:ring-cyan-500/50"
+                            ? "bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400 ring-1 ring-primary-300 dark:ring-primary-500/50"
                             : level === 1
                               ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-300 dark:ring-emerald-500/50"
                               : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-300 dark:ring-amber-500/50"
@@ -935,7 +935,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-sm flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 text-sm flex items-center gap-1"
                 >
                   {tag}
                   <button
@@ -972,7 +972,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 w-full px-4 py-2 rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm
-                focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                focus:outline-none focus:ring-2 focus:ring-primary-500/50
               "
             />
           </div>
@@ -990,7 +990,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   w-full px-4 py-2.5 rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               >
                 <option value="">{t("scheduler.taskForm.noKnowledgeLink")}</option>
@@ -1023,7 +1023,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:from-cyan-400 hover:to-blue-400 transition-all shadow-lg shadow-cyan-500/20 min-h-[44px] touch-target"
+            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target"
           >
             {isEditing ? t("scheduler.taskForm.saveChanges") : t("scheduler.taskForm.createTaskBtn")}
           </button>

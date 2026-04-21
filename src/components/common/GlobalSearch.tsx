@@ -226,7 +226,7 @@ export const GlobalSearch = () => {
             }
           }}
           placeholder={searchType === 'semantic' ? "AI 语义搜索..." : "搜索图谱或节点..."}
-          className={`w-full pl-10 pr-24 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full pl-10 pr-24 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
             isDark 
               ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
               : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'
@@ -238,7 +238,7 @@ export const GlobalSearch = () => {
             onClick={() => setShowFilters(prev => !prev)}
             className={`p-1 rounded-md transition-colors ${
               showFilters 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-primary-500 text-white' 
                 : isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
             }`}
             title="筛选"
@@ -250,7 +250,7 @@ export const GlobalSearch = () => {
             onClick={() => setSearchType(prev => prev === 'keyword' ? 'semantic' : 'keyword')}
             className={`p-1 rounded-md transition-colors ${
               searchType === 'semantic' 
-                ? 'text-purple-500' 
+                ? 'text-primary-500' 
                 : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
             }`}
             title={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
@@ -290,7 +290,7 @@ export const GlobalSearch = () => {
                         onClick={() => setFilters(prev => ({ ...prev, timeRange: range }))}
                         className={`px-2 py-1 rounded-md transition-colors ${
                           filters.timeRange === range
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-primary-500 text-white'
                             : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         }`}
                       >
@@ -314,7 +314,7 @@ export const GlobalSearch = () => {
                         onClick={() => setFilters(prev => ({ ...prev, status: key }))}
                         className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${
                           filters.status === key
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-primary-500 text-white'
                             : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         }`}
                       >
@@ -354,7 +354,7 @@ export const GlobalSearch = () => {
                     <Clock size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
                     <span className={`truncate ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{item.query}</span>
                     {item.type === 'semantic' && (
-                      <Sparkles size={12} className="text-purple-500" />
+                      <Sparkles size={12} className="text-primary-500" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -384,10 +384,10 @@ export const GlobalSearch = () => {
           ) : results ? (
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
               {results.answer && (
-                <div className={`p-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-purple-50/50'}`}>
+                <div className={`p-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-primary-50/50'}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Sparkles size={14} className="text-purple-500" />
-                    <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>AI 回答</span>
+                    <Sparkles size={14} className="text-primary-500" />
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>AI 回答</span>
                   </div>
                   <div className={`text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                     {results.answer}
@@ -409,7 +409,7 @@ export const GlobalSearch = () => {
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isDark ? 'bg-blue-900/30 text-blue-400 group-hover:bg-blue-900/50' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                        isDark ? 'bg-primary-900/30 text-primary-400 group-hover:bg-primary-900/50' : 'bg-primary-50 text-primary-600 group-hover:bg-primary-100'
                       }`}>
                         <LayoutGrid size={18} />
                       </div>

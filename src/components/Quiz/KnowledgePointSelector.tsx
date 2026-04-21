@@ -20,10 +20,10 @@ interface TreeNode {
 }
 
 const levelColors: Record<string, string> = {
-  root: 'bg-purple-500',
+  root: 'bg-primary-500',
   core: 'bg-red-500',
   sub: 'bg-orange-500',
-  normal: 'bg-blue-500',
+  normal: 'bg-primary-500',
   leaf: 'bg-green-500',
 };
 
@@ -159,8 +159,8 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
           className={`flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-colors ${
             isSelected
               ? isDark
-                ? 'bg-indigo-900/30'
-                : 'bg-indigo-50'
+                ? 'bg-primary-900/30'
+                : 'bg-primary-50'
               : isDark
                 ? 'hover:bg-slate-700/50'
                 : 'hover:bg-gray-100'
@@ -186,7 +186,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
             onClick={() => toggleSelect(node.id)}
             className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
               isSelected
-                ? 'bg-indigo-600 border-indigo-600 text-white'
+                ? 'bg-primary-600 border-primary-600 text-white'
                 : isDark
                   ? 'border-slate-600'
                   : 'border-gray-300'
@@ -245,8 +245,8 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
               className={`flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors ${
                 isSelected
                   ? isDark
-                    ? 'bg-indigo-900/30'
-                    : 'bg-indigo-50'
+                    ? 'bg-primary-900/30'
+                    : 'bg-primary-50'
                   : isDark
                     ? 'hover:bg-slate-700/50'
                     : 'hover:bg-gray-100'
@@ -255,7 +255,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
               <div
                 className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
                   isSelected
-                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    ? 'bg-primary-600 border-primary-600 text-white'
                     : isDark
                       ? 'border-slate-600'
                       : 'border-gray-300'
@@ -339,11 +339,11 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
 
           <div className="flex items-center justify-between">
             <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-              已选择 <span className="font-bold text-indigo-600">{selectedIds.length}</span> 个知识点
+              已选择 <span className="font-bold text-primary-600">{selectedIds.length}</span> 个知识点
             </div>
             <button
               onClick={toggleSelectAll}
-              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               {selectedIds.length === graphData?.nodes?.length ? '取消全选' : '全选'}
             </button>
@@ -357,7 +357,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
             <div className="max-h-[300px] overflow-y-auto p-2">
               {nodesLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 size={24} className="animate-spin text-indigo-600" />
+                  <Loader2 size={24} className="animate-spin text-primary-600" />
                 </div>
               ) : searchTerm ? (
                 renderSearchResults()

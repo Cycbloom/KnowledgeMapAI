@@ -25,13 +25,13 @@ interface DraggableTaskCardProps {
 
 const QUEUE_COLORS = {
   0: {
-    border: "border-cyan-300 dark:border-cyan-400",
-    glow: "shadow-cyan-500/30",
-    bg: "bg-cyan-100 dark:bg-cyan-500/10",
-    text: "text-cyan-600 dark:text-cyan-400",
-    badge: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
-    accent: "bg-cyan-500",
-    gradient: "from-cyan-500 to-blue-500",
+    border: "border-primary-300 dark:border-primary-400",
+    glow: "shadow-primary-500/30",
+    bg: "bg-primary-100 dark:bg-primary-500/10",
+    text: "text-primary-600 dark:text-primary-400",
+    badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
+    accent: "bg-primary-500",
+    gradient: "from-primary-500 to-primary-500",
   },
   1: {
     border: "border-emerald-300 dark:border-emerald-400",
@@ -63,7 +63,7 @@ const STATUS_CONFIG = {
   },
   in_progress: {
     label: "进行中",
-    color: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+    color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
   },
   paused: {
     label: "已暂停",
@@ -139,7 +139,7 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
                 : "hover:shadow-lg"
             }
             ${queueStyle.border} ${snapshot.isDragging ? queueStyle.glow : ""}
-            ${isInProgress ? "ring-2 ring-blue-400/50 dark:ring-blue-500/50" : ""}
+            ${isInProgress ? "ring-2 ring-primary-400/50 dark:ring-primary-500/50" : ""}
             bg-white dark:bg-slate-900/80 backdrop-blur-sm
             overflow-hidden flex-shrink-0
           `}
@@ -263,7 +263,7 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
                     e.stopPropagation();
                     onViewDetail();
                   }}
-                  className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:scale-110"
+                  className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
                   title="详情"
                 >
                   <Info size={12} />

@@ -16,11 +16,11 @@ interface NotificationItem {
 const DEFAULT_GRADIENT = "from-amber-500 to-orange-500";
 
 const CATEGORY_COLORS = {
-  focus: "from-cyan-500 to-blue-500",
+  focus: "from-primary-500 to-primary-500",
   tasks: "from-emerald-500 to-teal-500",
   streak: "from-amber-500 to-orange-500",
   special: "from-violet-500 to-pink-500",
-  study: "from-indigo-500 to-purple-500",
+  study: "from-primary-500 to-primary-500",
   creation: "from-rose-500 to-red-500",
 };
 

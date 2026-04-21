@@ -82,7 +82,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
         <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
             {result.analysis_summary.total_graphs_analyzed}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">分析图谱</div>
@@ -135,7 +135,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
             onClick={() => setFilterType('all')}
             className={`px-3 py-1 text-sm rounded-full transition-colors ${
               filterType === 'all'
-                ? 'bg-blue-500 text-white'
+                ? 'bg-primary-500 text-white'
                 : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
             }`}
           >
@@ -149,7 +149,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
               onClick={() => setFilterType(type)}
               className={`px-3 py-1 text-sm rounded-full transition-colors flex items-center gap-1 ${
                 filterType === type
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
               }`}
             >
@@ -205,7 +205,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                       {onGraphClick ? (
                         <button
                           onClick={() => onGraphClick(rel.source_graph_id)}
-                          className="text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[140px]"
+                          className="text-primary-600 dark:text-primary-400 hover:underline truncate max-w-[140px]"
                         >
                           {rel.source_graph_title}
                         </button>
@@ -218,7 +218,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                       {onGraphClick ? (
                         <button
                           onClick={() => onGraphClick(rel.target_graph_id)}
-                          className="text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[140px]"
+                          className="text-primary-600 dark:text-primary-400 hover:underline truncate max-w-[140px]"
                         >
                           {rel.target_graph_title}
                         </button>
@@ -261,7 +261,7 @@ export const RelationsResultSection: React.FC<RelationsResultSectionProps> = ({
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 cursor-default'
                           : isCreating
                           ? 'bg-gray-100 dark:bg-slate-600 text-gray-400 cursor-wait'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                          : 'bg-primary-500 text-white hover:bg-primary-600'
                       }`}
                     >
                       {isCreated ? (

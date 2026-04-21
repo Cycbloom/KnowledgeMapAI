@@ -97,7 +97,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
             {task.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-sm"
+                className="px-2 py-1 bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 rounded text-sm"
               >
                 {tag}
               </span>
@@ -118,7 +118,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
-                className="bg-blue-500 h-2 rounded-full transition-all"
+                className="bg-primary-500 h-2 rounded-full transition-all"
                 style={{ width: `${task.progress_percentage}%` }}
               />
             </div>

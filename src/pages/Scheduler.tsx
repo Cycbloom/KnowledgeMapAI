@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useState,
   useMemo,
   useEffect,
@@ -93,7 +93,7 @@ const SmartRecommendationBar = lazy(() =>
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center p-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
   </div>
 );
 
@@ -371,12 +371,12 @@ export const Scheduler: React.FC = () => {
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse" />
         <div
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
         />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/5 dark:bg-blue-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary-500/5 dark:bg-primary-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 h-full flex flex-col">
@@ -385,13 +385,13 @@ export const Scheduler: React.FC = () => {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30">
                     <Zap size={20} className="text-white" />
                   </div>
                   <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
                 </div>
                 <div>
-                  <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 dark:from-cyan-400 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary-500 via-primary-500 to-primary-500 dark:from-primary-400 dark:via-primary-400 dark:to-primary-400 bg-clip-text text-transparent">
                     {t("scheduler.title")}
                   </h1>
                 </div>
@@ -399,20 +399,20 @@ export const Scheduler: React.FC = () => {
 
               <div className="hidden sm:flex items-center gap-3">
                 <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary-500 dark:bg-primary-400" />
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     {t("scheduler.pending")}
                   </span>
-                  <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                  <span className="text-xs font-bold text-primary-600 dark:text-primary-400">
                     {stats.pending}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary-500 dark:bg-primary-400" />
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     {t("scheduler.inProgress")}
                   </span>
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-xs font-bold text-primary-600 dark:text-primary-400">
                     {stats.inProgress}
                   </span>
                 </div>
@@ -450,7 +450,7 @@ export const Scheduler: React.FC = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => openAddTaskForm(2)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all"
                 >
                   <Plus size={16} />
                   <span className="hidden sm:inline text-sm">
@@ -473,7 +473,7 @@ export const Scheduler: React.FC = () => {
                   onClick={() => setShowSettings(!showSettings)}
                   className={`p-2 rounded-xl border transition-all ${
                     showSettings
-                      ? "bg-cyan-100 dark:bg-cyan-500/20 border-cyan-300 dark:border-cyan-500/50 text-cyan-600 dark:text-cyan-400"
+                      ? "bg-primary-100 dark:bg-primary-500/20 border-primary-300 dark:border-primary-500/50 text-primary-600 dark:text-primary-400"
                       : "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600"
                   }`}
                 >
@@ -484,11 +484,11 @@ export const Scheduler: React.FC = () => {
 
             <div className="flex sm:hidden items-center gap-2 mt-2 overflow-x-auto">
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />
                 <span className="text-xs text-slate-500">{stats.pending}</span>
               </div>
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />
                 <span className="text-xs text-slate-500">
                   {stats.inProgress}
                 </span>
@@ -517,7 +517,7 @@ export const Scheduler: React.FC = () => {
                     }}
                     className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all ${
                       !selectedPathId && !groupByPath
-                        ? "bg-cyan-500 text-white"
+                        ? "bg-primary-500 text-white"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
@@ -533,7 +533,7 @@ export const Scheduler: React.FC = () => {
                       }
                       className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
                         selectedPathId === path.id
-                          ? "bg-indigo-500 text-white"
+                          ? "bg-primary-500 text-white"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                       }`}
                     >
@@ -547,7 +547,7 @@ export const Scheduler: React.FC = () => {
                     onClick={() => setGroupByPath(!groupByPath)}
                     className={`px-2.5 py-0.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
                       groupByPath
-                        ? "bg-purple-500 text-white"
+                        ? "bg-primary-500 text-white"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
@@ -582,10 +582,10 @@ export const Scheduler: React.FC = () => {
             <div className="flex-1 flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
-                  <div className="w-16 h-16 border-4 border-cyan-500/30 rounded-full animate-spin border-t-cyan-500" />
+                  <div className="w-16 h-16 border-4 border-primary-500/30 rounded-full animate-spin border-t-primary-500" />
                   <Sparkles
                     size={24}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-500 dark:text-cyan-400"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500 dark:text-primary-400"
                   />
                 </div>
                 <p className="text-slate-500 dark:text-slate-400">

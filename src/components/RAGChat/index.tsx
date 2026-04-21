@@ -277,7 +277,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
   const headerBgClass = isTutorMode 
     ? 'from-amber-600 to-orange-500' 
-    : 'from-indigo-600 to-purple-500';
+    : 'from-primary-600 to-primary-500';
 
   return (
     <motion.div
@@ -292,10 +292,10 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
       style={{ width: `${width}px` }}
     >
       <div
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 z-50 flex items-center justify-center group transition-colors"
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary-400 z-50 flex items-center justify-center group transition-colors"
         onMouseDown={handleMouseDown}
       >
-        <div className={`h-8 w-1 rounded-full group-hover:bg-blue-500 transition-colors ${chatState.isResizing ? 'bg-blue-500' : 'bg-gray-300'}`} />
+        <div className={`h-8 w-1 rounded-full group-hover:bg-primary-500 transition-colors ${chatState.isResizing ? 'bg-primary-500' : 'bg-gray-300'}`} />
       </div>
       
       <div className={`flex items-center justify-between p-4 border-b ${
@@ -417,11 +417,11 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
                 <div className={`p-4 rounded-2xl mb-4 ${
                   isTutorMode 
                     ? isDark ? 'bg-amber-900/30' : 'bg-amber-50'
-                    : isDark ? 'bg-indigo-900/30' : 'bg-indigo-50'
+                    : isDark ? 'bg-primary-900/30' : 'bg-primary-50'
                 }`}>
                   <Bot size={40} className={isTutorMode 
                     ? isDark ? 'text-amber-400' : 'text-amber-600'
-                    : isDark ? 'text-indigo-400' : 'text-indigo-600'
+                    : isDark ? 'text-primary-400' : 'text-primary-600'
                   } />
                 </div>
                 <h4 className={`font-semibold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
@@ -451,7 +451,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
                         <div className="flex items-center gap-2">
                           <Lightbulb size={14} className={isTutorMode 
                             ? isDark ? 'text-amber-400' : 'text-amber-500'
-                            : isDark ? 'text-indigo-400' : 'text-indigo-500'
+                            : isDark ? 'text-primary-400' : 'text-primary-500'
                           } />
                           <span>{q}</span>
                         </div>
@@ -591,8 +591,8 @@ const SimpleChatButton: React.FC<{
             ? 'bg-amber-600 hover:bg-amber-500 text-white' 
             : 'bg-amber-500 hover:bg-amber-600 text-white'
           : isDark 
-            ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
-            : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+            ? 'bg-primary-600 hover:bg-primary-500 text-white' 
+            : 'bg-primary-500 hover:bg-primary-600 text-white'
       }`}
       title={isTutorMode ? 'AI 助教' : '智能问答'}
     >

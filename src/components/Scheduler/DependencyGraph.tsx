@@ -98,8 +98,8 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
       className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}
     >
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl">
-          <GitBranch size={20} className="text-indigo-500" />
+        <div className="p-2 bg-primary-100 dark:bg-primary-500/20 rounded-xl">
+          <GitBranch size={20} className="text-primary-500" />
         </div>
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -211,7 +211,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
               <span>已完成</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-cyan-500" />
+              <div className="w-3 h-3 rounded bg-primary-500" />
               <span>进行中</span>
             </div>
             <div className="flex items-center gap-1">

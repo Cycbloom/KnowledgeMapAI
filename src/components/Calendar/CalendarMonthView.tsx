@@ -100,9 +100,9 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   const getEventColor = (event: CalendarEvent) => {
     switch (event.type) {
       case 'task':
-        return 'bg-blue-500';
+        return 'bg-primary-500';
       case 'study':
-        return 'bg-purple-500';
+        return 'bg-primary-500';
       case 'review':
         return 'bg-green-500';
       default:
@@ -139,7 +139,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                 : isDark
                   ? 'bg-slate-900/50'
                   : 'bg-gray-50'
-            } ${day.isToday ? 'ring-2 ring-blue-500' : ''}`}
+            } ${day.isToday ? 'ring-2 ring-primary-500' : ''}`}
             onClick={() => onDateSelect(day.date)}
             onMouseEnter={() => setHoveredDate(day.date)}
             onMouseLeave={() => setHoveredDate(null)}
@@ -149,7 +149,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               <span
                 className={`text-sm font-medium ${
                   day.isToday
-                    ? 'text-blue-500'
+                    ? 'text-primary-500'
                     : day.isCurrentMonth
                       ? isDark
                         ? 'text-white'

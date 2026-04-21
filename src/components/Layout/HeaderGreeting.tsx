@@ -47,7 +47,7 @@ export const HeaderGreeting: React.FC = () => {
       {dueToday > 0 && (
         <div
           className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
-            isDark ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"
+            isDark ? "bg-primary-900/30 text-primary-400" : "bg-primary-50 text-primary-600"
           }`}
         >
           <BookOpen size={12} />

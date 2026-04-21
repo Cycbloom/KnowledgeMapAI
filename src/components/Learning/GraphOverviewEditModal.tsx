@@ -215,7 +215,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
     <div className="space-y-4">
       <div className="space-y-3">
         <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+          <span className="w-1.5 h-4 bg-primary-500 rounded-full"></span>
           {editingBookIndex !== null ? t('learning.overviewEdit.editBook') : t('learning.overviewEdit.addBook')}
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -227,7 +227,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               type="text"
               value={bookForm.title}
               onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
-              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                 bookErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
               placeholder={t('learning.overviewEdit.bookTitlePlaceholder')}
@@ -244,7 +244,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               type="text"
               value={bookForm.author}
               onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
-              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                 bookErrors.author ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
               placeholder={t('learning.overviewEdit.authorPlaceholder')}
@@ -259,7 +259,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               type="text"
               value={bookForm.isbn || ''}
               onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder={t('learning.overviewEdit.isbnPlaceholder')}
             />
           </div>
@@ -269,7 +269,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               type="url"
               value={bookForm.url || ''}
               onChange={(e) => setBookForm({ ...bookForm, url: e.target.value })}
-              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                 bookErrors.url ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
               placeholder="https://..."
@@ -283,7 +283,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             <textarea
               value={bookForm.description || ''}
               onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               rows={2}
               placeholder={t('learning.overviewEdit.bookDescriptionPlaceholder')}
             />
@@ -294,7 +294,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             <>
               <button
                 onClick={handleUpdateBook}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
               >
                 <Save size={16} />
                 {t('learning.overviewEdit.updateBook')}
@@ -309,7 +309,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           ) : (
             <button
               onClick={handleAddBook}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
             >
               <Plus size={16} />
               {t('learning.overviewEdit.addBookButton')}
@@ -321,7 +321,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
       {books.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+            <span className="w-1.5 h-4 bg-primary-500 rounded-full"></span>
             {t('learning.overviewEdit.addedBooks', { count: books.length })}
           </h4>
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
@@ -340,7 +340,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                 <div className="flex items-center gap-1 ml-2">
                   <button
                     onClick={() => handleEditBook(index)}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
                   >
                     <Pencil size={16} />
                   </button>
@@ -363,7 +363,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
     <div className="space-y-4">
       <div className="space-y-3">
         <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+          <span className="w-1.5 h-4 bg-primary-500 rounded-full"></span>
           {editingLinkIndex !== null ? t('learning.overviewEdit.editLink') : t('learning.overviewEdit.addLink')}
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -375,7 +375,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               type="text"
               value={linkForm.title}
               onChange={(e) => setLinkForm({ ...linkForm, title: e.target.value })}
-              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                 linkErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
               placeholder={t('learning.overviewEdit.linkTitlePlaceholder')}
@@ -391,7 +391,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             <select
               value={linkForm.type}
               onChange={(e) => setLinkForm({ ...linkForm, type: e.target.value as ExternalLink['type'] })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {linkTypeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -408,7 +408,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               type="url"
               value={linkForm.url}
               onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
-              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                 linkErrors.url ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
               placeholder="https://..."
@@ -422,7 +422,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             <textarea
               value={linkForm.description || ''}
               onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               rows={2}
               placeholder={t('learning.overviewEdit.linkDescriptionPlaceholder')}
             />
@@ -433,7 +433,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             <>
               <button
                 onClick={handleUpdateLink}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
               >
                 <Save size={16} />
                 {t('learning.overviewEdit.updateLink')}
@@ -448,7 +448,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           ) : (
             <button
               onClick={handleAddLink}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
             >
               <Plus size={16} />
               {t('learning.overviewEdit.addLinkButton')}
@@ -460,7 +460,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
       {links.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+            <span className="w-1.5 h-4 bg-primary-500 rounded-full"></span>
             {t('learning.overviewEdit.addedLinks', { count: links.length })}
           </h4>
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
@@ -472,7 +472,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h5 className="font-medium text-slate-900 dark:text-slate-100 truncate">{link.title}</h5>
-                    <span className="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full">
+                    <span className="px-2 py-0.5 text-xs bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 rounded-full">
                       {linkTypeOptions.find(o => o.value === link.type)?.label || link.type}
                     </span>
                   </div>
@@ -480,7 +480,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline truncate block"
                   >
                     {link.url}
                   </a>
@@ -488,7 +488,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                 <div className="flex items-center gap-1 ml-2">
                   <button
                     onClick={() => handleEditLink(index)}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
                   >
                     <Pencil size={16} />
                   </button>
@@ -511,12 +511,12 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+          <span className="w-1.5 h-4 bg-primary-500 rounded-full"></span>
           {t('learning.overviewEdit.learningGuide')}
         </h4>
         <button
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
         >
           {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
           {showPreview ? t('learning.overviewEdit.edit') : t('learning.overviewEdit.preview')}
@@ -535,7 +535,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
         <textarea
           value={learningGuide}
           onChange={(e) => setLearningGuide(e.target.value)}
-          className="w-full min-h-[300px] px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y font-mono"
+          className="w-full min-h-[300px] px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-y font-mono"
           placeholder={t('learning.overviewEdit.guidePlaceholder')}
         />
       )}
@@ -549,7 +549,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-700">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
                   <BookOpen size={24} />
                 </div>
                 <div>
@@ -573,14 +573,14 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               onClick={() => setActiveTab('books')}
               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
                 activeTab === 'books'
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                  ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
               <BookOpen size={16} />
               {t('learning.overviewEdit.referenceBooks')}
               {books.length > 0 && (
-                <span className="px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full">
+                <span className="px-1.5 py-0.5 text-xs bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 rounded-full">
                   {books.length}
                 </span>
               )}
@@ -589,14 +589,14 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               onClick={() => setActiveTab('links')}
               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
                 activeTab === 'links'
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                  ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
               <Link2 size={16} />
               {t('learning.overviewEdit.externalLinks')}
               {links.length > 0 && (
-                <span className="px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full">
+                <span className="px-1.5 py-0.5 text-xs bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 rounded-full">
                   {links.length}
                 </span>
               )}
@@ -605,7 +605,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               onClick={() => setActiveTab('guide')}
               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
                 activeTab === 'guide'
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                  ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
@@ -631,7 +631,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 dark:shadow-none"
+              className="px-8 py-2.5 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-200 dark:shadow-none"
             >
               {isSaving ? (
                 <>

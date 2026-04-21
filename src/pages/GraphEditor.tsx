@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useMemo,
   lazy,
   Suspense,
@@ -99,7 +99,7 @@ const Console = lazy(() =>
 
 const ViewLoader = () => (
   <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
-    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+    <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
   </div>
 );
 
@@ -790,7 +790,7 @@ export const GraphEditor = () => {
         {isGraphLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
               <p className="text-gray-600 font-medium">正在加载数据...</p>
             </div>
           </div>
@@ -1362,7 +1362,7 @@ export const GraphEditor = () => {
       {sidebarMode === "none" && !isMobile && (
         <button
           onClick={() => setSidebarMode("outline")}
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-l-xl shadow-lg border-y border-l border-gray-200 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-all hover:pr-4"
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-l-xl shadow-lg border-y border-l border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary-600 transition-all hover:pr-4"
         >
           <ArrowLeft size={20} />
         </button>

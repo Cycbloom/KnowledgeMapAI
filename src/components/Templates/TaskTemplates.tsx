@@ -226,7 +226,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         </h2>
         <button
           onClick={handleOpenCreateModal}
-          className="px-4 py-2 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all font-medium text-sm"
+          className="px-4 py-2 rounded-xl flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white shadow-md transition-all font-medium text-sm"
         >
           <Plus size={18} />
           <span>{t("templates.createTemplate")}</span>
@@ -246,8 +246,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
               isDark
-                ? "bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                : "bg-white border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                : "bg-white border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             }`}
           />
         </div>
@@ -259,7 +259,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-2 rounded-xl font-medium transition-all text-sm ${
                 selectedCategory === cat
-                  ? "bg-blue-600 text-white"
+                  ? "bg-primary-600 text-white"
                   : isDark
                     ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                     : "bg-white text-gray-700 hover:bg-gray-100"
@@ -273,7 +273,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
         </div>
       ) : filteredTemplates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-500">
@@ -298,9 +298,9 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <div
                     className={`p-2 rounded-lg ${
                       template.category === "study"
-                        ? "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                        ? "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400"
                         : template.category === "work"
-                          ? "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400"
+                          ? "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400"
                           : template.category === "life"
                             ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
                             : template.category === "health"
@@ -355,7 +355,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
               <div className="flex gap-2">
                 <button
                   onClick={() => openApplyModal(template)}
-                  className="flex-1 px-3 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors text-sm"
+                  className="flex-1 px-3 py-2 rounded-lg font-medium bg-primary-600 hover:bg-primary-700 text-white transition-colors text-sm"
                 >
                   {t("templates.button.useTemplate")}
                 </button>
@@ -439,8 +439,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     placeholder={t("templates.form.namePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
-                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                     }`}
                   />
                 </div>
@@ -458,8 +458,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
                       isDark
-                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                     }`}
                   />
                 </div>
@@ -476,8 +476,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       onChange={(e) => updateField("category", e.target.value)}
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
-                          ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                          ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                       }`}
                     >
                       {["study", "work", "life", "health", "custom"].map((value) => (
@@ -502,8 +502,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       }
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
-                          ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                          ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                       }`}
                     />
                   </div>
@@ -525,8 +525,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     placeholder={t("templates.form.titleTemplatePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
-                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                     }`}
                   />
                 </div>
@@ -544,8 +544,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
                       isDark
-                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                     }`}
                   />
                 </div>
@@ -567,14 +567,14 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       placeholder={t("templates.form.tagsPlaceholder")}
                       className={`flex-1 px-4 py-2 rounded-xl border outline-none transition-all ${
                         isDark
-                          ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                          ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                       }`}
                     />
                     <button
                       type="button"
                       onClick={addTag}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors"
                     >
                       {t("templates.button.add")}
                     </button>
@@ -618,7 +618,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
                   >
                     {isEditing ? t("templates.button.update") : t("templates.button.create")}
                   </button>
@@ -686,8 +686,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                             placeholder={t("templates.input", { name: placeholder })}
                             className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                               isDark
-                                ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                                : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                                ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                                : "bg-gray-50 border-gray-200 focus:bg-white focus:border-primary-500"
                             }`}
                           />
                         </div>
@@ -739,7 +739,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 </button>
                 <button
                   onClick={handleApplyTemplate}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center gap-2"
                 >
                   <Check size={16} />
                   {t("templates.button.createTask")}

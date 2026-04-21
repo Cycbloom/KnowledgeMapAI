@@ -23,7 +23,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
     switch (priority) {
       case 'high': return isDark ? 'bg-red-900/50 border-red-500' : 'bg-red-50 border-red-500';
       case 'medium': return isDark ? 'bg-yellow-900/50 border-yellow-500' : 'bg-yellow-50 border-yellow-500';
-      case 'low': return isDark ? 'bg-blue-900/50 border-blue-500' : 'bg-blue-50 border-blue-500';
+      case 'low': return isDark ? 'bg-primary-900/50 border-primary-500' : 'bg-primary-50 border-primary-500';
       default: return isDark ? 'bg-gray-800 border-gray-600' : 'bg-gray-100 border-gray-400';
     }
   };
@@ -32,7 +32,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
     switch (priority) {
       case 'high': return <TrendingUp size={14} className="text-red-500" />;
       case 'medium': return <Clock size={14} className="text-yellow-500" />;
-      case 'low': return <Sparkles size={14} className="text-blue-500" />;
+      case 'low': return <Sparkles size={14} className="text-primary-500" />;
       default: return null;
     }
   };
@@ -115,8 +115,8 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
 
                   {suggestion.relatedTopics.length > 0 && (
                     <div className="flex items-center gap-1">
-                      <Sparkles size={10} className="text-purple-500" />
-                      <span className="text-xs text-purple-600 dark:text-purple-400">
+                      <Sparkles size={10} className="text-primary-500" />
+                      <span className="text-xs text-primary-600 dark:text-primary-400">
                         {suggestion.relatedTopics.length}
                       </span>
                     </div>
@@ -129,7 +129,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
                       {suggestion.relatedTopics.map((topic, i) => (
                         <span
                           key={i}
-                          className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                          className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300"
                         >
                           {topic}
                         </span>

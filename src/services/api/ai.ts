@@ -1,52 +1,51 @@
-import { request, getAIConfig, getApiUrl, handleResponse, injectAIConfig, getCookie } from './client';
-import { useStore } from '../../store/useStore';
-import type { AIAction } from '@shared/types';
-import i18n from '../../i18n';
-import { useLearningSettingsStore } from '../../store/useLearningSettingsStore';
-
-const getCurrentLanguage = (): string => {
-  const aiLanguage = useLearningSettingsStore.getState().aiLanguage;
-  if (aiLanguage === 'auto') {
-    const lang = i18n.language || 'zh-CN';
-    if (lang.startsWith('en')) return 'en-US';
-    if (lang.startsWith('zh')) return 'zh-CN';
-    return 'zh-CN';
-  }
-  return aiLanguage;
-};
+import {
+  request,
+  getAIConfig,
+  getApiUrl,
+  handleResponse,
+  injectAIConfig,
+  getCookie,
+} from "./client";
+import { useStore } from "../../store/useStore";
+import type { AIAction } from "@shared/types";
+import { getAILanguage } from "../../hooks/useAILanguage";
 
 export const aiActionsApi = {
-  list: (graphId?: string) => request(`/ai-actions${graphId ? `?graph_id=${graphId}` : ''}`),
-  
-  create: (data: Partial<AIAction>) => 
-    request('/ai-actions', { method: 'POST', body: JSON.stringify(data) }),
-  
-  update: (id: string, data: Partial<AIAction>) => 
-    request(`/ai-actions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  
-  delete: (id: string) => request(`/ai-actions/${id}`, { method: 'DELETE' }),
-  
-  execute: (data: { action_id: string; node_id: string; graph_id?: string }) => 
-    request('/ai-actions/execute', { method: 'POST', body: JSON.stringify(data) }),
+  list: (graphId?: string) =>
+    request(`/ai-actions${graphId ? `?graph_id=${graphId}` : ""}`),
+
+  create: (data: Partial<AIAction>) =>
+    request("/ai-actions", { method: "POST", body: JSON.stringify(data) }),
+
+  update: (id: string, data: Partial<AIAction>) =>
+    request(`/ai-actions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+
+  delete: (id: string) => request(`/ai-actions/${id}`, { method: "DELETE" }),
+
+  execute: (data: { action_id: string; node_id: string; graph_id?: string }) =>
+    request("/ai-actions/execute", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 const createStreamHandler = async (
   url: string,
   payload: unknown,
-  onChunk: (content: string) => void
+  onChunk: (content: string) => void,
 ) => {
   const token = useStore.getState().token;
-  const csrfToken = getCookie('csrf-token');
+  const csrfToken = getCookie("csrf-token");
   const apiUrl = await getApiUrl();
   const response = await fetch(`${apiUrl}${url}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
     },
-    credentials: 'include',
-    body: JSON.stringify(payload)
+    credentials: "include",
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -54,32 +53,32 @@ const createStreamHandler = async (
       useStore.getState().setUser(null, null);
     }
     const errorText = await response.text();
-    throw new Error(errorText || 'Stream failed');
+    throw new Error(errorText || "Stream failed");
   }
 
   const reader = response.body?.getReader();
   const decoder = new TextDecoder();
   if (!reader) return;
 
-  let buffer = '';
+  let buffer = "";
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    
+
     buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n\n');
-    buffer = lines.pop() || '';
-    
+    const lines = buffer.split("\n\n");
+    buffer = lines.pop() || "";
+
     for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const dataStr = line.replace('data: ', '');
-        if (dataStr === '[DONE]') return;
+      if (line.startsWith("data: ")) {
+        const dataStr = line.replace("data: ", "");
+        if (dataStr === "[DONE]") return;
         try {
           const parsed = JSON.parse(dataStr);
           if (parsed.content) onChunk(parsed.content);
           if (parsed.error) throw new Error(parsed.error);
         } catch (e) {
-          console.error('Stream parse error:', e);
+          console.error("Stream parse error:", e);
         }
       }
     }
@@ -87,130 +86,333 @@ const createStreamHandler = async (
 };
 
 export const aiApi = {
-  status: () => request('/ai/status'),
-  
-  generateContent: (data: { topic: string; context?: string; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/generate-content', { method: 'POST', body: JSON.stringify(payload) });
-  },
-  
-  generateContentStream: async (
-    data: { topic: string; context?: string; level?: string; provider?: string; model?: string; language?: string },
-    onChunk: (content: string) => void
-  ) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    await createStreamHandler('/ai/generate-content-stream', payload, onChunk);
-  },
-  
-  annotateTerms: (data: { node_id: string; node_content: string; graph_id: string; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/annotate-terms', { 
-      method: 'POST', 
-      body: JSON.stringify(payload) 
+  status: () => request("/ai/status"),
+
+  generateContent: (data: {
+    topic: string;
+    context?: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/generate-content", {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
   },
-  
-  generateLearningMaterial: (data: { topic: string; context?: string; level?: string; graph_id?: string; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/learning-material', { method: 'POST', body: JSON.stringify(payload) });
+
+  generateContentStream: async (
+    data: {
+      topic: string;
+      context?: string;
+      level?: string;
+      provider?: string;
+      model?: string;
+      language?: string;
+    },
+    onChunk: (content: string) => void,
+  ) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    await createStreamHandler("/ai/generate-content-stream", payload, onChunk);
   },
-  
-  expand: (data: { node_title: string; node_content?: string; existing_titles?: string[]; current_children?: string[]; node_level?: string; expand_prompt?: string; graph_id?: string; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
+
+  annotateTerms: (data: {
+    node_id: string;
+    node_content: string;
+    graph_id: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/annotate-terms", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
-  
-  getBranchSuggestions: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/branch-suggestions', { method: 'POST', body: JSON.stringify(payload) });
+
+  generateLearningMaterial: (data: {
+    topic: string;
+    context?: string;
+    level?: string;
+    graph_id?: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/learning-material", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
-  
-  generateCards: (data: { node_title: string; node_content: string; count?: number; types?: string[]; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(payload) });
+
+  expand: (data: {
+    node_title: string;
+    node_content?: string;
+    existing_titles?: string[];
+    current_children?: string[];
+    node_level?: string;
+    expand_prompt?: string;
+    graph_id?: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/expand-knowledge", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
-  
-  batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string; provider?: string; model?: string; language?: string }) => {
-    const payloadConfig = injectAIConfig({ ...config, language: config.language || getCurrentLanguage() }, 'text');
-    return request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config: payloadConfig }) });
+
+  getBranchSuggestions: (data: {
+    node_title: string;
+    node_content?: string;
+    existing_nodes?: unknown[];
+    child_nodes?: unknown[];
+    context_level?: string;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/branch-suggestions", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
-  
+
+  generateCards: (data: {
+    node_title: string;
+    node_content: string;
+    count?: number;
+    types?: string[];
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/generate-cards", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  batchGenerateCards: (
+    node_ids: string[],
+    config: {
+      types?: string[];
+      count?: number;
+      pack_template?: string;
+      provider?: string;
+      model?: string;
+      language?: string;
+    },
+  ) => {
+    const payloadConfig = injectAIConfig(
+      { ...config, language: config.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/batch-generate-cards", {
+      method: "POST",
+      body: JSON.stringify({ node_ids, config: payloadConfig }),
+    });
+  },
+
   batchExpandGraph: (node_ids: string[]) => {
-    return request('/ai/batch-expand-graph', { method: 'POST', body: JSON.stringify({ node_ids }) });
+    return request("/ai/batch-expand-graph", {
+      method: "POST",
+      body: JSON.stringify({ node_ids }),
+    });
   },
-  
+
   getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
-  
-  textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: unknown[]; edges?: unknown[]; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(payload) });
+
+  textToGraph: (data: {
+    text?: string;
+    graph_id: string;
+    action?: "analyze" | "save";
+    nodes?: unknown[];
+    edges?: unknown[];
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/text-to-graph", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
-  
-  documentToGraph: async (data: { graph_id: string; file: File; language?: string }) => {
+
+  documentToGraph: async (data: {
+    graph_id: string;
+    file: File;
+    language?: string;
+  }) => {
     const token = useStore.getState().token;
-    const csrfToken = getCookie('csrf-token');
-    const config = getAIConfig('text');
+    const csrfToken = getCookie("csrf-token");
+    const config = getAIConfig("text");
     const formData = new FormData();
-    formData.append('graph_id', data.graph_id);
-    formData.append('file', data.file);
-    formData.append('language', data.language || getCurrentLanguage());
-    if (config.provider) formData.append('provider', config.provider);
-    if (config.model) formData.append('model', config.model);
-    
+    formData.append("graph_id", data.graph_id);
+    formData.append("file", data.file);
+    formData.append("language", data.language || getAILanguage());
+    if (config.provider) formData.append("provider", config.provider);
+    if (config.model) formData.append("model", config.model);
+
     const apiUrl = await getApiUrl();
     const response = await fetch(`${apiUrl}/ai/document-to-graph`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
       },
-      credentials: 'include',
-      body: formData
+      credentials: "include",
+      body: formData,
     });
     return handleResponse(response);
   },
-  
-  imageToGraph: (formData: FormData) => request('/ai/image-to-graph', { method: 'POST', body: formData }),
-  
-  urlToText: (url: string) => request('/ai/url-to-text', { method: 'POST', body: JSON.stringify({ url }) }),
-  
-  recommendConnections: (data: { graph_id: string; node_title: string; node_content?: string }) => 
-    request('/ai/recommend-connections', { method: 'POST', body: JSON.stringify(data) }),
-  
+
+  imageToGraph: (formData: FormData) =>
+    request("/ai/image-to-graph", { method: "POST", body: formData }),
+
+  urlToText: (url: string) =>
+    request("/ai/url-to-text", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    }),
+
+  recommendConnections: (data: {
+    graph_id: string;
+    node_title: string;
+    node_content?: string;
+  }) =>
+    request("/ai/recommend-connections", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   chatStream: async (
-    data: { message: string; graph_id: string; history?: unknown[]; context_node_ids?: string[]; provider?: string; model?: string; language?: string },
-    onChunk: (content: string) => void
+    data: {
+      message: string;
+      graph_id: string;
+      history?: unknown[];
+      context_node_ids?: string[];
+      provider?: string;
+      model?: string;
+      language?: string;
+    },
+    onChunk: (content: string) => void,
   ) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    await createStreamHandler('/ai/chat', payload, onChunk);
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    await createStreamHandler("/ai/chat", payload, onChunk);
   },
-  
+
   tutorChatStream: async (
-    data: { message: string; graph_id?: string; history?: unknown[]; context_node_ids?: string[]; mode?: 'free' | 'guided' | 'learning-path'; provider?: string; model?: string; language?: string },
-    onChunk: (content: string) => void
+    data: {
+      message: string;
+      graph_id?: string;
+      history?: unknown[];
+      context_node_ids?: string[];
+      mode?: "free" | "guided" | "learning-path";
+      provider?: string;
+      model?: string;
+      language?: string;
+    },
+    onChunk: (content: string) => void,
   ) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    await createStreamHandler('/ai/tutor-chat', payload, onChunk);
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    await createStreamHandler("/ai/tutor-chat", payload, onChunk);
   },
-  
-  extractConcepts: (data: { text: string; existing_nodes?: string[]; max_concepts?: number; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/extract-concepts', { method: 'POST', body: JSON.stringify(payload) });
-  },
-  
-  suggestNextTopic: (data: { node_title: string; node_content?: string; existing_nodes?: string[]; user_progress?: { mastered_count?: number; due_count?: number; current_level?: string }; provider?: string; model?: string; language?: string }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/suggest-next-topic', { method: 'POST', body: JSON.stringify(payload) });
-  },
-  
-  generatePodcastScript: (context: string, language: string = 'zh-CN', graph_id?: string) => {
-    const payload = injectAIConfig({ context, language: language || getCurrentLanguage(), graph_id }, 'text');
-    return request('/ai/podcast/script', { 
-      method: 'POST', 
-      body: JSON.stringify(payload) 
+
+  extractConcepts: (data: {
+    text: string;
+    existing_nodes?: string[];
+    max_concepts?: number;
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/extract-concepts", {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
   },
-  
+
+  suggestNextTopic: (data: {
+    node_title: string;
+    node_content?: string;
+    existing_nodes?: string[];
+    user_progress?: {
+      mastered_count?: number;
+      due_count?: number;
+      current_level?: string;
+    };
+    provider?: string;
+    model?: string;
+    language?: string;
+  }) => {
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/suggest-next-topic", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  generatePodcastScript: (
+    context: string,
+    language: string = "zh-CN",
+    graph_id?: string,
+  ) => {
+    const payload = injectAIConfig(
+      { context, language: language || getAILanguage(), graph_id },
+      "text",
+    );
+    return request("/ai/podcast/script", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
   analyzeCrossGraphConnections: (data: {
     graph1_id: string;
     graph1_title?: string;
@@ -222,7 +424,13 @@ export const aiApi = {
     model?: string;
     language?: string;
   }) => {
-    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
-    return request('/ai/cross-graph-connections', { method: 'POST', body: JSON.stringify(payload) });
+    const payload = injectAIConfig(
+      { ...data, language: data.language || getAILanguage() },
+      "text",
+    );
+    return request("/ai/cross-graph-connections", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 };

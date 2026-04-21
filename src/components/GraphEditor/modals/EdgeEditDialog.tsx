@@ -118,7 +118,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
             onClick={() => setActiveTab('basic')}
             className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'basic'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -128,7 +128,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
             onClick={() => setActiveTab('style')}
             className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'style'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -148,7 +148,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder="输入边的标签（可选）"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                 />
               </div>
 
@@ -159,7 +159,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                 <select
                   value={relationshipType}
                   onChange={(e) => setRelationshipType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                 >
                   <option value="">选择关系类型</option>
                   {Object.entries(groupedRelationshipTypes).map(([category, types]) => (
@@ -195,7 +195,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                     value={customColor}
                     onChange={(e) => setCustomColor(e.target.value)}
                     placeholder="#3B82F6"
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                   />
                   {customColor && (
                     <button
@@ -212,7 +212,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                       key={color}
                       onClick={() => handlePresetColorClick(color)}
                       className={`w-6 h-6 rounded border-2 transition-transform hover:scale-110 ${
-                        customColor === color ? 'border-blue-500 ring-2 ring-blue-300' : 'border-transparent'
+                        customColor === color ? 'border-primary-500 ring-2 ring-primary-300' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: color }}
                       title={color}
@@ -233,7 +233,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                       onClick={() => setCustomLineStyle(option.value)}
                       className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                         customLineStyle === option.value
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                           : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
                       }`}
                     >
@@ -255,7 +255,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
                       onClick={() => setShowArrow(option.value)}
                       className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                         showArrow === option.value
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                           : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
                       }`}
                     >
@@ -278,7 +278,7 @@ export const EdgeEditDialog: React.FC<EdgeEditDialogProps> = ({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>

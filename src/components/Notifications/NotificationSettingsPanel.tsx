@@ -75,7 +75,7 @@ export const NotificationSettingsPanel: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
       </div>
     );
   }
@@ -86,7 +86,7 @@ export const NotificationSettingsPanel: React.FC = () => {
         <p>无法加载通知设置</p>
         <button
           onClick={loadSettings}
-          className="mt-2 text-blue-500 hover:text-blue-600"
+          className="mt-2 text-primary-500 hover:text-primary-600"
         >
           重试
         </button>
@@ -117,7 +117,7 @@ export const NotificationSettingsPanel: React.FC = () => {
             <button
               onClick={() => updateSetting('browser_enabled', !settings.browser_enabled)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.browser_enabled ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                settings.browser_enabled ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
               }`}
             >
               <motion.div
@@ -147,7 +147,7 @@ export const NotificationSettingsPanel: React.FC = () => {
             <button
               onClick={() => updateSetting('sound_enabled', !settings.sound_enabled)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.sound_enabled ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                settings.sound_enabled ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
               }`}
             >
               <motion.div
@@ -205,7 +205,7 @@ export const NotificationSettingsPanel: React.FC = () => {
               <button
                 onClick={() => updateSetting(item.key as keyof NotificationSettings, !settings[item.key as keyof NotificationSettings])}
                 className={`relative w-10 h-5 rounded-full transition-colors ${
-                  settings[item.key as keyof NotificationSettings] ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                  settings[item.key as keyof NotificationSettings] ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
                 }`}
               >
                 <motion.div
@@ -235,7 +235,7 @@ export const NotificationSettingsPanel: React.FC = () => {
                 onClick={() => toggleDeadlineReminder(minutes)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   settings.deadline_reminder_minutes?.includes(minutes)
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary-600 text-white'
                     : isDark
                       ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -269,7 +269,7 @@ export const NotificationSettingsPanel: React.FC = () => {
             <button
               onClick={() => updateSetting('do_not_disturb_enabled', !settings.do_not_disturb_enabled)}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.do_not_disturb_enabled ? 'bg-blue-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
+                settings.do_not_disturb_enabled ? 'bg-primary-600' : isDark ? 'bg-slate-600' : 'bg-gray-300'
               }`}
             >
               <motion.div
@@ -333,7 +333,7 @@ export const NotificationSettingsPanel: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />

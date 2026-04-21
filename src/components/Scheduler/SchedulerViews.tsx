@@ -61,7 +61,7 @@ export const SchedulerViews: React.FC<SchedulerViewsProps> = ({
             {isActive && (
               <motion.div
                 layoutId="activeViewIndicator"
-                className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20 border border-cyan-300 dark:border-cyan-500/30"
+                className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary-100 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/20 border border-primary-300 dark:border-primary-500/30"
                 initial={false}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />

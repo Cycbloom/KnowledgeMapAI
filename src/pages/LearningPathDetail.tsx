@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -134,8 +134,8 @@ const STATUS_CONFIG: Record<
   },
   in_progress: {
     label: "学习中",
-    color: "text-blue-500",
-    bgColor: "bg-blue-100 dark:bg-blue-900/30",
+    color: "text-primary-500",
+    bgColor: "bg-primary-100 dark:bg-primary-900/30",
     icon: <Play className="w-4 h-4" />,
   },
   completed: {
@@ -474,7 +474,7 @@ const LearningPathDetailPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
         <div className="text-center">
-          <RefreshCw className="w-12 h-12 animate-spin text-indigo-500 mx-auto mb-4" />
+          <RefreshCw className="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400">加载学习路径...</p>
         </div>
       </div>
@@ -494,7 +494,7 @@ const LearningPathDetailPage: React.FC = () => {
           </p>
           <button
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+            className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
           >
             返回
           </button>
@@ -518,7 +518,7 @@ const LearningPathDetailPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl">
+                <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-500 rounded-xl">
                   <Route className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -550,7 +550,7 @@ const LearningPathDetailPage: React.FC = () => {
                           : pathDetail.status === "paused"
                             ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                             : pathDetail.status === "completed"
-                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
                               : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                       }`}
                     >
@@ -670,7 +670,7 @@ const LearningPathDetailPage: React.FC = () => {
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercentage}%` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                  className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
                 />
               </div>
               <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -697,7 +697,7 @@ const LearningPathDetailPage: React.FC = () => {
                 className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700/50"
               >
                 <div className="flex items-center gap-3">
-                  <BookOpen className="w-5 h-5 text-indigo-500" />
+                  <BookOpen className="w-5 h-5 text-primary-500" />
                   <span className="font-semibold text-gray-900 dark:text-white">
                     学习节点
                   </span>
@@ -725,7 +725,7 @@ const LearningPathDetailPage: React.FC = () => {
                             <>
                               <button
                                 onClick={toggleSelectAll}
-                                className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                                className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
                               >
                                 {selectedNodeIds.size === pathDetail.nodes.filter((n) => n.status === "pending" && !n.related_task_id).length
                                   ? "取消全选"
@@ -738,7 +738,7 @@ const LearningPathDetailPage: React.FC = () => {
                           ) : (
                             <button
                               onClick={() => setIsSelectionMode(true)}
-                              className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                              className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                             >
                               <CheckSquare className="w-4 h-4" />
                               批量选择
@@ -751,7 +751,7 @@ const LearningPathDetailPage: React.FC = () => {
                               <button
                                 onClick={handleBatchConvertToTasks}
                                 disabled={selectedNodeIds.size === 0 || isBatchConverting}
-                                className="px-3 py-1.5 bg-indigo-500 text-white rounded-lg text-sm font-medium hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="px-3 py-1.5 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                               >
                                 {isBatchConverting ? (
                                   <>
@@ -789,7 +789,7 @@ const LearningPathDetailPage: React.FC = () => {
                           <div className="flex justify-center gap-3">
                             <button
                               onClick={() => navigate("/graphs")}
-                              className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center gap-2"
+                              className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2"
                             >
                               <Sparkles className="w-4 h-4" />
                               从图谱生成
@@ -805,9 +805,9 @@ const LearningPathDetailPage: React.FC = () => {
                             transition={{ delay: index * 0.02 }}
                             className={`border dark:border-slate-700 rounded-lg overflow-hidden ${
                               selectedNode === node.id
-                                ? "ring-2 ring-indigo-500"
+                                ? "ring-2 ring-primary-500"
                                 : ""
-                            } ${selectedNodeIds.has(node.id) ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""}`}
+                            } ${selectedNodeIds.has(node.id) ? "ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20" : ""}`}
                           >
                             <div
                               onClick={() => {
@@ -828,7 +828,7 @@ const LearningPathDetailPage: React.FC = () => {
                                   <div className="flex-shrink-0">
                                     {node.status === "pending" && !node.related_task_id ? (
                                       selectedNodeIds.has(node.id) ? (
-                                        <CheckSquare className="w-5 h-5 text-indigo-500" />
+                                        <CheckSquare className="w-5 h-5 text-primary-500" />
                                       ) : (
                                         <Square className="w-5 h-5 text-gray-400" />
                                       )
@@ -865,7 +865,7 @@ const LearningPathDetailPage: React.FC = () => {
                                       </span>
                                     )}
                                     {node.related_task && (
-                                      <span className="flex items-center gap-1 text-blue-500">
+                                      <span className="flex items-center gap-1 text-primary-500">
                                         <ListTodo className="w-3 h-3" />
                                         已关联任务
                                       </span>
@@ -968,7 +968,7 @@ const LearningPathDetailPage: React.FC = () => {
                                         onClick={() =>
                                           handleConvertToTask(node)
                                         }
-                                        className="flex-1 px-3 py-2 bg-indigo-500 text-white rounded-lg text-sm font-medium hover:bg-indigo-600 flex items-center justify-center gap-2"
+                                        className="flex-1 px-3 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 flex items-center justify-center gap-2"
                                       >
                                         <ListTodo className="w-4 h-4" />
                                         转为任务
@@ -1079,7 +1079,7 @@ const LearningPathDetailPage: React.FC = () => {
                             <div className="mt-3">
                               <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                                 <div
-                                  className={`h-full transition-all ${milestone.is_completed ? "bg-green-500" : "bg-indigo-500"}`}
+                                  className={`h-full transition-all ${milestone.is_completed ? "bg-green-500" : "bg-primary-500"}`}
                                   style={{ width: `${milestone.progress}%` }}
                                 />
                               </div>
@@ -1097,14 +1097,14 @@ const LearningPathDetailPage: React.FC = () => {
           <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-indigo-500" />
+                <BarChart3 className="w-5 h-5 text-primary-500" />
                 进度概览
               </h3>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-indigo-500">
+                    <div className="text-2xl font-bold text-primary-500">
                       {pathDetail.progress.total_nodes}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -1119,8 +1119,8 @@ const LearningPathDetailPage: React.FC = () => {
                       已完成
                     </div>
                   </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-blue-500">
+                  <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-primary-500">
                       {nodesByStatus.in_progress || 0}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -1165,7 +1165,7 @@ const LearningPathDetailPage: React.FC = () => {
                   className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700/50"
                 >
                   <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-blue-500" />
+                    <Calendar className="w-5 h-5 text-primary-500" />
                     <span className="font-semibold text-gray-900 dark:text-white">
                       学习计划
                     </span>
@@ -1301,7 +1301,7 @@ const LearningPathDetailPage: React.FC = () => {
               <button
                 onClick={handleAutoSchedule}
                 disabled={isUpdating}
-                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center gap-2 disabled:opacity-50"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2 disabled:opacity-50"
               >
                 {isUpdating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

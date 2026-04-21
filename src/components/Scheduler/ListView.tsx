@@ -43,9 +43,9 @@ type SortDirection = "asc" | "desc";
 
 const QUEUE_COLORS = {
   0: {
-    bg: "bg-cyan-100 dark:bg-cyan-500/20",
-    text: "text-cyan-600 dark:text-cyan-400",
-    border: "border-cyan-300 dark:border-cyan-500/30",
+    bg: "bg-primary-100 dark:bg-primary-500/20",
+    text: "text-primary-600 dark:text-primary-400",
+    border: "border-primary-300 dark:border-primary-500/30",
   },
   1: {
     bg: "bg-emerald-100 dark:bg-emerald-500/20",
@@ -78,7 +78,7 @@ export const ListView: React.FC<ListViewProps> = ({
     },
     in_progress: {
       label: t("scheduler.inProgress"),
-      color: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+      color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
     },
     paused: {
       label: t("scheduler.kanban.paused"),
@@ -215,7 +215,7 @@ export const ListView: React.FC<ListViewProps> = ({
     if (days === 1)
       return { text: t("scheduler.timeline.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
     if (days <= 7)
-      return { text: t("scheduler.review.daysLater", { count: days }), color: "text-blue-500 dark:text-blue-400" };
+      return { text: t("scheduler.review.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
     return {
       text: d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" }),
       color: "text-slate-500 dark:text-slate-400",
@@ -229,9 +229,9 @@ export const ListView: React.FC<ListViewProps> = ({
       );
     }
     return sortDirection === "asc" ? (
-      <ArrowUp size={14} className="text-cyan-500 dark:text-cyan-400" />
+      <ArrowUp size={14} className="text-primary-500 dark:text-primary-400" />
     ) : (
-      <ArrowDown size={14} className="text-cyan-500 dark:text-cyan-400" />
+      <ArrowDown size={14} className="text-primary-500 dark:text-primary-400" />
     );
   };
 
@@ -249,7 +249,7 @@ export const ListView: React.FC<ListViewProps> = ({
               placeholder={t("scheduler.listView.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-slate-800 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-400 dark:focus:border-cyan-500/50"
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-slate-800 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-primary-400 dark:focus:border-primary-500/50"
             />
           </div>
 
@@ -259,7 +259,7 @@ export const ListView: React.FC<ListViewProps> = ({
               flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm transition-all min-h-[44px]
               ${
                 showFilters
-                  ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30"
+                  ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-300 dark:border-primary-500/30"
                   : "bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50 hover:text-slate-800 dark:hover:text-white"
               }
             `}
@@ -493,7 +493,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             {task.tags?.slice(0, 2).map((tag, i) => (
                               <span
                                 key={i}
-                                className="px-1.5 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
+                                className="px-1.5 py-0.5 rounded text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
                               >
                                 {tag}
                               </span>
@@ -516,7 +516,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             {task.status === "pending" && onStartTask && (
                               <button
                                 onClick={() => onStartTask(task)}
-                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all"
+                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
                                 title="开始"
                               >
                                 <Play size={14} />

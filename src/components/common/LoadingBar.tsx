@@ -58,7 +58,7 @@ export const LoadingBar: React.FC = () => {
   return (
     <div className="fixed top-0 left-0 right-0 h-1 z-50 pointer-events-none">
       <div 
-        className="h-full bg-blue-500 transition-all duration-300 ease-out"
+        className="h-full bg-primary-500 transition-all duration-300 ease-out"
         style={{ width: `${progress}%` }}
       />
     </div>

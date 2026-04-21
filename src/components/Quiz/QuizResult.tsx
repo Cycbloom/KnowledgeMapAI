@@ -162,7 +162,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               className="mb-8"
             >
               <div className="flex items-center gap-2 mb-4">
-                <BarChart3 size={18} className="text-indigo-500" />
+                <BarChart3 size={18} className="text-primary-500" />
                 <h3 className="font-bold text-gray-900 dark:text-white">各题型得分</h3>
               </div>
               <div className="space-y-3">
@@ -240,7 +240,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           >
             <button
               onClick={onRetry}
-              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 flex items-center justify-center gap-2"
             >
               <RefreshCw size={18} />
               重新测验

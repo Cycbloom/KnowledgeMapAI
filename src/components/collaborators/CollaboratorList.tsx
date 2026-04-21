@@ -29,7 +29,7 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
           className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium">
               {collaborator.user?.name?.[0] || collaborator.user?.email?.[0] || "?"}
             </div>
             <div>

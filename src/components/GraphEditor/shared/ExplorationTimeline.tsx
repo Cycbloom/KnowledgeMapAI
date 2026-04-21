@@ -111,7 +111,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                   className={`
                     p-1.5 rounded-lg transition-all flex items-center gap-1
                     ${canGoBack
-                      ? isDark ? 'hover:bg-slate-700 text-blue-400' : 'hover:bg-gray-100 text-blue-600'
+                      ? isDark ? 'hover:bg-slate-700 text-primary-400' : 'hover:bg-gray-100 text-primary-600'
                       : 'opacity-30 cursor-not-allowed text-gray-400'
                     }
                   `}
@@ -140,8 +140,8 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
               <div className={`
                 mb-4 p-3 rounded-lg border-l-4
                 ${isDark 
-                  ? 'bg-slate-800/50 border-blue-500' 
-                  : 'bg-blue-50 border-blue-500'
+                  ? 'bg-slate-800/50 border-primary-500' 
+                  : 'bg-primary-50 border-primary-500'
                 }
               `}>
                 <div className="flex items-start justify-between mb-2">
@@ -176,8 +176,8 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                         w-full text-left p-2.5 rounded-lg transition-all flex items-center gap-2
                         ${index === currentPathIndex
                           ? isDark 
-                            ? 'bg-blue-900/30 border-blue-500 text-blue-400' 
-                            : 'bg-blue-50 border-blue-500 text-blue-700'
+                            ? 'bg-primary-900/30 border-primary-500 text-primary-400' 
+                            : 'bg-primary-50 border-primary-500 text-primary-700'
                           : isDark
                             ? 'hover:bg-slate-800 border-transparent text-gray-300'
                             : 'hover:bg-gray-50 border-transparent text-gray-700'
@@ -187,7 +187,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                     >
                       <div className="flex-shrink-0">
                         {index === currentPathIndex ? (
-                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          <div className="w-2 h-2 rounded-full bg-primary-500" />
                         ) : (
                           <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600" />
                         )}
@@ -212,7 +212,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                             isDark ? 'hover:bg-slate-700 text-gray-400' : 'hover:bg-gray-200 text-gray-500'
                           }`}
                         >
-                          <GitBranch size={14} className={isExpanded ? 'text-blue-500' : ''} />
+                          <GitBranch size={14} className={isExpanded ? 'text-primary-500' : ''} />
                         </button>
                       )}
                       <ArrowRight size={14} className="flex-shrink-0 text-gray-400" />

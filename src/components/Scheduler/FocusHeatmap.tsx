@@ -75,7 +75,7 @@ const DayCell: React.FC<DayCellProps> = ({
         className={`
           w-3 h-3 rounded-sm cursor-pointer transition-all
           ${colorClass}
-          ${isToday ? "ring-2 ring-cyan-500 ring-offset-1 dark:ring-offset-slate-900" : ""}
+          ${isToday ? "ring-2 ring-primary-500 ring-offset-1 dark:ring-offset-slate-900" : ""}
           hover:ring-2 hover:ring-slate-400 dark:hover:ring-slate-500
         `}
       />
@@ -273,9 +273,9 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
             {totalDays}
           </p>
         </div>
-        <div className="p-3 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-800/50">
+        <div className="p-3 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-800/50">
           <p className="text-xs text-slate-600 dark:text-slate-400">总时长</p>
-          <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
+          <p className="text-xl font-bold text-primary-600 dark:text-primary-400">
             {totalHours.toFixed(1)}h
           </p>
         </div>

@@ -44,7 +44,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
               isDark ? 'border-slate-800' : 'border-gray-50'
             }`}>
               <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-2xl ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                <div className={`p-2.5 rounded-2xl ${isDark ? 'bg-primary-900/40 text-primary-400' : 'bg-primary-50 text-primary-600'}`}>
                   <Info size={20} />
                 </div>
                 <div>
@@ -129,7 +129,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
                     onPractice(card);
                     onClose();
                   }}
-                  className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-black shadow-lg shadow-primary-200 hover:bg-primary-700 transition-all flex items-center justify-center gap-2"
                 >
                   <Play size={20} fill="currentColor" />
                   立即开始练习

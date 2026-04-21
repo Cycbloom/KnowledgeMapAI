@@ -59,7 +59,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
   };
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; description: string; color: string }> = [
-    { value: 'prerequisite', label: t('createRelation.prerequisite'), description: t('createRelation.prerequisiteDesc'), color: 'bg-blue-500' },
+    { value: 'prerequisite', label: t('createRelation.prerequisite'), description: t('createRelation.prerequisiteDesc'), color: 'bg-primary-500' },
     { value: 'extension', label: t('createRelation.extension'), description: t('createRelation.extensionDesc'), color: 'bg-green-500' },
     { value: 'related', label: t('createRelation.related'), description: t('createRelation.relatedDesc'), color: 'bg-amber-500' },
   ];
@@ -103,7 +103,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
               <select
                 value={sourceId}
                 onChange={e => setSourceId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="">{t('createRelation.selectSource')}</option>
                 {graphs.map(graph => (
@@ -125,7 +125,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
               <select
                 value={targetId}
                 onChange={e => setTargetId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="">{t('createRelation.selectTarget')}</option>
                 {availableTargets.map(graph => (
@@ -147,7 +147,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
                     onClick={() => setRelationType(option.value)}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       relationType === option.value
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
@@ -174,7 +174,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
                 onChange={e => setContext(e.target.value)}
                 placeholder={t('createRelation.contextPlaceholder')}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
               />
             </div>
           </div>
@@ -189,7 +189,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
             <button
               onClick={handleSubmit}
               disabled={!sourceId || !targetId || isSubmitting}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {isSubmitting ? t('createRelation.creating') : t('createRelation.create')}

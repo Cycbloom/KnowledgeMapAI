@@ -38,18 +38,18 @@ interface QueueSettingsProps {
 
 const QUEUE_COLORS: Record<QueueColor, { bg: string; text: string; border: string; ring: string; gradient: string }> = {
   cyan: {
-    bg: 'bg-cyan-100 dark:bg-cyan-500/20',
-    text: 'text-cyan-700 dark:text-cyan-300',
-    border: 'border-cyan-300 dark:border-cyan-500/50',
-    ring: 'ring-cyan-500',
-    gradient: 'from-cyan-500 to-cyan-600',
+    bg: 'bg-primary-100 dark:bg-primary-500/20',
+    text: 'text-primary-700 dark:text-primary-300',
+    border: 'border-primary-300 dark:border-primary-500/50',
+    ring: 'ring-primary-500',
+    gradient: 'from-primary-500 to-primary-600',
   },
   blue: {
-    bg: 'bg-blue-100 dark:bg-blue-500/20',
-    text: 'text-blue-700 dark:text-blue-300',
-    border: 'border-blue-300 dark:border-blue-500/50',
-    ring: 'ring-blue-500',
-    gradient: 'from-blue-500 to-blue-600',
+    bg: 'bg-primary-100 dark:bg-primary-500/20',
+    text: 'text-primary-700 dark:text-primary-300',
+    border: 'border-primary-300 dark:border-primary-500/50',
+    ring: 'ring-primary-500',
+    gradient: 'from-primary-500 to-primary-600',
   },
   emerald: {
     bg: 'bg-emerald-100 dark:bg-emerald-500/20',
@@ -73,11 +73,11 @@ const QUEUE_COLORS: Record<QueueColor, { bg: string; text: string; border: strin
     gradient: 'from-orange-500 to-orange-600',
   },
   purple: {
-    bg: 'bg-purple-100 dark:bg-purple-500/20',
-    text: 'text-purple-700 dark:text-purple-300',
-    border: 'border-purple-300 dark:border-purple-500/50',
-    ring: 'ring-purple-500',
-    gradient: 'from-purple-500 to-purple-600',
+    bg: 'bg-primary-100 dark:bg-primary-500/20',
+    text: 'text-primary-700 dark:text-primary-300',
+    border: 'border-primary-300 dark:border-primary-500/50',
+    ring: 'ring-primary-500',
+    gradient: 'from-primary-500 to-primary-600',
   },
   pink: {
     bg: 'bg-pink-100 dark:bg-pink-500/20',
@@ -465,7 +465,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
             className={`
               flex items-center gap-2 px-4 py-2 rounded-xl transition-all
               ${canAddQueue && !loading
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-400 hover:to-blue-400 shadow-lg shadow-cyan-500/20'
+                ? 'bg-gradient-to-r from-primary-500 to-primary-500 text-white hover:from-primary-400 hover:to-primary-400 shadow-lg shadow-primary-500/20'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'}
             `}
           >
@@ -541,7 +541,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
                       w-full px-4 py-2.5 rounded-xl
                       bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600
                       text-slate-900 dark:text-white
-                      focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                      focus:outline-none focus:ring-2 focus:ring-primary-500/50
                     "
                   >
                     {localQueues

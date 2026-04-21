@@ -384,9 +384,9 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
-          <div className="flex items-center space-x-2 text-blue-700">
-            <div className="p-2 bg-blue-100 rounded-lg">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-primary-50 to-white">
+          <div className="flex items-center space-x-2 text-primary-700">
+            <div className="p-2 bg-primary-100 rounded-lg">
               <Wand2 size={20} />
             </div>
             <h2 className="text-lg font-bold">
@@ -410,7 +410,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 <button
                   onClick={() => setActiveTab('text')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'text' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    activeTab === 'text' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <FileText size={16} />
@@ -419,7 +419,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 <button
                   onClick={() => setActiveTab('file')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'file' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    activeTab === 'file' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <Upload size={16} />
@@ -428,7 +428,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 <button
                   onClick={() => setActiveTab('image')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'image' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    activeTab === 'image' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <ImageIcon size={16} />
@@ -437,7 +437,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 <button
                   onClick={() => setActiveTab('url')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'url' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    activeTab === 'url' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <Globe size={16} />
@@ -458,7 +458,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       placeholder="例如：太阳系是以太阳为中心，和所有受到太阳的引力约束天体的集合体。包括八大行星..."
-                      className="w-full h-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-base leading-relaxed transition-all group-hover:border-gray-300"
+                      className="w-full h-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none text-base leading-relaxed transition-all group-hover:border-gray-300"
                       disabled={isAnalyzing}
                     />
                     <div className="absolute bottom-4 right-4 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
@@ -471,7 +471,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   <div 
                     className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 transition-all ${
                       isDragging 
-                        ? 'border-blue-500 bg-blue-50' 
+                        ? 'border-primary-500 bg-primary-50' 
                         : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
                     }`}
                     onDragEnter={handleDragEnter}
@@ -480,7 +480,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     onDrop={handleDrop}
                   >
                     <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                      <Upload size={32} className={isDragging ? 'text-blue-500' : 'text-gray-400'} />
+                      <Upload size={32} className={isDragging ? 'text-primary-500' : 'text-gray-400'} />
                     </div>
                     <h3 className="text-lg font-medium text-gray-700 mb-2">
                       {isDragging ? '释放以解析文件' : '点击或拖拽文件到此处'}
@@ -492,7 +492,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     </p>
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
+                      className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-primary-600 transition-colors shadow-sm"
                       disabled={isAnalyzing}
                     >
                       选择文件
@@ -511,7 +511,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   <div 
                     className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 transition-all ${
                       isDragging 
-                        ? 'border-blue-500 bg-blue-50' 
+                        ? 'border-primary-500 bg-primary-50' 
                         : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
                     }`}
                     onDragEnter={handleDragEnter}
@@ -520,7 +520,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     onDrop={handleDrop}
                   >
                     <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                      <ImageIcon size={32} className={isDragging ? 'text-blue-500' : 'text-gray-400'} />
+                      <ImageIcon size={32} className={isDragging ? 'text-primary-500' : 'text-gray-400'} />
                     </div>
                     <h3 className="text-lg font-medium text-gray-700 mb-2">
                       {isDragging ? '释放以识别图片' : '上传图片生成图谱'}
@@ -532,7 +532,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     </p>
                     <button
                       onClick={() => imageInputRef.current?.click()}
-                      className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
+                      className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-primary-600 transition-colors shadow-sm"
                       disabled={isAnalyzing}
                     >
                       选择图片
@@ -559,7 +559,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     <div className="w-full max-w-md space-y-4">
                       <div className="text-center mb-6">
                         <div className="bg-white p-3 rounded-full shadow-sm inline-block mb-3">
-                          <Globe size={28} className="text-blue-500" />
+                          <Globe size={28} className="text-primary-500" />
                         </div>
                         <h3 className="text-lg font-medium text-gray-800">输入网页链接</h3>
                         <p className="text-sm text-gray-500">AI 将读取网页内容并转化为知识结构</p>
@@ -574,12 +574,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           placeholder="https://example.com/article"
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                           disabled={isAnalyzing}
                         />
                       </div>
                       
-                      <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 flex items-start gap-2">
+                      <div className="bg-primary-50 p-3 rounded-lg text-xs text-primary-700 flex items-start gap-2">
                         <div className="mt-0.5"><Check size={12} /></div>
                         <span>支持博客文章、新闻报道、维基百科条目等以文本为主的网页。</span>
                       </div>
@@ -597,7 +597,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                  </p>
                  <button 
                    onClick={toggleAll}
-                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                   className="text-sm text-primary-600 hover:text-primary-800 font-medium"
                  >
                    {selectedNodeIds.size === previewData?.nodes.length ? '取消全选' : '全选'}
                  </button>
@@ -620,7 +620,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                           className={`p-3 flex items-start space-x-3 hover:bg-gray-50 transition-colors cursor-pointer ${!selectedNodeIds.has(node.id) ? 'opacity-50 grayscale' : ''}`}
                           onClick={() => toggleNode(node.id)}
                         >
-                          <div className={`mt-1 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${selectedNodeIds.has(node.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 bg-white'}`}>
+                          <div className={`mt-1 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${selectedNodeIds.has(node.id) ? 'bg-primary-600 border-primary-600 text-white' : 'border-gray-300 bg-white'}`}>
                             {selectedNodeIds.has(node.id) && <Check size={14} />}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -642,7 +642,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           <div>
             {step === 'preview' && (
                <div className="text-sm text-gray-500">
-                 已选择 <span className="font-bold text-blue-600">{selectedNodeIds.size}</span> / {previewData?.nodes.length} 个节点
+                 已选择 <span className="font-bold text-primary-600">{selectedNodeIds.size}</span> / {previewData?.nodes.length} 个节点
                </div>
             )}
           </div>
@@ -670,7 +670,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
               <button
                 onClick={handleAnalyze}
                 disabled={isAnalyzing || !text.trim()}
-                className="flex items-center space-x-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-2 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium shadow-lg shadow-primary-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isAnalyzing ? (
                   <>

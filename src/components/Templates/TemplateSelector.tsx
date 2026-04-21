@@ -135,8 +135,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 onChange={handleSearchChange}
                 className={`w-full ${isMobile ? "pl-9 pr-3 py-2 text-sm" : "pl-10 pr-4 py-2.5"} rounded-xl border outline-none transition-all ${
                   isDark
-                    ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                    : "border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                 }`}
               />
             </div>
@@ -152,7 +152,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     isMobile ? "text-xs" : ""
                   } ${
                     selectedCategory === cat
-                      ? "bg-blue-600 text-white"
+                      ? "bg-primary-600 text-white"
                       : isDark
                         ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -174,7 +174,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
                   <p
                     className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}
                   >
@@ -294,7 +294,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           <button
             onClick={handleConfirm}
             disabled={!selectedTemplate}
-            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${isMobile ? "w-full shadow-lg shadow-blue-600/20" : "shadow-lg shadow-blue-600/20"}`}
+            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-medium bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${isMobile ? "w-full shadow-lg shadow-primary-600/20" : "shadow-lg shadow-primary-600/20"}`}
           >
             {t("templates.button.use")}
           </button>

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
@@ -108,7 +108,7 @@ export const Achievements = () => {
   if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -137,7 +137,7 @@ export const Achievements = () => {
     <div className="h-full overflow-y-auto px-4 py-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
-          <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden">
+          <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-primary-600 to-primary-600 rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden">
             <div className="absolute right-0 top-0 opacity-10 transform translate-x-10 -translate-y-10">
               <Trophy size={200} />
             </div>
@@ -151,10 +151,10 @@ export const Achievements = () => {
                 <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-2">
                   <div>
                     <h2 className="text-xl md:text-2xl font-bold">{t('achievements.level')} {level}</h2>
-                    <p className="text-blue-100 text-sm md:text-base">{t('achievements.totalXpEarned', { xp: totalLifetimeXp })}</p>
+                    <p className="text-primary-100 text-sm md:text-base">{t('achievements.totalXpEarned', { xp: totalLifetimeXp })}</p>
                   </div>
                   <div className="text-center md:text-right">
-                    <span className="text-sm font-medium text-blue-100">{t('achievements.xpProgress', { current: currentXp, needed: xpNeeded })}</span>
+                    <span className="text-sm font-medium text-primary-100">{t('achievements.xpProgress', { current: currentXp, needed: xpNeeded })}</span>
                   </div>
                 </div>
                 
@@ -164,7 +164,7 @@ export const Achievements = () => {
                     style={{ width: `${levelProgress}%` }}
                   />
                 </div>
-                <p className="text-xs text-blue-200 mt-1">
+                <p className="text-xs text-primary-200 mt-1">
                   {t('achievements.xpToNextLevel', { xp: xpNeeded - currentXp, level: level + 1 })}
                 </p>
               </div>
@@ -195,7 +195,7 @@ export const Achievements = () => {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[44px] ${
                   activeTab === tab.key
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
@@ -237,7 +237,7 @@ export const Achievements = () => {
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                         isCompleted 
                           ? 'bg-green-100 text-green-600 dark:bg-green-800 dark:text-green-100' 
-                          : 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'bg-primary-50 text-primary-500 dark:bg-primary-900/30 dark:text-primary-300'
                       }`}>
                         <TaskIcon size={20} />
                       </div>
@@ -262,7 +262,7 @@ export const Achievements = () => {
                       <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div 
                           className={`h-full rounded-full transition-all duration-500 ${
-                            isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                            isCompleted ? 'bg-green-500' : 'bg-primary-500'
                           }`}
                           style={{ width: `${progressPercent}%` }}
                         />
@@ -279,7 +279,7 @@ export const Achievements = () => {
           <div className="space-y-4">
             {loadingPeriodicTasks ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
               </div>
             ) : (
               <PeriodicTaskList tasks={periodicTasks || []} />
@@ -291,7 +291,7 @@ export const Achievements = () => {
           <div className="space-y-6">
             {loadingPass ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
               </div>
             ) : (
               <>
@@ -356,7 +356,7 @@ export const Achievements = () => {
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                               isUnlocked 
-                                ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg' 
+                                ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg' 
                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 grayscale'
                             }`}>
                               <Icon size={24} />

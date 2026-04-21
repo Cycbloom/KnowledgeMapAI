@@ -99,7 +99,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
         </div>
         <div className={`h-2 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
           <div 
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+            className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-500 transition-all duration-500"
             style={{ width: `${learningPath.progress_percentage ?? 0}%` }}
           />
         </div>
@@ -116,14 +116,14 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
       <div className="p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-indigo-500" />
+            <Target className="w-5 h-5 text-primary-500" />
             <h3 className="font-semibold">{learningPath.title}</h3>
           </div>
           <span className={`px-2 py-1 rounded text-xs font-medium ${
             learningPath.status === 'active' 
               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
               : learningPath.status === 'completed'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+              ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
               : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
           }`}>
             {learningPath.status === 'active' ? '进行中' : learningPath.status === 'completed' ? '已完成' : '已暂停'}
@@ -141,7 +141,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
             <div className="text-xs text-gray-500">已完成</div>
           </div>
           <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
-            <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
+            <div className="flex items-center justify-center gap-1 text-primary-500 mb-1">
               <Play className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold">{stats?.inProgress}</div>
@@ -155,7 +155,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
             <div className="text-xs text-gray-500">待学习</div>
           </div>
           <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
-            <div className="flex items-center justify-center gap-1 text-purple-500 mb-1">
+            <div className="flex items-center justify-center gap-1 text-primary-500 mb-1">
               <Clock className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold">{Math.round((stats?.totalMinutes || 0) / 60)}</div>
@@ -170,17 +170,17 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
           </div>
           <div className={`h-3 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
             <div 
-              className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-500 to-pink-500 transition-all duration-500"
               style={{ width: `${learningPath.progress_percentage ?? 0}%` }}
             />
           </div>
         </div>
 
         {stats?.currentNode && (
-          <div className={`p-3 rounded-lg border-2 border-indigo-500 ${isDark ? 'bg-indigo-900/20' : 'bg-indigo-50'}`}>
+          <div className={`p-3 rounded-lg border-2 border-primary-500 ${isDark ? 'bg-primary-900/20' : 'bg-primary-50'}`}>
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-4 h-4 text-indigo-500" />
-              <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">当前学习</span>
+              <Zap className="w-4 h-4 text-primary-500" />
+              <span className="text-sm font-medium text-primary-600 dark:text-primary-400">当前学习</span>
             </div>
             <div className="flex items-center justify-between">
               <div>
@@ -191,7 +191,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
               </div>
               <button
                 onClick={() => stats.currentNode?.node && onNodeClick(stats.currentNode.node.id)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700"
               >
                 继续
                 <ChevronRight className="w-4 h-4" />
@@ -213,9 +213,9 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
                     ${node.status === 'completed' 
                       ? 'bg-green-500 text-white' 
                       : node.status === 'in_progress'
-                      ? 'bg-blue-500 text-white ring-2 ring-blue-300'
+                      ? 'bg-primary-500 text-white ring-2 ring-primary-300'
                       : node.node_id === currentNodeId
-                      ? 'bg-indigo-500 text-white'
+                      ? 'bg-primary-500 text-white'
                       : isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-200 text-gray-600'
                     }
                   `}

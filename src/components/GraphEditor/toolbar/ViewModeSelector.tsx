@@ -50,8 +50,8 @@ export const ViewModeSelector: React.FC<ViewModeSelectorProps> = ({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             currentMode === mode
               ? isDark
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-blue-500 text-white shadow-md'
+                ? 'bg-primary-600 text-white shadow-md'
+                : 'bg-primary-500 text-white shadow-md'
               : isDark
               ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'

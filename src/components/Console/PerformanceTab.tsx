@@ -257,12 +257,12 @@ const LogDetailModal: React.FC<{
             <div
               className={`mt-4 p-3 rounded-lg ${
                 isDark
-                  ? "bg-blue-900/20 border border-blue-700/30"
-                  : "bg-blue-50 border border-blue-200"
+                  ? "bg-primary-900/20 border border-primary-700/30"
+                  : "bg-primary-50 border border-primary-200"
               }`}
             >
               <div
-                className={`text-xs font-semibold mb-2 ${isDark ? "text-blue-300" : "text-blue-700"}`}
+                className={`text-xs font-semibold mb-2 ${isDark ? "text-primary-300" : "text-primary-700"}`}
               >
                 {t("console.performance.detail.tokenAnalysis")}
               </div>
@@ -298,7 +298,7 @@ const LogDetailModal: React.FC<{
                   </span>
                   <div className="text-right">
                     <span
-                      className={`text-sm font-medium ${isDark ? "text-blue-400" : "text-blue-600"}`}
+                      className={`text-sm font-medium ${isDark ? "text-primary-400" : "text-primary-600"}`}
                     >
                       {formatTokens(log.uncachedInputTokens || 0)}
                     </span>
@@ -320,7 +320,7 @@ const LogDetailModal: React.FC<{
                   </span>
                   <div className="text-right">
                     <span
-                      className={`text-sm font-medium ${isDark ? "text-purple-400" : "text-purple-600"}`}
+                      className={`text-sm font-medium ${isDark ? "text-primary-400" : "text-primary-600"}`}
                     >
                       {formatTokens(log.outputTokens)}
                     </span>
@@ -544,7 +544,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
           <div className="flex items-center gap-2">
             <Activity
               size={16}
-              className={isDark ? "text-blue-400" : "text-blue-600"}
+              className={isDark ? "text-primary-400" : "text-primary-600"}
             />
             <span
               className={`font-semibold ${isDark ? "text-slate-200" : "text-gray-800"}`}
@@ -649,7 +649,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                     type="checkbox"
                     checked={showEmbeddingOps}
                     onChange={(e) => setShowEmbeddingOps(e.target.checked)}
-                    className="w-3 h-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="w-3 h-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                   />
                   <span>{t('console.performance.showEmbedding')}</span>
                 </label>
@@ -698,14 +698,14 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
             value={String(stats.totalRequests)}
             subValue={`${stats.successRequests}/${stats.failedRequests}`}
             isDark={isDark}
-            color="bg-blue-500"
+            color="bg-primary-500"
           />
           <StatCard
             icon={<Zap size={14} className="text-white" />}
             label={t('console.performance.stats.tokens')}
             value={formatTokens(stats.totalTokens)}
             isDark={isDark}
-            color="bg-purple-500"
+            color="bg-primary-500"
           />
           <StatCard
             icon={<Coins size={14} className="text-white" />}
@@ -754,7 +754,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                 {!showEmbeddingOps && (
                   <button
                     onClick={() => setShowEmbeddingOps(true)}
-                    className={`mt-2 text-xs underline ${isDark ? "text-blue-400" : "text-blue-600"}`}
+                    className={`mt-2 text-xs underline ${isDark ? "text-primary-400" : "text-primary-600"}`}
                   >
                     {t('console.performance.showEmbeddingOps')}
                   </button>

@@ -115,10 +115,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
 
   const getLevelBadgeStyle = (level: NodeLevel, isDark: boolean = false) => {
     const styles = {
-      root: isDark ? 'bg-purple-900/50 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-700 border-purple-200',
+      root: isDark ? 'bg-primary-900/50 text-primary-300 border-primary-700' : 'bg-primary-100 text-primary-700 border-primary-200',
       core: isDark ? 'bg-red-900/50 text-red-300 border-red-700' : 'bg-red-100 text-red-700 border-red-200',
       sub: isDark ? 'bg-orange-900/50 text-orange-300 border-orange-700' : 'bg-orange-100 text-orange-700 border-orange-200',
-      normal: isDark ? 'bg-blue-900/50 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-700 border-blue-200',
+      normal: isDark ? 'bg-primary-900/50 text-primary-300 border-primary-700' : 'bg-primary-100 text-primary-700 border-primary-200',
       leaf: isDark ? 'bg-green-900/50 text-green-300 border-green-700' : 'bg-green-100 text-green-700 border-green-200'
     };
     return styles[level] || styles.normal;
@@ -131,13 +131,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
            {prevSidebarMode === 'outline' && (
              <button 
                onClick={onBack}
-               className={`text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all ${isMobile ? 'mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center' : 'mr-1 p-1.5'}`}
+               className={`text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-all ${isMobile ? 'mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center' : 'mr-1 p-1.5'}`}
                title="返回大纲"
              >
                <ArrowLeft size={isMobile ? 20 : 18} />
              </button>
            )}
-           <div className={`w-3 h-3 rounded-full ${mode === 'create' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+           <div className={`w-3 h-3 rounded-full ${mode === 'create' ? 'bg-green-500' : 'bg-primary-500'}`}></div>
            <h3 className={`font-bold text-gray-800 dark:text-gray-100 ${isMobile ? 'text-base' : 'text-lg'}`}>
              {mode === 'create' ? '创建新节点' : '编辑节点'}
            </h3>
@@ -174,7 +174,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               type="text"
               value={nodeForm.title}
               onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
-              className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2'}`}
+              className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2'}`}
               placeholder="输入节点标题"
             />
          </div>
@@ -196,7 +196,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   onChange={handleParentInputChange}
                   onFocus={handleParentInputFocus}
                   onBlur={handleParentInputBlur}
-                  className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'pl-11 pr-10 py-3 min-h-[44px] text-base' : 'pl-9 pr-8 py-2'}`}
+                  className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'pl-11 pr-10 py-3 min-h-[44px] text-base' : 'pl-9 pr-8 py-2'}`}
                   placeholder="搜索选择父节点..."
                 />
                 <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 ${isMobile ? 'right-3' : 'right-2'}`}>
@@ -224,7 +224,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     <button
                       onClick={clearAllParents}
                       className={`w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 ${
-                        nodeForm.parentNodeIds.length === 0 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
+                        nodeForm.parentNodeIds.length === 0 ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300'
                       } ${isMobile ? 'px-4 py-3.5 min-h-[48px]' : 'px-3 py-2.5'}`}
                     >
                       <Circle size={12} className="text-gray-400" />
@@ -243,13 +243,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                             key={node.id}
                             onClick={() => toggleParent(node.id)}
                             className={`w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between ${
-                              isSelected ? 'bg-blue-50 dark:bg-blue-900/30' : ''
+                              isSelected ? 'bg-primary-50 dark:bg-primary-900/30' : ''
                             } ${isMobile ? 'px-4 py-3.5 min-h-[48px]' : 'px-3 py-2.5'}`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
                                 isSelected 
-                                  ? 'bg-blue-500 border-blue-500' 
+                                  ? 'bg-primary-500 border-primary-500' 
                                   : 'border-gray-300 dark:border-gray-600'
                               }`}>
                                 {isSelected && <Check size={10} className="text-white" />}
@@ -274,7 +274,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 className={`rounded-lg border transition-all ${
                   isSelectingParent
                     ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400'
-                    : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-500 hover:border-blue-300'
+                    : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary-500 hover:border-primary-300'
                 } ${isMobile ? 'w-full py-3 min-h-[48px] flex items-center justify-center gap-2 font-medium' : 'p-2'}`}
                 title={isSelectingParent ? '完成选择' : '从图谱选择'}
               >
@@ -288,13 +288,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 {selectedParents.map(parent => (
                   <div 
                     key={parent.id}
-                    className={`inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg ${isMobile ? 'px-3 py-2 text-base' : 'px-2 py-1 text-sm'}`}
+                    className={`inline-flex items-center gap-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg ${isMobile ? 'px-3 py-2 text-base' : 'px-2 py-1 text-sm'}`}
                   >
                     <div className={`w-1.5 h-1.5 rounded-full ${getLevelColor(parent.level || 'normal')}`}></div>
                     <span className={`truncate ${isMobile ? 'max-w-[150px]' : 'max-w-[120px]'}`}>{parent.title}</span>
                     <button
                       onClick={() => removeParent(parent.id)}
-                      className={`hover:bg-blue-100 dark:hover:bg-blue-800 rounded ${isMobile ? 'p-1 min-h-[32px] min-w-[32px]' : 'p-0.5'}`}
+                      className={`hover:bg-primary-100 dark:hover:bg-primary-800 rounded ${isMobile ? 'p-1 min-h-[32px] min-w-[32px]' : 'p-0.5'}`}
                     >
                       <X size={isMobile ? 14 : 12} />
                     </button>
@@ -313,7 +313,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                  const tags = e.target.value.split(/[,，]/).map(t => t.trim()).filter(Boolean);
                  setNodeForm({ ...nodeForm, tags });
                }}
-               className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2'}`}
+               className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2'}`}
                placeholder="例如: 重要, 待办, 概念"
              />
           </div>
@@ -323,7 +323,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               <select
                 value={nodeForm.level}
                 onChange={(e) => setNodeForm({ ...nodeForm, level: e.target.value as any })}
-                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2 text-sm'}`}
+                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2 text-sm'}`}
               >
                 <option value="root">根节点</option>
                 <option value="core">核心节点</option>
@@ -338,7 +338,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             <textarea
               value={nodeForm.content}
               onChange={(e) => setNodeForm({ ...nodeForm, content: e.target.value })}
-              className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'h-48 px-4 py-3 text-base' : 'h-64 px-3 py-2 text-sm'}`}
+              className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'h-48 px-4 py-3 text-base' : 'h-64 px-3 py-2 text-sm'}`}
               placeholder="支持 Markdown 格式..."
             />
          </div>
@@ -359,7 +359,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                className={`flex-1 py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all min-h-[48px] ${
                  loading || !nodeForm.title.trim() 
                    ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed' 
-                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-200 dark:hover:shadow-blue-900/30 active:scale-[0.99]'
+                   : 'bg-gradient-to-r from-primary-600 to-primary-600 hover:shadow-primary-200 dark:hover:shadow-primary-900/30 active:scale-[0.99]'
                }`}
              >
                {loading ? (
@@ -382,7 +382,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
              className={`w-full py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all ${
                loading || !nodeForm.title.trim() 
                  ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed' 
-                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-200 dark:hover:shadow-blue-900/30 active:scale-[0.99]'
+                 : 'bg-gradient-to-r from-primary-600 to-primary-600 hover:shadow-primary-200 dark:hover:shadow-primary-900/30 active:scale-[0.99]'
              }`}
            >
              {loading ? (

@@ -123,10 +123,10 @@ const CATEGORY_COLOR_MAP: Record<string, { bg: string; bgHover: string; icon: st
     border: 'border-amber-200 dark:border-amber-700'
   },
   cyan: {
-    bg: 'bg-cyan-50/70 dark:bg-cyan-900/30',
-    bgHover: 'hover:bg-cyan-100/80 dark:hover:bg-cyan-900/50',
-    icon: 'text-cyan-600 dark:text-cyan-400',
-    border: 'border-cyan-200 dark:border-cyan-700'
+    bg: 'bg-primary-50/70 dark:bg-primary-900/30',
+    bgHover: 'hover:bg-primary-100/80 dark:hover:bg-primary-900/50',
+    icon: 'text-primary-600 dark:text-primary-400',
+    border: 'border-primary-200 dark:border-primary-700'
   },
   rose: {
     bg: 'bg-rose-50/70 dark:bg-rose-900/30',
@@ -305,8 +305,8 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
                         </h4>
                         <div className="flex items-center gap-2 text-xs mt-1">
                           <span className={`px-2 py-0.5 rounded-full border ${
-                            effective.source === 'Graph' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                            effective.source === 'User' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            effective.source === 'Graph' ? 'bg-primary-50 text-primary-700 border-primary-200' :
+                            effective.source === 'User' ? 'bg-primary-50 text-primary-700 border-primary-200' :
                             'bg-gray-50 text-gray-600 border-gray-200'
                           }`}>
                             {getSourceName(effective.source)}
@@ -329,7 +329,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
                         )}
                         <button 
                           onClick={() => setEditingCode(code)}
-                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
                           title={t('profile.promptSettings.customize')}
                         >
                           <Edit size={16} />

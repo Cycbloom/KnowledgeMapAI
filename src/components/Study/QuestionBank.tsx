@@ -200,7 +200,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             className={`p-2 rounded-lg border transition-colors ${
               showAdvancedFilters 
-                ? 'bg-indigo-100 border-indigo-200 text-indigo-600' 
+                ? 'bg-primary-100 border-primary-200 text-primary-600' 
                 : isDark ? 'bg-slate-800 border-slate-700 text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'
             }`}
             title={t('study.questionBank.advancedFilter')}
@@ -214,7 +214,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             onClick={handleSelectAll}
             className={`p-2 rounded-lg border transition-colors ${
               selectedIds.size === filteredCards.length && filteredCards.length > 0
-                ? 'bg-indigo-100 border-indigo-200 text-indigo-600'
+                ? 'bg-primary-100 border-primary-200 text-primary-600'
                 : isDark ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-400'
             }`}
             title={selectedIds.size === filteredCards.length ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
@@ -234,7 +234,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
           
           <button
             onClick={startCreating}
-            className="flex items-center gap-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <PlusCircle size={18} />
             <span>{t('study.questionBank.newQuestion')}</span>
@@ -306,7 +306,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                     onClick={() => toggleFsrsState(state)}
                     className={`px-2 py-1 text-xs rounded border transition-colors ${
                       selectedFsrsStates.has(state)
-                        ? 'bg-indigo-100 border-indigo-200 text-indigo-700'
+                        ? 'bg-primary-100 border-primary-200 text-primary-700'
                         : isDark ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-500'
                     }`}
                   >
@@ -405,7 +405,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                     onClick={() => setCurrentPage(pageNum)}
                     className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                       currentPage === pageNum
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-primary-600 text-white'
                         : (isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-gray-600 hover:bg-gray-100')
                     }`}
                   >

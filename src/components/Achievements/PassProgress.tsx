@@ -48,15 +48,15 @@ export const PassProgress: React.FC<PassProgressProps> = ({
   const periodTypeConfig = {
     weekly: {
       label: t("achievements.pass.weekly"),
-      color: "from-blue-500 to-cyan-500",
-      bgColor: "bg-blue-500",
-      borderColor: "border-blue-400",
+      color: "from-primary-500 to-primary-500",
+      bgColor: "bg-primary-500",
+      borderColor: "border-primary-400",
     },
     monthly: {
       label: t("achievements.pass.monthly"),
-      color: "from-purple-500 to-pink-500",
-      bgColor: "bg-purple-500",
-      borderColor: "border-purple-400",
+      color: "from-primary-500 to-pink-500",
+      bgColor: "bg-primary-500",
+      borderColor: "border-primary-400",
     },
     quarterly: {
       label: t("achievements.pass.quarterly"),

@@ -169,8 +169,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               placeholder="模板名称"
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
-                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
               }`}
             />
           </div>
@@ -186,8 +186,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
                 isDark
-                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
               }`}
             />
           </div>
@@ -205,7 +205,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                     onClick={() => setCategory(cat)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       category === cat
-                        ? "bg-blue-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : isDark
                           ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -227,7 +227,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               <button
                 type="button"
                 onClick={suggestVariables}
-                className="text-xs text-blue-500 hover:text-blue-600"
+                className="text-xs text-primary-500 hover:text-primary-600"
               >
                 自动提取变量
               </button>
@@ -239,8 +239,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               placeholder="例如：学习：{{topic}}"
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
-                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
               }`}
             />
             <p className="text-xs text-slate-400 mt-1">
@@ -260,8 +260,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
                 isDark
-                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
               }`}
             />
           </div>
@@ -280,8 +280,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 }
                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                   isDark
-                    ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                    ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
                 }`}
               />
             </div>
@@ -294,8 +294,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 onChange={(e) => setPriority(parseInt(e.target.value))}
                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                   isDark
-                    ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                    ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
                 }`}
               >
                 <option value={1}>低</option>
@@ -322,14 +322,14 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 placeholder="添加标签"
                 className={`flex-1 px-3 py-2 rounded-lg border text-sm ${
                   isDark
-                    ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
-                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                    ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
+                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-primary-500"
                 }`}
               />
               <button
                 type="button"
                 onClick={addTag}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
                 添加
               </button>
@@ -384,7 +384,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 {extractVariables(titleTemplate).map((v) => (
                   <span
                     key={v}
-                    className="px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-xs"
+                    className="px-2 py-0.5 bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 rounded text-xs"
                   >
                     {v}
                   </span>
@@ -409,7 +409,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />

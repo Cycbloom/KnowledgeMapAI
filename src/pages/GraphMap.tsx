@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } from "react";
+﻿import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -98,7 +98,7 @@ const AgentAnalysisPanel = lazy(() =>
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center p-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
   </div>
 );
 
@@ -177,19 +177,19 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
                     onClick={() => toggleDomain(domain.id)}
                     className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors text-left ${
                       isSelected
-                        ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-200 dark:ring-blue-800'
+                        ? 'bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-200 dark:ring-primary-800'
                         : 'hover:bg-gray-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     <span
-                      className={`w-3 h-3 rounded-full flex-shrink-0 ${isSelected ? 'ring-2 ring-offset-1 ring-blue-400 dark:ring-offset-slate-800' : ''}`}
+                      className={`w-3 h-3 rounded-full flex-shrink-0 ${isSelected ? 'ring-2 ring-offset-1 ring-primary-400 dark:ring-offset-slate-800' : ''}`}
                       style={{ backgroundColor: domain.color }}
                     />
-                    <span className={`text-sm flex-1 ${isSelected ? 'text-blue-700 dark:text-blue-300 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
+                    <span className={`text-sm flex-1 ${isSelected ? 'text-primary-700 dark:text-primary-300 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
                       {domain.name}
                     </span>
                     {isSelected && (
-                      <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -211,7 +211,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
               <button
                 onClick={() => onConfirm(Array.from(selectedIds))}
                 disabled={isSetting}
-                className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-colors"
               >
                 {t('common.confirm')}
               </button>
@@ -1068,9 +1068,9 @@ export const GraphMap = () => {
         </Suspense>
 
         {multiSelectedGraphIds.size === 2 && (
-          <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl p-5 max-w-sm border border-purple-200 dark:border-purple-800">
+          <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl p-5 max-w-sm border border-primary-200 dark:border-primary-800">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-500 flex items-center justify-center">
                 <svg
                   className="w-4 h-4 text-white"
                   fill="none"
@@ -1098,7 +1098,7 @@ export const GraphMap = () => {
                     className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg"
                   >
                     <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold ${index === 0 ? "bg-blue-500" : "bg-green-500"}`}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold ${index === 0 ? "bg-primary-500" : "bg-green-500"}`}
                     >
                       {index + 1}
                     </div>
@@ -1111,7 +1111,7 @@ export const GraphMap = () => {
             </div>
             <button
               onClick={handleCombinedOpen}
-              className="w-full px-4 py-2.5 text-sm bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-lg hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transition-all font-medium shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+              className="w-full px-4 py-2.5 text-sm bg-gradient-to-r from-primary-500 via-primary-500 to-pink-500 text-white rounded-lg hover:from-primary-600 hover:via-primary-600 hover:to-pink-600 transition-all font-medium shadow-md hover:shadow-lg flex items-center justify-center gap-2"
             >
               <svg
                 className="w-4 h-4"
@@ -1225,7 +1225,7 @@ export const GraphMap = () => {
                           {user && graph.user_id === user.id && (
                             <button
                               onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1238,7 +1238,7 @@ export const GraphMap = () => {
                       {user && graph.user_id === user.id && (!graph.domains || graph.domains.length === 0) && (
                         <button
                           onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600 mb-3"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600 mb-3"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1250,7 +1250,7 @@ export const GraphMap = () => {
                       <div className="flex gap-2 mb-3">
                         <button
                           onClick={() => navigate(`/graph/${graph.id}`)}
-                          className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg active:bg-blue-600 transition-colors"
+                          className="flex-1 px-3 py-2 bg-primary-500 text-white text-sm rounded-lg active:bg-primary-600 transition-colors"
                         >
                           {t('graphMap.graph.openGraph')}
                         </button>
@@ -1264,7 +1264,7 @@ export const GraphMap = () => {
 
                       <button
                         onClick={() => selectRelatedGraphs(selectedGraphId)}
-                        className="w-full mb-3 px-3 py-2 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg active:bg-purple-200 dark:active:bg-purple-900/50 transition-colors flex items-center justify-center gap-2"
+                        className="w-full mb-3 px-3 py-2 text-sm bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg active:bg-primary-200 dark:active:bg-primary-900/50 transition-colors flex items-center justify-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -1281,7 +1281,7 @@ export const GraphMap = () => {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleCreateRelatedGraph("prerequisite")}
-                                className="flex-1 px-2 py-2 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg active:bg-blue-100 dark:active:bg-blue-900/50 transition-colors"
+                                className="flex-1 px-2 py-2 text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg active:bg-primary-100 dark:active:bg-primary-900/50 transition-colors"
                               >
                                 + {t('graphMap.graph.prerequisite')}
                               </button>
@@ -1303,14 +1303,14 @@ export const GraphMap = () => {
                           <div className="flex gap-2 mb-3">
                             <button
                               onClick={() => setIsAIExpansionOpen(true)}
-                              className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg flex items-center justify-center gap-2"
+                              className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-pink-500 text-white rounded-lg flex items-center justify-center gap-2"
                             >
                               <Sparkles className="w-4 h-4" />
                               {t('graphMap.graph.aiExpand')}
                             </button>
                             <button
                               onClick={() => setIsNodeSelectorOpen(true)}
-                              className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg flex items-center justify-center gap-2"
+                              className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-lg flex items-center justify-center gap-2"
                             >
                               <BookOpen className="w-4 h-4" />
                               {t('graphMap.graph.generateQuestions')}
@@ -1333,10 +1333,10 @@ export const GraphMap = () => {
                                   if (!otherGraph) return null;
 
                                   const relationColor = {
-                                    prerequisite: "bg-blue-500",
+                                    prerequisite: "bg-primary-500",
                                     extension: "bg-green-500",
                                     related: "bg-amber-500",
-                                    cross_domain: "bg-purple-500",
+                                    cross_domain: "bg-primary-500",
                                   }[relation.relation_type];
 
                                   return (
@@ -1433,7 +1433,7 @@ export const GraphMap = () => {
                           {user && graph.user_id === user.id && (
                             <button
                               onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1447,7 +1447,7 @@ export const GraphMap = () => {
                         <div className="mb-3">
                           <button
                             onClick={() => setSingleGraphDomainPicker({ graphId: graph.id, open: true })}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors border border-dashed border-gray-300 dark:border-gray-600"
                           >
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1460,7 +1460,7 @@ export const GraphMap = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => navigate(`/graph/${graph.id}`)}
-                          className="flex-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                          className="flex-1 px-3 py-1.5 bg-primary-500 text-white text-sm rounded-lg hover:bg-primary-600 transition-colors"
                         >
                           {t('graphMap.graph.openGraph')}
                         </button>
@@ -1476,7 +1476,7 @@ export const GraphMap = () => {
 
                       <button
                         onClick={() => selectRelatedGraphs(selectedGraphId)}
-                        className="w-full mt-2 px-3 py-1.5 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors flex items-center justify-center gap-2"
+                        className="w-full mt-2 px-3 py-1.5 text-sm bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors flex items-center justify-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -1491,7 +1491,7 @@ export const GraphMap = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleCreateRelatedGraph("prerequisite")}
-                            className="flex-1 px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                            className="flex-1 px-2 py-1.5 text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
                           >
                             + {t('graphMap.graph.prerequisite')}
                           </button>
@@ -1513,7 +1513,7 @@ export const GraphMap = () => {
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <button
                           onClick={() => setIsAIExpansionOpen(true)}
-                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
+                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-pink-500 text-white rounded-lg hover:from-primary-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
                         >
                           <Sparkles className="w-4 h-4" />
                           {t('graphMap.graph.aiSmartExpand')}
@@ -1526,7 +1526,7 @@ export const GraphMap = () => {
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <button
                           onClick={() => setIsNodeSelectorOpen(true)}
-                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg hover:from-indigo-600 hover:to-violet-600 transition-all flex items-center justify-center gap-2"
+                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-lg hover:from-primary-600 hover:to-violet-600 transition-all flex items-center justify-center gap-2"
                         >
                           <BookOpen className="w-4 h-4" />
                           {t('graphMap.graph.generateQuestions')}
@@ -1557,10 +1557,10 @@ export const GraphMap = () => {
                                 if (!otherGraph) return null;
 
                                 const relationColor = {
-                                  prerequisite: "bg-blue-500",
+                                  prerequisite: "bg-primary-500",
                                   extension: "bg-green-500",
                                   related: "bg-amber-500",
-                                  cross_domain: "bg-purple-500",
+                                  cross_domain: "bg-primary-500",
                                 }[relation.relation_type];
 
                                 return (
@@ -1604,7 +1604,7 @@ export const GraphMap = () => {
           </h4>
           <div className="flex gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <div className="w-3 h-3 rounded-full bg-primary-500" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
                 {t('graphMap.legend.prerequisite')}
               </span>
@@ -1622,7 +1622,7 @@ export const GraphMap = () => {
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-purple-500" />
+              <div className="w-3 h-3 rounded-full bg-primary-500" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
                 {t('graphMap.legend.crossDomain')}
               </span>
@@ -1635,8 +1635,8 @@ export const GraphMap = () => {
           disabled={isAnalyzingCrossDomain}
           className={`fixed bottom-6 right-6 px-4 py-3 rounded-full shadow-lg transition-all flex items-center gap-2 z-40 ${
             isAnalyzingCrossDomain
-              ? 'bg-gradient-to-r from-purple-400 to-pink-400 cursor-wait'
-              : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl active:scale-95'
+              ? 'bg-gradient-to-r from-primary-400 to-pink-400 cursor-wait'
+              : 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 hover:shadow-xl active:scale-95'
           }`}
         >
           {isAnalyzingCrossDomain ? (
@@ -1706,7 +1706,7 @@ export const GraphMap = () => {
                   onClick={() => handleSwitchDepthPrompt("init")}
                   className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                     depthPromptType === "init"
-                      ? "text-purple-600 dark:text-purple-400 border-b-2 border-purple-500 bg-purple-50/50 dark:bg-purple-900/20"
+                      ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   }`}
                 >
@@ -1716,7 +1716,7 @@ export const GraphMap = () => {
                   onClick={() => handleSwitchDepthPrompt("expand")}
                   className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                     depthPromptType === "expand"
-                      ? "text-purple-600 dark:text-purple-400 border-b-2 border-purple-500 bg-purple-50/50 dark:bg-purple-900/20"
+                      ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   }`}
                 >
@@ -2017,9 +2017,9 @@ export const GraphMap = () => {
             className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-pink-50 dark:from-primary-900/30 dark:to-pink-900/30">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Layers className="w-5 h-5 text-purple-500" />
+                <Layers className="w-5 h-5 text-primary-500" />
                 {t('graphMap.crossDomain.title')}
               </h3>
               <button
@@ -2046,7 +2046,7 @@ export const GraphMap = () => {
               <button
                 onClick={handleCrossDomainAnalysis}
                 disabled={isAnalyzingCrossDomain}
-                className="px-4 py-2 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                className="px-4 py-2 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${isAnalyzingCrossDomain ? 'animate-spin' : ''}`} />
                 {t('graphMap.crossDomain.reanalyze')}

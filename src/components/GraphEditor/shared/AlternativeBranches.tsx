@@ -34,14 +34,14 @@ export const AlternativeBranches: React.FC<AlternativeBranchesProps> = ({
       switch (priority) {
         case 'high': return isDark ? 'bg-red-900/50 border-red-500' : 'bg-red-50 border-red-500';
         case 'medium': return isDark ? 'bg-yellow-900/50 border-yellow-500' : 'bg-yellow-50 border-yellow-500';
-        case 'low': return isDark ? 'bg-blue-900/50 border-blue-500' : 'bg-blue-50 border-blue-500';
+        case 'low': return isDark ? 'bg-primary-900/50 border-primary-500' : 'bg-primary-50 border-primary-500';
         default: return isDark ? 'bg-gray-800 border-gray-600' : 'bg-gray-100 border-gray-400';
       }
     }
     switch (priority) {
       case 'high': return isDark ? 'bg-red-900/70 border-red-500' : 'bg-red-50/90 border-red-500';
       case 'medium': return isDark ? 'bg-yellow-900/70 border-yellow-500' : 'bg-yellow-50/90 border-yellow-500';
-      case 'low': return isDark ? 'bg-blue-900/70 border-blue-500' : 'bg-blue-50/90 border-blue-500';
+      case 'low': return isDark ? 'bg-primary-900/70 border-primary-500' : 'bg-primary-50/90 border-primary-500';
       default: return isDark ? 'bg-gray-800/70 border-gray-600' : 'bg-gray-100/90 border-gray-400';
     }
   };
@@ -159,10 +159,10 @@ export const AlternativeBranches: React.FC<AlternativeBranchesProps> = ({
 
                   {branch.relatedTopics.length > 0 && (
                     <div className="flex items-center gap-0.5">
-                      <Sparkles size={8} className={isSelected ? 'text-purple-500' : 'text-purple-500/80'} />
+                      <Sparkles size={8} className={isSelected ? 'text-primary-500' : 'text-primary-500/80'} />
                       <span className={`text-[10px] ${isSelected 
-                        ? 'text-purple-600 dark:text-purple-400' 
-                        : 'text-purple-700 dark:text-purple-500'}`}>
+                        ? 'text-primary-600 dark:text-primary-400' 
+                        : 'text-primary-700 dark:text-primary-500'}`}>
                         {branch.relatedTopics.length}
                       </span>
                     </div>

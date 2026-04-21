@@ -37,6 +37,7 @@ router.post(
       edges,
       provider: providerType,
       model,
+      language,
     } = req.body;
 
     if (action === "save") {
@@ -208,6 +209,7 @@ router.post(
         {},
         req.user.id,
         graph_id,
+        language,
       );
 
       const completion = await provider.client.chat.completions.create({
@@ -259,6 +261,7 @@ router.post(
       graph_id,
       provider: providerOverride,
       model: modelOverride,
+      language,
     } = req.body;
     const file = req.file;
     const provider = await getAIProviderForTask(
@@ -341,6 +344,7 @@ router.post(
         {},
         req.user.id,
         graph_id,
+        language,
       );
 
       const completion = await provider.client.chat.completions.create({

@@ -450,8 +450,13 @@
     "darkMode": "Dark Mode",
     "followSystem": "Follow System",
     "language": "Language",
+    "interfaceLanguage": "Interface Language",
     "chinese": "中文",
     "english": "English",
+    "aiOutputLanguage": "AI Output Language",
+    "languageAuto": "Follow Interface",
+    "languageChinese": "Chinese",
+    "languageEnglish": "English",
     "aiStatus": "AI Status & Configuration",
     "modelManagement": "Available Models Management",
     "modelManagementDesc": "Add models supported by each provider for selection in tasks below.",
@@ -487,7 +492,17 @@
     "enterApiKey": "Please enter API Key",
     "mobileConfigSaved": "Mobile AI configuration saved",
     "mobileConfigCleared": "Mobile AI configuration cleared",
-    "inputModelName": "Enter model name (e.g. deepseek-chat)"
+    "inputModelName": "Enter model name (e.g. deepseek-chat)",
+    "themePreset": "Theme Color",
+    "themePresets": {
+      "default": "Default",
+      "ocean": "Ocean",
+      "forest": "Forest",
+      "sunset": "Sunset",
+      "lavender": "Lavender",
+      "rose": "Rose",
+      "midnight": "Midnight"
+    }
   },
   "layout": {
     "appName": "Knowledge Graph",
@@ -980,6 +995,10 @@
       "widthFull": "Full",
       "widthComfortable": "Comfortable",
       "widthNarrow": "Narrow",
+      "aiLanguage": "AI Output Language",
+      "languageAuto": "Follow Interface",
+      "languageChinese": "Chinese",
+      "languageEnglish": "English",
       "resetSettings": "Reset Default Settings",
       "configScenarios": "Configuration Scenarios",
       "templatePriority": "Template Priority",

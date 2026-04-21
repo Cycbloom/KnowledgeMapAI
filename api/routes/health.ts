@@ -85,19 +85,6 @@ router.get('/system', async (_req, res) => {
     checks.database = { status: 'error', message: String(e) };
   }
 
-  const redisStart = Date.now();
-  try {
-    const { default: redisClient } = await import('../utils/redis.js');
-    if (redisClient) {
-      await redisClient.ping();
-      checks.redis = { status: 'ok', latency: Date.now() - redisStart };
-    } else {
-      checks.redis = { status: 'ok', message: 'Not configured (using in-memory fallback)' };
-    }
-  } catch (e) {
-    checks.redis = { status: 'error', message: String(e) };
-  }
-
   checks.memory = {
     status: 'ok',
     message: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB / ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)}MB`,
@@ -134,7 +121,6 @@ router.get('/env', async (_req, res) => {
     { key: 'DEEPSEEK_API_KEY', description: 'DeepSeek API密钥' },
     { key: 'VOLCENGINE_API_KEY', description: '火山引擎API密钥' },
     { key: 'ALIYUN_API_KEY', description: '阿里云API密钥' },
-    { key: 'REDIS_URL', description: 'Redis连接URL' },
     { key: 'FRONTEND_URL', description: '前端URL (CORS)' },
     { key: 'NODE_ENV', description: '运行环境' },
   ];

@@ -1,7 +1,5 @@
 import './supabase';
 import app, { kernel } from './app';
-import './jobs/worker.js';
-import { taskWorker } from './jobs/worker';
 import { logger } from './utils/logger';
 import { checkEnvOnStartup } from './utils/envValidator';
 import { performanceMonitor } from './services/ai/performanceMonitor';
@@ -33,11 +31,6 @@ const PORT = process.env.PORT || 3001;
 
 const server = app.listen(PORT, async () => {
   logger.info(`Server ready on port ${PORT}`);
-  if (taskWorker) {
-    logger.info('[Worker] BullMQ Worker started');
-  } else {
-    logger.info('[Worker] BullMQ Worker not started (Redis not available)');
-  }
 
   try {
     await kernel.activateAll();
@@ -78,11 +71,6 @@ const gracefulShutdown = async (signal: string) => {
     logger.info('[Kernel] All plugins deactivated');
   } catch (error) {
     logger.error('[Kernel] Error during plugin deactivation:', error);
-  }
-
-  if (taskWorker) {
-    await taskWorker.close();
-    logger.info('Worker closed');
   }
 
   server.close(() => {

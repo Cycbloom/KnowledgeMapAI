@@ -1,6 +1,16 @@
 import { request, getAIConfig, getApiUrl, handleResponse, injectAIConfig, getCookie } from './client';
 import { useStore } from '../../store/useStore';
 import type { AIAction } from '@shared/types';
+import i18n from '../../i18n';
+import { useLearningSettingsStore } from '../../store/useLearningSettingsStore';
+
+const getCurrentLanguage = (): string => {
+  const aiLanguage = useLearningSettingsStore.getState().aiLanguage;
+  if (aiLanguage === 'auto') {
+    return i18n.language || 'zh-CN';
+  }
+  return aiLanguage;
+};
 
 export const aiActionsApi = {
   list: (graphId?: string) => request(`/ai-actions${graphId ? `?graph_id=${graphId}` : ''}`),
@@ -76,49 +86,49 @@ const createStreamHandler = async (
 export const aiApi = {
   status: () => request('/ai/status'),
   
-  generateContent: (data: { topic: string; context?: string; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  generateContent: (data: { topic: string; context?: string; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/generate-content', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   generateContentStream: async (
-    data: { topic: string; context?: string; level?: string; provider?: string; model?: string },
+    data: { topic: string; context?: string; level?: string; provider?: string; model?: string; language?: string },
     onChunk: (content: string) => void
   ) => {
-    const payload = injectAIConfig(data, 'text');
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     await createStreamHandler('/ai/generate-content-stream', payload, onChunk);
   },
   
-  annotateTerms: (data: { node_id: string; node_content: string; graph_id: string; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  annotateTerms: (data: { node_id: string; node_content: string; graph_id: string; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/annotate-terms', { 
       method: 'POST', 
       body: JSON.stringify(payload) 
     });
   },
   
-  generateLearningMaterial: (data: { topic: string; context?: string; level?: string; graph_id?: string; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  generateLearningMaterial: (data: { topic: string; context?: string; level?: string; graph_id?: string; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/learning-material', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  expand: (data: { node_title: string; node_content?: string; existing_titles?: string[]; current_children?: string[]; node_level?: string; expand_prompt?: string; graph_id?: string; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  expand: (data: { node_title: string; node_content?: string; existing_titles?: string[]; current_children?: string[]; node_level?: string; expand_prompt?: string; graph_id?: string; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  getBranchSuggestions: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  getBranchSuggestions: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/branch-suggestions', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  generateCards: (data: { node_title: string; node_content: string; count?: number; types?: string[]; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  generateCards: (data: { node_title: string; node_content: string; count?: number; types?: string[]; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string; provider?: string; model?: string }) => {
-    const payloadConfig = injectAIConfig(config, 'text');
+  batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string; provider?: string; model?: string; language?: string }) => {
+    const payloadConfig = injectAIConfig({ ...config, language: config.language || getCurrentLanguage() }, 'text');
     return request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config: payloadConfig }) });
   },
   
@@ -128,18 +138,19 @@ export const aiApi = {
   
   getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
   
-  textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: unknown[]; edges?: unknown[]; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: unknown[]; edges?: unknown[]; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  documentToGraph: async (data: { graph_id: string; file: File }) => {
+  documentToGraph: async (data: { graph_id: string; file: File; language?: string }) => {
     const token = useStore.getState().token;
     const csrfToken = getCookie('csrf-token');
     const config = getAIConfig('text');
     const formData = new FormData();
     formData.append('graph_id', data.graph_id);
     formData.append('file', data.file);
+    formData.append('language', data.language || getCurrentLanguage());
     if (config.provider) formData.append('provider', config.provider);
     if (config.model) formData.append('model', config.model);
     
@@ -164,33 +175,33 @@ export const aiApi = {
     request('/ai/recommend-connections', { method: 'POST', body: JSON.stringify(data) }),
   
   chatStream: async (
-    data: { message: string; graph_id: string; history?: unknown[]; context_node_ids?: string[]; provider?: string; model?: string },
+    data: { message: string; graph_id: string; history?: unknown[]; context_node_ids?: string[]; provider?: string; model?: string; language?: string },
     onChunk: (content: string) => void
   ) => {
-    const payload = injectAIConfig(data, 'text');
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     await createStreamHandler('/ai/chat', payload, onChunk);
   },
   
   tutorChatStream: async (
-    data: { message: string; graph_id?: string; history?: unknown[]; context_node_ids?: string[]; mode?: 'free' | 'guided' | 'learning-path'; provider?: string; model?: string },
+    data: { message: string; graph_id?: string; history?: unknown[]; context_node_ids?: string[]; mode?: 'free' | 'guided' | 'learning-path'; provider?: string; model?: string; language?: string },
     onChunk: (content: string) => void
   ) => {
-    const payload = injectAIConfig(data, 'text');
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     await createStreamHandler('/ai/tutor-chat', payload, onChunk);
   },
   
-  extractConcepts: (data: { text: string; existing_nodes?: string[]; max_concepts?: number; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  extractConcepts: (data: { text: string; existing_nodes?: string[]; max_concepts?: number; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/extract-concepts', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  suggestNextTopic: (data: { node_title: string; node_content?: string; existing_nodes?: string[]; user_progress?: { mastered_count?: number; due_count?: number; current_level?: string }; provider?: string; model?: string }) => {
-    const payload = injectAIConfig(data, 'text');
+  suggestNextTopic: (data: { node_title: string; node_content?: string; existing_nodes?: string[]; user_progress?: { mastered_count?: number; due_count?: number; current_level?: string }; provider?: string; model?: string; language?: string }) => {
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/suggest-next-topic', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  generatePodcastScript: (context: string, language: string = 'zh', graph_id?: string) => {
-    const payload = injectAIConfig({ context, language, graph_id }, 'text');
+  generatePodcastScript: (context: string, language: string = 'zh-CN', graph_id?: string) => {
+    const payload = injectAIConfig({ context, language: language || getCurrentLanguage(), graph_id }, 'text');
     return request('/ai/podcast/script', { 
       method: 'POST', 
       body: JSON.stringify(payload) 
@@ -206,8 +217,9 @@ export const aiApi = {
     graph2_nodes: Array<{ id: string; title: string; content?: string }>;
     provider?: string;
     model?: string;
+    language?: string;
   }) => {
-    const payload = injectAIConfig(data, 'text');
+    const payload = injectAIConfig({ ...data, language: data.language || getCurrentLanguage() }, 'text');
     return request('/ai/cross-graph-connections', { method: 'POST', body: JSON.stringify(payload) });
   },
 };

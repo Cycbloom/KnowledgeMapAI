@@ -83,7 +83,6 @@ function getChunkStrategy(id: string): string | undefined {
   if (id.includes("html2canvas")) return "vendor-export";
   if (id.includes("ts-fsrs")) return "vendor-fsrs";
   if (id.includes("cheerio")) return "vendor-parser";
-  if (id.includes("bullmq") || id.includes("ioredis")) return "vendor-queue";
 
   return undefined;
 }

@@ -1,5 +1,14 @@
 import { request, getAIConfig } from './client';
 import type { TemplateCategory, LayoutSuggestion, NodeLevel } from '@shared/types/graph';
+import { useLearningSettingsStore } from '../../store/useLearningSettingsStore';
+
+const getCurrentAILanguage = (): string => {
+  const aiLanguage = useLearningSettingsStore.getState().aiLanguage;
+  if (aiLanguage === 'auto') {
+    return 'en-US';
+  }
+  return aiLanguage;
+};
 
 export interface GenerateTemplatesData {
   topic: string;
@@ -103,9 +112,10 @@ export const autoGraphApi = {
     graph_id?: string;
     provider?: string;
     model?: string;
+    language?: string;
   }) => {
     const config = getAIConfig('text');
-    const payload = { style: 'academic', ...data };
+    const payload = { style: 'academic', ...data, language: data.language || getCurrentAILanguage() };
     if (!payload.provider && config.provider) payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
     return request('/auto-graph/init', { method: 'POST', body: JSON.stringify(payload) });
@@ -122,9 +132,10 @@ export const autoGraphApi = {
     existing_children?: Array<{ title: string; content?: string }>;
     provider?: string;
     model?: string;
+    language?: string;
   }) => {
     const config = getAIConfig('text');
-    const payload = { style: 'academic', ...data };
+    const payload = { style: 'academic', ...data, language: data.language || getCurrentAILanguage() };
     if (!payload.provider && config.provider) payload.provider = config.provider;
     if (!payload.model && config.model) payload.model = config.model;
     return request('/auto-graph/expand', { method: 'POST', body: JSON.stringify(payload) });

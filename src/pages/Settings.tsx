@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
 import { useUpdateProfileMutation } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
+import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import {
@@ -21,6 +22,7 @@ import {
   Smartphone,
   Globe,
   Puzzle,
+  SwatchBook,
 } from "lucide-react";
 import { AvailableModels } from "../types";
 import type { AIProviderType } from "@shared/types";
@@ -33,7 +35,9 @@ export const Settings = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { token } = useStore();
-  const { themeMode, setTheme } = useTheme();
+  const { themeMode, setTheme, themePreset, setThemePreset, availablePresets } =
+    useTheme();
+  const { aiLanguage, setAILanguage } = useLearningSettingsStore();
 
   const { data: userData } = useUser(!!token);
   const { data: aiStatus } = useAIStatus(!!token);
@@ -127,10 +131,16 @@ export const Settings = () => {
           available_models: availableModels,
         },
       });
-      frontendEventBus.publish("message_show", { type: "success", content: t("settings.saveSuccess") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("settings.saveSuccess"),
+      });
     } catch (e) {
       console.error(e);
-      frontendEventBus.publish("message_show", { type: "error", content: t("settings.saveFailed") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.saveFailed"),
+      });
     }
   };
 
@@ -140,7 +150,10 @@ export const Settings = () => {
     const currentModels = availableModels[provider] || [];
 
     if (currentModels.includes(newModelName.trim())) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("settings.modelExists") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("settings.modelExists"),
+      });
       return;
     }
 
@@ -164,7 +177,10 @@ export const Settings = () => {
 
   const handleSaveMobileAIConfig = () => {
     if (!mobileApiKey.trim()) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("settings.enterApiKey") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("settings.enterApiKey"),
+      });
       return;
     }
 
@@ -176,14 +192,20 @@ export const Settings = () => {
 
     mobileAIService.setConfig(config);
     setMobileAIConfig(config);
-    frontendEventBus.publish("message_show", { type: "success", content: t("settings.mobileConfigSaved") });
+    frontendEventBus.publish("message_show", {
+      type: "success",
+      content: t("settings.mobileConfigSaved"),
+    });
   };
 
   const handleClearMobileAIConfig = () => {
     mobileAIService.clearConfig();
     setMobileAIConfig(null);
     setMobileApiKey("");
-    frontendEventBus.publish("message_show", { type: "success", content: t("settings.mobileConfigCleared") });
+    frontendEventBus.publish("message_show", {
+      type: "success",
+      content: t("settings.mobileConfigCleared"),
+    });
   };
 
   return (
@@ -275,40 +297,140 @@ export const Settings = () => {
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
+            <SwatchBook className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              {t("settings.themePreset")}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+            {availablePresets.map((preset) => (
+              <button
+                key={preset.key}
+                onClick={() => setThemePreset(preset.key)}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[80px] ${
+                  themePreset === preset.key
+                    ? "border-2 bg-primary-50 dark:bg-primary-900/30"
+                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                }`}
+                style={
+                  themePreset === preset.key
+                    ? { borderColor: preset.previewColor }
+                    : undefined
+                }
+              >
+                <div
+                  className="w-6 h-6 rounded-full mb-2 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-800"
+                  style={
+                    {
+                      backgroundColor: preset.previewColor,
+                      "--tw-ring-color":
+                        themePreset === preset.key
+                          ? preset.previewColor
+                          : "transparent",
+                    } as React.CSSProperties
+                  }
+                />
+                <span className="font-medium text-xs text-center">
+                  {t(`settings.themePresets.${preset.key}`)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+          <div className="flex items-center gap-2 mb-4">
             <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               {t("settings.language")}
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              onClick={() => i18n.changeLanguage("zh-CN")}
-              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
-                i18n.language === "zh-CN" || i18n.language.startsWith("zh")
-                  ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
-                  : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
-              }`}
-            >
-              <span className="text-2xl mb-2">中</span>
-              <span className="font-medium text-sm">
-                {t("settings.chinese")}
-              </span>
-            </button>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                {t("settings.interfaceLanguage")}
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={() => i18n.changeLanguage("zh-CN")}
+                  className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
+                    i18n.language === "zh-CN" || i18n.language.startsWith("zh")
+                      ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
+                      : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <span className="text-2xl mb-2">中</span>
+                  <span className="font-medium text-sm">
+                    {t("settings.chinese")}
+                  </span>
+                </button>
 
-            <button
-              onClick={() => i18n.changeLanguage("en-US")}
-              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
-                i18n.language === "en-US" || i18n.language.startsWith("en")
-                  ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
-                  : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
-              }`}
-            >
-              <span className="text-2xl mb-2">A</span>
-              <span className="font-medium text-sm">
-                {t("settings.english")}
-              </span>
-            </button>
+                <button
+                  onClick={() => i18n.changeLanguage("en-US")}
+                  className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
+                    i18n.language === "en-US" || i18n.language.startsWith("en")
+                      ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
+                      : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <span className="text-2xl mb-2">A</span>
+                  <span className="font-medium text-sm">
+                    {t("settings.english")}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                {t("settings.aiOutputLanguage")}
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => setAILanguage("auto")}
+                  className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
+                    aiLanguage === "auto"
+                      ? "bg-cyan-50 border-cyan-200 text-cyan-700 ring-1 ring-cyan-200 dark:bg-cyan-900/30 dark:border-cyan-800 dark:text-cyan-300"
+                      : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <Monitor className="w-5 h-5 mb-1" />
+                  <span className="font-medium text-sm">
+                    {t("settings.languageAuto")}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setAILanguage("zh-CN")}
+                  className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
+                    aiLanguage === "zh-CN"
+                      ? "bg-red-50 border-red-200 text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
+                      : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <span className="text-xl mb-1">中</span>
+                  <span className="font-medium text-sm">
+                    {t("settings.languageChinese")}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setAILanguage("en-US")}
+                  className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
+                    aiLanguage === "en-US"
+                      ? "bg-blue-50 border-blue-200 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300"
+                      : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <span className="text-xl mb-1">A</span>
+                  <span className="font-medium text-sm">
+                    {t("settings.languageEnglish")}
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

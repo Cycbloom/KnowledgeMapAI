@@ -11,10 +11,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
 import { aiService } from "../../services/ai/aiService";
 import { getMockResponse } from "../../services/ai/mock";
-import {
-  getAIProviderForTask,
-  getAIProvider,
-} from "../../services/ai/factory";
+import { getAIProviderForTask, getAIProvider } from "../../services/ai/factory";
 import { logger } from "../../utils/logger";
 import { promptService } from "../../services/ai/promptService";
 import { supabaseAdmin } from "../../supabase";
@@ -178,6 +175,7 @@ router.post(
       model,
       graph_id,
       level,
+      language,
     } = req.body;
     const provider = providerType
       ? await getAIProvider(providerType)
@@ -202,6 +200,7 @@ router.post(
         templateContext,
         req.user.id,
         graph_id,
+        language,
       );
 
       const completion = await provider.client.chat.completions.create({
@@ -229,7 +228,8 @@ router.post(
   requireAuth,
   validate(generateLearningMaterialSchema),
   async (req: AuthRequest, res: Response) => {
-    const { topic, context, level, provider, model, graph_id } = req.body;
+    const { topic, context, level, provider, model, graph_id, language } =
+      req.body;
 
     try {
       const result = await aiService.generateLearningMaterial(topic, context, {
@@ -238,6 +238,7 @@ router.post(
         level,
         userId: req.user.id,
         graphId: graph_id,
+        language,
       });
       res.json({ content: result.content, keywords: result.keywords });
     } catch (error: unknown) {
@@ -260,6 +261,7 @@ router.post(
       provider: providerType,
       model,
       graph_id,
+      language,
     } = req.body;
     const provider = providerType
       ? await getAIProvider(providerType)
@@ -298,6 +300,7 @@ router.post(
         templateContext,
         req.user.id,
         graph_id,
+        language,
       );
 
       const stream = await provider.client.chat.completions.create({

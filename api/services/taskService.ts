@@ -1,5 +1,4 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { taskQueue } from "./common/queueService";
 import { sseService } from "./core/sseService";
 import { logger } from "../utils/logger";
 import { getProcessor } from "./taskProcessors/index";
@@ -77,14 +76,10 @@ export class TaskService {
 
     if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to create task: ${error.message}` });
 
-    if (taskQueue) {
-      await taskQueue.add(type, { taskId: data.id });
-    } else {
-      logger.info("Task queue not available, processing task synchronously");
-      this.processTaskAsync(data.id, userId, type, payload || {}).catch((err) => {
-        logger.error(`Failed to process task ${data.id} synchronously:`, err);
-      });
-    }
+    logger.info("Processing task synchronously");
+    this.processTaskAsync(data.id, userId, type, payload || {}).catch((err) => {
+      logger.error(`Failed to process task ${data.id} synchronously:`, err);
+    });
 
     return data as Task;
   }
@@ -250,21 +245,15 @@ export class TaskService {
 
     if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to retry task: ${error.message}` });
 
-    if (taskQueue) {
-      await taskQueue.add(data.task_type, { taskId: data.id });
-    } else {
-      logger.info(
-        "Task queue not available, processing retried task synchronously",
-      );
-      this.processTaskAsync(data.id, userId, data.task_type, {}).catch(
-        (err) => {
-          logger.error(
-            `Failed to process retried task ${data.id} synchronously:`,
-            err,
-          );
-        },
-      );
-    }
+    logger.info("Processing retried task synchronously");
+    this.processTaskAsync(data.id, userId, data.task_type, {}).catch(
+      (err) => {
+        logger.error(
+          `Failed to process retried task ${data.id} synchronously:`,
+          err,
+        );
+      },
+    );
 
     return data as Task;
   }

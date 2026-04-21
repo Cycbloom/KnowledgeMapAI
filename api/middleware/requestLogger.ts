@@ -1,6 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { logger } from '../utils/logger';
-import redisClient from '../utils/redis';
 
 interface RequestLog {
   method: string;
@@ -34,47 +33,10 @@ const sanitizePath = (path: string): string => {
     .replace(/\/\d+/g, '/:id');
 };
 
-const scanKeys = async (pattern: string, maxKeys: number = 5000): Promise<string[]> => {
-  if (!redisClient) return [];
-
-  const keys: string[] = [];
-  let cursor = '0';
-
-  do {
-    const result = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
-    cursor = result[0];
-    const batch = result[1] ?? [];
-    keys.push(...batch);
-  } while (cursor !== '0' && keys.length < maxKeys);
-
-  if (keys.length > maxKeys) {
-    return keys.slice(0, maxKeys);
-  }
-
-  return keys;
-};
-
 const flushLogs = async () => {
   if (LOG_BUFFER.length === 0) return;
 
-  const logs = [...LOG_BUFFER];
   LOG_BUFFER.length = 0;
-
-  if (redisClient) {
-    try {
-      const pipeline = redisClient.pipeline();
-      const now = Date.now();
-      
-      logs.forEach(log => {
-        const key = `logs:${log.method}:${sanitizePath(log.path)}:${now}`;
-        pipeline.setex(key, 86400, JSON.stringify(log));
-      });
-
-      await pipeline.exec();
-    } catch (error) {
-      logger.error('Failed to flush logs to Redis:', error);
-    }
-  }
 };
 
 setInterval(flushLogs, FLUSH_INTERVAL);
@@ -123,16 +85,13 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   next();
 };
 
-export const getRequestStats = async (minutes: number = 60): Promise<{
+export const getRequestStats = async (_minutes: number = 60): Promise<{
   total: number;
   byEndpoint: Record<string, number>;
   byStatus: Record<number, number>;
   avgDuration: number;
   errorRate: number;
 }> => {
-  const now = Date.now();
-  const since = now - minutes * 60 * 1000;
-
   const stats = {
     total: 0,
     byEndpoint: {} as Record<string, number>,
@@ -140,38 +99,6 @@ export const getRequestStats = async (minutes: number = 60): Promise<{
     avgDuration: 0,
     errorRate: 0,
   };
-
-  if (redisClient) {
-    try {
-      const keys = await scanKeys('logs:*', 20000);
-      let totalDuration = 0;
-      let errorCount = 0;
-
-      for (const key of keys) {
-        const data = await redisClient.get(key);
-        if (data) {
-          const log: RequestLog = JSON.parse(data);
-          if (new Date(log.timestamp).getTime() >= since) {
-            stats.total++;
-            totalDuration += log.duration;
-            
-            if (log.status >= 400) {
-              errorCount++;
-            }
-
-            const endpoint = `${log.method} ${log.path}`;
-            stats.byEndpoint[endpoint] = (stats.byEndpoint[endpoint] || 0) + 1;
-            stats.byStatus[log.status] = (stats.byStatus[log.status] || 0) + 1;
-          }
-        }
-      }
-
-      stats.avgDuration = stats.total > 0 ? Math.round(totalDuration / stats.total) : 0;
-      stats.errorRate = stats.total > 0 ? Math.round((errorCount / stats.total) * 100) : 0;
-    } catch (error) {
-      logger.error('Failed to get request stats:', error);
-    }
-  }
 
   return stats;
 };

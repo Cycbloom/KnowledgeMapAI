@@ -25,7 +25,7 @@ export type ColorScheme =
   | "forest"
   | "custom";
 
-export type ThemePreset = "minimal" | "colorful" | "professional" | "custom";
+export type ThemePreset = 'default' | 'ocean' | 'forest' | 'sunset' | 'lavender' | 'rose' | 'midnight';
 
 export interface ShadowConfig {
   enabled: boolean;

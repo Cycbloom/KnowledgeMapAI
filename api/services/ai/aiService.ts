@@ -208,6 +208,7 @@ export interface GenerateCardsOptions {
   graphId?: string;
   pack_type?: string;
   difficulty?: CardDifficulty;
+  language?: string;
 }
 
 export class AIService {
@@ -415,7 +416,7 @@ export class AIService {
 
   async generatePodcastScript(
     context: string,
-    language: string = "zh",
+    language: string = "zh-CN",
   ): Promise<string> {
     const provider = await getAIProviderForTask("text");
 
@@ -431,11 +432,21 @@ export class AIService {
       supabaseAdmin,
       "podcast_system",
       {},
+      undefined,
+      undefined,
+      language,
     );
     const userPrompt = await promptService.getRenderedPrompt(
       supabaseAdmin,
       "podcast_script",
-      { context, language },
+      {
+        context,
+        language:
+          language === "zh-CN" || language === "zh" ? "Chinese" : "English",
+      },
+      undefined,
+      undefined,
+      language,
     );
 
     const requestKey = generateRequestKey("generatePodcastScript", {
@@ -617,6 +628,7 @@ export class AIService {
                   { count: Math.ceil(count / types.length), difficulty },
                   options.userId,
                   options.graphId,
+                  options.language,
                 );
 
                 if (rendered && rendered.trim().length > 0) {
@@ -646,6 +658,7 @@ export class AIService {
                 },
                 options.userId,
                 options.graphId,
+                options.language,
               );
             } else {
               const typeRestriction =
@@ -748,6 +761,7 @@ Please respond with a valid JSON object.`;
       expandPrompt?: string;
       userId?: string;
       graphId?: string;
+      language?: string;
     } = {},
   ) {
     const provider = options.provider
@@ -813,6 +827,7 @@ Please respond with a valid JSON object.`;
             templateContext,
             options.userId,
             options.graphId,
+            options.language,
           );
 
           const completion = await withTimeoutAndRetry(
@@ -901,6 +916,7 @@ Please respond with a valid JSON object.`;
       contextLevel?: string;
       userId?: string;
       graphId?: string;
+      language?: string;
     } = {},
   ) {
     const provider = options.provider
@@ -963,6 +979,7 @@ Please respond with a valid JSON object.`;
               templateContext,
               options.userId,
               options.graphId,
+              options.language,
             );
 
             const completion = await withTimeoutAndRetry(
@@ -1105,6 +1122,7 @@ Your task:
       level?: string;
       userId?: string;
       graphId?: string;
+      language?: string;
     } = {},
   ): Promise<GenerateLearningMaterialResult> {
     const provider = options.provider
@@ -1165,6 +1183,7 @@ Your task:
               templateContext,
               options.userId,
               options.graphId,
+              options.language,
             );
 
             const completion = await withTimeoutAndRetry(
@@ -1553,6 +1572,7 @@ Please respond in Chinese.`,
       provider?: AIProviderType;
       model?: string;
       userId?: string;
+      language?: string;
     } = {},
   ) {
     const provider = options.provider
@@ -1624,6 +1644,8 @@ Please respond in Chinese.`,
             "cross_graph_connection_analysis",
             templateContext,
             options.userId,
+            undefined,
+            options.language,
           );
 
           const completion = await withTimeoutAndRetry(
@@ -1697,6 +1719,7 @@ Please respond in Chinese.`,
       model?: string;
       context?: string;
       userId?: string;
+      language?: string;
     } = {},
   ): Promise<{
     description: string;
@@ -1747,6 +1770,8 @@ Please respond in Chinese.`,
                 context: options.context || "",
               },
               options.userId,
+              undefined,
+              options.language,
             );
 
             const completion = await withTimeoutAndRetry(

@@ -33,7 +33,6 @@ export * from "./study/index";
 export {
   cacheService,
   CacheKeys,
-  taskQueue,
   backupService,
   createBackup,
   deleteBackupFile,

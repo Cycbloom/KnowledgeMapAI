@@ -21,7 +21,7 @@ import { setSSEHeaders, sendStreamChunk, sendStreamDone, sendStreamError } from 
 const router = Router();
 
 router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, history = [], context_node_ids, provider: providerType, model } = req.body;
+  const { message, graph_id, history = [], context_node_ids, provider: providerType, model, language } = req.body;
   const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   setSSEHeaders(res);
@@ -93,7 +93,8 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
       'chat',
       { contextText },
       req.user.id,
-      graph_id
+      graph_id,
+      language
     );
 
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [

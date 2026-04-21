@@ -5,6 +5,18 @@ import { logger } from "../../utils/logger";
 
 export type PromptScope = "system" | "user" | "graph";
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  "zh-CN": "Please respond in Chinese.",
+  "en-US": "Please respond in English.",
+  zh: "Please respond in Chinese.",
+  en: "Please respond in English.",
+};
+
+export function getLanguageInstruction(language?: string): string {
+  if (!language) return LANGUAGE_INSTRUCTIONS["zh-CN"];
+  return LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS["zh-CN"];
+}
+
 export interface PromptTemplate {
   id: string;
   code: string;
@@ -22,9 +34,7 @@ Return a JSON object with a 'cards' array. Each card object must have:
 - 'question'
 - 'answer'
 - 'explanation' (Detailed analysis/reasoning)
-- 'options' (Array of 4 strings, ONLY for 'choice' and 'multi_choice' types)
-
-Please respond in Chinese.`;
+- 'options' (Array of 4 strings, ONLY for 'choice' and 'multi_choice' types)`;
 
 const DEFAULT_PROMPTS: Record<string, string> = {
   learning_material: `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
@@ -93,7 +103,6 @@ Please respond with a valid JSON object.`,
 3. 使用清晰的 Markdown 格式组织回答
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
 5. 在回答末尾，可以建议 1-3 个相关的后续问题
-6. 用中文回答
 
 知识上下文：
 {{context}}`,
@@ -124,14 +133,11 @@ Each keyword object must have:
 - 'term': The keyword text (string)
 - 'importance': Importance level 1-5 (number, where 5 is most important)
 - 'category': Category type - one of: '定义', '概念', '方法', '结论', '原理', '应用', '术语' (string)
-- 'explanation': Brief explanation of the keyword (string, max 50 chars)
-
-Please respond in Chinese.`,
+- 'explanation': Brief explanation of the keyword (string, max 50 chars)`,
 
   expand_knowledge: `
 Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.
-Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content" }] }
-Please respond in Chinese.`,
+Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content" }] }`,
 
   auto_graph_init: `
 Return a JSON object with the following structure:
@@ -148,8 +154,7 @@ Return a JSON object with the following structure:
 
 Important:
 - Generate exactly 1 root node and 3-5 core nodes
-- Each node must have title and content
-- Respond in Chinese`,
+- Each node must have title and content`,
 
   auto_graph_expand: `
 Return a JSON object with the following structure:
@@ -162,8 +167,7 @@ Return a JSON object with the following structure:
 
 Important:
 - Generate 3-5 child nodes
-- Each node must have title and content
-- Respond in Chinese`,
+- Each node must have title and content`,
 
   learning_path_generate: `
 Return a JSON object with the following structure:
@@ -192,8 +196,7 @@ Important:
 - estimatedTime should be in minutes (5-60)
 - priority determines learning importance
 - prerequisites should reference node titles from earlier in the path
-- Provide 2-4 helpful suggestions
-- Respond in Chinese`,
+- Provide 2-4 helpful suggestions`,
 
   learning_path_questions: `
 Return a JSON object with the following structure:
@@ -218,8 +221,7 @@ Important:
 - generate 3-5 prerequisite questions relevant to the topic
 - goals should be specific and motivating
 - questions should identify knowledge that helps learn this topic
-- always use the exact 4 options: 不了解, 了解一点, 比较熟悉, 非常熟悉
-- respond in Chinese`,
+- always use the exact 4 options: 不了解, 了解一点, 比较熟悉, 非常熟悉`,
 
   generate_cards: GENERATE_CARDS_SCHEMA,
   generate_cards_qa: GENERATE_CARDS_SCHEMA,
@@ -242,8 +244,7 @@ return a json object with a 'suggestions' array. Each object must have:
 Important:
 - Generate 3-5 branches
 - Each branch should be distinct and represent different perspectives
-- Consider linking to existing nodes if relevant
-- Respond in Chinese`,
+- Consider linking to existing nodes if relevant`,
 
   template_generation: `
 return a JSON object with the following structure:
@@ -287,8 +288,7 @@ Important:
 - Use meaningful node titles (not generic like "Node 1")
 - Ensure all edge references point to valid node IDs
 - Consider the topic's nature when choosing structures
-- provide clear reasoning for each template choice
-- respond in Chinese`,
+- provide clear reasoning for each template choice`,
 
   template_application: `
 Return a JSON object with the following structure:
@@ -305,8 +305,7 @@ Return a JSON object with the following structure:
 Important:
 - Generate content for each node in the template
 - Maintain the template structure
-- Follow the selected style (academic, practical, beginner, custom)
-- respond in Chinese`,
+- Follow the selected style (academic, practical, beginner, custom)`,
 
   text_to_graph: `
 Return a JSON object with 'nodes' and 'edges' arrays.
@@ -355,8 +354,7 @@ Important:
 - For knowledge prerequisites, use "prerequisite" or "depends_on"
 - For similar concepts, use "similar_to"
 - For cause-effect relationships, use "causes" or "caused_by"
-- Choose the most specific relationship type that accurately describes the connection
-Please respond in Chinese.`,
+- Choose the most specific relationship type that accurately describes the connection`,
 
   document_to_graph: `
 Return a JSON object with 'nodes' and 'edges' arrays.
@@ -405,17 +403,14 @@ Important:
 - For knowledge prerequisites, use "prerequisite" or "depends_on"
 - For similar concepts, use "similar_to"
 - For cause-effect relationships, use "causes" or "caused_by"
-- Choose the most specific relationship type that accurately describes the connection
-Please respond in Chinese.`,
+- Choose the most specific relationship type that accurately describes the connection`,
 
   recommend_connections: `
-Return a JSON object with a 'recommendations' array. Each item should have 'node_title' and 'reason'.
-Respond in Chinese.`,
+Return a JSON object with a 'recommendations' array. Each item should have 'node_title' and 'reason'.`,
 
   term_annotation: `
 Return a JSON array where each object has "term" (the exact text found in the source) and "explanation" (a concise definition under 20 words).
-Example format: [{"term": "RAG", "explanation": "检索增强生成，一种结合检索系统和生成模型的技术。"}]
-Please respond in Chinese.`,
+Example format: [{"term": "RAG", "explanation": "检索增强生成，一种结合检索系统和生成模型的技术。"}]`,
 
   infinite_graph_expansion: `
 Return a JSON object with the following structure:
@@ -452,8 +447,7 @@ Important:
 - description should explain what the domain contains, NOT its relationship to the current domain
 - reason should explain why this domain has this relationship type
 - suggested_domain should be based on domain hierarchy (e.g., if current domain is "机器学习", a new domain "深度学习" could suggest "机器学习" as parent)
-- If the new domain is a sub-domain of current domain, set suggested_domain to current domain name
-- Respond in Chinese`,
+- If the new domain is a sub-domain of current domain, set suggested_domain to current domain name`,
 
   cross_graph_connection_analysis: `
 Return a JSON object with the following structure:
@@ -489,8 +483,7 @@ Important:
 - Only suggest connections with similarity >= 0.5
 - Provide clear reasons in Chinese
 - similarity should be between 0 and 1
-- Use exact node titles from the input for matching
-- Respond in Chinese`,
+- Use exact node titles from the input for matching`,
 
   generate_task_details: `
 Return a JSON object with the following structure:
@@ -515,7 +508,6 @@ Queue determination criteria:
 - Q2 (Normal): Regular tasks, can be handled later
 
 Important:
-- Respond in Chinese
 - Tags should be practical and commonly used
 - Duration should be realistic for the task complexity`,
 
@@ -559,8 +551,7 @@ Important:
 - confidence should be between 0 and 1 (higher means more confident)
 - Provide clear reasons in Chinese
 - shared_concepts should list 2-5 key concepts that appear in both graphs
-- Use exact graph titles from the input for matching
-- Respond in Chinese`,
+- Use exact graph titles from the input for matching`,
 };
 
 export interface PromptListOptions {
@@ -740,6 +731,7 @@ export class PromptService {
     context: Record<string, any>,
     userId?: string,
     graphId?: string,
+    language?: string,
   ): Promise<string> {
     const template = await this.getTemplate(supabase, code, userId, graphId);
 
@@ -774,6 +766,10 @@ export class PromptService {
     if (OUTPUT_SCHEMAS[code]) {
       content += `\n\n${OUTPUT_SCHEMAS[code]}`;
     }
+
+    // Append language instruction based on the language parameter
+    const languageInstruction = getLanguageInstruction(language);
+    content += `\n\n${languageInstruction}`;
 
     return content;
   }

@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { logger } from '../utils/logger';
-import redisClient from '../utils/redis';
 
 const router = Router();
 
@@ -24,30 +23,14 @@ interface ErrorReport {
   metadata?: Record<string, unknown>;
 }
 
-const ANALYTICS_TTL = 86400 * 7;
-
 router.post('/performance', async (req, res): Promise<void> => {
   try {
     const report: PerformanceReport = req.body;
-    const { metrics, url, userAgent, timestamp } = report;
+    const { metrics, url } = report;
 
     if (!metrics || typeof metrics !== 'object') {
       res.status(400).json({ error: 'Invalid metrics data' });
       return;
-    }
-
-    const date = new Date().toISOString().split('T')[0];
-    const key = `analytics:performance:${date}`;
-
-    if (redisClient) {
-      await redisClient.lpush(key, JSON.stringify({
-        metrics,
-        url,
-        userAgent,
-        timestamp,
-        ip: req.ip,
-      }));
-      await redisClient.expire(key, ANALYTICS_TTL);
     }
 
     logger.info('Performance report received', {
@@ -71,29 +54,14 @@ router.post('/errors', async (req, res): Promise<void> => {
       return;
     }
 
-    const date = new Date().toISOString().split('T')[0];
-    const key = `analytics:errors:${date}`;
-
     for (const error of errors) {
-      const { message, stack, url, userId, timestamp } = error;
+      const { message, url, userId } = error;
 
       logger.error('Frontend error reported', {
         message: message.substring(0, 200),
         url: url.substring(0, 100),
         userId,
       });
-
-      if (redisClient) {
-        await redisClient.lpush(key, JSON.stringify({
-          message: message.substring(0, 500),
-          stack: stack?.substring(0, 2000),
-          url,
-          userId,
-          timestamp,
-          ip: req.ip,
-        }));
-        await redisClient.expire(key, ANALYTICS_TTL);
-      }
     }
 
     res.json({ success: true, count: errors.length });
@@ -103,9 +71,8 @@ router.post('/errors', async (req, res): Promise<void> => {
   }
 });
 
-router.get('/stats', async (req, res): Promise<void> => {
+router.get('/stats', async (_req, res): Promise<void> => {
   try {
-    const days = parseInt(req.query.days as string) || 7;
     const stats = {
       performance: {
         total: 0,
@@ -119,66 +86,6 @@ router.get('/stats', async (req, res): Promise<void> => {
       },
     };
 
-    if (redisClient) {
-      const dates = [];
-      for (let i = 0; i < days; i++) {
-        const date = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
-        dates.push(date);
-      }
-
-      let totalLCP = 0;
-      let totalFID = 0;
-      let totalCLS = 0;
-      let lcpCount = 0;
-      let fidCount = 0;
-      let clsCount = 0;
-
-      for (const date of dates) {
-        const perfKey = `analytics:performance:${date}`;
-        const errorKey = `analytics:errors:${date}`;
-
-        const perfData = await redisClient.lrange(perfKey, 0, -1);
-        stats.performance.total += perfData.length;
-
-        for (const item of perfData) {
-          try {
-            const report = JSON.parse(item);
-            if (report.metrics?.LCP) {
-              totalLCP += report.metrics.LCP;
-              lcpCount++;
-            }
-            if (report.metrics?.FID) {
-              totalFID += report.metrics.FID;
-              fidCount++;
-            }
-            if (report.metrics?.CLS) {
-              totalCLS += report.metrics.CLS;
-              clsCount++;
-            }
-          } catch {
-            // Skip invalid entries
-          }
-        }
-
-        const errorData = await redisClient.lrange(errorKey, 0, -1);
-        stats.errors.total += errorData.length;
-
-        for (const item of errorData) {
-          try {
-            const error = JSON.parse(item);
-            const type = error.message?.split(':')[0] || 'unknown';
-            stats.errors.byType[type] = (stats.errors.byType[type] || 0) + 1;
-          } catch {
-            // Skip invalid entries
-          }
-        }
-      }
-
-      stats.performance.avgLCP = lcpCount > 0 ? Math.round(totalLCP / lcpCount) : 0;
-      stats.performance.avgFID = fidCount > 0 ? Math.round(totalFID / fidCount) : 0;
-      stats.performance.avgCLS = clsCount > 0 ? Math.round(totalCLS / clsCount * 1000) / 1000 : 0;
-    }
-
     res.json(stats);
   } catch (error) {
     logger.error('Analytics stats error:', error);
@@ -186,25 +93,9 @@ router.get('/stats', async (req, res): Promise<void> => {
   }
 });
 
-router.get('/performance/recent', async (req, res): Promise<void> => {
+router.get('/performance/recent', async (_req, res): Promise<void> => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const date = new Date().toISOString().split('T')[0];
-    const key = `analytics:performance:${date}`;
-
-    let data: string[] = [];
-    if (redisClient) {
-      data = await redisClient.lrange(key, 0, limit - 1);
-    }
-
-    const reports = data.map(item => {
-      try {
-        return JSON.parse(item);
-      } catch {
-        return null;
-      }
-    }).filter(Boolean);
-
+    const reports: unknown[] = [];
     res.json({ reports, count: reports.length });
   } catch (error) {
     logger.error('Recent performance error:', error);
@@ -212,25 +103,9 @@ router.get('/performance/recent', async (req, res): Promise<void> => {
   }
 });
 
-router.get('/errors/recent', async (req, res): Promise<void> => {
+router.get('/errors/recent', async (_req, res): Promise<void> => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const date = new Date().toISOString().split('T')[0];
-    const key = `analytics:errors:${date}`;
-
-    let data: string[] = [];
-    if (redisClient) {
-      data = await redisClient.lrange(key, 0, limit - 1);
-    }
-
-    const errors = data.map(item => {
-      try {
-        return JSON.parse(item);
-      } catch {
-        return null;
-      }
-    }).filter(Boolean);
-
+    const errors: unknown[] = [];
     res.json({ errors, count: errors.length });
   } catch (error) {
     logger.error('Recent errors fetch failed:', error);

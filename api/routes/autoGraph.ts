@@ -129,6 +129,7 @@ const initGraphSchema = z.object({
   graph_id: z.string().uuid().optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
+  language: z.string().optional(),
 });
 
 const expandNodeSchema = z.object({
@@ -151,6 +152,7 @@ const expandNodeSchema = z.object({
     .optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
+  language: z.string().optional(),
 });
 
 const optimizePromptSchema = z.object({
@@ -230,6 +232,7 @@ router.post(
       graph_id,
       provider: providerType,
       model,
+      language,
     } = req.body;
     const supabase = req.supabase;
     if (!supabase) {
@@ -271,6 +274,7 @@ router.post(
           },
           req.user.id,
           graph_id,
+          language,
         );
       } else {
         const templateData: Record<string, any> = {
@@ -288,6 +292,7 @@ router.post(
           templateData,
           req.user.id,
           graph_id,
+          language,
         );
       }
 
@@ -364,6 +369,7 @@ router.post(
       existing_children,
       provider: providerType,
       model,
+      language,
     } = req.body;
     const supabase = req.supabase!;
     const provider = providerType
@@ -398,6 +404,7 @@ router.post(
           },
           req.user.id,
           graph_id,
+          language,
         );
       } else {
         const templateData: Record<string, any> = {
@@ -418,6 +425,7 @@ router.post(
           templateData,
           req.user.id,
           graph_id,
+          language,
         );
       }
 

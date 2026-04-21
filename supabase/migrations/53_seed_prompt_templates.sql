@@ -189,7 +189,7 @@ Output Requirements:
 - Node titles must preserve core terminology.
 - **Content Richness**: Each node MUST have substantial ''content'' (100-200 words), not just a title.
 - Node count: 40-60 nodes to ensure completeness.
-- All titles and descriptions in Chinese.', NOW(), NOW()),
+- All titles and descriptions should match the language of the source document.', NOW(), NOW()),
 ('generate_content', 'system', null, null, 'You are an expert tutor and content creator. Generate detailed, structured educational content for the topic "{{topic}}".
 
 Context: {{context}}
@@ -267,9 +267,7 @@ Use the following sources as reference:
 {{sources}}
 {{/if}}
 
-Topic: {{topic}}
-
-Respond in Chinese.', NOW(), NOW()),
+Topic: {{topic}}', NOW(), NOW()),
 ('auto_graph_expand', 'system', null, null, 'You are a knowledge graph expert. Expand a node by generating its child nodes.
 
 ## Task
@@ -309,9 +307,7 @@ Generate 3-5 child nodes for the given parent node. Each child should be a speci
 ## Existing Children
 The following child nodes already exist: {{existingChildren}}
 Generate NEW, DIFFERENT child nodes.
-{{/if}}
-
-Respond in Chinese.', NOW(), NOW()),
+{{/if}}', NOW(), NOW()),
 ('learning_path_generate', 'system', null, null, 'You are an expert learning path planner. Create an optimal learning path based on the given knowledge graph and user goals.
 
 ## Task
@@ -351,9 +347,7 @@ Analyze the knowledge graph and create a personalized learning path that helps t
 2. Estimate time for each node (5-60 minutes)
 3. Assign priority: high (must learn), medium (should learn), low (nice to have)
 4. Provide a brief reason for each node''s placement
-5. List prerequisite node titles for each node (use exact titles from the input)
-
-Respond in Chinese.', NOW(), NOW()),
+5. List prerequisite node titles for each node (use exact titles from the input)', NOW(), NOW()),
 ('learning_path_questions', 'system', null, null, 'You are an expert learning path designer. Generate guided questions to help users plan their learning journey.
 
 ## Task
@@ -394,9 +388,7 @@ Return a JSON object with:
       "options": ["不了解", "了解一点", "比较熟悉", "非常熟悉"]
     }
   ]
-}
-
-Respond in Chinese.', NOW(), NOW()),
+}', NOW(), NOW()),
 ('infinite_graph_expansion', 'system', null, null, '你是一个知识图谱专家。你的任务是根据给定的知识领域，分析并生成**其他独立的知识领域**。
 
 ## 重要概念区分
@@ -450,9 +442,7 @@ Respond in Chinese.', NOW(), NOW()),
 3. 生成的领域应该足够"大"，可以独立成为一个知识图谱
 4. 如果某个方向没有合适的独立领域，可以返回空数组
 5. 描述应该说明该领域包含什么内容，而不是它与当前领域的关系
-6. **领域归属建议**：为每个建议的领域提供一个 suggested_domain，表示该领域应该归属的父领域名称
-
-请用中文回复。', NOW(), NOW()),
+6. **领域归属建议**：为每个建议的领域提供一个 suggested_domain，表示该领域应该归属的父领域名称', NOW(), NOW()),
 ('cross_graph_connection_analysis', 'system', null, null, '你是一个知识图谱专家。你的任务是分析两个知识图谱之间的节点关系，找出潜在的连接。
 
 ## 图谱信息
@@ -485,9 +475,7 @@ Respond in Chinese.', NOW(), NOW()),
 1. 只建议相似度 >= 0.5 的连接
 2. 每个节点最多建议 3 个连接
 3. 提供清晰的连接理由
-4. 相似度范围：0 到 1
-
-请用中文回复。', NOW(), NOW()),
+4. 相似度范围：0 到 1', NOW(), NOW()),
 ('generate_task_details', 'system', null, null, '你是一个专业的任务管理助手。根据用户提供的任务标题，生成详细的任务描述和建议。
 
 请分析任务标题{{#if context}}和补充信息：{{context}}{{/if}}，生成以下内容：
@@ -539,9 +527,7 @@ Respond in Chinese.', NOW(), NOW()),
 
 {{#if include_cross_domain}}
 6. 识别跨学科交叉领域和共享主题
-{{/if}}
-
-请输出JSON格式的分析结果。', NOW(), NOW()),
+{{/if}}', NOW(), NOW()),
 ('template_generation', 'system', null, null, 'You are an expert knowledge graph template designer. Your task is to generate 3 different template schemes for the given topic.
 
 ## Requirements
@@ -571,7 +557,6 @@ For each template scheme, provide:
 4. Ensure all edge references point to valid node IDs
 5. Consider the topic''s nature when choosing structures
 6. Provide clear reasoning for each template choice
-7. Respond in Chinese for all descriptions and content
 
 {{#if category}}
 ## Category Guidance
@@ -596,7 +581,6 @@ For each node in the template:
 1. **Detailed Content**: Generate comprehensive content based on the node''s title and suggested content
 2. **Style Consistency**: Maintain the selected style throughout (academic, practical, beginner, or custom)
 3. **Context Awareness**: Consider the topic and context when generating content
-4. **Language**: Respond in Chinese
 
 ## Style Guidelines
 

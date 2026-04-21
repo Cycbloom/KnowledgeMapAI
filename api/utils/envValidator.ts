@@ -37,11 +37,6 @@ const ENV_SCHEMA: Record<string, EnvConfig> = {
     type: 'string',
     description: 'Supabase service role key',
   },
-  REDIS_URL: {
-    required: false,
-    type: 'url',
-    description: 'Redis connection URL',
-  },
   DEEPSEEK_API_KEY: {
     required: false,
     type: 'string',
@@ -140,10 +135,6 @@ export const validateEnv = (): ValidationResult => {
 
   if (!hasApiKey) {
     warnings.push('No AI API key configured. AI features will be limited.');
-  }
-
-  if (!process.env.REDIS_URL) {
-    warnings.push('Redis not configured. Rate limiting and caching will use in-memory fallback.');
   }
 
   return {

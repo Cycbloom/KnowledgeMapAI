@@ -170,9 +170,7 @@ npm run dev
 
 ### 架构
 
-- **生产**：Redis
-- **开发/降级**：NodeCache
-- **自动降级**：Redis 不可用时自动切换
+- **内存缓存**：NodeCache（适用于桌面应用）
 
 ### 使用规范
 
@@ -243,30 +241,6 @@ await withTimeoutAndRetry(() => callAI(), {
 - AI 服务调用
 - 外部 API 调用
 - 数据库操作
-
-## 任务队列
-
-### 架构
-
-- **队列**：BullMQ
-- **存储**：Redis
-- **Worker**：独立进程，并发数 5
-
-### 任务类型
-
-- `expand_graph`（高优先级）
-- `generate_questions`（中优先级）
-- `embedding_generation`（低优先级）
-
-### 使用方式
-
-```typescript
-await queueService.addTask({
-  type: "expand_graph",
-  userId: "user-123",
-  payload: { nodeId: "node-456" },
-});
-```
 
 ## SSE 实时通信
 

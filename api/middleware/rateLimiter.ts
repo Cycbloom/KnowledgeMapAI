@@ -1,5 +1,4 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import redisClient from '../utils/redis';
 import { logger } from '../utils/logger';
 
 const isRateLimitDisabled = () => {
@@ -50,66 +49,39 @@ export const createRateLimiter = (config: RateLimitConfig) => {
     const resetTime = now + windowMs;
 
     try {
-      if (redisClient) {
-        const current = await redisClient.get(key);
-        let count = current ? parseInt(current, 10) : 0;
+      const stored = localStore.get(key);
+      let count = 1;
 
-        if (count === 0) {
-          await redisClient.setex(key, Math.ceil(windowMs / 1000), '1');
-          count = 1;
-        } else if (count >= maxRequests) {
-          const ttl = await redisClient.ttl(key);
+      if (stored && stored.resetTime > now) {
+        count = stored.count + 1;
+        if (count > maxRequests) {
+          const retryAfter = Math.ceil((stored.resetTime - now) / 1000);
           res.setHeader('X-RateLimit-Limit', maxRequests.toString());
           res.setHeader('X-RateLimit-Remaining', '0');
-          res.setHeader('X-RateLimit-Reset', ttl.toString());
+          res.setHeader('X-RateLimit-Reset', retryAfter.toString());
           
-          logger.warn(`Rate limit exceeded for ${key}`, { count, maxRequests });
           return res.status(429).json({
             success: false,
             error: message,
-            retryAfter: ttl,
+            retryAfter,
           });
-        } else {
-          await redisClient.incr(key);
-          count++;
         }
-
-        const ttl = await redisClient.ttl(key);
-        res.setHeader('X-RateLimit-Limit', maxRequests.toString());
-        res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - count).toString());
-        res.setHeader('X-RateLimit-Reset', ttl.toString());
+        stored.count = count;
       } else {
-        const stored = localStore.get(key);
-        let count = 1;
-
-        if (stored && stored.resetTime > now) {
-          count = stored.count + 1;
-          if (count > maxRequests) {
-            const retryAfter = Math.ceil((stored.resetTime - now) / 1000);
-            res.setHeader('X-RateLimit-Limit', maxRequests.toString());
-            res.setHeader('X-RateLimit-Remaining', '0');
-            res.setHeader('X-RateLimit-Reset', retryAfter.toString());
-            
-            return res.status(429).json({
-              success: false,
-              error: message,
-              retryAfter,
-            });
-          }
-          stored.count = count;
-        } else {
-          localStore.set(key, { count: 1, resetTime });
-        }
-
-        res.setHeader('X-RateLimit-Limit', maxRequests.toString());
-        res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - count).toString());
-        res.setHeader('X-RateLimit-Reset', Math.ceil(windowMs / 1000).toString());
+        localStore.set(key, { count: 1, resetTime });
       }
+
+      res.setHeader('X-RateLimit-Limit', maxRequests.toString());
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - count).toString());
+      res.setHeader('X-RateLimit-Reset', Math.ceil(windowMs / 1000).toString());
 
       if (skipFailedRequests) {
         res.on('finish', () => {
-          if (res.statusCode >= 400 && redisClient) {
-            redisClient.decr(key).catch(() => {});
+          if (res.statusCode >= 400) {
+            const currentStored = localStore.get(key);
+            if (currentStored && currentStored.count > 0) {
+              currentStored.count--;
+            }
           }
         });
       }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Lightbulb, Plus, X } from 'lucide-react';
 import { ExtractedConcept } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface ConceptsPanelProps {
   concepts: ExtractedConcept[];
@@ -17,6 +18,8 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
   onAddAll,
   onClose
 }) => {
+  const { t } = useTranslation();
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return isDark ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-red-100 text-red-700 border-red-200';
@@ -31,7 +34,7 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-sm font-semibold flex items-center ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
           <Lightbulb size={16} className="mr-2 text-yellow-500" />
-          提取的概念
+          {t("aiChat.addConceptsTitle")}
         </h3>
         <button
           onClick={onClose}
@@ -54,7 +57,7 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
               <button
                 onClick={() => onAddConcept(concept)}
                 className="ml-2 p-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                title="添加到图谱"
+                title={t("aiChat.addToGraph")}
               >
                 <Plus size={14} />
               </button>
@@ -67,7 +70,7 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
           onClick={onAddAll}
           className="w-full mt-3 p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
         >
-          全部添加到图谱
+          {t("aiChat.addAllToGraph")}
         </button>
       )}
     </div>

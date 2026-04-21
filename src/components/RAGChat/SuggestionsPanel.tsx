@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SuggestedTopic {
   title: string;
@@ -19,6 +20,8 @@ export const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({
   isDark,
   onClose
 }) => {
+  const { t } = useTranslation();
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return isDark ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-red-100 text-red-700 border-red-200';
@@ -33,7 +36,7 @@ export const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-sm font-semibold flex items-center ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
           <Sparkles size={16} className="mr-2 text-primary-500" />
-          学习建议
+          {t("aiChat.learningSuggestionsTitle")}
         </h3>
         <button
           onClick={onClose}
@@ -52,7 +55,7 @@ export const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({
             <p className="text-xs mt-1 opacity-80">{topic.description}</p>
             <div className="flex items-center mt-2 gap-2">
               <span className={`text-xs px-2 py-0.5 rounded ${isDark ? 'bg-slate-700' : 'bg-white/50'}`}>
-                难度: {topic.estimatedDifficulty}/5
+                {t("aiChat.difficulty")}: {topic.estimatedDifficulty}/5
               </span>
             </div>
           </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Volume2, VolumeX, Loader2, X, Globe, Cpu, Play, Pause } from 'lucide-react';
 import { useTextToSpeech } from "../../hooks";
 import { TTSEngine } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface VoiceSettingsProps {
   isDark: boolean;
@@ -9,6 +10,7 @@ interface VoiceSettingsProps {
 }
 
 export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose }) => {
+  const { t } = useTranslation();
   const [ttsEngine, setTTSEngine] = useState<TTSEngine>('browser');
   const { 
     isSpeaking: _isSpeaking, 
@@ -37,7 +39,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
   return (
     <div className={`px-4 py-3 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-primary-50 border-primary-100'}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-medium ${isDark ? 'text-primary-300' : 'text-primary-600'}`}>语音设置</span>
+        <span className={`text-xs font-medium ${isDark ? 'text-primary-300' : 'text-primary-600'}`}>{t("aiChat.voiceSettings")}</span>
         <button
           onClick={onClose}
           className={`transition-colors ${isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
@@ -48,7 +50,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
       
       <div className="mb-3">
         <div className="flex items-center gap-2">
-          <span className={`text-xs ${isDark ? 'text-primary-300' : 'text-primary-600'}`}>语音引擎：</span>
+          <span className={`text-xs ${isDark ? 'text-primary-300' : 'text-primary-600'}`}>{t("aiChat.voiceSettings")}：</span>
           <div className="flex gap-1">
             <button
               onClick={() => {
@@ -64,7 +66,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               }`}
             >
               <Globe size={12} />
-              <span>浏览器</span>
+              <span>{t("aiChat.modeFree") === "Free Chat" ? "Browser" : "浏览器"}</span>
             </button>
             <button
               onClick={() => {
@@ -145,6 +147,7 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
   onResume,
   onStop
 }) => {
+  const { t } = useTranslation();
   const isCurrentMessage = currentSpeakingMessageId === messageId;
   
   const handlePlay = () => {
@@ -171,7 +174,7 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
               ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' 
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
         } disabled:opacity-50`}
-        title={isCurrentMessage && isSpeaking ? (isPaused ? '继续' : '暂停') : '朗读'}
+        title={isCurrentMessage && isSpeaking ? (isPaused ? t("aiChat.resume") : t("aiChat.pause")) : t("aiChat.play")}
       >
         {ttsLoading && isCurrentMessage ? (
           <Loader2 size={12} className="animate-spin" />
@@ -189,7 +192,7 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
               ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' 
               : 'bg-red-100 text-red-600 hover:bg-red-200'
           }`}
-          title="停止"
+          title={t("aiChat.stop")}
         >
           <VolumeX size={12} />
         </button>

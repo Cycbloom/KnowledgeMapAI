@@ -1,5 +1,6 @@
 import React from 'react';
 import { Send, Loader2, Lightbulb, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ChatInputProps {
   input: string;
@@ -28,6 +29,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSuggestNextTopics,
   hasAssistantMessages
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className={`p-4 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
       {selectedNodeCount > 0 && (
@@ -36,7 +39,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ? isDark ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-600'
             : isDark ? 'bg-primary-900/30 text-primary-300' : 'bg-primary-50 text-primary-600'
         }`}>
-          已选中 {selectedNodeCount} 个节点作为上下文
+          {t("aiChat.selectedNodesContext", { count: selectedNodeCount })}
         </div>
       )}
       <div className={`flex items-end gap-2 p-2 rounded-2xl ${
@@ -46,7 +49,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={isTutorMode ? "与助教对话..." : "输入你的问题..."}
+          placeholder={isTutorMode ? t("aiChat.tutorInputPlaceholder") : t("aiChat.inputPlaceholder")}
           rows={1}
           className={`flex-1 bg-transparent resize-none outline-none text-sm ${
             isDark ? 'text-slate-200 placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
@@ -87,7 +90,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             }`}
           >
             <Lightbulb size={14} />
-            提取概念
+            {t("aiChat.extractConcepts")}
           </button>
           {onSuggestNextTopics && (
             <button
@@ -99,7 +102,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               }`}
             >
               <Sparkles size={14} />
-              学习建议
+              {t("aiChat.learningSuggestion")}
             </button>
           )}
         </div>

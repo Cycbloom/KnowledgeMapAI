@@ -22,6 +22,7 @@ import { ConceptsPanel } from './ConceptsPanel';
 import { SuggestionsPanel } from './SuggestionsPanel';
 import { LearningPathPanel } from '../Learning/LearningPathPanel';
 import 'katex/dist/katex.min.css';
+import { useTranslation } from 'react-i18next';
 
 interface RAGChatPanelProps {
   graphId?: string;
@@ -76,6 +77,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   onPathSelect,
   onLearningPathNodeClick
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const chatState = useChatState();
   const [ttsEngine, _setTTSEngine] = useState<TTSEngine>('browser');
@@ -248,9 +250,9 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
     } catch (error: any) {
       console.error('RAG Chat Error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '发送失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t("aiChat.sendFailed") });
       chatState.updateMessage(assistantMessageId, { 
-        content: '抱歉，发生了错误，请稍后再试。', 
+        content: t("aiChat.errorOccurred"), 
         isStreaming: false 
       });
     } finally {
@@ -306,9 +308,9 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             {isTutorMode ? <GraduationCap size={20} /> : <Sparkles size={20} />}
           </div>
           <div>
-            <h3 className="font-bold">{isTutorMode ? 'AI 助教' : '智能问答'}</h3>
+            <h3 className="font-bold">{isTutorMode ? t("aiChat.tutorTitle") : t("aiChat.title")}</h3>
             <p className="text-xs text-white/80">
-              {isTutorMode ? '引导学习 · 概念提取' : '基于知识图谱的 AI 助手'}
+              {isTutorMode ? t("aiChat.tutorSubtitle") : t("aiChat.subtitle")}
             </p>
           </div>
         </div>
@@ -319,7 +321,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               className={`p-2 rounded-lg transition-colors ${
                 showVoiceSettings ? 'bg-white/20' : 'hover:bg-white/10'
               }`}
-              title="语音设置"
+              title={t("aiChat.voiceSettings")}
             >
               <Settings2 size={16} />
             </button>
@@ -330,7 +332,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               className={`p-2 rounded-lg transition-colors ${
                 isTutorMode ? 'bg-white/20' : 'hover:bg-white/10'
               }`}
-              title={isTutorMode ? '切换到普通模式' : '切换到助教模式'}
+              title={isTutorMode ? t("aiChat.switchToNormal") : t("aiChat.switchToTutor")}
             >
               {isTutorMode ? <MessageCircle size={16} /> : <GraduationCap size={16} />}
             </button>
@@ -353,7 +355,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
       {isTutorMode && (
         <div className={`px-4 py-2 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-amber-50 border-amber-100'}`}>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>模式：</span>
+            <span className={`text-xs font-medium ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>{t("aiChat.modeLabel")}</span>
             <div className="flex gap-1">
               <button
                 onClick={() => onSwitchTutorMode?.('free')}
@@ -365,7 +367,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
                       : 'bg-white text-amber-600 hover:bg-amber-100'
                 }`}
               >
-                自由对话
+                {t("aiChat.modeFree")}
               </button>
               <button
                 onClick={() => onSwitchTutorMode?.('guided')}
@@ -377,7 +379,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
                       : 'bg-white text-amber-600 hover:bg-amber-100'
                 }`}
               >
-                引导学习
+                {t("aiChat.modeGuided")}
               </button>
               <button
                 onClick={() => onSwitchTutorMode?.('learning-path')}
@@ -389,7 +391,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
                       : 'bg-white text-amber-600 hover:bg-amber-100'
                 }`}
               >
-                学习路径
+                {t("aiChat.modeLearningPath")}
               </button>
             </div>
           </div>
@@ -398,7 +400,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
       {aiEnabled === false && (
         <div className={`px-4 py-2 text-xs border-b ${isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-800 border-amber-100'}`}>
-          AI 未配置：当前为模拟回复，请配置 AI Key 获取真实结果
+          {t("aiChat.aiNotConfigured")}
         </div>
       )}
 
@@ -425,18 +427,18 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
                   } />
                 </div>
                 <h4 className={`font-semibold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-                  {isTutorMode ? '你好！我是你的 AI 助教' : '你好！我是知识图谱助手'}
+                  {isTutorMode ? t("aiChat.tutorGreeting") : t("aiChat.greeting")}
                 </h4>
                 <p className={`text-sm mb-6 max-w-[280px] ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                   {isTutorMode 
-                    ? '我可以帮助你学习知识图谱，提取关键概念，并建议下一步的学习方向。' 
-                    : '我可以帮你理解知识图谱中的内容，回答问题，发现知识关联。'}
+                    ? t("aiChat.tutorDescription") 
+                    : t("aiChat.description")}
                 </p>
                 
                 {chatState.suggestedQuestions.length > 0 && (
                   <div className="w-full space-y-2">
                     <p className={`text-xs font-medium mb-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                      试试这些问题：
+                      {t("aiChat.tryThese")}
                     </p>
                     {chatState.suggestedQuestions.map((q, i) => (
                       <button
@@ -576,6 +578,7 @@ const SimpleChatButton: React.FC<{
   isMobilePreviewMode,
   hasSelectedNode
 }) => {
+  const { t } = useTranslation();
   const shouldMoveUp = isMobilePreviewMode && hasSelectedNode;
   
   return (
@@ -594,7 +597,7 @@ const SimpleChatButton: React.FC<{
             ? 'bg-primary-600 hover:bg-primary-500 text-white' 
             : 'bg-primary-500 hover:bg-primary-600 text-white'
       }`}
-      title={isTutorMode ? 'AI 助教' : '智能问答'}
+      title={isTutorMode ? t("aiChat.tutorTitle") : t("aiChat.title")}
     >
       {isTutorMode ? <GraduationCap size={18} /> : <MessageCircle size={18} />}
       <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white animate-pulse" />

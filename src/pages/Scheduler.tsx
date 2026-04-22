@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   useState,
   useMemo,
   useEffect,
@@ -136,13 +136,15 @@ export const Scheduler: React.FC = () => {
     }
   }, [scrollDirection]);
 
+  const shouldIncludeCompleted = currentView === "kanban" || currentView === "timeline" || currentView === "list";
+
   const {
     data: queuesData,
     isLoading,
     error,
     refetch,
     isFetching,
-  } = useSchedulerQueues();
+  } = useSchedulerQueues({ includeCompleted: shouldIncludeCompleted, includeCancelled: shouldIncludeCompleted });
   const { data: settings } = useSchedulerSettings();
   const { data: learningPaths = [] } = useLearningPaths("active");
 
@@ -169,6 +171,19 @@ export const Scheduler: React.FC = () => {
     };
   }, [queuesData]);
 
+  const displayQueues = useMemo(() => {
+    if (currentView === "queue") {
+      const filterActive = (tasks: ScheduledTask[]) =>
+        tasks.filter((t) => t.status !== "completed" && t.status !== "cancelled");
+      return {
+        q0: filterActive(queues.q0),
+        q1: filterActive(queues.q1),
+        q2: filterActive(queues.q2),
+      };
+    }
+    return queues;
+  }, [queues, currentView]);
+
   const timeSlices = useMemo(
     () => ({
       q0: settings?.q0_time_slice || DEFAULT_TIME_SLICES.q0,
@@ -183,7 +198,8 @@ export const Scheduler: React.FC = () => {
   }, [queues]);
 
   const filteredQueues = useMemo(() => {
-    if (!selectedPathId) return queues;
+    const baseQueues = currentView === "queue" ? displayQueues : queues;
+    if (!selectedPathId) return baseQueues;
 
     const filterByPath = (tasks: ScheduledTask[]) => {
       return tasks.filter((task) => {
@@ -193,11 +209,11 @@ export const Scheduler: React.FC = () => {
     };
 
     return {
-      q0: filterByPath(queues.q0),
-      q1: filterByPath(queues.q1),
-      q2: filterByPath(queues.q2),
+      q0: filterByPath(baseQueues.q0),
+      q1: filterByPath(baseQueues.q1),
+      q2: filterByPath(baseQueues.q2),
     };
-  }, [queues, selectedPathId]);
+  }, [queues, displayQueues, currentView, selectedPathId]);
 
   const filteredTasks = useMemo(() => {
     return [...filteredQueues.q0, ...filteredQueues.q1, ...filteredQueues.q2];

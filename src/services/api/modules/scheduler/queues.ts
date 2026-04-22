@@ -3,8 +3,23 @@ import type { Queue, CreateQueueData, UpdateQueueData } from "@shared/types";
 
 export type { Queue, CreateQueueData, UpdateQueueData };
 
+export interface GetQueuesOptions {
+  includeCompleted?: boolean;
+  includeCancelled?: boolean;
+}
+
 export const queuesApi = {
-  getQueues: () => request("/scheduler/queues"),
+  getQueues: (options?: GetQueuesOptions) => {
+    const params = new URLSearchParams();
+    if (options?.includeCompleted) {
+      params.append("include_completed", "true");
+    }
+    if (options?.includeCancelled) {
+      params.append("include_cancelled", "true");
+    }
+    const queryString = params.toString();
+    return request(`/scheduler/queues${queryString ? `?${queryString}` : ""}`);
+  },
 
   createQueue: (data: CreateQueueData) =>
     request("/scheduler/queues", {

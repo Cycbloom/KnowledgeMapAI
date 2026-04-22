@@ -306,8 +306,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         className={`absolute left-0 top-0 bottom-0 w-1 ${queueStyle.accent}`}
       />
 
-      <div className="p-3 pl-4">
-        <div className="flex items-center gap-2 mb-1.5">
+      <div className="p-2 pl-3">
+        <div className="flex items-center gap-2 mb-1">
           <span
             className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${queueStyle.badge}`}
           >
@@ -323,13 +323,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
 
-        <h4 className="font-medium text-slate-900 dark:text-white mb-1 truncate pr-2 flex items-center gap-2">
+        <h4 className="font-medium text-slate-900 dark:text-white mb-0.5 truncate pr-2 flex items-center gap-2">
           {task.title}
           {getTaskTypeBadge(task.task_type)}
         </h4>
 
         {task.description && (
-          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-1.5">
             {task.description}
           </p>
         )}
@@ -358,13 +358,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
 
         {hasSubtasks && (
-          <div className="mt-2 mb-2">
+          <div className="mt-1.5 mb-1.5">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowSubtasks(!showSubtasks);
               }}
-              className="flex items-center justify-between w-full text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors py-2 min-h-[44px]"
+              className="flex items-center justify-between w-full text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors py-1.5"
             >
               <div className="flex items-center gap-2">
                 {showSubtasks ? (
@@ -408,7 +408,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       subtasks.slice(0, 5).map((subtask) => (
                         <div
                           key={subtask.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg text-xs transition-colors ${
+                          className={`flex items-center gap-2 p-1.5 rounded-lg text-xs transition-colors ${
                             subtask.status === "completed"
                               ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
                               : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
@@ -419,7 +419,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                               e.stopPropagation();
                               handleToggleSubtask(subtask);
                             }}
-                            className="flex-shrink-0 hover:scale-110 transition-transform p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            className="flex-shrink-0 hover:scale-110 transition-transform p-1 flex items-center justify-center"
                           >
                             {subtask.status === "completed" ? (
                               <CheckCircle className="w-4 h-4 text-green-500" />
@@ -459,7 +459,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
           {task.estimated_duration && (
             <div className="flex items-center gap-1">
               <Clock size={12} className={queueStyle.text} />
@@ -509,11 +509,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       {hasActions && (
         <div
           className={`
-              flex items-center justify-end gap-1 px-3 py-2
-              bg-slate-50/80 dark:bg-slate-800/50
-              border-t border-slate-100 dark:border-slate-700/50
+              absolute bottom-0 left-0 right-0
+              flex items-center justify-end gap-1 px-2 py-1.5
+              bg-gradient-to-t from-white/95 dark:from-slate-900/95 to-transparent
+              backdrop-blur-sm
               opacity-0 group-hover:opacity-100
               transition-opacity duration-200
+              pointer-events-auto
             `}
           onPointerDown={(e) => e.stopPropagation()}
         >
@@ -523,10 +525,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onStart();
               }}
-              className={`p-2.5 rounded-md transition-all hover:scale-110 min-h-[44px] min-w-[44px] ${queueStyle.bg} ${queueStyle.text}`}
+              className={`p-2 rounded-md transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
               title="开始"
             >
-              <Play size={16} />
+              <Play size={14} />
             </button>
           )}
 
@@ -536,10 +538,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onPause();
               }}
-              className="p-2.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px]"
+              className="p-2 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
               title="暂停"
             >
-              <Pause size={16} />
+              <Pause size={14} />
             </button>
           )}
 
@@ -552,10 +554,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   e.stopPropagation();
                   onComplete();
                 }}
-                className="p-2.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px]"
+                className="p-2 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
                 title="完成"
               >
-                <Check size={16} />
+                <Check size={14} />
               </button>
             )}
 
@@ -565,10 +567,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onViewDetail();
               }}
-              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px]"
+              className="p-2 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
               title="详情"
             >
-              <Info size={16} />
+              <Info size={14} />
             </button>
           )}
 
@@ -578,10 +580,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onEdit();
               }}
-              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px]"
+              className="p-2 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
               title="编辑"
             >
-              <Edit2 size={16} />
+              <Edit2 size={14} />
             </button>
           )}
 
@@ -591,10 +593,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onDelete();
               }}
-              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px]"
+              className="p-2 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
               title="删除"
             >
-              <Trash2 size={16} />
+              <Trash2 size={14} />
             </button>
           )}
         </div>

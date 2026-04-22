@@ -32,6 +32,14 @@ export type {
 
 export { orchestratorApi } from "./orchestrator";
 
+export { systemTasksApi } from "./systemTasks";
+export type {
+  SystemTask,
+  CreateSystemTaskData,
+  GetSystemTasksOptions,
+  SystemTaskStats,
+} from "./systemTasks";
+
 export type {
   ScheduledTask,
   TaskType,
@@ -71,6 +79,7 @@ import { progressSyncApi } from "./progressSync";
 import { pathTasksApi } from "./pathTasks";
 import { activitiesApi } from "./activities";
 import { orchestratorApi } from "./orchestrator";
+import { systemTasksApi } from "./systemTasks";
 
 export const schedulerApi = {
   ...tasksApi,
@@ -90,4 +99,5 @@ export const schedulerApi = {
   ...pathTasksApi,
   ...activitiesApi,
   ...orchestratorApi,
+  ...systemTasksApi,
 };

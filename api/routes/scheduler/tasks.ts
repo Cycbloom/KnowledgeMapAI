@@ -511,12 +511,23 @@ router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: "Database connection not available" });
   }
 
+  const includeCompleted = req.query.include_completed === "true";
+  const includeCancelled = req.query.include_cancelled === "true";
+
+  let statusFilter: string[] = ["pending", "in_progress", "paused"];
+  if (includeCompleted) {
+    statusFilter.push("completed");
+  }
+  if (includeCancelled) {
+    statusFilter.push("cancelled");
+  }
+
   const { data: tasks, error } = await supabase
     .from("scheduled_tasks")
     .select("*")
     .eq("user_id", req.user.id)
     .is("deleted_at", null)
-    .in("status", ["pending", "in_progress", "paused"])
+    .in("status", statusFilter)
     .order("queue_level", { ascending: true })
     .order("position", { ascending: true });
 

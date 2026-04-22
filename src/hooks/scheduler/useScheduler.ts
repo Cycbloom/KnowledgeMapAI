@@ -60,10 +60,10 @@ export function useSchedulerTask(id: string) {
   });
 }
 
-export function useSchedulerQueues() {
+export function useSchedulerQueues(options?: { includeCompleted?: boolean; includeCancelled?: boolean }) {
   return useQuery({
     queryKey: schedulerKeys.queues(),
-    queryFn: () => api.scheduler.getQueues() as Promise<QueueData>,
+    queryFn: () => api.scheduler.getQueues(options) as Promise<QueueData>,
     ...realtimeQueryConfig,
   });
 }

@@ -21,6 +21,12 @@ export type LearningState = "learning" | "review" | "practice" | "quiz";
 
 export type LinkType = "web" | "file" | "api";
 
+export type TaskSource = "user" | "import" | "template" | "system_recommendation";
+
+export type SystemTaskType = "graph_expansion" | "ai_generation" | "knowledge_sync" | "review_generation";
+
+export type SystemTaskStatus = "pending" | "in_progress" | "completed" | "failed" | "cancelled";
+
 export interface ScheduledTask {
   id: string;
   user_id: string;
@@ -50,6 +56,37 @@ export interface ScheduledTask {
   subtask_count?: number;
   subtask_completed?: number;
   has_subtasks?: boolean;
+  source?: TaskSource;
+}
+
+export interface SystemTask {
+  id: string;
+  user_id: string;
+  task_type: SystemTaskType;
+  title: string;
+  description?: string;
+  status: SystemTaskStatus;
+  priority: number;
+  input_data: Record<string, unknown>;
+  output_data: Record<string, unknown>;
+  error_message?: string;
+  retry_count: number;
+  max_retries: number;
+  scheduled_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSystemTaskData {
+  task_type: SystemTaskType;
+  title: string;
+  description?: string;
+  priority?: number;
+  input_data?: Record<string, unknown>;
+  max_retries?: number;
+  scheduled_at?: string;
 }
 
 export interface Queue {

@@ -202,6 +202,7 @@ class SmartTaskLinker {
         estimated_duration: 60,
         tags: ["图谱学习"],
         context: { graph_id: graphId, auto_generated: true },
+        source: "system_recommendation",
       })
       .select()
       .single();

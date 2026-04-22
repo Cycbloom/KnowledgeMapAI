@@ -19,8 +19,12 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useErrorHandler } from "../../hooks";
+import { useActivityTracker } from "../../hooks/useActivityTracker";
 import { LearningPathWizard } from "./LearningPathWizard";
-import { useLearningPaths, useLearningPath } from "../../hooks/queries/useLearningPathQueries";
+import {
+  useLearningPaths,
+  useLearningPath,
+} from "../../hooks/queries/useLearningPathQueries";
 import {
   useCreateLearningPathMutation,
   useDeleteLearningPathMutation,
@@ -110,6 +114,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   const [hasInitialized, setHasInitialized] = useState(false);
 
   const { handleError } = useErrorHandler();
+  const { recordActivity } = useActivityTracker();
 
   const { data: savedPaths = [], isLoading: isLoadingPaths } =
     useLearningPaths();
@@ -123,7 +128,13 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   );
 
   useEffect(() => {
-    if (graphId && graphPaths.length === 0 && !tempPath && !hasInitialized && !isLoadingPaths) {
+    if (
+      graphId &&
+      graphPaths.length === 0 &&
+      !tempPath &&
+      !hasInitialized &&
+      !isLoadingPaths
+    ) {
       setHasInitialized(true);
       generateTempPath();
     }
@@ -165,7 +176,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   }) => {
     setIsGenerating(true);
     setGenerationStep(t("learning.learningPath.analyzingGraph"));
-    frontendEventBus.publish("message_show", { type: "info", content: t("learning.learningPath.aiAnalyzing") });
+    frontendEventBus.publish("message_show", {
+      type: "info",
+      content: t("learning.learningPath.aiAnalyzing"),
+    });
 
     try {
       const knowledgeStr = Object.entries(data.currentKnowledge)
@@ -204,7 +218,8 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
     setIsGenerating(true);
     try {
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuidPattern =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
       const nodes = tempPath.stages.map((stage, index) => ({
         knowledge_point_id: stage.nodeId,
@@ -213,12 +228,14 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         description: stage.reason,
         estimated_time: stage.estimatedTime,
         is_milestone: stage.priority === "high",
-        prerequisites: stage.prerequisites.filter(id => uuidPattern.test(id)),
+        prerequisites: stage.prerequisites.filter((id) => uuidPattern.test(id)),
       }));
 
       await createMutation.mutateAsync({
         title: tempPath.targetGoal || `学习路径 - ${tempPath.graphTitle}`,
-        description: t("learning.learningPath.pathDescription", { hours: Math.round(tempPath.estimatedTotalTime / 60) }),
+        description: t("learning.learningPath.pathDescription", {
+          hours: Math.round(tempPath.estimatedTotalTime / 60),
+        }),
         goal: tempPath.targetGoal,
         source_graph_id: graphId,
         total_estimated_time: tempPath.estimatedTotalTime,
@@ -229,7 +246,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
       setTempPath(null);
       setViewMode("list");
-      frontendEventBus.publish("message_show", { type: "success", content: t("learning.learningPath.pathSaved") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("learning.learningPath.pathSaved"),
+      });
     } catch (error) {
       handleError(error, {
         context: "SavePath",
@@ -245,7 +265,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
     try {
       await deleteMutation.mutateAsync(pathId);
-      frontendEventBus.publish("message_show", { type: "success", content: t("learning.learningPath.pathDeleted") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("learning.learningPath.pathDeleted"),
+      });
       if (selectedPath?.id === pathId) {
         setSelectedPath(null);
       }
@@ -266,7 +289,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
       });
       frontendEventBus.publish("message_show", {
         type: "success",
-        content: newStatus === "active" ? t("learning.learningPath.pathResumed") : t("learning.learningPath.pathPaused"),
+        content:
+          newStatus === "active"
+            ? t("learning.learningPath.pathResumed")
+            : t("learning.learningPath.pathPaused"),
       });
     } catch (error) {
       handleError(error, {
@@ -343,7 +369,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
   const learningStyles = [
     { value: "sequential", label: t("learning.learningPath.styleSequential") },
-    { value: "exploratory", label: t("learning.learningPath.styleExploratory") },
+    {
+      value: "exploratory",
+      label: t("learning.learningPath.styleExploratory"),
+    },
     { value: "focused", label: t("learning.learningPath.styleFocused") },
     { value: "custom", label: t("learning.learningPath.styleCustom") },
   ];
@@ -408,7 +437,9 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             <div className="flex items-center gap-2 px-3 py-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex-shrink-0">
               <Sparkles size={14} className="text-primary-500" />
               <span className="text-xs text-primary-600 dark:text-primary-400">
-                {t("learning.learningPath.aiGeneratedTarget", { goal: tempPath.targetGoal })}
+                {t("learning.learningPath.aiGeneratedTarget", {
+                  goal: tempPath.targetGoal,
+                })}
               </span>
             </div>
           )}
@@ -418,19 +449,25 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               <div className="text-2xl font-bold text-primary-500">
                 {tempPath.totalNodes}
               </div>
-              <div className="text-xs text-gray-500">{t("learning.learningPath.totalNodes")}</div>
+              <div className="text-xs text-gray-500">
+                {t("learning.learningPath.totalNodes")}
+              </div>
             </div>
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-green-500">
                 {tempPath.completedNodes}
               </div>
-              <div className="text-xs text-gray-500">{t("learning.learningPath.mastered")}</div>
+              <div className="text-xs text-gray-500">
+                {t("learning.learningPath.mastered")}
+              </div>
             </div>
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-primary-500">
                 {Math.round(tempPath.estimatedTotalTime / 60)}h
               </div>
-              <div className="text-xs text-gray-500">{t("learning.learningPath.estimatedTime")}</div>
+              <div className="text-xs text-gray-500">
+                {t("learning.learningPath.estimatedTime")}
+              </div>
             </div>
           </div>
 
@@ -449,7 +486,8 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <Clock className="w-3 h-3" />
-                  {stage.estimatedTime}{t("learning.learningPath.minutes")}
+                  {stage.estimatedTime}
+                  {t("learning.learningPath.minutes")}
                 </div>
                 <span
                   className={`text-xs px-2 py-0.5 rounded ${getPriorityColor(stage.priority)}`}
@@ -499,7 +537,9 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 </h2>
                 <p className="text-sm text-gray-500">
                   {graphPaths.length > 0
-                    ? t("learning.learningPath.pathCount", { count: graphPaths.length })
+                    ? t("learning.learningPath.pathCount", {
+                        count: graphPaths.length,
+                      })
                     : t("learning.learningPath.noPaths")}
                 </p>
               </div>
@@ -551,7 +591,9 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t("learning.learningPath.dailyTime", { minutes: dailyTime })}
+                    {t("learning.learningPath.dailyTime", {
+                      minutes: dailyTime,
+                    })}
                   </label>
                   <input
                     type="range"
@@ -586,151 +628,195 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                         isSelected ? "ring-2 ring-primary-500" : ""
                       }`}
                     >
-                    <div className="p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Route className="w-4 h-4 text-primary-500 flex-shrink-0" />
-                          <span className="font-medium text-gray-900 dark:text-white truncate">
-                            {path.title}
-                          </span>
-                          {getStatusBadge(path.status)}
+                      <div className="p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <Route className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                            <span className="font-medium text-gray-900 dark:text-white truncate">
+                              {path.title}
+                            </span>
+                            {getStatusBadge(path.status)}
+                          </div>
                         </div>
-                      </div>
 
-                      {path.description && (
-                        <p className="text-xs text-gray-500 mb-2 line-clamp-2">
-                          {path.description}
-                        </p>
-                      )}
+                        {path.description && (
+                          <p className="text-xs text-gray-500 mb-2 line-clamp-2">
+                            {path.description}
+                          </p>
+                        )}
 
-                      <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
-                        <span className="flex items-center gap-1">
-                          <BookOpen className="w-3 h-3" />
-                          {t("learning.learningPath.nodeCount", { count: path.nodes_count || 0 })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {Math.round((path.total_estimated_time || 0) / 60)}h
-                        </span>
-                        {path.progress_percentage !== undefined && (
+                        <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
                           <span className="flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            {path.progress_percentage}%
-                          </span>
-                        )}
-                      </div>
-
-                      {path.progress_percentage !== undefined &&
-                        path.progress_percentage > 0 && (
-                          <div className="h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-3">
-                            <div
-                              className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
-                              style={{ width: `${path.progress_percentage}%` }}
-                            />
-                          </div>
-                        )}
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            if (isSelected) {
-                              onPathSelect?.(null as any);
-                            } else {
-                              onPathSelect?.(path.id);
-                            }
-                          }}
-                          className={`flex-1 py-1.5 text-xs rounded flex items-center justify-center gap-1 transition-colors ${
-                            isSelected
-                              ? "bg-gray-500 text-white hover:bg-gray-600"
-                              : "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50"
-                          }`}
-                        >
-                          <Route className="w-3 h-3" />
-                          {isSelected ? t("learning.learningPath.deselect") : t("learning.learningPath.switchToPath")}
-                        </button>
-                        <button
-                          onClick={() =>
-                            window.open(`/learning-paths/${path.id}`, "_blank")
-                          }
-                          className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
-                          title={t("learning.learningPath.viewDetails")}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(path)}
-                          className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
-                          title={path.status === "active" ? t("learning.learningPath.pause") : t("learning.learningPath.resume")}
-                        >
-                          {path.status === "active" ? (
-                            <Pause className="w-4 h-4" />
-                          ) : (
-                            <Play className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDeletePath(path.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
-                          title={t("learning.learningPath.delete")}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      
-                      {isSelected && selectedPathDetail?.nodes && selectedPathDetail.nodes.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                          <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
-                            {t("learning.learningPath.learningOrder")}
-                          </div>
-                          <div className="space-y-1 max-h-48 overflow-y-auto">
-                            {selectedPathDetail.nodes.map((node: any, index: number) => {
-                              const nodeStatus = node.status || "pending";
-                              const isCompleted = nodeStatus === "completed";
-                              const isInProgress = nodeStatus === "in_progress";
-                              
-                              return (
-                                <div
-                                  key={node.id}
-                                  onClick={() => {
-                                    const nodeId = node.knowledge_point_id || node.id;
-                                    if (nodeId) onNodeSelect?.(nodeId);
-                                  }}
-                                  className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
-                                >
-                                  <div
-                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
-                                      isCompleted
-                                        ? "bg-green-500 text-white"
-                                        : isInProgress
-                                          ? "bg-primary-500 text-white"
-                                          : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
-                                    }`}
-                                  >
-                                    {isCompleted ? (
-                                      <CheckCircle2 className="w-3 h-3" />
-                                    ) : (
-                                      index + 1
-                                    )}
-                                  </div>
-                                  <span className="text-xs text-gray-700 dark:text-gray-200 truncate flex-1">
-                                    {node.title}
-                                  </span>
-                                  {node.estimated_time && (
-                                    <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
-                                      <Clock className="w-2.5 h-2.5" />
-                                      {node.estimated_time}{t("learning.learningPath.min")}
-                                    </span>
-                                  )}
-                                </div>
-                              );
+                            <BookOpen className="w-3 h-3" />
+                            {t("learning.learningPath.nodeCount", {
+                              count: path.nodes_count || 0,
                             })}
-                          </div>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {Math.round((path.total_estimated_time || 0) / 60)}h
+                          </span>
+                          {path.progress_percentage !== undefined && (
+                            <span className="flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              {path.progress_percentage}%
+                            </span>
+                          )}
                         </div>
-                      )}
+
+                        {path.progress_percentage !== undefined &&
+                          path.progress_percentage > 0 && (
+                            <div className="h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-3">
+                              <div
+                                className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
+                                style={{
+                                  width: `${path.progress_percentage}%`,
+                                }}
+                              />
+                            </div>
+                          )}
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              if (isSelected) {
+                                onPathSelect?.(null as any);
+                              } else {
+                                onPathSelect?.(path.id);
+                              }
+                            }}
+                            className={`flex-1 py-1.5 text-xs rounded flex items-center justify-center gap-1 transition-colors ${
+                              isSelected
+                                ? "bg-gray-500 text-white hover:bg-gray-600"
+                                : "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50"
+                            }`}
+                          >
+                            <Route className="w-3 h-3" />
+                            {isSelected
+                              ? t("learning.learningPath.deselect")
+                              : t("learning.learningPath.switchToPath")}
+                          </button>
+                          <button
+                            onClick={() =>
+                              window.open(
+                                `/learning-paths/${path.id}`,
+                                "_blank",
+                              )
+                            }
+                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
+                            title={t("learning.learningPath.viewDetails")}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(path)}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
+                            title={
+                              path.status === "active"
+                                ? t("learning.learningPath.pause")
+                                : t("learning.learningPath.resume")
+                            }
+                          >
+                            {path.status === "active" ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDeletePath(path.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                            title={t("learning.learningPath.delete")}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {isSelected &&
+                          selectedPathDetail?.nodes &&
+                          selectedPathDetail.nodes.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                              <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+                                {t("learning.learningPath.learningOrder")}
+                              </div>
+                              <div className="space-y-1 max-h-48 overflow-y-auto">
+                                {selectedPathDetail.nodes.map(
+                                  (node: any, index: number) => {
+                                    const nodeStatus = node.status || "pending";
+                                    const isCompleted =
+                                      nodeStatus === "completed";
+                                    const isInProgress =
+                                      nodeStatus === "in_progress";
+
+                                    return (
+                                      <div
+                                        key={node.id}
+                                        onClick={() => {
+                                          const kpId =
+                                            node.knowledge_point_id || node.id;
+                                          if (kpId) {
+                                            const progressMap: Record<
+                                              string,
+                                              number
+                                            > = {
+                                              completed: 100,
+                                              in_progress: 50,
+                                              pending: 0,
+                                              skipped: 0,
+                                            };
+                                            recordActivity({
+                                              activity_type: "path_progress",
+                                              title: `学习路径进展: ${node.title}`,
+                                              knowledge_point_id: kpId,
+                                              graph_id: graphId,
+                                              metadata: {
+                                                path_id: path.id,
+                                                node_id: node.id,
+                                                progress:
+                                                  progressMap[node.status] ?? 0,
+                                              },
+                                            });
+                                            onNodeSelect?.(kpId);
+                                          }
+                                        }}
+                                        className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
+                                      >
+                                        <div
+                                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                                            isCompleted
+                                              ? "bg-green-500 text-white"
+                                              : isInProgress
+                                                ? "bg-primary-500 text-white"
+                                                : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                                          }`}
+                                        >
+                                          {isCompleted ? (
+                                            <CheckCircle2 className="w-3 h-3" />
+                                          ) : (
+                                            index + 1
+                                          )}
+                                        </div>
+                                        <span className="text-xs text-gray-700 dark:text-gray-200 truncate flex-1">
+                                          {node.title}
+                                        </span>
+                                        {node.estimated_time && (
+                                          <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                                            <Clock className="w-2.5 h-2.5" />
+                                            {node.estimated_time}
+                                            {t("learning.learningPath.min")}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
+                            </div>
+                          )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -771,13 +857,20 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-4 h-4 text-primary-500" />
                   <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
-                    {tempPath.targetGoal || t("learning.learningPath.aiGeneratedPath")}
+                    {tempPath.targetGoal ||
+                      t("learning.learningPath.aiGeneratedPath")}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-primary-600 dark:text-primary-400 mb-2">
-                  <span>{t("learning.learningPath.knowledgePoints", { count: tempPath.totalNodes })}</span>
                   <span>
-                    {t("learning.learningPath.hours", { hours: Math.round(tempPath.estimatedTotalTime / 60) })}
+                    {t("learning.learningPath.knowledgePoints", {
+                      count: tempPath.totalNodes,
+                    })}
+                  </span>
+                  <span>
+                    {t("learning.learningPath.hours", {
+                      hours: Math.round(tempPath.estimatedTotalTime / 60),
+                    })}
                   </span>
                 </div>
                 <button
@@ -785,7 +878,9 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                   disabled={isGenerating}
                   className="w-full py-1.5 bg-primary-500 text-white rounded text-xs hover:bg-primary-600 disabled:opacity-50"
                 >
-                  {isGenerating ? t("learning.learningPath.saving") : t("learning.learningPath.saveThisPath")}
+                  {isGenerating
+                    ? t("learning.learningPath.saving")
+                    : t("learning.learningPath.saveThisPath")}
                 </button>
               </div>
             </div>

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+﻿﻿import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { TermTooltip } from "../components/common";
@@ -67,6 +67,7 @@ import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
+import { useActivityTracker } from "../hooks/useActivityTracker";
 import { schedulerApi } from "../services/api";
 
 type Message = {
@@ -116,6 +117,14 @@ export const LearningMode = () => {
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
+  const [linkedTask, setLinkedTask] = useState<{
+    mainTaskId: string;
+    graphName: string;
+    totalNodes: number;
+    completedNodes: number;
+    progress: number;
+    subtaskId?: string;
+  } | null>(null);
   const { fontSize, readingMode, contentWidthMode } =
     useLearningSettingsStore();
   const queryClient = useQueryClient();
@@ -133,6 +142,57 @@ export const LearningMode = () => {
     }
   }, [nodeId, focusTaskId, isFocusTimerActive, startFocusTimer]);
 
+  useEffect(() => {
+    if (nodeId && nodeTitle) {
+      activityRef.current = true;
+      activityFnsRef.current.startActivity(
+        "focus_study",
+        `阅读学习资料: ${nodeTitle}`,
+        {
+          knowledge_point_id: nodeId,
+          task_id: linkedTask?.mainTaskId,
+        },
+      );
+    }
+    return () => {
+      if (activityRef.current) {
+        activityFnsRef.current.endActivity();
+        activityRef.current = false;
+      }
+    };
+  }, [nodeId, nodeTitle, linkedTask?.mainTaskId]);
+
+  useEffect(() => {
+    if (!graphId) return;
+
+    const fetchLinkedTask = async () => {
+      try {
+        const result = await schedulerApi.linkTaskForGraph(graphId);
+        if (result?.data) {
+          const data = result.data;
+          setLinkedTask({
+            mainTaskId: data.mainTaskId,
+            graphName: data.graphName,
+            totalNodes: data.totalNodes,
+            completedNodes: data.completedNodes,
+            progress:
+              data.totalNodes > 0
+                ? Math.round((data.completedNodes / data.totalNodes) * 100)
+                : 0,
+            subtaskId: data.subtasks?.find(
+              (s: { knowledgePointId: string }) =>
+                s.knowledgePointId === nodeId,
+            )?.id,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to link task:", error);
+      }
+    };
+
+    fetchLinkedTask();
+  }, [graphId, nodeId]);
+
   const [generateProgress, setGenerateProgress] = useState<{
     current: number;
     total: number;
@@ -141,6 +201,10 @@ export const LearningMode = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const { enterFocusMode, exitFocusMode } = useFocusStore();
+  const { startActivity, endActivity } = useActivityTracker();
+  const activityRef = useRef(false);
+  const activityFnsRef = useRef({ startActivity, endActivity });
+  activityFnsRef.current = { startActivity, endActivity };
 
   const handleSelectLearningPath = (pathId: string) => {
     setSelectedLearningPathId(pathId);
@@ -1605,6 +1669,17 @@ export const LearningMode = () => {
                         </button>
                       </div>
                     </div>
+                    {linkedTask && (
+                      <div className="mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                        <Route size={16} />
+                        <span>学习图谱: {linkedTask.graphName}</span>
+                        <span className="text-xs opacity-75">
+                          ({linkedTask.completedNodes}/{linkedTask.totalNodes}{" "}
+                          节点)
+                        </span>
+                        <span className="ml-auto">{linkedTask.progress}%</span>
+                      </div>
+                    )}
                     <div
                       className={`prose dark:prose-invert prose-indigo ${
                         contentWidthMode === "full"

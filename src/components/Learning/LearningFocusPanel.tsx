@@ -43,6 +43,8 @@ import {
 import { HighlightedReader } from "./HighlightedReader";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
 import { useUnifiedTimer } from "../../hooks/scheduler";
+import { useActivityTracker } from "../../hooks/useActivityTracker";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { AudioVisualizer } from "../common/AudioVisualizer";
 import { NOISE_OPTIONS, NOISE_CATEGORIES } from "../../utils/audioSynthesis";
 import type { Keyword } from "../../../shared/types/graph";
@@ -103,7 +105,15 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
     setHighlightEnabled,
     setHighlightIntensity,
     exitFocusMode,
+    currentNodeId,
   } = useFocusStore();
+
+  const { recordActivity } = useActivityTracker();
+  const sessionStartRef = useRef<string | null>(null);
+  const recordActivityRef = useRef(recordActivity);
+  useEffect(() => {
+    recordActivityRef.current = recordActivity;
+  });
 
   const {
     isActive,
@@ -155,29 +165,42 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
     setIsSystemDark(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsSystemDark(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
-  const handleKeywordClick = useCallback((keyword: { term: string; importance: number; category: string; explanation: string }) => {
-    setShowSettings(true);
-    setTimeout(() => {
-      const keywordCards = keywordListRef.current?.querySelectorAll('[data-keyword-term]');
-      if (keywordCards) {
-        for (const card of keywordCards) {
-          if (card.getAttribute('data-keyword-term') === keyword.term) {
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            card.classList.add('ring-2', 'ring-primary-400');
-            setTimeout(() => card.classList.remove('ring-2', 'ring-primary-400'), 2000);
-            break;
+  const handleKeywordClick = useCallback(
+    (keyword: {
+      term: string;
+      importance: number;
+      category: string;
+      explanation: string;
+    }) => {
+      setShowSettings(true);
+      setTimeout(() => {
+        const keywordCards = keywordListRef.current?.querySelectorAll(
+          "[data-keyword-term]",
+        );
+        if (keywordCards) {
+          for (const card of keywordCards) {
+            if (card.getAttribute("data-keyword-term") === keyword.term) {
+              card.scrollIntoView({ behavior: "smooth", block: "center" });
+              card.classList.add("ring-2", "ring-primary-400");
+              setTimeout(
+                () => card.classList.remove("ring-2", "ring-primary-400"),
+                2000,
+              );
+              break;
+            }
           }
         }
-      }
-    }, 300);
-  }, []);
+      }, 300);
+    },
+    [],
+  );
 
   const getNoiseOption = useCallback((type: WhiteNoiseType) => {
     return NOISE_OPTIONS.find((opt) => opt.id === type);
@@ -186,17 +209,60 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   useEffect(() => {
     if (isOpen) {
       startMixer();
+      sessionStartRef.current = new Date().toISOString();
     }
     return () => {
       stopMixer();
+      sessionStartRef.current = null;
     };
   }, [isOpen, startMixer, stopMixer]);
 
+  useEffect(() => {
+    const unsubscribe = frontendEventBus.subscribe(
+      "timer_completed",
+      (payload) => {
+        if (isOpen && payload.mode === "focus") {
+          recordActivityRef.current({
+            activity_type: "focus_study",
+            title: `专注学习: ${nodeTitle || "知识点"}`,
+            started_at: sessionStartRef.current || new Date().toISOString(),
+            ended_at: new Date().toISOString(),
+            duration: payload.duration,
+            knowledge_point_id: currentNodeId ?? undefined,
+          });
+          sessionStartRef.current = new Date().toISOString();
+        }
+      },
+    );
+    return () => unsubscribe();
+  }, [isOpen, nodeTitle, currentNodeId]);
+
   const handleClose = useCallback(() => {
+    if (isActive && mode === "focus" && sessionStartRef.current) {
+      const elapsed = Math.round(
+        (Date.now() - new Date(sessionStartRef.current).getTime()) / 1000,
+      );
+      recordActivityRef.current({
+        activity_type: "focus_study",
+        title: `专注学习: ${nodeTitle || "知识点"}`,
+        started_at: sessionStartRef.current,
+        ended_at: new Date().toISOString(),
+        duration: elapsed,
+        knowledge_point_id: currentNodeId ?? undefined,
+      });
+    }
     stopMixer();
     exitFocusMode();
     onClose();
-  }, [stopMixer, exitFocusMode, onClose]);
+  }, [
+    stopMixer,
+    exitFocusMode,
+    onClose,
+    isActive,
+    mode,
+    nodeTitle,
+    currentNodeId,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -265,7 +331,10 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
           <div className="absolute top-0 left-0 right-0 p-3 flex items-center justify-between bg-gradient-to-b from-slate-200/90 to-transparent dark:from-slate-900/90 dark:to-transparent z-20">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-500/20 border border-primary-300 dark:border-primary-500/30">
-                <Brain size={16} className="text-primary-600 dark:text-primary-400" />
+                <Brain
+                  size={16}
+                  className="text-primary-600 dark:text-primary-400"
+                />
                 <span className="text-sm text-primary-700 dark:text-primary-300 font-medium">
                   {t("learning.focusMode.title")}
                 </span>
@@ -288,7 +357,9 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                 }`}
               >
                 <Highlighter size={14} />
-                <span className="hidden sm:inline">{t("learning.focusMode.highlight")}</span>
+                <span className="hidden sm:inline">
+                  {t("learning.focusMode.highlight")}
+                </span>
               </button>
 
               <motion.button
@@ -305,7 +376,11 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                 className={`p-2 rounded-lg transition-colors ${isLocked ? "bg-primary-100 text-primary-600 dark:bg-primary-500/30 dark:text-primary-300" : "bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"}`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title={isLocked ? t("learning.focusMode.unlock") : t("learning.focusMode.lock")}
+                title={
+                  isLocked
+                    ? t("learning.focusMode.unlock")
+                    : t("learning.focusMode.lock")
+                }
               >
                 {isLocked ? <Lock size={16} /> : <Unlock size={16} />}
               </motion.button>
@@ -372,11 +447,13 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
                             }`}
                           >
-                            {m === "focus" ? t("learning.focusMode.focus") : t("learning.focusMode.break")}
+                            {m === "focus"
+                              ? t("learning.focusMode.focus")
+                              : t("learning.focusMode.break")}
                           </button>
                         ))}
                       </div>
-                      
+
                       <div className="flex flex-col items-center gap-3">
                         <div className="relative">
                           <svg className="w-24 h-24 transform -rotate-90">
@@ -413,11 +490,13 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                               {formatTime(timeLeft)}
                             </span>
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                              {isActive ? t("learning.focusMode.inProgress") : t("learning.focusMode.paused")}
+                              {isActive
+                                ? t("learning.focusMode.inProgress")
+                                : t("learning.focusMode.paused")}
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setTimerMode(mode)}
@@ -425,7 +504,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           >
                             <RotateCcw size={18} />
                           </button>
-                          
+
                           <button
                             onClick={isActive ? pauseTimer : resumeTimer}
                             className={`p-3 rounded-full shadow-lg transform transition-transform active:scale-95 ${
@@ -444,7 +523,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                               />
                             )}
                           </button>
-                          
+
                           <button
                             onClick={skipToBreak}
                             className="p-2 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
@@ -452,15 +531,19 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                             <SkipForward size={18} />
                           </button>
                         </div>
-                        
+
                         <div className="text-xs text-slate-500 dark:text-slate-500 flex items-center justify-center gap-1">
                           <CheckCircleIcon size={12} />
-                          <span>{t("learning.focusMode.sessionsCompleted", { count: sessionsCompleted })}</span>
+                          <span>
+                            {t("learning.focusMode.sessionsCompleted", {
+                              count: sessionsCompleted,
+                            })}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                       <Highlighter size={16} className="text-yellow-500" />
@@ -483,7 +566,9 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       {highlightEnabled && (
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs text-slate-500 dark:text-slate-500">
-                            <span>{t("learning.focusMode.highlightIntensity")}</span>
+                            <span>
+                              {t("learning.focusMode.highlightIntensity")}
+                            </span>
                             <span>{Math.round(highlightIntensity * 100)}%</span>
                           </div>
                           <input
@@ -508,7 +593,10 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                         <Brain size={16} className="text-primary-500" />
                         {t("learning.focusMode.keywords")} ({keywords.length})
                       </h3>
-                      <div ref={keywordListRef} className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                      <div
+                        ref={keywordListRef}
+                        className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar"
+                      >
                         {keywords.map((keyword, index) => {
                           const importanceColors: Record<number, string> = {
                             5: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30",
@@ -578,7 +666,9 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                               />
                             )}
                             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                              {t(`learning.focusMode.noiseCategories.${category.id}`)}
+                              {t(
+                                `learning.focusMode.noiseCategories.${category.id}`,
+                              )}
                             </span>
                           </button>
                           {expandedCategories.has(category.id) && (
@@ -601,7 +691,9 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 >
                                   {getIcon(option.icon)}
                                   <span className="text-[10px]">
-                                    {t(`learning.focusMode.noiseOptions.${option.id}`)}
+                                    {t(
+                                      `learning.focusMode.noiseOptions.${option.id}`,
+                                    )}
                                   </span>
                                 </motion.button>
                               ))}
@@ -615,7 +707,8 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       <div className="mt-4 space-y-2">
                         <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
                           <Volume2 size={12} />
-                          {t("learning.focusMode.currentMix")} ({mixedNoises.length})
+                          {t("learning.focusMode.currentMix")} (
+                          {mixedNoises.length})
                         </h4>
                         <div className="space-y-2">
                           {mixedNoises.map((noise) => {
@@ -627,7 +720,9 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                               >
                                 {option && getIcon(option.icon)}
                                 <span className="text-xs text-slate-600 dark:text-slate-300 flex-1">
-                                  {t(`learning.focusMode.noiseOptions.${noise.type}`)}
+                                  {t(
+                                    `learning.focusMode.noiseOptions.${noise.type}`,
+                                  )}
                                 </span>
                                 <input
                                   type="range"
@@ -677,16 +772,20 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 : "bg-slate-100 text-slate-500 hover:bg-slate-200 border border-transparent dark:bg-white/10 dark:text-slate-400 dark:hover:bg-white/20"
                             }`}
                             whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          {preset.isBuiltIn ? t(`learning.focusMode.presetNames.${preset.id}`) : preset.name}
-                        </motion.button>
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {preset.isBuiltIn
+                              ? t(`learning.focusMode.presetNames.${preset.id}`)
+                              : preset.name}
+                          </motion.button>
                         ))}
                       </div>
                       {mixedNoises.length > 0 && (
                         <button
                           onClick={() => {
-                            const name = prompt(t("learning.focusMode.enterPresetName"));
+                            const name = prompt(
+                              t("learning.focusMode.enterPresetName"),
+                            );
                             if (name) saveCurrentAsPreset(name);
                           }}
                           className="w-full flex items-center justify-center gap-1.5 p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs transition-colors"

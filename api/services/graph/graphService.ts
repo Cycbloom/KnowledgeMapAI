@@ -18,6 +18,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { supabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
 import { appEventBus } from "../core/eventBus";
+import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import type { GraphCreatedPayload, GraphUpdatedPayload, GraphDeletedPayload } from "@shared/types/events";
 
 interface GraphWithCount {
@@ -241,6 +242,20 @@ export class GraphService {
       .single();
 
     if (error) throw error;
+
+    try {
+      const taskInfo = await smartTaskLinker.getOrCreateTaskForGraph(
+        supabase,
+        userId,
+        data.id,
+      );
+      logger.info("[GraphService] Created task for new graph:", {
+        graphId: data.id,
+        taskId: taskInfo.mainTaskId,
+      });
+    } catch (taskError) {
+      logger.warn("[GraphService] Failed to create task for graph:", taskError);
+    }
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 

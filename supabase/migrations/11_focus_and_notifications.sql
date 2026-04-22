@@ -88,3 +88,29 @@ COMMENT ON COLUMN user_efficiency_profile.tag_efficiency IS '各标签效率统�
 COMMENT ON COLUMN user_efficiency_profile.queue_efficiency IS '各队列效率统计，结构: {"0": {"avgDuration": 25, "completionRate": 0.9}, ...}';
 COMMENT ON COLUMN user_efficiency_profile.peak_hours IS '高效时段列表（小时）';
 COMMENT ON COLUMN user_efficiency_profile.low_hours IS '低效时段列表（小时）';
+
+CREATE TABLE IF NOT EXISTS user_activities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  activity_type TEXT NOT NULL CHECK (activity_type IN ('focus_study', 'review', 'path_progress')),
+  title TEXT NOT NULL,
+  description TEXT,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ended_at TIMESTAMPTZ,
+  duration INTEGER,
+  metadata JSONB DEFAULT '{}',
+  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
+  graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
+  task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE user_activities IS '用户活动记录表，追踪用户在应用内的各类操作';
+COMMENT ON COLUMN user_activities.activity_type IS '活动类型：focus_study, review, path_progress';
+COMMENT ON COLUMN user_activities.duration IS '活动持续时间（秒）';
+COMMENT ON COLUMN user_activities.metadata IS '活动额外数据，如评分、模式等';
+
+CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON user_activities(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_activities_type ON user_activities(activity_type);
+CREATE INDEX IF NOT EXISTS idx_user_activities_started_at ON user_activities(started_at);
+CREATE INDEX IF NOT EXISTS idx_user_activities_knowledge_point_id ON user_activities(knowledge_point_id);

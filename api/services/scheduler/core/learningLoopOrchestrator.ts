@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../../utils/logger";
+import { autoTaskGenerator } from "../autoTaskGenerator";
 import type {
   FocusSessionEndedPayload,
   TaskCompletedPayload,
@@ -52,8 +53,29 @@ class LearningLoopOrchestrator {
 
     await this.persistLoop(supabase, loop);
 
-    const task = await this.createStageTask(supabase, loop, "learn");
-    loop.taskId = task?.id;
+    if (loop.knowledgePointId) {
+      try {
+        const autoResult = await autoTaskGenerator.generateLearningTask(
+          supabase,
+          userId,
+          loop.knowledgePointId,
+          { graphId: loop.graphId },
+        );
+        if (autoResult.created) {
+          loop.taskId = autoResult.taskId;
+        } else {
+          const task = await this.createStageTask(supabase, loop, "learn");
+          loop.taskId = task?.id;
+        }
+      } catch (err) {
+        logger.error("[LearningLoop] Auto task generation failed, falling back to stage task:", err);
+        const task = await this.createStageTask(supabase, loop, "learn");
+        loop.taskId = task?.id;
+      }
+    } else {
+      const task = await this.createStageTask(supabase, loop, "learn");
+      loop.taskId = task?.id;
+    }
 
     this.activeLoops.set(`${userId}:${loop.id}`, loop);
 

@@ -191,12 +191,16 @@ CREATE TABLE IF NOT EXISTS task_subtasks (
   due_date TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
   learning_path_node_id UUID,
+  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
+  task_type TEXT DEFAULT 'learning' CHECK (task_type IN ('learning', 'review', 'practice', 'explore')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE task_subtasks IS 'Subtasks for breaking down main tasks';
 COMMENT ON COLUMN task_subtasks.learning_path_node_id IS 'Associated learning path node ID';
+COMMENT ON COLUMN task_subtasks.knowledge_point_id IS 'Associated knowledge point ID (node in graph)';
+COMMENT ON COLUMN task_subtasks.task_type IS 'Type of subtask: learning, review, practice, explore';
 
 -- Task links table
 CREATE TABLE IF NOT EXISTS task_links (
@@ -298,3 +302,7 @@ COMMENT ON COLUMN knowledge_review_tasks.ease_factor IS '易遗忘因子 (EF)，
 COMMENT ON COLUMN knowledge_review_tasks.repetitions IS '连续成功复习次数';
 COMMENT ON COLUMN knowledge_review_tasks.next_review_date IS '下次复习日期';
 COMMENT ON COLUMN knowledge_review_tasks.last_quality_score IS '上次复习评分 (0-5)';
+
+ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL;
+
+COMMENT ON COLUMN knowledge_graphs.task_id IS '关联的学习任务ID，创建图谱时自动创建';

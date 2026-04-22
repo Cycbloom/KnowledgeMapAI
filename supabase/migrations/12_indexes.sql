@@ -16,6 +16,7 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_created ON knowledge_graphs
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_public ON knowledge_graphs(id) WHERE is_public = true AND deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_favorite ON knowledge_graphs(user_id, is_favorite DESC) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_domain ON knowledge_graphs(domain) WHERE domain IS NOT NULL AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_task_id ON knowledge_graphs(task_id) WHERE task_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS knowledge_graphs_embedding_idx ON knowledge_graphs USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Knowledge points
@@ -181,6 +182,7 @@ CREATE INDEX IF NOT EXISTS idx_task_subtasks_task_id ON task_subtasks(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_status ON task_subtasks(status);
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_position ON task_subtasks(task_id, position);
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_learning_path_node ON task_subtasks(learning_path_node_id);
+CREATE INDEX IF NOT EXISTS idx_task_subtasks_knowledge_point_id ON task_subtasks(knowledge_point_id);
 
 -- Task links
 CREATE INDEX IF NOT EXISTS idx_task_links_task_id ON task_links(task_id);

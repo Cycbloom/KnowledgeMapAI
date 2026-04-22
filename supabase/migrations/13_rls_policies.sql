@@ -318,6 +318,13 @@ CREATE POLICY "Users can view own focus stats" ON user_focus_stats FOR SELECT US
 CREATE POLICY "Users can insert own focus stats" ON user_focus_stats FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own focus stats" ON user_focus_stats FOR UPDATE USING (auth.uid() = user_id);
 
+-- User Activities
+ALTER TABLE user_activities ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own activities" ON user_activities FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own activities" ON user_activities FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own activities" ON user_activities FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own activities" ON user_activities FOR DELETE USING (auth.uid() = user_id);
+
 -- Task templates
 ALTER TABLE task_templates ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own task templates" ON task_templates FOR SELECT USING (auth.uid() = user_id OR is_system = TRUE);

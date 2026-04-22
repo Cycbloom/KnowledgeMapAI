@@ -112,4 +112,7 @@ export type {
   SyncStudyDurationData,
   SyncTaskCompletionData,
   TaskProgressSummary,
+  RecordActivityData,
+  GetActivitiesOptions,
+  AutoGenerateTaskData,
 } from './modules/scheduler';

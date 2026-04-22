@@ -23,6 +23,13 @@ export type {
   PathTaskWithDetails,
 } from "./pathTasks";
 
+export { activitiesApi } from "./activities";
+export type {
+  RecordActivityData,
+  GetActivitiesOptions,
+  AutoGenerateTaskData,
+} from "./activities";
+
 export { orchestratorApi } from "./orchestrator";
 
 export type {
@@ -62,6 +69,7 @@ import { achievementsApi } from "./achievements";
 import { reviewTasksApi } from "./reviewTasks";
 import { progressSyncApi } from "./progressSync";
 import { pathTasksApi } from "./pathTasks";
+import { activitiesApi } from "./activities";
 import { orchestratorApi } from "./orchestrator";
 
 export const schedulerApi = {
@@ -80,5 +88,6 @@ export const schedulerApi = {
   ...reviewTasksApi,
   ...progressSyncApi,
   ...pathTasksApi,
+  ...activitiesApi,
   ...orchestratorApi,
 };

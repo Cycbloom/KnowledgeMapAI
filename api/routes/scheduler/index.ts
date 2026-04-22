@@ -16,6 +16,7 @@ import progressSyncRouter from "./progressSync";
 import settingsRouter from "./settings";
 import unifiedReviewRouter from "./unifiedReview";
 import learningLoopsRouter from "./learningLoops";
+import activitiesRouter from "./activities";
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use(progressSyncRouter);
 router.use(settingsRouter);
 router.use(unifiedReviewRouter);
 router.use(learningLoopsRouter);
+router.use("/activities", activitiesRouter);
 
 export default router;

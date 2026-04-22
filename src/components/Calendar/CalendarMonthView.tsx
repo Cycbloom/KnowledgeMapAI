@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTheme } from "../../hooks";
-import { CalendarEvent, ExecutionEvent } from '../../types/calendar';
+import { CalendarEvent, ExecutionEvent, CalendarMode, DailyActivityStats } from '../../types/calendar';
 
 interface CalendarMonthViewProps {
   currentDate: Date;
@@ -10,6 +10,8 @@ interface CalendarMonthViewProps {
   onDateSelect: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
   onAddEvent: (date: Date) => void;
+  calendarMode?: CalendarMode;
+  activityStats?: DailyActivityStats[];
 }
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
@@ -21,6 +23,8 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   onDateSelect,
   onEventClick,
   onAddEvent,
+  calendarMode = 'plan',
+  activityStats,
 }) => {
   const { isDark } = useTheme();
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
@@ -112,7 +116,6 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-2">
         {WEEKDAYS.map((day) => (
           <div
@@ -126,7 +129,6 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div className="grid grid-cols-7 flex-1 gap-1">
         {monthData.map((day, index) => (
           <div
@@ -144,7 +146,6 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
             onMouseEnter={() => setHoveredDate(day.date)}
             onMouseLeave={() => setHoveredDate(null)}
           >
-            {/* Date number */}
             <div className="flex items-center justify-between mb-1">
               <span
                 className={`text-sm font-medium ${
@@ -161,7 +162,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               >
                 {day.date.getDate()}
               </span>
-              {hoveredDate?.getTime() === day.date.getTime() && day.isCurrentMonth && (
+              {calendarMode === 'plan' && hoveredDate?.getTime() === day.date.getTime() && day.isCurrentMonth && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -178,29 +179,29 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               )}
             </div>
 
-            {/* Events */}
-            <div className="space-y-0.5 overflow-hidden">
-              {day.events.slice(0, 3).map((event, i) => (
-                <div
-                  key={i}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEventClick(event);
-                  }}
-                  className={`${getEventColor(event)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80`}
-                >
-                  {event.title}
-                </div>
-              ))}
-              {day.events.length > 3 && (
-                <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  +{day.events.length - 3} 更多
-                </div>
-              )}
-            </div>
+            {calendarMode === 'plan' && (
+              <div className="space-y-0.5 overflow-hidden">
+                {day.events.slice(0, 3).map((event, i) => (
+                  <div
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEventClick(event);
+                    }}
+                    className={`${getEventColor(event)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80`}
+                  >
+                    {event.title}
+                  </div>
+                ))}
+                {day.events.length > 3 && (
+                  <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                    +{day.events.length - 3} 更多
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Execution indicator */}
-            {day.executions.length > 0 && (
+            {calendarMode === 'plan' && day.executions.length > 0 && (
               <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -208,6 +209,26 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                 </span>
               </div>
             )}
+
+            {calendarMode === 'history' && activityStats && (() => {
+              const dateStr = day.date.toISOString().split('T')[0];
+              const stats = activityStats.find(s => s.date === dateStr);
+              if (!stats || stats.activity_count === 0) return null;
+              const intensity = Math.min(stats.activity_count / 5, 1);
+              return (
+                <div className="mt-1">
+                  <div className={`h-1 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                    <div
+                      className="h-full rounded-full bg-primary-500 transition-all"
+                      style={{ width: `${intensity * 100}%` }}
+                    />
+                  </div>
+                  <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                    {stats.activity_count}项 · {Math.round(stats.total_duration / 60)}分钟
+                  </span>
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>

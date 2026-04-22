@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -26,6 +26,9 @@ import {
   CalendarEvent,
   ExecutionEvent,
   EventDropInfo,
+  CalendarMode,
+  ActivityEvent,
+  DailyActivityStats,
 } from "../types/calendar";
 
 type ViewType = "month" | "week" | "day" | "schedule";
@@ -52,6 +55,9 @@ export const CalendarPage: React.FC = () => {
   const [viewType, setViewType] = useState<ViewType>("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [executions, setExecutions] = useState<ExecutionEvent[]>([]);
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>("plan");
+  const [activityStats, setActivityStats] = useState<DailyActivityStats[]>([]);
+  const [dailyActivities, setDailyActivities] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -68,55 +74,74 @@ export const CalendarPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [currentDate, viewType]);
+  }, [currentDate, viewType, calendarMode]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [tasksRes, executionsRes] = await Promise.all([
-        api.scheduler.getTasks({}),
-        api.scheduler.getExecutions({}),
-      ]);
+      if (calendarMode === "history") {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const startDate = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+        const endDate = new Date(year, month + 1, 0)
+          .toISOString()
+          .split("T")[0];
 
-      if (tasksRes.success) {
-        const calendarEvents: CalendarEvent[] = (tasksRes.data || []).map(
-          (task: any) => ({
-            id: task.id,
-            title: task.title,
-            description: task.description,
-            start: task.scheduled_start || task.deadline || task.created_at,
-            end: task.scheduled_end,
-            type: task.tags?.includes("学习")
-              ? "study"
-              : task.tags?.includes("复习")
-                ? "review"
-                : "task",
-            color:
-              task.priority === 4
-                ? "red"
-                : task.priority === 3
-                  ? "orange"
-                  : "blue",
-            allDay: !task.scheduled_start,
-            estimated_duration: task.estimated_duration,
-          }),
-        );
-        setEvents(calendarEvents);
-      }
+        const [statsRes, dailyRes] = await Promise.all([
+          api.scheduler.getActivityStats(startDate, endDate),
+          api.scheduler.getDailyActivities(
+            currentDate.toISOString().split("T")[0],
+          ),
+        ]);
 
-      if (executionsRes.success) {
-        const executionEvents: ExecutionEvent[] = (
-          executionsRes.data || []
-        ).map((exec: any) => ({
-          id: exec.id,
-          task_id: exec.task_id,
-          task_title: exec.task_title || "未知任务",
-          started_at: exec.started_at,
-          ended_at: exec.ended_at,
-          duration: exec.duration,
-          status: exec.status,
-        }));
-        setExecutions(executionEvents);
+        if (statsRes?.data) setActivityStats(statsRes.data);
+        if (dailyRes?.data) setDailyActivities(dailyRes.data);
+      } else {
+        const [tasksRes, executionsRes] = await Promise.all([
+          api.scheduler.getTasks({}),
+          api.scheduler.getExecutions({}),
+        ]);
+
+        if (tasksRes.success) {
+          const calendarEvents: CalendarEvent[] = (tasksRes.data || []).map(
+            (task: any) => ({
+              id: task.id,
+              title: task.title,
+              description: task.description,
+              start: task.scheduled_start || task.deadline || task.created_at,
+              end: task.scheduled_end,
+              type: task.tags?.includes("学习")
+                ? "study"
+                : task.tags?.includes("复习")
+                  ? "review"
+                  : "task",
+              color:
+                task.priority === 4
+                  ? "red"
+                  : task.priority === 3
+                    ? "orange"
+                    : "blue",
+              allDay: !task.scheduled_start,
+              estimated_duration: task.estimated_duration,
+            }),
+          );
+          setEvents(calendarEvents);
+        }
+
+        if (executionsRes.success) {
+          const executionEvents: ExecutionEvent[] = (
+            executionsRes.data || []
+          ).map((exec: any) => ({
+            id: exec.id,
+            task_id: exec.task_id,
+            task_title: exec.task_title || "未知任务",
+            started_at: exec.started_at,
+            ended_at: exec.ended_at,
+            duration: exec.duration,
+            status: exec.status,
+          }));
+          setExecutions(executionEvents);
+        }
       }
     } catch (error) {
       console.error("Failed to load calendar data:", error);
@@ -155,7 +180,10 @@ export const CalendarPage: React.FC = () => {
 
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) {
-      frontendEventBus.publish("message_show", { type: "error", content: "请输入任务标题" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "请输入任务标题",
+      });
       return;
     }
 
@@ -172,11 +200,17 @@ export const CalendarPage: React.FC = () => {
           taskForm.priority >= 3 ? 0 : taskForm.priority >= 2 ? 1 : 2,
       });
 
-      frontendEventBus.publish("message_show", { type: "success", content: "任务创建成功!" });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: "任务创建成功!",
+      });
       setShowTaskModal(false);
       loadData();
     } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "创建任务失败" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: error.message || "创建任务失败",
+      });
     } finally {
       setSaving(false);
     }
@@ -193,29 +227,29 @@ export const CalendarPage: React.FC = () => {
     setTaskForm({ ...taskForm, tags: taskForm.tags.filter((t) => t !== tag) });
   };
 
-  const handleEventDrop = useCallback(
-    async (dropInfo: EventDropInfo) => {
-      try {
-        const updateData: any = {
-          scheduled_start: dropInfo.newStart.toISOString(),
-        };
+  const handleEventDrop = useCallback(async (dropInfo: EventDropInfo) => {
+    try {
+      const updateData: any = {
+        scheduled_start: dropInfo.newStart.toISOString(),
+      };
 
-        if (dropInfo.newEnd) {
-          updateData.scheduled_end = dropInfo.newEnd.toISOString();
-        }
-
-        await api.scheduler.updateTask(dropInfo.eventId, updateData);
-        frontendEventBus.publish("message_show", { type: "success", content: "任务时间已更新!" });
-        loadData();
-      } catch (error: any) {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: error.message || "更新任务时间失败",
-        });
+      if (dropInfo.newEnd) {
+        updateData.scheduled_end = dropInfo.newEnd.toISOString();
       }
-    },
-    [],
-  );
+
+      await api.scheduler.updateTask(dropInfo.eventId, updateData);
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: "任务时间已更新!",
+      });
+      loadData();
+    } catch (error: any) {
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: error.message || "更新任务时间失败",
+      });
+    }
+  }, []);
 
   const navigateMonth = (direction: number) => {
     const newDate = new Date(currentDate);
@@ -287,16 +321,25 @@ export const CalendarPage: React.FC = () => {
       a.download = `calendar-${new Date().toISOString().split("T")[0]}.ics`;
       a.click();
       window.URL.revokeObjectURL(url);
-      frontendEventBus.publish("message_show", { type: "success", content: "日历已导出!" });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: "日历已导出!",
+      });
     } catch (error) {
-      frontendEventBus.publish("message_show", { type: "error", content: "导出失败" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "导出失败",
+      });
     }
   };
 
   const handleCopyWebCalLink = () => {
     const webcalUrl = `webcal://${window.location.host}/api/calendar/subscribe/${localStorage.getItem("userId")}`;
     navigator.clipboard.writeText(webcalUrl);
-    frontendEventBus.publish("message_show", { type: "success", content: "WebCal 链接已复制!" });
+    frontendEventBus.publish("message_show", {
+      type: "success",
+      content: "WebCal 链接已复制!",
+    });
   };
 
   const priorityLabels = ["低", "中", "高", "紧急"];
@@ -394,6 +437,35 @@ export const CalendarPage: React.FC = () => {
                 ))}
               </div>
 
+              <div
+                className={`flex rounded-lg p-1 ${isDark ? "bg-slate-800" : "bg-gray-100"}`}
+              >
+                <button
+                  onClick={() => setCalendarMode("plan")}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    calendarMode === "plan"
+                      ? "bg-primary-600 text-white"
+                      : isDark
+                        ? "text-slate-400 hover:text-white"
+                        : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  规划
+                </button>
+                <button
+                  onClick={() => setCalendarMode("history")}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    calendarMode === "history"
+                      ? "bg-primary-600 text-white"
+                      : isDark
+                        ? "text-slate-400 hover:text-white"
+                        : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  历史
+                </button>
+              </div>
+
               {/* Export button */}
               <button
                 onClick={() => setShowExportModal(true)}
@@ -439,6 +511,8 @@ export const CalendarPage: React.FC = () => {
                   onDateSelect={handleDateSelect}
                   onEventClick={handleEventClick}
                   onAddEvent={handleAddEvent}
+                  calendarMode={calendarMode}
+                  activityStats={activityStats}
                 />
               )}
               {viewType === "week" && (
@@ -460,6 +534,8 @@ export const CalendarPage: React.FC = () => {
                   onEventClick={handleEventClick}
                   onAddEvent={handleAddEvent}
                   onEventDrop={handleEventDrop}
+                  calendarMode={calendarMode}
+                  dailyActivities={dailyActivities}
                 />
               )}
               {viewType === "schedule" && (
@@ -471,6 +547,8 @@ export const CalendarPage: React.FC = () => {
                   onAddEvent={handleAddEvent}
                   onDateChange={setCurrentDate}
                   onEventDrop={handleEventDrop}
+                  calendarMode={calendarMode}
+                  dailyActivities={dailyActivities}
                 />
               )}
             </motion.div>

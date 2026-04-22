@@ -482,6 +482,7 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
   // study 类型
   if (shouldProcess('study')) {
     const studyTables = [
+      { table: 'user_activities', column: 'user_id' },
       { table: 'user_time_slots', column: 'user_id' },
       { table: 'user_achievements', column: 'user_id' },
       { table: 'focus_sessions', column: 'user_id' },

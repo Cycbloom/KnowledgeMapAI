@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { SubtaskStateMachine } from "../subtaskStateMachine";
-import type { LearningState, StateHistoryEntry } from "../../../../shared/types/scheduler";
+import type {
+  LearningState,
+  StateHistoryEntry,
+} from "../../../../shared/types/scheduler";
 
 describe("SubtaskStateMachine", () => {
   let stateMachine: SubtaskStateMachine;
@@ -161,7 +164,7 @@ describe("SubtaskStateMachine", () => {
         "review",
         20,
         25,
-        "初始学习完成"
+        "初始学习完成",
       );
 
       expect(newHistory).toHaveLength(1);
@@ -189,7 +192,7 @@ describe("SubtaskStateMachine", () => {
         "review",
         "practice",
         20,
-        50
+        50,
       );
 
       expect(newHistory).toHaveLength(2);
@@ -208,7 +211,7 @@ describe("SubtaskStateMachine", () => {
           "review",
           "practice",
           i,
-          i + 1
+          i + 1,
         );
       }
 
@@ -222,7 +225,7 @@ describe("SubtaskStateMachine", () => {
         "practice",
         "quiz",
         70,
-        75
+        75,
       );
 
       expect(newHistory[0].reason).toBeUndefined();
@@ -328,9 +331,15 @@ describe("SubtaskStateMachine", () => {
   describe("getRecommendedNextState", () => {
     it("首次 learning 返回基于掌握度的状态", () => {
       const history: StateHistoryEntry[] = [];
-      expect(stateMachine.getRecommendedNextState("learning", 20, history)).toBe("review");
-      expect(stateMachine.getRecommendedNextState("learning", 50, history)).toBe("practice");
-      expect(stateMachine.getRecommendedNextState("learning", 80, history)).toBe("quiz");
+      expect(
+        stateMachine.getRecommendedNextState("learning", 20, history),
+      ).toBe("review");
+      expect(
+        stateMachine.getRecommendedNextState("learning", 50, history),
+      ).toBe("practice");
+      expect(
+        stateMachine.getRecommendedNextState("learning", 80, history),
+      ).toBe("quiz");
     });
 
     it("已完成 learning 后使用循环逻辑", () => {
@@ -343,7 +352,9 @@ describe("SubtaskStateMachine", () => {
           mastery_level_after: 20,
         },
       ];
-      expect(stateMachine.getRecommendedNextState("learning", 20, history)).toBe("review");
+      expect(
+        stateMachine.getRecommendedNextState("learning", 20, history),
+      ).toBe("review");
     });
   });
 
@@ -353,7 +364,7 @@ describe("SubtaskStateMachine", () => {
         "review",
         "practice",
         30,
-        50
+        50,
       );
       expect(result.improved).toBe(true);
       expect(result.improvementAmount).toBe(20);
@@ -365,7 +376,7 @@ describe("SubtaskStateMachine", () => {
         "practice",
         "review",
         50,
-        30
+        30,
       );
       expect(result.improved).toBe(false);
       expect(result.improvementAmount).toBe(-20);
@@ -377,7 +388,7 @@ describe("SubtaskStateMachine", () => {
         "learning",
         "review",
         0,
-        20
+        20,
       );
       expect(result.improved).toBe(true);
       expect(result.improvementAmount).toBe(20);
@@ -387,7 +398,11 @@ describe("SubtaskStateMachine", () => {
 
   describe("validateTransition", () => {
     it("learning → learning 无效", () => {
-      const result = stateMachine.validateTransition("learning", "learning", 50);
+      const result = stateMachine.validateTransition(
+        "learning",
+        "learning",
+        50,
+      );
       expect(result.valid).toBe(false);
       expect(result.error).toContain("Learning state can only occur once");
     });

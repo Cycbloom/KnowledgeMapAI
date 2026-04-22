@@ -48,7 +48,10 @@ export interface SubtaskWithKnowledgePoint {
 const MASTERY_MAX = 1.0;
 const MASTERY_MIN = 0.0;
 const REVIEW_THRESHOLD = 0.6;
-const MASTERY_STATE_MAPPING: Record<LearningState, { min: number; max: number }> = {
+const MASTERY_STATE_MAPPING: Record<
+  LearningState,
+  { min: number; max: number }
+> = {
   learning: { min: 0.0, max: 0.3 },
   review: { min: 0.3, max: 0.6 },
   practice: { min: 0.6, max: 0.8 },
@@ -60,9 +63,9 @@ export class SubtaskKnowledgeSyncService {
     supabase: SupabaseClient,
     subtaskId: string,
     newState: LearningState,
-    newMasteryLevel: number
+    newMasteryLevel: number,
   ): Promise<SyncResult> {
-    logger.info('Syncing subtask state to knowledge point', {
+    logger.info("Syncing subtask state to knowledge point", {
       subtaskId,
       newState,
       newMasteryLevel,
@@ -70,7 +73,9 @@ export class SubtaskKnowledgeSyncService {
 
     const { data: subtask, error: subtaskError } = await supabase
       .from("task_subtasks")
-      .select("id, task_id, knowledge_point_id, learning_state, mastery_level, state_history")
+      .select(
+        "id, task_id, knowledge_point_id, learning_state, mastery_level, state_history",
+      )
       .eq("id", subtaskId)
       .single();
 
@@ -114,7 +119,7 @@ export class SubtaskKnowledgeSyncService {
     const adjustedMastery = this.calculateKnowledgePointMastery(
       newState,
       newMasteryLevel,
-      oldMastery
+      oldMastery,
     );
 
     const now = new Date().toISOString();
@@ -150,13 +155,13 @@ export class SubtaskKnowledgeSyncService {
           subtaskData.learning_state,
           newState,
           subtaskData.mastery_level,
-          newMasteryLevel
+          newMasteryLevel,
         ),
       })
       .eq("id", subtaskId);
 
     if (updateSubtaskError) {
-      logger.error('Failed to update subtask state history', {
+      logger.error("Failed to update subtask state history", {
         subtaskId,
         error: updateSubtaskError.message,
       });
@@ -166,10 +171,10 @@ export class SubtaskKnowledgeSyncService {
       supabase,
       subtaskData.task_id,
       knowledgePointId,
-      adjustedMastery
+      adjustedMastery,
     );
 
-    logger.info('Successfully synced subtask state to knowledge point', {
+    logger.info("Successfully synced subtask state to knowledge point", {
       subtaskId,
       knowledgePointId,
       oldMastery,
@@ -188,16 +193,18 @@ export class SubtaskKnowledgeSyncService {
   async syncKnowledgePointToSubtask(
     supabase: SupabaseClient,
     knowledgePointId: string,
-    newMasteryLevel: number
+    newMasteryLevel: number,
   ): Promise<SyncResult> {
-    logger.info('Syncing knowledge point to subtask', {
+    logger.info("Syncing knowledge point to subtask", {
       knowledgePointId,
       newMasteryLevel,
     });
 
     const { data: subtasks, error: subtasksError } = await supabase
       .from("task_subtasks")
-      .select("id, task_id, knowledge_point_id, learning_state, mastery_level, state_history")
+      .select(
+        "id, task_id, knowledge_point_id, learning_state, mastery_level, state_history",
+      )
       .eq("knowledge_point_id", knowledgePointId);
 
     if (subtasksError) {
@@ -237,7 +244,7 @@ export class SubtaskKnowledgeSyncService {
           primarySubtask.learning_state,
           newLearningState,
           oldMastery,
-          newMasteryLevel
+          newMasteryLevel,
         ),
       })
       .eq("id", subtaskId);
@@ -256,7 +263,7 @@ export class SubtaskKnowledgeSyncService {
       await this.triggerReviewReminder(supabase, subtaskId);
     }
 
-    logger.info('Successfully synced knowledge point to subtask', {
+    logger.info("Successfully synced knowledge point to subtask", {
       subtaskId,
       knowledgePointId,
       oldMastery,
@@ -275,9 +282,9 @@ export class SubtaskKnowledgeSyncService {
 
   async updateLastStudyTime(
     supabase: SupabaseClient,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<void> {
-    logger.info('Updating last study time for knowledge point', {
+    logger.info("Updating last study time for knowledge point", {
       knowledgePointId,
     });
 
@@ -292,7 +299,7 @@ export class SubtaskKnowledgeSyncService {
       .eq("id", knowledgePointId);
 
     if (error) {
-      logger.error('Failed to update last study time', {
+      logger.error("Failed to update last study time", {
         knowledgePointId,
         error: error.message,
       });
@@ -315,23 +322,23 @@ export class SubtaskKnowledgeSyncService {
         .eq("knowledge_point_id", knowledgePointId);
 
       if (updateSubtasksError) {
-        logger.warn('Failed to update subtasks last study time', {
+        logger.warn("Failed to update subtasks last study time", {
           knowledgePointId,
           error: updateSubtasksError.message,
         });
       }
     }
 
-    logger.info('Successfully updated last study time', {
+    logger.info("Successfully updated last study time", {
       knowledgePointId,
     });
   }
 
   async triggerReviewReminder(
     supabase: SupabaseClient,
-    subtaskId: string
+    subtaskId: string,
   ): Promise<void> {
-    logger.info('Triggering review reminder for subtask', {
+    logger.info("Triggering review reminder for subtask", {
       subtaskId,
     });
 
@@ -342,14 +349,19 @@ export class SubtaskKnowledgeSyncService {
       .single();
 
     if (subtaskError || !subtask) {
-      logger.warn('Subtask not found for review reminder', {
+      logger.warn("Subtask not found for review reminder", {
         subtaskId,
         error: subtaskError?.message,
       });
       return;
     }
 
-    const subtaskData = subtask as { id: string; task_id: string; knowledge_point_id: string; mastery_level: number };
+    const subtaskData = subtask as {
+      id: string;
+      task_id: string;
+      knowledge_point_id: string;
+      mastery_level: number;
+    };
 
     const { data: task, error: taskError } = await supabase
       .from("scheduled_tasks")
@@ -358,7 +370,7 @@ export class SubtaskKnowledgeSyncService {
       .single();
 
     if (taskError || !task) {
-      logger.warn('Task not found for review reminder', {
+      logger.warn("Task not found for review reminder", {
         taskId: subtaskData.task_id,
         error: taskError?.message,
       });
@@ -381,10 +393,10 @@ export class SubtaskKnowledgeSyncService {
         },
       },
       taskData.user_id,
-      "subtaskKnowledgeSync"
+      "subtaskKnowledgeSync",
     );
 
-    logger.info('Review reminder triggered successfully', {
+    logger.info("Review reminder triggered successfully", {
       subtaskId,
       userId: taskData.user_id,
     });
@@ -392,9 +404,9 @@ export class SubtaskKnowledgeSyncService {
 
   async batchSync(
     supabase: SupabaseClient,
-    updates: SyncUpdate[]
+    updates: SyncUpdate[],
   ): Promise<SyncResult[]> {
-    logger.info('Starting batch sync', {
+    logger.info("Starting batch sync", {
       updateCount: updates.length,
     });
 
@@ -406,7 +418,7 @@ export class SubtaskKnowledgeSyncService {
           supabase,
           update.subtask_id,
           update.learning_state,
-          update.mastery_level
+          update.mastery_level,
         );
         results.push(result);
       } catch (error) {
@@ -420,7 +432,7 @@ export class SubtaskKnowledgeSyncService {
     }
 
     const successCount = results.filter((r) => r.success).length;
-    logger.info('Batch sync completed', {
+    logger.info("Batch sync completed", {
       total: updates.length,
       successful: successCount,
       failed: updates.length - successCount,
@@ -431,7 +443,7 @@ export class SubtaskKnowledgeSyncService {
 
   async getKnowledgePointInfo(
     supabase: SupabaseClient,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<KnowledgePointInfo> {
     const { data: knowledgePoint, error } = await supabase
       .from("knowledge_points")
@@ -462,11 +474,13 @@ export class SubtaskKnowledgeSyncService {
 
   async getSubtasksByKnowledgePoint(
     supabase: SupabaseClient,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<SubtaskWithKnowledgePoint[]> {
     const { data: subtasks, error } = await supabase
       .from("task_subtasks")
-      .select("id, task_id, knowledge_point_id, learning_state, mastery_level, state_history")
+      .select(
+        "id, task_id, knowledge_point_id, learning_state, mastery_level, state_history",
+      )
       .eq("knowledge_point_id", knowledgePointId);
 
     if (error) {
@@ -480,9 +494,9 @@ export class SubtaskKnowledgeSyncService {
 
   async checkAndTriggerReviews(
     supabase: SupabaseClient,
-    userId: string
+    userId: string,
   ): Promise<string[]> {
-    logger.info('Checking for knowledge points needing review', {
+    logger.info("Checking for knowledge points needing review", {
       userId,
     });
 
@@ -492,7 +506,7 @@ export class SubtaskKnowledgeSyncService {
       .lt("mastery_level", REVIEW_THRESHOLD);
 
     if (error) {
-      logger.error('Failed to fetch knowledge points for review check', {
+      logger.error("Failed to fetch knowledge points for review check", {
         error: error.message,
       });
       return [];
@@ -513,7 +527,7 @@ export class SubtaskKnowledgeSyncService {
       }
     }
 
-    logger.info('Review check completed', {
+    logger.info("Review check completed", {
       userId,
       triggeredCount: triggeredSubtaskIds.length,
     });
@@ -524,13 +538,14 @@ export class SubtaskKnowledgeSyncService {
   private calculateKnowledgePointMastery(
     learningState: LearningState,
     subtaskMastery: number,
-    currentKpMastery: number
+    currentKpMastery: number,
   ): number {
     const stateConfig = MASTERY_STATE_MAPPING[learningState];
     const stateMidpoint = (stateConfig.min + stateConfig.max) / 2;
 
     const weight = 0.3;
-    const weightedMastery = currentKpMastery * (1 - weight) + stateMidpoint * weight;
+    const weightedMastery =
+      currentKpMastery * (1 - weight) + stateMidpoint * weight;
 
     const adjustedMastery = weightedMastery + (subtaskMastery - 0.5) * 0.1;
 
@@ -561,7 +576,7 @@ export class SubtaskKnowledgeSyncService {
     fromState: LearningState,
     toState: LearningState,
     masteryBefore: number,
-    masteryAfter: number
+    masteryAfter: number,
   ): Array<{
     from_state: LearningState;
     to_state: LearningState;
@@ -591,7 +606,7 @@ export class SubtaskKnowledgeSyncService {
     supabase: SupabaseClient,
     taskId: string,
     knowledgePointId: string,
-    masteryLevel: number
+    masteryLevel: number,
   ): Promise<void> {
     try {
       const { data: task } = await supabase
@@ -610,11 +625,11 @@ export class SubtaskKnowledgeSyncService {
             source: "task_completion" as const,
           },
           task.user_id,
-          "subtaskKnowledgeSync"
+          "subtaskKnowledgeSync",
         );
       }
     } catch (error) {
-      logger.warn('Failed to publish learning progress event', {
+      logger.warn("Failed to publish learning progress event", {
         taskId,
         knowledgePointId,
         error: error instanceof Error ? error.message : String(error),

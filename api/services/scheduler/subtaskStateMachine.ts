@@ -84,7 +84,10 @@ const MASTERY_THRESHOLDS = {
 const CYCLE_ORDER: LearningState[] = ["review", "practice", "quiz"];
 
 class SubtaskStateMachine {
-  getNextState(currentState: LearningState, masteryLevel: number): LearningState {
+  getNextState(
+    currentState: LearningState,
+    masteryLevel: number,
+  ): LearningState {
     if (currentState === "learning") {
       return this.getNextStateFromLearning(masteryLevel);
     }
@@ -102,7 +105,10 @@ class SubtaskStateMachine {
     return "quiz";
   }
 
-  private getNextStateInCycle(currentState: LearningState, masteryLevel: number): LearningState {
+  private getNextStateInCycle(
+    currentState: LearningState,
+    masteryLevel: number,
+  ): LearningState {
     const currentIndex = CYCLE_ORDER.indexOf(currentState);
 
     if (currentState === "review") {
@@ -162,7 +168,7 @@ class SubtaskStateMachine {
     subtaskId: string,
     toState: LearningState,
     masteryLevel: number,
-    reason?: string
+    reason?: string,
   ): Promise<TransitionResult> {
     const { data: subtask, error: fetchError } = await supabase
       .from("task_subtasks")
@@ -171,7 +177,10 @@ class SubtaskStateMachine {
       .single();
 
     if (fetchError || !subtask) {
-      logger.error("[SubtaskStateMachine] Failed to fetch subtask:", fetchError);
+      logger.error(
+        "[SubtaskStateMachine] Failed to fetch subtask:",
+        fetchError,
+      );
       return {
         success: false,
         error: fetchError?.message ?? "Subtask not found",
@@ -192,7 +201,8 @@ class SubtaskStateMachine {
     if (fromState === "learning" && toState === "learning") {
       return {
         success: false,
-        error: "Cannot transition to learning state. Learning state can only occur once.",
+        error:
+          "Cannot transition to learning state. Learning state can only occur once.",
       };
     }
 
@@ -202,7 +212,7 @@ class SubtaskStateMachine {
       toState,
       masteryBefore,
       masteryLevel,
-      reason
+      reason,
     );
 
     const now = new Date().toISOString();
@@ -222,7 +232,10 @@ class SubtaskStateMachine {
       .single();
 
     if (updateError || !updatedSubtask) {
-      logger.error("[SubtaskStateMachine] Failed to update subtask:", updateError);
+      logger.error(
+        "[SubtaskStateMachine] Failed to update subtask:",
+        updateError,
+      );
       return {
         success: false,
         error: updateError?.message ?? "Failed to update subtask",
@@ -230,7 +243,7 @@ class SubtaskStateMachine {
     }
 
     logger.info(
-      `[SubtaskStateMachine] Subtask ${subtaskId}: ${fromState} → ${toState} (mastery: ${masteryBefore}% → ${masteryLevel}%)`
+      `[SubtaskStateMachine] Subtask ${subtaskId}: ${fromState} → ${toState} (mastery: ${masteryBefore}% → ${masteryLevel}%)`,
     );
 
     return {
@@ -245,7 +258,7 @@ class SubtaskStateMachine {
     to: LearningState,
     masteryBefore: number,
     masteryAfter: number,
-    reason?: string
+    reason?: string,
   ): StateHistoryEntry[] {
     const newEntry: StateHistoryEntry = {
       from_state: from,
@@ -259,7 +272,10 @@ class SubtaskStateMachine {
     return [...history, newEntry];
   }
 
-  getTransitionDescription(from: LearningState, to: LearningState): string | undefined {
+  getTransitionDescription(
+    from: LearningState,
+    to: LearningState,
+  ): string | undefined {
     const transitions = VALID_TRANSITIONS[from];
     if (!transitions) {
       return undefined;
@@ -283,9 +299,12 @@ class SubtaskStateMachine {
   getRecommendedNextState(
     currentState: LearningState,
     masteryLevel: number,
-    stateHistory: StateHistoryEntry[]
+    stateHistory: StateHistoryEntry[],
   ): LearningState {
-    if (currentState === "learning" && !this.isLearningCompleted(stateHistory)) {
+    if (
+      currentState === "learning" &&
+      !this.isLearningCompleted(stateHistory)
+    ) {
       return this.getNextStateFromLearning(masteryLevel);
     }
 
@@ -296,7 +315,7 @@ class SubtaskStateMachine {
     fromState: LearningState,
     toState: LearningState,
     masteryBefore: number,
-    masteryAfter: number
+    masteryAfter: number,
   ): {
     improved: boolean;
     improvementAmount: number;
@@ -329,7 +348,7 @@ class SubtaskStateMachine {
   validateTransition(
     from: LearningState,
     to: LearningState,
-    masteryLevel: number
+    masteryLevel: number,
   ): {
     valid: boolean;
     error?: string;

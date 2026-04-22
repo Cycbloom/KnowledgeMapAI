@@ -149,9 +149,15 @@ export const Tasks = () => {
   const handleRetry = async (taskId: string) => {
     try {
       await retryMutation.mutateAsync(taskId);
-      frontendEventBus.publish("message_show", { type: "success", content: t("tasks.taskRetried") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("tasks.taskRetried"),
+      });
     } catch (err: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("tasks.retryFailed") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: err.message || t("tasks.retryFailed"),
+      });
     }
   };
 
@@ -163,16 +169,25 @@ export const Tasks = () => {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      frontendEventBus.publish("message_show", { type: "success", content: t("tasks.taskDeleted") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("tasks.taskDeleted"),
+      });
       setDeleteId(null);
     } catch (err: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("tasks.deleteFailed") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: err.message || t("tasks.deleteFailed"),
+      });
     }
   };
 
   const handleExport = () => {
     if (!tasks || tasks.length === 0) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("tasks.noTasksToExport") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("tasks.noTasksToExport"),
+      });
       return;
     }
 
@@ -203,7 +218,10 @@ export const Tasks = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    frontendEventBus.publish("message_show", { type: "success", content: t("tasks.tasksExported") });
+    frontendEventBus.publish("message_show", {
+      type: "success",
+      content: t("tasks.tasksExported"),
+    });
   };
 
   return (
@@ -234,7 +252,9 @@ export const Tasks = () => {
             <RefreshCw
               className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
             />
-            <span>{isFetching ? t("tasks.refreshing") : t("tasks.refresh")}</span>
+            <span>
+              {isFetching ? t("tasks.refreshing") : t("tasks.refresh")}
+            </span>
           </button>
           <Link
             to="/dashboard"
@@ -282,7 +302,9 @@ export const Tasks = () => {
       {error ? (
         <div className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
           <XCircle className="w-8 h-8 mx-auto mb-2" />
-          <p>{t("tasks.loadTasksFailed", { error: (error as Error).message })}</p>
+          <p>
+            {t("tasks.loadTasksFailed", { error: (error as Error).message })}
+          </p>
           <button
             onClick={() => refetch()}
             className="mt-4 text-primary-600 dark:text-primary-400 hover:underline"
@@ -310,11 +332,15 @@ export const Tasks = () => {
             <>
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
                 {tasks.map((task) => {
-                  const context = (() => { 
-                    try { 
+                  const context = (() => {
+                    try {
                       const input = (task as any).input_data || {};
-                      return typeof input === 'string' ? JSON.parse(input) : input;
-                    } catch { return {}; } 
+                      return typeof input === "string"
+                        ? JSON.parse(input)
+                        : input;
+                    } catch {
+                      return {};
+                    }
                   })();
                   const graphId = context.graph_id;
                   const nodeId = context.node_id;
@@ -348,11 +374,14 @@ export const Tasks = () => {
                                 {formatTime(task.created_at)}
                               </span>
                               {task.updated_at !== task.created_at && (
-                                <span>{t("tasks.updated")} {formatTime(task.updated_at)}</span>
+                                <span>
+                                  {t("tasks.updated")}{" "}
+                                  {formatTime(task.updated_at)}
+                                </span>
                               )}
                             </div>
 
-                            {((task as any).error_message) && (
+                            {(task as any).error_message && (
                               <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
                                 {(task as any).error_message}
                               </div>
@@ -405,18 +434,19 @@ export const Tasks = () => {
                             </button>
                           )}
 
-                          {task.task_type === "generate_questions" && nodeId && (
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/study?node_id=${encodeURIComponent(nodeId)}`,
-                                )
-                              }
-                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-primary-200 dark:border-primary-800/50 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
-                            >
-                              {t("tasks.reviewQuestions")}
-                            </button>
-                          )}
+                          {task.task_type === "generate_questions" &&
+                            nodeId && (
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/study?node_id=${encodeURIComponent(nodeId)}`,
+                                  )
+                                }
+                                className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-primary-200 dark:border-primary-800/50 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                              >
+                                {t("tasks.reviewQuestions")}
+                              </button>
+                            )}
 
                           {task.status === "completed" &&
                             graphId &&
@@ -469,7 +499,7 @@ export const Tasks = () => {
                     {t("tasks.showing", {
                       start: (page - 1) * limit + 1,
                       end: Math.min(page * limit, total),
-                      total: total
+                      total: total,
                     })}
                   </div>
                   <div className="flex items-center gap-2">

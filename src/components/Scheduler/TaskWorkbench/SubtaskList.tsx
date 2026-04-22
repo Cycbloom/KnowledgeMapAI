@@ -69,7 +69,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           data.map((kp: any) => ({
             id: kp.id,
             title: kp.title || "未命名知识点",
-          }))
+          })),
         );
       }
     } catch (error) {
@@ -79,12 +79,18 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const handleAddSubtask = async () => {
     if (!newSubtask.title.trim()) {
-      frontendEventBus.publish("message_show", { type: "error", content: "请输入子任务标题" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "请输入子任务标题",
+      });
       return;
     }
 
     if (!newSubtask.knowledge_point_id) {
-      frontendEventBus.publish("message_show", { type: "error", content: "请选择关联的知识点" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "请选择关联的知识点",
+      });
       return;
     }
 
@@ -104,10 +110,16 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           knowledge_point_id: defaultKnowledgePointId || "",
         });
         setIsAdding(false);
-        frontendEventBus.publish("message_show", { type: "success", content: "子任务已添加" });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: "子任务已添加",
+        });
       }
     } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "添加子任务失败" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: error.message || "添加子任务失败",
+      });
     }
   };
 
@@ -123,7 +135,10 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         );
       }
     } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "更新状态失败" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: error.message || "更新状态失败",
+      });
     }
   };
 
@@ -132,10 +147,16 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
       const response = await api.scheduler.deleteSubtask(taskId, subtaskId);
       if (response.success) {
         setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
-        frontendEventBus.publish("message_show", { type: "success", content: "子任务已删除" });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: "子任务已删除",
+        });
       }
     } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "删除子任务失败" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: error.message || "删除子任务失败",
+      });
     }
   };
 
@@ -149,7 +170,8 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const avgMastery =
     subtasks.length > 0
-      ? subtasks.reduce((sum, st) => sum + (st.mastery_level || 0), 0) / subtasks.length
+      ? subtasks.reduce((sum, st) => sum + (st.mastery_level || 0), 0) /
+        subtasks.length
       : 0;
 
   if (loading) {
@@ -244,7 +266,10 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 <select
                   value={newSubtask.knowledge_point_id}
                   onChange={(e) =>
-                    setNewSubtask({ ...newSubtask, knowledge_point_id: e.target.value })
+                    setNewSubtask({
+                      ...newSubtask,
+                      knowledge_point_id: e.target.value,
+                    })
                   }
                   className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
@@ -330,7 +355,10 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                       {subtask.title}
                     </p>
                     {subtask.learning_state && (
-                      <LearningStateBadge state={subtask.learning_state} size="sm" />
+                      <LearningStateBadge
+                        state={subtask.learning_state}
+                        size="sm"
+                      />
                     )}
                   </div>
                   {subtask.description && (

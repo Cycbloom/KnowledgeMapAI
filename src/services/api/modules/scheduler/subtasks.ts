@@ -78,7 +78,11 @@ export const subtasksApi = {
       method: "DELETE",
     }),
 
-  transitionSubtask: (taskId: string, subtaskId: string, data: TransitionSubtaskData) =>
+  transitionSubtask: (
+    taskId: string,
+    subtaskId: string,
+    data: TransitionSubtaskData,
+  ) =>
     request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}/transition`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -90,6 +94,11 @@ export const subtasksApi = {
       body: JSON.stringify({ mastery_level: masteryLevel }),
     }),
 
-  getValidTransitions: (taskId: string, subtaskId: string): Promise<{ success: boolean; data: ValidTransitionsResult }> =>
-    request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}/valid-transitions`),
+  getValidTransitions: (
+    taskId: string,
+    subtaskId: string,
+  ): Promise<{ success: boolean; data: ValidTransitionsResult }> =>
+    request(
+      `/scheduler/tasks/${taskId}/subtasks/${subtaskId}/valid-transitions`,
+    ),
 };

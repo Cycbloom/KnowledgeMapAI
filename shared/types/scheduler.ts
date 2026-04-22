@@ -21,11 +21,24 @@ export type LearningState = "learning" | "review" | "practice" | "quiz";
 
 export type LinkType = "web" | "file" | "api";
 
-export type TaskSource = "user" | "import" | "template" | "system_recommendation";
+export type TaskSource =
+  | "user"
+  | "import"
+  | "template"
+  | "system_recommendation";
 
-export type SystemTaskType = "graph_expansion" | "ai_generation" | "knowledge_sync" | "review_generation";
+export type SystemTaskType =
+  | "graph_expansion"
+  | "ai_generation"
+  | "knowledge_sync"
+  | "review_generation";
 
-export type SystemTaskStatus = "pending" | "in_progress" | "completed" | "failed" | "cancelled";
+export type SystemTaskStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 export interface ScheduledTask {
   id: string;
@@ -625,7 +638,10 @@ export interface LearningStateConfig {
   description: string;
 }
 
-export const LEARNING_STATE_CONFIGS: Record<LearningState, LearningStateConfig> = {
+export const LEARNING_STATE_CONFIGS: Record<
+  LearningState,
+  LearningStateConfig
+> = {
   learning: {
     state: "learning",
     label: "学习",

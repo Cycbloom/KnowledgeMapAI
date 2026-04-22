@@ -28,9 +28,7 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
     return null;
   }
 
-  const visibleSubtasks = isExpanded
-    ? subtasks
-    : subtasks.slice(0, maxVisible);
+  const visibleSubtasks = isExpanded ? subtasks : subtasks.slice(0, maxVisible);
   const hiddenCount = subtasks.length - maxVisible;
   const hasHidden = hiddenCount > 0 && !isExpanded;
 
@@ -52,9 +50,7 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
       case "in_progress":
         return "bg-blue-50 dark:bg-blue-500/10";
       default:
-        return isDark
-          ? "bg-slate-700/50"
-          : "bg-gray-50";
+        return isDark ? "bg-slate-700/50" : "bg-gray-50";
     }
   };
 
@@ -79,16 +75,22 @@ export const CalendarSubtaskStack: React.FC<CalendarSubtaskStackProps> = ({
               size="sm"
               showIcon={false}
             />
-            <span className={`truncate flex-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+            <span
+              className={`truncate flex-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+            >
               {subtask.title}
             </span>
-            <span className={`font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+            <span
+              className={`font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
               {subtask.mastery_level}%
             </span>
           </div>
         ))}
         {subtasks.length > 2 && (
-          <div className={`text-[10px] ${isDark ? "text-slate-500" : "text-gray-400"} pl-1`}>
+          <div
+            className={`text-[10px] ${isDark ? "text-slate-500" : "text-gray-400"} pl-1`}
+          >
             +{subtasks.length - 2} 更多
           </div>
         )}

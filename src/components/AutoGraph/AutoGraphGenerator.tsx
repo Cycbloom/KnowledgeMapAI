@@ -100,15 +100,15 @@ const categoryColorMap: Record<
 const getLevelColor = (level?: string) => {
   switch (level) {
     case "root":
-      return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
+      return "bg-primary-50 text-primary-900 border-primary-300 dark:bg-primary-950/40 dark:text-primary-200 dark:border-primary-700";
     case "core":
-      return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300";
+      return "bg-primary-100 text-primary-800 border-primary-300 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-600";
     case "sub":
-      return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300";
+      return "bg-primary-200 text-primary-900 border-primary-400 dark:bg-primary-800/30 dark:text-primary-200 dark:border-primary-500";
     case "normal":
-      return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
+      return "bg-primary-50 text-primary-800 border-primary-300 dark:bg-primary-950/35 dark:text-primary-300 dark:border-primary-700";
     case "leaf":
-      return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300";
+      return "bg-primary-50 text-primary-800 border-primary-300 dark:bg-primary-950/35 dark:text-primary-300 dark:border-primary-700";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300";
   }

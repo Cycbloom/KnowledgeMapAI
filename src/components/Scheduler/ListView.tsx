@@ -66,24 +66,25 @@ const QUEUE_COLORS = {
   },
 };
 
-const SUBTASK_TYPE_COLORS: Record<LearningState, { bg: string; text: string }> = {
-  learning: {
-    bg: "bg-blue-100 dark:bg-blue-500/20",
-    text: "text-blue-600 dark:text-blue-400",
-  },
-  review: {
-    bg: "bg-green-100 dark:bg-green-500/20",
-    text: "text-green-600 dark:text-green-400",
-  },
-  practice: {
-    bg: "bg-orange-100 dark:bg-orange-500/20",
-    text: "text-orange-600 dark:text-orange-400",
-  },
-  quiz: {
-    bg: "bg-purple-100 dark:bg-purple-500/20",
-    text: "text-purple-600 dark:text-purple-400",
-  },
-};
+const SUBTASK_TYPE_COLORS: Record<LearningState, { bg: string; text: string }> =
+  {
+    learning: {
+      bg: "bg-blue-100 dark:bg-blue-500/20",
+      text: "text-blue-600 dark:text-blue-400",
+    },
+    review: {
+      bg: "bg-green-100 dark:bg-green-500/20",
+      text: "text-green-600 dark:text-green-400",
+    },
+    practice: {
+      bg: "bg-orange-100 dark:bg-orange-500/20",
+      text: "text-orange-600 dark:text-orange-400",
+    },
+    quiz: {
+      bg: "bg-purple-100 dark:bg-purple-500/20",
+      text: "text-purple-600 dark:text-purple-400",
+    },
+  };
 
 export const ListView: React.FC<ListViewProps> = ({
   tasks,
@@ -96,7 +97,7 @@ export const ListView: React.FC<ListViewProps> = ({
   onSubtaskUpdate,
 }) => {
   const { t } = useTranslation();
-  
+
   const STATUS_CONFIG = {
     pending: {
       label: t("scheduler.pending"),
@@ -105,7 +106,8 @@ export const ListView: React.FC<ListViewProps> = ({
     },
     in_progress: {
       label: t("scheduler.inProgress"),
-      color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
+      color:
+        "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
     },
     paused: {
       label: t("scheduler.kanban.paused"),
@@ -128,10 +130,18 @@ export const ListView: React.FC<ListViewProps> = ({
     { id: "status", label: t("scheduler.listView.status"), width: "w-24" },
     { id: "queue_level", label: t("scheduler.listView.queue"), width: "w-16" },
     { id: "priority", label: t("scheduler.listView.priority"), width: "w-20" },
-    { id: "estimated_duration", label: t("scheduler.estimatedDuration"), width: "w-24" },
+    {
+      id: "estimated_duration",
+      label: t("scheduler.estimatedDuration"),
+      width: "w-24",
+    },
     { id: "deadline", label: t("scheduler.listView.deadline"), width: "w-28" },
     { id: "tags", label: t("scheduler.listView.tags"), width: "w-32" },
-    { id: "created_at", label: t("scheduler.listView.createdAt"), width: "w-28" },
+    {
+      id: "created_at",
+      label: t("scheduler.listView.createdAt"),
+      width: "w-28",
+    },
     { id: "actions", label: t("scheduler.listView.actions"), width: "w-32" },
   ];
 
@@ -142,8 +152,12 @@ export const ListView: React.FC<ListViewProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
-  const [subtasksMap, setSubtasksMap] = useState<Map<string, TaskSubtask[]>>(new Map());
-  const [loadingSubtasks, setLoadingSubtasks] = useState<Set<string>>(new Set());
+  const [subtasksMap, setSubtasksMap] = useState<Map<string, TaskSubtask[]>>(
+    new Map(),
+  );
+  const [loadingSubtasks, setLoadingSubtasks] = useState<Set<string>>(
+    new Set(),
+  );
 
   const filteredAndSortedTasks = useMemo(() => {
     let result = [...tasks];
@@ -208,12 +222,14 @@ export const ListView: React.FC<ListViewProps> = ({
 
   const loadSubtasks = async (taskId: string) => {
     if (subtasksMap.has(taskId)) return;
-    
+
     setLoadingSubtasks((prev) => new Set(prev).add(taskId));
     try {
       const response = await api.scheduler.getSubtasks(taskId);
       if (response.success) {
-        setSubtasksMap((prev) => new Map(prev).set(taskId, response.data || []));
+        setSubtasksMap((prev) =>
+          new Map(prev).set(taskId, response.data || []),
+        );
       }
     } catch (error) {
       console.error("Failed to load subtasks:", error);
@@ -237,7 +253,10 @@ export const ListView: React.FC<ListViewProps> = ({
     setExpandedTasks(newExpanded);
   };
 
-  const handleToggleSubtask = async (task: ScheduledTask, subtask: TaskSubtask) => {
+  const handleToggleSubtask = async (
+    task: ScheduledTask,
+    subtask: TaskSubtask,
+  ) => {
     const newStatus = subtask.status === "completed" ? "pending" : "completed";
     try {
       const response = await api.scheduler.updateSubtask(task.id, subtask.id, {
@@ -250,7 +269,7 @@ export const ListView: React.FC<ListViewProps> = ({
           if (subtasks) {
             next.set(
               task.id,
-              subtasks.map((st) => (st.id === subtask.id ? response.data : st))
+              subtasks.map((st) => (st.id === subtask.id ? response.data : st)),
             );
           }
           return next;
@@ -313,13 +332,25 @@ export const ListView: React.FC<ListViewProps> = ({
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
     if (days < 0)
-      return { text: t("scheduler.timeline.overdue"), color: "text-red-500 dark:text-red-400" };
+      return {
+        text: t("scheduler.timeline.overdue"),
+        color: "text-red-500 dark:text-red-400",
+      };
     if (days === 0)
-      return { text: t("scheduler.timeline.today"), color: "text-amber-500 dark:text-amber-400" };
+      return {
+        text: t("scheduler.timeline.today"),
+        color: "text-amber-500 dark:text-amber-400",
+      };
     if (days === 1)
-      return { text: t("scheduler.timeline.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
+      return {
+        text: t("scheduler.timeline.tomorrow"),
+        color: "text-yellow-500 dark:text-yellow-400",
+      };
     if (days <= 7)
-      return { text: t("scheduler.review.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
+      return {
+        text: t("scheduler.review.daysLater", { count: days }),
+        color: "text-primary-500 dark:text-primary-400",
+      };
     return {
       text: d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" }),
       color: "text-slate-500 dark:text-slate-400",
@@ -375,7 +406,9 @@ export const ListView: React.FC<ListViewProps> = ({
         </div>
 
         <div className="text-sm text-slate-500 dark:text-slate-400">
-          {t("scheduler.listView.totalTasks", { count: filteredAndSortedTasks.length })}
+          {t("scheduler.listView.totalTasks", {
+            count: filteredAndSortedTasks.length,
+          })}
         </div>
       </div>
 
@@ -512,12 +545,19 @@ export const ListView: React.FC<ListViewProps> = ({
                       STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
                     const deadlineInfo = formatDeadline(task.deadline);
                     const isExpanded = expandedTasks.has(task.id);
-                    const hasSubtasks = task.has_subtasks || (task.subtask_count && task.subtask_count > 0);
+                    const hasSubtasks =
+                      task.has_subtasks ||
+                      (task.subtask_count && task.subtask_count > 0);
                     const subtasks = subtasksMap.get(task.id) || [];
                     const isLoadingSubtasks = loadingSubtasks.has(task.id);
-                    const subtaskProgress = hasSubtasks && task.subtask_count
-                      ? Math.round(((task.subtask_completed || 0) / task.subtask_count) * 100)
-                      : 0;
+                    const subtaskProgress =
+                      hasSubtasks && task.subtask_count
+                        ? Math.round(
+                            ((task.subtask_completed || 0) /
+                              task.subtask_count) *
+                              100,
+                          )
+                        : 0;
                     const subtaskTypeStats = getSubtaskTypeStats(subtasks);
                     const avgMastery = getAverageMastery(subtasks);
 
@@ -534,13 +574,21 @@ export const ListView: React.FC<ListViewProps> = ({
                             <div className="flex items-center gap-2">
                               {hasSubtasks && (
                                 <button
-                                  onClick={() => toggleTaskExpand(task.id, hasSubtasks)}
+                                  onClick={() =>
+                                    toggleTaskExpand(task.id, hasSubtasks)
+                                  }
                                   className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                 >
                                   {isExpanded ? (
-                                    <ChevronDown size={14} className="text-slate-400 dark:text-slate-500" />
+                                    <ChevronDown
+                                      size={14}
+                                      className="text-slate-400 dark:text-slate-500"
+                                    />
                                   ) : (
-                                    <ChevronRight size={14} className="text-slate-400 dark:text-slate-500" />
+                                    <ChevronRight
+                                      size={14}
+                                      className="text-slate-400 dark:text-slate-500"
+                                    />
                                   )}
                                 </button>
                               )}
@@ -555,12 +603,15 @@ export const ListView: React.FC<ListViewProps> = ({
                                       <motion.div
                                         className="h-full bg-gradient-to-r from-primary-500 to-primary-400"
                                         initial={{ width: 0 }}
-                                        animate={{ width: `${subtaskProgress}%` }}
+                                        animate={{
+                                          width: `${subtaskProgress}%`,
+                                        }}
                                         transition={{ duration: 0.3 }}
                                       />
                                     </div>
                                     <span className="text-[10px] text-slate-400">
-                                      {task.subtask_completed || 0}/{task.subtask_count}
+                                      {task.subtask_completed || 0}/
+                                      {task.subtask_count}
                                     </span>
                                   </div>
                                 )}
@@ -685,7 +736,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             </div>
                           </td>
                         </motion.tr>
-                        
+
                         <AnimatePresence>
                           {isExpanded && hasSubtasks && (
                             <motion.tr
@@ -694,7 +745,10 @@ export const ListView: React.FC<ListViewProps> = ({
                               exit={{ height: 0, opacity: 0 }}
                               className="bg-slate-50/50 dark:bg-slate-800/30"
                             >
-                              <td colSpan={COLUMNS.length} className="px-4 py-0">
+                              <td
+                                colSpan={COLUMNS.length}
+                                className="px-4 py-0"
+                              >
                                 <motion.div
                                   initial={{ y: -10 }}
                                   animate={{ y: 0 }}
@@ -710,41 +764,69 @@ export const ListView: React.FC<ListViewProps> = ({
                                       <div className="flex items-center gap-4 mb-3 px-2">
                                         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                                           <BookOpen size={12} />
-                                          <span>{t("scheduler.subtasks.knowledgePoints", { count: subtasks.length })}</span>
+                                          <span>
+                                            {t(
+                                              "scheduler.subtasks.knowledgePoints",
+                                              { count: subtasks.length },
+                                            )}
+                                          </span>
                                         </div>
                                         {subtasks.length > 0 && (
                                           <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{t("scheduler.subtasks.avgMastery")}:</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                                              {t(
+                                                "scheduler.subtasks.avgMastery",
+                                              )}
+                                              :
+                                            </span>
                                             <div className="w-24">
-                                              <MasteryProgressBar masteryLevel={avgMastery} size="sm" showLabel={false} />
+                                              <MasteryProgressBar
+                                                masteryLevel={avgMastery}
+                                                size="sm"
+                                                showLabel={false}
+                                              />
                                             </div>
-                                            <span className="text-xs text-slate-600 dark:text-slate-300">{avgMastery}%</span>
+                                            <span className="text-xs text-slate-600 dark:text-slate-300">
+                                              {avgMastery}%
+                                            </span>
                                           </div>
                                         )}
                                         <div className="flex items-center gap-1.5 ml-auto">
                                           {subtaskTypeStats.learning > 0 && (
-                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.learning.bg} ${SUBTASK_TYPE_COLORS.learning.text}`}>
-                                              {t("scheduler.subtasks.learning")} {subtaskTypeStats.learning}
+                                            <span
+                                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.learning.bg} ${SUBTASK_TYPE_COLORS.learning.text}`}
+                                            >
+                                              {t("scheduler.subtasks.learning")}{" "}
+                                              {subtaskTypeStats.learning}
                                             </span>
                                           )}
                                           {subtaskTypeStats.review > 0 && (
-                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.review.bg} ${SUBTASK_TYPE_COLORS.review.text}`}>
-                                              {t("scheduler.subtasks.review")} {subtaskTypeStats.review}
+                                            <span
+                                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.review.bg} ${SUBTASK_TYPE_COLORS.review.text}`}
+                                            >
+                                              {t("scheduler.subtasks.review")}{" "}
+                                              {subtaskTypeStats.review}
                                             </span>
                                           )}
                                           {subtaskTypeStats.practice > 0 && (
-                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.practice.bg} ${SUBTASK_TYPE_COLORS.practice.text}`}>
-                                              {t("scheduler.subtasks.practice")} {subtaskTypeStats.practice}
+                                            <span
+                                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.practice.bg} ${SUBTASK_TYPE_COLORS.practice.text}`}
+                                            >
+                                              {t("scheduler.subtasks.practice")}{" "}
+                                              {subtaskTypeStats.practice}
                                             </span>
                                           )}
                                           {subtaskTypeStats.quiz > 0 && (
-                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.quiz.bg} ${SUBTASK_TYPE_COLORS.quiz.text}`}>
-                                              {t("scheduler.subtasks.quiz")} {subtaskTypeStats.quiz}
+                                            <span
+                                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.quiz.bg} ${SUBTASK_TYPE_COLORS.quiz.text}`}
+                                            >
+                                              {t("scheduler.subtasks.quiz")}{" "}
+                                              {subtaskTypeStats.quiz}
                                             </span>
                                           )}
                                         </div>
                                       </div>
-                                      
+
                                       {subtasks.length > 0 ? (
                                         <div className="space-y-1.5 max-h-64 overflow-y-auto">
                                           {subtasks.map((subtask) => (
@@ -760,32 +842,54 @@ export const ListView: React.FC<ListViewProps> = ({
                                               `}
                                             >
                                               <button
-                                                onClick={() => handleToggleSubtask(task, subtask)}
+                                                onClick={() =>
+                                                  handleToggleSubtask(
+                                                    task,
+                                                    subtask,
+                                                  )
+                                                }
                                                 className="flex-shrink-0 hover:scale-110 transition-transform p-1"
                                               >
-                                                {subtask.status === "completed" ? (
+                                                {subtask.status ===
+                                                "completed" ? (
                                                   <CheckCircle className="w-4 h-4 text-emerald-500" />
                                                 ) : (
                                                   <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 hover:text-primary-500" />
                                                 )}
                                               </button>
-                                              
+
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                  <span className={`text-sm font-medium truncate ${subtask.status === "completed" ? "text-emerald-700 dark:text-emerald-400 line-through" : "text-slate-700 dark:text-slate-200"}`}>
+                                                  <span
+                                                    className={`text-sm font-medium truncate ${subtask.status === "completed" ? "text-emerald-700 dark:text-emerald-400 line-through" : "text-slate-700 dark:text-slate-200"}`}
+                                                  >
                                                     {subtask.title}
                                                   </span>
-                                                  <LearningStateBadge state={subtask.learning_state} size="sm" />
+                                                  <LearningStateBadge
+                                                    state={
+                                                      subtask.learning_state
+                                                    }
+                                                    size="sm"
+                                                  />
                                                 </div>
                                                 <div className="mt-1.5">
-                                                  <MasteryProgressBar masteryLevel={subtask.mastery_level} size="sm" className="max-w-[200px]" />
+                                                  <MasteryProgressBar
+                                                    masteryLevel={
+                                                      subtask.mastery_level
+                                                    }
+                                                    size="sm"
+                                                    className="max-w-[200px]"
+                                                  />
                                                 </div>
                                               </div>
-                                              
+
                                               {subtask.estimated_duration && (
                                                 <div className="flex items-center gap-1 text-xs text-slate-400">
                                                   <Clock size={10} />
-                                                  <span>{subtask.estimated_duration}m</span>
+                                                  <span>
+                                                    {subtask.estimated_duration}
+                                                    m
+                                                  </span>
                                                 </div>
                                               )}
                                             </div>

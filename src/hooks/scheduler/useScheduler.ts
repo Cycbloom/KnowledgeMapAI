@@ -60,7 +60,10 @@ export function useSchedulerTask(id: string) {
   });
 }
 
-export function useSchedulerQueues(options?: { includeCompleted?: boolean; includeCancelled?: boolean }) {
+export function useSchedulerQueues(options?: {
+  includeCompleted?: boolean;
+  includeCancelled?: boolean;
+}) {
   return useQuery({
     queryKey: schedulerKeys.queues(),
     queryFn: () => api.scheduler.getQueues(options) as Promise<QueueData>,
@@ -108,7 +111,10 @@ export function useCreateScheduledTaskMutation() {
     mutationFn: (data: CreateScheduledTaskData) =>
       api.scheduler.createTask(data) as Promise<ScheduledTask>,
     onSuccess: (data) => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: data.id, action: "created" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: data.id,
+        action: "created",
+      });
     },
   });
 }
@@ -118,7 +124,10 @@ export function useUpdateScheduledTaskMutation() {
     mutationFn: ({ id, data }: { id: string; data: UpdateScheduledTaskData }) =>
       api.scheduler.updateTask(id, data) as Promise<ScheduledTask>,
     onSuccess: (_data, variables) => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: variables.id, action: "updated" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: variables.id,
+        action: "updated",
+      });
     },
   });
 }
@@ -127,7 +136,10 @@ export function useDeleteScheduledTaskMutation() {
   return useMutation({
     mutationFn: (id: string) => api.scheduler.deleteTask(id),
     onSuccess: (_data, id) => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "deleted" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: id,
+        action: "deleted",
+      });
     },
   });
 }
@@ -137,7 +149,10 @@ export function useStartScheduledTaskMutation() {
     mutationFn: (id: string) =>
       api.scheduler.startTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "updated" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: id,
+        action: "updated",
+      });
     },
   });
 }
@@ -147,7 +162,10 @@ export function usePauseScheduledTaskMutation() {
     mutationFn: (id: string) =>
       api.scheduler.pauseTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "updated" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: id,
+        action: "updated",
+      });
     },
   });
 }
@@ -167,7 +185,10 @@ export function useDemoteScheduledTaskMutation() {
     mutationFn: (id: string) =>
       api.scheduler.demoteTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "updated" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: id,
+        action: "updated",
+      });
     },
   });
 }
@@ -177,7 +198,10 @@ export function useMoveScheduledTaskMutation() {
     mutationFn: ({ id, targetQueue }: { id: string; targetQueue: number }) =>
       api.scheduler.moveTask(id, targetQueue) as Promise<ScheduledTask>,
     onSuccess: (_data, variables) => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: variables.id, action: "updated" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: variables.id,
+        action: "updated",
+      });
     },
   });
 }
@@ -192,7 +216,10 @@ export function useReorderScheduledTasksMutation() {
       taskIds: string[];
     }) => api.scheduler.reorderTasks(queueLevel, taskIds),
     onSuccess: () => {
-      frontendEventBus.publish("scheduler_task_changed", { taskId: "", action: "updated" });
+      frontendEventBus.publish("scheduler_task_changed", {
+        taskId: "",
+        action: "updated",
+      });
     },
   });
 }

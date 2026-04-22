@@ -1,10 +1,7 @@
 export { taskService, TaskService } from "./taskService";
 export { executionService, ExecutionService } from "./executionService";
 export { focusService, FocusService } from "./focusService";
-export {
-  achievementService,
-  AchievementService,
-} from "./achievementService";
+export { achievementService, AchievementService } from "./achievementService";
 export { statsService, StatsService } from "./statsService";
 export { settingsService, SettingsService } from "./settingsService";
 export {
@@ -24,10 +21,7 @@ export {
   ProgressSyncService,
 } from "./progressSyncService";
 export { efficiencyService, EfficiencyService } from "./efficiencyService";
-export {
-  reviewTaskService,
-  ReviewTaskService,
-} from "./reviewTaskService";
+export { reviewTaskService, ReviewTaskService } from "./reviewTaskService";
 
 export type {
   ScheduledTask,
@@ -104,7 +98,10 @@ export type {
   PathTaskWithDetails,
 } from "./pathTaskService";
 
-export { smartSchedulerService, SmartSchedulerService } from "./smartSchedulerService";
+export {
+  smartSchedulerService,
+  SmartSchedulerService,
+} from "./smartSchedulerService";
 export type {
   TimeSlotRecommendation,
   MasteryBasedPriority,

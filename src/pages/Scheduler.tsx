@@ -21,6 +21,7 @@ import {
   Calendar,
   Route,
   Filter,
+  Info,
 } from "lucide-react";
 import {
   useSchedulerQueues,
@@ -127,6 +128,7 @@ export const Scheduler: React.FC = () => {
     scrollableSelector: "[data-scrollable-queue]",
   });
   const [recommendationCollapsed, setRecommendationCollapsed] = useState(false);
+  const [showNoDeadlineHint, setShowNoDeadlineHint] = useState(false);
 
   useEffect(() => {
     if (scrollDirection === "down") {
@@ -136,7 +138,10 @@ export const Scheduler: React.FC = () => {
     }
   }, [scrollDirection]);
 
-  const shouldIncludeCompleted = currentView === "kanban" || currentView === "timeline" || currentView === "list";
+  const shouldIncludeCompleted =
+    currentView === "kanban" ||
+    currentView === "timeline" ||
+    currentView === "list";
 
   const {
     data: queuesData,
@@ -144,7 +149,10 @@ export const Scheduler: React.FC = () => {
     error,
     refetch,
     isFetching,
-  } = useSchedulerQueues({ includeCompleted: shouldIncludeCompleted, includeCancelled: shouldIncludeCompleted });
+  } = useSchedulerQueues({
+    includeCompleted: shouldIncludeCompleted,
+    includeCancelled: shouldIncludeCompleted,
+  });
   const { data: settings } = useSchedulerSettings();
   const { data: learningPaths = [] } = useLearningPaths("active");
 
@@ -174,7 +182,9 @@ export const Scheduler: React.FC = () => {
   const displayQueues = useMemo(() => {
     if (currentView === "queue") {
       const filterActive = (tasks: ScheduledTask[]) =>
-        tasks.filter((t) => t.status !== "completed" && t.status !== "cancelled");
+        tasks.filter(
+          (t) => t.status !== "completed" && t.status !== "cancelled",
+        );
       return {
         q0: filterActive(queues.q0),
         q1: filterActive(queues.q1),
@@ -250,6 +260,15 @@ export const Scheduler: React.FC = () => {
     };
   }, [filteredTasks]);
 
+  const noDeadlineTasks = useMemo(() => {
+    return allTasks.filter(
+      (task) =>
+        !task.deadline &&
+        task.status !== "completed" &&
+        task.status !== "cancelled",
+    );
+  }, [allTasks]);
+
   const findTaskById = useCallback(
     (taskId: string): ScheduledTask | undefined => {
       return allTasks.find((t) => t.id === taskId);
@@ -260,7 +279,10 @@ export const Scheduler: React.FC = () => {
   const handleCreateTask = async (data: CreateScheduledTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskCreated") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("scheduler.taskCreated"),
+      });
       setShowTaskForm(false);
     } catch (err: any) {
       frontendEventBus.publish("message_show", {
@@ -274,7 +296,10 @@ export const Scheduler: React.FC = () => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskUpdated") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("scheduler.taskUpdated"),
+      });
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: any) {
@@ -288,7 +313,10 @@ export const Scheduler: React.FC = () => {
   const handleDeleteTask = async (task: ScheduledTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskDeleted") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("scheduler.taskDeleted"),
+      });
     } catch (err: any) {
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -326,7 +354,10 @@ export const Scheduler: React.FC = () => {
   const handleStartTask = async (task: ScheduledTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskStarted") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("scheduler.taskStarted"),
+      });
     } catch (err: any) {
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -338,7 +369,10 @@ export const Scheduler: React.FC = () => {
   const handlePauseTask = async (task: ScheduledTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskPaused") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("scheduler.taskPaused"),
+      });
     } catch (err: any) {
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -350,7 +384,10 @@ export const Scheduler: React.FC = () => {
   const handleCompleteTask = async (task: ScheduledTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskCompleted") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("scheduler.taskCompleted"),
+      });
     } catch (err: any) {
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -767,11 +804,54 @@ export const Scheduler: React.FC = () => {
               <span className="hidden sm:inline">
                 {t("scheduler.taskAutoDowngrade")}
               </span>
+              {noDeadlineTasks.length > 0 && (
+                <>
+                  <span className="text-slate-300 dark:text-slate-600">|</span>
+                  <button
+                    onClick={() => setShowNoDeadlineHint(!showNoDeadlineHint)}
+                    className="flex items-center gap-1 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
+                  >
+                    <Info size={12} />
+                    <span>
+                      {t("scheduler.timeline.noDeadline")} (
+                      {noDeadlineTasks.length})
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span>{t("scheduler.totalTasks", { count: stats.total })}</span>
             </div>
           </div>
+          <AnimatePresence>
+            {showNoDeadlineHint && noDeadlineTasks.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden mt-2"
+              >
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                  {noDeadlineTasks.slice(0, 10).map((task) => (
+                    <button
+                      key={task.id}
+                      onClick={() => openEditTaskForm(task)}
+                      className="px-2 py-1 rounded-md bg-white dark:bg-slate-800/50 text-xs text-slate-600 dark:text-slate-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors border border-slate-200 dark:border-slate-700 truncate max-w-[180px]"
+                    >
+                      {task.title}
+                    </button>
+                  ))}
+                  {noDeadlineTasks.length > 10 && (
+                    <span className="px-2 py-1 text-xs text-slate-400 self-center">
+                      +{noDeadlineTasks.length - 10} {t("scheduler.more")}
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Clock, Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ScheduledTask } from '@shared/types';
 import { TaskCard } from './TaskCard';
@@ -64,17 +64,13 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const overdueTasks = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     return tasks.filter((task) => {
       if (!task.deadline || task.status === 'completed' || task.status === 'cancelled') return false;
       const deadline = new Date(task.deadline);
       deadline.setHours(0, 0, 0, 0);
       return deadline < today;
     });
-  }, [tasks]);
-
-  const noDeadlineTasks = useMemo(() => {
-    return tasks.filter((task) => !task.deadline && task.status !== 'completed' && task.status !== 'cancelled');
   }, [tasks]);
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -227,62 +223,31 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         </div>
       </div>
 
-      {(overdueTasks.length > 0 || noDeadlineTasks.length > 0) && (
+      {overdueTasks.length > 0 && (
         <div className="flex-shrink-0 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {overdueTasks.length > 0 && (
-              <div className="p-3 sm:p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">
-                <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                  <AlertCircle size={16} className="text-red-500 dark:text-red-400" />
-                  <span className="text-sm font-medium text-red-600 dark:text-red-400">{t('scheduler.timeline.overdue')} ({overdueTasks.length})</span>
+          <div className="p-3 sm:p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <AlertCircle size={16} className="text-red-500 dark:text-red-400" />
+              <span className="text-sm font-medium text-red-600 dark:text-red-400">{t('scheduler.timeline.overdue')} ({overdueTasks.length})</span>
+            </div>
+            <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
+              {overdueTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="p-2 rounded-lg bg-white dark:bg-slate-800/50 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border border-slate-100 dark:border-transparent"
+                  onClick={() => onTaskClick?.(task)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
+                    }`}>
+                      Q{task.queue_level}
+                    </span>
+                    <span className="text-slate-800 dark:text-white truncate">{task.title}</span>
+                  </div>
                 </div>
-                <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
-                  {overdueTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="p-2 rounded-lg bg-white dark:bg-slate-800/50 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border border-slate-100 dark:border-transparent"
-                      onClick={() => onTaskClick?.(task)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
-                        }`}>
-                          Q{task.queue_level}
-                        </span>
-                        <span className="text-slate-800 dark:text-white truncate">{task.title}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {noDeadlineTasks.length > 0 && (
-              <div className="p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
-                <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                  <Clock size={16} className="text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{t('scheduler.timeline.noDeadline')} ({noDeadlineTasks.length})</span>
-                </div>
-                <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
-                  {noDeadlineTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="p-2 rounded-lg bg-white dark:bg-slate-800/50 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border border-slate-100 dark:border-transparent"
-                      onClick={() => onTaskClick?.(task)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
-                        }`}>
-                          Q{task.queue_level}
-                        </span>
-                        <span className="text-slate-800 dark:text-white truncate">{task.title}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       )}

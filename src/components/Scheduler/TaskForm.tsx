@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -17,6 +18,7 @@ import {
   TrendingDown,
   Minus,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
@@ -98,6 +100,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   timeSliceSettings = null,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const isEditing = !!task;
 
   const DURATION_OPTIONS = [
@@ -112,10 +115,26 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   ];
 
   const PRIORITY_OPTIONS = [
-    { value: 1, label: t("scheduler.taskForm.priorityLow"), color: "text-slate-500 dark:text-slate-400" },
-    { value: 2, label: t("scheduler.taskForm.priorityMedium"), color: "text-primary-600 dark:text-primary-400" },
-    { value: 3, label: t("scheduler.taskForm.priorityHigh"), color: "text-amber-600 dark:text-amber-400" },
-    { value: 4, label: t("scheduler.taskForm.priorityUrgent"), color: "text-red-600 dark:text-red-400" },
+    {
+      value: 1,
+      label: t("scheduler.taskForm.priorityLow"),
+      color: "text-slate-500 dark:text-slate-400",
+    },
+    {
+      value: 2,
+      label: t("scheduler.taskForm.priorityMedium"),
+      color: "text-primary-600 dark:text-primary-400",
+    },
+    {
+      value: 3,
+      label: t("scheduler.taskForm.priorityHigh"),
+      color: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      value: 4,
+      label: t("scheduler.taskForm.priorityUrgent"),
+      color: "text-red-600 dark:text-red-400",
+    },
   ];
 
   const COMMON_TAGS = [
@@ -459,7 +478,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-            {isEditing ? t("scheduler.taskForm.editTask") : t("scheduler.taskForm.createTask")}
+            {isEditing
+              ? t("scheduler.taskForm.editTask")
+              : t("scheduler.taskForm.createTask")}
           </h2>
           <button
             onClick={handleClose}
@@ -486,7 +507,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              {t("scheduler.taskForm.taskTitle")} <span className="text-red-500 dark:text-red-400">*</span>
+              {t("scheduler.taskForm.taskTitle")}{" "}
+              <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <div className="flex gap-2">
               <input
@@ -567,16 +589,28 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 focus:outline-none focus:ring-2 focus:ring-primary-500/50
               "
             >
-              <option value="one_time">{t("scheduler.taskForm.typeOneTime")}</option>
-              <option value="long_term">{t("scheduler.taskForm.typeLongTerm")}</option>
-              <option value="periodic">{t("scheduler.taskForm.typePeriodic")}</option>
-              <option value="learning">{t("scheduler.taskForm.typeLearning")}</option>
+              <option value="one_time">
+                {t("scheduler.taskForm.typeOneTime")}
+              </option>
+              <option value="long_term">
+                {t("scheduler.taskForm.typeLongTerm")}
+              </option>
+              <option value="periodic">
+                {t("scheduler.taskForm.typePeriodic")}
+              </option>
+              <option value="learning">
+                {t("scheduler.taskForm.typeLearning")}
+              </option>
             </select>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {taskType === "one_time" && t("scheduler.taskForm.typeOneTimeDesc")}
-              {taskType === "long_term" && t("scheduler.taskForm.typeLongTermDesc")}
-              {taskType === "periodic" && t("scheduler.taskForm.typePeriodicDesc")}
-              {taskType === "learning" && t("scheduler.taskForm.typeLearningDesc")}
+              {taskType === "one_time" &&
+                t("scheduler.taskForm.typeOneTimeDesc")}
+              {taskType === "long_term" &&
+                t("scheduler.taskForm.typeLongTermDesc")}
+              {taskType === "periodic" &&
+                t("scheduler.taskForm.typePeriodicDesc")}
+              {taskType === "learning" &&
+                t("scheduler.taskForm.typeLearningDesc")}
             </p>
           </div>
 
@@ -603,7 +637,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               />
               {totalDuration > 0 && timeSliceSettings && (
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {t("scheduler.taskForm.estimatedTimeSlices", { count: Math.ceil(totalDuration / timeSliceSettings.q0_time_slice) })}
+                  {t("scheduler.taskForm.estimatedTimeSlices", {
+                    count: Math.ceil(
+                      totalDuration / timeSliceSettings.q0_time_slice,
+                    ),
+                  })}
                 </p>
               )}
             </div>
@@ -626,10 +664,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               >
-                <option value="average">{t("scheduler.taskForm.progressAverage")}</option>
-                <option value="decreasing">{t("scheduler.taskForm.progressDecreasing")}</option>
-                <option value="increasing">{t("scheduler.taskForm.progressIncreasing")}</option>
-                <option value="custom">{t("scheduler.taskForm.progressCustom")}</option>
+                <option value="average">
+                  {t("scheduler.taskForm.progressAverage")}
+                </option>
+                <option value="decreasing">
+                  {t("scheduler.taskForm.progressDecreasing")}
+                </option>
+                <option value="increasing">
+                  {t("scheduler.taskForm.progressIncreasing")}
+                </option>
+                <option value="custom">
+                  {t("scheduler.taskForm.progressCustom")}
+                </option>
               </select>
               <div className="mt-2 flex items-center gap-2">
                 {progressMode === "average" && (
@@ -642,10 +688,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   <TrendingUp size={14} className="text-emerald-500" />
                 )}
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {progressMode === "average" && t("scheduler.taskForm.progressAverageDesc")}
-                  {progressMode === "decreasing" && t("scheduler.taskForm.progressDecreasingDesc")}
-                  {progressMode === "increasing" && t("scheduler.taskForm.progressIncreasingDesc")}
-                  {progressMode === "custom" && t("scheduler.taskForm.progressCustomDesc")}
+                  {progressMode === "average" &&
+                    t("scheduler.taskForm.progressAverageDesc")}
+                  {progressMode === "decreasing" &&
+                    t("scheduler.taskForm.progressDecreasingDesc")}
+                  {progressMode === "increasing" &&
+                    t("scheduler.taskForm.progressIncreasingDesc")}
+                  {progressMode === "custom" &&
+                    t("scheduler.taskForm.progressCustomDesc")}
                 </p>
               </div>
             </div>
@@ -677,7 +727,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   }
                 >
                   {selectedDependencies.length > 0
-                    ? t("scheduler.taskForm.dependenciesSelected", { count: selectedDependencies.length })
+                    ? t("scheduler.taskForm.dependenciesSelected", {
+                        count: selectedDependencies.length,
+                      })
                     : t("scheduler.taskForm.selectDependencies")}
                 </span>
                 <ChevronDown size={16} className="text-slate-400" />
@@ -759,22 +811,216 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <FileText size={14} className="inline mr-1" />
               {t("scheduler.taskForm.context")}
             </label>
-            <textarea
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              placeholder={t("scheduler.taskForm.contextPlaceholder")}
-              rows={3}
-              maxLength={2000}
-              className="
-                w-full px-4 py-2.5 rounded-xl
-                bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
-                text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-primary-500/50
-                resize-none
-              "
-            />
+
+            {(() => {
+              let parsedContext: Record<string, unknown> = {};
+              try {
+                parsedContext = context ? JSON.parse(context) : {};
+              } catch {
+                return (
+                  <textarea
+                    value={context}
+                    onChange={(e) => setContext(e.target.value)}
+                    placeholder={t("scheduler.taskForm.contextPlaceholder")}
+                    rows={3}
+                    maxLength={2000}
+                    className="
+                      w-full px-4 py-2.5 rounded-xl
+                      bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                      text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+                      focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                      resize-none font-mono text-xs
+                    "
+                  />
+                );
+              }
+
+              const hasGraphContext = !!(
+                parsedContext.graph_id || parsedContext.source_graph_id
+              );
+              const isAutoGenerated = parsedContext.auto_generated === true;
+
+              if (
+                hasGraphContext ||
+                isAutoGenerated ||
+                Object.keys(parsedContext).length > 0
+              ) {
+                return (
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-slate-50 to-primary-50 dark:from-slate-800 dark:to-primary-500/10 border border-slate-200 dark:border-slate-600">
+                      <div className="flex items-center gap-2 mb-2">
+                        {isAutoGenerated && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-medium">
+                            <Sparkles size={12} />
+                            自动生成
+                          </span>
+                        )}
+                        {(task as any)?.source === "system_recommendation" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium">
+                            <Zap size={12} />
+                            系统推荐
+                          </span>
+                        )}
+                        {(task as any)?.source === "import" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                            导入
+                          </span>
+                        )}
+                      </div>
+
+                      {hasGraphContext && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const graphId = String(
+                              parsedContext.graph_id ||
+                                parsedContext.source_graph_id ||
+                                "",
+                            );
+                            if (graphId) {
+                              navigate(`/graphs/${graphId}`);
+                            }
+                          }}
+                          className="w-full flex items-start gap-2 p-2 rounded-lg bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-500/50 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors cursor-pointer text-left"
+                        >
+                          <Layers
+                            size={16}
+                            className="text-primary-500 mt-0.5 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                              关联图谱
+                            </p>
+                            <p className="text-sm text-slate-800 dark:text-slate-200 truncate">
+                              {String(
+                                parsedContext.graph_title ||
+                                  parsedContext.source_graph_title ||
+                                  parsedContext.topic ||
+                                  "点击查看图谱",
+                              )}
+                            </p>
+                          </div>
+                          <ExternalLink
+                            size={14}
+                            className="text-slate-400 mt-1 flex-shrink-0"
+                          />
+                        </button>
+                      )}
+
+                      {!!parsedContext.node_id && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const graphId = String(
+                              parsedContext.graph_id ||
+                                parsedContext.source_graph_id ||
+                                "",
+                            );
+                            const nodeId = String(parsedContext.node_id);
+                            if (graphId && nodeId) {
+                              navigate(`/graphs/${graphId}?node=${nodeId}`);
+                            }
+                          }}
+                          className="w-full flex items-start gap-2 p-2 rounded-lg bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-500/50 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer text-left"
+                        >
+                          <Link
+                            size={16}
+                            className="text-amber-500 mt-0.5 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                              关联知识点
+                            </p>
+                            <p className="text-sm text-slate-800 dark:text-slate-200 truncate">
+                              {String(
+                                parsedContext.node_title ||
+                                  parsedContext.knowledge_point_title ||
+                                  "点击查看知识点",
+                              )}
+                            </p>
+                          </div>
+                          <ExternalLink
+                            size={14}
+                            className="text-slate-400 mt-1 flex-shrink-0"
+                          />
+                        </button>
+                      )}
+
+                      {parsedContext.depth !== undefined && (
+                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                          <span>扩展深度</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            {String(parsedContext.depth)}
+                          </span>
+                        </div>
+                      )}
+
+                      {parsedContext.max_depth !== undefined && (
+                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                          <span>最大深度</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            {String(parsedContext.max_depth)}
+                          </span>
+                        </div>
+                      )}
+
+                      {!!parsedContext.style && (
+                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                          <span>扩展风格</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">
+                            {String(parsedContext.style)}
+                          </span>
+                        </div>
+                      )}
+
+                      {!!parsedContext.topic && (
+                        <div className="mt-2 p-2 rounded-lg bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700">
+                          <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            主题
+                          </p>
+                          <p className="text-sm text-slate-800 dark:text-slate-200">
+                            {String(parsedContext.topic)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <details className="group">
+                      <summary className="cursor-pointer text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center gap-1">
+                        <ChevronDown
+                          size={12}
+                          className="transition-transform group-open:rotate-180"
+                        />
+                        查看原始数据
+                      </summary>
+                      <pre className="mt-2 p-2 rounded-lg bg-slate-100 dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-400 overflow-x-auto max-h-32 overflow-y-auto">
+                        {JSON.stringify(parsedContext, null, 2)}
+                      </pre>
+                    </details>
+                  </div>
+                );
+              }
+
+              return (
+                <textarea
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder={t("scheduler.taskForm.contextPlaceholder")}
+                  rows={3}
+                  maxLength={2000}
+                  className="
+                    w-full px-4 py-2.5 rounded-xl
+                    bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                    text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+                    focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                    resize-none
+                  "
+                />
+              );
+            })()}
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 text-right">
               {context.length}/2000
             </p>
@@ -862,7 +1108,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         className="text-primary-500 dark:text-primary-400"
                       />
                       <span className="text-xs text-primary-700 dark:text-primary-300">
-                        {t("scheduler.taskForm.suggestion")}: P{prioritySuggestion.suggestedPriority} / Q
+                        {t("scheduler.taskForm.suggestion")}: P
+                        {prioritySuggestion.suggestedPriority} / Q
                         {prioritySuggestion.suggestedQueue}
                         <span className="ml-1 text-primary-400 dark:text-primary-500">
                           ({Math.round(prioritySuggestion.confidence * 100)}%)
@@ -993,7 +1240,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   focus:outline-none focus:ring-2 focus:ring-primary-500/50
                 "
               >
-                <option value="">{t("scheduler.taskForm.noKnowledgeLink")}</option>
+                <option value="">
+                  {t("scheduler.taskForm.noKnowledgeLink")}
+                </option>
                 {knowledgePoints.map((kp) => (
                   <option key={kp.id} value={kp.id}>
                     {kp.title}
@@ -1025,7 +1274,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             onClick={handleSubmit}
             className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:from-primary-400 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/20 min-h-[44px] touch-target"
           >
-            {isEditing ? t("scheduler.taskForm.saveChanges") : t("scheduler.taskForm.createTaskBtn")}
+            {isEditing
+              ? t("scheduler.taskForm.saveChanges")
+              : t("scheduler.taskForm.createTaskBtn")}
           </button>
         </div>
       </motion.div>

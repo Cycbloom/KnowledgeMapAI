@@ -1,9 +1,13 @@
-import React, { useMemo, useState, useRef } from 'react';
-import { Clock, Move } from 'lucide-react';
+import React, { useMemo, useState, useRef } from "react";
+import { Clock, Move } from "lucide-react";
 import { useTheme } from "../../hooks";
-import { CalendarEvent, ExecutionEvent, EventDropInfo } from '../../types/calendar';
-import { CalendarSubtaskStack } from './CalendarSubtaskStack';
-import type { TaskSubtask } from '@shared/types';
+import {
+  CalendarEvent,
+  ExecutionEvent,
+  EventDropInfo,
+} from "../../types/calendar";
+import { CalendarSubtaskStack } from "./CalendarSubtaskStack";
+import type { TaskSubtask } from "@shared/types";
 
 interface CalendarWeekViewProps {
   currentDate: Date;
@@ -17,7 +21,7 @@ interface CalendarWeekViewProps {
   onSubtaskClick?: (subtask: TaskSubtask, parentEvent: CalendarEvent) => void;
 }
 
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
@@ -33,7 +37,10 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 }) => {
   const { isDark } = useTheme();
   const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
-  const [dragOverCell, setDragOverCell] = useState<{ dayIndex: number; hour: number } | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<{
+    dayIndex: number;
+    hour: number;
+  } | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +90,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
   const getEventPosition = (event: CalendarEvent) => {
     const start = new Date(event.start);
-    const end = event.end ? new Date(event.end) : new Date(start.getTime() + 60 * 60 * 1000);
+    const end = event.end
+      ? new Date(event.end)
+      : new Date(start.getTime() + 60 * 60 * 1000);
     const startHour = start.getHours() + start.getMinutes() / 60;
     const endHour = end.getHours() + end.getMinutes() / 60;
     const duration = endHour - startHour;
@@ -96,14 +105,14 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
   const getEventColor = (event: CalendarEvent) => {
     switch (event.type) {
-      case 'task':
-        return 'bg-primary-500 border-primary-600';
-      case 'study':
-        return 'bg-primary-500 border-primary-600';
-      case 'review':
-        return 'bg-green-500 border-green-600';
+      case "task":
+        return "bg-primary-500 border-primary-600";
+      case "study":
+        return "bg-primary-500 border-primary-600";
+      case "review":
+        return "bg-green-500 border-green-600";
       default:
-        return 'bg-gray-500 border-gray-600';
+        return "bg-gray-500 border-gray-600";
     }
   };
 
@@ -124,16 +133,20 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
     const clickY = e.clientY - rect.top;
     const offsetHours = clickY / 60;
     setDragOffset(offsetHours);
-    
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', event.id);
-    
-    const dragImage = document.createElement('div');
-    dragImage.className = 'opacity-50';
+
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", event.id);
+
+    const dragImage = document.createElement("div");
+    dragImage.className = "opacity-50";
     e.dataTransfer.setDragImage(dragImage, 0, 0);
   };
 
-  const handleDragOver = (e: React.DragEvent, dayIndex: number, hour: number) => {
+  const handleDragOver = (
+    e: React.DragEvent,
+    dayIndex: number,
+    hour: number,
+  ) => {
     e.preventDefault();
     if (draggedEvent) {
       setDragOverCell({ dayIndex, hour });
@@ -146,28 +159,28 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
   const handleDrop = (e: React.DragEvent, dayIndex: number, hour: number) => {
     e.preventDefault();
-    
+
     if (draggedEvent && onEventDrop) {
       const newStart = new Date(weekData[dayIndex].date);
       const adjustedHour = hour - Math.floor(dragOffset);
       newStart.setHours(adjustedHour, (dragOffset % 1) * 60, 0, 0);
-      
+
       const originalStart = new Date(draggedEvent.start);
       const originalEnd = draggedEvent.end ? new Date(draggedEvent.end) : null;
       let newEnd: Date | undefined;
-      
+
       if (originalEnd) {
         const duration = originalEnd.getTime() - originalStart.getTime();
         newEnd = new Date(newStart.getTime() + duration);
       }
-      
+
       onEventDrop({
         eventId: draggedEvent.id,
         newStart,
         newEnd,
       });
     }
-    
+
     setDraggedEvent(null);
     setDragOverCell(null);
     setDragOffset(0);
@@ -188,14 +201,18 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           <div
             key={index}
             className={`flex-1 text-center py-2 border-l border-slate-200 dark:border-slate-700 cursor-pointer ${
-              day.isToday ? 'bg-primary-50 dark:bg-primary-500/10' : ''
+              day.isToday ? "bg-primary-50 dark:bg-primary-500/10" : ""
             }`}
             onClick={() => onDateSelect(day.date)}
           >
-            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <div
+              className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
               {WEEKDAYS[index]}
             </div>
-            <div className={`text-sm font-medium ${day.isToday ? 'text-primary-500' : isDark ? 'text-white' : 'text-gray-900'}`}>
+            <div
+              className={`text-sm font-medium ${day.isToday ? "text-primary-500" : isDark ? "text-white" : "text-gray-900"}`}
+            >
               {day.label}
             </div>
           </div>
@@ -204,16 +221,16 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
       {/* Time grid */}
       <div className="flex-1 overflow-y-auto">
-        <div className="flex relative" style={{ minHeight: '1440px' }}>
+        <div className="flex relative" style={{ minHeight: "1440px" }}>
           {/* Time labels */}
           <div className="w-16 flex-shrink-0">
             {HOURS.map((hour) => (
               <div
                 key={hour}
                 className="h-[60px] text-xs text-right pr-2 text-slate-400"
-                style={{ height: '60px' }}
+                style={{ height: "60px" }}
               >
-                {hour.toString().padStart(2, '0')}:00
+                {hour.toString().padStart(2, "0")}:00
               </div>
             ))}
           </div>
@@ -223,7 +240,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
             <div
               key={dayIndex}
               className={`flex-1 relative border-l border-slate-200 dark:border-slate-700 ${
-                day.isToday ? 'bg-primary-50/30 dark:bg-primary-500/5' : ''
+                day.isToday ? "bg-primary-50/30 dark:bg-primary-500/5" : ""
               }`}
             >
               {/* Hour lines */}
@@ -231,9 +248,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 <div
                   key={hour}
                   className={`absolute w-full border-t ${
-                    isDark ? 'border-slate-700/50' : 'border-gray-100'
-                  } ${dragOverCell?.dayIndex === dayIndex && dragOverCell?.hour === hour ? 'bg-primary-100/50 dark:bg-primary-500/20' : ''}`}
-                  style={{ top: `${hour * 60}px`, height: '60px' }}
+                    isDark ? "border-slate-700/50" : "border-gray-100"
+                  } ${dragOverCell?.dayIndex === dayIndex && dragOverCell?.hour === hour ? "bg-primary-100/50 dark:bg-primary-500/20" : ""}`}
+                  style={{ top: `${hour * 60}px`, height: "60px" }}
                   onDragOver={(e) => handleDragOver(e, dayIndex, hour)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, dayIndex, hour)}
@@ -262,7 +279,8 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {day.events.map((event, i) => {
                 const position = getEventPosition(event);
                 const isDragging = draggedEvent?.id === event.id;
-                const hasEnoughHeight = position.height && parseInt(position.height) > 80;
+                const hasEnoughHeight =
+                  position.height && parseInt(position.height) > 80;
                 return (
                   <div
                     key={`event-${i}`}
@@ -271,8 +289,8 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     onDragStart={(e) => handleDragStart(e, event)}
                     onDragEnd={handleDragEnd}
                     className={`absolute left-1 right-1 ${getEventColor(event)} text-white rounded shadow-sm cursor-pointer hover:opacity-90 overflow-hidden ${
-                      isDragging ? 'opacity-50' : ''
-                    } ${onEventDrop ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                      isDragging ? "opacity-50" : ""
+                    } ${onEventDrop ? "cursor-grab active:cursor-grabbing" : ""}`}
                     style={position}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -291,24 +309,27 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     {position.height && parseInt(position.height) > 40 && (
                       <div className="px-1 text-xs opacity-80 flex items-center gap-1">
                         <Clock size={10} />
-                        {new Date(event.start).toLocaleTimeString('zh-CN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
+                        {new Date(event.start).toLocaleTimeString("zh-CN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </div>
                     )}
-                    {showSubtasks && hasEnoughHeight && event.subtasks && event.subtasks.length > 0 && (
-                      <div className="px-1 pb-1">
-                        <CalendarSubtaskStack
-                          subtasks={event.subtasks}
-                          maxVisible={2}
-                          compact={true}
-                          onSubtaskClick={(subtask) => {
-                            onSubtaskClick?.(subtask, event);
-                          }}
-                        />
-                      </div>
-                    )}
+                    {showSubtasks &&
+                      hasEnoughHeight &&
+                      event.subtasks &&
+                      event.subtasks.length > 0 && (
+                        <div className="px-1 pb-1">
+                          <CalendarSubtaskStack
+                            subtasks={event.subtasks}
+                            maxVisible={2}
+                            compact={true}
+                            onSubtaskClick={(subtask) => {
+                              onSubtaskClick?.(subtask, event);
+                            }}
+                          />
+                        </div>
+                      )}
                   </div>
                 );
               })}
@@ -317,9 +338,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {dragOverCell?.dayIndex === dayIndex && draggedEvent && (
                 <div
                   className="absolute left-1 right-1 bg-primary-400/30 border-2 border-primary-400 border-dashed rounded pointer-events-none"
-                  style={{ 
-                    top: `${(dragOverCell.hour - Math.floor(dragOffset)) * 60}px`, 
-                    height: `${getEventPosition(draggedEvent).height}` 
+                  style={{
+                    top: `${(dragOverCell.hour - Math.floor(dragOffset)) * 60}px`,
+                    height: `${getEventPosition(draggedEvent).height}`,
                   }}
                 >
                   <div className="flex items-center justify-center h-full text-primary-500 text-xs font-medium">

@@ -188,20 +188,40 @@ describe("MasteryDecayService", () => {
       const easeFactor = 2.5;
       const decayBaseFactor = 10;
 
-      const retention1Day = Math.pow(Math.E, -1 / (easeFactor * decayBaseFactor));
+      const retention1Day = Math.pow(
+        Math.E,
+        -1 / (easeFactor * decayBaseFactor),
+      );
       const expected1Day = mastery * retention1Day;
-      const result1Day = service.calculateDecay(mastery, daysAgo(1), easeFactor);
+      const result1Day = service.calculateDecay(
+        mastery,
+        daysAgo(1),
+        easeFactor,
+      );
       expect(result1Day).toBeCloseTo(expected1Day, 2);
 
-      const retention7Days = Math.pow(Math.E, -7 / (easeFactor * decayBaseFactor));
+      const retention7Days = Math.pow(
+        Math.E,
+        -7 / (easeFactor * decayBaseFactor),
+      );
       const expected7Days = mastery * retention7Days;
-      const result7Days = service.calculateDecay(mastery, daysAgo(7), easeFactor);
+      const result7Days = service.calculateDecay(
+        mastery,
+        daysAgo(7),
+        easeFactor,
+      );
       expect(result7Days).toBeCloseTo(expected7Days, 2);
     });
 
     it("衰减后掌握度不会低于最小值", () => {
-      const serviceWithMinMastery = new MasteryDecayService({ minMastery: 0.1 });
-      const result = serviceWithMinMastery.calculateDecay(0.9, daysAgo(365), 1.3);
+      const serviceWithMinMastery = new MasteryDecayService({
+        minMastery: 0.1,
+      });
+      const result = serviceWithMinMastery.calculateDecay(
+        0.9,
+        daysAgo(365),
+        1.3,
+      );
       expect(result).toBeGreaterThanOrEqual(0.1);
     });
   });

@@ -58,7 +58,11 @@ export type {
 
 export type { Queue, CreateQueueData, UpdateQueueData } from "./queues";
 
-export type { TaskSettings, UpdateTaskSettingsData, UserTimeSlot } from "./settings";
+export type {
+  TaskSettings,
+  UpdateTaskSettingsData,
+  UserTimeSlot,
+} from "./settings";
 
 export type { TaskStats, HeatmapData } from "./analytics";
 

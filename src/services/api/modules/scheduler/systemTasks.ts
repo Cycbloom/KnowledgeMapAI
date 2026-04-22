@@ -27,7 +27,9 @@ export const systemTasksApi = {
       params.append("limit", options.limit.toString());
     }
     const queryString = params.toString();
-    return request<SystemTask[]>(`/scheduler/system-tasks${queryString ? `?${queryString}` : ""}`);
+    return request<SystemTask[]>(
+      `/scheduler/system-tasks${queryString ? `?${queryString}` : ""}`,
+    );
   },
 
   createSystemTask: (data: CreateSystemTaskData) =>

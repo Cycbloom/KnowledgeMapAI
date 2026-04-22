@@ -27,7 +27,9 @@ const SIZE_CONFIGS = {
   },
 };
 
-const getMasteryColor = (level: number): { bg: string; text: string; progress: string } => {
+const getMasteryColor = (
+  level: number,
+): { bg: string; text: string; progress: string } => {
   if (level < 30) {
     return {
       bg: "bg-red-100 dark:bg-red-500/20",
@@ -89,9 +91,13 @@ export const MasteryProgressBar: React.FC<MasteryProgressBarProps> = ({
         />
       </div>
       {showLabel && (
-        <div className={`flex items-center gap-1 ${sizeConfig.text} ${colors.text} whitespace-nowrap`}>
+        <div
+          className={`flex items-center gap-1 ${sizeConfig.text} ${colors.text} whitespace-nowrap`}
+        >
           <span className="font-medium">{clampedLevel}%</span>
-          <span className="hidden sm:inline opacity-70">({getMasteryLabel(clampedLevel)})</span>
+          <span className="hidden sm:inline opacity-70">
+            ({getMasteryLabel(clampedLevel)})
+          </span>
         </div>
       )}
     </div>

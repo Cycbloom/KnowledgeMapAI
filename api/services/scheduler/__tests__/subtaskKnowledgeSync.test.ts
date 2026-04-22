@@ -38,7 +38,7 @@ describe("SubtaskKnowledgeSyncService", () => {
       const result = (service as any).calculateKnowledgePointMastery(
         "learning",
         0.2,
-        0.3
+        0.3,
       );
       expect(result).toBeGreaterThanOrEqual(0);
       expect(result).toBeLessThanOrEqual(1);
@@ -48,7 +48,7 @@ describe("SubtaskKnowledgeSyncService", () => {
       const result = (service as any).calculateKnowledgePointMastery(
         "review",
         0.5,
-        0.4
+        0.4,
       );
       expect(result).toBeGreaterThanOrEqual(0);
       expect(result).toBeLessThanOrEqual(1);
@@ -58,7 +58,7 @@ describe("SubtaskKnowledgeSyncService", () => {
       const result = (service as any).calculateKnowledgePointMastery(
         "practice",
         0.7,
-        0.6
+        0.6,
       );
       expect(result).toBeGreaterThanOrEqual(0);
       expect(result).toBeLessThanOrEqual(1);
@@ -68,7 +68,7 @@ describe("SubtaskKnowledgeSyncService", () => {
       const result = (service as any).calculateKnowledgePointMastery(
         "quiz",
         0.9,
-        0.8
+        0.8,
       );
       expect(result).toBeGreaterThanOrEqual(0);
       expect(result).toBeLessThanOrEqual(1);
@@ -78,12 +78,12 @@ describe("SubtaskKnowledgeSyncService", () => {
       const resultLow = (service as any).calculateKnowledgePointMastery(
         "review",
         0.3,
-        0.5
+        0.5,
       );
       const resultHigh = (service as any).calculateKnowledgePointMastery(
         "review",
         0.7,
-        0.5
+        0.5,
       );
       expect(resultHigh).toBeGreaterThan(resultLow);
     });
@@ -105,7 +105,7 @@ describe("SubtaskKnowledgeSyncService", () => {
         "learning",
         "review",
         0.2,
-        0.4
+        0.4,
       );
 
       expect(newHistory).toHaveLength(1);
@@ -131,7 +131,7 @@ describe("SubtaskKnowledgeSyncService", () => {
         "review",
         "practice",
         0.2,
-        0.5
+        0.5,
       );
 
       expect(newHistory).toHaveLength(2);
@@ -154,7 +154,7 @@ describe("SubtaskKnowledgeSyncService", () => {
         "practice",
         "quiz",
         0.7,
-        0.8
+        0.8,
       );
 
       expect(newHistory.length).toBeLessThanOrEqual(50);
@@ -198,12 +198,12 @@ describe("SubtaskKnowledgeSyncService", () => {
       const learningResult = (service as any).calculateKnowledgePointMastery(
         "learning",
         0.5,
-        0.5
+        0.5,
       );
       const quizResult = (service as any).calculateKnowledgePointMastery(
         "quiz",
         0.5,
-        0.5
+        0.5,
       );
       expect(quizResult).toBeGreaterThan(learningResult);
     });
@@ -212,12 +212,12 @@ describe("SubtaskKnowledgeSyncService", () => {
       const resultLow = (service as any).calculateKnowledgePointMastery(
         "review",
         0.5,
-        0.2
+        0.2,
       );
       const resultHigh = (service as any).calculateKnowledgePointMastery(
         "review",
         0.5,
-        0.8
+        0.8,
       );
       expect(resultHigh).toBeGreaterThan(resultLow);
     });

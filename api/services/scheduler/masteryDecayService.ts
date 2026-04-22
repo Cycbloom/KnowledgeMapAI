@@ -1,5 +1,5 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { logger } from '../../utils/logger';
+import { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "../../utils/logger";
 
 const DEFAULT_EASE_FACTOR = 2.5;
 const MIN_EASE_FACTOR = 1.3;
@@ -69,7 +69,7 @@ export class MasteryDecayService {
   calculateDecay(
     masteryLevel: number,
     lastStudyAt: Date,
-    easeFactor: number
+    easeFactor: number,
   ): number {
     const validatedMastery = Math.max(0, Math.min(1, masteryLevel));
     const validatedEaseFactor = Math.max(MIN_EASE_FACTOR, easeFactor);
@@ -82,7 +82,7 @@ export class MasteryDecayService {
 
     const retentionRate = Math.pow(
       Math.E,
-      -daysSinceLastStudy / (validatedEaseFactor * this.config.decayBaseFactor)
+      -daysSinceLastStudy / (validatedEaseFactor * this.config.decayBaseFactor),
     );
 
     const newMastery = validatedMastery * retentionRate;
@@ -92,14 +92,12 @@ export class MasteryDecayService {
 
   async batchDecayCalculation(
     supabase: SupabaseClient,
-    userId?: string
+    userId?: string,
   ): Promise<DecayResult[]> {
-    logger.info('Starting batch decay calculation', { userId });
+    logger.info("Starting batch decay calculation", { userId });
 
     try {
-      let query = supabase
-        .from('task_subtasks')
-        .select(`
+      let query = supabase.from("task_subtasks").select(`
           id,
           knowledge_point_id,
           mastery_level,
@@ -109,26 +107,26 @@ export class MasteryDecayService {
         `);
 
       if (userId) {
-        query = query.eq('tasks.user_id', userId);
+        query = query.eq("tasks.user_id", userId);
       }
 
       const { data: subtasks, error } = await query;
 
       if (error) {
-        logger.error('Failed to fetch subtasks for decay calculation', {
+        logger.error("Failed to fetch subtasks for decay calculation", {
           error: error.message,
         });
         throw new Error(`Failed to fetch subtasks: ${error.message}`);
       }
 
       if (!subtasks || subtasks.length === 0) {
-        logger.info('No subtasks found for decay calculation');
+        logger.info("No subtasks found for decay calculation");
         return [];
       }
 
       const { data: reviewTasks } = await supabase
-        .from('review_tasks')
-        .select('knowledge_point_id, ease_factor');
+        .from("review_tasks")
+        .select("knowledge_point_id, ease_factor");
 
       const easeFactorMap = new Map<string, number>();
       if (reviewTasks) {
@@ -140,12 +138,20 @@ export class MasteryDecayService {
       const results: DecayResult[] = [];
 
       for (const subtask of subtasks as SubtaskData[]) {
-        const easeFactor = easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
+        const easeFactor =
+          easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
         const lastStudyAt = new Date(subtask.last_state_change_at);
         const oldMastery = subtask.mastery_level;
-        const newMastery = this.calculateDecay(oldMastery, lastStudyAt, easeFactor);
+        const newMastery = this.calculateDecay(
+          oldMastery,
+          lastStudyAt,
+          easeFactor,
+        );
         const daysSinceStudy = daysBetween(lastStudyAt, new Date());
-        const needsReview = this.needsReview(newMastery, this.config.reviewThreshold);
+        const needsReview = this.needsReview(
+          newMastery,
+          this.config.reviewThreshold,
+        );
 
         if (Math.abs(newMastery - oldMastery) > 0.01 || needsReview) {
           results.push({
@@ -159,16 +165,19 @@ export class MasteryDecayService {
         }
       }
 
-      logger.info('Batch decay calculation completed', {
+      logger.info("Batch decay calculation completed", {
         totalProcessed: subtasks.length,
         resultsCount: results.length,
-        needingReview: results.filter(r => r.needs_review).length,
+        needingReview: results.filter((r) => r.needs_review).length,
       });
 
       return results;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Error during batch decay calculation', { error: errorMessage });
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error("Error during batch decay calculation", {
+        error: errorMessage,
+      });
       throw error;
     }
   }
@@ -181,26 +190,31 @@ export class MasteryDecayService {
   async getPointsNeedingReview(
     supabase: SupabaseClient,
     userId: string,
-    threshold?: number
+    threshold?: number,
   ): Promise<KnowledgePointForReview[]> {
     const reviewThreshold = threshold ?? this.config.reviewThreshold;
 
-    logger.info('Fetching points needing review', { userId, threshold: reviewThreshold });
+    logger.info("Fetching points needing review", {
+      userId,
+      threshold: reviewThreshold,
+    });
 
     try {
       const { data: subtasks, error } = await supabase
-        .from('task_subtasks')
-        .select(`
+        .from("task_subtasks")
+        .select(
+          `
           id,
           knowledge_point_id,
           mastery_level,
           last_state_change_at,
           task_id
-        `)
-        .eq('tasks.user_id', userId);
+        `,
+        )
+        .eq("tasks.user_id", userId);
 
       if (error) {
-        logger.error('Failed to fetch subtasks for review check', {
+        logger.error("Failed to fetch subtasks for review check", {
           error: error.message,
         });
         throw new Error(`Failed to fetch subtasks: ${error.message}`);
@@ -211,8 +225,8 @@ export class MasteryDecayService {
       }
 
       const { data: reviewTasks } = await supabase
-        .from('review_tasks')
-        .select('knowledge_point_id, ease_factor');
+        .from("review_tasks")
+        .select("knowledge_point_id, ease_factor");
 
       const easeFactorMap = new Map<string, number>();
       if (reviewTasks) {
@@ -224,12 +238,13 @@ export class MasteryDecayService {
       const pointsNeedingReview: KnowledgePointForReview[] = [];
 
       for (const subtask of subtasks as SubtaskData[]) {
-        const easeFactor = easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
+        const easeFactor =
+          easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
         const lastStudyAt = new Date(subtask.last_state_change_at);
         const currentMastery = this.calculateDecay(
           subtask.mastery_level,
           lastStudyAt,
-          easeFactor
+          easeFactor,
         );
 
         if (this.needsReview(currentMastery, reviewThreshold)) {
@@ -243,15 +258,18 @@ export class MasteryDecayService {
         }
       }
 
-      logger.info('Found points needing review', {
+      logger.info("Found points needing review", {
         userId,
         count: pointsNeedingReview.length,
       });
 
       return pointsNeedingReview;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Error fetching points needing review', { error: errorMessage });
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error("Error fetching points needing review", {
+        error: errorMessage,
+      });
       throw error;
     }
   }
@@ -259,83 +277,85 @@ export class MasteryDecayService {
   async applyDecay(
     supabase: SupabaseClient,
     knowledgePointId: string,
-    newMasteryLevel: number
+    newMasteryLevel: number,
   ): Promise<void> {
-    logger.info('Applying decay to knowledge point', {
+    logger.info("Applying decay to knowledge point", {
       knowledgePointId,
       newMasteryLevel,
     });
 
     try {
       const { error } = await supabase
-        .from('task_subtasks')
+        .from("task_subtasks")
         .update({
           mastery_level: newMasteryLevel,
           updated_at: new Date().toISOString(),
         })
-        .eq('knowledge_point_id', knowledgePointId);
+        .eq("knowledge_point_id", knowledgePointId);
 
       if (error) {
-        logger.error('Failed to apply decay', {
+        logger.error("Failed to apply decay", {
           knowledgePointId,
           error: error.message,
         });
         throw new Error(`Failed to apply decay: ${error.message}`);
       }
 
-      logger.info('Decay applied successfully', {
+      logger.info("Decay applied successfully", {
         knowledgePointId,
         newMasteryLevel,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Error applying decay', { error: errorMessage });
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error("Error applying decay", { error: errorMessage });
       throw error;
     }
   }
 
   async applyBatchDecay(
     supabase: SupabaseClient,
-    decayResults: DecayResult[]
+    decayResults: DecayResult[],
   ): Promise<{ success: number; failed: number }> {
     let success = 0;
     let failed = 0;
 
-    logger.info('Starting batch decay application', {
+    logger.info("Starting batch decay application", {
       count: decayResults.length,
     });
 
     for (const result of decayResults) {
       try {
-        await this.applyDecay(supabase, result.knowledge_point_id, result.new_mastery);
+        await this.applyDecay(
+          supabase,
+          result.knowledge_point_id,
+          result.new_mastery,
+        );
         success++;
       } catch {
         failed++;
-        logger.warn('Failed to apply decay for knowledge point', {
+        logger.warn("Failed to apply decay for knowledge point", {
           knowledgePointId: result.knowledge_point_id,
         });
       }
     }
 
-    logger.info('Batch decay application completed', { success, failed });
+    logger.info("Batch decay application completed", { success, failed });
 
     return { success, failed };
   }
 
-  calculateRetentionRate(
-    daysSinceStudy: number,
-    easeFactor: number
-  ): number {
+  calculateRetentionRate(daysSinceStudy: number, easeFactor: number): number {
     return Math.pow(
       Math.E,
-      -daysSinceStudy / (easeFactor * this.config.decayBaseFactor)
+      -daysSinceStudy / (easeFactor * this.config.decayBaseFactor),
     );
   }
 
   estimateDaysUntilThreshold(
     currentMastery: number,
     easeFactor: number,
-    threshold?: number
+    threshold?: number,
   ): number {
     const reviewThreshold = threshold ?? this.config.reviewThreshold;
 
@@ -344,7 +364,8 @@ export class MasteryDecayService {
     }
 
     const decayConstant = easeFactor * this.config.decayBaseFactor;
-    const daysUntilThreshold = -decayConstant * Math.log(reviewThreshold / currentMastery);
+    const daysUntilThreshold =
+      -decayConstant * Math.log(reviewThreshold / currentMastery);
 
     return Math.max(0, Math.round(daysUntilThreshold));
   }
@@ -355,7 +376,7 @@ export class MasteryDecayService {
 
   setDecayConfig(config: Partial<DecayConfig>): void {
     this.config = { ...this.config, ...config };
-    logger.info('Decay config updated', { config: this.config });
+    logger.info("Decay config updated", { config: this.config });
   }
 }
 

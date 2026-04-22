@@ -6,10 +6,7 @@ import {
   FileCheck,
   LucideIcon,
 } from "lucide-react";
-import {
-  LearningState,
-  LEARNING_STATE_CONFIGS,
-} from "@shared/types/scheduler";
+import { LearningState, LEARNING_STATE_CONFIGS } from "@shared/types/scheduler";
 
 interface SubtaskStateIconProps {
   state: LearningState;
@@ -36,12 +33,7 @@ export const SubtaskStateIcon: React.FC<SubtaskStateIconProps> = ({
     return null;
   }
 
-  return (
-    <Icon
-      size={size}
-      className={`${config.color} ${className}`}
-    />
-  );
+  return <Icon size={size} className={`${config.color} ${className}`} />;
 };
 
 export default SubtaskStateIcon;

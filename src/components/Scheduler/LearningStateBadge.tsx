@@ -9,7 +9,10 @@ interface LearningStateBadgeProps {
   className?: string;
 }
 
-const STATE_ICONS: Record<LearningState, React.ComponentType<{ size?: number | string }>> = {
+const STATE_ICONS: Record<
+  LearningState,
+  React.ComponentType<{ size?: number | string }>
+> = {
   learning: BookOpen,
   review: RefreshCw,
   practice: Pencil,

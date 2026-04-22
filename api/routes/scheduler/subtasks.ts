@@ -31,7 +31,9 @@ const updateSubtaskSchema = z.object({
     estimated_duration: z.number().int().min(0).optional(),
     actual_duration: z.number().int().min(0).optional(),
     due_date: z.string().datetime().optional().nullable(),
-    learning_state: z.enum(["learning", "review", "practice", "quiz"]).optional(),
+    learning_state: z
+      .enum(["learning", "review", "practice", "quiz"])
+      .optional(),
     mastery_level: z.number().min(0).max(100).optional(),
   }),
   params: z.object({
@@ -70,8 +72,14 @@ router.post(
     }
 
     const { id } = req.params;
-    const { title, description, knowledge_point_id, priority, estimated_duration, due_date } =
-      req.body;
+    const {
+      title,
+      description,
+      knowledge_point_id,
+      priority,
+      estimated_duration,
+      due_date,
+    } = req.body;
 
     const { data: task } = await supabase
       .from("scheduled_tasks")
@@ -322,11 +330,16 @@ router.post(
       return res.status(404).json({ error: "子任务不存在" });
     }
 
-    const currentState = subtask.learning_state as "learning" | "review" | "practice" | "quiz";
-    
+    const currentState = subtask.learning_state as
+      | "learning"
+      | "review"
+      | "practice"
+      | "quiz";
+
     if (!subtaskStateMachine.canTransition(currentState, to_state)) {
-      const validTransitions = subtaskStateMachine.getValidTransitions(currentState);
-      return res.status(400).json({ 
+      const validTransitions =
+        subtaskStateMachine.getValidTransitions(currentState);
+      return res.status(400).json({
         error: `无效的状态转换: ${currentState} → ${to_state}`,
         validTransitions,
       });
@@ -426,8 +439,13 @@ router.get(
       return res.status(404).json({ error: "子任务不存在" });
     }
 
-    const currentState = subtask.learning_state as "learning" | "review" | "practice" | "quiz";
-    const validTransitions = subtaskStateMachine.getValidTransitions(currentState);
+    const currentState = subtask.learning_state as
+      | "learning"
+      | "review"
+      | "practice"
+      | "quiz";
+    const validTransitions =
+      subtaskStateMachine.getValidTransitions(currentState);
     const recommendedNext = subtaskStateMachine.getRecommendedNextState(
       currentState,
       subtask.mastery_level,

@@ -298,7 +298,8 @@ router.get(
       : undefined;
 
     const subtaskCount = subtasks?.length || 0;
-    const subtaskCompleted = subtasks?.filter((s) => s.status === "completed").length || 0;
+    const subtaskCompleted =
+      subtasks?.filter((s) => s.status === "completed").length || 0;
 
     const taskDetail = {
       ...task,
@@ -415,7 +416,10 @@ router.post(
       return res.status(400).json({ error: result.error });
     }
 
-    res.json({ success: true, data: { task: result.task, execution: result.execution } });
+    res.json({
+      success: true,
+      data: { task: result.task, execution: result.execution },
+    });
   },
 );
 
@@ -457,7 +461,10 @@ router.post(
       return res.status(400).json({ error: result.error });
     }
 
-    res.json({ success: true, data: { task: result.task, duration: result.execution?.duration ?? 0 } });
+    res.json({
+      success: true,
+      data: { task: result.task, duration: result.execution?.duration ?? 0 },
+    });
   },
 );
 

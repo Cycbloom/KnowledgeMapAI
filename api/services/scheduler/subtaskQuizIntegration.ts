@@ -84,10 +84,10 @@ interface AIGeneratedCard {
   options?: string[];
 }
 
-const PRACTICE_WEIGHT = 0.10;
-const PRACTICE_MAX_IMPROVEMENT = 0.30;
-const QUIZ_WEIGHT = 0.20;
-const QUIZ_MAX_IMPROVEMENT = 0.40;
+const PRACTICE_WEIGHT = 0.1;
+const PRACTICE_MAX_IMPROVEMENT = 0.3;
+const QUIZ_WEIGHT = 0.2;
+const QUIZ_MAX_IMPROVEMENT = 0.4;
 
 const PRACTICE_SESSIONS_TABLE = "practice_sessions";
 const QUIZ_SESSIONS_TABLE = "quiz_sessions";
@@ -98,7 +98,7 @@ export class SubtaskQuizIntegrationService {
   async getPracticeCards(
     supabase: SupabaseClient,
     knowledgePointId: string,
-    difficulty?: 1 | 2
+    difficulty?: 1 | 2,
   ): Promise<StudyCard[]> {
     logger.info("Getting practice cards for knowledge point", {
       knowledgePointId,
@@ -112,9 +112,7 @@ export class SubtaskQuizIntegrationService {
       .order("created_at", { ascending: false });
 
     if (difficulty !== undefined) {
-      const difficultyRange = difficulty === 1 
-        ? [1, 2, 3] 
-        : [3, 4, 5];
+      const difficultyRange = difficulty === 1 ? [1, 2, 3] : [3, 4, 5];
       query = query.in("difficulty", difficultyRange);
     }
 
@@ -140,7 +138,7 @@ export class SubtaskQuizIntegrationService {
 
   async getQuizSet(
     supabase: SupabaseClient,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<QuizSet | null> {
     logger.info("Getting quiz set for knowledge point", {
       knowledgePointId,
@@ -148,7 +146,8 @@ export class SubtaskQuizIntegrationService {
 
     const { data: quizSets, error } = await supabase
       .from("quiz_sets")
-      .select(`
+      .select(
+        `
         id,
         user_id,
         graph_id,
@@ -159,7 +158,8 @@ export class SubtaskQuizIntegrationService {
         card_count,
         created_at,
         updated_at
-      `)
+      `,
+      )
       .contains("config->knowledgePointIds", JSON.stringify([knowledgePointId]))
       .eq("status", "ready")
       .order("created_at", { ascending: false })
@@ -193,7 +193,7 @@ export class SubtaskQuizIntegrationService {
   async startPracticeSession(
     supabase: SupabaseClient,
     subtaskId: string,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<PracticeSession> {
     logger.info("Starting practice session", {
       subtaskId,
@@ -208,15 +208,16 @@ export class SubtaskQuizIntegrationService {
       const generatedCards = await this.generatePracticeCards(
         supabase,
         knowledgePointId,
-        5
+        5,
       );
-      
+
       if (generatedCards.length === 0) {
         throw new AppError(ErrorCodes.NOT_FOUND, {
-          message: "No practice cards available and failed to generate new ones",
+          message:
+            "No practice cards available and failed to generate new ones",
         });
       }
-      
+
       cards.push(...generatedCards);
     }
 
@@ -264,7 +265,7 @@ export class SubtaskQuizIntegrationService {
   async completePractice(
     supabase: SupabaseClient,
     subtaskId: string,
-    results: PracticeResult[]
+    results: PracticeResult[],
   ): Promise<PracticeCompletionResult> {
     logger.info("Completing practice", {
       subtaskId,
@@ -294,7 +295,7 @@ export class SubtaskQuizIntegrationService {
 
     const improvement = Math.min(
       accuracy * PRACTICE_WEIGHT,
-      PRACTICE_MAX_IMPROVEMENT
+      PRACTICE_MAX_IMPROVEMENT,
     );
 
     const currentMastery = subtask.mastery_level;
@@ -302,7 +303,7 @@ export class SubtaskQuizIntegrationService {
 
     const newState = subtaskStateMachine.getNextState(
       subtask.learning_state,
-      newMastery
+      newMastery,
     );
 
     const now = new Date().toISOString();
@@ -342,7 +343,7 @@ export class SubtaskQuizIntegrationService {
       supabase,
       subtaskId,
       newState,
-      newMastery
+      newMastery,
     );
 
     await this.updateCardReviewStats(supabase, results);
@@ -368,7 +369,7 @@ export class SubtaskQuizIntegrationService {
   async startQuizSession(
     supabase: SupabaseClient,
     subtaskId: string,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<QuizSession> {
     logger.info("Starting quiz session", {
       subtaskId,
@@ -389,7 +390,8 @@ export class SubtaskQuizIntegrationService {
 
     const { data: quizSetCards, error: cardsError } = await supabase
       .from("quiz_set_cards")
-      .select(`
+      .select(
+        `
         display_order,
         study_cards (
           id,
@@ -415,7 +417,8 @@ export class SubtaskQuizIntegrationService {
           fsrs_last_review,
           created_at
         )
-      `)
+      `,
+      )
       .eq("quiz_set_id", quizSet.id)
       .order("display_order", { ascending: true });
 
@@ -486,7 +489,7 @@ export class SubtaskQuizIntegrationService {
   async completeQuiz(
     supabase: SupabaseClient,
     subtaskId: string,
-    results: QuizResult[]
+    results: QuizResult[],
   ): Promise<QuizCompletionResult> {
     logger.info("Completing quiz", {
       subtaskId,
@@ -514,17 +517,14 @@ export class SubtaskQuizIntegrationService {
     const totalCount = results.length;
     const score = totalCount > 0 ? correctCount / totalCount : 0;
 
-    const improvement = Math.min(
-      score * QUIZ_WEIGHT,
-      QUIZ_MAX_IMPROVEMENT
-    );
+    const improvement = Math.min(score * QUIZ_WEIGHT, QUIZ_MAX_IMPROVEMENT);
 
     const currentMastery = subtask.mastery_level;
     const newMastery = Math.min(1, currentMastery + improvement);
 
     const newState = subtaskStateMachine.getNextState(
       subtask.learning_state,
-      newMastery
+      newMastery,
     );
 
     const now = new Date().toISOString();
@@ -564,7 +564,7 @@ export class SubtaskQuizIntegrationService {
       supabase,
       subtaskId,
       newState,
-      newMastery
+      newMastery,
     );
 
     await this.updateCardReviewStats(
@@ -573,7 +573,7 @@ export class SubtaskQuizIntegrationService {
         card_id: r.card_id,
         correct: r.correct,
         time_spent: r.time_spent,
-      }))
+      })),
     );
 
     logger.info("Quiz completed", {
@@ -597,7 +597,7 @@ export class SubtaskQuizIntegrationService {
   async generatePracticeCards(
     supabase: SupabaseClient,
     knowledgePointId: string,
-    count: number = 5
+    count: number = 5,
   ): Promise<StudyCard[]> {
     logger.info("Generating practice cards", {
       knowledgePointId,
@@ -606,7 +606,7 @@ export class SubtaskQuizIntegrationService {
 
     const knowledgePoint = await this.getKnowledgePointData(
       supabase,
-      knowledgePointId
+      knowledgePointId,
     );
 
     const { data: existingCards } = await supabase
@@ -615,7 +615,7 @@ export class SubtaskQuizIntegrationService {
       .eq("knowledge_point_id", knowledgePointId);
 
     const existingQuestions = new Set(
-      (existingCards ?? []).map((c) => c.question)
+      (existingCards ?? []).map((c) => c.question),
     );
 
     try {
@@ -626,8 +626,9 @@ export class SubtaskQuizIntegrationService {
           types: ["qa", "choice"],
           count,
           difficulty: "easy",
-          context: "Practice mode: Generate simple questions for quick knowledge check",
-        }
+          context:
+            "Practice mode: Generate simple questions for quick knowledge check",
+        },
       );
 
       const newCards: StudyCard[] = [];
@@ -696,7 +697,7 @@ export class SubtaskQuizIntegrationService {
   async generateQuizSet(
     supabase: SupabaseClient,
     knowledgePointId: string,
-    config: QuizSetConfig
+    config: QuizSetConfig,
   ): Promise<QuizSet> {
     logger.info("Generating quiz set", {
       knowledgePointId,
@@ -705,30 +706,28 @@ export class SubtaskQuizIntegrationService {
 
     const knowledgePoint = await this.getKnowledgePointData(
       supabase,
-      knowledgePointId
+      knowledgePointId,
     );
 
     const userId = await this.getUserIdForKnowledgePoint(
       supabase,
-      knowledgePointId
+      knowledgePointId,
     );
 
     const quizSetId = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    const { error: quizSetError } = await supabase
-      .from("quiz_sets")
-      .insert({
-        id: quizSetId,
-        user_id: userId,
-        title: `测验: ${knowledgePoint.title}`,
-        description: `针对知识点 "${knowledgePoint.title}" 的综合测验`,
-        config,
-        status: "generating",
-        card_count: 0,
-        created_at: now,
-        updated_at: now,
-      });
+    const { error: quizSetError } = await supabase.from("quiz_sets").insert({
+      id: quizSetId,
+      user_id: userId,
+      title: `测验: ${knowledgePoint.title}`,
+      description: `针对知识点 "${knowledgePoint.title}" 的综合测验`,
+      config,
+      status: "generating",
+      card_count: 0,
+      created_at: now,
+      updated_at: now,
+    });
 
     if (quizSetError) {
       logger.error("Failed to create quiz set", {
@@ -755,13 +754,13 @@ export class SubtaskQuizIntegrationService {
           types: config.cardTypes,
           count: config.cardTypes.reduce(
             (sum, type) => sum + (config.cardsPerType?.[type] ?? 3),
-            0
+            0,
           ),
           difficulty: difficultyMap[config.difficulty] || "medium",
           context: config.customPrompt,
           userId,
           graphId: knowledgePoint.graph_id,
-        }
+        },
       );
 
       const cardsToInsert = aiResult.cards.map((card: any) => ({
@@ -794,11 +793,13 @@ export class SubtaskQuizIntegrationService {
         throw insertError;
       }
 
-      const quizSetCardsToInsert = insertedCards.map((card: any, index: number) => ({
-        quiz_set_id: quizSetId,
-        card_id: card.id,
-        display_order: index + 1,
-      }));
+      const quizSetCardsToInsert = insertedCards.map(
+        (card: any, index: number) => ({
+          quiz_set_id: quizSetId,
+          card_id: card.id,
+          display_order: index + 1,
+        }),
+      );
 
       await supabase.from("quiz_set_cards").insert(quizSetCardsToInsert);
 
@@ -848,7 +849,7 @@ export class SubtaskQuizIntegrationService {
 
   async getRecommendedActivity(
     supabase: SupabaseClient,
-    subtaskId: string
+    subtaskId: string,
   ): Promise<{
     type: "practice" | "quiz" | "review";
     reason: string;
@@ -857,7 +858,10 @@ export class SubtaskQuizIntegrationService {
     const subtask = await this.getSubtaskData(supabase, subtaskId);
     const { learning_state, mastery_level } = subtask;
 
-    const cards = await this.getPracticeCards(supabase, subtask.knowledge_point_id);
+    const cards = await this.getPracticeCards(
+      supabase,
+      subtask.knowledge_point_id,
+    );
     const quizSet = await this.getQuizSet(supabase, subtask.knowledge_point_id);
 
     if (learning_state === "learning" || learning_state === "review") {
@@ -907,7 +911,7 @@ export class SubtaskQuizIntegrationService {
 
   private async getSubtaskData(
     supabase: SupabaseClient,
-    subtaskId: string
+    subtaskId: string,
   ): Promise<SubtaskData> {
     const { data: subtask, error } = await supabase
       .from("task_subtasks")
@@ -936,7 +940,7 @@ export class SubtaskQuizIntegrationService {
 
   private async getKnowledgePointData(
     supabase: SupabaseClient,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<KnowledgePointData> {
     const { data: kp, error } = await supabase
       .from("knowledge_points")
@@ -967,7 +971,7 @@ export class SubtaskQuizIntegrationService {
 
   private async getUserIdForKnowledgePoint(
     supabase: SupabaseClient,
-    knowledgePointId: string
+    knowledgePointId: string,
   ): Promise<string> {
     const { data: subtask } = await supabase
       .from("task_subtasks")
@@ -1015,7 +1019,7 @@ export class SubtaskQuizIntegrationService {
 
   private async updateCardReviewStats(
     supabase: SupabaseClient,
-    results: Array<{ card_id: string; correct: boolean; time_spent: number }>
+    results: Array<{ card_id: string; correct: boolean; time_spent: number }>,
   ): Promise<void> {
     const now = new Date().toISOString();
 
@@ -1044,4 +1048,5 @@ export class SubtaskQuizIntegrationService {
   }
 }
 
-export const subtaskQuizIntegrationService = new SubtaskQuizIntegrationService();
+export const subtaskQuizIntegrationService =
+  new SubtaskQuizIntegrationService();

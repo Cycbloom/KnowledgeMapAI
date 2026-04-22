@@ -191,16 +191,22 @@ CREATE TABLE IF NOT EXISTS task_subtasks (
   due_date TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
   learning_path_node_id UUID,
-  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
-  task_type TEXT DEFAULT 'learning' CHECK (task_type IN ('learning', 'review', 'practice', 'explore')),
+  knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
+  learning_state TEXT DEFAULT 'learning' CHECK (learning_state IN ('learning', 'review', 'practice', 'quiz')),
+  mastery_level DECIMAL(5,2) DEFAULT 0.00 CHECK (mastery_level >= 0 AND mastery_level <= 100),
+  last_state_change_at TIMESTAMPTZ DEFAULT NOW(),
+  state_history JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-COMMENT ON TABLE task_subtasks IS 'Subtasks for breaking down main tasks';
+COMMENT ON TABLE task_subtasks IS 'Subtasks for breaking down main tasks, each subtask is bound to one knowledge point';
 COMMENT ON COLUMN task_subtasks.learning_path_node_id IS 'Associated learning path node ID';
-COMMENT ON COLUMN task_subtasks.knowledge_point_id IS 'Associated knowledge point ID (node in graph)';
-COMMENT ON COLUMN task_subtasks.task_type IS 'Type of subtask: learning, review, practice, explore';
+COMMENT ON COLUMN task_subtasks.knowledge_point_id IS 'Associated knowledge point ID (required, one-to-one binding)';
+COMMENT ON COLUMN task_subtasks.learning_state IS 'Learning state machine: learning(once) -> review -> practice -> quiz -> review(cycle)';
+COMMENT ON COLUMN task_subtasks.mastery_level IS 'Mastery level (0.00-100.00), synced with knowledge_points.mastery_level';
+COMMENT ON COLUMN task_subtasks.last_state_change_at IS 'Timestamp of last learning state change';
+COMMENT ON COLUMN task_subtasks.state_history IS 'History of learning state transitions';
 
 -- Task links table
 CREATE TABLE IF NOT EXISTS task_links (

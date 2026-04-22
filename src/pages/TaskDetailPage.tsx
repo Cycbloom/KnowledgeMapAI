@@ -23,7 +23,7 @@ const TaskDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="h-screen">
+    <div className="h-full overflow-hidden">
       <TaskWorkbench taskId={taskId} onBack={handleBack} onEdit={handleEdit} />
     </div>
   );

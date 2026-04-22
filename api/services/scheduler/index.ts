@@ -112,3 +112,16 @@ export type {
   TaskTypeTimeMatch,
   SmartRecommendation,
 } from "./smartSchedulerService";
+
+export {
+  subtaskQuizIntegrationService,
+  SubtaskQuizIntegrationService,
+} from "./subtaskQuizIntegration";
+export type {
+  PracticeSession,
+  PracticeResult,
+  QuizSession,
+  QuizResult,
+  PracticeCompletionResult,
+  QuizCompletionResult,
+} from "./subtaskQuizIntegration";

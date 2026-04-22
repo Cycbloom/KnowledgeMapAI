@@ -16,6 +16,8 @@ import {
   ActivityEvent,
 } from "../../types/calendar";
 import { ActivityTimeline } from "./ActivityTimeline";
+import { CalendarSubtaskStack } from "./CalendarSubtaskStack";
+import type { TaskSubtask } from "@shared/types";
 
 interface CalendarScheduleViewProps {
   currentDate: Date;
@@ -27,6 +29,8 @@ interface CalendarScheduleViewProps {
   onEventDrop?: (dropInfo: EventDropInfo) => void;
   calendarMode?: CalendarMode;
   dailyActivities?: ActivityEvent[];
+  showSubtasks?: boolean;
+  onSubtaskClick?: (subtask: TaskSubtask, parentEvent: CalendarEvent) => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -41,6 +45,8 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
   onEventDrop,
   calendarMode = "plan",
   dailyActivities = [],
+  showSubtasks = false,
+  onSubtaskClick,
 }) => {
   const { isDark } = useTheme();
   const [hoveredSlot, setHoveredSlot] = useState<{
@@ -438,12 +444,32 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                             <span className="text-sm font-medium truncate">
                               {event.title}
                             </span>
+                            {event.has_subtasks && event.subtask_count && (
+                              <span className="ml-auto text-xs opacity-75">
+                                {event.subtask_completed || 0}/
+                                {event.subtask_count}
+                              </span>
+                            )}
                           </div>
                           {event.estimated_duration && (
                             <div className="text-xs opacity-80 mt-1">
                               预计 {event.estimated_duration} 分钟
                             </div>
                           )}
+                          {showSubtasks &&
+                            event.subtasks &&
+                            event.subtasks.length > 0 && (
+                              <div className="mt-2">
+                                <CalendarSubtaskStack
+                                  subtasks={event.subtasks}
+                                  maxVisible={2}
+                                  compact={true}
+                                  onSubtaskClick={(subtask) => {
+                                    onSubtaskClick?.(subtask, event);
+                                  }}
+                                />
+                              </div>
+                            )}
                         </div>
                       );
                     })}

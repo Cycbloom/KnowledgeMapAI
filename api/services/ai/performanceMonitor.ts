@@ -238,6 +238,9 @@ class PerformanceMonitor {
     const totalUncachedInputTokens = logs.reduce((sum: number, l: AIPerformanceLog) => sum + (l.uncachedInputTokens || 0), 0);
     const totalSavedByCache = logs.reduce((sum: number, l: AIPerformanceLog) => sum + (l.costBreakdown?.savedByCache || 0), 0);
     
+    const embeddingOperations = ['generate_embedding', 'generate_embedding_batch'];
+    const nonEmbeddingLogs = logs.filter(l => !embeddingOperations.includes(l.operation));
+    
     const stats: AIPerformanceStats = {
       totalRequests: logs.length,
       successRequests: logs.filter(l => l.success).length,
@@ -249,7 +252,9 @@ class PerformanceMonitor {
       totalTokens: logs.reduce((sum: number, l: AIPerformanceLog) => sum + l.totalTokens, 0),
       totalCost: logs.reduce((sum: number, l: AIPerformanceLog) => sum + l.estimatedCost, 0),
       totalSavedByCache,
-      avgDuration: logs.length > 0 ? logs.reduce((sum: number, l: AIPerformanceLog) => sum + l.duration, 0) / logs.length : 0,
+      avgDuration: nonEmbeddingLogs.length > 0 
+        ? nonEmbeddingLogs.reduce((sum: number, l: AIPerformanceLog) => sum + l.duration, 0) / nonEmbeddingLogs.length 
+        : 0,
       avgCacheHitRate: logs.length > 0 
         ? logs.reduce((sum: number, l: AIPerformanceLog) => sum + (l.cacheHitRate || 0), 0) / logs.length 
         : 0,

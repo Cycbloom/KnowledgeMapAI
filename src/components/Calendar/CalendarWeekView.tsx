@@ -2,6 +2,8 @@ import React, { useMemo, useState, useRef } from 'react';
 import { Clock, Move } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { CalendarEvent, ExecutionEvent, EventDropInfo } from '../../types/calendar';
+import { CalendarSubtaskStack } from './CalendarSubtaskStack';
+import type { TaskSubtask } from '@shared/types';
 
 interface CalendarWeekViewProps {
   currentDate: Date;
@@ -11,6 +13,8 @@ interface CalendarWeekViewProps {
   onEventClick: (event: CalendarEvent) => void;
   onAddEvent: (date: Date, hour?: number) => void;
   onEventDrop?: (dropInfo: EventDropInfo) => void;
+  showSubtasks?: boolean;
+  onSubtaskClick?: (subtask: TaskSubtask, parentEvent: CalendarEvent) => void;
 }
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -24,6 +28,8 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   onEventClick,
   onAddEvent,
   onEventDrop,
+  showSubtasks = false,
+  onSubtaskClick,
 }) => {
   const { isDark } = useTheme();
   const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
@@ -256,6 +262,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {day.events.map((event, i) => {
                 const position = getEventPosition(event);
                 const isDragging = draggedEvent?.id === event.id;
+                const hasEnoughHeight = position.height && parseInt(position.height) > 80;
                 return (
                   <div
                     key={`event-${i}`}
@@ -275,6 +282,11 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     <div className="p-1 text-xs font-medium truncate flex items-center gap-1">
                       {onEventDrop && <Move size={10} className="opacity-50" />}
                       {event.title}
+                      {event.has_subtasks && event.subtask_count && (
+                        <span className="ml-auto opacity-75 text-[10px]">
+                          {event.subtask_completed || 0}/{event.subtask_count}
+                        </span>
+                      )}
                     </div>
                     {position.height && parseInt(position.height) > 40 && (
                       <div className="px-1 text-xs opacity-80 flex items-center gap-1">
@@ -283,6 +295,18 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
+                      </div>
+                    )}
+                    {showSubtasks && hasEnoughHeight && event.subtasks && event.subtasks.length > 0 && (
+                      <div className="px-1 pb-1">
+                        <CalendarSubtaskStack
+                          subtasks={event.subtasks}
+                          maxVisible={2}
+                          compact={true}
+                          onSubtaskClick={(subtask) => {
+                            onSubtaskClick?.(subtask, event);
+                          }}
+                        />
                       </div>
                     )}
                   </div>

@@ -2097,6 +2097,15 @@
       "clearFilter": "清除筛选",
       "noTasks": "没有找到匹配的任务"
     },
+    "subtasks": {
+      "knowledgePoints": "{{count}} 个知识点",
+      "avgMastery": "平均掌握度",
+      "learning": "学习",
+      "review": "复习",
+      "practice": "练习",
+      "quiz": "测验",
+      "noSubtasks": "暂无子任务"
+    },
     "kanban": {
       "todo": "待办",
       "inProgress": "进行中",

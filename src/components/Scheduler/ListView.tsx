@@ -10,16 +10,22 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
-  Eye,
-  EyeOff,
+  ChevronRight,
   Play,
   Pause,
   Check,
   Edit2,
   Trash2,
+  BookOpen,
+  Circle,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ScheduledTask } from "@shared/types";
+import { ScheduledTask, TaskSubtask, LearningState } from "@shared/types";
+import { api } from "../../services/api";
+import { LearningStateBadge } from "./LearningStateBadge";
+import { MasteryProgressBar } from "./MasteryProgressBar";
 
 interface ListViewProps {
   tasks: ScheduledTask[];
@@ -29,6 +35,7 @@ interface ListViewProps {
   onStartTask?: (task: ScheduledTask) => void;
   onPauseTask?: (task: ScheduledTask) => void;
   onCompleteTask?: (task: ScheduledTask) => void;
+  onSubtaskUpdate?: () => void;
 }
 
 type SortField =
@@ -59,6 +66,25 @@ const QUEUE_COLORS = {
   },
 };
 
+const SUBTASK_TYPE_COLORS: Record<LearningState, { bg: string; text: string }> = {
+  learning: {
+    bg: "bg-blue-100 dark:bg-blue-500/20",
+    text: "text-blue-600 dark:text-blue-400",
+  },
+  review: {
+    bg: "bg-green-100 dark:bg-green-500/20",
+    text: "text-green-600 dark:text-green-400",
+  },
+  practice: {
+    bg: "bg-orange-100 dark:bg-orange-500/20",
+    text: "text-orange-600 dark:text-orange-400",
+  },
+  quiz: {
+    bg: "bg-purple-100 dark:bg-purple-500/20",
+    text: "text-purple-600 dark:text-purple-400",
+  },
+};
+
 export const ListView: React.FC<ListViewProps> = ({
   tasks,
   onTaskClick: _onTaskClick,
@@ -67,6 +93,7 @@ export const ListView: React.FC<ListViewProps> = ({
   onStartTask,
   onPauseTask,
   onCompleteTask,
+  onSubtaskUpdate,
 }) => {
   const { t } = useTranslation();
   
@@ -114,7 +141,9 @@ export const ListView: React.FC<ListViewProps> = ({
   const [filterQueue, setFilterQueue] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [expandedTask, setExpandedTask] = useState<string | null>(null);
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [subtasksMap, setSubtasksMap] = useState<Map<string, TaskSubtask[]>>(new Map());
+  const [loadingSubtasks, setLoadingSubtasks] = useState<Set<string>>(new Set());
 
   const filteredAndSortedTasks = useMemo(() => {
     let result = [...tasks];
@@ -176,6 +205,81 @@ export const ListView: React.FC<ListViewProps> = ({
 
     return result;
   }, [tasks, sortField, sortDirection, filterStatus, filterQueue, searchQuery]);
+
+  const loadSubtasks = async (taskId: string) => {
+    if (subtasksMap.has(taskId)) return;
+    
+    setLoadingSubtasks((prev) => new Set(prev).add(taskId));
+    try {
+      const response = await api.scheduler.getSubtasks(taskId);
+      if (response.success) {
+        setSubtasksMap((prev) => new Map(prev).set(taskId, response.data || []));
+      }
+    } catch (error) {
+      console.error("Failed to load subtasks:", error);
+    } finally {
+      setLoadingSubtasks((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    }
+  };
+
+  const toggleTaskExpand = (taskId: string, hasSubtasks: boolean) => {
+    const newExpanded = new Set(expandedTasks);
+    if (newExpanded.has(taskId)) {
+      newExpanded.delete(taskId);
+    } else if (hasSubtasks) {
+      newExpanded.add(taskId);
+      loadSubtasks(taskId);
+    }
+    setExpandedTasks(newExpanded);
+  };
+
+  const handleToggleSubtask = async (task: ScheduledTask, subtask: TaskSubtask) => {
+    const newStatus = subtask.status === "completed" ? "pending" : "completed";
+    try {
+      const response = await api.scheduler.updateSubtask(task.id, subtask.id, {
+        status: newStatus,
+      });
+      if (response.success) {
+        setSubtasksMap((prev) => {
+          const next = new Map(prev);
+          const subtasks = next.get(task.id);
+          if (subtasks) {
+            next.set(
+              task.id,
+              subtasks.map((st) => (st.id === subtask.id ? response.data : st))
+            );
+          }
+          return next;
+        });
+        onSubtaskUpdate?.();
+      }
+    } catch (error) {
+      console.error("Failed to update subtask:", error);
+    }
+  };
+
+  const getSubtaskTypeStats = (subtasks: TaskSubtask[]) => {
+    const stats: Record<LearningState, number> = {
+      learning: 0,
+      review: 0,
+      practice: 0,
+      quiz: 0,
+    };
+    subtasks.forEach((st) => {
+      stats[st.learning_state]++;
+    });
+    return stats;
+  };
+
+  const getAverageMastery = (subtasks: TaskSubtask[]) => {
+    if (subtasks.length === 0) return 0;
+    const total = subtasks.reduce((sum, st) => sum + st.mastery_level, 0);
+    return Math.round(total / subtasks.length);
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -407,163 +511,299 @@ export const ListView: React.FC<ListViewProps> = ({
                     const statusConfig =
                       STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
                     const deadlineInfo = formatDeadline(task.deadline);
-                    const isExpanded = expandedTask === task.id;
+                    const isExpanded = expandedTasks.has(task.id);
+                    const hasSubtasks = task.has_subtasks || (task.subtask_count && task.subtask_count > 0);
+                    const subtasks = subtasksMap.get(task.id) || [];
+                    const isLoadingSubtasks = loadingSubtasks.has(task.id);
+                    const subtaskProgress = hasSubtasks && task.subtask_count
+                      ? Math.round(((task.subtask_completed || 0) / task.subtask_count) * 100)
+                      : 0;
+                    const subtaskTypeStats = getSubtaskTypeStats(subtasks);
+                    const avgMastery = getAverageMastery(subtasks);
 
                     return (
-                      <motion.tr
-                        key={task.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ delay: index * 0.02 }}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                        onClick={() =>
-                          setExpandedTask(isExpanded ? null : task.id)
-                        }
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            {isExpanded ? (
-                              <EyeOff
-                                size={14}
-                                className="text-slate-400 dark:text-slate-500"
-                              />
-                            ) : (
-                              <Eye
-                                size={14}
-                                className="text-slate-400 dark:text-slate-500"
-                              />
-                            )}
-                            <div className="min-w-0">
-                              <div className="font-medium text-slate-800 dark:text-white truncate">
-                                {task.title}
-                              </div>
-                              {isExpanded && task.description && (
-                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                                  {task.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${statusConfig.color}`}
-                          >
-                            {statusConfig.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-bold ${queueStyle.bg} ${queueStyle.text}`}
-                          >
-                            Q{task.queue_level}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            {task.priority >= 3 && (
-                              <span className="text-red-500 dark:text-red-400">
-                                ★
-                              </span>
-                            )}
-                            <span className="text-slate-700 dark:text-slate-300">
-                              {task.priority || 0}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-sm">
-                            <Clock size={12} />
-                            <span>
-                              {formatDuration(task.estimated_duration)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div
-                            className={`flex items-center gap-1 text-sm ${deadlineInfo.color}`}
-                          >
-                            <Calendar size={12} />
-                            <span>{deadlineInfo.text}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {task.tags?.slice(0, 2).map((tag, i) => (
-                              <span
-                                key={i}
-                                className="px-1.5 py-0.5 rounded text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                            {task.tags && task.tags.length > 2 && (
-                              <span className="text-xs text-slate-400 dark:text-slate-500">
-                                +{task.tags.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
-                          {formatDate(task.created_at)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div
-                            className="flex items-center gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {task.status === "pending" && onStartTask && (
-                              <button
-                                onClick={() => onStartTask(task)}
-                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
-                                title="开始"
-                              >
-                                <Play size={14} />
-                              </button>
-                            )}
-                            {task.status === "in_progress" && onPauseTask && (
-                              <button
-                                onClick={() => onPauseTask(task)}
-                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
-                                title="暂停"
-                              >
-                                <Pause size={14} />
-                              </button>
-                            )}
-                            {(task.status === "pending" ||
-                              task.status === "in_progress" ||
-                              task.status === "paused") &&
-                              onCompleteTask && (
+                      <React.Fragment key={task.id}>
+                        <motion.tr
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ delay: index * 0.02 }}
+                          className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {hasSubtasks && (
                                 <button
-                                  onClick={() => onCompleteTask(task)}
-                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
-                                  title="完成"
+                                  onClick={() => toggleTaskExpand(task.id, hasSubtasks)}
+                                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                 >
-                                  <Check size={14} />
+                                  {isExpanded ? (
+                                    <ChevronDown size={14} className="text-slate-400 dark:text-slate-500" />
+                                  ) : (
+                                    <ChevronRight size={14} className="text-slate-400 dark:text-slate-500" />
+                                  )}
                                 </button>
                               )}
-                            {onEditTask && (
-                              <button
-                                onClick={() => onEditTask(task)}
-                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-all"
-                                title="编辑"
-                              >
-                                <Edit2 size={14} />
-                              </button>
-                            )}
-                            {onDeleteTask && (
-                              <button
-                                onClick={() => onDeleteTask(task)}
-                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
-                                title="删除"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </motion.tr>
+                              {!hasSubtasks && <div className="w-6" />}
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-slate-800 dark:text-white truncate">
+                                  {task.title}
+                                </div>
+                                {hasSubtasks && (
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden max-w-[120px]">
+                                      <motion.div
+                                        className="h-full bg-gradient-to-r from-primary-500 to-primary-400"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${subtaskProgress}%` }}
+                                        transition={{ duration: 0.3 }}
+                                      />
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">
+                                      {task.subtask_completed || 0}/{task.subtask_count}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-medium ${statusConfig.color}`}
+                            >
+                              {statusConfig.label}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-bold ${queueStyle.bg} ${queueStyle.text}`}
+                            >
+                              Q{task.queue_level}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              {task.priority >= 3 && (
+                                <span className="text-red-500 dark:text-red-400">
+                                  ★
+                                </span>
+                              )}
+                              <span className="text-slate-700 dark:text-slate-300">
+                                {task.priority || 0}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-sm">
+                              <Clock size={12} />
+                              <span>
+                                {formatDuration(task.estimated_duration)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div
+                              className={`flex items-center gap-1 text-sm ${deadlineInfo.color}`}
+                            >
+                              <Calendar size={12} />
+                              <span>{deadlineInfo.text}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {task.tags?.slice(0, 2).map((tag, i) => (
+                                <span
+                                  key={i}
+                                  className="px-1.5 py-0.5 rounded text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              {task.tags && task.tags.length > 2 && (
+                                <span className="text-xs text-slate-400 dark:text-slate-500">
+                                  +{task.tags.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                            {formatDate(task.created_at)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div
+                              className="flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {task.status === "pending" && onStartTask && (
+                                <button
+                                  onClick={() => onStartTask(task)}
+                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
+                                  title="开始"
+                                >
+                                  <Play size={14} />
+                                </button>
+                              )}
+                              {task.status === "in_progress" && onPauseTask && (
+                                <button
+                                  onClick={() => onPauseTask(task)}
+                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
+                                  title="暂停"
+                                >
+                                  <Pause size={14} />
+                                </button>
+                              )}
+                              {(task.status === "pending" ||
+                                task.status === "in_progress" ||
+                                task.status === "paused") &&
+                                onCompleteTask && (
+                                  <button
+                                    onClick={() => onCompleteTask(task)}
+                                    className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
+                                    title="完成"
+                                  >
+                                    <Check size={14} />
+                                  </button>
+                                )}
+                              {onEditTask && (
+                                <button
+                                  onClick={() => onEditTask(task)}
+                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-all"
+                                  title="编辑"
+                                >
+                                  <Edit2 size={14} />
+                                </button>
+                              )}
+                              {onDeleteTask && (
+                                <button
+                                  onClick={() => onDeleteTask(task)}
+                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                                  title="删除"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </motion.tr>
+                        
+                        <AnimatePresence>
+                          {isExpanded && hasSubtasks && (
+                            <motion.tr
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="bg-slate-50/50 dark:bg-slate-800/30"
+                            >
+                              <td colSpan={COLUMNS.length} className="px-4 py-0">
+                                <motion.div
+                                  initial={{ y: -10 }}
+                                  animate={{ y: 0 }}
+                                  exit={{ y: -10 }}
+                                  className="py-3"
+                                >
+                                  {isLoadingSubtasks ? (
+                                    <div className="flex items-center justify-center py-4">
+                                      <Loader2 className="w-5 h-5 animate-spin text-primary-500" />
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-center gap-4 mb-3 px-2">
+                                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                          <BookOpen size={12} />
+                                          <span>{t("scheduler.subtasks.knowledgePoints", { count: subtasks.length })}</span>
+                                        </div>
+                                        {subtasks.length > 0 && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{t("scheduler.subtasks.avgMastery")}:</span>
+                                            <div className="w-24">
+                                              <MasteryProgressBar masteryLevel={avgMastery} size="sm" showLabel={false} />
+                                            </div>
+                                            <span className="text-xs text-slate-600 dark:text-slate-300">{avgMastery}%</span>
+                                          </div>
+                                        )}
+                                        <div className="flex items-center gap-1.5 ml-auto">
+                                          {subtaskTypeStats.learning > 0 && (
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.learning.bg} ${SUBTASK_TYPE_COLORS.learning.text}`}>
+                                              {t("scheduler.subtasks.learning")} {subtaskTypeStats.learning}
+                                            </span>
+                                          )}
+                                          {subtaskTypeStats.review > 0 && (
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.review.bg} ${SUBTASK_TYPE_COLORS.review.text}`}>
+                                              {t("scheduler.subtasks.review")} {subtaskTypeStats.review}
+                                            </span>
+                                          )}
+                                          {subtaskTypeStats.practice > 0 && (
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.practice.bg} ${SUBTASK_TYPE_COLORS.practice.text}`}>
+                                              {t("scheduler.subtasks.practice")} {subtaskTypeStats.practice}
+                                            </span>
+                                          )}
+                                          {subtaskTypeStats.quiz > 0 && (
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${SUBTASK_TYPE_COLORS.quiz.bg} ${SUBTASK_TYPE_COLORS.quiz.text}`}>
+                                              {t("scheduler.subtasks.quiz")} {subtaskTypeStats.quiz}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      {subtasks.length > 0 ? (
+                                        <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                                          {subtasks.map((subtask) => (
+                                            <div
+                                              key={subtask.id}
+                                              className={`
+                                                flex items-center gap-3 p-2.5 rounded-lg border transition-all
+                                                ${
+                                                  subtask.status === "completed"
+                                                    ? "bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
+                                                    : "bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50"
+                                                }
+                                              `}
+                                            >
+                                              <button
+                                                onClick={() => handleToggleSubtask(task, subtask)}
+                                                className="flex-shrink-0 hover:scale-110 transition-transform p-1"
+                                              >
+                                                {subtask.status === "completed" ? (
+                                                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                                ) : (
+                                                  <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 hover:text-primary-500" />
+                                                )}
+                                              </button>
+                                              
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                  <span className={`text-sm font-medium truncate ${subtask.status === "completed" ? "text-emerald-700 dark:text-emerald-400 line-through" : "text-slate-700 dark:text-slate-200"}`}>
+                                                    {subtask.title}
+                                                  </span>
+                                                  <LearningStateBadge state={subtask.learning_state} size="sm" />
+                                                </div>
+                                                <div className="mt-1.5">
+                                                  <MasteryProgressBar masteryLevel={subtask.mastery_level} size="sm" className="max-w-[200px]" />
+                                                </div>
+                                              </div>
+                                              
+                                              {subtask.estimated_duration && (
+                                                <div className="flex items-center gap-1 text-xs text-slate-400">
+                                                  <Clock size={10} />
+                                                  <span>{subtask.estimated_duration}m</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="text-center py-4 text-slate-400 dark:text-slate-500 text-sm">
+                                          {t("scheduler.subtasks.noSubtasks")}
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </motion.div>
+                              </td>
+                            </motion.tr>
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
                     );
                   })
                 )}

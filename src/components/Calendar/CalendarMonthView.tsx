@@ -1,7 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import { useTheme } from "../../hooks";
-import { CalendarEvent, ExecutionEvent, CalendarMode, DailyActivityStats } from '../../types/calendar';
+import {
+  CalendarEvent,
+  ExecutionEvent,
+  CalendarMode,
+  DailyActivityStats,
+} from "../../types/calendar";
+import { CalendarSubtaskStack } from "./CalendarSubtaskStack";
+import type { TaskSubtask } from "@shared/types";
 
 interface CalendarMonthViewProps {
   currentDate: Date;
@@ -12,9 +19,11 @@ interface CalendarMonthViewProps {
   onAddEvent: (date: Date) => void;
   calendarMode?: CalendarMode;
   activityStats?: DailyActivityStats[];
+  showSubtasks?: boolean;
+  onSubtaskClick?: (subtask: TaskSubtask, parentEvent: CalendarEvent) => void;
 }
 
-const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 
 export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   currentDate,
@@ -23,8 +32,10 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   onDateSelect,
   onEventClick,
   onAddEvent,
-  calendarMode = 'plan',
+  calendarMode = "plan",
   activityStats,
+  showSubtasks = false,
+  onSubtaskClick,
 }) => {
   const { isDark } = useTheme();
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
@@ -103,14 +114,14 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
 
   const getEventColor = (event: CalendarEvent) => {
     switch (event.type) {
-      case 'task':
-        return 'bg-primary-500';
-      case 'study':
-        return 'bg-primary-500';
-      case 'review':
-        return 'bg-green-500';
+      case "task":
+        return "bg-primary-500";
+      case "study":
+        return "bg-primary-500";
+      case "review":
+        return "bg-green-500";
       default:
-        return 'bg-gray-500';
+        return "bg-gray-500";
     }
   };
 
@@ -121,7 +132,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
           <div
             key={day}
             className={`text-center text-sm font-medium py-2 ${
-              isDark ? 'text-slate-400' : 'text-gray-500'
+              isDark ? "text-slate-400" : "text-gray-500"
             }`}
           >
             {day}
@@ -136,12 +147,12 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
             className={`relative min-h-[80px] p-1 rounded-lg cursor-pointer transition-colors ${
               day.isCurrentMonth
                 ? isDark
-                  ? 'bg-slate-800 hover:bg-slate-700'
-                  : 'bg-white hover:bg-gray-50'
+                  ? "bg-slate-800 hover:bg-slate-700"
+                  : "bg-white hover:bg-gray-50"
                 : isDark
-                  ? 'bg-slate-900/50'
-                  : 'bg-gray-50'
-            } ${day.isToday ? 'ring-2 ring-primary-500' : ''}`}
+                  ? "bg-slate-900/50"
+                  : "bg-gray-50"
+            } ${day.isToday ? "ring-2 ring-primary-500" : ""}`}
             onClick={() => onDateSelect(day.date)}
             onMouseEnter={() => setHoveredDate(day.date)}
             onMouseLeave={() => setHoveredDate(null)}
@@ -150,85 +161,116 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               <span
                 className={`text-sm font-medium ${
                   day.isToday
-                    ? 'text-primary-500'
+                    ? "text-primary-500"
                     : day.isCurrentMonth
                       ? isDark
-                        ? 'text-white'
-                        : 'text-gray-900'
+                        ? "text-white"
+                        : "text-gray-900"
                       : isDark
-                        ? 'text-slate-600'
-                        : 'text-gray-400'
+                        ? "text-slate-600"
+                        : "text-gray-400"
                 }`}
               >
                 {day.date.getDate()}
               </span>
-              {calendarMode === 'plan' && hoveredDate?.getTime() === day.date.getTime() && day.isCurrentMonth && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddEvent(day.date);
-                  }}
-                  className={`p-0.5 rounded ${
-                    isDark
-                      ? 'bg-slate-600 hover:bg-slate-500 text-slate-300'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-                  }`}
-                >
-                  <Plus size={12} />
-                </button>
-              )}
-            </div>
-
-            {calendarMode === 'plan' && (
-              <div className="space-y-0.5 overflow-hidden">
-                {day.events.slice(0, 3).map((event, i) => (
-                  <div
-                    key={i}
+              {calendarMode === "plan" &&
+                hoveredDate?.getTime() === day.date.getTime() &&
+                day.isCurrentMonth && (
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onEventClick(event);
+                      onAddEvent(day.date);
                     }}
-                    className={`${getEventColor(event)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80`}
+                    className={`p-0.5 rounded ${
+                      isDark
+                        ? "bg-slate-600 hover:bg-slate-500 text-slate-300"
+                        : "bg-gray-200 hover:bg-gray-300 text-gray-600"
+                    }`}
                   >
-                    {event.title}
+                    <Plus size={12} />
+                  </button>
+                )}
+            </div>
+
+            {calendarMode === "plan" && (
+              <div className="space-y-0.5 overflow-hidden">
+                {day.events.slice(0, 3).map((event, i) => (
+                  <div key={i}>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick(event);
+                      }}
+                      className={`${getEventColor(event)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80`}
+                    >
+                      {event.title}
+                      {event.has_subtasks && event.subtask_count && (
+                        <span className="ml-1 opacity-75">
+                          ({event.subtask_completed || 0}/{event.subtask_count})
+                        </span>
+                      )}
+                    </div>
+                    {showSubtasks &&
+                      event.subtasks &&
+                      event.subtasks.length > 0 && (
+                        <CalendarSubtaskStack
+                          subtasks={event.subtasks}
+                          maxVisible={2}
+                          compact={true}
+                          onSubtaskClick={(subtask) =>
+                            onSubtaskClick?.(subtask, event)
+                          }
+                        />
+                      )}
                   </div>
                 ))}
                 {day.events.length > 3 && (
-                  <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                  <div
+                    className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                  >
                     +{day.events.length - 3} 更多
                   </div>
                 )}
               </div>
             )}
 
-            {calendarMode === 'plan' && day.executions.length > 0 && (
+            {calendarMode === "plan" && day.executions.length > 0 && (
               <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                <span
+                  className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                >
                   {day.executions.length}
                 </span>
               </div>
             )}
 
-            {calendarMode === 'history' && activityStats && (() => {
-              const dateStr = day.date.toISOString().split('T')[0];
-              const stats = activityStats.find(s => s.date === dateStr);
-              if (!stats || stats.activity_count === 0) return null;
-              const intensity = Math.min(stats.activity_count / 5, 1);
-              return (
-                <div className="mt-1">
-                  <div className={`h-1 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
+            {calendarMode === "history" &&
+              activityStats &&
+              (() => {
+                const dateStr = day.date.toISOString().split("T")[0];
+                const stats = activityStats.find((s) => s.date === dateStr);
+                if (!stats || stats.activity_count === 0) return null;
+                const intensity = Math.min(stats.activity_count / 5, 1);
+                return (
+                  <div className="mt-1">
                     <div
-                      className="h-full rounded-full bg-primary-500 transition-all"
-                      style={{ width: `${intensity * 100}%` }}
-                    />
+                      className={`h-1 rounded-full ${isDark ? "bg-slate-700" : "bg-gray-200"}`}
+                    >
+                      <div
+                        className="h-full rounded-full bg-primary-500 transition-all"
+                        style={{ width: `${intensity * 100}%` }}
+                      />
+                    </div>
+                    <span
+                      className={`text-[10px] ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                    >
+                      {stats.activity_count}项 ·{" "}
+                      {Math.round(stats.total_duration / 60)}分钟
+                    </span>
                   </div>
-                  <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    {stats.activity_count}项 · {Math.round(stats.total_duration / 60)}分钟
-                  </span>
-                </div>
-              );
-            })()}
+                );
+              })()}
           </div>
         ))}
       </div>

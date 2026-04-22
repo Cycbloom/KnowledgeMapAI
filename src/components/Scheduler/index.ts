@@ -48,6 +48,10 @@ export { ProgressTimeline } from './ProgressTimeline';
 export { TaskRecommendation } from './TaskRecommendation';
 export { SmartSuggestion } from './SmartSuggestion';
 
+export { LearningStateBadge } from './LearningStateBadge';
+export { MasteryProgressBar } from './MasteryProgressBar';
+export { SubtaskStateIcon } from './SubtaskStateIcon';
+
 export type { ScheduledTask, CreateScheduledTaskData, TaskExecution } from '@shared/types';
 export type { TaskTemplate, CreateTemplateData, UpdateTemplateData, TemplateFilters, ApplyTemplateData, TemplateCategory as TemplateCategoryType } from '../../services/api/template';
 export type { 

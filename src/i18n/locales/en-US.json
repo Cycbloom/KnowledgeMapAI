@@ -1877,6 +1877,15 @@
       "clearFilter": "Clear Filter",
       "noTasks": "No matching tasks found"
     },
+    "subtasks": {
+      "knowledgePoints": "{{count}} knowledge points",
+      "avgMastery": "Avg. Mastery",
+      "learning": "Learning",
+      "review": "Review",
+      "practice": "Practice",
+      "quiz": "Quiz",
+      "noSubtasks": "No subtasks"
+    },
     "kanban": {
       "todo": "To Do",
       "inProgress": "In Progress",

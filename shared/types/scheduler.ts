@@ -17,6 +17,8 @@ export type ScheduleType = "daily" | "weekly" | "custom" | "smart";
 
 export type SubtaskStatus = "pending" | "in_progress" | "completed";
 
+export type LearningState = "learning" | "review" | "practice" | "quiz";
+
 export type LinkType = "web" | "file" | "api";
 
 export interface ScheduledTask {
@@ -140,6 +142,15 @@ export interface TaskExecution {
   status: ExecutionStatus;
 }
 
+export interface StateHistoryEntry {
+  from_state: LearningState;
+  to_state: LearningState;
+  changed_at: string;
+  mastery_level_before: number;
+  mastery_level_after: number;
+  reason?: string;
+}
+
 export interface TaskSubtask {
   id: string;
   task_id: string;
@@ -153,6 +164,11 @@ export interface TaskSubtask {
   due_date?: string;
   completed_at?: string;
   learning_path_node_id?: string;
+  knowledge_point_id: string;
+  learning_state: LearningState;
+  mastery_level: number;
+  last_state_change_at: string;
+  state_history: StateHistoryEntry[];
   created_at: string;
   updated_at: string;
 }
@@ -551,4 +567,87 @@ export interface SchedulerEventLog {
   retry_count: number;
   created_at: string;
   processed_at?: string;
+}
+
+export interface StateTransition {
+  from: LearningState;
+  to: LearningState;
+  condition: {
+    min_mastery?: number;
+    max_mastery?: number;
+  };
+}
+
+export interface LearningStateConfig {
+  state: LearningState;
+  label: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  icon: string;
+  description: string;
+}
+
+export const LEARNING_STATE_CONFIGS: Record<LearningState, LearningStateConfig> = {
+  learning: {
+    state: "learning",
+    label: "学习",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-100 dark:bg-blue-500/20",
+    borderColor: "border-blue-300 dark:border-blue-500/30",
+    icon: "BookOpen",
+    description: "初始学习阶段，仅出现一次",
+  },
+  review: {
+    state: "review",
+    label: "复习",
+    color: "text-green-600 dark:text-green-400",
+    bgColor: "bg-green-100 dark:bg-green-500/20",
+    borderColor: "border-green-300 dark:border-green-500/30",
+    icon: "RefreshCw",
+    description: "复习已学内容",
+  },
+  practice: {
+    state: "practice",
+    label: "练习",
+    color: "text-orange-600 dark:text-orange-400",
+    bgColor: "bg-orange-100 dark:bg-orange-500/20",
+    borderColor: "border-orange-300 dark:border-orange-500/30",
+    icon: "Pencil",
+    description: "简单题目快速检验",
+  },
+  quiz: {
+    state: "quiz",
+    label: "测验",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-100 dark:bg-purple-500/20",
+    borderColor: "border-purple-300 dark:border-purple-500/30",
+    icon: "FileCheck",
+    description: "综合题目全面评估",
+  },
+};
+
+export interface CreateSubtaskData {
+  title: string;
+  description?: string;
+  knowledge_point_id: string;
+  estimated_duration?: number;
+  priority?: number;
+}
+
+export interface UpdateSubtaskData {
+  title?: string;
+  description?: string;
+  status?: SubtaskStatus;
+  learning_state?: LearningState;
+  mastery_level?: number;
+  estimated_duration?: number;
+  actual_duration?: number;
+  priority?: number;
+}
+
+export interface TransitionSubtaskData {
+  to_state: LearningState;
+  mastery_level: number;
+  reason?: string;
 }

@@ -1,3 +1,5 @@
+import type { TaskSubtask } from "@shared/types";
+
 export type CalendarMode = "plan" | "history";
 
 export type ActivityEventType = "focus_study" | "review" | "path_progress";
@@ -15,6 +17,10 @@ export interface CalendarEvent {
   mode?: CalendarMode;
   activityType?: ActivityEventType;
   activityData?: Record<string, unknown>;
+  subtasks?: TaskSubtask[];
+  subtask_count?: number;
+  subtask_completed?: number;
+  has_subtasks?: boolean;
 }
 
 export interface ActivityEvent {

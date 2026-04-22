@@ -10,6 +10,7 @@ import {
   Calendar,
   Clock,
   Tag,
+  ListTodo,
 } from "lucide-react";
 import { useTheme } from "../hooks";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
@@ -62,6 +63,7 @@ export const CalendarPage: React.FC = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showSubtasks, setShowSubtasks] = useState(false);
   const [taskForm, setTaskForm] = useState<QuickTaskFormData>({
     title: "",
     description: "",
@@ -123,6 +125,10 @@ export const CalendarPage: React.FC = () => {
                     : "blue",
               allDay: !task.scheduled_start,
               estimated_duration: task.estimated_duration,
+              subtasks: task.subtasks || [],
+              subtask_count: task.subtask_count || 0,
+              subtask_completed: task.subtask_completed || 0,
+              has_subtasks: task.has_subtasks || false,
             }),
           );
           setEvents(calendarEvents);
@@ -466,6 +472,26 @@ export const CalendarPage: React.FC = () => {
                 </button>
               </div>
 
+              {/* Subtasks toggle */}
+              {calendarMode === "plan" && (
+                <button
+                  onClick={() => setShowSubtasks(!showSubtasks)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
+                    showSubtasks
+                      ? "bg-primary-600 text-white"
+                      : isDark
+                        ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  title={showSubtasks ? "隐藏子任务" : "显示子任务"}
+                >
+                  <ListTodo size={18} />
+                  <span className="hidden md:inline">
+                    {showSubtasks ? "隐藏子任务" : "显示子任务"}
+                  </span>
+                </button>
+              )}
+
               {/* Export button */}
               <button
                 onClick={() => setShowExportModal(true)}
@@ -513,6 +539,7 @@ export const CalendarPage: React.FC = () => {
                   onAddEvent={handleAddEvent}
                   calendarMode={calendarMode}
                   activityStats={activityStats}
+                  showSubtasks={showSubtasks}
                 />
               )}
               {viewType === "week" && (
@@ -524,6 +551,7 @@ export const CalendarPage: React.FC = () => {
                   onEventClick={handleEventClick}
                   onAddEvent={handleAddEvent}
                   onEventDrop={handleEventDrop}
+                  showSubtasks={showSubtasks}
                 />
               )}
               {viewType === "day" && (
@@ -536,6 +564,7 @@ export const CalendarPage: React.FC = () => {
                   onEventDrop={handleEventDrop}
                   calendarMode={calendarMode}
                   dailyActivities={dailyActivities}
+                  showSubtasks={showSubtasks}
                 />
               )}
               {viewType === "schedule" && (
@@ -549,6 +578,7 @@ export const CalendarPage: React.FC = () => {
                   onEventDrop={handleEventDrop}
                   calendarMode={calendarMode}
                   dailyActivities={dailyActivities}
+                  showSubtasks={showSubtasks}
                 />
               )}
             </motion.div>

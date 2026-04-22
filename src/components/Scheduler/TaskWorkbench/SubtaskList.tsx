@@ -7,21 +7,32 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
+  BookOpen,
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskSubtask } from "../../../types";
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { LearningStateBadge } from "../LearningStateBadge";
+import { MasteryProgressBar } from "../MasteryProgressBar";
 
 interface SubtaskListProps {
   taskId: string;
+  knowledgePointId?: string;
   className?: string;
+}
+
+interface KnowledgePoint {
+  id: string;
+  title: string;
 }
 
 export const SubtaskList: React.FC<SubtaskListProps> = ({
   taskId,
+  knowledgePointId: defaultKnowledgePointId,
   className = "",
 }) => {
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
+  const [knowledgePoints, setKnowledgePoints] = useState<KnowledgePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -29,10 +40,12 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     title: "",
     description: "",
     estimated_duration: undefined as number | undefined,
+    knowledge_point_id: defaultKnowledgePointId || "",
   });
 
   useEffect(() => {
     loadSubtasks();
+    loadKnowledgePoints();
   }, [taskId]);
 
   const loadSubtasks = async () => {
@@ -48,9 +61,30 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     }
   };
 
+  const loadKnowledgePoints = async () => {
+    try {
+      const data = await api.knowledgePoints.list();
+      if (data) {
+        setKnowledgePoints(
+          data.map((kp: any) => ({
+            id: kp.id,
+            title: kp.title || "未命名知识点",
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Failed to load knowledge points:", error);
+    }
+  };
+
   const handleAddSubtask = async () => {
     if (!newSubtask.title.trim()) {
       frontendEventBus.publish("message_show", { type: "error", content: "请输入子任务标题" });
+      return;
+    }
+
+    if (!newSubtask.knowledge_point_id) {
+      frontendEventBus.publish("message_show", { type: "error", content: "请选择关联的知识点" });
       return;
     }
 
@@ -59,6 +93,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         title: newSubtask.title,
         description: newSubtask.description || undefined,
         estimated_duration: newSubtask.estimated_duration,
+        knowledge_point_id: newSubtask.knowledge_point_id,
       });
       if (response.success) {
         setSubtasks([...subtasks, response.data]);
@@ -66,6 +101,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           title: "",
           description: "",
           estimated_duration: undefined,
+          knowledge_point_id: defaultKnowledgePointId || "",
         });
         setIsAdding(false);
         frontendEventBus.publish("message_show", { type: "success", content: "子任务已添加" });
@@ -111,6 +147,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
       ? Math.round((completedCount / subtasks.length) * 100)
       : 0;
 
+  const avgMastery =
+    subtasks.length > 0
+      ? subtasks.reduce((sum, st) => sum + (st.mastery_level || 0), 0) / subtasks.length
+      : 0;
+
   if (loading) {
     return (
       <div className={`animate-pulse ${className}`}>
@@ -141,6 +182,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           <span className="text-sm text-slate-500 dark:text-slate-400">
             {completedCount}/{subtasks.length} 完成
           </span>
+          {subtasks.length > 0 && (
+            <span className="text-sm text-slate-500 dark:text-slate-400">
+              · 平均掌握度 {avgMastery.toFixed(0)}%
+            </span>
+          )}
         </div>
         <button
           onClick={(e) => {
@@ -193,6 +239,23 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                 className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 rows={2}
               />
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen size={14} className="text-slate-400" />
+                <select
+                  value={newSubtask.knowledge_point_id}
+                  onChange={(e) =>
+                    setNewSubtask({ ...newSubtask, knowledge_point_id: e.target.value })
+                  }
+                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">选择知识点</option>
+                  {knowledgePoints.map((kp) => (
+                    <option key={kp.id} value={kp.id}>
+                      {kp.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="flex items-center gap-2 mb-3">
                 <Clock size={14} className="text-slate-400" />
                 <input
@@ -218,6 +281,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                       title: "",
                       description: "",
                       estimated_duration: undefined,
+                      knowledge_point_id: defaultKnowledgePointId || "",
                     });
                   }}
                   className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -255,26 +319,40 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
                   )}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p
-                    className={`font-medium ${
-                      subtask.status === "completed"
-                        ? "text-slate-500 dark:text-slate-400 line-through"
-                        : "text-slate-900 dark:text-white"
-                    }`}
-                  >
-                    {subtask.title}
-                  </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p
+                      className={`font-medium ${
+                        subtask.status === "completed"
+                          ? "text-slate-500 dark:text-slate-400 line-through"
+                          : "text-slate-900 dark:text-white"
+                      }`}
+                    >
+                      {subtask.title}
+                    </p>
+                    {subtask.learning_state && (
+                      <LearningStateBadge state={subtask.learning_state} size="sm" />
+                    )}
+                  </div>
                   {subtask.description && (
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                       {subtask.description}
                     </p>
                   )}
-                  {subtask.estimated_duration && (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-                      <Clock size={12} />
-                      {subtask.estimated_duration} 分钟
-                    </p>
-                  )}
+                  <div className="flex items-center gap-3 mt-1">
+                    {subtask.mastery_level !== undefined && (
+                      <MasteryProgressBar
+                        masteryLevel={subtask.mastery_level}
+                        size="sm"
+                        showLabel
+                      />
+                    )}
+                    {subtask.estimated_duration && (
+                      <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                        <Clock size={12} />
+                        {subtask.estimated_duration} 分钟
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => handleDeleteSubtask(subtask.id)}

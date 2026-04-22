@@ -256,67 +256,66 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div className="px-6 py-4">
+        <div className="px-4 py-2.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={onBack}
-                className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                className="flex-shrink-0 p-2 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-all"
+                title="返回"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span>返回</span>
               </button>
-              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white truncate max-w-md">
+              <h1 className="text-base font-semibold text-slate-900 dark:text-white truncate">
                 {task.title}
               </h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               {onEdit && (
                 <button
                   onClick={onEdit}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  title="编辑"
                 >
                   <Edit className="w-4 h-4" />
-                  编辑
                 </button>
               )}
               <button
                 onClick={() => setShowSaveAsTemplate(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+                className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+                title="保存为模板"
               >
                 <Bookmark className="w-4 h-4" />
-                保存为模板
               </button>
               <button
                 onClick={handleDeleteTask}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                title="删除"
               >
                 <Trash2 className="w-4 h-4" />
-                删除
               </button>
             </div>
           </div>
 
           {/* Status and meta info */}
-          <div className="flex flex-wrap items-center gap-3 mt-3">
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(task.status)}`}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}
             >
               {getStatusIcon(task.status)}
               {getStatusLabel(task.status)}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-sm text-slate-600 dark:text-slate-400">
-              <Tag className="w-4 h-4" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs text-slate-600 dark:text-slate-400">
+              <Tag className="w-3 h-3" />
               {getTaskTypeLabel(task.task_type)}
             </span>
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityInfo.bg} ${priorityInfo.color}`}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${priorityInfo.bg} ${priorityInfo.color}`}
             >
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-3 h-3" />
               {priorityInfo.label}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-sm text-slate-600 dark:text-slate-400">
+            <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs text-slate-600 dark:text-slate-400">
               Q{task.queue_level}
             </span>
           </div>
@@ -324,59 +323,59 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       </div>
 
       {/* Main content - Left/Right split */}
-      <div className="flex-1 overflow-hidden flex">
+      <div className="flex-1 min-h-0 overflow-hidden flex">
         {/* Left panel - Task info */}
-        <div className="w-[400px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 overflow-y-auto p-6 space-y-6">
+        <div className="w-[360px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 overflow-y-auto p-4 space-y-4">
           {/* Description */}
           {task.description && (
             <div>
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+              <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                 描述
               </h3>
-              <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
+              <p className="text-sm text-slate-900 dark:text-white whitespace-pre-wrap leading-relaxed">
                 {task.description}
               </p>
             </div>
           )}
 
           {/* Time info cards */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-1">
-                <Timer className="w-4 h-4" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
+                <Timer className="w-3.5 h-3.5" />
                 <span className="text-xs">预计时长</span>
               </div>
-              <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">
                 {formatDuration(task.estimated_duration)}
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-1">
-                <Clock className="w-4 h-4" />
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
+                <Clock className="w-3.5 h-3.5" />
                 <span className="text-xs">实际时长</span>
               </div>
-              <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">
                 {formatDuration(task.actual_duration)}
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-1">
-                <BarChart3 className="w-4 h-4" />
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
+                <BarChart3 className="w-3.5 h-3.5" />
                 <span className="text-xs">总时长</span>
               </div>
-              <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">
                 {formatDuration(task.total_duration)}
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-1">
-                <Calendar className="w-4 h-4" />
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1">
+                <Calendar className="w-3.5 h-3.5" />
                 <span className="text-xs">截止日期</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              <p className="text-xs font-semibold text-slate-900 dark:text-white">
                 {task.deadline ? formatDate(task.deadline) : "未设置"}
               </p>
             </div>
@@ -386,16 +385,16 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {task.task_type === "long_term" &&
             task.progress_percentage !== undefined && (
               <div>
-                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                   进度
                 </h3>
-                <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-primary-500 to-primary-500 h-full transition-all duration-300"
                     style={{ width: `${task.progress_percentage}%` }}
                   />
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                   {task.progress_percentage}% 完成
                 </p>
               </div>
@@ -404,14 +403,14 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {/* Tags */}
           {task.tags && task.tags.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+              <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                 标签
               </h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {task.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 rounded-full text-sm"
+                    className="px-2.5 py-0.5 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 rounded-full text-xs"
                   >
                     {tag}
                   </span>
@@ -427,25 +426,25 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           <KnowledgePointAssociation taskId={task.id} />
 
           {/* Timestamps */}
-          <div className="text-xs text-slate-400 dark:text-slate-500 space-y-1 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <p>创建时间: {formatDate(task.created_at)}</p>
-            <p>更新时间: {formatDate(task.updated_at)}</p>
+          <div className="text-xs text-slate-400 dark:text-slate-500 space-y-1 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <p>创建: {formatDate(task.created_at)}</p>
+            <p>更新: {formatDate(task.updated_at)}</p>
             {task.completed_at && (
-              <p>完成时间: {formatDate(task.completed_at)}</p>
+              <p>完成: {formatDate(task.completed_at)}</p>
             )}
           </div>
         </div>
 
         {/* Right panel - Work area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Tab bar */}
-          <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6">
+          <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4">
             <div className="flex items-center gap-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 transition-all ${
                     activeTab === tab.id
                       ? "border-primary-500 text-primary-600 dark:text-primary-400"
                       : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -459,7 +458,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 overflow-hidden p-6">
+          <div className="flex-1 min-h-0 overflow-hidden p-4">
             {activeTab === "notes" && (
               <div className="h-full">
                 <MarkdownEditor
@@ -490,44 +489,54 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       </div>
 
       {/* Footer - Action buttons */}
-      <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-4">
-        <div className="flex items-center gap-3">
-          {task.status === "pending" && (
-            <button
-              onClick={handleStartTask}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-xl font-medium hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30"
-            >
-              <Play className="w-5 h-5" />
-              开始任务
-            </button>
-          )}
-          {task.status === "in_progress" && (
-            <>
+      <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-slate-400 dark:text-slate-500">
+            {task.status === "in_progress" && (
+              <span className="flex items-center gap-1.5">
+                <Timer className="w-3.5 h-3.5 animate-pulse" />
+                进行中
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {task.status === "pending" && (
               <button
-                onClick={handlePauseTask}
-                className="flex items-center gap-2 px-6 py-2.5 bg-yellow-500 text-white rounded-xl font-medium hover:bg-yellow-600 transition-colors"
+                onClick={handleStartTask}
+                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-medium hover:from-primary-600 hover:to-primary-700 transition-all shadow-md shadow-primary-500/30 hover:shadow-lg"
               >
-                <Pause className="w-5 h-5" />
-                暂停任务
+                <Play className="w-4 h-4" />
+                开始任务
               </button>
+            )}
+            {task.status === "in_progress" && (
+              <>
+                <button
+                  onClick={handlePauseTask}
+                  className="flex items-center gap-2 px-5 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors"
+                >
+                  <Pause className="w-4 h-4" />
+                  暂停任务
+                </button>
+                <button
+                  onClick={handleCompleteTask}
+                  className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all shadow-md shadow-green-500/30"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  完成任务
+                </button>
+              </>
+            )}
+            {task.status === "paused" && (
               <button
-                onClick={handleCompleteTask}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg shadow-green-500/30"
+                onClick={handleStartTask}
+                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-medium hover:from-primary-600 hover:to-primary-700 transition-all shadow-md shadow-primary-500/30"
               >
-                <CheckCircle className="w-5 h-5" />
-                完成任务
+                <Play className="w-4 h-4" />
+                继续任务
               </button>
-            </>
-          )}
-          {task.status === "paused" && (
-            <button
-              onClick={handleStartTask}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-xl font-medium hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30"
-            >
-              <Play className="w-5 h-5" />
-              继续任务
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

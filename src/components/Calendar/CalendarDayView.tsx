@@ -9,6 +9,8 @@ import {
   ActivityEvent,
 } from "../../types/calendar";
 import { ActivityTimeline } from "./ActivityTimeline";
+import { CalendarSubtaskStack } from "./CalendarSubtaskStack";
+import type { TaskSubtask } from "@shared/types";
 
 interface CalendarDayViewProps {
   currentDate: Date;
@@ -19,6 +21,8 @@ interface CalendarDayViewProps {
   onEventDrop?: (dropInfo: EventDropInfo) => void;
   calendarMode?: CalendarMode;
   dailyActivities?: ActivityEvent[];
+  showSubtasks?: boolean;
+  onSubtaskClick?: (subtask: TaskSubtask, parentEvent: CalendarEvent) => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -32,6 +36,8 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   onEventDrop,
   calendarMode = "plan",
   dailyActivities = [],
+  showSubtasks = false,
+  onSubtaskClick,
 }) => {
   const { isDark } = useTheme();
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
@@ -255,12 +261,32 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                           )}
                           <Clock size={14} />
                           <span className="font-medium">{event.title}</span>
+                          {event.has_subtasks && event.subtask_count && (
+                            <span className="ml-auto text-xs opacity-75">
+                              {event.subtask_completed || 0}/
+                              {event.subtask_count} 子任务
+                            </span>
+                          )}
                         </div>
                         {event.description && (
                           <p className="text-xs opacity-80 mt-1 truncate">
                             {event.description}
                           </p>
                         )}
+                        {showSubtasks &&
+                          event.subtasks &&
+                          event.subtasks.length > 0 && (
+                            <div className="mt-2">
+                              <CalendarSubtaskStack
+                                subtasks={event.subtasks}
+                                maxVisible={3}
+                                compact={false}
+                                onSubtaskClick={(subtask) => {
+                                  onSubtaskClick?.(subtask, event);
+                                }}
+                              />
+                            </div>
+                          )}
                       </div>
                     );
                   })}

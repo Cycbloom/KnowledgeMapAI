@@ -7,7 +7,7 @@ export interface LinkedTaskResult {
   source: "learning_path" | "existing" | "auto_generated";
   graphId?: string;
   subtaskId?: string;
-  subtaskType?: string;
+  learningState?: string;
   progress?: number;
   totalNodes?: number;
   completedNodes?: number;
@@ -24,7 +24,7 @@ export interface GraphTaskInfo {
     title: string;
     knowledgePointId: string;
     status: string;
-    taskType: string;
+    learningState: string;
   }>;
 }
 
@@ -156,7 +156,7 @@ class SmartTaskLinker {
           source: "auto_generated" as const,
           graphId,
           subtaskId: subtask.id,
-          subtaskType: subtask.taskType,
+          learningState: subtask.learningState,
           progress:
             graphTask.totalNodes > 0
               ? Math.round(
@@ -294,7 +294,10 @@ class SmartTaskLinker {
       position: (existingSubtasks?.length || 0) + index,
       estimated_duration: 15,
       knowledge_point_id: node.id,
-      task_type: "learning",
+      learning_state: "learning",
+      mastery_level: 0,
+      last_state_change_at: new Date().toISOString(),
+      state_history: [],
     }));
 
     const { error } = await supabase
@@ -313,7 +316,7 @@ class SmartTaskLinker {
   private async getSubtasksForTask(supabase: SupabaseClient, taskId: string) {
     const { data } = await supabase
       .from("task_subtasks")
-      .select("id, title, status, knowledge_point_id, task_type")
+      .select("id, title, status, knowledge_point_id, learning_state")
       .eq("task_id", taskId)
       .order("position", { ascending: true });
 
@@ -322,7 +325,7 @@ class SmartTaskLinker {
       title: s.title,
       knowledgePointId: s.knowledge_point_id,
       status: s.status,
-      taskType: s.task_type,
+      learningState: s.learning_state,
     }));
   }
 }

@@ -6,6 +6,7 @@ import { getPaginationParams, PaginationOptions } from "../utils/pagination";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { Task } from "../../shared/types/common";
+import type { SystemTaskType } from "../../shared/types/scheduler";
 import "./taskProcessors/batchGenerateCardsProcessor.js";
 import "./taskProcessors/recursiveGraphProcessor.js";
 import "./taskProcessors/infiniteExpansionProcessor.js";
@@ -60,16 +61,30 @@ try {
 }
 
 export class TaskService {
+  private mapTaskTypeToSystemTaskType(type: string): SystemTaskType {
+    const typeMap: Record<string, SystemTaskType> = {
+      "generate_questions": "ai_generation",
+      "batch_generate_questions": "ai_generation",
+      "expand_graph": "graph_expansion",
+      "recursive_graph_generation": "graph_expansion",
+      "infinite_graph_expansion": "graph_expansion",
+      "embedding_generation": "knowledge_sync",
+    };
+    return typeMap[type] || "ai_generation";
+  }
+
   async createTask(userId: string, type: string, payload?: Record<string, unknown>, name?: string) {
     const supabase = defaultClient;
+    const systemTaskType = this.mapTaskTypeToSystemTaskType(type);
 
     const { data, error } = await supabase
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .insert({
         user_id: userId,
-        task_type: type,
-        title: name,
+        task_type: systemTaskType,
+        title: name || type,
         status: "pending",
+        input_data: payload || {},
       })
       .select()
       .single();
@@ -143,8 +158,9 @@ export class TaskService {
       }
     }
 
-    const updateData: { status: string; updated_at: string; progress_percentage?: number } = { status, updated_at: new Date().toISOString() };
-    if (progress?.progress !== undefined) updateData.progress_percentage = progress.progress;
+    const updateData: { status: string; updated_at: string; output_data?: Record<string, unknown>; error_message?: string } = { status, updated_at: new Date().toISOString() };
+    if (result) updateData.output_data = result;
+    if (errorMsg) updateData.error_message = errorMsg;
 
     logger.info(`Updating task ${taskId} status to ${status}`, {
       stage: progress?.stage,
@@ -152,7 +168,7 @@ export class TaskService {
     });
 
     const { error } = await supabase
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .update(updateData)
       .eq("id", taskId);
 
@@ -177,7 +193,7 @@ export class TaskService {
   ) {
     const { offset, end } = getPaginationParams(options);
     let query = client
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .select("*", { count: "exact" })
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -198,7 +214,7 @@ export class TaskService {
     userId: string,
   ): Promise<Task | null> {
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -211,7 +227,7 @@ export class TaskService {
 
   async getPendingTasks(client: SupabaseClient) {
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .select("*")
       .eq("status", "pending")
       .order("created_at", { ascending: true })
@@ -223,7 +239,7 @@ export class TaskService {
 
   async retryTask(client: SupabaseClient, taskId: string, userId: string) {
     const { data: task, error: fetchError } = await client
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -232,10 +248,10 @@ export class TaskService {
     if (fetchError || !task) throw new AppError(ErrorCodes.NOT_FOUND, { message: "Task not found" });
 
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .update({
         status: "pending",
-        progress_percentage: 0,
+        retry_count: (task.retry_count || 0) + 1,
         updated_at: new Date().toISOString(),
       })
       .eq("id", taskId)
@@ -246,7 +262,8 @@ export class TaskService {
     if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to retry task: ${error.message}` });
 
     logger.info("Processing retried task synchronously");
-    this.processTaskAsync(data.id, userId, data.task_type, {}).catch(
+    const originalType = this.getOriginalTaskType(task.task_type);
+    this.processTaskAsync(data.id, userId, originalType, (task.input_data as Record<string, unknown>) || {}).catch(
       (err) => {
         logger.error(
           `Failed to process retried task ${data.id} synchronously:`,
@@ -258,9 +275,18 @@ export class TaskService {
     return data as Task;
   }
 
+  private getOriginalTaskType(systemTaskType: string): string {
+    const reverseMap: Record<string, string> = {
+      "ai_generation": "generate_questions",
+      "graph_expansion": "expand_graph",
+      "knowledge_sync": "embedding_generation",
+    };
+    return reverseMap[systemTaskType] || systemTaskType;
+  }
+
   async deleteTask(client: SupabaseClient, taskId: string, userId: string) {
     const { error } = await client
-      .from("scheduled_tasks")
+      .from("system_tasks")
       .delete()
       .eq("id", taskId)
       .eq("user_id", userId);

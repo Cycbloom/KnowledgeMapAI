@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTasks } from "../hooks/queries";
@@ -60,18 +60,23 @@ const getStatusIcon = (status: string) => {
 
 const getTypeLabel = (type: string, t: (key: string) => string) => {
   switch (type) {
+    case "ai_generation":
     case "generate_questions":
       return t("tasks.autoGenerateQuestions");
     case "batch_generate_questions":
       return t("tasks.batchGenerateQuestions");
+    case "graph_expansion":
     case "expand_graph":
       return t("tasks.autoExpandGraph");
     case "recursive_graph_generation":
       return t("tasks.recursiveGraphGeneration");
     case "infinite_graph_expansion":
       return t("tasks.infiniteExpansion");
+    case "knowledge_sync":
     case "embedding_generation":
       return t("tasks.embeddingGeneration");
+    case "review_generation":
+      return t("tasks.reviewGeneration") || "复习任务生成";
     default:
       return type;
   }
@@ -305,7 +310,12 @@ export const Tasks = () => {
             <>
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
                 {tasks.map((task) => {
-                  const context = (() => { try { return JSON.parse(task.context || '{}'); } catch { return {}; } })();
+                  const context = (() => { 
+                    try { 
+                      const input = (task as any).input_data || {};
+                      return typeof input === 'string' ? JSON.parse(input) : input;
+                    } catch { return {}; } 
+                  })();
                   const graphId = context.graph_id;
                   const nodeId = context.node_id;
 
@@ -341,6 +351,12 @@ export const Tasks = () => {
                                 <span>{t("tasks.updated")} {formatTime(task.updated_at)}</span>
                               )}
                             </div>
+
+                            {((task as any).error_message) && (
+                              <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
+                                {(task as any).error_message}
+                              </div>
+                            )}
 
                             {task.notes && (
                               <div className="text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/10 p-2 rounded text-xs break-words border border-slate-100 dark:border-slate-900/20">

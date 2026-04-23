@@ -408,6 +408,28 @@
   --primary-800: #075985;
   --primary-900: #0c4a6e;
   --accent: #0ea5e9;
+
+  --secondary-50: #ecfeff;
+  --secondary-100: #cffafe;
+  --secondary-200: #a5f3fc;
+  --secondary-300: #67e8f9;
+  --secondary-400: #22d3ee;
+  --secondary-500: #06b6d4;
+  --secondary-600: #0891b2;
+  --secondary-700: #0e7490;
+  --secondary-800: #155e75;
+  --secondary-900: #164e63;
+
+  --tertiary-50: #f0fdfa;
+  --tertiary-100: #ccfbf1;
+  --tertiary-200: #99f6e4;
+  --tertiary-300: #5eead4;
+  --tertiary-400: #2dd4bf;
+  --tertiary-500: #14b8a6;
+  --tertiary-600: #0d9488;
+  --tertiary-700: #0f766e;
+  --tertiary-800: #115e59;
+  --tertiary-900: #134e4a;
 }
 
 :root.theme-default {
@@ -422,6 +444,28 @@
   --primary-800: #075985;
   --primary-900: #0c4a6e;
   --accent: #0ea5e9;
+
+  --secondary-50: #ecfeff;
+  --secondary-100: #cffafe;
+  --secondary-200: #a5f3fc;
+  --secondary-300: #67e8f9;
+  --secondary-400: #22d3ee;
+  --secondary-500: #06b6d4;
+  --secondary-600: #0891b2;
+  --secondary-700: #0e7490;
+  --secondary-800: #155e75;
+  --secondary-900: #164e63;
+
+  --tertiary-50: #f0fdfa;
+  --tertiary-100: #ccfbf1;
+  --tertiary-200: #99f6e4;
+  --tertiary-300: #5eead4;
+  --tertiary-400: #2dd4bf;
+  --tertiary-500: #14b8a6;
+  --tertiary-600: #0d9488;
+  --tertiary-700: #0f766e;
+  --tertiary-800: #115e59;
+  --tertiary-900: #134e4a;
 }
 
 :root.theme-ocean {
@@ -436,6 +480,28 @@
   --primary-800: #1e40af;
   --primary-900: #1e3a8a;
   --accent: #3b82f6;
+
+  --secondary-50: #eef2ff;
+  --secondary-100: #e0e7ff;
+  --secondary-200: #c7d2fe;
+  --secondary-300: #a5b4fc;
+  --secondary-400: #818cf8;
+  --secondary-500: #6366f1;
+  --secondary-600: #4f46e5;
+  --secondary-700: #4338ca;
+  --secondary-800: #3730a3;
+  --secondary-900: #312e81;
+
+  --tertiary-50: #f5f3ff;
+  --tertiary-100: #ede9fe;
+  --tertiary-200: #ddd6fe;
+  --tertiary-300: #c4b5fd;
+  --tertiary-400: #a78bfa;
+  --tertiary-500: #8b5cf6;
+  --tertiary-600: #7c3aed;
+  --tertiary-700: #6d28d9;
+  --tertiary-800: #5b21b6;
+  --tertiary-900: #4c1d95;
 }
 
 :root.theme-forest {
@@ -450,6 +516,28 @@
   --primary-800: #166534;
   --primary-900: #14532d;
   --accent: #22c55e;
+
+  --secondary-50: #ecfdf5;
+  --secondary-100: #d1fae5;
+  --secondary-200: #a7f3d0;
+  --secondary-300: #6ee7b7;
+  --secondary-400: #34d399;
+  --secondary-500: #10b981;
+  --secondary-600: #059669;
+  --secondary-700: #047857;
+  --secondary-800: #065f46;
+  --secondary-900: #064e3b;
+
+  --tertiary-50: #f7fee7;
+  --tertiary-100: #ecfccb;
+  --tertiary-200: #d9f99d;
+  --tertiary-300: #bef264;
+  --tertiary-400: #a3e635;
+  --tertiary-500: #84cc16;
+  --tertiary-600: #65a30d;
+  --tertiary-700: #4d7c0f;
+  --tertiary-800: #3f6212;
+  --tertiary-900: #365314;
 }
 
 :root.theme-sunset {
@@ -464,6 +552,28 @@
   --primary-800: #9a3412;
   --primary-900: #7c2d12;
   --accent: #f97316;
+
+  --secondary-50: #fff1f2;
+  --secondary-100: #ffe4e6;
+  --secondary-200: #fecdd3;
+  --secondary-300: #fda4af;
+  --secondary-400: #fb7185;
+  --secondary-500: #f43f5e;
+  --secondary-600: #e11d48;
+  --secondary-700: #be123c;
+  --secondary-800: #9f1239;
+  --secondary-900: #881337;
+
+  --tertiary-50: #fefce8;
+  --tertiary-100: #fef9c3;
+  --tertiary-200: #fef08a;
+  --tertiary-300: #fde047;
+  --tertiary-400: #facc15;
+  --tertiary-500: #eab308;
+  --tertiary-600: #ca8a04;
+  --tertiary-700: #a16207;
+  --tertiary-800: #854d0e;
+  --tertiary-900: #713f12;
 }
 
 :root.theme-lavender {
@@ -478,6 +588,28 @@
   --primary-800: #6d28d9;
   --primary-900: #581c87;
   --accent: #a855f7;
+
+  --secondary-50: #eef2ff;
+  --secondary-100: #e0e7ff;
+  --secondary-200: #c7d2fe;
+  --secondary-300: #a5b4fc;
+  --secondary-400: #818cf8;
+  --secondary-500: #6366f1;
+  --secondary-600: #4f46e5;
+  --secondary-700: #4338ca;
+  --secondary-800: #3730a3;
+  --secondary-900: #312e81;
+
+  --tertiary-50: #fdf4ff;
+  --tertiary-100: #fae8ff;
+  --tertiary-200: #f5d0fe;
+  --tertiary-300: #f0abfc;
+  --tertiary-400: #e879f9;
+  --tertiary-500: #d946ef;
+  --tertiary-600: #c026d3;
+  --tertiary-700: #a21caf;
+  --tertiary-800: #86198f;
+  --tertiary-900: #701a75;
 }
 
 :root.theme-rose {
@@ -492,6 +624,28 @@
   --primary-800: #9f1239;
   --primary-900: #881337;
   --accent: #f43f5e;
+
+  --secondary-50: #fdf2f8;
+  --secondary-100: #fce7f3;
+  --secondary-200: #fbcfe8;
+  --secondary-300: #f9a8d4;
+  --secondary-400: #f472b6;
+  --secondary-500: #ec4899;
+  --secondary-600: #db2777;
+  --secondary-700: #be185d;
+  --secondary-800: #9d174d;
+  --secondary-900: #831843;
+
+  --tertiary-50: #fff1f2;
+  --tertiary-100: #ffe4e6;
+  --tertiary-200: #fecdd3;
+  --tertiary-300: #fda4af;
+  --tertiary-400: #fb7185;
+  --tertiary-500: #f43f5e;
+  --tertiary-600: #e11d48;
+  --tertiary-700: #be123c;
+  --tertiary-800: #9f1239;
+  --tertiary-900: #881337;
 }
 
 :root.theme-midnight {
@@ -506,6 +660,28 @@
   --primary-800: #3730a3;
   --primary-900: #312e81;
   --accent: #6366f1;
+
+  --secondary-50: #faf5ff;
+  --secondary-100: #f3e8ff;
+  --secondary-200: #e9d5ff;
+  --secondary-300: #d8b4fe;
+  --secondary-400: #c084fc;
+  --secondary-500: #a855f7;
+  --secondary-600: #9333ea;
+  --secondary-700: #7c3aed;
+  --secondary-800: #6d28d9;
+  --secondary-900: #581c87;
+
+  --tertiary-50: #f5f3ff;
+  --tertiary-100: #ede9fe;
+  --tertiary-200: #ddd6fe;
+  --tertiary-300: #c4b5fd;
+  --tertiary-400: #a78bfa;
+  --tertiary-500: #8b5cf6;
+  --tertiary-600: #7c3aed;
+  --tertiary-700: #6d28d9;
+  --tertiary-800: #5b21b6;
+  --tertiary-900: #4c1d95;
 }
 
 .dark.theme-default {
@@ -520,6 +696,28 @@
   --primary-800: #e0f2fe;
   --primary-900: #f0f9ff;
   --accent: #38bdf8;
+
+  --secondary-50: #164e63;
+  --secondary-100: #155e75;
+  --secondary-200: #0e7490;
+  --secondary-300: #0891b2;
+  --secondary-400: #22d3ee;
+  --secondary-500: #06b6d4;
+  --secondary-600: #67e8f9;
+  --secondary-700: #a5f3fc;
+  --secondary-800: #cffafe;
+  --secondary-900: #ecfeff;
+
+  --tertiary-50: #134e4a;
+  --tertiary-100: #115e59;
+  --tertiary-200: #0f766e;
+  --tertiary-300: #0d9488;
+  --tertiary-400: #2dd4bf;
+  --tertiary-500: #14b8a6;
+  --tertiary-600: #5eead4;
+  --tertiary-700: #99f6e4;
+  --tertiary-800: #ccfbf1;
+  --tertiary-900: #f0fdfa;
 }
 
 .dark.theme-ocean {
@@ -534,6 +732,28 @@
   --primary-800: #dbeafe;
   --primary-900: #eff6ff;
   --accent: #60a5fa;
+
+  --secondary-50: #312e81;
+  --secondary-100: #3730a3;
+  --secondary-200: #4338ca;
+  --secondary-300: #4f46e5;
+  --secondary-400: #818cf8;
+  --secondary-500: #6366f1;
+  --secondary-600: #a5b4fc;
+  --secondary-700: #c7d2fe;
+  --secondary-800: #e0e7ff;
+  --secondary-900: #eef2ff;
+
+  --tertiary-50: #4c1d95;
+  --tertiary-100: #5b21b6;
+  --tertiary-200: #6d28d9;
+  --tertiary-300: #7c3aed;
+  --tertiary-400: #a78bfa;
+  --tertiary-500: #8b5cf6;
+  --tertiary-600: #c4b5fd;
+  --tertiary-700: #ddd6fe;
+  --tertiary-800: #ede9fe;
+  --tertiary-900: #f5f3ff;
 }
 
 .dark.theme-forest {
@@ -548,6 +768,28 @@
   --primary-800: #dcfce7;
   --primary-900: #f0fdf4;
   --accent: #4ade80;
+
+  --secondary-50: #064e3b;
+  --secondary-100: #065f46;
+  --secondary-200: #047857;
+  --secondary-300: #059669;
+  --secondary-400: #34d399;
+  --secondary-500: #10b981;
+  --secondary-600: #6ee7b7;
+  --secondary-700: #a7f3d0;
+  --secondary-800: #d1fae5;
+  --secondary-900: #ecfdf5;
+
+  --tertiary-50: #365314;
+  --tertiary-100: #3f6212;
+  --tertiary-200: #4d7c0f;
+  --tertiary-300: #65a30d;
+  --tertiary-400: #a3e635;
+  --tertiary-500: #84cc16;
+  --tertiary-600: #bef264;
+  --tertiary-700: #d9f99d;
+  --tertiary-800: #ecfccb;
+  --tertiary-900: #f7fee7;
 }
 
 .dark.theme-sunset {
@@ -562,6 +804,28 @@
   --primary-800: #ffedd5;
   --primary-900: #fff7ed;
   --accent: #fb923c;
+
+  --secondary-50: #881337;
+  --secondary-100: #9f1239;
+  --secondary-200: #be123c;
+  --secondary-300: #e11d48;
+  --secondary-400: #fb7185;
+  --secondary-500: #f43f5e;
+  --secondary-600: #fda4af;
+  --secondary-700: #fecdd3;
+  --secondary-800: #ffe4e6;
+  --secondary-900: #fff1f2;
+
+  --tertiary-50: #713f12;
+  --tertiary-100: #854d0e;
+  --tertiary-200: #a16207;
+  --tertiary-300: #ca8a04;
+  --tertiary-400: #facc15;
+  --tertiary-500: #eab308;
+  --tertiary-600: #fde047;
+  --tertiary-700: #fef08a;
+  --tertiary-800: #fef9c3;
+  --tertiary-900: #fefce8;
 }
 
 .dark.theme-lavender {
@@ -576,6 +840,28 @@
   --primary-800: #f3e8ff;
   --primary-900: #faf5ff;
   --accent: #c084fc;
+
+  --secondary-50: #312e81;
+  --secondary-100: #3730a3;
+  --secondary-200: #4338ca;
+  --secondary-300: #4f46e5;
+  --secondary-400: #818cf8;
+  --secondary-500: #6366f1;
+  --secondary-600: #a5b4fc;
+  --secondary-700: #c7d2fe;
+  --secondary-800: #e0e7ff;
+  --secondary-900: #eef2ff;
+
+  --tertiary-50: #701a75;
+  --tertiary-100: #86198f;
+  --tertiary-200: #a21caf;
+  --tertiary-300: #c026d3;
+  --tertiary-400: #e879f9;
+  --tertiary-500: #d946ef;
+  --tertiary-600: #f0abfc;
+  --tertiary-700: #f5d0fe;
+  --tertiary-800: #fae8ff;
+  --tertiary-900: #fdf4ff;
 }
 
 .dark.theme-rose {
@@ -590,6 +876,28 @@
   --primary-800: #ffe4e6;
   --primary-900: #fff1f2;
   --accent: #fb7185;
+
+  --secondary-50: #831843;
+  --secondary-100: #9d174d;
+  --secondary-200: #be185d;
+  --secondary-300: #db2777;
+  --secondary-400: #f472b6;
+  --secondary-500: #ec4899;
+  --secondary-600: #f9a8d4;
+  --secondary-700: #fbcfe8;
+  --secondary-800: #fce7f3;
+  --secondary-900: #fdf2f8;
+
+  --tertiary-50: #881337;
+  --tertiary-100: #9f1239;
+  --tertiary-200: #be123c;
+  --tertiary-300: #e11d48;
+  --tertiary-400: #fb7185;
+  --tertiary-500: #f43f5e;
+  --tertiary-600: #fda4af;
+  --tertiary-700: #fecdd3;
+  --tertiary-800: #ffe4e6;
+  --tertiary-900: #fff1f2;
 }
 
 .dark.theme-midnight {
@@ -604,6 +912,28 @@
   --primary-800: #e0e7ff;
   --primary-900: #eef2ff;
   --accent: #818cf8;
+
+  --secondary-50: #581c87;
+  --secondary-100: #6d28d9;
+  --secondary-200: #7c3aed;
+  --secondary-300: #9333ea;
+  --secondary-400: #c084fc;
+  --secondary-500: #a855f7;
+  --secondary-600: #d8b4fe;
+  --secondary-700: #e9d5ff;
+  --secondary-800: #f3e8ff;
+  --secondary-900: #faf5ff;
+
+  --tertiary-50: #4c1d95;
+  --tertiary-100: #5b21b6;
+  --tertiary-200: #6d28d9;
+  --tertiary-300: #7c3aed;
+  --tertiary-400: #a78bfa;
+  --tertiary-500: #8b5cf6;
+  --tertiary-600: #c4b5fd;
+  --tertiary-700: #ddd6fe;
+  --tertiary-800: #ede9fe;
+  --tertiary-900: #f5f3ff;
 }
 
 /* Global safe area padding for mobile devices */

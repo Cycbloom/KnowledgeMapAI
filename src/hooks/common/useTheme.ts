@@ -12,7 +12,7 @@ interface ThemeContextType {
   isDark: boolean;
   themePreset: ThemePreset;
   setThemePreset: (preset: ThemePreset) => void;
-  availablePresets: { key: ThemePreset; name: string; previewColor: string }[];
+  availablePresets: { key: ThemePreset; name: string; previewColors: string[] }[];
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);

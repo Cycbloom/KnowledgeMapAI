@@ -1,4 +1,4 @@
-﻿import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
@@ -315,22 +315,27 @@ export const Settings = () => {
                 }`}
                 style={
                   themePreset === preset.key
-                    ? { borderColor: preset.previewColor }
+                    ? { borderColor: preset.previewColors[0] }
                     : undefined
                 }
               >
-                <div
-                  className="w-6 h-6 rounded-full mb-2 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-800"
-                  style={
-                    {
-                      backgroundColor: preset.previewColor,
-                      "--tw-ring-color":
-                        themePreset === preset.key
-                          ? preset.previewColor
-                          : "transparent",
-                    } as React.CSSProperties
-                  }
-                />
+                <div className="flex space-x-1 mb-2">
+                  {preset.previewColors.map((color, idx) => (
+                    <div
+                      key={idx}
+                      className="w-4 h-4 rounded-full ring-1 ring-offset-1 ring-offset-white dark:ring-offset-slate-800"
+                      style={
+                        {
+                          backgroundColor: color,
+                          "--tw-ring-color":
+                            themePreset === preset.key
+                              ? color
+                              : "transparent",
+                        } as React.CSSProperties
+                      }
+                    />
+                  ))}
+                </div>
                 <span className="font-medium text-xs text-center">
                   {t(`settings.themePresets.${preset.key}`)}
                 </span>

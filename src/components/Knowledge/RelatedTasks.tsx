@@ -65,16 +65,16 @@ const QUEUE_COLORS = {
     badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
   },
   1: {
-    accent: "bg-emerald-500",
-    text: "text-emerald-600 dark:text-emerald-400",
+    accent: "bg-secondary-500",
+    text: "text-secondary-600 dark:text-secondary-400",
     badge:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+      "bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-300",
   },
   2: {
-    accent: "bg-amber-500",
-    text: "text-amber-600 dark:text-amber-400",
+    accent: "bg-tertiary-500",
+    text: "text-tertiary-600 dark:text-tertiary-400",
     badge:
-      "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+      "bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-500/20 dark:text-tertiary-300",
   },
 };
 

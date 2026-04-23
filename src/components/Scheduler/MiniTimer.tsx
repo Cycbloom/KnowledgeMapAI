@@ -17,9 +17,9 @@ interface MiniTimerProps {
 }
 
 const QUEUE_COLORS = {
-  0: { bg: 'from-primary-500 to-primary-500', progress: '#06b6d4' },
-  1: { bg: 'from-emerald-500 to-green-500', progress: '#10b981' },
-  2: { bg: 'from-amber-500 to-orange-500', progress: '#f59e0b' },
+  0: { bg: 'from-primary-500 to-primary-600', progress: '#06b6d4' },
+  1: { bg: 'from-secondary-500 to-secondary-600', progress: '#10b981' },
+  2: { bg: 'from-tertiary-500 to-tertiary-600', progress: '#f59e0b' },
 };
 
 export const MiniTimer: React.FC<MiniTimerProps> = ({

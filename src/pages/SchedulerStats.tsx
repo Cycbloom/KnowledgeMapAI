@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSchedulerStats, useHeatmap, useExecutions } from '../hooks';
 import type { ExecutionFilters, TaskExecution } from '@shared/types';
 import {
@@ -12,8 +12,8 @@ import {
 
 const QUEUE_COLORS = {
   q0: { main: '#06b6d4', glow: 'rgba(6, 182, 212, 0.3)', bg: 'bg-primary-500' },
-  q1: { main: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.3)', bg: 'bg-violet-500' },
-  q2: { main: '#f59e0b', glow: 'rgba(245, 158, 11, 0.3)', bg: 'bg-amber-500' },
+  q1: { main: '#10b981', glow: 'rgba(16, 185, 129, 0.3)', bg: 'bg-secondary-500' },
+  q2: { main: '#f59e0b', glow: 'rgba(245, 158, 11, 0.3)', bg: 'bg-tertiary-500' },
 };
 
 

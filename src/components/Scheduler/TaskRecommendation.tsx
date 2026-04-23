@@ -44,8 +44,8 @@ const URGENCY_CONFIG = {
 
 const QUEUE_COLORS = {
   0: 'bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300',
-  1: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
-  2: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+  1: 'bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-300',
+  2: 'bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-500/20 dark:text-tertiary-300',
 };
 
 export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({

@@ -32,11 +32,11 @@ export const LEVEL_WEIGHTS: Record<NodeLevel, number> = {
 
 export const getLevelColor = (level: NodeLevel): string => {
   const colors: Record<NodeLevel, string> = {
-    root: 'bg-purple-500',
-    core: 'bg-red-500',
-    sub: 'bg-orange-500',
-    normal: 'bg-blue-500',
-    leaf: 'bg-green-500'
+    root: 'bg-primary-500',
+    core: 'bg-primary-500',
+    sub: 'bg-secondary-500',
+    normal: 'bg-tertiary-500',
+    leaf: 'bg-tertiary-500'
   };
   return colors[level] || colors.normal;
 };

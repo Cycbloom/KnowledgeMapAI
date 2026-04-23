@@ -13,8 +13,8 @@ interface TimelineViewProps {
 
 const QUEUE_COLORS = {
   0: { border: 'border-primary-400 dark:border-primary-400', glow: 'shadow-primary-500/30', bg: 'bg-primary-100 dark:bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400' },
-  1: { border: 'border-emerald-400 dark:border-emerald-400', glow: 'shadow-emerald-500/30', bg: 'bg-emerald-100 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400' },
-  2: { border: 'border-amber-400 dark:border-amber-400', glow: 'shadow-amber-500/30', bg: 'bg-amber-100 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
+  1: { border: 'border-secondary-400 dark:border-secondary-400', glow: 'shadow-secondary-500/30', bg: 'bg-secondary-100 dark:bg-secondary-500/10', text: 'text-secondary-600 dark:text-secondary-400' },
+  2: { border: 'border-tertiary-400 dark:border-tertiary-400', glow: 'shadow-tertiary-500/30', bg: 'bg-tertiary-100 dark:bg-tertiary-500/10', text: 'text-tertiary-600 dark:text-tertiary-400' },
 };
 
 export const TimelineView: React.FC<TimelineViewProps> = ({

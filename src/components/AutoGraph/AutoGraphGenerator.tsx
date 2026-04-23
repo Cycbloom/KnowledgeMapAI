@@ -104,11 +104,11 @@ const getLevelColor = (level?: string) => {
     case "core":
       return "bg-primary-100 text-primary-800 border-primary-300 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-600";
     case "sub":
-      return "bg-primary-200 text-primary-900 border-primary-400 dark:bg-primary-800/30 dark:text-primary-200 dark:border-primary-500";
+      return "bg-secondary-100 text-secondary-800 border-secondary-300 dark:bg-secondary-900/30 dark:text-secondary-300 dark:border-secondary-600";
     case "normal":
-      return "bg-primary-50 text-primary-800 border-primary-300 dark:bg-primary-950/35 dark:text-primary-300 dark:border-primary-700";
+      return "bg-tertiary-50 text-tertiary-800 border-tertiary-300 dark:bg-tertiary-950/35 dark:text-tertiary-300 dark:border-tertiary-700";
     case "leaf":
-      return "bg-primary-50 text-primary-800 border-primary-300 dark:bg-primary-950/35 dark:text-primary-300 dark:border-primary-700";
+      return "bg-tertiary-50 text-tertiary-800 border-tertiary-300 dark:bg-tertiary-950/35 dark:text-tertiary-300 dark:border-tertiary-700";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300";
   }
@@ -277,7 +277,8 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [expandedCategory, setExpandedCategory] =
     useState<TemplateCategory | null>(null);
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
-  const [showTemplatePromptConfig, setShowTemplatePromptConfig] = useState(false);
+  const [showTemplatePromptConfig, setShowTemplatePromptConfig] =
+    useState(false);
 
   const [topic, setTopic] = useState("");
   const [backgroundInfo, setBackgroundInfo] = useState("");
@@ -330,17 +331,26 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
   const handleInitialize = useCallback(async () => {
     if (!topic.trim()) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("autoGraph.topicRequired") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("autoGraph.topicRequired"),
+      });
       return;
     }
 
     if (!graphId && isDuplicate) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("autoGraph.topicDuplicate") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("autoGraph.topicDuplicate"),
+      });
       return;
     }
 
     if (style === "custom" && !customPrompt.trim()) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("autoGraph.enterCustomRules") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("autoGraph.enterCustomRules"),
+      });
       return;
     }
 
@@ -375,7 +385,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       setRootNode(root);
       setIsInputCollapsed(true);
-      frontendEventBus.publish("message_show", { type: "success", content: t("autoGraph.initSuccess") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("autoGraph.initSuccess"),
+      });
     } catch (error) {
       handleError(error, {
         context: "AutoGraphInit",
@@ -533,7 +546,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         nodes: allNodes,
       });
 
-      frontendEventBus.publish("message_show", { type: "success", content: t("autoGraph.graphSaved") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("autoGraph.graphSaved"),
+      });
       onGraphGenerated?.(allNodes, []);
       onClose?.();
     } catch (error) {
@@ -838,7 +854,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 >
                   <Icon
                     className={`${isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} ${
-                      style === option.value ? "text-primary-500" : "text-gray-400"
+                      style === option.value
+                        ? "text-primary-500"
+                        : "text-gray-400"
                     }`}
                   />
                   <span
@@ -1149,7 +1167,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         isOpen={showTemplatePromptConfig}
         onClose={() => setShowTemplatePromptConfig(false)}
         graphId={graphId}
-        initialSelectedType={selectedTemplateType !== "blank" ? selectedTemplateType : undefined}
+        initialSelectedType={
+          selectedTemplateType !== "blank" ? selectedTemplateType : undefined
+        }
       />
     </div>
   );

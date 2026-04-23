@@ -55,14 +55,14 @@ const QUEUE_COLORS = {
     border: "border-primary-300 dark:border-primary-500/30",
   },
   1: {
-    bg: "bg-emerald-100 dark:bg-emerald-500/20",
-    text: "text-emerald-600 dark:text-emerald-400",
-    border: "border-emerald-300 dark:border-emerald-500/30",
+    bg: "bg-secondary-100 dark:bg-secondary-500/20",
+    text: "text-secondary-600 dark:text-secondary-400",
+    border: "border-secondary-300 dark:border-secondary-500/30",
   },
   2: {
-    bg: "bg-amber-100 dark:bg-amber-500/20",
-    text: "text-amber-600 dark:text-amber-400",
-    border: "border-amber-300 dark:border-amber-500/30",
+    bg: "bg-tertiary-100 dark:bg-tertiary-500/20",
+    text: "text-tertiary-600 dark:text-tertiary-400",
+    border: "border-tertiary-300 dark:border-tertiary-500/30",
   },
 };
 

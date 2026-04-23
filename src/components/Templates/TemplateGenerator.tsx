@@ -56,13 +56,13 @@ const getLevelColor = (level?: string) => {
     case "root":
       return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
     case "core":
-      return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300";
-    case "sub":
-      return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300";
-    case "normal":
       return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
+    case "sub":
+      return "bg-secondary-100 text-secondary-800 border-secondary-200 dark:bg-secondary-900/30 dark:text-secondary-300";
+    case "normal":
+      return "bg-tertiary-100 text-tertiary-800 border-tertiary-200 dark:bg-tertiary-900/30 dark:text-tertiary-300";
     case "leaf":
-      return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300";
+      return "bg-tertiary-100 text-tertiary-800 border-tertiary-200 dark:bg-tertiary-900/30 dark:text-tertiary-300";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300";
   }

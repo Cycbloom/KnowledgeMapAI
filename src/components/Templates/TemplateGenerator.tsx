@@ -54,17 +54,17 @@ const difficultyColors: Record<TemplateDifficulty, string> = {
 const getLevelColor = (level?: string) => {
   switch (level) {
     case "root":
-      return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
+      return "bg-primary-600 text-white border-primary-700 dark:bg-primary-500 dark:text-white dark:border-primary-400";
     case "core":
-      return "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300";
+      return "bg-primary-200 text-primary-900 border-primary-300 dark:bg-primary-800 dark:text-primary-100 dark:border-primary-600";
     case "sub":
-      return "bg-secondary-100 text-secondary-800 border-secondary-200 dark:bg-secondary-900/30 dark:text-secondary-300";
+      return "bg-secondary-200 text-secondary-800 border-secondary-300 dark:bg-secondary-800 dark:text-secondary-100 dark:border-secondary-600";
     case "normal":
-      return "bg-tertiary-100 text-tertiary-800 border-tertiary-200 dark:bg-tertiary-900/30 dark:text-tertiary-300";
+      return "bg-tertiary-100 text-tertiary-800 border-tertiary-200 dark:bg-tertiary-900 dark:text-tertiary-200 dark:border-tertiary-700";
     case "leaf":
-      return "bg-tertiary-100 text-tertiary-800 border-tertiary-200 dark:bg-tertiary-900/30 dark:text-tertiary-300";
+      return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600";
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300";
+      return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300";
   }
 };
 

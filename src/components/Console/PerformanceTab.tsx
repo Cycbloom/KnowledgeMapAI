@@ -96,6 +96,55 @@ const LogDetailModal: React.FC<{
     return translated === key ? operation : translated;
   };
 
+  const metadataLabels: Record<string, string> = {
+    graphId: '图谱ID',
+    graphTitle: '图谱标题',
+    userId: '用户ID',
+    userName: '用户名',
+    nodeId: '节点ID',
+    nodeTitle: '节点名称',
+    nodeLevel: '节点层级',
+    topic: '主题',
+    style: '风格',
+    depth: '深度',
+    actionName: '动作名称',
+    documentName: '文档名称',
+    learningStyle: '学习风格',
+    targetGoal: '目标',
+    templateType: '模板类型',
+    text: '文本内容',
+    graph1: '图谱1',
+    graph2: '图谱2',
+    title: '标题',
+  };
+
+  const priorityOrder = ['graphTitle', 'userName', 'nodeTitle', 'topic', 'style', 'nodeLevel', 'depth', 'actionName'];
+
+  const getOrderedMetadata = (): Array<{ key: string; label: string; value: any }> => {
+    if (!log.metadata) return [];
+
+    const entries = Object.entries(log.metadata);
+
+    const priorityItems = priorityOrder
+      .filter(key => log.metadata && log.metadata[key] !== undefined && log.metadata[key] !== null && log.metadata[key] !== '')
+      .map(key => ({
+        key,
+        label: metadataLabels[key] || key,
+        value: (log.metadata as Record<string, unknown>)[key],
+      }));
+
+    const otherItems = entries
+      .filter(([key]) => !priorityOrder.includes(key))
+      .filter(([, value]) => value !== undefined && value !== null && value !== '')
+      .map(([key, value]) => ({
+        key,
+        label: metadataLabels[key] || key,
+        value,
+      }));
+
+    return [...priorityItems, ...otherItems];
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -108,7 +157,7 @@ const LogDetailModal: React.FC<{
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className={`w-[500px] max-h-[80vh] rounded-xl shadow-2xl overflow-hidden ${
+        className={`w-[560px] max-h-[85vh] rounded-xl shadow-2xl overflow-hidden ${
           isDark
             ? "bg-slate-900 border border-slate-700"
             : "bg-white border border-gray-200"
@@ -122,11 +171,12 @@ const LogDetailModal: React.FC<{
               : "border-gray-200 bg-gray-50"
           }`}
         >
-          <h3
-            className={`font-semibold ${isDark ? "text-slate-200" : "text-gray-800"}`}
-          >
-            {t("console.performance.detail.title")}
-          </h3>
+          <div className="flex items-center gap-2">
+            <Activity size={16} className={isDark ? "text-primary-400" : "text-primary-600"} />
+            <h3 className={`font-semibold ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+              {t("console.performance.detail.title")}
+            </h3>
+          </div>
           <button
             onClick={onClose}
             className={`p-1 rounded-md transition-colors ${
@@ -138,116 +188,67 @@ const LogDetailModal: React.FC<{
             <XCircle size={16} />
           </button>
         </div>
-        <div className="p-4 space-y-3 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
+
+        <div className="p-4 space-y-4 overflow-y-auto">
+          <div className={`grid grid-cols-2 gap-x-6 gap-y-3 p-3 rounded-lg ${
+            isDark ? "bg-slate-800/50" : "bg-gray-50"
+          }`}>
+            <div className="space-y-1">
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                 {t("console.performance.detail.operation")}
-              </div>
-              <div
-                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-              >
+              </span>
+              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
                 {getOperationLabel(log.operation)}
               </div>
             </div>
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
+
+            <div className="space-y-1">
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                 {t("console.performance.detail.model")}
-              </div>
-              <div
-                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-              >
+              </span>
+              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
                 {log.model}
               </div>
             </div>
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
+
+            <div className="space-y-1">
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                 {t("console.performance.detail.provider")}
-              </div>
-              <div
-                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-              >
+              </span>
+              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
                 {log.provider}
               </div>
             </div>
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
+
+            <div className="space-y-1">
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                 {t("console.performance.detail.status")}
-              </div>
-              <div
-                className={`text-sm font-medium flex items-center gap-1 ${
-                  log.success
-                    ? isDark
-                      ? "text-green-400"
-                      : "text-green-600"
-                    : isDark
-                      ? "text-red-400"
-                      : "text-red-600"
-                }`}
-              >
-                {log.success ? (
-                  <CheckCircle size={14} />
-                ) : (
-                  <XCircle size={14} />
-                )}
-                {log.success
-                  ? t("console.performance.success")
-                  : t("console.performance.failed")}
+              </span>
+              <div className={`text-sm font-medium flex items-center gap-1 ${
+                log.success
+                  ? isDark ? "text-green-400" : "text-green-600"
+                  : isDark ? "text-red-400" : "text-red-600"
+              }`}>
+                {log.success ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                {log.success ? t("console.performance.success") : t("console.performance.failed")}
               </div>
             </div>
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
-                {t("console.performance.detail.totalTokens")}
-              </div>
-              <div
-                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-              >
-                {formatTokens(log.totalTokens)}
-              </div>
-            </div>
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
-                {t("console.performance.detail.estimatedCost")}
-              </div>
-              <div
-                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-              >
-                {formatCost(log.estimatedCost)}
-              </div>
-            </div>
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
+
+            <div className="space-y-1">
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                 {t("console.performance.detail.duration")}
-              </div>
-              <div
-                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-              >
+              </span>
+              <div className={`text-sm font-medium flex items-center gap-1 ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                <Clock size={12} />
                 {formatDuration(log.duration)}
               </div>
             </div>
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
+
+            <div className="space-y-1">
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                 {t("console.performance.detail.time")}
-              </div>
-              <div
-                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-              >
+              </span>
+              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
                 {formatTimestamp(log.timestamp)}
               </div>
             </div>
@@ -255,7 +256,7 @@ const LogDetailModal: React.FC<{
 
           {log.cachedInputTokens !== undefined && log.cachedInputTokens > 0 && (
             <div
-              className={`mt-4 p-3 rounded-lg ${
+              className={`p-3 rounded-lg ${
                 isDark
                   ? "bg-primary-900/20 border border-primary-700/30"
                   : "bg-primary-50 border border-primary-200"
@@ -403,53 +404,66 @@ const LogDetailModal: React.FC<{
               </div>
             </div>
           )}
+
           {log.errorMessage && (
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
-                {t("console.performance.detail.errorMessage")}
+            <div className={`p-3 rounded-lg ${
+              isDark ? "bg-red-900/20 border border-red-700/30" : "bg-red-50 border border-red-200"
+            }`}>
+              <div className={`text-xs font-medium mb-1 ${isDark ? "text-red-400" : "text-red-600"}`}>
+                错误信息
               </div>
-              <div
-                className={`text-sm p-2 rounded-md mt-1 ${
-                  isDark
-                    ? "bg-red-900/20 text-red-400"
-                    : "bg-red-50 text-red-600"
-                }`}
-              >
+              <div className={`text-sm ${isDark ? "text-red-300" : "text-red-700"}`}>
                 {log.errorMessage}
               </div>
             </div>
           )}
-          {log.metadata && (
-            <div>
-              <div
-                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-              >
-                {t("console.performance.detail.metadata")}
+
+          {(() => {
+            const orderedMetadata = getOrderedMetadata();
+            if (orderedMetadata.length === 0) return null;
+
+            return (
+              <div>
+                <div className={`text-xs font-semibold mb-2.5 flex items-center gap-1.5 ${
+                  isDark ? "text-slate-400" : "text-gray-500"
+                }`}>
+                  <Coins size={12} />
+                  元数据信息
+                </div>
+                <div className={`rounded-lg overflow-hidden border divide-y ${
+                  isDark ? "border-slate-700 bg-slate-800/30 divide-slate-700/50" : "border-gray-200 bg-white divide-gray-100"
+                }`}>
+                  {orderedMetadata.map(({ key, label, value }, index) => {
+                    const displayValue = typeof value === 'string' ? value : JSON.stringify(value);
+                    const isLongText = displayValue.length > 60;
+
+                    return (
+                      <div
+                        key={key}
+                        className={`flex items-start justify-between px-3 py-2.5 hover:${
+                          isDark ? "bg-slate-700/30" : "bg-gray-50"
+                        } transition-colors`}
+                      >
+                        <span className={`text-xs font-medium shrink-0 w-16 ${
+                          isDark ? "text-slate-400" : "text-gray-500"
+                        }`}>
+                          {label}
+                        </span>
+                        <span 
+                          className={`text-xs text-right max-w-[280px] break-all ${
+                            isDark ? "text-slate-200" : "text-gray-700"
+                          }`} 
+                          title={isLongText ? displayValue : undefined}
+                        >
+                          {isLongText ? `${displayValue.slice(0, 57)}...` : displayValue}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div
-                className={`mt-1 space-y-1 ${
-                  isDark
-                    ? "bg-slate-800 text-slate-300"
-                    : "bg-gray-100 text-gray-700"
-                } p-2 rounded-md`}
-              >
-                {Object.entries(log.metadata).map(([key, value]) => (
-                  <div key={key} className="flex flex-col">
-                    <span className={`text-xs font-medium ${
-                      isDark ? "text-slate-400" : "text-gray-500"
-                    }`}>
-                      {key}:
-                    </span>
-                    <span className="text-xs ml-2">
-                      {typeof value === 'string' ? value : JSON.stringify(value)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </motion.div>
     </motion.div>
@@ -561,8 +575,8 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                     ? "bg-slate-700 text-slate-200"
                     : "bg-gray-200 text-gray-800"
                   : isDark
-                    ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                  ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
               }`}
               title={t('console.performance.filter')}
             >

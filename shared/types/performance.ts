@@ -37,6 +37,16 @@ export interface AIPerformanceLog {
     graph2?: string;
     title?: string;
     nodeTitle?: string;
+    graphTitle?: string;
+    userName?: string;
+    graphDescription?: string;
+    nodeLevel?: string;
+    style?: string;
+    depth?: number;
+    actionName?: string;
+    documentName?: string;
+    learningStyle?: string;
+    targetGoal?: string;
   };
 }
 

@@ -369,3 +369,71 @@ class PerformanceMonitor {
 }
 
 export const performanceMonitor = new PerformanceMonitor();
+
+export interface EnrichedMetadata {
+  graphId?: string;
+  graphTitle?: string;
+  graphDescription?: string;
+  userId?: string;
+  userName?: string;
+  nodeId?: string;
+  nodeTitle?: string;
+  nodeLevel?: string;
+  topic?: string;
+  style?: string;
+  depth?: number;
+  documentName?: string;
+  actionName?: string;
+}
+
+async function getGraphInfo(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  graphId: string
+): Promise<{ id: string; title: string; description?: string | null } | null> {
+  const { data } = await supabase
+    .from("knowledge_graphs")
+    .select("id, title, description")
+    .eq("id", graphId)
+    .maybeSingle();
+  return data;
+}
+
+async function getUserInfo(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userId: string
+): Promise<{ id: string; name?: string | null } | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, name")
+    .eq("id", userId)
+    .maybeSingle();
+  return data;
+}
+
+export async function enrichMetadata(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  baseMetadata: {
+    graphId?: string;
+    nodeId?: string;
+    userId?: string;
+    topic?: string;
+    nodeTitle?: string;
+    nodeLevel?: string;
+    style?: string;
+    depth?: number;
+    documentName?: string;
+    actionName?: string;
+  }
+): Promise<EnrichedMetadata> {
+  const [graphInfo, userInfo] = await Promise.all([
+    baseMetadata.graphId ? getGraphInfo(supabase, baseMetadata.graphId) : null,
+    baseMetadata.userId ? getUserInfo(supabase, baseMetadata.userId) : null,
+  ]);
+
+  return {
+    ...baseMetadata,
+    graphTitle: graphInfo?.title ?? undefined,
+    graphDescription: graphInfo?.description ?? undefined,
+    userName: userInfo?.name ?? undefined,
+  };
+}

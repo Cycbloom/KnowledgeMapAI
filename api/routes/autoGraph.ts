@@ -7,7 +7,7 @@ import type { AIProviderType } from "@shared/types";
 import { getAIProviderForTask, getAIProvider } from "../services/ai/factory";
 import { promptService } from "../services/ai/promptService";
 import { cacheService, CacheKeys } from "../services/common/cacheService";
-import { performanceMonitor } from "../services/ai/performanceMonitor";
+import { performanceMonitor, enrichMetadata } from "../services/ai/performanceMonitor";
 import { pricingService } from "../services/ai/pricingService";
 import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
@@ -41,7 +41,17 @@ async function withAutoGraphTracking<T>(
       };
     };
   }>,
-  metadata?: { graphId?: string; userId?: string }
+  metadata?: {
+    graphId?: string;
+    graphTitle?: string;
+    userId?: string;
+    userName?: string;
+    topic?: string;
+    nodeTitle?: string;
+    nodeId?: string;
+    nodeLevel?: string;
+    style?: string;
+  }
 ): Promise<T> {
   const startTime = Date.now();
   let success = true;
@@ -318,7 +328,12 @@ router.post(
             usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
           };
         },
-        { graphId: graph_id, userId: req.user.id }
+        await enrichMetadata(supabase, {
+          graphId: graph_id,
+          userId: req.user.id,
+          topic,
+          style,
+        })
       );
 
       const content = completion.choices[0].message.content;
@@ -451,7 +466,13 @@ router.post(
             usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
           };
         },
-        { graphId: graph_id, userId: req.user.id }
+        await enrichMetadata(supabase, {
+          graphId: graph_id,
+          userId: req.user.id,
+          nodeTitle: node_title,
+          nodeId: node_id,
+          nodeLevel: node_level,
+        })
       );
 
       const content = completion.choices[0].message.content;

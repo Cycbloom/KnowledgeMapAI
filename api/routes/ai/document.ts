@@ -21,6 +21,8 @@ import { promptService } from "../../services/ai/promptService";
 import { supabaseAdmin } from "../../supabase";
 import { scrapeUrl } from "../../utils/scraper";
 import { upload } from "./utils";
+import { performanceMonitor, enrichMetadata } from "../../services/ai/performanceMonitor";
+import { pricingService } from "../../services/ai/pricingService";
 
 const router = Router();
 
@@ -212,6 +214,13 @@ router.post(
         language,
       );
 
+      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+        graphId: graph_id,
+        userId: req.user.id,
+        topic: text?.slice(0, 50),
+      });
+
+      const startTime = Date.now();
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
@@ -221,6 +230,31 @@ router.post(
         response_format: { type: "json_object" },
         max_tokens: 8000,
       });
+      const duration = Date.now() - startTime;
+
+      const usage = completion.usage;
+      if (usage) {
+        const cost = pricingService.calculateCost(
+          provider.providerType,
+          model || provider.model,
+          usage.prompt_tokens,
+          usage.completion_tokens,
+          0
+        );
+        await performanceMonitor.recordLog({
+          operation: 'text_to_graph',
+          provider: provider.providerType,
+          model: model || provider.model,
+          inputTokens: usage.prompt_tokens,
+          outputTokens: usage.completion_tokens,
+          totalTokens: usage.prompt_tokens + usage.completion_tokens,
+          cachedInputTokens: 0,
+          duration,
+          success: true,
+          estimatedCost: cost,
+          metadata: enrichedMetadata,
+        });
+      }
 
       const content = completion.choices[0].message.content;
       let parsed;
@@ -347,6 +381,13 @@ router.post(
         language,
       );
 
+      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+        graphId: graph_id,
+        userId: req.user.id,
+        documentName: file.originalname,
+      });
+
+      const startTime = Date.now();
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
@@ -359,6 +400,31 @@ router.post(
         response_format: { type: "json_object" },
         max_tokens: 4000,
       });
+      const duration = Date.now() - startTime;
+
+      const usage = completion.usage;
+      if (usage) {
+        const cost = pricingService.calculateCost(
+          provider.providerType,
+          provider.model,
+          usage.prompt_tokens,
+          usage.completion_tokens,
+          0
+        );
+        await performanceMonitor.recordLog({
+          operation: 'document_to_graph',
+          provider: provider.providerType,
+          model: provider.model,
+          inputTokens: usage.prompt_tokens,
+          outputTokens: usage.completion_tokens,
+          totalTokens: usage.prompt_tokens + usage.completion_tokens,
+          cachedInputTokens: 0,
+          duration,
+          success: true,
+          estimatedCost: cost,
+          metadata: enrichedMetadata,
+        });
+      }
 
       const content = completion.choices[0].message.content;
       const parsed = JSON.parse(content || '{"nodes": [], "edges": []}');

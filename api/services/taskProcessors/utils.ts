@@ -3,6 +3,8 @@ import { promptService } from '../ai/promptService';
 import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
 import { logger } from '../../utils/logger';
 import { getNextLevel } from '../../utils/levelUtils';
+import { performanceMonitor, enrichMetadata } from '../ai/performanceMonitor';
+import { pricingService } from '../ai/pricingService';
 
 export async function getAutoGraphPrompt(
   supabase: SupabaseClient, 
@@ -42,6 +44,14 @@ export async function generateNodesForGraph(
       userId
     );
 
+    const enrichedMetadata = userId ? await enrichMetadata(supabase, {
+      graphId,
+      userId,
+      topic,
+      depth,
+    }) : undefined;
+
+    const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -51,6 +61,31 @@ export async function generateNodesForGraph(
       response_format: { type: "json_object" },
       max_tokens: 4000,
     });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage && enrichedMetadata) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'generate_nodes_for_graph',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
 
     const parsed = JSON.parse(completion.choices[0].message.content || '{"root":null,"coreNodes":[]}');
 
@@ -160,6 +195,16 @@ export async function expandNodeForGraph(
       userId
     );
 
+    const enrichedMetadata = userId ? await enrichMetadata(supabase, {
+      graphId,
+      userId,
+      nodeTitle: parentNodeTitle,
+      nodeId: parentNodeId,
+      nodeLevel: parentLevel,
+      depth: remainingDepth,
+    }) : undefined;
+
+    const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -169,6 +214,31 @@ export async function expandNodeForGraph(
       response_format: { type: "json_object" },
       max_tokens: 3000,
     });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage && enrichedMetadata) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'expand_node_for_graph',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
 
     const parsed = JSON.parse(completion.choices[0].message.content || '{"children":[]}');
     const children = parsed.children || [];

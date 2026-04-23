@@ -2,6 +2,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { logger } from "../../utils/logger";
+import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
+import { pricingService } from "../ai/pricingService";
 
 export interface DiscoveredRelation {
   source_graph_id: string;
@@ -174,6 +176,11 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
 
 请发现新的潜在关系，输出JSON格式。`;
 
+    const enrichedMetadata = await enrichMetadata(supabase, {
+      userId: userId,
+    });
+
+    const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -183,6 +190,31 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       response_format: { type: "json_object" },
       max_tokens: 4000,
     });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'discover_relations',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
 
     const content = completion.choices[0].message.content;
     let parsed: Record<string, any> = {};
@@ -388,6 +420,11 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       summary: discoveryResult.analysis_summary,
     };
 
+    const enrichedMetadata = await enrichMetadata(supabase, {
+      userId: userId,
+    });
+
+    const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -400,6 +437,31 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       response_format: { type: "json_object" },
       max_tokens: 3000,
     });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'get_intelligent_suggestions',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
 
     const content = completion.choices[0].message.content;
     let parsed: IntelligentSuggestion = {
@@ -515,6 +577,11 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       core_concepts: g.core_concepts.slice(0, 10),
     }));
 
+    const enrichedMetadata = await enrichMetadata(supabase, {
+      userId: userId,
+    });
+
+    const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -527,6 +594,31 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       response_format: { type: "json_object" },
       max_tokens: 3000,
     });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'analyze_cross_domain_insights',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
 
     const content = completion.choices[0].message.content;
     let parsed: { cross_domain_insights: Array<{
@@ -672,6 +764,11 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       };
     });
 
+    const enrichedMetadata = await enrichMetadata(supabase, {
+      userId: userId,
+    });
+
+    const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -690,6 +787,31 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       response_format: { type: "json_object" },
       max_tokens: 3000,
     });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'generate_learning_path_suggestions',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
 
     const content = completion.choices[0].message.content;
     let parsed: { learning_path_suggestions: Array<{
@@ -852,6 +974,11 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       core_concepts: g.core_concepts.slice(0, 10),
     }));
 
+    const enrichedMetadata = await enrichMetadata(supabase, {
+      userId: userId,
+    });
+
+    const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -864,6 +991,31 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       response_format: { type: "json_object" },
       max_tokens: 3000,
     });
+    const duration = Date.now() - startTime;
+
+    const usage = completion.usage;
+    if (usage) {
+      const cost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        0
+      );
+      await performanceMonitor.recordLog({
+        operation: 'analyze_knowledge_gaps',
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: usage.prompt_tokens,
+        outputTokens: usage.completion_tokens,
+        totalTokens: usage.prompt_tokens + usage.completion_tokens,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: cost,
+        metadata: enrichedMetadata,
+      });
+    }
 
     const content = completion.choices[0].message.content;
     let parsed: { knowledge_gaps: Array<{

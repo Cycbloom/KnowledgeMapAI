@@ -11,6 +11,8 @@ import { logger } from "../../utils/logger";
 import { generateNodesForGraph } from "./utils";
 import { checkDuplicateGraphTopic } from "../../utils/similaritySearch";
 import { aiService } from "../ai/index";
+import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
+import { pricingService } from "../ai/pricingService";
 
 interface GraphDomainInfo {
   domainId: string;
@@ -211,6 +213,14 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
           userId,
         );
 
+        const enrichedMetadata = await enrichMetadata(supabase, {
+          graphId: current.graphId,
+          userId,
+          topic: current.graphTitle,
+          depth: current.depth,
+        });
+
+        const startTime = Date.now();
         const completion = await provider.client.chat.completions.create({
           messages: [
             { role: "system", content: systemPrompt },
@@ -223,6 +233,31 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
           response_format: { type: "json_object" },
           max_tokens: 4000,
         });
+        const duration = Date.now() - startTime;
+
+        const usage = completion.usage;
+        if (usage) {
+          const cost = pricingService.calculateCost(
+            provider.providerType,
+            provider.model,
+            usage.prompt_tokens,
+            usage.completion_tokens,
+            0
+          );
+          await performanceMonitor.recordLog({
+            operation: 'infinite_graph_expansion',
+            provider: provider.providerType,
+            model: provider.model,
+            inputTokens: usage.prompt_tokens,
+            outputTokens: usage.completion_tokens,
+            totalTokens: usage.prompt_tokens + usage.completion_tokens,
+            cachedInputTokens: 0,
+            duration,
+            success: true,
+            estimatedCost: cost,
+            metadata: enrichedMetadata,
+          });
+        }
 
         const parsed = JSON.parse(
           completion.choices[0].message.content ||

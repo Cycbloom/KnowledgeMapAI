@@ -4,6 +4,8 @@ import { getAIProviderForTask } from './factory';
 import { logger } from '../../utils/logger';
 import { supabaseAdmin } from '../../supabase';
 import { createKnowledgePointWithGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
+import { performanceMonitor, enrichMetadata } from './performanceMonitor';
+import { pricingService } from './pricingService';
 
 export interface AIActionVariables {
   includeParent?: boolean;
@@ -245,6 +247,15 @@ export class AIActionService {
     }
 
     try {
+        const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+          graphId: graphId,
+          userId: userId,
+          nodeId: nodeId,
+          nodeTitle: node.title,
+          actionName: action.name,
+        });
+
+        const startTime = Date.now();
         const completion = await provider.client.chat.completions.create({
             messages: [
                 { role: 'system', content: 'You are a helpful knowledge graph assistant.' },
@@ -253,6 +264,31 @@ export class AIActionService {
             model: provider.model,
             response_format: action.target_mode !== 'show_result' ? { type: "json_object" } : undefined
         });
+        const duration = Date.now() - startTime;
+
+        const usage = completion.usage;
+        if (usage) {
+          const cost = pricingService.calculateCost(
+            provider.providerType,
+            provider.model,
+            usage.prompt_tokens,
+            usage.completion_tokens,
+            0
+          );
+          await performanceMonitor.recordLog({
+            operation: 'ai_action_execute',
+            provider: provider.providerType,
+            model: provider.model,
+            inputTokens: usage.prompt_tokens,
+            outputTokens: usage.completion_tokens,
+            totalTokens: usage.prompt_tokens + usage.completion_tokens,
+            cachedInputTokens: 0,
+            duration,
+            success: true,
+            estimatedCost: cost,
+            metadata: enrichedMetadata,
+          });
+        }
 
         const responseContent = completion.choices[0].message.content || '';
         

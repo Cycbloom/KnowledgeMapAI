@@ -21,6 +21,8 @@ import {
   sendStreamDone,
   sendStreamError,
 } from "./utils";
+import { performanceMonitor, enrichMetadata } from "../../services/ai/performanceMonitor";
+import { pricingService } from "../../services/ai/pricingService";
 
 const router = Router();
 
@@ -66,6 +68,13 @@ router.post(
 内容：
 ${content}`;
 
+      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+        graphId: graph_id,
+        userId: req.user.id,
+        topic: content?.slice(0, 50),
+      });
+
+      const startTime = Date.now();
       const completion = await provider.client.chat.completions.create({
         messages: [
           {
@@ -78,6 +87,31 @@ ${content}`;
         model: provider.model,
         response_format: { type: "json_object" },
       });
+      const duration = Date.now() - startTime;
+
+      const usage = completion.usage;
+      if (usage) {
+        const cost = pricingService.calculateCost(
+          provider.providerType,
+          provider.model,
+          usage.prompt_tokens,
+          usage.completion_tokens,
+          0
+        );
+        await performanceMonitor.recordLog({
+          operation: 'annotate_terms',
+          provider: provider.providerType,
+          model: provider.model,
+          inputTokens: usage.prompt_tokens,
+          outputTokens: usage.completion_tokens,
+          totalTokens: usage.prompt_tokens + usage.completion_tokens,
+          cachedInputTokens: 0,
+          duration,
+          success: true,
+          estimatedCost: cost,
+          metadata: enrichedMetadata,
+        });
+      }
 
       const aiContent = completion.choices[0].message.content || "{}";
       let terms: { term: string; explanation: string }[] = [];
@@ -203,6 +237,14 @@ router.post(
         language,
       );
 
+      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+        graphId: graph_id,
+        userId: req.user.id,
+        topic,
+        nodeLevel: level,
+      });
+
+      const startTime = Date.now();
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
@@ -213,6 +255,31 @@ router.post(
         ],
         model: model || provider.model,
       });
+      const duration = Date.now() - startTime;
+
+      const usage = completion.usage;
+      if (usage) {
+        const cost = pricingService.calculateCost(
+          provider.providerType,
+          model || provider.model,
+          usage.prompt_tokens,
+          usage.completion_tokens,
+          0
+        );
+        await performanceMonitor.recordLog({
+          operation: 'generate_content',
+          provider: provider.providerType,
+          model: model || provider.model,
+          inputTokens: usage.prompt_tokens,
+          outputTokens: usage.completion_tokens,
+          totalTokens: usage.prompt_tokens + usage.completion_tokens,
+          cachedInputTokens: 0,
+          duration,
+          success: true,
+          estimatedCost: cost,
+          metadata: enrichedMetadata,
+        });
+      }
 
       res.json({ content: completion.choices[0].message.content });
     } catch (error: unknown) {
@@ -303,6 +370,14 @@ router.post(
         language,
       );
 
+      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+        graphId: graph_id,
+        userId: req.user.id,
+        topic,
+        nodeLevel: level,
+      });
+
+      const startTime = Date.now();
       const stream = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
@@ -321,6 +396,22 @@ router.post(
           sendStreamChunk(res, content);
         }
       }
+      const duration = Date.now() - startTime;
+
+      await performanceMonitor.recordLog({
+        operation: 'generate_content_stream',
+        provider: provider.providerType,
+        model: model || provider.model,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        cachedInputTokens: 0,
+        duration,
+        success: true,
+        estimatedCost: 0,
+        metadata: enrichedMetadata,
+      });
+
       sendStreamDone(res);
     } catch (error: unknown) {
       const err = error as Error;

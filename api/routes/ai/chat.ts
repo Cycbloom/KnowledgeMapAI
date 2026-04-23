@@ -17,6 +17,7 @@ import { graphService } from '../../services/graph/index';
 import { promptService } from '../../services/ai/promptService';
 import { supabaseAdmin } from '../../supabase';
 import { setSSEHeaders, sendStreamChunk, sendStreamDone, sendStreamError } from './utils';
+import { performanceMonitor, enrichMetadata } from '../../services/ai/performanceMonitor';
 
 const router = Router();
 
@@ -103,6 +104,13 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
       { role: "user", content: message }
     ];
 
+    const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      graphId: graph_id,
+      userId: req.user.id,
+      topic: message?.slice(0, 50),
+    });
+
+    const startTime = Date.now();
     const stream = await provider.client.chat.completions.create({
       messages,
       model: model || provider.model,
@@ -115,6 +123,22 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
         sendStreamChunk(res, content);
       }
     }
+    const duration = Date.now() - startTime;
+
+    await performanceMonitor.recordLog({
+      operation: 'chat',
+      provider: provider.providerType,
+      model: model || provider.model,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      cachedInputTokens: 0,
+      duration,
+      success: true,
+      estimatedCost: 0,
+      metadata: enrichedMetadata,
+    });
+
     sendStreamDone(res);
 
   } catch (error: unknown) {
@@ -172,6 +196,14 @@ router.post('/tutor-chat', requireAuth, validate(tutorChatSchema), async (req: A
       { role: 'user', content: message }
     ];
 
+    const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      graphId: graph_id,
+      userId: req.user.id,
+      topic: message?.slice(0, 50),
+      style: mode,
+    });
+
+    const startTime = Date.now();
     const stream = await provider.client.chat.completions.create({
       messages: [
         { 
@@ -208,6 +240,22 @@ Instructions:
         sendStreamChunk(res, content);
       }
     }
+    const duration = Date.now() - startTime;
+
+    await performanceMonitor.recordLog({
+      operation: 'tutor_chat',
+      provider: provider.providerType,
+      model: model || provider.model,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      cachedInputTokens: 0,
+      duration,
+      success: true,
+      estimatedCost: 0,
+      metadata: enrichedMetadata,
+    });
+
     sendStreamDone(res);
 
   } catch (error: unknown) {

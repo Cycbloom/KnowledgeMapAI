@@ -4,6 +4,8 @@ import { getAIProviderForTask } from '../ai/factory';
 import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
 import { logger } from '../../utils/logger';
 import { getAutoGraphPrompt } from './utils';
+import { performanceMonitor, enrichMetadata } from '../ai/performanceMonitor';
+import { pricingService } from '../ai/pricingService';
 
 export class RecursiveGraphProcessor implements TaskProcessor {
   async process(
@@ -51,6 +53,15 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         isInit: true
       });
 
+      const enrichedMetadata = await enrichMetadata(supabase, {
+        graphId: graph_id,
+        userId,
+        topic,
+        style,
+        depth,
+      });
+
+      const initStartTime = Date.now();
       const initCompletion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
@@ -60,6 +71,31 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         response_format: { type: "json_object" },
         max_tokens: 4000,
       });
+      const initDuration = Date.now() - initStartTime;
+
+      const initUsage = initCompletion.usage;
+      if (initUsage) {
+        const cost = pricingService.calculateCost(
+          provider.providerType,
+          provider.model,
+          initUsage.prompt_tokens,
+          initUsage.completion_tokens,
+          0
+        );
+        await performanceMonitor.recordLog({
+          operation: 'recursive_graph_init',
+          provider: provider.providerType,
+          model: provider.model,
+          inputTokens: initUsage.prompt_tokens,
+          outputTokens: initUsage.completion_tokens,
+          totalTokens: initUsage.prompt_tokens + initUsage.completion_tokens,
+          cachedInputTokens: 0,
+          duration: initDuration,
+          success: true,
+          estimatedCost: cost,
+          metadata: enrichedMetadata,
+        });
+      }
 
       const initParsed = JSON.parse(initCompletion.choices[0].message.content || '{"root": null, "coreNodes": []}');
       
@@ -136,6 +172,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               existingChildren: ''
             });
 
+            const expandStartTime = Date.now();
             const expandCompletion = await provider.client.chat.completions.create({
               messages: [
                 { role: "system", content: expandPrompt },
@@ -145,6 +182,36 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               response_format: { type: "json_object" },
               max_tokens: 3000,
             });
+            const expandDuration = Date.now() - expandStartTime;
+
+            const expandUsage = expandCompletion.usage;
+            if (expandUsage) {
+              const cost = pricingService.calculateCost(
+                provider.providerType,
+                provider.model,
+                expandUsage.prompt_tokens,
+                expandUsage.completion_tokens,
+                0
+              );
+              await performanceMonitor.recordLog({
+                operation: 'recursive_graph_expand_depth2',
+                provider: provider.providerType,
+                model: provider.model,
+                inputTokens: expandUsage.prompt_tokens,
+                outputTokens: expandUsage.completion_tokens,
+                totalTokens: expandUsage.prompt_tokens + expandUsage.completion_tokens,
+                cachedInputTokens: 0,
+                duration: expandDuration,
+                success: true,
+                estimatedCost: cost,
+                metadata: {
+                  ...enrichedMetadata,
+                  nodeTitle,
+                  nodeId,
+                  nodeLevel: 'core',
+                },
+              });
+            }
 
             const expandParsed = JSON.parse(expandCompletion.choices[0].message.content || '{"children": []}');
             const children = expandParsed.children || [];
@@ -206,6 +273,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               existingChildren: ''
             });
 
+            const expandStartTime = Date.now();
             const expandCompletion = await provider.client.chat.completions.create({
               messages: [
                 { role: "system", content: expandPrompt },
@@ -215,6 +283,36 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               response_format: { type: "json_object" },
               max_tokens: 2000,
             });
+            const expandDuration = Date.now() - expandStartTime;
+
+            const expandUsage = expandCompletion.usage;
+            if (expandUsage) {
+              const cost = pricingService.calculateCost(
+                provider.providerType,
+                provider.model,
+                expandUsage.prompt_tokens,
+                expandUsage.completion_tokens,
+                0
+              );
+              await performanceMonitor.recordLog({
+                operation: 'recursive_graph_expand_depth3',
+                provider: provider.providerType,
+                model: provider.model,
+                inputTokens: expandUsage.prompt_tokens,
+                outputTokens: expandUsage.completion_tokens,
+                totalTokens: expandUsage.prompt_tokens + expandUsage.completion_tokens,
+                cachedInputTokens: 0,
+                duration: expandDuration,
+                success: true,
+                estimatedCost: cost,
+                metadata: {
+                  ...enrichedMetadata,
+                  nodeTitle,
+                  nodeId,
+                  nodeLevel: 'sub',
+                },
+              });
+            }
 
             const expandParsed = JSON.parse(expandCompletion.choices[0].message.content || '{"children": []}');
             const children = expandParsed.children || [];

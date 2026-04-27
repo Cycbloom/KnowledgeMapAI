@@ -1571,7 +1571,7 @@ export class LearningPathService {
     }
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 0)
@@ -1586,7 +1586,7 @@ export class LearningPathService {
       nodes?.reduce((sum, n) => sum + (n.estimated_time || 0), 0) || 0;
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: userId,
         title: `[学习路径] ${path.title}`,
@@ -1712,14 +1712,14 @@ export class LearningPathService {
     }
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", options?.queue_level ?? 0)
       .is("deleted_at", null);
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: userId,
         title: `[学习] ${node.title}`,
@@ -2056,7 +2056,7 @@ export class LearningPathService {
     path_completed: boolean;
   }> {
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)

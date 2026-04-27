@@ -136,7 +136,7 @@ class SchedulerCronService {
     },
   ): Promise<string | undefined> {
     const { data: template } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("title, description, queue_level, priority, tags, task_type")
       .eq("id", schedule.task_template_id)
       .is("deleted_at", null)
@@ -148,14 +148,14 @@ class SchedulerCronService {
     }
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", schedule.user_id)
       .eq("queue_level", template.queue_level ?? 0)
       .is("deleted_at", null);
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: schedule.user_id,
         title: template.title,

@@ -97,7 +97,7 @@ router.get(
       .select(
         `
       *,
-      task_template:scheduled_tasks(
+      task_template:user_tasks(
         id,
         title,
         description,
@@ -136,7 +136,7 @@ router.post(
       req.body;
 
     const { data: taskTemplate, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, user_id")
       .eq("id", task_template_id)
       .eq("user_id", req.user.id)
@@ -284,7 +284,7 @@ router.post(
       .select(
         `
         *,
-        task_template:scheduled_tasks(
+        task_template:user_tasks(
           id,
           title,
           description,
@@ -310,14 +310,14 @@ router.post(
     }
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", req.user.id)
       .eq("queue_level", template.queue_level ?? 0)
       .is("deleted_at", null);
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: req.user.id,
         title: template.title,

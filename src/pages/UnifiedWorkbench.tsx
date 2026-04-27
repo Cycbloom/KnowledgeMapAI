@@ -23,20 +23,20 @@ import {
 } from "lucide-react";
 import {
   useSchedulerQueues,
-  useCreateScheduledTaskMutation,
-  useUpdateScheduledTaskMutation,
-  useDeleteScheduledTaskMutation,
-  useStartScheduledTaskMutation,
-  usePauseScheduledTaskMutation,
-  useCompleteScheduledTaskMutation,
+  useCreateUserTaskMutation,
+  useUpdateUserTaskMutation,
+  useDeleteUserTaskMutation,
+  useStartUserTaskMutation,
+  usePauseUserTaskMutation,
+  useCompleteUserTaskMutation,
   useSchedulerSettings,
 } from "../hooks";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { TaskForm } from "../components/Scheduler/TaskForm";
 import { api } from "../services/api";
 import type {
-  ScheduledTask,
-  CreateScheduledTaskData,
+  UserTask,
+  CreateUserTaskData,
   QueueData,
   PendingReviewTask,
   ReviewTaskStats,
@@ -140,7 +140,7 @@ const URGENCY_CONFIG = {
 export const UnifiedWorkbench: React.FC = () => {
   const navigate = useNavigate();
   const [showTaskForm, setShowTaskForm] = useState(false);
-  const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
+  const [editingTask, setEditingTask] = useState<UserTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
   const [linkingTaskId, setLinkingTaskId] = useState<string | null>(null);
   const [knowledgePointSearch, setKnowledgePointSearch] = useState("");
@@ -155,12 +155,12 @@ export const UnifiedWorkbench: React.FC = () => {
   } = useSchedulerQueues();
   const { data: settings } = useSchedulerSettings();
 
-  const createTaskMutation = useCreateScheduledTaskMutation();
-  const updateTaskMutation = useUpdateScheduledTaskMutation();
-  const deleteTaskMutation = useDeleteScheduledTaskMutation();
-  const startTaskMutation = useStartScheduledTaskMutation();
-  const pauseTaskMutation = usePauseScheduledTaskMutation();
-  const completeTaskMutation = useCompleteScheduledTaskMutation();
+  const createTaskMutation = useCreateUserTaskMutation();
+  const updateTaskMutation = useUpdateUserTaskMutation();
+  const deleteTaskMutation = useDeleteUserTaskMutation();
+  const startTaskMutation = useStartUserTaskMutation();
+  const pauseTaskMutation = usePauseUserTaskMutation();
+  const completeTaskMutation = useCompleteUserTaskMutation();
 
   const [reviewStats, setReviewStats] = useState<ReviewTaskStats | null>(null);
   const [pendingReviews, setPendingReviews] = useState<PendingReviewTask[]>([]);
@@ -278,7 +278,7 @@ export const UnifiedWorkbench: React.FC = () => {
     loadTodayStats();
   }, []);
 
-  const handleCreateTask = async (data: CreateScheduledTaskData) => {
+  const handleCreateTask = async (data: CreateUserTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
       frontendEventBus.publish("message_show", { type: "success", content: "任务创建成功" });
@@ -289,7 +289,7 @@ export const UnifiedWorkbench: React.FC = () => {
     }
   };
 
-  const handleUpdateTask = async (data: CreateScheduledTaskData) => {
+  const handleUpdateTask = async (data: CreateUserTaskData) => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
@@ -302,7 +302,7 @@ export const UnifiedWorkbench: React.FC = () => {
     }
   };
 
-  const handleDeleteTask = async (task: ScheduledTask) => {
+  const handleDeleteTask = async (task: UserTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已删除" });
@@ -312,7 +312,7 @@ export const UnifiedWorkbench: React.FC = () => {
     }
   };
 
-  const handleStartTask = async (task: ScheduledTask) => {
+  const handleStartTask = async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已开始" });
@@ -322,7 +322,7 @@ export const UnifiedWorkbench: React.FC = () => {
     }
   };
 
-  const handlePauseTask = async (task: ScheduledTask) => {
+  const handlePauseTask = async (task: UserTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已暂停" });
@@ -332,7 +332,7 @@ export const UnifiedWorkbench: React.FC = () => {
     }
   };
 
-  const handleCompleteTask = async (task: ScheduledTask) => {
+  const handleCompleteTask = async (task: UserTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已完成" });
@@ -348,7 +348,7 @@ export const UnifiedWorkbench: React.FC = () => {
     setShowTaskForm(true);
   };
 
-  const openEditTaskForm = (task: ScheduledTask) => {
+  const openEditTaskForm = (task: UserTask) => {
     setEditingTask(task);
     setShowTaskForm(true);
   };
@@ -406,7 +406,7 @@ export const UnifiedWorkbench: React.FC = () => {
     return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
   };
 
-  const renderTaskCard = (task: ScheduledTask, queueLevel: number) => {
+  const renderTaskCard = (task: UserTask, queueLevel: number) => {
     const queueStyle = QUEUE_COLORS[queueLevel as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
     const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
     const deadlineInfo = formatDeadline(task.deadline);
@@ -537,7 +537,7 @@ export const UnifiedWorkbench: React.FC = () => {
     );
   };
 
-  const renderQueueColumn = (level: number, title: string, tasks: ScheduledTask[]) => {
+  const renderQueueColumn = (level: number, title: string, tasks: UserTask[]) => {
     const queueStyle = QUEUE_COLORS[level as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
     const timeSlice = timeSlices[`q${level}` as keyof typeof timeSlices];
 

@@ -52,14 +52,14 @@ class AutoTaskGenerator {
     }
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 1)
       .is("deleted_at", null);
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: userId,
         title,
@@ -138,7 +138,7 @@ class AutoTaskGenerator {
     }
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 0)
@@ -148,7 +148,7 @@ class AutoTaskGenerator {
     today.setHours(9, 0, 0, 0);
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: userId,
         title,
@@ -266,7 +266,7 @@ class AutoTaskGenerator {
     _taskContext: string,
   ) {
     const { data } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, title, queue_level, priority, status")
       .eq("user_id", userId)
       .eq("knowledge_point_id", knowledgePointId)

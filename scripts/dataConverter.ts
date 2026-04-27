@@ -1,5 +1,5 @@
 import type { User, Graph, GraphNode, KnowledgePoint, Edge, Template } from '../shared/types/index.js';
-import type { ScheduledTask, Queue, FocusSession, Achievement, UserAchievement } from '../shared/types/scheduler.js';
+import type { UserTask, Queue, FocusSession, Achievement, UserAchievement } from '../shared/types/scheduler.js';
 import type { StudyCard, LearningPath, Notification } from '../shared/types/common.js';
 import type { QuizSet } from '../shared/types/quiz.js';
 
@@ -13,7 +13,7 @@ export interface ExportedData {
   graph_nodes: ExportedGraphNode[];
   edges: ExportedEdge[];
   study_cards: ExportedStudyCard[];
-  scheduled_tasks: ExportedScheduledTask[];
+  user_tasks: ExportedScheduledTask[];
   focus_sessions: ExportedFocusSession[];
   templates: ExportedTemplate[];
   achievements: ExportedAchievement[];
@@ -523,7 +523,7 @@ export function createEmptyExportData(): ExportedData {
     graph_nodes: [],
     edges: [],
     study_cards: [],
-    scheduled_tasks: [],
+    user_tasks: [],
     focus_sessions: [],
     templates: [],
     achievements: [],
@@ -552,7 +552,7 @@ export function validateExportData(data: any): { valid: boolean; errors: string[
 
   const requiredArrays = [
     'users', 'knowledge_graphs', 'knowledge_points', 'graph_nodes',
-    'edges', 'study_cards', 'scheduled_tasks', 'focus_sessions',
+    'edges', 'study_cards', 'user_tasks', 'focus_sessions',
     'templates', 'achievements', 'user_achievements', 'queues',
     'quiz_sets', 'learning_paths', 'notifications'
   ];
@@ -602,7 +602,7 @@ export function getExportStats(data: ExportedData): Record<string, number> {
     graph_nodes: data.graph_nodes.length,
     edges: data.edges.length,
     study_cards: data.study_cards.length,
-    scheduled_tasks: data.scheduled_tasks.length,
+    user_tasks: data.user_tasks.length,
     focus_sessions: data.focus_sessions.length,
     templates: data.templates.length,
     achievements: data.achievements.length,

@@ -109,7 +109,7 @@ router.get(
 
     try {
       const { data: tasks, error: tasksError } = await supabase
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .select("*")
         .eq("user_id", req.user.id)
         .is("deleted_at", null)
@@ -169,7 +169,7 @@ router.get(
       }
 
       const { data: tasks, error: tasksError } = await supabase
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .select("*")
         .eq("user_id", userId)
         .is("deleted_at", null)
@@ -220,7 +220,7 @@ router.get(
 
     try {
       let tasksQuery = supabase
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .select("*")
         .eq("user_id", req.user.id)
         .is("deleted_at", null);

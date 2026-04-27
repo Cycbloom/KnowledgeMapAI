@@ -23,8 +23,8 @@ CREATE OR REPLACE TRIGGER on_user_created_task_settings
   FOR EACH ROW EXECUTE FUNCTION handle_new_user_task_settings();
 
 -- Updated_at triggers (all use update_updated_at_column)
-CREATE TRIGGER scheduled_tasks_updated_at
-  BEFORE UPDATE ON scheduled_tasks
+CREATE TRIGGER user_tasks_updated_at
+  BEFORE UPDATE ON user_tasks
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER queues_updated_at
@@ -44,7 +44,7 @@ CREATE TRIGGER on_focus_session_created
 
 -- Task completed -> update stats
 CREATE TRIGGER on_task_completed
-  AFTER UPDATE ON scheduled_tasks
+  AFTER UPDATE ON user_tasks
   FOR EACH ROW
   EXECUTE FUNCTION update_stats_on_task_complete();
 

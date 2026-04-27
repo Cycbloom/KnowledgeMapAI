@@ -36,8 +36,8 @@ GRANT ALL PRIVILEGES ON graph_collaborators TO authenticated;
 GRANT SELECT ON graph_collaborators TO anon;
 
 -- Scheduler
-GRANT ALL PRIVILEGES ON scheduled_tasks TO authenticated;
-GRANT SELECT ON scheduled_tasks TO anon;
+GRANT ALL PRIVILEGES ON user_tasks TO authenticated;
+GRANT SELECT ON user_tasks TO anon;
 GRANT ALL PRIVILEGES ON task_executions TO authenticated;
 GRANT SELECT ON task_executions TO anon;
 GRANT ALL PRIVILEGES ON task_tags TO authenticated;

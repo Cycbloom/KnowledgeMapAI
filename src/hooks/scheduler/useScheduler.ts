@@ -2,14 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type {
-  ScheduledTask,
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
+  UserTask,
+  CreateUserTaskData,
+  UpdateUserTaskData,
   TaskSettings,
   UpdateTaskSettingsData,
-  TaskStats,
+  UserTaskStats,
   HeatmapData,
-  TaskFilters,
+  UserTaskFilters,
   ExecutionFilters,
   QueueData,
 } from "@shared/types";
@@ -32,7 +32,7 @@ const realtimeQueryConfig = {
 };
 
 export const schedulerKeys = {
-  tasks: (filters?: TaskFilters) => ["scheduler", "tasks", filters] as const,
+  tasks: (filters?: UserTaskFilters) => ["scheduler", "tasks", filters] as const,
   task: (id: string) => ["scheduler", "task", id] as const,
   queues: () => ["scheduler", "queues"] as const,
   executions: (filters?: ExecutionFilters) =>
@@ -43,7 +43,7 @@ export const schedulerKeys = {
     ["scheduler", "heatmap", year, month] as const,
 };
 
-export function useSchedulerTasks(filters?: TaskFilters) {
+export function useSchedulerTasks(filters?: UserTaskFilters) {
   return useQuery({
     queryKey: schedulerKeys.tasks(filters),
     queryFn: () => api.scheduler.getTasks(filters),
@@ -92,7 +92,7 @@ export function useSchedulerStats(
 ) {
   return useQuery({
     queryKey: schedulerKeys.stats(period),
-    queryFn: () => api.scheduler.getStats(period) as Promise<TaskStats>,
+    queryFn: () => api.scheduler.getStats(period) as Promise<UserTaskStats>,
     ...defaultQueryConfig,
   });
 }
@@ -106,10 +106,10 @@ export function useHeatmap(year?: number, month?: number) {
   });
 }
 
-export function useCreateScheduledTaskMutation() {
+export function useCreateUserTaskMutation() {
   return useMutation({
-    mutationFn: (data: CreateScheduledTaskData) =>
-      api.scheduler.createTask(data) as Promise<ScheduledTask>,
+    mutationFn: (data: CreateUserTaskData) =>
+      api.scheduler.createTask(data) as Promise<UserTask>,
     onSuccess: (data) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: data.id,
@@ -119,10 +119,10 @@ export function useCreateScheduledTaskMutation() {
   });
 }
 
-export function useUpdateScheduledTaskMutation() {
+export function useUpdateUserTaskMutation() {
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateScheduledTaskData }) =>
-      api.scheduler.updateTask(id, data) as Promise<ScheduledTask>,
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserTaskData }) =>
+      api.scheduler.updateTask(id, data) as Promise<UserTask>,
     onSuccess: (_data, variables) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: variables.id,
@@ -132,7 +132,7 @@ export function useUpdateScheduledTaskMutation() {
   });
 }
 
-export function useDeleteScheduledTaskMutation() {
+export function useDeleteUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) => api.scheduler.deleteTask(id),
     onSuccess: (_data, id) => {
@@ -144,10 +144,10 @@ export function useDeleteScheduledTaskMutation() {
   });
 }
 
-export function useStartScheduledTaskMutation() {
+export function useStartUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.startTask(id) as Promise<ScheduledTask>,
+      api.scheduler.startTask(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: id,
@@ -157,10 +157,10 @@ export function useStartScheduledTaskMutation() {
   });
 }
 
-export function usePauseScheduledTaskMutation() {
+export function usePauseUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.pauseTask(id) as Promise<ScheduledTask>,
+      api.scheduler.pauseTask(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: id,
@@ -170,20 +170,20 @@ export function usePauseScheduledTaskMutation() {
   });
 }
 
-export function useCompleteScheduledTaskMutation() {
+export function useCompleteUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.completeTask(id) as Promise<ScheduledTask>,
+      api.scheduler.completeTask(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_completed", { taskId: id });
     },
   });
 }
 
-export function useDemoteScheduledTaskMutation() {
+export function useDemoteUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.demoteTask(id) as Promise<ScheduledTask>,
+      api.scheduler.demoteTask(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: id,
@@ -193,10 +193,10 @@ export function useDemoteScheduledTaskMutation() {
   });
 }
 
-export function useMoveScheduledTaskMutation() {
+export function useMoveUserTaskMutation() {
   return useMutation({
     mutationFn: ({ id, targetQueue }: { id: string; targetQueue: number }) =>
-      api.scheduler.moveTask(id, targetQueue) as Promise<ScheduledTask>,
+      api.scheduler.moveTask(id, targetQueue) as Promise<UserTask>,
     onSuccess: (_data, variables) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: variables.id,
@@ -206,7 +206,7 @@ export function useMoveScheduledTaskMutation() {
   });
 }
 
-export function useReorderScheduledTasksMutation() {
+export function useReorderUserTasksMutation() {
   return useMutation({
     mutationFn: ({
       queueLevel,

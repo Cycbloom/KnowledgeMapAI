@@ -187,7 +187,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", id)
       .eq("user_id", req.user.id)

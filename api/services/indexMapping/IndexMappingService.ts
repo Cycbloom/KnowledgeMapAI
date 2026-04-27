@@ -120,7 +120,7 @@ export class IndexMappingService {
     }
 
     const { data: tasks, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("user_id", userId)
       .is("deleted_at", null);

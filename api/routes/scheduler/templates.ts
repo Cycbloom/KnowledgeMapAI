@@ -343,14 +343,14 @@ router.post(
     }
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", req.user.id)
       .eq("queue_level", queue_level ?? 0)
       .is("deleted_at", null);
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: req.user.id,
         title,

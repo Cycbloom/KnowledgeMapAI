@@ -90,15 +90,15 @@ export const api = {
 };
 
 export type {
-  ScheduledTask,
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
+  UserTask,
+  CreateUserTaskData,
+  UpdateUserTaskData,
   TaskExecution,
   TaskSettings,
   UpdateTaskSettingsData,
-  TaskStats,
+  UserTaskStats,
   HeatmapData,
-  TaskFilters,
+  UserTaskFilters,
   ExecutionFilters,
   QueueData,
   Queue,

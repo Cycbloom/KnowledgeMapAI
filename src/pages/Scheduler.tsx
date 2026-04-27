@@ -25,22 +25,22 @@ import {
 } from "lucide-react";
 import {
   useSchedulerQueues,
-  useCreateScheduledTaskMutation,
-  useUpdateScheduledTaskMutation,
-  useDeleteScheduledTaskMutation,
-  useMoveScheduledTaskMutation,
-  useReorderScheduledTasksMutation,
-  useStartScheduledTaskMutation,
-  usePauseScheduledTaskMutation,
-  useCompleteScheduledTaskMutation,
+  useCreateUserTaskMutation,
+  useUpdateUserTaskMutation,
+  useDeleteUserTaskMutation,
+  useMoveUserTaskMutation,
+  useReorderUserTasksMutation,
+  useStartUserTaskMutation,
+  usePauseUserTaskMutation,
+  useCompleteUserTaskMutation,
   useSchedulerSettings,
 } from "../hooks";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import {
-  ScheduledTask,
-  CreateScheduledTaskData,
+  UserTask,
+  CreateUserTaskData,
   QueueData,
 } from "@shared/types";
 
@@ -112,7 +112,7 @@ export const Scheduler: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [showTaskForm, setShowTaskForm] = useState(false);
-  const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
+  const [editingTask, setEditingTask] = useState<UserTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
   const [showSettings, setShowSettings] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>(() => {
@@ -156,14 +156,14 @@ export const Scheduler: React.FC = () => {
   const { data: settings } = useSchedulerSettings();
   const { data: learningPaths = [] } = useLearningPaths("active");
 
-  const createTaskMutation = useCreateScheduledTaskMutation();
-  const updateTaskMutation = useUpdateScheduledTaskMutation();
-  const deleteTaskMutation = useDeleteScheduledTaskMutation();
-  const moveTaskMutation = useMoveScheduledTaskMutation();
-  const reorderMutation = useReorderScheduledTasksMutation();
-  const startTaskMutation = useStartScheduledTaskMutation();
-  const pauseTaskMutation = usePauseScheduledTaskMutation();
-  const completeTaskMutation = useCompleteScheduledTaskMutation();
+  const createTaskMutation = useCreateUserTaskMutation();
+  const updateTaskMutation = useUpdateUserTaskMutation();
+  const deleteTaskMutation = useDeleteUserTaskMutation();
+  const moveTaskMutation = useMoveUserTaskMutation();
+  const reorderMutation = useReorderUserTasksMutation();
+  const startTaskMutation = useStartUserTaskMutation();
+  const pauseTaskMutation = usePauseUserTaskMutation();
+  const completeTaskMutation = useCompleteUserTaskMutation();
 
   useEffect(() => {
     localStorage.setItem("scheduler-view", currentView);
@@ -181,7 +181,7 @@ export const Scheduler: React.FC = () => {
 
   const displayQueues = useMemo(() => {
     if (currentView === "queue") {
-      const filterActive = (tasks: ScheduledTask[]) =>
+      const filterActive = (tasks: UserTask[]) =>
         tasks.filter(
           (t) => t.status !== "completed" && t.status !== "cancelled",
         );
@@ -211,7 +211,7 @@ export const Scheduler: React.FC = () => {
     const baseQueues = currentView === "queue" ? displayQueues : queues;
     if (!selectedPathId) return baseQueues;
 
-    const filterByPath = (tasks: ScheduledTask[]) => {
+    const filterByPath = (tasks: UserTask[]) => {
       return tasks.filter((task) => {
         const taskPathId = (task as any).learning_path_id;
         return taskPathId === selectedPathId;
@@ -270,13 +270,13 @@ export const Scheduler: React.FC = () => {
   }, [allTasks]);
 
   const findTaskById = useCallback(
-    (taskId: string): ScheduledTask | undefined => {
+    (taskId: string): UserTask | undefined => {
       return allTasks.find((t) => t.id === taskId);
     },
     [allTasks],
   );
 
-  const handleCreateTask = async (data: CreateScheduledTaskData) => {
+  const handleCreateTask = async (data: CreateUserTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
       frontendEventBus.publish("message_show", {
@@ -292,7 +292,7 @@ export const Scheduler: React.FC = () => {
     }
   };
 
-  const handleUpdateTask = async (data: CreateScheduledTaskData) => {
+  const handleUpdateTask = async (data: CreateUserTaskData) => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
@@ -310,7 +310,7 @@ export const Scheduler: React.FC = () => {
     }
   };
 
-  const handleDeleteTask = async (task: ScheduledTask) => {
+  const handleDeleteTask = async (task: UserTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", {
@@ -351,7 +351,7 @@ export const Scheduler: React.FC = () => {
     }
   };
 
-  const handleStartTask = async (task: ScheduledTask) => {
+  const handleStartTask = async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", {
@@ -366,7 +366,7 @@ export const Scheduler: React.FC = () => {
     }
   };
 
-  const handlePauseTask = async (task: ScheduledTask) => {
+  const handlePauseTask = async (task: UserTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", {
@@ -381,7 +381,7 @@ export const Scheduler: React.FC = () => {
     }
   };
 
-  const handleCompleteTask = async (task: ScheduledTask) => {
+  const handleCompleteTask = async (task: UserTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", {
@@ -402,12 +402,12 @@ export const Scheduler: React.FC = () => {
     setShowTaskForm(true);
   };
 
-  const openEditTaskForm = (task: ScheduledTask) => {
+  const openEditTaskForm = (task: UserTask) => {
     setEditingTask(task);
     setShowTaskForm(true);
   };
 
-  const handleViewTaskDetail = (task: ScheduledTask) => {
+  const handleViewTaskDetail = (task: UserTask) => {
     navigate(`/scheduler/task/${task.id}`);
   };
 

@@ -927,7 +927,7 @@ export class SubtaskQuizIntegrationService {
     }
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("user_id")
       .eq("id", (subtask as any).task_id)
       .single();
@@ -982,7 +982,7 @@ export class SubtaskQuizIntegrationService {
 
     if (subtask) {
       const { data: task } = await supabase
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .select("user_id")
         .eq("id", (subtask as any).task_id)
         .single();

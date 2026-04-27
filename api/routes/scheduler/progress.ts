@@ -147,7 +147,7 @@ router.post(
       req.body;
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -194,7 +194,7 @@ router.post(
       }
 
       await supabase
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .update({
           progress_mode,
           progress_percentage: 0,
@@ -230,7 +230,7 @@ router.put(
     }
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -284,7 +284,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, title, progress_mode, progress_percentage")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -334,7 +334,7 @@ router.post(
     const progressDate = date || new Date().toISOString().split("T")[0];
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -397,7 +397,7 @@ router.post(
     }
 
     const { data: updatedTask, error: updateTaskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update(taskUpdateData)
       .eq("id", id)
       .select()

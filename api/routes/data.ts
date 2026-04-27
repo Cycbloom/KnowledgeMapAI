@@ -460,7 +460,7 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   // tasks 类型
-  if (shouldProcess('scheduled_tasks')) {
+  if (shouldProcess('user_tasks')) {
     const taskTables = [
       { table: 'task_subtasks', column: 'user_id' },
       { table: 'task_links', column: 'user_id' },
@@ -471,7 +471,7 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
       { table: 'task_settings', column: 'user_id' },
       { table: 'task_schedules', column: 'user_id' },
       { table: 'task_progress_plans', column: 'user_id' },
-      { table: 'scheduled_tasks', column: 'user_id' }
+      { table: 'user_tasks', column: 'user_id' }
     ];
 
     for (const t of taskTables) {
@@ -499,7 +499,7 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
       { table: 'study_progress', column: 'user_id' },
       { table: 'backup_snapshots', column: 'user_id' },
       { table: 'queues', column: 'user_id' },
-      { table: 'scheduled_tasks', column: 'user_id' }
+      { table: 'user_tasks', column: 'user_id' }
     ];
 
     for (const t of studyTables) {

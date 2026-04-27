@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-export interface SchedulerStats {
+export interface UserTaskSchedulerStats {
   total_tasks: number;
   completed_tasks: number;
   total_duration: number;
@@ -28,7 +28,7 @@ export class StatsService {
     client: SupabaseClient,
     userId: string,
     period: "day" | "week" | "month" = "week",
-  ): Promise<SchedulerStats> {
+  ): Promise<UserTaskSchedulerStats> {
     const now = new Date();
     let startDate: Date;
 
@@ -50,7 +50,7 @@ export class StatsService {
     }
 
     const { data: tasks, error: tasksError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .is("deleted_at", null)
@@ -96,7 +96,7 @@ export class StatsService {
       byStatus[t.status] = (byStatus[t.status] || 0) + 1;
     });
 
-    const daily: SchedulerStats["daily"] = [];
+    const daily: UserTaskSchedulerStats["daily"] = [];
     const daysCount = period === "day" ? 1 : period === "week" ? 7 : 30;
 
     for (let i = daysCount - 1; i >= 0; i--) {

@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import type { ScheduledTask } from "../../../shared/types/scheduler";
+import type { UserTask } from "../../../shared/types/scheduler";
 
 export interface PathNodeTask {
   id: string;
@@ -44,7 +44,7 @@ export interface BatchConvertResult {
 }
 
 export interface PathTaskWithDetails extends PathNodeTask {
-  task?: ScheduledTask;
+  task?: UserTask;
   node?: LearningPathNode;
 }
 
@@ -81,7 +81,7 @@ export class PathTaskService {
     }
 
     const { data: maxPosResult } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", 0)
@@ -98,7 +98,7 @@ export class PathTaskService {
     const taskKnowledgePointId = data.knowledge_point_id ?? node.knowledge_point_id;
 
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: userId,
         title: taskTitle,
@@ -132,7 +132,7 @@ export class PathTaskService {
       .single();
 
     if (linkError) {
-      await client.from("scheduled_tasks").delete().eq("id", task.id);
+      await client.from("user_tasks").delete().eq("id", task.id);
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
         details: { originalError: linkError.message },
       });
@@ -184,7 +184,7 @@ export class PathTaskService {
     const existingNodeIds = new Set(existingLinks?.map((link) => link.node_id) ?? []);
 
     const { data: maxPosResult } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", 0)
@@ -220,7 +220,7 @@ export class PathTaskService {
         currentPosition++;
 
         const { data: task, error: taskError } = await client
-          .from("scheduled_tasks")
+          .from("user_tasks")
           .insert({
             user_id: userId,
             title: node.title,
@@ -260,7 +260,7 @@ export class PathTaskService {
           .single();
 
         if (linkError) {
-          await client.from("scheduled_tasks").delete().eq("id", task.id);
+          await client.from("user_tasks").delete().eq("id", task.id);
           createdTasks.pop();
           nodeToTaskMap.delete(node.id);
           results.failed_count++;
@@ -330,7 +330,7 @@ export class PathTaskService {
         task_id,
         user_id,
         created_at,
-        task:scheduled_tasks!task_id (
+        task:user_tasks!task_id (
           id,
           user_id,
           title,
@@ -388,7 +388,7 @@ export class PathTaskService {
         task_id,
         user_id,
         created_at,
-        task:scheduled_tasks!task_id (
+        task:user_tasks!task_id (
           id,
           user_id,
           title,
@@ -464,7 +464,7 @@ export class PathTaskService {
 
     if (deleteTask) {
       const { error: deleteTaskError } = await client
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .update({
           deleted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -518,7 +518,7 @@ export class PathTaskService {
       const taskIds = pathNodeTasks.map((pnt) => pnt.task_id);
 
       const { error: deleteTasksError } = await client
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .update({
           deleted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

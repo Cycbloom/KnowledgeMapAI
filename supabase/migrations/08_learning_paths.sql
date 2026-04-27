@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS path_node_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   path_id UUID NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
   node_id UUID NOT NULL REFERENCES learning_path_nodes(id) ON DELETE CASCADE,
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(node_id, task_id)

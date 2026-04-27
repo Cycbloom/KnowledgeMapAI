@@ -244,8 +244,8 @@ async function exportStudyCards(supabase: SupabaseClient, data: ExportedData, op
 }
 
 async function exportScheduledTasks(supabase: SupabaseClient, data: ExportedData, options: ExportOptions): Promise<void> {
-  console.log('Exporting scheduled_tasks...');
-  let query = supabase.from('scheduled_tasks').select('*');
+  console.log('Exporting user_tasks...');
+  let query = supabase.from('user_tasks').select('*');
   
   if (options.userId) {
     query = query.eq('user_id', options.userId);
@@ -259,12 +259,12 @@ async function exportScheduledTasks(supabase: SupabaseClient, data: ExportedData
 
   const { data: tasks, error } = await query;
   if (error) {
-    console.warn('Warning: Failed to export scheduled_tasks:', error.message);
+    console.warn('Warning: Failed to export user_tasks:', error.message);
     return;
   }
 
-  data.scheduled_tasks = (tasks || []).map(convertScheduledTaskToExport);
-  console.log(`  Exported ${data.scheduled_tasks.length} scheduled_tasks`);
+  data.user_tasks = (tasks || []).map(convertScheduledTaskToExport);
+  console.log(`  Exported ${data.user_tasks.length} user_tasks`);
 }
 
 async function exportFocusSessions(supabase: SupabaseClient, data: ExportedData, options: ExportOptions): Promise<void> {

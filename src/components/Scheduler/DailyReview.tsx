@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { reviewApi, TaskReview, Mood } from "../../services/api/review";
 import { api } from "../../services/api";
-import type { ScheduledTask } from "@shared/types";
+import type { UserTask } from "@shared/types";
 
 interface DailyReviewProps {
   isOpen: boolean;
@@ -72,7 +72,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
   const [difficulties, setDifficulties] = useState("");
   const [improvements, setImprovements] = useState("");
   const [learnings, setLearnings] = useState("");
-  const [completedTasks, setCompletedTasks] = useState<ScheduledTask[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<UserTask[]>([]);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -102,7 +102,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
         setLearnings(review.learnings || "");
       }
 
-      const todayTasks = tasks.filter((t: ScheduledTask) => {
+      const todayTasks = tasks.filter((t: UserTask) => {
         if (!t.completed_at) return false;
         const completedDate = new Date(t.completed_at)
           .toISOString()

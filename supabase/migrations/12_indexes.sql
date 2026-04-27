@@ -133,16 +133,16 @@ CREATE INDEX IF NOT EXISTS idx_graph_collaborators_pending ON graph_collaborator
 CREATE INDEX IF NOT EXISTS idx_queues_user_id ON queues(user_id);
 CREATE INDEX IF NOT EXISTS idx_queues_priority ON queues(user_id, priority);
 
--- Scheduled tasks
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_status ON scheduled_tasks(user_id, status);
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_queue_position ON scheduled_tasks(user_id, queue_level, position);
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deleted ON scheduled_tasks(user_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deadline ON scheduled_tasks(user_id, deadline) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_knowledge_point ON scheduled_tasks(knowledge_point_id) WHERE knowledge_point_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_queue_id ON scheduled_tasks(queue_id) WHERE queue_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_task_type ON scheduled_tasks(user_id, task_type) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_parent_task ON scheduled_tasks(parent_task_id) WHERE parent_task_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_scheduled_start ON scheduled_tasks(user_id, scheduled_start) WHERE deleted_at IS NULL;
+-- User tasks
+CREATE INDEX IF NOT EXISTS idx_user_tasks_user_status ON user_tasks(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_user_tasks_user_queue_position ON user_tasks(user_id, queue_level, position);
+CREATE INDEX IF NOT EXISTS idx_user_tasks_user_deleted ON user_tasks(user_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_user_deadline ON user_tasks(user_id, deadline) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_knowledge_point ON user_tasks(knowledge_point_id) WHERE knowledge_point_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_queue_id ON user_tasks(queue_id) WHERE queue_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_task_type ON user_tasks(user_id, task_type) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_parent_task ON user_tasks(parent_task_id) WHERE parent_task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_scheduled_start ON user_tasks(user_id, scheduled_start) WHERE deleted_at IS NULL;
 
 -- Task executions
 CREATE INDEX IF NOT EXISTS idx_task_executions_task ON task_executions(task_id);

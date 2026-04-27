@@ -276,12 +276,12 @@ CREATE POLICY "Users can insert their own queues" ON queues FOR INSERT WITH CHEC
 CREATE POLICY "Users can update their own queues" ON queues FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own queues" ON queues FOR DELETE USING (auth.uid() = user_id);
 
--- Scheduled tasks
-ALTER TABLE scheduled_tasks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own scheduled tasks" ON scheduled_tasks FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own scheduled tasks" ON scheduled_tasks FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own scheduled tasks" ON scheduled_tasks FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own scheduled tasks" ON scheduled_tasks FOR DELETE USING (auth.uid() = user_id);
+-- User tasks
+ALTER TABLE user_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own user tasks" ON user_tasks FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own user tasks" ON user_tasks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own user tasks" ON user_tasks FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own user tasks" ON user_tasks FOR DELETE USING (auth.uid() = user_id);
 
 -- Task executions
 ALTER TABLE task_executions ENABLE ROW LEVEL SECURITY;
@@ -357,14 +357,14 @@ CREATE POLICY "Users can update own pass progress" ON user_pass_progress FOR UPD
 -- Task dependencies
 ALTER TABLE task_dependencies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own task dependencies" ON task_dependencies FOR SELECT USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_dependencies.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can insert own task dependencies" ON task_dependencies FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.task_id AND scheduled_tasks.user_id = auth.uid())
-  AND EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.depends_on_task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_dependencies.task_id AND user_tasks.user_id = auth.uid())
+  AND EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_dependencies.depends_on_task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can delete own task dependencies" ON task_dependencies FOR DELETE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_dependencies.task_id AND user_tasks.user_id = auth.uid())
 );
 
 -- Task schedules
@@ -377,16 +377,16 @@ CREATE POLICY "Users can delete own task schedules" ON task_schedules FOR DELETE
 -- Task progress plans
 ALTER TABLE task_progress_plans ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own task progress plans" ON task_progress_plans FOR SELECT USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_progress_plans.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can insert own task progress plans" ON task_progress_plans FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_progress_plans.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can update own task progress plans" ON task_progress_plans FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_progress_plans.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can delete own task progress plans" ON task_progress_plans FOR DELETE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_progress_plans.task_id AND user_tasks.user_id = auth.uid())
 );
 
 -- User time slots
@@ -399,46 +399,46 @@ CREATE POLICY "Users can delete own time slots" ON user_time_slots FOR DELETE US
 -- Task subtasks
 ALTER TABLE task_subtasks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own task subtasks" ON task_subtasks FOR SELECT USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_subtasks.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can insert own task subtasks" ON task_subtasks FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_subtasks.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can update own task subtasks" ON task_subtasks FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_subtasks.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can delete own task subtasks" ON task_subtasks FOR DELETE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_subtasks.task_id AND user_tasks.user_id = auth.uid())
 );
 
 -- Task links
 ALTER TABLE task_links ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own task links" ON task_links FOR SELECT USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_links.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can insert own task links" ON task_links FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_links.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can update own task links" ON task_links FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_links.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can delete own task links" ON task_links FOR DELETE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_links.task_id AND user_tasks.user_id = auth.uid())
 );
 
 -- Task knowledge points
 ALTER TABLE task_knowledge_points ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own task knowledge points" ON task_knowledge_points FOR SELECT USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_knowledge_points.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can insert own task knowledge points" ON task_knowledge_points FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_knowledge_points.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can update own task knowledge points" ON task_knowledge_points FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_knowledge_points.task_id AND user_tasks.user_id = auth.uid())
 );
 CREATE POLICY "Users can delete own task knowledge points" ON task_knowledge_points FOR DELETE USING (
-  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+  EXISTS (SELECT 1 FROM user_tasks WHERE user_tasks.id = task_knowledge_points.task_id AND user_tasks.user_id = auth.uid())
 );
 
 -- Learning paths

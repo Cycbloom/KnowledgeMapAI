@@ -649,7 +649,7 @@ export class PeriodicTaskService {
               }
               case 'tasks': {
                 const { count: taskCount } = await supabase
-                  .from('scheduled_tasks')
+                  .from('user_tasks')
                   .select('*', { count: 'exact', head: true })
                   .eq('user_id', user.id)
                   .eq('status', 'completed')

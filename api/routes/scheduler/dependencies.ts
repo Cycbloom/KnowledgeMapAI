@@ -71,7 +71,7 @@ router.post(
     }
 
     const { data: tasks, error: tasksError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .in("id", [id, depends_on_task_id])
       .eq("user_id", req.user.id)
@@ -172,7 +172,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -186,7 +186,7 @@ router.get(
     const { data: dependencies, error } = await supabase
       .from("task_dependencies")
       .select(
-        "id, dependency_type, created_at, depends_on_task_id, scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
+        "id, dependency_type, created_at, depends_on_task_id, user_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
       )
       .eq("task_id", id)
       .eq("user_id", req.user.id);
@@ -200,7 +200,7 @@ router.get(
       id: dep.id,
       dependency_type: dep.dependency_type,
       created_at: dep.created_at,
-      task: dep.scheduled_tasks,
+      task: dep.user_tasks,
     }));
 
     res.json({ success: true, data: formattedDeps });
@@ -222,7 +222,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -236,7 +236,7 @@ router.get(
     const { data: dependents, error } = await supabase
       .from("task_dependencies")
       .select(
-        "id, dependency_type, created_at, task_id, scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
+        "id, dependency_type, created_at, task_id, user_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
       )
       .eq("depends_on_task_id", id)
       .eq("user_id", req.user.id);
@@ -250,7 +250,7 @@ router.get(
       id: dep.id,
       dependency_type: dep.dependency_type,
       created_at: dep.created_at,
-      task: dep.scheduled_tasks,
+      task: dep.user_tasks,
     }));
 
     res.json({ success: true, data: formattedDeps });

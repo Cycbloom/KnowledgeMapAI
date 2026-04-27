@@ -2,7 +2,7 @@ export type TaskType = "one_time" | "long_term" | "periodic" | "learning";
 
 export type ProgressMode = "average" | "decreasing" | "increasing" | "custom";
 
-export type TaskStatus =
+export type UserTaskStatus =
   | "pending"
   | "in_progress"
   | "paused"
@@ -40,7 +40,7 @@ export type SystemTaskStatus =
   | "failed"
   | "cancelled";
 
-export interface ScheduledTask {
+export interface UserTask {
   id: string;
   user_id: string;
   title: string;
@@ -50,7 +50,7 @@ export interface ScheduledTask {
   estimated_duration?: number;
   actual_duration?: number;
   deadline?: string;
-  status: TaskStatus;
+  status: UserTaskStatus;
   tags: string[];
   knowledge_point_id?: string;
   priority: number;
@@ -254,7 +254,7 @@ export interface TaskKnowledgePoint {
   };
 }
 
-export interface TaskDetail extends ScheduledTask {
+export interface UserTaskDetail extends UserTask {
   dependencies: TaskDependency[];
   dependents: TaskDependency[];
   progress_plans: TaskProgressPlan[];
@@ -289,7 +289,7 @@ export interface UpdateTaskSettingsData {
   notification_enabled?: boolean;
 }
 
-export interface TaskStats {
+export interface UserTaskStats {
   total_tasks: number;
   completed_tasks: number;
   total_duration: number;
@@ -331,7 +331,7 @@ export interface CreateTaskData {
   priority?: number;
 }
 
-export interface TaskFilters {
+export interface UserTaskFilters {
   status?: string;
   queue_level?: number;
   tags?: string[];
@@ -346,7 +346,7 @@ export interface ExecutionFilters {
   status?: string;
 }
 
-export interface SchedulerStats {
+export interface UserTaskSchedulerStats {
   total_tasks: number;
   completed_tasks: number;
   total_duration: number;
@@ -363,7 +363,7 @@ export interface SchedulerStats {
   }>;
 }
 
-export interface CreateScheduledTaskData {
+export interface CreateUserTaskData {
   title: string;
   description?: string;
   queue_level?: number;
@@ -379,7 +379,7 @@ export interface CreateScheduledTaskData {
   parent_task_id?: string;
 }
 
-export interface UpdateScheduledTaskData {
+export interface UpdateUserTaskData {
   title?: string;
   description?: string;
   estimated_duration?: number;
@@ -397,9 +397,9 @@ export interface UpdateScheduledTaskData {
 }
 
 export interface QueueData {
-  q0: ScheduledTask[];
-  q1: ScheduledTask[];
-  q2: ScheduledTask[];
+  q0: UserTask[];
+  q1: UserTask[];
+  q2: UserTask[];
 }
 
 export interface GenerateTaskDetailsResult {
@@ -559,6 +559,21 @@ export interface PendingReviewTask extends ReviewTask {
   urgency: "overdue" | "today" | "upcoming" | "future";
   masteryLevel: number;
 }
+
+/** @deprecated Use UserTaskStatus instead */
+export type TaskStatus = UserTaskStatus;
+/** @deprecated Use UserTask instead */
+export type ScheduledTask = UserTask;
+/** @deprecated Use UserTaskDetail instead */
+export type TaskDetail = UserTaskDetail;
+/** @deprecated Use UserTaskStats instead */
+export type TaskStats = UserTaskStats;
+/** @deprecated Use UserTaskFilters instead */
+export type TaskFilters = UserTaskFilters;
+/** @deprecated Use CreateUserTaskData instead */
+export type CreateScheduledTaskData = CreateUserTaskData;
+/** @deprecated Use UpdateUserTaskData instead */
+export type UpdateScheduledTaskData = UpdateUserTaskData;
 
 export type {
   SchedulerEventType,

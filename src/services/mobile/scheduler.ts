@@ -1,10 +1,10 @@
 import { getMobileSupabaseClient } from "./client";
 import type {
-  ScheduledTask,
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
-  TaskFilters,
-  TaskDetail,
+  UserTask,
+  CreateUserTaskData,
+  UpdateUserTaskData,
+  UserTaskFilters,
+  UserTaskDetail,
   TaskSubtask,
   TaskExecution,
   TaskDependency,
@@ -14,7 +14,7 @@ import type {
   QueueData,
   TaskSettings,
   UpdateTaskSettingsData,
-  TaskStats,
+  UserTaskStats,
   HeatmapData,
   FocusSession,
   CreateFocusSessionData,
@@ -30,7 +30,7 @@ import type {
 } from "@shared/types";
 
 export const mobileSchedulerApi: any = {
-  createTask: async (data: CreateScheduledTaskData) => {
+  createTask: async (data: CreateUserTaskData) => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -44,7 +44,7 @@ export const mobileSchedulerApi: any = {
       throw new Error("User not authenticated");
     }
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .insert({
         user_id: user.id,
         title: data.title,
@@ -69,10 +69,10 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
-  getTasks: async (filters?: TaskFilters): Promise<ScheduledTask[]> => {
+  getTasks: async (filters?: UserTaskFilters): Promise<UserTask[]> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -86,7 +86,7 @@ export const mobileSchedulerApi: any = {
       return [];
     }
 
-    let query = (client.from("scheduled_tasks") as any)
+    let query = (client.from("user_tasks") as any)
       .select("*")
       .eq("user_id", user.id)
       .is("deleted_at", null)
@@ -114,16 +114,16 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return (data || []) as ScheduledTask[];
+    return (data || []) as UserTask[];
   },
 
-  getTask: async (id: string): Promise<ScheduledTask> => {
+  getTask: async (id: string): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("scheduled_tasks") as any)
+    const { data, error } = await (client.from("user_tasks") as any)
       .select("*")
       .eq("id", id)
       .single();
@@ -132,16 +132,16 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return data as ScheduledTask;
+    return data as UserTask;
   },
 
-  getTaskDetail: async (id: string): Promise<TaskDetail> => {
+  getTaskDetail: async (id: string): Promise<UserTaskDetail> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: task, error: taskError } = await (client.from("scheduled_tasks") as any)
+    const { data: task, error: taskError } = await (client.from("user_tasks") as any)
       .select("*")
       .eq("id", id)
       .single();
@@ -154,12 +154,12 @@ export const mobileSchedulerApi: any = {
       await Promise.all([
         (client.from("task_dependencies") as any)
           .select(
-            "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)"
+            "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:user_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)"
           )
           .eq("task_id", id),
         (client.from("task_dependencies") as any)
           .select(
-            "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)"
+            "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:user_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)"
           )
           .eq("depends_on_task_id", id),
         (client.from("task_executions") as any)
@@ -177,7 +177,7 @@ export const mobileSchedulerApi: any = {
       subtasksResult.data?.filter((s: any) => s.status === "completed").length || 0;
 
     return {
-      ...(task as ScheduledTask),
+      ...(task as UserTask),
       dependencies: (dependenciesResult.data || []) as TaskDependency[],
       dependents: (dependentsResult.data || []) as TaskDependency[],
       progress_plans: [],
@@ -188,16 +188,16 @@ export const mobileSchedulerApi: any = {
       subtask_count: subtaskCount,
       subtask_completed: subtaskCompleted,
       has_subtasks: subtaskCount > 0,
-    } as TaskDetail;
+    } as UserTaskDetail;
   },
 
-  updateTask: async (id: string, data: UpdateScheduledTaskData): Promise<ScheduledTask> => {
+  updateTask: async (id: string, data: UpdateUserTaskData): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .update({
         ...data,
         updated_at: new Date().toISOString(),
@@ -210,7 +210,7 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
   deleteTask: async (id: string): Promise<void> => {
@@ -219,7 +219,7 @@ export const mobileSchedulerApi: any = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("scheduled_tasks") as any)
+    const { error } = await (client.from("user_tasks") as any)
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id);
 
@@ -228,13 +228,13 @@ export const mobileSchedulerApi: any = {
     }
   },
 
-  startTask: async (id: string): Promise<ScheduledTask> => {
+  startTask: async (id: string): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .update({
         status: "in_progress",
         updated_at: new Date().toISOString(),
@@ -247,16 +247,16 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
-  pauseTask: async (id: string): Promise<ScheduledTask> => {
+  pauseTask: async (id: string): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .update({
         status: "paused",
         updated_at: new Date().toISOString(),
@@ -269,16 +269,16 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
-  completeTask: async (id: string): Promise<ScheduledTask> => {
+  completeTask: async (id: string): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
@@ -292,16 +292,16 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
-  demoteTask: async (id: string): Promise<ScheduledTask> => {
+  demoteTask: async (id: string): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: task } = await (client.from("scheduled_tasks") as any)
+    const { data: task } = await (client.from("user_tasks") as any)
       .select("queue_level")
       .eq("id", id)
       .single();
@@ -309,7 +309,7 @@ export const mobileSchedulerApi: any = {
     const currentLevel = (task as any)?.queue_level ?? 0;
     const newLevel = Math.min(currentLevel + 1, 2);
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .update({
         queue_level: newLevel,
         updated_at: new Date().toISOString(),
@@ -322,10 +322,10 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
-  moveTask: async (id: string, targetQueue: number | string): Promise<ScheduledTask> => {
+  moveTask: async (id: string, targetQueue: number | string): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -333,7 +333,7 @@ export const mobileSchedulerApi: any = {
 
     const targetLevel = typeof targetQueue === "number" ? targetQueue : parseInt(targetQueue, 10);
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .update({
         queue_level: targetLevel,
         updated_at: new Date().toISOString(),
@@ -346,7 +346,7 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
   reorderTasks: async (_queueLevel: number, taskIds: string[]): Promise<void> => {
@@ -356,7 +356,7 @@ export const mobileSchedulerApi: any = {
     }
 
     for (let i = 0; i < taskIds.length; i++) {
-      await (client.from("scheduled_tasks") as any)
+      await (client.from("user_tasks") as any)
         .update({ position: i, updated_at: new Date().toISOString() })
         .eq("id", taskIds[i]);
     }
@@ -372,13 +372,13 @@ export const mobileSchedulerApi: any = {
     };
   },
 
-  updateNotes: async (taskId: string, notes: string): Promise<ScheduledTask> => {
+  updateNotes: async (taskId: string, notes: string): Promise<UserTask> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("scheduled_tasks") as any)
+    const { data: result, error } = await (client.from("user_tasks") as any)
       .update({
         notes,
         updated_at: new Date().toISOString(),
@@ -391,7 +391,7 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    return result as ScheduledTask;
+    return result as UserTask;
   },
 
   getSmartRecommendation: async () => {
@@ -408,7 +408,7 @@ export const mobileSchedulerApi: any = {
       return { task: null, reason: "No user" };
     }
 
-    const { data: tasks } = await (client.from("scheduled_tasks") as any)
+    const { data: tasks } = await (client.from("user_tasks") as any)
       .select("*")
       .eq("user_id", user.id)
       .eq("status", "pending")
@@ -433,7 +433,7 @@ export const mobileSchedulerApi: any = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: task } = await (client.from("scheduled_tasks") as any)
+    const { data: task } = await (client.from("user_tasks") as any)
       .select("priority, deadline, created_at")
       .eq("id", taskId)
       .single();
@@ -475,7 +475,7 @@ export const mobileSchedulerApi: any = {
 
     const dependentIds = dependencies.map((d: any) => d.depends_on_task_id);
 
-    const { data: dependentTasks } = await (client.from("scheduled_tasks") as any)
+    const { data: dependentTasks } = await (client.from("user_tasks") as any)
       .select("id, title, status")
       .in("id", dependentIds);
 
@@ -597,7 +597,7 @@ export const mobileSchedulerApi: any = {
       return { q0: [], q1: [], q2: [] };
     }
 
-    const { data, error } = await (client.from("scheduled_tasks") as any)
+    const { data, error } = await (client.from("user_tasks") as any)
       .select("*")
       .eq("user_id", user.id)
       .is("deleted_at", null)
@@ -607,7 +607,7 @@ export const mobileSchedulerApi: any = {
       throw new Error(error.message);
     }
 
-    const tasks = (data || []) as ScheduledTask[];
+    const tasks = (data || []) as UserTask[];
     return {
       q0: tasks.filter((t) => t.queue_level === 0),
       q1: tasks.filter((t) => t.queue_level === 1),
@@ -767,7 +767,7 @@ export const mobileSchedulerApi: any = {
     return result as TaskSettings;
   },
 
-  getStats: async (): Promise<TaskStats> => {
+  getStats: async (): Promise<UserTaskStats> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -789,7 +789,7 @@ export const mobileSchedulerApi: any = {
       };
     }
 
-    const { data: tasks } = await (client.from("scheduled_tasks") as any)
+    const { data: tasks } = await (client.from("user_tasks") as any)
       .select("status, queue_level, actual_duration")
       .eq("user_id", user.id)
       .is("deleted_at", null);

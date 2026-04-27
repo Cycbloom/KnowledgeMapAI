@@ -23,8 +23,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import type {
-  ScheduledTask,
-  CreateScheduledTaskData,
+  UserTask,
+  CreateUserTaskData,
   TaskType,
   ProgressMode,
   TaskSettings,
@@ -36,12 +36,12 @@ import {
 import { TemplateSelector } from "./TemplateSelector";
 
 interface TaskFormProps {
-  task?: ScheduledTask;
-  onSubmit: (data: CreateScheduledTaskData) => void;
+  task?: UserTask;
+  onSubmit: (data: CreateUserTaskData) => void;
   onCancel: () => void;
   knowledgePoints?: { id: string; title: string }[];
   defaultQueueLevel?: number;
-  availableTasks?: ScheduledTask[];
+  availableTasks?: UserTask[];
   timeSliceSettings?: TaskSettings | null;
 }
 

@@ -20,12 +20,12 @@ import {
   Circle,
   CheckCircle,
 } from "lucide-react";
-import { ScheduledTask, TaskSubtask } from "@shared/types";
+import { UserTask, TaskSubtask } from "@shared/types";
 import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 interface TaskCardProps {
-  task: ScheduledTask;
+  task: UserTask;
   onEdit?: () => void;
   onDelete?: () => void;
   onStart?: () => void;

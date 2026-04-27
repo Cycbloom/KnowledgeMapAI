@@ -30,7 +30,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -73,7 +73,7 @@ router.get(
 
     let query = supabase
       .from("task_executions")
-      .select("*, scheduled_tasks(title, queue_level)", { count: "exact" })
+      .select("*, user_tasks(title, queue_level)", { count: "exact" })
       .eq("user_id", req.user.id)
       .order("started_at", { ascending: false });
 
@@ -111,7 +111,7 @@ router.get(
 
     const { data: execution, error } = await supabase
       .from("task_executions")
-      .select("*, scheduled_tasks(title, description, queue_level)")
+      .select("*, user_tasks(title, description, queue_level)")
       .eq("id", id)
       .eq("user_id", req.user.id)
       .single();

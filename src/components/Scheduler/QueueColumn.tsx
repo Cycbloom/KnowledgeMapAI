@@ -14,22 +14,22 @@ import {
   Target,
   ListTodo,
 } from "lucide-react";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 import { TaskCard } from "./TaskCard";
 
 interface QueueColumnProps {
   level: number;
   title: string;
   timeSlice: number;
-  tasks: ScheduledTask[];
-  onTaskClick?: (task: ScheduledTask) => void;
+  tasks: UserTask[];
+  onTaskClick?: (task: UserTask) => void;
   onTaskMove?: (taskId: string, targetQueue: number) => void;
   onReorder?: (taskIds: string[]) => void;
-  onEditTask?: (task: ScheduledTask) => void;
-  onDeleteTask?: (task: ScheduledTask) => void;
-  onStartTask?: (task: ScheduledTask) => void;
-  onPauseTask?: (task: ScheduledTask) => void;
-  onCompleteTask?: (task: ScheduledTask) => void;
+  onEditTask?: (task: UserTask) => void;
+  onDeleteTask?: (task: UserTask) => void;
+  onStartTask?: (task: UserTask) => void;
+  onPauseTask?: (task: UserTask) => void;
+  onCompleteTask?: (task: UserTask) => void;
   onAddTask?: () => void;
 }
 

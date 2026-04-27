@@ -520,7 +520,7 @@ export const deleteRelationSchema = z.object({
 });
 
 // --- Scheduler Schemas ---
-export const createScheduledTaskSchema = z.object({
+export const createUserTaskSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   description: z.string().optional(),
   queue_level: z.number().int().min(0).max(2).optional(),
@@ -540,7 +540,7 @@ export const createScheduledTaskSchema = z.object({
   parent_task_id: z.string().uuid().optional(),
 });
 
-export const updateScheduledTaskSchema = z.object({
+export const updateUserTaskSchema = z.object({
   title: z.string().min(1, "标题不能为空").optional(),
   description: z.string().optional(),
   queue_level: z.number().int().min(0).max(2).optional(),

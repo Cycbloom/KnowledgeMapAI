@@ -16,10 +16,10 @@ import {
   Timer,
   TrendingUp,
 } from "lucide-react";
-import { ScheduledTask, TaskExecution } from "@shared/types";
+import { UserTask, TaskExecution } from "@shared/types";
 
 interface TaskDetailProps {
-  task: ScheduledTask;
+  task: UserTask;
   executions: TaskExecution[];
   onEdit?: () => void;
   onDelete?: () => void;

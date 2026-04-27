@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { TaskDependency, ScheduledTask } from '../../types';
+import { TaskDependency, UserTask } from '../../types';
 
 interface TaskDependencyGraphProps {
   taskId: string;
   dependencies: TaskDependency[];
   dependents: TaskDependency[];
-  allTasks?: ScheduledTask[];
+  allTasks?: UserTask[];
   onTaskClick?: (taskId: string) => void;
 }
 

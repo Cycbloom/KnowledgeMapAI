@@ -48,16 +48,16 @@ CREATE POLICY "Service role can manage all system tasks"
   ON system_tasks FOR ALL
   USING (auth.role() = 'service_role');
 
--- Add source column to scheduled_tasks
-ALTER TABLE scheduled_tasks ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'user'
+-- Add source column to user_tasks
+ALTER TABLE user_tasks ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'user'
   CHECK (source IN ('user', 'import', 'template', 'system_recommendation'));
 
-COMMENT ON COLUMN scheduled_tasks.source IS 'Task source: user (manual), import, template, system_recommendation';
+COMMENT ON COLUMN user_tasks.source IS 'Task source: user (manual), import, template, system_recommendation';
 
 -- Update existing tasks to have correct source
-UPDATE scheduled_tasks
+UPDATE user_tasks
 SET source = 'user'
 WHERE source IS NULL OR source = 'user';
 
 -- Index for source filtering
-CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_source ON scheduled_tasks(source);
+CREATE INDEX IF NOT EXISTS idx_user_tasks_source ON user_tasks(source);

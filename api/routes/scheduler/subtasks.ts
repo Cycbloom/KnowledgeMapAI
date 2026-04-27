@@ -82,7 +82,7 @@ router.post(
     } = req.body;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -153,7 +153,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -195,7 +195,7 @@ router.put(
     const updates = req.body;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -308,7 +308,7 @@ router.post(
     const { to_state, mastery_level, reason } = req.body;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("id", id)
       .eq("user_id", req.user.id)

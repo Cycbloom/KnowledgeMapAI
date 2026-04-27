@@ -115,7 +115,7 @@ router.put(
     const { notes } = req.body;
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({ notes, updated_at: new Date().toISOString() })
       .eq("id", id)
       .eq("user_id", req.user.id)

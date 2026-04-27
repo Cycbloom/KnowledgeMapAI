@@ -3,8 +3,8 @@ import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import {
-  createScheduledTaskSchema,
-  updateScheduledTaskSchema,
+  createUserTaskSchema,
+  updateUserTaskSchema,
   moveTaskSchema,
   reorderTasksSchema,
 } from "../../schemas/index";
@@ -29,7 +29,7 @@ const uuidParamsSchema = z.object({
 router.post(
   "/tasks",
   requireAuth,
-  validate(createScheduledTaskSchema),
+  validate(createUserTaskSchema),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
@@ -55,14 +55,14 @@ router.post(
     } = req.body;
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", req.user.id)
       .eq("queue_level", queue_level ?? 0)
       .is("deleted_at", null);
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: req.user.id,
         title,
@@ -110,7 +110,7 @@ router.get(
       req.query as unknown as z.infer<typeof getTasksQuerySchema>;
 
     let query = supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact" })
       .eq("user_id", req.user.id)
       .is("deleted_at", null)
@@ -194,7 +194,7 @@ router.put(
 
     for (const update of updates) {
       await supabase
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .update({ position: update.position, queue_level: update.queue_level })
         .eq("id", update.id)
         .eq("user_id", req.user.id);
@@ -219,7 +219,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -249,7 +249,7 @@ router.get(
     const { id } = req.params;
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -263,14 +263,14 @@ router.get(
     const { data: dependencies } = await supabase
       .from("task_dependencies")
       .select(
-        "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
+        "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:user_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
       )
       .eq("task_id", id);
 
     const { data: dependents } = await supabase
       .from("task_dependencies")
       .select(
-        "id, task_id, depends_on_task_id, dependency_type, created_at, task:scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
+        "id, task_id, depends_on_task_id, dependency_type, created_at, task:user_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
       )
       .eq("depends_on_task_id", id);
 
@@ -321,7 +321,7 @@ router.get(
 router.put(
   "/tasks/:id",
   requireAuth,
-  validate({ params: uuidParamsSchema, body: updateScheduledTaskSchema }),
+  validate({ params: uuidParamsSchema, body: updateUserTaskSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
@@ -334,7 +334,7 @@ router.put(
     const updateData = req.body;
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update(updateData)
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -365,7 +365,7 @@ router.delete(
     const { id } = req.params;
 
     const { error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id)
       .eq("user_id", req.user.id);
@@ -393,7 +393,7 @@ router.post(
     const { id } = req.params;
 
     const { data: currentTask } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("status")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -438,7 +438,7 @@ router.post(
     const { id } = req.params;
 
     const { data: currentTask } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("status")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -484,7 +484,7 @@ router.post(
     const { actual_duration } = req.body;
 
     const { data: currentTask } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("status")
       .eq("id", id)
       .eq("user_id", req.user.id)
@@ -530,7 +530,7 @@ router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   const { data: tasks, error } = await supabase
-    .from("scheduled_tasks")
+    .from("user_tasks")
     .select("*")
     .eq("user_id", req.user.id)
     .is("deleted_at", null)
@@ -600,14 +600,14 @@ router.put(
     const { target_queue } = req.body;
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", req.user.id)
       .eq("queue_level", target_queue)
       .is("deleted_at", null);
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         queue_level: target_queue,
         position: count ?? 0,

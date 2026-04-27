@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { efficiencyService } from "./efficiencyService";
 import { sm2Service, ReviewTaskData } from "./sm2Service";
-import { ScheduledTask } from "./taskService";
+import { UserTask } from "./taskService";
 import { logger } from "../../utils/logger";
 
 export interface TimeSlotRecommendation {
@@ -23,7 +23,7 @@ export interface MasteryBasedPriority {
 }
 
 export interface DependencyAwareTask {
-  task: ScheduledTask;
+  task: UserTask;
   dependencies: string[];
   dependents: string[];
   canStart: boolean;
@@ -38,7 +38,7 @@ export interface TaskTypeTimeMatch {
 
 export interface SmartRecommendation {
   taskId: string;
-  task: ScheduledTask;
+  task: UserTask;
   overallScore: number;
   timeSlotScore: number;
   masteryScore: number;
@@ -144,7 +144,7 @@ export class SmartSchedulerService {
   async calculateMasteryBasedPriority(
     client: SupabaseClient,
     _userId: string,
-    tasks: ScheduledTask[],
+    tasks: UserTask[],
   ): Promise<MasteryBasedPriority[]> {
     const results: MasteryBasedPriority[] = [];
 
@@ -213,9 +213,9 @@ export class SmartSchedulerService {
   async getDependencyAwareOrder(
     client: SupabaseClient,
     _userId: string,
-    tasks: ScheduledTask[],
+    tasks: UserTask[],
   ): Promise<DependencyAwareTask[]> {
-    const taskMap = new Map<string, ScheduledTask>();
+    const taskMap = new Map<string, UserTask>();
     for (const task of tasks) {
       taskMap.set(task.id, task);
     }
@@ -294,7 +294,7 @@ export class SmartSchedulerService {
   }
 
   matchTaskTypeToTimeSlot(
-    task: ScheduledTask,
+    task: UserTask,
     timeSlots: TimeSlotRecommendation[],
   ): TaskTypeTimeMatch[] {
     const results: TaskTypeTimeMatch[] = [];
@@ -329,7 +329,7 @@ export class SmartSchedulerService {
     userId: string,
   ): Promise<SmartSchedulerResult> {
     const { data: tasksData, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
@@ -345,7 +345,7 @@ export class SmartSchedulerService {
       };
     }
 
-    const tasks = tasksData as ScheduledTask[];
+    const tasks = tasksData as UserTask[];
 
     const timeSlots = await this.getTimeSlotRecommendations(client, userId);
     const masteryPriorities = await this.calculateMasteryBasedPriority(client, userId, tasks);
@@ -424,7 +424,7 @@ export class SmartSchedulerService {
   }
 
   private calculateTimeSlotScore(
-    task: ScheduledTask,
+    task: UserTask,
     timeSlots: TimeSlotRecommendation[],
   ): number {
     const now = new Date();
@@ -455,7 +455,7 @@ export class SmartSchedulerService {
     masteryScore: number,
     dependencyScore: number,
     typeMatchScore: number,
-    task: ScheduledTask,
+    task: UserTask,
   ): number {
     const weights = {
       timeSlot: 0.2,
@@ -477,7 +477,7 @@ export class SmartSchedulerService {
   }
 
   private findBestTimeSlot(
-    task: ScheduledTask,
+    task: UserTask,
     timeSlots: TimeSlotRecommendation[],
     _typeMatches: TaskTypeTimeMatch[],
   ): TimeSlotRecommendation | null {
@@ -515,7 +515,7 @@ export class SmartSchedulerService {
   }
 
   private generateReasons(
-    task: ScheduledTask,
+    task: UserTask,
     masteryPriority: MasteryBasedPriority | undefined,
     dependencyInfo: DependencyAwareTask | undefined,
     typeMatches: TaskTypeTimeMatch[],

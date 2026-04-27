@@ -12,12 +12,12 @@ import {
   Brain,
 } from "lucide-react";
 import { reviewApi, TaskReview } from "../../services/api/review";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 
 interface TaskRetrospectProps {
   isOpen: boolean;
   onClose: () => void;
-  task: ScheduledTask | null;
+  task: UserTask | null;
   onSave?: (review: TaskReview) => void;
   onSkip?: () => void;
 }

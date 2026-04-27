@@ -111,7 +111,7 @@ class SchedulerDecisionEngine {
     userId: string,
   ): Promise<Array<Record<string, unknown>>> {
     const { data: tasks, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
@@ -144,7 +144,7 @@ class SchedulerDecisionEngine {
     const { data: deps } = await supabase
       .from("task_dependencies")
       .select(
-        "dependency_type, depends_on_task:scheduled_tasks!task_dependencies_depends_on_task_id_fkey(status)",
+        "dependency_type, depends_on_task:user_tasks!task_dependencies_depends_on_task_id_fkey(status)",
       )
       .eq("task_id", taskId);
 

@@ -18,10 +18,10 @@ import {
 } from "../../services/api/taskRecommendation";
 import { TaskRecommendation as TaskRecommendationComponent } from "./TaskRecommendation";
 import type { TaskRecommendation as TaskRecommendationType } from "../../services/api/taskRecommendation";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 
 interface SmartSuggestionProps {
-  onSelectTask?: (task: ScheduledTask) => void;
+  onSelectTask?: (task: UserTask) => void;
   onStartTask?: (taskId: string) => void;
   onPrioritySuggestion?: (suggestion: PrioritySuggestion) => void;
   taskTitle?: string;
@@ -71,7 +71,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                 ? "medium"
                 : "low";
 
-        const task: ScheduledTask = {
+        const task: UserTask = {
           id: d.taskId,
           title: d.title,
           queue_level: d.queueLevel,

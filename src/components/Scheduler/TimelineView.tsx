@@ -2,12 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ScheduledTask } from '@shared/types';
+import { UserTask } from '@shared/types';
 import { TaskCard } from './TaskCard';
 
 interface TimelineViewProps {
-  tasks: ScheduledTask[];
-  onTaskClick?: (task: ScheduledTask) => void;
+  tasks: UserTask[];
+  onTaskClick?: (task: UserTask) => void;
   onTaskMove?: (taskId: string, newDeadline: string) => void;
 }
 
@@ -30,7 +30,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const days: { date: Date; label: string; tasks: ScheduledTask[]; isToday: boolean; isPast: boolean }[] = [];
+    const days: { date: Date; label: string; tasks: UserTask[]; isToday: boolean; isPast: boolean }[] = [];
     
     for (let i = -3; i <= 10; i++) {
       const date = new Date(currentDate);

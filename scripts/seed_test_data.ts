@@ -876,7 +876,7 @@ async function createScheduledTasks(userId: string) {
     }
     
     const { error } = await supabase
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .insert(insertData);
     
     if (!error) {
@@ -897,7 +897,7 @@ async function createTaskExecutions(userId: string) {
   ];
   
   const { data: tasks } = await supabase
-    .from('scheduled_tasks')
+    .from('user_tasks')
     .select('id')
     .eq('user_id', userId)
     .limit(5);

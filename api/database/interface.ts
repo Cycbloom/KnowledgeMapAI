@@ -15,7 +15,7 @@ import type {
 } from '../../shared/types/index';
 
 import type {
-  ScheduledTask,
+  UserTask,
   TaskExecution,
   TaskSettings,
   Queue,
@@ -152,7 +152,7 @@ export interface UpdateEdgeInput {
   show_arrow?: boolean;
 }
 
-export interface CreateScheduledTaskInput {
+export interface CreateUserTaskInput {
   user_id: string;
   title: string;
   description?: string;
@@ -170,7 +170,7 @@ export interface CreateScheduledTaskInput {
   context?: string;
 }
 
-export interface UpdateScheduledTaskInput {
+export interface UpdateUserTaskInput {
   title?: string;
   description?: string;
   queue_level?: number;
@@ -297,12 +297,12 @@ export interface DatabaseInterface {
   updateEdge(id: string, data: UpdateEdgeInput): Promise<Edge>;
   deleteEdge(id: string): Promise<void>;
 
-  getScheduledTasks(userId: string, options?: QueryOptions): Promise<ScheduledTask[]>;
-  getScheduledTask(id: string): Promise<ScheduledTask | null>;
-  createScheduledTask(data: CreateScheduledTaskInput): Promise<ScheduledTask>;
-  updateScheduledTask(id: string, data: UpdateScheduledTaskInput): Promise<ScheduledTask>;
-  deleteScheduledTask(id: string, userId: string): Promise<void>;
-  getTasksByQueue(userId: string, queueLevel: number): Promise<ScheduledTask[]>;
+  getUserTasks(userId: string, options?: QueryOptions): Promise<UserTask[]>;
+  getUserTask(id: string): Promise<UserTask | null>;
+  createUserTask(data: CreateUserTaskInput): Promise<UserTask>;
+  updateUserTask(id: string, data: UpdateUserTaskInput): Promise<UserTask>;
+  deleteUserTask(id: string, userId: string): Promise<void>;
+  getTasksByQueue(userId: string, queueLevel: number): Promise<UserTask[]>;
   reorderTasks(userId: string, queueLevel: number, taskIds: string[]): Promise<void>;
 
   getTaskExecutions(taskId: string): Promise<TaskExecution[]>;

@@ -3,7 +3,7 @@ import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { motion } from "framer-motion";
 import { LayoutGrid, Calendar, Columns, List, ChevronDown } from "lucide-react";
 import { useTranslation } from 'react-i18next';
-import { ScheduledTask, QueueData } from "@shared/types";
+import { UserTask, QueueData } from "@shared/types";
 import { HorizontalQueue } from "./HorizontalQueue";
 
 interface HorizontalQueueViewProps {
@@ -15,13 +15,13 @@ interface HorizontalQueueViewProps {
   };
   onTaskMove?: (taskId: string, targetQueue: number) => void;
   onReorder?: (queueLevel: number, taskIds: string[]) => void;
-  onEditTask?: (task: ScheduledTask) => void;
-  onDeleteTask?: (task: ScheduledTask) => void;
-  onStartTask?: (task: ScheduledTask) => void;
-  onPauseTask?: (task: ScheduledTask) => void;
-  onCompleteTask?: (task: ScheduledTask) => void;
+  onEditTask?: (task: UserTask) => void;
+  onDeleteTask?: (task: UserTask) => void;
+  onStartTask?: (task: UserTask) => void;
+  onPauseTask?: (task: UserTask) => void;
+  onCompleteTask?: (task: UserTask) => void;
   onAddTask?: (queueLevel: number) => void;
-  onViewTaskDetail?: (task: ScheduledTask) => void;
+  onViewTaskDetail?: (task: UserTask) => void;
   currentView?: "queue" | "timeline" | "kanban" | "list";
   onViewChange?: (view: string) => void;
   children?: {

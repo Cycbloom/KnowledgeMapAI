@@ -1,11 +1,11 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Check, Clock, Zap, Target, ListTodo } from "lucide-react";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 import { useUnifiedTimer } from "../../hooks/scheduler";
 
 interface ActiveTaskPanelProps {
-  task: ScheduledTask;
+  task: UserTask;
   onPause: () => void;
   onComplete: () => void;
   timeSlice: number;

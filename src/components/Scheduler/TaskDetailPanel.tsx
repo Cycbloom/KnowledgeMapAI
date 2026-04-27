@@ -1,13 +1,13 @@
 import React from 'react';
 import { X, Clock, AlertCircle, CheckCircle } from 'lucide-react';
-import { TaskDetail } from '../../types';
+import { UserTaskDetail } from '../../types';
 import { BasicInfoSection } from './BasicInfoSection';
 import { DependencySection } from './DependencySection';
 import { ProgressSection } from './ProgressSection';
 import { RelatedResourcesSection } from './RelatedResourcesSection';
 
 interface TaskDetailPanelProps {
-  task: TaskDetail | null;
+  task: UserTaskDetail | null;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: () => void;

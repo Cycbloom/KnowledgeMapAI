@@ -1,6 +1,6 @@
 import { request } from "../../client";
 
-export interface TaskStats {
+export interface UserTaskStats {
   total_tasks: number;
   completed_tasks: number;
   total_duration: number;

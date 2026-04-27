@@ -1,7 +1,7 @@
 import { logger } from "../../../utils/logger";
 import { schedulerEventBus } from "./eventBus";
 import type {
-  TaskStatus,
+  UserTaskStatus,
   TaskStartedPayload,
   TaskPausedPayload,
   TaskResumedPayload,
@@ -19,13 +19,13 @@ type TransitionSideEffect = (
   supabase: any,
   taskId: string,
   userId: string,
-  fromState: TaskStatus,
-  toState: TaskStatus,
+  fromState: UserTaskStatus,
+  toState: UserTaskStatus,
   taskData?: Record<string, unknown>,
 ) => Promise<Record<string, unknown> | undefined>;
 
 interface TransitionConfig {
-  to: TaskStatus;
+  to: UserTaskStatus;
   sideEffect?: TransitionSideEffect;
   eventType?: string;
   eventPayloadBuilder?: (
@@ -36,7 +36,7 @@ interface TransitionConfig {
   ) => { payload: unknown; source?: string };
 }
 
-const VALID_TRANSITIONS: Record<TaskStatus, TransitionConfig[]> = {
+const VALID_TRANSITIONS: Record<UserTaskStatus, TransitionConfig[]> = {
   pending: [
     {
       to: "in_progress",
@@ -218,13 +218,13 @@ const VALID_TRANSITIONS: Record<TaskStatus, TransitionConfig[]> = {
 };
 
 class TaskStateMachine {
-  canTransition(from: TaskStatus, to: TaskStatus): boolean {
+  canTransition(from: UserTaskStatus, to: UserTaskStatus): boolean {
     const transitions = VALID_TRANSITIONS[from];
     if (!transitions) return false;
     return transitions.some((t) => t.to === to);
   }
 
-  getValidTransitions(from: TaskStatus): TaskStatus[] {
+  getValidTransitions(from: UserTaskStatus): UserTaskStatus[] {
     return (VALID_TRANSITIONS[from] ?? []).map((t) => t.to);
   }
 
@@ -232,8 +232,8 @@ class TaskStateMachine {
     supabase: any,
     taskId: string,
     userId: string,
-    fromState: TaskStatus,
-    toState: TaskStatus,
+    fromState: UserTaskStatus,
+    toState: UserTaskStatus,
     additionalData?: Record<string, unknown>,
   ): Promise<TransitionResult> {
     const transitions = VALID_TRANSITIONS[fromState];
@@ -262,7 +262,7 @@ class TaskStateMachine {
     }
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update(updateData)
       .eq("id", taskId)
       .eq("user_id", userId)

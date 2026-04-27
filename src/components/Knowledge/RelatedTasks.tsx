@@ -14,7 +14,7 @@ import {
   ListTodo,
 } from "lucide-react";
 import { useSchedulerTasks } from "../../hooks";
-import type { ScheduledTask, TaskStatus } from "@shared/types";
+import type { UserTask, UserTaskStatus } from "@shared/types";
 
 interface RelatedTasksProps {
   knowledgePointId: string;
@@ -23,7 +23,7 @@ interface RelatedTasksProps {
 }
 
 const STATUS_CONFIG: Record<
-  TaskStatus,
+  UserTaskStatus,
   { label: string; color: string; bgColor: string; borderColor: string }
 > = {
   pending: {
@@ -100,7 +100,7 @@ const formatDeadline = (date?: string): { text: string; color: string } | null =
   return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
 };
 
-const getStatusIcon = (status: TaskStatus) => {
+const getStatusIcon = (status: UserTaskStatus) => {
   switch (status) {
     case "completed":
       return <CheckCircle size={16} className="text-emerald-500" />;
@@ -123,15 +123,15 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
   const relatedTasks = React.useMemo(() => {
     if (!tasksData?.data) return [];
     return tasksData.data.filter(
-      (task: ScheduledTask) => task.knowledge_point_id === knowledgePointId
+      (task: UserTask) => task.knowledge_point_id === knowledgePointId
     );
   }, [tasksData, knowledgePointId]);
 
   const taskStats = React.useMemo(() => {
     const total = relatedTasks.length;
-    const completed = relatedTasks.filter((t: ScheduledTask) => t.status === "completed").length;
-    const inProgress = relatedTasks.filter((t: ScheduledTask) => t.status === "in_progress").length;
-    const pending = relatedTasks.filter((t: ScheduledTask) => t.status === "pending").length;
+    const completed = relatedTasks.filter((t: UserTask) => t.status === "completed").length;
+    const inProgress = relatedTasks.filter((t: UserTask) => t.status === "in_progress").length;
+    const pending = relatedTasks.filter((t: UserTask) => t.status === "pending").length;
     return { total, completed, inProgress, pending };
   }, [relatedTasks]);
 
@@ -241,7 +241,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
           </motion.div>
         ) : (
           <div className="space-y-2">
-            {relatedTasks.map((task: ScheduledTask, index: number) => {
+            {relatedTasks.map((task: UserTask, index: number) => {
               const statusConfig = STATUS_CONFIG[task.status];
               const queueStyle =
                 QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] ||

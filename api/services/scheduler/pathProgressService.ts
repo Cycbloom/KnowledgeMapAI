@@ -107,7 +107,7 @@ export class PathProgressService {
     }
 
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, status")
       .eq("id", pathNodeTask.task_id)
       .eq("user_id", userId)
@@ -135,7 +135,7 @@ export class PathProgressService {
     const completionTime = completedAt ?? new Date().toISOString();
 
     const { error: updateError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         status: "completed",
         completed_at: completionTime,
@@ -168,7 +168,7 @@ export class PathProgressService {
     taskId: string,
   ): Promise<TaskCompletionSyncResult> {
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -610,7 +610,7 @@ export class PathProgressService {
     const taskIds = pathNodeTasks.map((pnt) => pnt.task_id);
 
     const { data: tasks, error: tasksError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, status")
       .in("id", taskIds)
       .eq("user_id", userId);

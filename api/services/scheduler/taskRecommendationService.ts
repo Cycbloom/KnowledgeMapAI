@@ -1,9 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ScheduledTask } from "./taskService";
+import { UserTask } from "./taskService";
 import { logger } from "../../utils/logger";
 
 export interface TaskRecommendation {
-  task: ScheduledTask;
+  task: UserTask;
   score: number;
   reasons: string[];
   urgencyLevel: "low" | "medium" | "high" | "critical";
@@ -122,7 +122,7 @@ const PRIORITY_KEYWORDS = {
 };
 
 export class TaskRecommendationService {
-  calculateUrgencyScore(task: ScheduledTask, now: Date = new Date()): number {
+  calculateUrgencyScore(task: UserTask, now: Date = new Date()): number {
     let score = 0;
 
     if (task.deadline) {
@@ -184,7 +184,7 @@ export class TaskRecommendationService {
       .select(
         `
         *,
-        scheduled_tasks!inner(tags, queue_level)
+        user_tasks!inner(tags, queue_level)
       `,
       )
       .eq("user_id", userId)
@@ -216,7 +216,7 @@ export class TaskRecommendationService {
 
       hourlyEfficiency[hour].push(duration);
 
-      const task = exec.scheduled_tasks as {
+      const task = exec.user_tasks as {
         tags?: string[];
         queue_level?: number;
       };
@@ -347,9 +347,9 @@ export class TaskRecommendationService {
   }
 
   getTimeSlotRecommendations(
-    tasks: ScheduledTask[],
+    tasks: UserTask[],
     timeSlot: TimeSlot,
-  ): ScheduledTask[] {
+  ): UserTask[] {
     const config = TIME_SLOT_CONFIG[timeSlot.type];
     if (!config) return tasks;
 
@@ -376,7 +376,7 @@ export class TaskRecommendationService {
     const now = context?.currentTime || new Date();
 
     const { data: tasks, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
@@ -451,7 +451,7 @@ export class TaskRecommendationService {
       }
 
       return {
-        task: task as ScheduledTask,
+        task: task as UserTask,
         score: Math.min(100, adjustedScore),
         reasons,
         urgencyLevel,
@@ -590,10 +590,10 @@ export class TaskRecommendationService {
   }
 
   calculateOptimalTaskOrder(
-    tasks: ScheduledTask[],
+    tasks: UserTask[],
     efficiencyData: EfficiencyData,
     now: Date = new Date(),
-  ): ScheduledTask[] {
+  ): UserTask[] {
     const scoredTasks = tasks.map((task) => {
       let score = 0;
 
@@ -651,7 +651,7 @@ export class TaskRecommendationService {
         `
         dependency_type,
         depends_on_task_id,
-        scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, status)
+        user_tasks!task_dependencies_depends_on_task_id_fkey(id, title, status)
       `,
       )
       .eq("task_id", taskId);
@@ -665,9 +665,9 @@ export class TaskRecommendationService {
       [];
 
     for (const dep of dependencies) {
-      const taskData = Array.isArray(dep.scheduled_tasks)
-        ? dep.scheduled_tasks[0]
-        : dep.scheduled_tasks;
+      const taskData = Array.isArray(dep.user_tasks)
+        ? dep.user_tasks[0]
+        : dep.user_tasks;
       if (taskData && taskData.status !== "completed") {
         const taskItem = {
           id: taskData.id,
@@ -853,7 +853,7 @@ export class TaskRecommendationService {
   }
 
   calculateDynamicPriority(
-    task: ScheduledTask,
+    task: UserTask,
     now: Date = new Date(),
   ): {
     score: number;

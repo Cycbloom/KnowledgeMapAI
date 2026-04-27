@@ -2,11 +2,11 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertTriangle, CheckCircle, Zap, TrendingUp, Calendar, Tag } from 'lucide-react';
 import { TaskRecommendation as TaskRecommendationType } from '../../services/api/taskRecommendation';
-import { ScheduledTask } from '@shared/types';
+import { UserTask } from '@shared/types';
 
 interface TaskRecommendationProps {
   recommendations: TaskRecommendationType[];
-  onSelectTask?: (task: ScheduledTask) => void;
+  onSelectTask?: (task: UserTask) => void;
   onStartTask?: (taskId: string) => void;
   isLoading?: boolean;
 }

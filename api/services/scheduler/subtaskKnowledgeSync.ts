@@ -364,7 +364,7 @@ export class SubtaskKnowledgeSyncService {
     };
 
     const { data: task, error: taskError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, user_id, title")
       .eq("id", subtaskData.task_id)
       .single();
@@ -610,7 +610,7 @@ export class SubtaskKnowledgeSyncService {
   ): Promise<void> {
     try {
       const { data: task } = await supabase
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .select("user_id")
         .eq("id", taskId)
         .single();

@@ -24,10 +24,10 @@ export { efficiencyService, EfficiencyService } from "./efficiencyService";
 export { reviewTaskService, ReviewTaskService } from "./reviewTaskService";
 
 export type {
-  ScheduledTask,
+  UserTask,
   TaskSettings,
   CreateTaskData,
-  TaskFilters,
+  UserTaskFilters,
 } from "./taskService";
 
 export type { TaskExecution, ExecutionFilters } from "./executionService";
@@ -48,7 +48,7 @@ export type {
   AchievementCheckResult,
 } from "./achievementService";
 
-export type { SchedulerStats } from "./statsService";
+export type { UserTaskSchedulerStats } from "./statsService";
 
 export type {
   PeriodicTask,

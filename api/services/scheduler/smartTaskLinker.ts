@@ -183,14 +183,14 @@ class SmartTaskLinker {
     graphName: string,
   ) {
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 1)
       .is("deleted_at", null);
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: userId,
         title: `学习图谱: ${graphName}`,

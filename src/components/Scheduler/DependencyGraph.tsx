@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { GitBranch, CheckCircle, Lock, Unlock } from "lucide-react";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 
 interface DependencyGraphProps {
-  tasks: ScheduledTask[];
+  tasks: UserTask[];
   className?: string;
-  onTaskClick?: (task: ScheduledTask) => void;
+  onTaskClick?: (task: UserTask) => void;
 }
 
 interface TaskNode {
-  task: ScheduledTask;
+  task: UserTask;
   x: number;
   y: number;
   isBlocked: boolean;
-  blockingTasks: ScheduledTask[];
+  blockingTasks: UserTask[];
 }
 
 export const DependencyGraph: React.FC<DependencyGraphProps> = ({
@@ -25,14 +25,14 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   const [nodes, setNodes] = useState<TaskNode[]>([]);
 
   const calculateLayout = () => {
-    const taskMap = new Map<string, ScheduledTask>();
+    const taskMap = new Map<string, UserTask>();
     tasks.forEach((t) => taskMap.set(t.id, t));
 
     const nodesWithPositions: TaskNode[] = tasks.map((task, index) => {
       const dependsOn = (task as any).depends_on || [];
       const blockingTasks = dependsOn
         .map((id: string) => taskMap.get(id))
-        .filter(Boolean) as ScheduledTask[];
+        .filter(Boolean) as UserTask[];
 
       const isBlocked = blockingTasks.some((t) => t.status !== "completed");
 
@@ -230,7 +230,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 };
 
 interface DependencyIndicatorProps {
-  blockingTasks?: ScheduledTask[];
+  blockingTasks?: UserTask[];
   className?: string;
 }
 

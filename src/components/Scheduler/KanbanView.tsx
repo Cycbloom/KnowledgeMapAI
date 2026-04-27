@@ -9,13 +9,13 @@ import {
   Clock,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 import { TaskCard } from "./TaskCard";
 
 export const KanbanView: React.FC<{
-  tasks: ScheduledTask[];
+  tasks: UserTask[];
   onTaskMove?: (taskId: string, status: string) => void;
-  onTaskClick?: (task: ScheduledTask) => void;
+  onTaskClick?: (task: UserTask) => void;
 }> = ({ tasks, onTaskMove, onTaskClick }) => {
   const { t } = useTranslation();
 
@@ -128,7 +128,7 @@ export const KanbanView: React.FC<{
     setDraggedOverColumn(null);
   };
 
-  const totalEstimatedTime = (columnTasks: ScheduledTask[]) => {
+  const totalEstimatedTime = (columnTasks: UserTask[]) => {
     return columnTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
   };
 

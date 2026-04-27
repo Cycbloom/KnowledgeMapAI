@@ -75,7 +75,7 @@ export class TaskAnalyticsService {
     monthAgo.setDate(monthAgo.getDate() - 30);
 
     const { data: tasks } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .is("deleted_at", null);

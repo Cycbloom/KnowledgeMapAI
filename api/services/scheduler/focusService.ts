@@ -222,7 +222,7 @@ export class FocusService {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: sessionsError.message } });
 
     const { data: tasks, error: tasksError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id")
       .eq("user_id", userId)
       .eq("status", "completed")
@@ -275,7 +275,7 @@ export class FocusService {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: sessionsError.message } });
 
     const { data: tasks, error: tasksError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, completed_at")
       .eq("user_id", userId)
       .eq("status", "completed")
@@ -348,7 +348,7 @@ export class FocusService {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: sessionsError.message } });
 
     const { data: tasks, error: tasksError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, completed_at")
       .eq("user_id", userId)
       .eq("status", "completed")

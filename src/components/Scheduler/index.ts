@@ -68,8 +68,8 @@ export { MasteryProgressBar } from "./MasteryProgressBar";
 export { SubtaskStateIcon } from "./SubtaskStateIcon";
 
 export type {
-  ScheduledTask,
-  CreateScheduledTaskData,
+  UserTask,
+  CreateUserTaskData,
   TaskExecution,
 } from "@shared/types";
 export type {

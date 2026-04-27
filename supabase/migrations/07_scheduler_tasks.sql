@@ -21,8 +21,8 @@ COMMENT ON COLUMN queues.color IS 'Queue color for UI (e.g., cyan, emerald, ambe
 COMMENT ON COLUMN queues.time_slice IS 'Default time slice in minutes for tasks in this queue';
 COMMENT ON COLUMN queues.priority IS 'Queue priority (lower = higher priority)';
 
--- Scheduled tasks table (main task table)
-CREATE TABLE IF NOT EXISTS scheduled_tasks (
+-- User tasks table (tasks that participate in scheduling: queue-based, SM2, focus sessions)
+CREATE TABLE IF NOT EXISTS user_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
   total_duration INTEGER,
   progress_mode TEXT CHECK (progress_mode IN ('average', 'decreasing', 'increasing', 'custom')),
   progress_percentage INTEGER DEFAULT 0,
-  parent_task_id UUID REFERENCES scheduled_tasks(id),
+  parent_task_id UUID REFERENCES user_tasks(id),
   context TEXT,
   scheduled_start TIMESTAMPTZ,
   scheduled_end TIMESTAMPTZ,
@@ -52,23 +52,23 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
   completed_at TIMESTAMPTZ
 );
 
-COMMENT ON TABLE scheduled_tasks IS 'Three-layer feedback queue task scheduler - main task table';
-COMMENT ON COLUMN scheduled_tasks.queue_id IS 'Reference to the queue this task belongs to';
-COMMENT ON COLUMN scheduled_tasks.queue_level IS 'Queue level: 0=Q0 (focus), 1=Q1 (standard), 2=Q2 (background)';
-COMMENT ON COLUMN scheduled_tasks.position IS 'Position within the queue for ordering';
-COMMENT ON COLUMN scheduled_tasks.estimated_duration IS 'Estimated duration in minutes';
-COMMENT ON COLUMN scheduled_tasks.actual_duration IS 'Actual duration in minutes';
-COMMENT ON COLUMN scheduled_tasks.task_type IS 'Task type: one_time, long_term, periodic, learning, async';
-COMMENT ON COLUMN scheduled_tasks.total_duration IS 'Total duration in minutes for long-term tasks';
-COMMENT ON COLUMN scheduled_tasks.progress_mode IS 'Progress distribution mode: average, decreasing, increasing, custom';
-COMMENT ON COLUMN scheduled_tasks.progress_percentage IS 'Current progress percentage (0-100)';
-COMMENT ON COLUMN scheduled_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
-COMMENT ON COLUMN scheduled_tasks.context IS 'Task context description for AI assistance';
+COMMENT ON TABLE user_tasks IS 'User tasks that participate in scheduling (queue-based, SM2, focus sessions)';
+COMMENT ON COLUMN user_tasks.queue_id IS 'Reference to the queue this task belongs to';
+COMMENT ON COLUMN user_tasks.queue_level IS 'Queue level: 0=Q0 (focus), 1=Q1 (standard), 2=Q2 (background)';
+COMMENT ON COLUMN user_tasks.position IS 'Position within the queue for ordering';
+COMMENT ON COLUMN user_tasks.estimated_duration IS 'Estimated duration in minutes';
+COMMENT ON COLUMN user_tasks.actual_duration IS 'Actual duration in minutes';
+COMMENT ON COLUMN user_tasks.task_type IS 'Task type: one_time, long_term, periodic, learning, async';
+COMMENT ON COLUMN user_tasks.total_duration IS 'Total duration in minutes for long-term tasks';
+COMMENT ON COLUMN user_tasks.progress_mode IS 'Progress distribution mode: average, decreasing, increasing, custom';
+COMMENT ON COLUMN user_tasks.progress_percentage IS 'Current progress percentage (0-100)';
+COMMENT ON COLUMN user_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
+COMMENT ON COLUMN user_tasks.context IS 'Task context description for AI assistance';
 
 -- Task executions table (execution history)
 CREATE TABLE IF NOT EXISTS task_executions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   started_at TIMESTAMPTZ NOT NULL,
   ended_at TIMESTAMPTZ,
@@ -114,8 +114,8 @@ COMMENT ON COLUMN task_settings.break_duration IS 'Break duration between tasks 
 -- Task dependencies table
 CREATE TABLE IF NOT EXISTS task_dependencies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
-  depends_on_task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
+  depends_on_task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   dependency_type TEXT NOT NULL DEFAULT 'strict' CHECK (dependency_type IN ('strict', 'soft')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(task_id, depends_on_task_id)
@@ -128,7 +128,7 @@ COMMENT ON COLUMN task_dependencies.dependency_type IS 'strict: must complete be
 CREATE TABLE IF NOT EXISTS task_schedules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  task_template_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_template_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   schedule_type TEXT NOT NULL CHECK (schedule_type IN ('daily', 'weekly', 'custom', 'smart')),
   schedule_config JSONB DEFAULT '{}',
   next_run_at TIMESTAMPTZ,
@@ -146,7 +146,7 @@ COMMENT ON COLUMN task_schedules.schedule_config IS 'JSON config for schedule (e
 -- Task progress plans table
 CREATE TABLE IF NOT EXISTS task_progress_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   plan_date DATE NOT NULL,
   planned_percentage INTEGER NOT NULL,
   actual_percentage INTEGER DEFAULT 0,
@@ -180,7 +180,7 @@ COMMENT ON COLUMN user_time_slots.label IS 'Optional label for this time slot (e
 -- Task subtasks table
 CREATE TABLE IF NOT EXISTS task_subtasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
@@ -211,7 +211,7 @@ COMMENT ON COLUMN task_subtasks.state_history IS 'History of learning state tran
 -- Task links table
 CREATE TABLE IF NOT EXISTS task_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   link_type TEXT NOT NULL DEFAULT 'web' CHECK (link_type IN ('web', 'file', 'api')),
   title TEXT,
   url TEXT NOT NULL,
@@ -229,7 +229,7 @@ COMMENT ON COLUMN task_links.link_type IS 'Type of link: web (URL), file (local 
 -- Task knowledge points table
 CREATE TABLE IF NOT EXISTS task_knowledge_points (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
   relevance_score INTEGER DEFAULT 100 CHECK (relevance_score BETWEEN 0 AND 100),
   is_primary BOOLEAN DEFAULT FALSE,
@@ -270,7 +270,7 @@ COMMENT ON COLUMN task_templates.is_system IS 'Whether this is a system preset t
 CREATE TABLE IF NOT EXISTS task_reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL,
+  task_id UUID REFERENCES user_tasks(id) ON DELETE SET NULL,
   review_type TEXT NOT NULL CHECK (review_type IN ('daily', 'task', 'weekly')),
   content TEXT,
   mood TEXT CHECK (mood IN ('great', 'good', 'neutral', 'tired', 'stressed')),
@@ -290,7 +290,7 @@ CREATE TABLE IF NOT EXISTS knowledge_review_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
   interval_days INTEGER NOT NULL DEFAULT 1,
   ease_factor DECIMAL(3,2) NOT NULL DEFAULT 2.5,
   repetitions INTEGER NOT NULL DEFAULT 0,
@@ -309,6 +309,6 @@ COMMENT ON COLUMN knowledge_review_tasks.repetitions IS '连续成功复习次�
 COMMENT ON COLUMN knowledge_review_tasks.next_review_date IS '下次复习日期';
 COMMENT ON COLUMN knowledge_review_tasks.last_quality_score IS '上次复习评分 (0-5)';
 
-ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL;
+ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS task_id UUID REFERENCES user_tasks(id) ON DELETE SET NULL;
 
 COMMENT ON COLUMN knowledge_graphs.task_id IS '关联的学习任务ID，创建图谱时自动创建';

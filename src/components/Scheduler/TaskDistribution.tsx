@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PieChart, Tag } from "lucide-react";
 import { api } from '../../services/api';
-import type {ScheduledTask} from '@shared/types';
+import type {UserTask} from '@shared/types';
 
 interface TaskDistributionProps {
   className?: string;
@@ -32,7 +32,7 @@ const TAG_COLORS = [
 export const TaskDistribution: React.FC<TaskDistributionProps> = ({
   className = "",
 }) => {
-  const [tasks, setTasks] = useState<ScheduledTask[]>([]);
+  const [tasks, setTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 

@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS user_activities (
   metadata JSONB DEFAULT '{}',
   knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
   graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
-  task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL,
+  task_id UUID REFERENCES user_tasks(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

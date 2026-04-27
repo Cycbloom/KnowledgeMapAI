@@ -10,10 +10,10 @@ import {
   Lock,
   Info,
 } from "lucide-react";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 
 interface DraggableTaskCardProps {
-  task: ScheduledTask;
+  task: UserTask;
   index: number;
   onEdit?: () => void;
   onDelete?: () => void;

@@ -142,14 +142,14 @@ class LearningLoopOrchestrator {
     const config = stageConfig[stage];
 
     const { count } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", loop.userId)
       .eq("queue_level", config.queueLevel)
       .is("deleted_at", null);
 
     const { data: task, error } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: loop.userId,
         title: config.title,
@@ -180,7 +180,7 @@ class LearningLoopOrchestrator {
     if (!payload.taskId) return;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("context")
       .eq("id", payload.taskId)
       .eq("user_id", userId)
@@ -215,7 +215,7 @@ class LearningLoopOrchestrator {
     if (!payload.knowledgePointId) return;
 
     const { data: task } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("context")
       .eq("id", payload.taskId)
       .eq("user_id", userId)

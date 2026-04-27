@@ -13,8 +13,8 @@ import type {
   UpdateGraphNodeInput,
   CreateEdgeInput,
   UpdateEdgeInput,
-  CreateScheduledTaskInput,
-  UpdateScheduledTaskInput,
+  CreateUserTaskInput,
+  UpdateUserTaskInput,
   CreateStudyCardInput,
   UpdateStudyCardInput,
   CreateFocusSessionInput,
@@ -35,7 +35,7 @@ import type {
 } from '../../../shared/types/index';
 
 import type {
-  ScheduledTask,
+  UserTask,
   TaskExecution,
   TaskSettings,
   Queue,
@@ -886,9 +886,9 @@ export class SupabaseAdapter implements DatabaseInterface {
     if (error) throw error;
   }
 
-  async getScheduledTasks(userId: string, options?: QueryOptions): Promise<ScheduledTask[]> {
+  async getUserTasks(userId: string, options?: QueryOptions): Promise<UserTask[]> {
     let query = this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .select('*')
       .eq('user_id', userId)
       .is('deleted_at', null)
@@ -938,9 +938,9 @@ export class SupabaseAdapter implements DatabaseInterface {
     }));
   }
 
-  async getScheduledTask(id: string): Promise<ScheduledTask | null> {
+  async getUserTask(id: string): Promise<UserTask | null> {
     const { data, error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .select('*')
       .eq('id', id)
       .is('deleted_at', null)
@@ -977,9 +977,9 @@ export class SupabaseAdapter implements DatabaseInterface {
     };
   }
 
-  async createScheduledTask(data: CreateScheduledTaskInput): Promise<ScheduledTask> {
+  async createUserTask(data: CreateUserTaskInput): Promise<UserTask> {
     const { data: maxPos } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .select('position')
       .eq('user_id', data.user_id)
       .eq('queue_level', data.queue_level || 0)
@@ -991,7 +991,7 @@ export class SupabaseAdapter implements DatabaseInterface {
     const position = (maxPos?.position ?? -1) + 1;
 
     const { data: task, error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .insert({
         user_id: data.user_id,
         title: data.title,
@@ -1043,9 +1043,9 @@ export class SupabaseAdapter implements DatabaseInterface {
     };
   }
 
-  async updateScheduledTask(id: string, data: UpdateScheduledTaskInput): Promise<ScheduledTask> {
+  async updateUserTask(id: string, data: UpdateUserTaskInput): Promise<UserTask> {
     const updateData: Record<string, unknown> = { updated_at: now() };
-    const fields: (keyof UpdateScheduledTaskInput)[] = [
+    const fields: (keyof UpdateUserTaskInput)[] = [
       'title', 'description', 'queue_level', 'position', 'estimated_duration',
       'actual_duration', 'deadline', 'status', 'tags', 'priority', 'task_type',
       'total_duration', 'progress_mode', 'progress_percentage', 'parent_task_id',
@@ -1059,7 +1059,7 @@ export class SupabaseAdapter implements DatabaseInterface {
     }
 
     const { data: task, error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -1095,18 +1095,18 @@ export class SupabaseAdapter implements DatabaseInterface {
     };
   }
 
-  async deleteScheduledTask(id: string, _userId: string): Promise<void> {
+  async deleteUserTask(id: string, _userId: string): Promise<void> {
     const { error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .update({ deleted_at: now(), updated_at: now() })
       .eq('id', id);
 
     if (error) throw error;
   }
 
-  async getTasksByQueue(userId: string, queueLevel: number): Promise<ScheduledTask[]> {
+  async getTasksByQueue(userId: string, queueLevel: number): Promise<UserTask[]> {
     const { data, error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .select('*')
       .eq('user_id', userId)
       .eq('queue_level', queueLevel)
@@ -1146,7 +1146,7 @@ export class SupabaseAdapter implements DatabaseInterface {
   async reorderTasks(_userId: string, queueLevel: number, taskIds: string[]): Promise<void> {
     for (let i = 0; i < taskIds.length; i++) {
       const { error } = await this.client
-        .from('scheduled_tasks')
+        .from('user_tasks')
         .update({ position: i, queue_level: queueLevel, updated_at: now() })
         .eq('id', taskIds[i]);
 
@@ -2877,7 +2877,7 @@ export class SupabaseAdapter implements DatabaseInterface {
 
   async getAsyncTasks(userId: string, options?: { status?: string }): Promise<Task[]> {
     let query = this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .select('*')
       .eq('user_id', userId);
 
@@ -2923,7 +2923,7 @@ export class SupabaseAdapter implements DatabaseInterface {
 
   async getAsyncTask(id: string): Promise<Task | null> {
     const { data, error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .select('*')
       .eq('id', id)
       .maybeSingle();
@@ -2971,7 +2971,7 @@ export class SupabaseAdapter implements DatabaseInterface {
     notes?: string;
   }): Promise<Task> {
     const { data: task, error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .insert({
         user_id: data.user_id,
         task_type: data.task_type,
@@ -3026,7 +3026,7 @@ export class SupabaseAdapter implements DatabaseInterface {
     if (data.notes !== undefined) updateData.notes = data.notes;
 
     const { data: task, error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -3067,7 +3067,7 @@ export class SupabaseAdapter implements DatabaseInterface {
 
   async deleteAsyncTask(id: string): Promise<void> {
     const { error } = await this.client
-      .from('scheduled_tasks')
+      .from('user_tasks')
       .delete()
       .eq('id', id);
 

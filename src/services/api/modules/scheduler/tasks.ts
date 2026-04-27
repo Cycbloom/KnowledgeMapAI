@@ -1,31 +1,31 @@
 import { request } from "../../client";
 import type {
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
-  TaskFilters,
+  CreateUserTaskData,
+  UpdateUserTaskData,
+  UserTaskFilters,
 } from "@shared/types";
 
 export type {
-  ScheduledTask,
+  UserTask,
   TaskType,
   ProgressMode,
-  TaskStatus,
+  UserTaskStatus,
   TaskDependency,
   TaskExecution,
-  TaskDetail,
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
-  TaskFilters,
+  UserTaskDetail,
+  CreateUserTaskData,
+  UpdateUserTaskData,
+  UserTaskFilters,
   ExecutionFilters,
   QueueData,
   GenerateTaskDetailsResult,
 } from "@shared/types";
 
 export const tasksApi = {
-  createTask: (data: CreateScheduledTaskData) =>
+  createTask: (data: CreateUserTaskData) =>
     request("/scheduler/tasks", { method: "POST", body: JSON.stringify(data) }),
 
-  getTasks: (filters?: TaskFilters) => {
+  getTasks: (filters?: UserTaskFilters) => {
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
     if (filters?.queue_level !== undefined)
@@ -41,7 +41,7 @@ export const tasksApi = {
 
   getTaskDetail: (id: string) => request(`/scheduler/tasks/${id}/detail`),
 
-  updateTask: (id: string, data: UpdateScheduledTaskData) =>
+  updateTask: (id: string, data: UpdateUserTaskData) =>
     request(`/scheduler/tasks/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),

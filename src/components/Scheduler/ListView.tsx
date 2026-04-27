@@ -22,19 +22,19 @@ import {
   Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ScheduledTask, TaskSubtask, LearningState } from "@shared/types";
+import { UserTask, TaskSubtask, LearningState } from "@shared/types";
 import { api } from "../../services/api";
 import { LearningStateBadge } from "./LearningStateBadge";
 import { MasteryProgressBar } from "./MasteryProgressBar";
 
 interface ListViewProps {
-  tasks: ScheduledTask[];
-  onTaskClick?: (task: ScheduledTask) => void;
-  onEditTask?: (task: ScheduledTask) => void;
-  onDeleteTask?: (task: ScheduledTask) => void;
-  onStartTask?: (task: ScheduledTask) => void;
-  onPauseTask?: (task: ScheduledTask) => void;
-  onCompleteTask?: (task: ScheduledTask) => void;
+  tasks: UserTask[];
+  onTaskClick?: (task: UserTask) => void;
+  onEditTask?: (task: UserTask) => void;
+  onDeleteTask?: (task: UserTask) => void;
+  onStartTask?: (task: UserTask) => void;
+  onPauseTask?: (task: UserTask) => void;
+  onCompleteTask?: (task: UserTask) => void;
   onSubtaskUpdate?: () => void;
 }
 
@@ -254,7 +254,7 @@ export const ListView: React.FC<ListViewProps> = ({
   };
 
   const handleToggleSubtask = async (
-    task: ScheduledTask,
+    task: UserTask,
     subtask: TaskSubtask,
   ) => {
     const newStatus = subtask.status === "completed" ? "pending" : "completed";

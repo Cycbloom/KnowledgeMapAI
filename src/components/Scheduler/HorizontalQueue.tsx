@@ -4,21 +4,21 @@ import { Droppable } from "@hello-pangea/dnd";
 import { motion } from "framer-motion";
 import { Clock, Plus, Zap, Target, ListTodo } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ScheduledTask } from "@shared/types";
+import { UserTask } from "@shared/types";
 import { DraggableTaskCard } from "./DraggableTaskCard";
 
 interface HorizontalQueueProps {
   level: number;
   title: string;
   timeSlice: number;
-  tasks: ScheduledTask[];
-  onEditTask?: (task: ScheduledTask) => void;
-  onDeleteTask?: (task: ScheduledTask) => void;
-  onStartTask?: (task: ScheduledTask) => void;
-  onPauseTask?: (task: ScheduledTask) => void;
-  onCompleteTask?: (task: ScheduledTask) => void;
+  tasks: UserTask[];
+  onEditTask?: (task: UserTask) => void;
+  onDeleteTask?: (task: UserTask) => void;
+  onStartTask?: (task: UserTask) => void;
+  onPauseTask?: (task: UserTask) => void;
+  onCompleteTask?: (task: UserTask) => void;
   onAddTask?: () => void;
-  onViewTaskDetail?: (task: ScheduledTask) => void;
+  onViewTaskDetail?: (task: UserTask) => void;
 }
 
 export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({

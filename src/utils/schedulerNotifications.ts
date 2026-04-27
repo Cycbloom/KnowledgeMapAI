@@ -1,4 +1,4 @@
-import type { ScheduledTask } from '@shared/types';
+import type { UserTask } from '@shared/types';
 import type { SSETaskUpdatePayload, SchedulerTaskChangedPayload } from '../services/FrontendEventTypes';
 import { frontendEventBus } from '../services/timer/FrontendEventBus';
 
@@ -48,21 +48,21 @@ class SchedulerNotificationService {
     }, 5000);
   }
 
-  notifyTaskStart(task: ScheduledTask): void {
+  notifyTaskStart(task: UserTask): void {
     this.sendNotification(`任务开始: ${task.title}`, {
       body: `优先级: ${task.priority} | 预计时长: ${task.estimated_duration || '未设置'}分钟`,
       tag: `task-start-${task.id}`,
     });
   }
 
-  notifyTaskComplete(task: ScheduledTask): void {
+  notifyTaskComplete(task: UserTask): void {
     this.sendNotification(`任务完成: ${task.title}`, {
       body: `实际用时: ${task.actual_duration || '未记录'}分钟`,
       tag: `task-complete-${task.id}`,
     });
   }
 
-  notifyTimeSliceEnd(task: ScheduledTask, nextQueue: number): void {
+  notifyTimeSliceEnd(task: UserTask, nextQueue: number): void {
     const queueNames = ['执行队列', '准备队列', '待办队列'];
     this.sendNotification(`时间片结束: ${task.title}`, {
       body: `任务已移至 ${queueNames[nextQueue] || `队列 ${nextQueue}`}`,
@@ -84,7 +84,7 @@ class SchedulerNotificationService {
     });
   }
 
-  notifyDeadline(task: ScheduledTask): void {
+  notifyDeadline(task: UserTask): void {
     this.sendNotification(`截止日期提醒: ${task.title}`, {
       body: '任务即将到期，请尽快完成',
       tag: `deadline-${task.id}`,
@@ -191,10 +191,10 @@ class SchedulerSoundService {
 
 class DeadlineChecker {
   private notifiedTasks: Set<string> = new Set();
-  private tasks: ScheduledTask[] = [];
+  private tasks: UserTask[] = [];
   private unsubscribers: (() => void)[] = [];
 
-  startCheck(tasks: ScheduledTask[]): void {
+  startCheck(tasks: UserTask[]): void {
     this.stopCheck();
     this.tasks = tasks;
     this.checkExistingTasks();
@@ -232,7 +232,7 @@ class DeadlineChecker {
     });
   }
 
-  private checkTaskDeadline(task: ScheduledTask): void {
+  private checkTaskDeadline(task: UserTask): void {
     if (!task.deadline || task.status === 'completed' || task.status === 'cancelled') return;
 
     const deadlineDate = new Date(task.deadline);
@@ -257,7 +257,7 @@ class DeadlineChecker {
     }
   }
 
-  private playDeadlineNotification(task: ScheduledTask): void {
+  private playDeadlineNotification(task: UserTask): void {
     schedulerNotificationService.notifyDeadline(task);
     schedulerSoundService.playAlert();
   }

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -22,14 +22,14 @@ import {
 import {
   useSchedulerTasks,
   useSchedulerSettings,
-  usePauseScheduledTaskMutation,
-  useCompleteScheduledTaskMutation,
-  useDemoteScheduledTaskMutation,
-  useStartScheduledTaskMutation,
+  usePauseUserTaskMutation,
+  useCompleteUserTaskMutation,
+  useDemoteUserTaskMutation,
+  useStartUserTaskMutation,
 } from "../hooks";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useUnifiedTimer } from "../hooks/scheduler";
-import type { ScheduledTask, TaskSettings } from "@shared/types";
+import type { UserTask, TaskSettings } from "@shared/types";
 
 const QUEUE_CONFIG = {
   0: {
@@ -99,13 +99,13 @@ export const CurrentTask: React.FC = () => {
     refetch,
   } = useSchedulerTasks({ status: "in_progress" });
   const { data: settings } = useSchedulerSettings();
-  const pauseMutation = usePauseScheduledTaskMutation();
-  const completeMutation = useCompleteScheduledTaskMutation();
-  const demoteMutation = useDemoteScheduledTaskMutation();
-  const startMutation = useStartScheduledTaskMutation();
+  const pauseMutation = usePauseUserTaskMutation();
+  const completeMutation = useCompleteUserTaskMutation();
+  const demoteMutation = useDemoteUserTaskMutation();
+  const startMutation = useStartUserTaskMutation();
 
   const currentTask = useMemo(() => {
-    const tasks = tasksData as ScheduledTask[] | undefined;
+    const tasks = tasksData as UserTask[] | undefined;
     return tasks?.[0] || null;
   }, [tasksData]);
 

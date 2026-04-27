@@ -4,21 +4,21 @@ import {
   PaginationOptions,
 } from "../../utils/pagination";
 import type {
-  ScheduledTask,
+  UserTask,
   TaskExecution,
   TaskSettings,
   CreateTaskData,
-  TaskFilters,
+  UserTaskFilters,
 } from "../../../shared/types/index";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 export type {
-  ScheduledTask,
+  UserTask,
   TaskExecution,
   TaskSettings,
   CreateTaskData,
-  TaskFilters,
+  UserTaskFilters,
 };
 
 export class TaskService {
@@ -26,9 +26,9 @@ export class TaskService {
     client: SupabaseClient,
     userId: string,
     taskData: CreateTaskData,
-  ): Promise<ScheduledTask> {
+  ): Promise<UserTask> {
     const { data: maxPosResult } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", 0)
@@ -40,7 +40,7 @@ export class TaskService {
     const nextPosition = (maxPosResult?.position ?? -1) + 1;
 
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .insert({
         user_id: userId,
         title: taskData.title,
@@ -58,7 +58,7 @@ export class TaskService {
       .single();
 
     if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_CREATION_FAILED, { details: { originalError: error.message } });
-    return data as ScheduledTask;
+    return data as UserTask;
   }
 
   async updateTask(
@@ -66,11 +66,11 @@ export class TaskService {
     taskId: string,
     userId: string,
     updates: Partial<
-      Omit<ScheduledTask, "id" | "user_id" | "created_at" | "updated_at">
+      Omit<UserTask, "id" | "user_id" | "created_at" | "updated_at">
     >,
-  ): Promise<ScheduledTask> {
+  ): Promise<UserTask> {
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
@@ -83,7 +83,7 @@ export class TaskService {
 
     if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     if (!data) throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND);
-    return data as ScheduledTask;
+    return data as UserTask;
   }
 
   async deleteTask(
@@ -92,7 +92,7 @@ export class TaskService {
     userId: string,
   ): Promise<void> {
     const { error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         deleted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -107,9 +107,9 @@ export class TaskService {
     client: SupabaseClient,
     taskId: string,
     userId: string,
-  ): Promise<ScheduledTask | null> {
+  ): Promise<UserTask | null> {
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -119,18 +119,18 @@ export class TaskService {
     if (error && error.code !== "PGRST116") {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     }
-    return data as ScheduledTask | null;
+    return data as UserTask | null;
   }
 
   async getTasks(
     client: SupabaseClient,
     userId: string,
-    filters?: TaskFilters,
+    filters?: UserTaskFilters,
     options?: PaginationOptions,
-  ): Promise<{ tasks: ScheduledTask[]; total: number }> {
+  ): Promise<{ tasks: UserTask[]; total: number }> {
     const { offset, end } = getPaginationParams(options);
     let query = client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*", { count: "exact" })
       .eq("user_id", userId)
       .is("deleted_at", null)
@@ -151,16 +151,16 @@ export class TaskService {
     const { data, error, count } = await query;
 
     if (error) throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
-    return { tasks: data as ScheduledTask[], total: count ?? 0 };
+    return { tasks: data as UserTask[], total: count ?? 0 };
   }
 
   async getTasksByQueue(
     client: SupabaseClient,
     userId: string,
     queueLevel: number,
-  ): Promise<ScheduledTask[]> {
+  ): Promise<UserTask[]> {
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .eq("queue_level", queueLevel)
@@ -169,16 +169,16 @@ export class TaskService {
 
     if (error)
       throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
-    return data as ScheduledTask[];
+    return data as UserTask[];
   }
 
   async startTask(
     client: SupabaseClient,
     taskId: string,
     userId: string,
-  ): Promise<{ task: ScheduledTask; execution: TaskExecution }> {
+  ): Promise<{ task: UserTask; execution: TaskExecution }> {
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         status: "in_progress",
         updated_at: new Date().toISOString(),
@@ -208,7 +208,7 @@ export class TaskService {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: execError.message } });
 
     return {
-      task: task as ScheduledTask,
+      task: task as UserTask,
       execution: execution as TaskExecution,
     };
   }
@@ -217,9 +217,9 @@ export class TaskService {
     client: SupabaseClient,
     taskId: string,
     userId: string,
-  ): Promise<ScheduledTask> {
+  ): Promise<UserTask> {
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         status: "paused",
         updated_at: new Date().toISOString(),
@@ -232,14 +232,14 @@ export class TaskService {
 
     if (taskError)
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
-    return task as ScheduledTask;
+    return task as UserTask;
   }
 
   async completeTask(
     client: SupabaseClient,
     taskId: string,
     userId: string,
-  ): Promise<ScheduledTask> {
+  ): Promise<UserTask> {
     const { data: executions, error: execError } = await client
       .from("task_executions")
       .select("*")
@@ -269,7 +269,7 @@ export class TaskService {
     }
 
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
@@ -283,7 +283,7 @@ export class TaskService {
 
     if (taskError)
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
-    return task as ScheduledTask;
+    return task as UserTask;
   }
 
   async moveTaskToQueue(
@@ -291,9 +291,9 @@ export class TaskService {
     taskId: string,
     userId: string,
     targetQueue: number,
-  ): Promise<ScheduledTask> {
+  ): Promise<UserTask> {
     const { data: maxPosResult } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", targetQueue)
@@ -305,7 +305,7 @@ export class TaskService {
     const nextPosition = (maxPosResult?.position ?? -1) + 1;
 
     const { data, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         queue_level: targetQueue,
         position: nextPosition,
@@ -318,7 +318,7 @@ export class TaskService {
       .single();
 
     if (error) throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
-    return data as ScheduledTask;
+    return data as UserTask;
   }
 
   async reorderTasks(
@@ -329,7 +329,7 @@ export class TaskService {
   ): Promise<void> {
     for (let i = 0; i < taskIds.length; i++) {
       const { error } = await client
-        .from("scheduled_tasks")
+        .from("user_tasks")
         .update({
           position: i,
           queue_level: queueLevel,
@@ -346,9 +346,9 @@ export class TaskService {
     client: SupabaseClient,
     taskId: string,
     userId: string,
-  ): Promise<ScheduledTask> {
+  ): Promise<UserTask> {
     const { data: task } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("queue_level")
       .eq("id", taskId)
       .eq("user_id", userId)

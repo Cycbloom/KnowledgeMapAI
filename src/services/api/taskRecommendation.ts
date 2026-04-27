@@ -1,8 +1,8 @@
 import { request } from './client';
-import type { ScheduledTask } from '@shared/types';
+import type { UserTask } from '@shared/types';
 
 export interface TaskRecommendation {
-  task: ScheduledTask;
+  task: UserTask;
   score: number;
   reasons: string[];
   urgencyLevel: 'low' | 'medium' | 'high' | 'critical';

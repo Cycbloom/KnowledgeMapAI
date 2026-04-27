@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Calendar } from "lucide-react";
 import { api } from '../../services/api';
-import type {TaskStats} from '@shared/types';
+import type {UserTaskStats} from '@shared/types';
 
 interface EfficiencyTrendProps {
   period?: "7d" | "30d" | "90d";
@@ -13,7 +13,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
   period = "7d",
   className = "",
 }) => {
-  const [stats, setStats] = useState<TaskStats | null>(null);
+  const [stats, setStats] = useState<UserTaskStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

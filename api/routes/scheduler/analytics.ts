@@ -47,7 +47,7 @@ router.get(
     }
 
     const { data: completedTasks, error: tasksError } = await supabase
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, actual_duration, queue_level, completed_at")
       .eq("user_id", req.user.id)
       .eq("status", "completed")

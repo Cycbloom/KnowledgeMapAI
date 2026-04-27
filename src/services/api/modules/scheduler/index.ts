@@ -41,16 +41,16 @@ export type {
 } from "./systemTasks";
 
 export type {
-  ScheduledTask,
+  UserTask,
   TaskType,
   ProgressMode,
-  TaskStatus,
+  UserTaskStatus,
   TaskDependency,
   TaskExecution,
-  TaskDetail,
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
-  TaskFilters,
+  UserTaskDetail,
+  CreateUserTaskData,
+  UpdateUserTaskData,
+  UserTaskFilters,
   ExecutionFilters,
   QueueData,
   GenerateTaskDetailsResult,
@@ -64,7 +64,7 @@ export type {
   UserTimeSlot,
 } from "./settings";
 
-export type { TaskStats, HeatmapData } from "./analytics";
+export type { UserTaskStats, HeatmapData } from "./analytics";
 
 import { tasksApi } from "./tasks";
 import { queuesApi } from "./queues";

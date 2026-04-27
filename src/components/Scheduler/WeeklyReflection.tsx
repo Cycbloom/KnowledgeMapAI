@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { reviewApi, TaskReview, Mood } from '../../services/api/review';
 import { api } from '../../services/api';
-import type {TaskStats} from '@shared/types';
+import type {UserTaskStats} from '@shared/types';
 
 interface WeeklyReflectionProps {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
-  const [weekStats, setWeekStats] = useState<TaskStats | null>(null);
+  const [weekStats, setWeekStats] = useState<UserTaskStats | null>(null);
   const [weekReviews, setWeekReviews] = useState<TaskReview[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
 

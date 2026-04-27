@@ -61,7 +61,7 @@ export class ProgressSyncService {
     logger.info('Syncing study duration', { taskId, userId, durationMinutes });
 
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -93,7 +93,7 @@ export class ProgressSyncService {
     }
 
     const { error: updateTaskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         actual_duration: newActualDuration,
         progress_percentage: newProgressPercentage,
@@ -138,7 +138,7 @@ export class ProgressSyncService {
     logger.info('Syncing task completion', { taskId, userId, completionQuality });
 
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -162,7 +162,7 @@ export class ProgressSyncService {
     );
 
     const { error: updateTaskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .update({
         progress_percentage: 100,
         status: "completed",
@@ -463,7 +463,7 @@ export class ProgressSyncService {
     }>;
   }> {
     const { data: task, error: taskError } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, title, actual_duration, estimated_duration, progress_percentage")
       .eq("id", taskId)
       .eq("user_id", userId)

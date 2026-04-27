@@ -1,9 +1,9 @@
 import React from 'react';
 import { Calendar, Clock, Tag, AlertTriangle } from 'lucide-react';
-import { TaskDetail } from '../../types';
+import { UserTaskDetail } from '../../types';
 
 interface BasicInfoSectionProps {
-  task: TaskDetail;
+  task: UserTaskDetail;
 }
 
 export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {

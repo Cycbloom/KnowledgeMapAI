@@ -16,7 +16,7 @@ import {
   Bookmark,
 } from "lucide-react";
 import { api } from "../../../services/api";
-import { TaskDetail } from "../../../types";
+import { UserTaskDetail } from "../../../types";
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { SubtaskList } from "./SubtaskList";
@@ -39,7 +39,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   onBack,
   onEdit,
 }) => {
-  const [task, setTask] = useState<TaskDetail | null>(null);
+  const [task, setTask] = useState<UserTaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<WorkTab>("notes");
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);

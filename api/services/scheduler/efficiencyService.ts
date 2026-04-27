@@ -129,7 +129,7 @@ export class EfficiencyService {
     tag: string,
   ): Promise<void> {
     const { data: tasks, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, status, tags, completed_at")
       .eq("user_id", userId)
       .contains("tags", [tag])
@@ -210,7 +210,7 @@ export class EfficiencyService {
     queueLevel: number,
   ): Promise<void> {
     const { data: tasks, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, status, queue_level, completed_at")
       .eq("user_id", userId)
       .eq("queue_level", queueLevel)
@@ -333,7 +333,7 @@ export class EfficiencyService {
     tag: string,
   ): Promise<TagEfficiencyData> {
     const { data: tasks, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, status, tags")
       .eq("user_id", userId)
       .contains("tags", [tag])
@@ -382,7 +382,7 @@ export class EfficiencyService {
     queueLevel: number,
   ): Promise<QueueEfficiencyData> {
     const { data: tasks, error } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("id, status, queue_level")
       .eq("user_id", userId)
       .eq("queue_level", queueLevel)
@@ -451,7 +451,7 @@ export class EfficiencyService {
     const hourlyEfficiency = await this.calculateHourlyEfficiency(client, userId);
 
     const { data: allTags } = await client
-      .from("scheduled_tasks")
+      .from("user_tasks")
       .select("tags")
       .eq("user_id", userId)
       .is("deleted_at", null);

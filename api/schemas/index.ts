@@ -214,6 +214,7 @@ export const chatSchema = z.object({
   context_node_ids: z.array(z.string().uuid()).optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
+  session_id: z.string().uuid().optional(),
 });
 
 export const recommendConnectionsSchema = z.object({
@@ -246,6 +247,7 @@ export const tutorChatSchema = z.object({
   mode: z.enum(["free", "guided"]).optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
   model: z.string().optional(),
+  session_id: z.string().uuid().optional(),
 });
 
 export const extractConceptsSchema = z.object({

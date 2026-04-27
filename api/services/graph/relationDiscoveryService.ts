@@ -83,10 +83,12 @@ export class RelationDiscoveryService {
       graph_ids?: string[];
       max_suggestions?: number;
       include_cross_domain?: boolean;
+      session_id?: string;
     },
-  ): Promise<DiscoveryResult> {
+  ): Promise<DiscoveryResult & { session_id?: string }> {
     const maxSuggestions = options?.max_suggestions || 20;
     const includeCrossDomain = options?.include_cross_domain ?? true;
+    const sessionId = options?.session_id || crypto.randomUUID();
 
     const graphIds = options?.graph_ids;
     let graphs: GraphInfo[];
@@ -199,10 +201,10 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         provider.model,
         usage.prompt_tokens,
         usage.completion_tokens,
-        0
+        0,
       );
       await performanceMonitor.recordLog({
-        operation: 'discover_relations',
+        operation: "discover_relations",
         provider: provider.providerType,
         model: provider.model,
         inputTokens: usage.prompt_tokens,
@@ -213,6 +215,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         success: true,
         estimatedCost: cost,
         metadata: enrichedMetadata,
+        sessionId,
       });
     }
 
@@ -311,6 +314,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         cross_domain_clusters: crossDomainInsights.length,
         isolated_graphs: isolatedGraphs,
       },
+      session_id: sessionId,
     };
   }
 
@@ -368,12 +372,15 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
   async getIntelligentSuggestions(
     supabase: SupabaseClient,
     userId: string,
-    options?: { graph_ids?: string[] },
-  ): Promise<IntelligentSuggestion> {
+    options?: { graph_ids?: string[]; session_id?: string },
+  ): Promise<IntelligentSuggestion & { session_id?: string }> {
+    const sessionId = options?.session_id || crypto.randomUUID();
+
     const discoveryResult = await this.discoverRelations(supabase, userId, {
       graph_ids: options?.graph_ids,
       max_suggestions: 30,
       include_cross_domain: true,
+      session_id: sessionId,
     });
 
     const provider = await getAIProviderForTask("text");
@@ -446,10 +453,10 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         provider.model,
         usage.prompt_tokens,
         usage.completion_tokens,
-        0
+        0,
       );
       await performanceMonitor.recordLog({
-        operation: 'get_intelligent_suggestions',
+        operation: "get_intelligent_suggestions",
         provider: provider.providerType,
         model: provider.model,
         inputTokens: usage.prompt_tokens,
@@ -460,6 +467,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         success: true,
         estimatedCost: cost,
         metadata: enrichedMetadata,
+        sessionId,
       });
     }
 
@@ -476,7 +484,10 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       logger.error("Failed to parse intelligent suggestions", e);
     }
 
-    return parsed;
+    return {
+      ...parsed,
+      session_id: sessionId,
+    };
   }
 
   async analyzeCrossDomainInsights(
@@ -485,13 +496,16 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
     options?: {
       graph_ids?: string[];
       min_intersection?: number;
+      session_id?: string;
     },
   ): Promise<{
     cross_domain_insights: CrossDomainInsight[];
     domain_distribution: Record<string, number>;
     analysis_summary: { total_domains: number; cross_domain_clusters: number };
+    session_id?: string;
   }> {
     const minIntersection = options?.min_intersection || 2;
+    const sessionId = options?.session_id || crypto.randomUUID();
 
     const graphIds = options?.graph_ids;
     let graphs: GraphInfo[];
@@ -603,10 +617,10 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         provider.model,
         usage.prompt_tokens,
         usage.completion_tokens,
-        0
+        0,
       );
       await performanceMonitor.recordLog({
-        operation: 'analyze_cross_domain_insights',
+        operation: "analyze_cross_domain_insights",
         provider: provider.providerType,
         model: provider.model,
         inputTokens: usage.prompt_tokens,
@@ -617,16 +631,19 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         success: true,
         estimatedCost: cost,
         metadata: enrichedMetadata,
+        sessionId,
       });
     }
 
     const content = completion.choices[0].message.content;
-    let parsed: { cross_domain_insights: Array<{
-      domains: string[];
-      intersection_topics: string[];
-      description: string;
-      related_graph_titles?: string[];
-    }> } = { cross_domain_insights: [] };
+    let parsed: {
+      cross_domain_insights: Array<{
+        domains: string[];
+        intersection_topics: string[];
+        description: string;
+        related_graph_titles?: string[];
+      }>;
+    } = { cross_domain_insights: [] };
 
     try {
       parsed = JSON.parse(content || "{}");
@@ -636,7 +653,10 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
 
     const crossDomainInsights: CrossDomainInsight[] = [];
     for (const insight of parsed.cross_domain_insights || []) {
-      if (insight.intersection_topics && insight.intersection_topics.length >= minIntersection) {
+      if (
+        insight.intersection_topics &&
+        insight.intersection_topics.length >= minIntersection
+      ) {
         const relatedGraphs = graphs.filter(
           (g) =>
             insight.related_graph_titles?.some(
@@ -659,6 +679,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
         total_domains: uniqueDomains.length,
         cross_domain_clusters: crossDomainInsights.length,
       },
+      session_id: sessionId,
     };
   }
 
@@ -668,6 +689,7 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
     options?: {
       graph_ids?: string[];
       difficulty?: "beginner" | "intermediate" | "advanced";
+      session_id?: string;
     },
   ): Promise<{
     learning_path_suggestions: Array<{
@@ -678,8 +700,10 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
       difficulty: "beginner" | "intermediate" | "advanced";
     }>;
     analysis_summary: { total_paths: number; avg_path_length: number };
+    session_id?: string;
   }> {
     const targetDifficulty = options?.difficulty;
+    const sessionId = options?.session_id || crypto.randomUUID();
 
     const graphIds = options?.graph_ids;
     let graphs: GraphInfo[];
@@ -796,10 +820,10 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
         provider.model,
         usage.prompt_tokens,
         usage.completion_tokens,
-        0
+        0,
       );
       await performanceMonitor.recordLog({
-        operation: 'generate_learning_path_suggestions',
+        operation: "generate_learning_path_suggestions",
         provider: provider.providerType,
         model: provider.model,
         inputTokens: usage.prompt_tokens,
@@ -810,16 +834,19 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
         success: true,
         estimatedCost: cost,
         metadata: enrichedMetadata,
+        sessionId,
       });
     }
 
     const content = completion.choices[0].message.content;
-    let parsed: { learning_path_suggestions: Array<{
-      path_titles: string[];
-      description: string;
-      estimated_time: string;
-      difficulty: "beginner" | "intermediate" | "advanced";
-    }> } = { learning_path_suggestions: [] };
+    let parsed: {
+      learning_path_suggestions: Array<{
+        path_titles: string[];
+        description: string;
+        estimated_time: string;
+        difficulty: "beginner" | "intermediate" | "advanced";
+      }>;
+    } = { learning_path_suggestions: [] };
 
     try {
       parsed = JSON.parse(content || "{}");
@@ -846,7 +873,9 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
 
         for (const title of suggestion.path_titles) {
           const graph = graphs.find(
-            (g) => g.title === title || g.title.toLowerCase() === title.toLowerCase(),
+            (g) =>
+              g.title === title ||
+              g.title.toLowerCase() === title.toLowerCase(),
           );
           if (graph) {
             pathIds.push(graph.id);
@@ -878,6 +907,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
         total_paths: learningPathSuggestions.length,
         avg_path_length: Math.round(avgPathLength * 10) / 10,
       },
+      session_id: sessionId,
     };
   }
 
@@ -887,6 +917,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
     options?: {
       graph_ids?: string[];
       min_importance?: "high" | "medium" | "low";
+      session_id?: string;
     },
   ): Promise<{
     knowledge_gaps: Array<{
@@ -898,8 +929,10 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       reason: string;
     }>;
     analysis_summary: { total_gaps: number; high_priority_count: number };
+    session_id?: string;
   }> {
     const minImportance = options?.min_importance;
+    const sessionId = options?.session_id || crypto.randomUUID();
 
     const graphIds = options?.graph_ids;
     let graphs: GraphInfo[];
@@ -1000,10 +1033,10 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
         provider.model,
         usage.prompt_tokens,
         usage.completion_tokens,
-        0
+        0,
       );
       await performanceMonitor.recordLog({
-        operation: 'analyze_knowledge_gaps',
+        operation: "analyze_knowledge_gaps",
         provider: provider.providerType,
         model: provider.model,
         inputTokens: usage.prompt_tokens,
@@ -1014,17 +1047,20 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
         success: true,
         estimatedCost: cost,
         metadata: enrichedMetadata,
+        sessionId,
       });
     }
 
     const content = completion.choices[0].message.content;
-    let parsed: { knowledge_gaps: Array<{
-      missing_topic: string;
-      related_graph_titles: string[];
-      importance: "high" | "medium" | "low";
-      suggested_action: "create" | "merge" | "expand";
-      reason: string;
-    }> } = { knowledge_gaps: [] };
+    let parsed: {
+      knowledge_gaps: Array<{
+        missing_topic: string;
+        related_graph_titles: string[];
+        importance: "high" | "medium" | "low";
+        suggested_action: "create" | "merge" | "expand";
+        reason: string;
+      }>;
+    } = { knowledge_gaps: [] };
 
     try {
       parsed = JSON.parse(content || "{}");
@@ -1033,7 +1069,9 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
     }
 
     const importanceOrder = { high: 3, medium: 2, low: 1 };
-    const minImportanceLevel = minImportance ? importanceOrder[minImportance] : 0;
+    const minImportanceLevel = minImportance
+      ? importanceOrder[minImportance]
+      : 0;
 
     const knowledgeGaps: Array<{
       missing_topic: string;
@@ -1054,7 +1092,8 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
 
       for (const title of gap.related_graph_titles || []) {
         const graph = graphs.find(
-          (g) => g.title === title || g.title.toLowerCase() === title.toLowerCase(),
+          (g) =>
+            g.title === title || g.title.toLowerCase() === title.toLowerCase(),
         );
         if (graph) {
           relatedGraphIds.push(graph.id);
@@ -1072,7 +1111,9 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       });
     }
 
-    const highPriorityCount = knowledgeGaps.filter((g) => g.importance === "high").length;
+    const highPriorityCount = knowledgeGaps.filter(
+      (g) => g.importance === "high",
+    ).length;
 
     return {
       knowledge_gaps: knowledgeGaps,
@@ -1080,6 +1121,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
         total_gaps: knowledgeGaps.length,
         high_priority_count: highPriorityCount,
       },
+      session_id: sessionId,
     };
   }
 

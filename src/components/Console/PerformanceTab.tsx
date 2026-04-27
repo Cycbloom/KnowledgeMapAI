@@ -105,6 +105,24 @@ const getSessionName = (logs: AIPerformanceLog[], getOperationLabel: (operation:
   if (operations.has('generate_nodes_for_graph') || operations.has('expand_node_for_graph')) {
     return '图谱节点生成';
   }
+  if (operations.has('discover_relations') || operations.has('get_intelligent_suggestions')) {
+    return '图谱关系分析';
+  }
+  if (operations.has('chat') || operations.has('tutor_chat')) {
+    return 'AI 对话';
+  }
+  if (operations.has('generate_content') || operations.has('generate_content_stream')) {
+    return '内容生成';
+  }
+  if (operations.has('ai_action_execute')) {
+    return 'AI 动作执行';
+  }
+  if (operations.has('template_generation')) {
+    return '模板生成';
+  }
+  if (operations.has('text_to_graph') || operations.has('document_to_graph') || operations.has('image_to_graph')) {
+    return '文档转图谱';
+  }
   
   const firstLog = logs.sort((a, b) => a.timestamp - b.timestamp)[0];
   return getOperationLabel(firstLog.operation);

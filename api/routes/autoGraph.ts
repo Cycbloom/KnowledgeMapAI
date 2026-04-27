@@ -7,14 +7,21 @@ import type { AIProviderType } from "@shared/types";
 import { getAIProviderForTask, getAIProvider } from "../services/ai/factory";
 import { promptService } from "../services/ai/promptService";
 import { cacheService, CacheKeys } from "../services/common/cacheService";
-import { performanceMonitor, enrichMetadata } from "../services/ai/performanceMonitor";
+import {
+  performanceMonitor,
+  enrichMetadata,
+} from "../services/ai/performanceMonitor";
 import { pricingService } from "../services/ai/pricingService";
 import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
 import { autoGraphService, graphNodeService } from "../services/graph/index";
 import { embeddingService } from "../services/ai/embeddingService";
 import { templateGeneratorService } from "../services/ai/templateGeneratorService";
-import type { TemplateCategory, TemplateType, LayoutSuggestion } from "@shared/types/graph";
+import type {
+  TemplateCategory,
+  TemplateType,
+  LayoutSuggestion,
+} from "@shared/types/graph";
 import { z } from "zod";
 import { saveNodesSchema } from "../schemas/index";
 
@@ -51,7 +58,8 @@ async function withAutoGraphTracking<T>(
     nodeId?: string;
     nodeLevel?: string;
     style?: string;
-  }
+  },
+  sessionId?: string,
 ): Promise<T> {
   const startTime = Date.now();
   let success = true;
@@ -66,7 +74,7 @@ async function withAutoGraphTracking<T>(
     const { result, usage } = await fn();
     inputTokens = usage?.prompt_tokens || 0;
     outputTokens = usage?.completion_tokens || 0;
-    
+
     cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
     uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
     reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
@@ -80,14 +88,15 @@ async function withAutoGraphTracking<T>(
   } finally {
     const duration = Date.now() - startTime;
     const totalTokens = inputTokens + outputTokens;
-    const cacheHitRate = inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
-    
+    const cacheHitRate =
+      inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
+
     const costBreakdown = pricingService.calculateDetailedCost(
       providerType,
       model,
       inputTokens,
       outputTokens,
-      cachedInputTokens
+      cachedInputTokens,
     );
 
     performanceMonitor.recordLog({
@@ -102,7 +111,8 @@ async function withAutoGraphTracking<T>(
       success,
       errorMessage,
       metadata,
-      
+      sessionId,
+
       cachedInputTokens,
       uncachedInputTokens,
       reasoningTokens,
@@ -140,6 +150,7 @@ const initGraphSchema = z.object({
   provider: z.string().optional(),
   model: z.string().optional(),
   language: z.string().optional(),
+  session_id: z.string().uuid().optional(),
 });
 
 const expandNodeSchema = z.object({
@@ -163,6 +174,7 @@ const expandNodeSchema = z.object({
   provider: z.string().optional(),
   model: z.string().optional(),
   language: z.string().optional(),
+  session_id: z.string().uuid().optional(),
 });
 
 const optimizePromptSchema = z.object({
@@ -201,7 +213,7 @@ const applyTemplateSchema = z.object({
           parentId: z.string().optional(),
           suggestedContent: z.string().optional(),
           color: z.string().optional(),
-        })
+        }),
       ),
       edges: z.array(
         z.object({
@@ -209,7 +221,7 @@ const applyTemplateSchema = z.object({
           target: z.string().min(1),
           relationship_type: z.string().optional(),
           description: z.string().optional(),
-        })
+        }),
       ),
       layoutSuggestion: z.enum(["radial", "tree", "network", "hierarchical"]),
       estimatedNodes: z.number().optional(),
@@ -243,6 +255,7 @@ router.post(
       provider: providerType,
       model,
       language,
+      session_id,
     } = req.body;
     const supabase = req.supabase;
     if (!supabase) {
@@ -261,6 +274,8 @@ router.post(
         ErrorCodes.INTERNAL_ERROR,
       );
     }
+
+    const sessionId = session_id || crypto.randomUUID();
 
     try {
       let processedSources: string[] = [];
@@ -325,7 +340,7 @@ router.post(
           });
           return {
             result,
-            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+            usage: result.usage,
           };
         },
         await enrichMetadata(supabase, {
@@ -333,7 +348,8 @@ router.post(
           userId: req.user.id,
           topic,
           style,
-        })
+        }),
+        sessionId,
       );
 
       const content = completion.choices[0].message.content;
@@ -350,6 +366,7 @@ router.post(
       }
 
       res.json({
+        sessionId,
         root: parsed.root || {
           title: topic,
           content: `${topic}的核心概念和知识体系`,
@@ -385,6 +402,7 @@ router.post(
       provider: providerType,
       model,
       language,
+      session_id,
     } = req.body;
     const supabase = req.supabase!;
     const provider = providerType
@@ -398,6 +416,8 @@ router.post(
         ErrorCodes.INTERNAL_ERROR,
       );
     }
+
+    const sessionId = session_id || crypto.randomUUID();
 
     try {
       let systemPrompt: string;
@@ -463,7 +483,7 @@ router.post(
           });
           return {
             result,
-            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+            usage: result.usage,
           };
         },
         await enrichMetadata(supabase, {
@@ -472,7 +492,8 @@ router.post(
           nodeTitle: node_title,
           nodeId: node_id,
           nodeLevel: node_level,
-        })
+        }),
+        sessionId,
       );
 
       const content = completion.choices[0].message.content;
@@ -489,6 +510,7 @@ router.post(
       }
 
       res.json({
+        sessionId,
         parentNodeId: node_id,
         children: parsed.children || [],
       });
@@ -560,10 +582,12 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
           });
           return {
             result,
-            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+            usage: result.usage as
+              | { prompt_tokens?: number; completion_tokens?: number }
+              | undefined,
           };
         },
-        { userId: req.user.id }
+        { userId: req.user.id },
       );
 
       const content = completion.choices[0].message.content;
@@ -638,7 +662,10 @@ router.post(
       await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
       await cacheService.del(CacheKeys.GRAPH_NODES("public", graph_id));
 
-      const nodeMapping: Record<string, { graphNodeId: string; knowledgePointId: string }> = result.nodeMapping;
+      const nodeMapping: Record<
+        string,
+        { graphNodeId: string; knowledgePointId: string }
+      > = result.nodeMapping;
 
       res.json({
         success: true,
@@ -764,7 +791,7 @@ router.post(
         ErrorCodes.INTERNAL_ERROR,
       );
     }
-  }
+  },
 );
 
 router.post(
@@ -825,11 +852,7 @@ router.post(
           .single();
 
         if (fetchError || !storedTemplate) {
-          throw new AppError(
-            "模板不存在或无权访问",
-            404,
-            ErrorCodes.NOT_FOUND,
-          );
+          throw new AppError("模板不存在或无权访问", 404, ErrorCodes.NOT_FOUND);
         }
 
         selectedTemplate = {
@@ -838,8 +861,7 @@ router.post(
           description: storedTemplate.description || undefined,
           nodes: storedTemplate.template_data?.nodes || [],
           edges: storedTemplate.template_data?.edges || [],
-          layoutSuggestion:
-            storedTemplate.layout_suggestion || "radial",
+          layoutSuggestion: storedTemplate.layout_suggestion || "radial",
           estimatedNodes: storedTemplate.estimated_nodes,
           difficulty: storedTemplate.difficulty || "medium",
           tags: storedTemplate.tags || [],
@@ -861,7 +883,7 @@ router.post(
           isBeginner: style === "beginner",
         },
         req.user.id,
-        graph_id
+        graph_id,
       );
 
       const completion = await withAutoGraphTracking(
@@ -876,16 +898,23 @@ router.post(
                 role: "user",
                 content: `主题：${topic}\n\n模板名称：${selectedTemplate!.name}\n模板结构：\n${JSON.stringify(
                   {
-                    nodes: selectedTemplate!.nodes.map((n: { id: string; title: string; level: string; parentId?: string }) => ({
-                      id: n.id,
-                      title: n.title,
-                      level: n.level,
-                      parentId: n.parentId,
-                    })),
+                    nodes: selectedTemplate!.nodes.map(
+                      (n: {
+                        id: string;
+                        title: string;
+                        level: string;
+                        parentId?: string;
+                      }) => ({
+                        id: n.id,
+                        title: n.title,
+                        level: n.level,
+                        parentId: n.parentId,
+                      }),
+                    ),
                     edges: selectedTemplate!.edges,
                   },
                   null,
-                  2
+                  2,
                 )}\n\n请根据模板结构生成完整的知识图谱内容。`,
               },
             ],
@@ -895,10 +924,12 @@ router.post(
           });
           return {
             result,
-            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+            usage: result.usage as
+              | { prompt_tokens?: number; completion_tokens?: number }
+              | undefined,
           };
         },
-        { graphId: graph_id, userId: req.user.id }
+        { graphId: graph_id, userId: req.user.id },
       );
 
       const content = completion.choices[0].message.content;
@@ -955,7 +986,7 @@ router.post(
         ErrorCodes.INTERNAL_ERROR,
       );
     }
-  }
+  },
 );
 
 export default router;

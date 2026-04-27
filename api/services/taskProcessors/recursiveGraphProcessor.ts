@@ -1,57 +1,82 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
-import { getAIProviderForTask } from '../ai/factory';
-import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
-import { logger } from '../../utils/logger';
-import { getAutoGraphPrompt } from './utils';
-import { performanceMonitor, enrichMetadata } from '../ai/performanceMonitor';
-import { pricingService } from '../ai/pricingService';
+import { SupabaseClient } from "@supabase/supabase-js";
+import {
+  TaskProcessor,
+  registerProcessor,
+  UpdateTaskStatusFunction,
+} from "./index";
+import { getAIProviderForTask } from "../ai/factory";
+import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
+import { logger } from "../../utils/logger";
+import { getAutoGraphPrompt } from "./utils";
+import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
+import { pricingService } from "../ai/pricingService";
 
 export class RecursiveGraphProcessor implements TaskProcessor {
   async process(
-    taskId: string, 
-    userId: string, 
-    payload: any, 
+    taskId: string,
+    userId: string,
+    payload: any,
     supabase: SupabaseClient,
-    updateTaskStatus: UpdateTaskStatusFunction
+    updateTaskStatus: UpdateTaskStatusFunction,
   ): Promise<void> {
-    logger.info(`Starting recursive graph generation task ${taskId} for user ${userId}`, { payload });
-    
+    logger.info(
+      `Starting recursive graph generation task ${taskId} for user ${userId}`,
+      { payload },
+    );
+
+    const sessionId = crypto.randomUUID();
+
     try {
-      await updateTaskStatus(supabase, taskId, 'in_progress', { 
-        stage: 'init', 
-        progress: 0 
-      }, undefined, undefined, userId);
+      await updateTaskStatus(
+        supabase,
+        taskId,
+        "in_progress",
+        {
+          stage: "init",
+          progress: 0,
+        },
+        undefined,
+        undefined,
+        userId,
+      );
 
-      const { graph_id, topic, depth = 3, style = 'academic' } = payload;
+      const { graph_id, topic, depth = 3, style = "academic" } = payload;
 
-      logger.info(`Processing graph ${graph_id} with topic "${topic}", depth ${depth}, style ${style}`);
+      logger.info(
+        `Processing graph ${graph_id} with topic "${topic}", depth ${depth}, style ${style}`,
+      );
 
       const { data: graph } = await supabase
-        .from('knowledge_graphs')
-        .select('id, title')
-        .eq('id', graph_id)
+        .from("knowledge_graphs")
+        .select("id, title")
+        .eq("id", graph_id)
         .single();
 
       if (!graph) {
-        throw new Error('Graph not found');
+        throw new Error("Graph not found");
       }
 
-      const provider = await getAIProviderForTask('text');
+      const provider = await getAIProviderForTask("text");
       if (!provider.hasKey) {
-        throw new Error('AI provider not configured');
+        throw new Error("AI provider not configured");
       }
 
       let totalNodes = 0;
       let totalEdges = 0;
       const nodeMap = new Map<string, string>();
 
-      const systemPrompt = await getAutoGraphPrompt(supabase, userId, graph_id, 'init', {
-        topic,
-        isAcademic: style === 'academic',
-        hasSources: false,
-        isInit: true
-      });
+      const systemPrompt = await getAutoGraphPrompt(
+        supabase,
+        userId,
+        graph_id,
+        "init",
+        {
+          topic,
+          isAcademic: style === "academic",
+          hasSources: false,
+          isInit: true,
+        },
+      );
 
       const enrichedMetadata = await enrichMetadata(supabase, {
         graphId: graph_id,
@@ -65,7 +90,10 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       const initCompletion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `主题：${topic}\n\n请生成知识图谱的根节点和核心节点。` }
+          {
+            role: "user",
+            content: `主题：${topic}\n\n请生成知识图谱的根节点和核心节点。`,
+          },
         ],
         model: provider.model,
         response_format: { type: "json_object" },
@@ -80,10 +108,10 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           provider.model,
           initUsage.prompt_tokens,
           initUsage.completion_tokens,
-          0
+          0,
         );
         await performanceMonitor.recordLog({
-          operation: 'recursive_graph_init',
+          operation: "recursive_graph_init",
           provider: provider.providerType,
           model: provider.model,
           inputTokens: initUsage.prompt_tokens,
@@ -94,94 +122,136 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           success: true,
           estimatedCost: cost,
           metadata: enrichedMetadata,
+          sessionId,
         });
       }
 
-      const initParsed = JSON.parse(initCompletion.choices[0].message.content || '{"root": null, "coreNodes": []}');
-      
-      const rootData = initParsed.root || { title: topic, content: `${topic}的核心概念` };
+      const initParsed = JSON.parse(
+        initCompletion.choices[0].message.content ||
+          '{"root": null, "coreNodes": []}',
+      );
+
+      const rootData = initParsed.root || {
+        title: topic,
+        content: `${topic}的核心概念`,
+      };
       const coreNodes = initParsed.coreNodes || [];
 
-      const rootNodeResult = await createKnowledgePointWithGraphNode(supabase, userId, {
-        graph_id,
-        title: rootData.title,
-        content: rootData.content || '',
-        level: 'root',
-        x_position: 400,
-        y_position: 300
-      });
+      const rootNodeResult = await createKnowledgePointWithGraphNode(
+        supabase,
+        userId,
+        {
+          graph_id,
+          title: rootData.title,
+          content: rootData.content || "",
+          level: "root",
+          x_position: 400,
+          y_position: 300,
+        },
+      );
 
       if (rootNodeResult) {
         nodeMap.set(rootData.title, rootNodeResult.id);
         totalNodes++;
 
         for (const coreNode of coreNodes) {
-          const childNodeResult = await createKnowledgePointWithGraphNode(supabase, userId, {
-            graph_id,
-            title: coreNode.title,
-            content: coreNode.content || '',
-            level: 'core',
-            x_position: 200 + Math.random() * 400,
-            y_position: 500 + Math.random() * 200
-          });
+          const childNodeResult = await createKnowledgePointWithGraphNode(
+            supabase,
+            userId,
+            {
+              graph_id,
+              title: coreNode.title,
+              content: coreNode.content || "",
+              level: "core",
+              x_position: 200 + Math.random() * 400,
+              y_position: 500 + Math.random() * 200,
+            },
+          );
 
           if (childNodeResult) {
             nodeMap.set(coreNode.title, childNodeResult.id);
             totalNodes++;
 
-            await supabase
-              .from('edges')
-              .insert({
-                graph_id,
-                source_knowledge_point_id: rootNodeResult.id,
-                target_knowledge_point_id: childNodeResult.id,
-                relationship_type: 'contains'
-              });
+            await supabase.from("edges").insert({
+              graph_id,
+              source_knowledge_point_id: rootNodeResult.id,
+              target_knowledge_point_id: childNodeResult.id,
+              relationship_type: "contains",
+            });
             totalEdges++;
           }
         }
       }
 
-      await updateTaskStatus(supabase, taskId, 'in_progress', { 
-        stage: 'init_complete', 
-        progress: 30,
-        totalNodes 
-      }, undefined, undefined, userId);
+      await updateTaskStatus(
+        supabase,
+        taskId,
+        "in_progress",
+        {
+          stage: "init_complete",
+          progress: 30,
+          totalNodes,
+        },
+        undefined,
+        undefined,
+        userId,
+      );
 
       if (depth >= 2) {
-        const coreNodeEntries = Array.from(nodeMap.entries()).filter(([title]) => title !== rootData.title);
-        logger.info(`Starting depth 2 expansion for ${coreNodeEntries.length} core nodes`);
-        
+        const coreNodeEntries = Array.from(nodeMap.entries()).filter(
+          ([title]) => title !== rootData.title,
+        );
+        logger.info(
+          `Starting depth 2 expansion for ${coreNodeEntries.length} core nodes`,
+        );
+
         for (let i = 0; i < coreNodeEntries.length; i++) {
           const [nodeTitle, nodeId] = coreNodeEntries[i];
-          
-          logger.debug(`Expanding core node ${i + 1}/${coreNodeEntries.length}: ${nodeTitle}`);
-          await updateTaskStatus(supabase, taskId, 'in_progress', { 
-            stage: 'expanding', 
-            progress: 30 + Math.round((i / coreNodeEntries.length) * 40),
-            currentNode: nodeTitle
-          }, undefined, undefined, userId);
+
+          logger.debug(
+            `Expanding core node ${i + 1}/${coreNodeEntries.length}: ${nodeTitle}`,
+          );
+          await updateTaskStatus(
+            supabase,
+            taskId,
+            "in_progress",
+            {
+              stage: "expanding",
+              progress: 30 + Math.round((i / coreNodeEntries.length) * 40),
+              currentNode: nodeTitle,
+            },
+            undefined,
+            undefined,
+            userId,
+          );
 
           try {
-            const expandPrompt = await getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
-              nodeTitle,
-              nodeContent: '',
-              nodeLevel: 'core',
-              isAcademic: style === 'academic',
-              hasExistingChildren: false,
-              existingChildren: ''
-            });
+            const expandPrompt = await getAutoGraphPrompt(
+              supabase,
+              userId,
+              graph_id,
+              "expand",
+              {
+                nodeTitle,
+                nodeContent: "",
+                nodeLevel: "core",
+                isAcademic: style === "academic",
+                hasExistingChildren: false,
+                existingChildren: "",
+              },
+            );
 
             const expandStartTime = Date.now();
-            const expandCompletion = await provider.client.chat.completions.create({
-              messages: [
-                { role: "system", content: expandPrompt },
-                { role: "user", content: `请为「${nodeTitle}」生成子节点。` }
-              ],
-              model: provider.model,
-              response_format: { type: "json_object" },
-              max_tokens: 3000,
-            });
+            const expandCompletion =
+              await provider.client.chat.completions.create({
+                messages: [
+                  { role: "system", content: expandPrompt },
+                  { role: "user", content: `请为「${nodeTitle}」生成子节点。` },
+                ],
+                model: provider.model,
+                response_format: { type: "json_object" },
+                max_tokens: 3000,
+              });
             const expandDuration = Date.now() - expandStartTime;
 
             const expandUsage = expandCompletion.usage;
@@ -191,15 +261,16 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                 provider.model,
                 expandUsage.prompt_tokens,
                 expandUsage.completion_tokens,
-                0
+                0,
               );
               await performanceMonitor.recordLog({
-                operation: 'recursive_graph_expand_depth2',
+                operation: "recursive_graph_expand_depth2",
                 provider: provider.providerType,
                 model: provider.model,
                 inputTokens: expandUsage.prompt_tokens,
                 outputTokens: expandUsage.completion_tokens,
-                totalTokens: expandUsage.prompt_tokens + expandUsage.completion_tokens,
+                totalTokens:
+                  expandUsage.prompt_tokens + expandUsage.completion_tokens,
                 cachedInputTokens: 0,
                 duration: expandDuration,
                 success: true,
@@ -208,36 +279,41 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                   ...enrichedMetadata,
                   nodeTitle,
                   nodeId,
-                  nodeLevel: 'core',
+                  nodeLevel: "core",
                 },
+                sessionId,
               });
             }
 
-            const expandParsed = JSON.parse(expandCompletion.choices[0].message.content || '{"children": []}');
+            const expandParsed = JSON.parse(
+              expandCompletion.choices[0].message.content || '{"children": []}',
+            );
             const children = expandParsed.children || [];
 
             for (const child of children.slice(0, 5)) {
-              const subNodeResult = await createKnowledgePointWithGraphNode(supabase, userId, {
-                graph_id,
-                title: child.title,
-                content: child.content || '',
-                level: 'sub',
-                x_position: 100 + Math.random() * 600,
-                y_position: 700 + Math.random() * 200
-              });
+              const subNodeResult = await createKnowledgePointWithGraphNode(
+                supabase,
+                userId,
+                {
+                  graph_id,
+                  title: child.title,
+                  content: child.content || "",
+                  level: "sub",
+                  x_position: 100 + Math.random() * 600,
+                  y_position: 700 + Math.random() * 200,
+                },
+              );
 
               if (subNodeResult) {
                 nodeMap.set(child.title, subNodeResult.id);
                 totalNodes++;
 
-                await supabase
-                  .from('edges')
-                  .insert({
-                    graph_id,
-                    source_knowledge_point_id: nodeId,
-                    target_knowledge_point_id: subNodeResult.id,
-                    relationship_type: 'contains'
-                  });
+                await supabase.from("edges").insert({
+                  graph_id,
+                  source_knowledge_point_id: nodeId,
+                  target_knowledge_point_id: subNodeResult.id,
+                  relationship_type: "contains",
+                });
                 totalEdges++;
               }
             }
@@ -249,40 +325,63 @@ export class RecursiveGraphProcessor implements TaskProcessor {
 
       if (depth >= 3) {
         logger.info(`Starting depth 3 expansion for sub-nodes`);
-        const subNodeEntries = Array.from(nodeMap.entries()).filter(([title]) => {
-          return title !== rootData.title && !coreNodes.some((c: any) => c.title === title);
-        });
+        const subNodeEntries = Array.from(nodeMap.entries()).filter(
+          ([title]) => {
+            return (
+              title !== rootData.title &&
+              !coreNodes.some((c: any) => c.title === title)
+            );
+          },
+        );
 
         for (let i = 0; i < Math.min(subNodeEntries.length, 10); i++) {
           const [nodeTitle, nodeId] = subNodeEntries[i];
-          
-          logger.debug(`Expanding sub-node ${i + 1}/${Math.min(subNodeEntries.length, 10)}: ${nodeTitle}`);
-          await updateTaskStatus(supabase, taskId, 'in_progress', { 
-            stage: 'deep_expanding', 
-            progress: 70 + Math.round((i / Math.min(subNodeEntries.length, 10)) * 25),
-            currentNode: nodeTitle
-          }, undefined, undefined, userId);
+
+          logger.debug(
+            `Expanding sub-node ${i + 1}/${Math.min(subNodeEntries.length, 10)}: ${nodeTitle}`,
+          );
+          await updateTaskStatus(
+            supabase,
+            taskId,
+            "in_progress",
+            {
+              stage: "deep_expanding",
+              progress:
+                70 + Math.round((i / Math.min(subNodeEntries.length, 10)) * 25),
+              currentNode: nodeTitle,
+            },
+            undefined,
+            undefined,
+            userId,
+          );
 
           try {
-            const expandPrompt = await getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
-              nodeTitle,
-              nodeContent: '',
-              nodeLevel: 'sub',
-              isAcademic: style === 'academic',
-              hasExistingChildren: false,
-              existingChildren: ''
-            });
+            const expandPrompt = await getAutoGraphPrompt(
+              supabase,
+              userId,
+              graph_id,
+              "expand",
+              {
+                nodeTitle,
+                nodeContent: "",
+                nodeLevel: "sub",
+                isAcademic: style === "academic",
+                hasExistingChildren: false,
+                existingChildren: "",
+              },
+            );
 
             const expandStartTime = Date.now();
-            const expandCompletion = await provider.client.chat.completions.create({
-              messages: [
-                { role: "system", content: expandPrompt },
-                { role: "user", content: `请为「${nodeTitle}」生成子节点。` }
-              ],
-              model: provider.model,
-              response_format: { type: "json_object" },
-              max_tokens: 2000,
-            });
+            const expandCompletion =
+              await provider.client.chat.completions.create({
+                messages: [
+                  { role: "system", content: expandPrompt },
+                  { role: "user", content: `请为「${nodeTitle}」生成子节点。` },
+                ],
+                model: provider.model,
+                response_format: { type: "json_object" },
+                max_tokens: 2000,
+              });
             const expandDuration = Date.now() - expandStartTime;
 
             const expandUsage = expandCompletion.usage;
@@ -292,15 +391,16 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                 provider.model,
                 expandUsage.prompt_tokens,
                 expandUsage.completion_tokens,
-                0
+                0,
               );
               await performanceMonitor.recordLog({
-                operation: 'recursive_graph_expand_depth3',
+                operation: "recursive_graph_expand_depth3",
                 provider: provider.providerType,
                 model: provider.model,
                 inputTokens: expandUsage.prompt_tokens,
                 outputTokens: expandUsage.completion_tokens,
-                totalTokens: expandUsage.prompt_tokens + expandUsage.completion_tokens,
+                totalTokens:
+                  expandUsage.prompt_tokens + expandUsage.completion_tokens,
                 cachedInputTokens: 0,
                 duration: expandDuration,
                 success: true,
@@ -309,35 +409,40 @@ export class RecursiveGraphProcessor implements TaskProcessor {
                   ...enrichedMetadata,
                   nodeTitle,
                   nodeId,
-                  nodeLevel: 'sub',
+                  nodeLevel: "sub",
                 },
+                sessionId,
               });
             }
 
-            const expandParsed = JSON.parse(expandCompletion.choices[0].message.content || '{"children": []}');
+            const expandParsed = JSON.parse(
+              expandCompletion.choices[0].message.content || '{"children": []}',
+            );
             const children = expandParsed.children || [];
 
             for (const child of children.slice(0, 3)) {
-              const leafNodeResult = await createKnowledgePointWithGraphNode(supabase, userId, {
-                graph_id,
-                title: child.title,
-                content: child.content || '',
-                level: 'leaf',
-                x_position: 50 + Math.random() * 700,
-                y_position: 900 + Math.random() * 200
-              });
+              const leafNodeResult = await createKnowledgePointWithGraphNode(
+                supabase,
+                userId,
+                {
+                  graph_id,
+                  title: child.title,
+                  content: child.content || "",
+                  level: "leaf",
+                  x_position: 50 + Math.random() * 700,
+                  y_position: 900 + Math.random() * 200,
+                },
+              );
 
               if (leafNodeResult) {
                 totalNodes++;
 
-                await supabase
-                  .from('edges')
-                  .insert({
-                    graph_id,
-                    source_knowledge_point_id: nodeId,
-                    target_knowledge_point_id: leafNodeResult.id,
-                    relationship_type: 'contains'
-                  });
+                await supabase.from("edges").insert({
+                  graph_id,
+                  source_knowledge_point_id: nodeId,
+                  target_knowledge_point_id: leafNodeResult.id,
+                  relationship_type: "contains",
+                });
                 totalEdges++;
               }
             }
@@ -347,19 +452,39 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         }
       }
 
-      logger.info(`Graph generation completed for graph ${graph_id}: ${totalNodes} nodes, ${totalEdges} edges`);
-      await updateTaskStatus(supabase, taskId, 'completed', { 
-        success: true, 
-        totalNodes,
-        totalEdges,
-        graphId: graph_id
-      }, undefined, undefined, userId);
-
+      logger.info(
+        `Graph generation completed for graph ${graph_id}: ${totalNodes} nodes, ${totalEdges} edges`,
+      );
+      await updateTaskStatus(
+        supabase,
+        taskId,
+        "completed",
+        {
+          success: true,
+          totalNodes,
+          totalEdges,
+          graphId: graph_id,
+        },
+        undefined,
+        undefined,
+        userId,
+      );
     } catch (error: any) {
-      logger.error(`Recursive graph generation failed for task ${taskId}:`, error);
-      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error.message, userId);
+      logger.error(
+        `Recursive graph generation failed for task ${taskId}:`,
+        error,
+      );
+      await updateTaskStatus(
+        supabase,
+        taskId,
+        "failed",
+        null,
+        undefined,
+        error.message,
+        userId,
+      );
     }
   }
 }
 
-registerProcessor('recursive_graph_generation', new RecursiveGraphProcessor());
+registerProcessor("recursive_graph_generation", new RecursiveGraphProcessor());

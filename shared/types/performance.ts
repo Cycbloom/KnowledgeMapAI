@@ -4,6 +4,7 @@ export interface AIPerformanceLog {
   id: string;
   timestamp: number;
   operation: string;
+  sessionId?: string;
   model: string;
   provider: AIProviderType;
   inputTokens: number;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
@@ -10,6 +10,9 @@ import {
   Filter,
   RefreshCw,
   Trash2,
+  ChevronDown,
+  ChevronRight,
+  Layers,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAIPerformanceStore } from "@/store/useAIPerformanceStore";
@@ -83,6 +86,155 @@ const StatCard: React.FC<{
   </div>
 );
 
+interface SessionGroupProps {
+  logs: AIPerformanceLog[];
+  isDark: boolean;
+  onSelectLog: (log: AIPerformanceLog) => void;
+  getOperationLabel: (operation: string) => string;
+}
+
+const getSessionName = (logs: AIPerformanceLog[], getOperationLabel: (operation: string) => string): string => {
+  const operations = new Set(logs.map((l) => l.operation));
+  
+  if (operations.has('auto_graph_init') || operations.has('auto_graph_expand')) {
+    return '图谱自动生成';
+  }
+  if (operations.has('recursive_graph_init') || operations.has('recursive_graph_expand_depth2') || operations.has('recursive_graph_expand_depth3')) {
+    return '递归图谱生成';
+  }
+  if (operations.has('generate_nodes_for_graph') || operations.has('expand_node_for_graph')) {
+    return '图谱节点生成';
+  }
+  
+  const firstLog = logs.sort((a, b) => a.timestamp - b.timestamp)[0];
+  return getOperationLabel(firstLog.operation);
+};
+
+const SessionGroup: React.FC<SessionGroupProps> = ({
+  logs,
+  isDark,
+  onSelectLog,
+  getOperationLabel,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const { t } = useTranslation();
+
+  const sessionStats = useMemo(() => {
+    const totalTokens = logs.reduce((sum, l) => sum + l.totalTokens, 0);
+    const totalCost = logs.reduce((sum, l) => sum + l.estimatedCost, 0);
+    const totalDuration = logs.reduce((sum, l) => sum + l.duration, 0);
+    const successCount = logs.filter((l) => l.success).length;
+    return { totalTokens, totalCost, totalDuration, successCount, total: logs.length };
+  }, [logs]);
+
+  const sortedLogs = useMemo(() => 
+    [...logs].sort((a, b) => a.timestamp - b.timestamp),
+    [logs]
+  );
+
+  const sessionName = useMemo(() => 
+    getSessionName(logs, getOperationLabel),
+    [logs, getOperationLabel]
+  );
+
+  return (
+    <div className={`border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-full px-4 py-3 flex items-center justify-between ${
+          isDark ? "bg-slate-800/30 hover:bg-slate-800/50" : "bg-gray-50 hover:bg-gray-100"
+        } transition-colors`}
+      >
+        <div className="flex items-center gap-2">
+          {isExpanded ? (
+            <ChevronDown size={14} className={isDark ? "text-slate-400" : "text-gray-500"} />
+          ) : (
+            <ChevronRight size={14} className={isDark ? "text-slate-400" : "text-gray-500"} />
+          )}
+          <Layers size={14} className={isDark ? "text-primary-400" : "text-primary-600"} />
+          <span className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+            {sessionName}
+          </span>
+          <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+            ({sessionStats.total} {t('console.performance.requests')})
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-xs">
+          <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+            {formatTokens(sessionStats.totalTokens)} tokens
+          </span>
+          <span className={isDark ? "text-amber-400" : "text-amber-600"}>
+            {formatCost(sessionStats.totalCost)}
+          </span>
+          <span className={isDark ? "text-green-400" : "text-green-600"}>
+            {formatDuration(sessionStats.totalDuration)}
+          </span>
+          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+            sessionStats.successCount === sessionStats.total
+              ? isDark ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-600"
+              : isDark ? "bg-amber-900/30 text-amber-400" : "bg-amber-100 text-amber-600"
+          }`}>
+            {sessionStats.successCount}/{sessionStats.total}
+          </span>
+        </div>
+      </button>
+      
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            {sortedLogs.map((log) => (
+              <motion.button
+                key={log.id}
+                onClick={() => onSelectLog(log)}
+                className={`w-full text-left px-4 py-2.5 pl-10 transition-colors ${
+                  isDark ? "hover:bg-slate-800/30" : "hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {log.success ? (
+                      <CheckCircle size={12} className={isDark ? "text-green-400" : "text-green-500"} />
+                    ) : (
+                      <XCircle size={12} className={isDark ? "text-red-400" : "text-red-500"} />
+                    )}
+                    <span className={`text-sm ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                      {getOperationLabel(log.operation)}
+                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      isDark ? "bg-slate-700 text-slate-400" : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {log.model}
+                    </span>
+                  </div>
+                  <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                    {formatTimestamp(log.timestamp)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 mt-1 text-xs pl-5">
+                  <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                    {formatTokens(log.totalTokens)} tokens
+                  </span>
+                  <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                    {formatCost(log.estimatedCost)}
+                  </span>
+                  <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                    {formatDuration(log.duration)}
+                  </span>
+                </div>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const LogDetailModal: React.FC<{
   log: AIPerformanceLog;
   isDark: boolean;
@@ -120,22 +272,35 @@ const LogDetailModal: React.FC<{
 
   const priorityOrder = ['graphTitle', 'userName', 'nodeTitle', 'topic', 'style', 'nodeLevel', 'depth', 'actionName'];
 
+  const isPlaceholderValue = (key: string, value: unknown): boolean => {
+    if (typeof value !== 'string') return false;
+    const lowerValue = value.toLowerCase();
+    if (key === 'graphId' && (lowerValue === 'temp' || lowerValue === 'temporary')) return true;
+    if (key === 'nodeId') {
+      if (lowerValue === 'node' || lowerValue === 'temp' || lowerValue === 'temporary') return true;
+      if (/^node[-_]?\d+$/i.test(value)) return true;
+    }
+    return false;
+  };
+
   const getOrderedMetadata = (): Array<{ key: string; label: string; value: any }> => {
     if (!log.metadata) return [];
 
     const entries = Object.entries(log.metadata);
+    const metadata = log.metadata as Record<string, unknown>;
 
     const priorityItems = priorityOrder
-      .filter(key => log.metadata && log.metadata[key] !== undefined && log.metadata[key] !== null && log.metadata[key] !== '')
+      .filter(key => metadata[key] !== undefined && metadata[key] !== null && metadata[key] !== '' && !isPlaceholderValue(key, metadata[key]))
       .map(key => ({
         key,
         label: metadataLabels[key] || key,
-        value: (log.metadata as Record<string, unknown>)[key],
+        value: metadata[key],
       }));
 
     const otherItems = entries
       .filter(([key]) => !priorityOrder.includes(key))
       .filter(([, value]) => value !== undefined && value !== null && value !== '')
+      .filter(([key, value]) => !isPlaceholderValue(key, value))
       .map(([key, value]) => ({
         key,
         label: metadataLabels[key] || key,
@@ -217,6 +382,19 @@ const LogDetailModal: React.FC<{
               </span>
               <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
                 {log.provider}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                {t("console.performance.detail.sessionId")}
+              </span>
+              <div className={`text-sm font-medium font-mono ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                {log.sessionId ? (
+                  <span className="text-primary-500 dark:text-primary-400 text-xs break-all">{log.sessionId}</span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
               </div>
             </div>
 
@@ -433,7 +611,7 @@ const LogDetailModal: React.FC<{
                 <div className={`rounded-lg overflow-hidden border divide-y ${
                   isDark ? "border-slate-700 bg-slate-800/30 divide-slate-700/50" : "border-gray-200 bg-white divide-gray-100"
                 }`}>
-                  {orderedMetadata.map(({ key, label, value }, index) => {
+                  {orderedMetadata.map(({ key, label, value }) => {
                     const displayValue = typeof value === 'string' ? value : JSON.stringify(value);
                     const isLongText = displayValue.length > 60;
 
@@ -548,6 +726,33 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   const filteredUniqueOperations = showEmbeddingOps
     ? uniqueOperations
     : uniqueOperations.filter((op) => !isEmbeddingOperation(op));
+
+  const { sessionGroups, standaloneLogs } = useMemo(() => {
+    const groups = new Map<string, AIPerformanceLog[]>();
+    const standalone: AIPerformanceLog[] = [];
+
+    filteredLogs.forEach((log) => {
+      if (log.sessionId) {
+        const existing = groups.get(log.sessionId) || [];
+        existing.push(log);
+        groups.set(log.sessionId, existing);
+      } else {
+        standalone.push(log);
+      }
+    });
+
+    const sortedGroups = Array.from(groups.entries())
+      .map(([sessionId, sessionLogs]) => ({
+        sessionId,
+        logs: sessionLogs,
+        firstTimestamp: Math.min(...sessionLogs.map((l) => l.timestamp)),
+      }))
+      .sort((a, b) => b.firstTimestamp - a.firstTimestamp);
+
+    const sortedStandalone = standalone.sort((a, b) => b.timestamp - a.timestamp);
+
+    return { sessionGroups: sortedGroups, standaloneLogs: sortedStandalone };
+  }, [filteredLogs]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -758,7 +963,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
             <p className="text-xs mt-1 opacity-75">{t('console.performance.noDataHint')}</p>
           </div>
         ) : (
-          <div className="divide-y">
+          <div>
             {filteredLogs.length === 0 ? (
               <div
                 className={`text-center py-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
@@ -775,72 +980,65 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                 )}
               </div>
             ) : (
-              filteredLogs.map((log, index) => (
-                <motion.button
-                  key={log.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.01 }}
-                  onClick={() => setSelectedLog(log)}
-                  className={`w-full text-left px-4 py-3 transition-colors ${
-                    isDark ? "hover:bg-slate-800/50" : "hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {log.success ? (
-                        <CheckCircle
-                          size={14}
-                          className={
-                            isDark ? "text-green-400" : "text-green-500"
-                          }
-                        />
-                      ) : (
-                        <XCircle
-                          size={14}
-                          className={isDark ? "text-red-400" : "text-red-500"}
-                        />
-                      )}
-                      <span
-                        className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
-                      >
-                        {getOperationLabel(log.operation)}
-                      </span>
-                      <span
-                        className={`text-xs px-1.5 py-0.5 rounded ${
-                          isDark
-                            ? "bg-slate-700 text-slate-400"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {log.model}
+              <>
+                {sessionGroups.map((group) => (
+                  <SessionGroup
+                    key={group.sessionId}
+                    logs={group.logs}
+                    isDark={isDark}
+                    onSelectLog={setSelectedLog}
+                    getOperationLabel={getOperationLabel}
+                  />
+                ))}
+                {standaloneLogs.length > 0 && sessionGroups.length > 0 && (
+                  <div className={`px-4 py-2 text-xs font-medium ${
+                    isDark ? "text-slate-500 bg-slate-900/50" : "text-gray-400 bg-gray-100"
+                  }`}>
+                    {t('console.performance.standaloneRequests')}
+                  </div>
+                )}
+                {standaloneLogs.map((log) => (
+                  <motion.button
+                    key={log.id}
+                    onClick={() => setSelectedLog(log)}
+                    className={`w-full text-left px-4 py-3 transition-colors border-b ${
+                      isDark ? "hover:bg-slate-800/50 border-slate-700" : "hover:bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {log.success ? (
+                          <CheckCircle size={14} className={isDark ? "text-green-400" : "text-green-500"} />
+                        ) : (
+                          <XCircle size={14} className={isDark ? "text-red-400" : "text-red-500"} />
+                        )}
+                        <span className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                          {getOperationLabel(log.operation)}
+                        </span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                          isDark ? "bg-slate-700 text-slate-400" : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {log.model}
+                        </span>
+                      </div>
+                      <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                        {formatTimestamp(log.timestamp)}
                       </span>
                     </div>
-                    <span
-                      className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
-                    >
-                      {formatTimestamp(log.timestamp)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 mt-1.5 text-xs">
-                    <span
-                      className={isDark ? "text-slate-400" : "text-gray-500"}
-                    >
-                      {formatTokens(log.totalTokens)} tokens
-                    </span>
-                    <span
-                      className={isDark ? "text-slate-400" : "text-gray-500"}
-                    >
-                      {formatCost(log.estimatedCost)}
-                    </span>
-                    <span
-                      className={isDark ? "text-slate-400" : "text-gray-500"}
-                    >
-                      {formatDuration(log.duration)}
-                    </span>
-                  </div>
-                </motion.button>
-              ))
+                    <div className="flex items-center gap-4 mt-1.5 text-xs">
+                      <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                        {formatTokens(log.totalTokens)} tokens
+                      </span>
+                      <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                        {formatCost(log.estimatedCost)}
+                      </span>
+                      <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                        {formatDuration(log.duration)}
+                      </span>
+                    </div>
+                  </motion.button>
+                ))}
+              </>
             )}
           </div>
         )}

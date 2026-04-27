@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -250,6 +250,7 @@ export const GraphMap = () => {
   const [expansionProgress, setExpansionProgress] =
     useState<InfiniteExpansionProgress | null>(null);
   const [isExpansionRunning, setIsExpansionRunning] = useState(false);
+  const [expansionSessionId, setExpansionSessionId] = useState<string | null>(null);
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
   const [promptContent, setPromptContent] = useState("");
   const [promptEditMode, setPromptEditMode] = useState<"depth" | "width">(
@@ -681,7 +682,7 @@ export const GraphMap = () => {
         throw error;
       }
     },
-    [selectedGraphId, queryClient, t],
+    [selectedGraphId, queryClient, expansionSessionId, t],
   );
 
   const handleDepthExpand = useCallback(
@@ -704,6 +705,8 @@ export const GraphMap = () => {
           sources: config.sources,
           graph_id: selectedGraphId,
         });
+
+        setExpansionSessionId(result.sessionId);
 
         if (result.root && result.coreNodes) {
           const nodes = [
@@ -774,6 +777,7 @@ export const GraphMap = () => {
           style: config.style,
           customPrompt: config.customPrompt,
           existing_children: config.existingChildren,
+          session_id: expansionSessionId || undefined,
         });
 
         if (result.children && result.children.length > 0) {
@@ -800,7 +804,7 @@ export const GraphMap = () => {
         throw error;
       }
     },
-    [selectedGraphId, queryClient, t],
+    [selectedGraphId, queryClient, expansionSessionId, t],
   );
 
   const handleOpenPromptEditor = useCallback(

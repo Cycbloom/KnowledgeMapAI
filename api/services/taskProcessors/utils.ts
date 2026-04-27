@@ -1,37 +1,46 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { promptService } from '../ai/promptService';
-import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
-import { logger } from '../../utils/logger';
-import { getNextLevel } from '../../utils/levelUtils';
-import { performanceMonitor, enrichMetadata } from '../ai/performanceMonitor';
-import { pricingService } from '../ai/pricingService';
+import { SupabaseClient } from "@supabase/supabase-js";
+import { promptService } from "../ai/promptService";
+import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
+import { logger } from "../../utils/logger";
+import { getNextLevel } from "../../utils/levelUtils";
+import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
+import { pricingService } from "../ai/pricingService";
 
 export async function getAutoGraphPrompt(
-  supabase: SupabaseClient, 
-  userId: string, 
-  graphId: string, 
-  type: 'init' | 'expand', 
-  data: any
+  supabase: SupabaseClient,
+  userId: string,
+  graphId: string,
+  type: "init" | "expand",
+  data: any,
 ): Promise<string> {
-  const templateCode = type === 'init' ? 'auto_graph_init' : 'auto_graph_expand';
-  return promptService.getRenderedPrompt(supabase, templateCode, data, userId, graphId);
+  const templateCode =
+    type === "init" ? "auto_graph_init" : "auto_graph_expand";
+  return promptService.getRenderedPrompt(
+    supabase,
+    templateCode,
+    data,
+    userId,
+    graphId,
+  );
 }
 
 export async function generateNodesForGraph(
-  supabase: SupabaseClient, 
-  graphId: string, 
-  topic: string, 
+  supabase: SupabaseClient,
+  graphId: string,
+  topic: string,
   description: string | undefined,
   depth: number,
   provider: any,
-  userId?: string
+  userId?: string,
+  sessionId?: string,
 ): Promise<number> {
   try {
     let totalNodes = 0;
+    const effectiveSessionId = sessionId || crypto.randomUUID();
 
     const systemPrompt = await promptService.getRenderedPrompt(
       supabase,
-      'auto_graph_init',
+      "auto_graph_init",
       {
         topic,
         isCustom: false,
@@ -39,23 +48,28 @@ export async function generateNodesForGraph(
         isPractical: false,
         isBeginner: false,
         hasSources: false,
-        sources: ''
+        sources: "",
       },
-      userId
+      userId,
     );
 
-    const enrichedMetadata = userId ? await enrichMetadata(supabase, {
-      graphId,
-      userId,
-      topic,
-      depth,
-    }) : undefined;
+    const enrichedMetadata = userId
+      ? await enrichMetadata(supabase, {
+          graphId,
+          userId,
+          topic,
+          depth,
+        })
+      : undefined;
 
     const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `请为「${topic}」生成知识点。${description ? `\n\n领域描述：${description}` : ''}` }
+        {
+          role: "user",
+          content: `请为「${topic}」生成知识点。${description ? `\n\n领域描述：${description}` : ""}`,
+        },
       ],
       model: provider.model,
       response_format: { type: "json_object" },
@@ -70,10 +84,10 @@ export async function generateNodesForGraph(
         provider.model,
         usage.prompt_tokens,
         usage.completion_tokens,
-        0
+        0,
       );
       await performanceMonitor.recordLog({
-        operation: 'generate_nodes_for_graph',
+        operation: "generate_nodes_for_graph",
         provider: provider.providerType,
         model: provider.model,
         inputTokens: usage.prompt_tokens,
@@ -84,53 +98,62 @@ export async function generateNodesForGraph(
         success: true,
         estimatedCost: cost,
         metadata: enrichedMetadata,
+        sessionId: effectiveSessionId,
       });
     }
 
-    const parsed = JSON.parse(completion.choices[0].message.content || '{"root":null,"coreNodes":[]}');
+    const parsed = JSON.parse(
+      completion.choices[0].message.content || '{"root":null,"coreNodes":[]}',
+    );
 
     if (parsed.root) {
-      const rootNodeResult = await createKnowledgePointWithGraphNode(supabase, userId || '', {
-        graph_id: graphId,
-        title: parsed.root.title || topic,
-        content: parsed.root.content || '',
-        level: 'root',
-        x_position: 400,
-        y_position: 300
-      });
+      const rootNodeResult = await createKnowledgePointWithGraphNode(
+        supabase,
+        userId || "",
+        {
+          graph_id: graphId,
+          title: parsed.root.title || topic,
+          content: parsed.root.content || "",
+          level: "root",
+          x_position: 400,
+          y_position: 300,
+        },
+      );
 
       if (rootNodeResult) {
         totalNodes++;
 
         const coreNodes = parsed.coreNodes || [];
         const coreNodeIds: string[] = [];
-        
+
         for (let i = 0; i < coreNodes.length; i++) {
           const coreNode = coreNodes[i];
           const angle = (2 * Math.PI * i) / coreNodes.length;
           const radius = 200;
 
-          const childNodeResult = await createKnowledgePointWithGraphNode(supabase, userId || '', {
-            graph_id: graphId,
-            title: coreNode.title,
-            content: coreNode.content || '',
-            level: 'core',
-            x_position: 400 + radius * Math.cos(angle),
-            y_position: 300 + radius * Math.sin(angle)
-          });
+          const childNodeResult = await createKnowledgePointWithGraphNode(
+            supabase,
+            userId || "",
+            {
+              graph_id: graphId,
+              title: coreNode.title,
+              content: coreNode.content || "",
+              level: "core",
+              x_position: 400 + radius * Math.cos(angle),
+              y_position: 300 + radius * Math.sin(angle),
+            },
+          );
 
           if (childNodeResult) {
             totalNodes++;
             coreNodeIds.push(childNodeResult.id);
 
-            await supabase
-              .from('edges')
-              .insert({
-                graph_id: graphId,
-                source_knowledge_point_id: rootNodeResult.id,
-                target_knowledge_point_id: childNodeResult.id,
-                relationship_type: 'contains'
-              });
+            await supabase.from("edges").insert({
+              graph_id: graphId,
+              source_knowledge_point_id: rootNodeResult.id,
+              target_knowledge_point_id: childNodeResult.id,
+              relationship_type: "contains",
+            });
           }
         }
 
@@ -138,7 +161,7 @@ export async function generateNodesForGraph(
           for (let i = 0; i < coreNodes.length; i++) {
             const coreNode = coreNodes[i];
             const coreNodeId = coreNodeIds[i];
-            
+
             if (coreNodeId) {
               const expandCount = await expandNodeForGraph(
                 supabase,
@@ -146,10 +169,11 @@ export async function generateNodesForGraph(
                 coreNodeId,
                 coreNode.title,
                 coreNode.content,
-                'core',
+                "core",
                 depth - 1,
                 provider,
-                userId
+                userId,
+                effectiveSessionId,
               );
               totalNodes += expandCount;
             }
@@ -174,41 +198,45 @@ export async function expandNodeForGraph(
   parentLevel: string,
   remainingDepth: number,
   provider: any,
-  userId?: string
+  userId?: string,
+  sessionId?: string,
 ): Promise<number> {
   try {
     let totalNodes = 0;
+    const effectiveSessionId = sessionId || crypto.randomUUID();
 
     const systemPrompt = await promptService.getRenderedPrompt(
       supabase,
-      'auto_graph_expand',
+      "auto_graph_expand",
       {
         nodeTitle: parentNodeTitle,
-        nodeContent: parentNodeContent || '',
+        nodeContent: parentNodeContent || "",
         nodeLevel: parentLevel,
         isCustom: false,
         isAcademic: true,
         isPractical: false,
         isBeginner: false,
-        existingChildren: []
+        existingChildren: [],
       },
-      userId
+      userId,
     );
 
-    const enrichedMetadata = userId ? await enrichMetadata(supabase, {
-      graphId,
-      userId,
-      nodeTitle: parentNodeTitle,
-      nodeId: parentNodeId,
-      nodeLevel: parentLevel,
-      depth: remainingDepth,
-    }) : undefined;
+    const enrichedMetadata = userId
+      ? await enrichMetadata(supabase, {
+          graphId,
+          userId,
+          nodeTitle: parentNodeTitle,
+          nodeId: parentNodeId,
+          nodeLevel: parentLevel,
+          depth: remainingDepth,
+        })
+      : undefined;
 
     const startTime = Date.now();
     const completion = await provider.client.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `请为「${parentNodeTitle}」生成子知识点。` }
+        { role: "user", content: `请为「${parentNodeTitle}」生成子知识点。` },
       ],
       model: provider.model,
       response_format: { type: "json_object" },
@@ -223,10 +251,10 @@ export async function expandNodeForGraph(
         provider.model,
         usage.prompt_tokens,
         usage.completion_tokens,
-        0
+        0,
       );
       await performanceMonitor.recordLog({
-        operation: 'expand_node_for_graph',
+        operation: "expand_node_for_graph",
         provider: provider.providerType,
         model: provider.model,
         inputTokens: usage.prompt_tokens,
@@ -237,41 +265,46 @@ export async function expandNodeForGraph(
         success: true,
         estimatedCost: cost,
         metadata: enrichedMetadata,
+        sessionId: effectiveSessionId,
       });
     }
 
-    const parsed = JSON.parse(completion.choices[0].message.content || '{"children":[]}');
+    const parsed = JSON.parse(
+      completion.choices[0].message.content || '{"children":[]}',
+    );
     const children = parsed.children || [];
 
     if (children.length > 0) {
       const childNodeIds: string[] = [];
-      
+
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
         const angle = (2 * Math.PI * i) / children.length;
         const radius = 150;
 
-        const childNodeResult = await createKnowledgePointWithGraphNode(supabase, userId || '', {
-          graph_id: graphId,
-          title: child.title,
-          content: child.content || '',
-          level: getNextLevel(parentLevel),
-          x_position: 400 + radius * Math.cos(angle),
-          y_position: 300 + radius * Math.sin(angle)
-        });
+        const childNodeResult = await createKnowledgePointWithGraphNode(
+          supabase,
+          userId || "",
+          {
+            graph_id: graphId,
+            title: child.title,
+            content: child.content || "",
+            level: getNextLevel(parentLevel),
+            x_position: 400 + radius * Math.cos(angle),
+            y_position: 300 + radius * Math.sin(angle),
+          },
+        );
 
         if (childNodeResult) {
           totalNodes++;
           childNodeIds.push(childNodeResult.id);
 
-          await supabase
-            .from('edges')
-            .insert({
-              graph_id: graphId,
-              source_knowledge_point_id: parentNodeId,
-              target_knowledge_point_id: childNodeResult.id,
-              relationship_type: 'contains'
-            });
+          await supabase.from("edges").insert({
+            graph_id: graphId,
+            source_knowledge_point_id: parentNodeId,
+            target_knowledge_point_id: childNodeResult.id,
+            relationship_type: "contains",
+          });
         }
       }
 
@@ -279,7 +312,7 @@ export async function expandNodeForGraph(
         for (let i = 0; i < children.length; i++) {
           const child = children[i];
           const childNodeId = childNodeIds[i];
-          
+
           if (childNodeId) {
             const expandCount = await expandNodeForGraph(
               supabase,
@@ -290,7 +323,8 @@ export async function expandNodeForGraph(
               getNextLevel(parentLevel),
               remainingDepth - 1,
               provider,
-              userId
+              userId,
+              effectiveSessionId,
             );
             totalNodes += expandCount;
           }

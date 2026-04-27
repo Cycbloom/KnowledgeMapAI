@@ -109,7 +109,12 @@ export const autoGraphApi = {
     provider?: string;
     model?: string;
     language?: string;
-  }) => {
+    session_id?: string;
+  }): Promise<{
+    sessionId: string;
+    root: { title: string; content: string };
+    coreNodes: Array<{ title: string; content?: string }>;
+  }> => {
     const config = getAIConfig("text");
     const payload = {
       style: "academic",
@@ -137,7 +142,12 @@ export const autoGraphApi = {
     provider?: string;
     model?: string;
     language?: string;
-  }) => {
+    session_id?: string;
+  }): Promise<{
+    sessionId: string;
+    parentNodeId: string;
+    children: Array<{ title: string; content?: string }>;
+  }> => {
     const config = getAIConfig("text");
     const payload = {
       style: "academic",

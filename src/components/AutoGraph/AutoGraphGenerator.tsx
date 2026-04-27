@@ -296,6 +296,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
   const [rootNode, setRootNode] = useState<TreeNode | null>(null);
   const [createdGraphId, setCreatedGraphId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const { handleError } = useErrorHandler();
 
@@ -367,6 +368,8 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         graph_id: graphId,
       });
 
+      setSessionId(result.sessionId);
+
       const root: TreeNode = {
         id: generateNodeId(),
         title: result.root.title,
@@ -411,6 +414,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           style,
           customPrompt: style === "custom" ? customPrompt : undefined,
           existing_children: node.children?.map((c) => ({ title: c.title })),
+          session_id: sessionId || undefined,
         });
 
         const childLevel = getNextLevel(node.level);
@@ -430,7 +434,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         return null;
       }
     },
-    [createdGraphId, graphId, style, customPrompt, handleError, t],
+    [createdGraphId, graphId, style, customPrompt, sessionId, handleError, t],
   );
 
   const updateNodeInTree = useCallback(

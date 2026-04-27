@@ -1,7 +1,11 @@
-import type { AIPerformanceLog, AIPerformanceStats, GetPerformanceLogsQuery } from '@shared/types';
-import { pricingService } from './pricingService';
-import { supabaseAdmin } from '../../supabase';
-import { logger } from '../../utils/logger';
+import type {
+  AIPerformanceLog,
+  AIPerformanceStats,
+  GetPerformanceLogsQuery,
+} from "@shared/types";
+import { pricingService } from "./pricingService";
+import { supabaseAdmin } from "../../supabase";
+import { logger } from "../../utils/logger";
 
 const MAX_LOGS = 1000;
 
@@ -9,6 +13,7 @@ interface DatabaseLogRow {
   id: string;
   timestamp: number;
   operation: string;
+  session_id?: string | null;
   model: string;
   provider: string;
   input_tokens: number;
@@ -32,22 +37,27 @@ class PerformanceMonitor {
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    
+
     try {
       await this.loadFromDatabase();
       this.initialized = true;
-      logger.info(`[PerformanceMonitor] Loaded ${this.logs.length} logs from database`);
+      logger.info(
+        `[PerformanceMonitor] Loaded ${this.logs.length} logs from database`,
+      );
     } catch (error) {
-      logger.error('[PerformanceMonitor] Failed to load logs from database:', error);
+      logger.error(
+        "[PerformanceMonitor] Failed to load logs from database:",
+        error,
+      );
       this.initialized = true;
     }
   }
 
   private async loadFromDatabase(): Promise<void> {
     const { data, error } = await supabaseAdmin
-      .from('ai_performance_logs')
-      .select('*')
-      .order('timestamp', { ascending: false })
+      .from("ai_performance_logs")
+      .select("*")
+      .order("timestamp", { ascending: false })
       .limit(MAX_LOGS);
 
     if (error) {
@@ -59,8 +69,9 @@ class PerformanceMonitor {
         id: row.id,
         timestamp: row.timestamp,
         operation: row.operation,
+        sessionId: row.session_id || undefined,
         model: row.model,
-        provider: row.provider as AIPerformanceLog['provider'],
+        provider: row.provider as AIPerformanceLog["provider"],
         inputTokens: row.input_tokens,
         outputTokens: row.output_tokens,
         totalTokens: row.total_tokens,
@@ -71,23 +82,29 @@ class PerformanceMonitor {
         cachedInputTokens: row.cached_input_tokens || undefined,
         uncachedInputTokens: row.uncached_input_tokens || undefined,
         reasoningTokens: row.reasoning_tokens || undefined,
-        cacheHitRate: row.cache_hit_rate ? parseFloat(String(row.cache_hit_rate)) : undefined,
-        costBreakdown: row.cost_breakdown as AIPerformanceLog['costBreakdown'],
-        metadata: row.metadata as AIPerformanceLog['metadata'],
+        cacheHitRate: row.cache_hit_rate
+          ? parseFloat(String(row.cache_hit_rate))
+          : undefined,
+        costBreakdown: row.cost_breakdown as AIPerformanceLog["costBreakdown"],
+        metadata: row.metadata as AIPerformanceLog["metadata"],
       }));
     }
   }
 
-  async recordLog(log: Omit<AIPerformanceLog, 'id' | 'timestamp'>): Promise<void> {
-    const totalTokens = (log.totalTokens || log.inputTokens + log.outputTokens);
-    const estimatedCost = log.estimatedCost || pricingService.calculateCost(
-      log.provider,
-      log.model,
-      log.inputTokens,
-      log.outputTokens,
-      log.cachedInputTokens
-    );
-    
+  async recordLog(
+    log: Omit<AIPerformanceLog, "id" | "timestamp">,
+  ): Promise<void> {
+    const totalTokens = log.totalTokens || log.inputTokens + log.outputTokens;
+    const estimatedCost =
+      log.estimatedCost ||
+      pricingService.calculateCost(
+        log.provider,
+        log.model,
+        log.inputTokens,
+        log.outputTokens,
+        log.cachedInputTokens,
+      );
+
     const fullLog: AIPerformanceLog = {
       ...log,
       id: crypto.randomUUID(),
@@ -95,7 +112,7 @@ class PerformanceMonitor {
       totalTokens,
       estimatedCost,
     };
-    
+
     // 内存存储（用于快速查询）
     this.logs.unshift(fullLog);
     if (this.logs.length > MAX_LOGS) {
@@ -104,67 +121,72 @@ class PerformanceMonitor {
 
     // 异步持久化到数据库（不阻塞主流程）
     this.persistToDatabase(fullLog).catch((err: Error) => {
-      logger.warn('[PerformanceMonitor] Failed to persist log to database:', err);
+      logger.warn(
+        "[PerformanceMonitor] Failed to persist log to database:",
+        err,
+      );
     });
   }
 
   private async persistToDatabase(log: AIPerformanceLog): Promise<void> {
     try {
-      const { error } = await supabaseAdmin
-        .from('ai_performance_logs')
-        .insert({
-          id: log.id,
-          timestamp: log.timestamp,
-          operation: log.operation,
-          model: log.model,
-          provider: log.provider,
-          input_tokens: log.inputTokens,
-          output_tokens: log.outputTokens,
-          total_tokens: log.totalTokens,
-          cached_input_tokens: log.cachedInputTokens || null,
-          uncached_input_tokens: log.uncachedInputTokens || null,
-          reasoning_tokens: log.reasoningTokens || null,
-          cache_hit_rate: log.cacheHitRate || null,
-          estimated_cost: log.estimatedCost,
-          duration: log.duration,
-          success: log.success,
-          error_message: log.errorMessage || null,
-          cost_breakdown: log.costBreakdown || null,
-          metadata: log.metadata || {},
-        });
+      const { error } = await supabaseAdmin.from("ai_performance_logs").insert({
+        id: log.id,
+        timestamp: log.timestamp,
+        operation: log.operation,
+        session_id: log.sessionId || null,
+        model: log.model,
+        provider: log.provider,
+        input_tokens: log.inputTokens,
+        output_tokens: log.outputTokens,
+        total_tokens: log.totalTokens,
+        cached_input_tokens: log.cachedInputTokens || null,
+        uncached_input_tokens: log.uncachedInputTokens || null,
+        reasoning_tokens: log.reasoningTokens || null,
+        cache_hit_rate: log.cacheHitRate || null,
+        estimated_cost: log.estimatedCost,
+        duration: log.duration,
+        success: log.success,
+        error_message: log.errorMessage || null,
+        cost_breakdown: log.costBreakdown || null,
+        metadata: log.metadata || {},
+      });
 
       if (error) {
         throw error;
       }
     } catch (error) {
-      logger.error('[PerformanceMonitor] Database persist error:', error);
+      logger.error("[PerformanceMonitor] Database persist error:", error);
       throw error;
     }
   }
 
-  getLogs(query: GetPerformanceLogsQuery = {}): { logs: AIPerformanceLog[]; total: number } {
+  getLogs(query: GetPerformanceLogsQuery = {}): {
+    logs: AIPerformanceLog[];
+    total: number;
+  } {
     let filtered = [...this.logs];
-    
+
     if (query.operation) {
-      filtered = filtered.filter(l => l.operation === query.operation);
+      filtered = filtered.filter((l) => l.operation === query.operation);
     }
     if (query.provider) {
-      filtered = filtered.filter(l => l.provider === query.provider);
+      filtered = filtered.filter((l) => l.provider === query.provider);
     }
     if (query.success !== undefined) {
-      filtered = filtered.filter(l => l.success === query.success);
+      filtered = filtered.filter((l) => l.success === query.success);
     }
     if (query.startTime) {
-      filtered = filtered.filter(l => l.timestamp >= query.startTime!);
+      filtered = filtered.filter((l) => l.timestamp >= query.startTime!);
     }
     if (query.endTime) {
-      filtered = filtered.filter(l => l.timestamp <= query.endTime!);
+      filtered = filtered.filter((l) => l.timestamp <= query.endTime!);
     }
-    
+
     const total = filtered.length;
     const offset = query.offset || 0;
     const limit = query.limit || 50;
-    
+
     return {
       logs: filtered.slice(offset, offset + limit),
       total,
@@ -172,58 +194,71 @@ class PerformanceMonitor {
   }
 
   async getHistoricalLogs(
-    query: GetPerformanceLogsQuery & { days?: number } = {}
+    query: GetPerformanceLogsQuery & { days?: number; sessionId?: string } = {},
   ): Promise<{ logs: AIPerformanceLog[]; total: number }> {
     let dbQuery = supabaseAdmin
-      .from('ai_performance_logs')
-      .select('*', { count: 'exact' })
-      .order('timestamp', { ascending: false });
+      .from("ai_performance_logs")
+      .select("*", { count: "exact" })
+      .order("timestamp", { ascending: false });
 
     if (query.days) {
-      const startTime = Date.now() - (query.days * 24 * 60 * 60 * 1000);
-      dbQuery = dbQuery.gte('timestamp', startTime);
+      const startTime = Date.now() - query.days * 24 * 60 * 60 * 1000;
+      dbQuery = dbQuery.gte("timestamp", startTime);
     }
     if (query.operation) {
-      dbQuery = dbQuery.eq('operation', query.operation);
+      dbQuery = dbQuery.eq("operation", query.operation);
     }
     if (query.provider) {
-      dbQuery = dbQuery.eq('provider', query.provider);
+      dbQuery = dbQuery.eq("provider", query.provider);
     }
     if (query.success !== undefined) {
-      dbQuery = dbQuery.eq('success', query.success);
+      dbQuery = dbQuery.eq("success", query.success);
+    }
+    if (query.sessionId) {
+      dbQuery = dbQuery.eq("session_id", query.sessionId);
     }
 
     const offset = query.offset || 0;
     const limit = Math.min(query.limit || 50, 1000);
 
-    const { data, count, error } = await dbQuery
-      .range(offset, offset + limit - 1);
+    const { data, count, error } = await dbQuery.range(
+      offset,
+      offset + limit - 1,
+    );
 
     if (error) {
-      logger.error('[PerformanceMonitor] Failed to fetch historical logs:', error);
+      logger.error(
+        "[PerformanceMonitor] Failed to fetch historical logs:",
+        error,
+      );
       return { logs: [], total: 0 };
     }
 
-    const logs: AIPerformanceLog[] = ((data || []) as DatabaseLogRow[]).map((row: DatabaseLogRow) => ({
-      id: row.id,
-      timestamp: row.timestamp,
-      operation: row.operation,
-      model: row.model,
-      provider: row.provider as AIPerformanceLog['provider'],
-      inputTokens: row.input_tokens,
-      outputTokens: row.output_tokens,
-      totalTokens: row.total_tokens,
-      estimatedCost: parseFloat(String(row.estimated_cost)),
-      duration: row.duration,
-      success: row.success,
-      errorMessage: row.error_message || undefined,
-      cachedInputTokens: row.cached_input_tokens || undefined,
-      uncachedInputTokens: row.uncached_input_tokens || undefined,
-      reasoningTokens: row.reasoning_tokens || undefined,
-      cacheHitRate: row.cache_hit_rate ? parseFloat(String(row.cache_hit_rate)) : undefined,
-      costBreakdown: row.cost_breakdown as AIPerformanceLog['costBreakdown'],
-      metadata: row.metadata as AIPerformanceLog['metadata'],
-    }));
+    const logs: AIPerformanceLog[] = ((data || []) as DatabaseLogRow[]).map(
+      (row: DatabaseLogRow) => ({
+        id: row.id,
+        timestamp: row.timestamp,
+        operation: row.operation,
+        sessionId: row.session_id || undefined,
+        model: row.model,
+        provider: row.provider as AIPerformanceLog["provider"],
+        inputTokens: row.input_tokens,
+        outputTokens: row.output_tokens,
+        totalTokens: row.total_tokens,
+        estimatedCost: parseFloat(String(row.estimated_cost)),
+        duration: row.duration,
+        success: row.success,
+        errorMessage: row.error_message || undefined,
+        cachedInputTokens: row.cached_input_tokens || undefined,
+        uncachedInputTokens: row.uncached_input_tokens || undefined,
+        reasoningTokens: row.reasoning_tokens || undefined,
+        cacheHitRate: row.cache_hit_rate
+          ? parseFloat(String(row.cache_hit_rate))
+          : undefined,
+        costBreakdown: row.cost_breakdown as AIPerformanceLog["costBreakdown"],
+        metadata: row.metadata as AIPerformanceLog["metadata"],
+      }),
+    );
 
     return {
       logs,
@@ -233,48 +268,97 @@ class PerformanceMonitor {
 
   getStats(query: GetPerformanceLogsQuery = {}): AIPerformanceStats {
     const { logs } = this.getLogs({ ...query, limit: MAX_LOGS });
-    
-    const totalCachedInputTokens = logs.reduce((sum: number, l: AIPerformanceLog) => sum + (l.cachedInputTokens || 0), 0);
-    const totalUncachedInputTokens = logs.reduce((sum: number, l: AIPerformanceLog) => sum + (l.uncachedInputTokens || 0), 0);
-    const totalSavedByCache = logs.reduce((sum: number, l: AIPerformanceLog) => sum + (l.costBreakdown?.savedByCache || 0), 0);
-    
-    const embeddingOperations = ['generate_embedding', 'generate_embedding_batch'];
-    const nonEmbeddingLogs = logs.filter(l => !embeddingOperations.includes(l.operation));
-    
+
+    const totalCachedInputTokens = logs.reduce(
+      (sum: number, l: AIPerformanceLog) => sum + (l.cachedInputTokens || 0),
+      0,
+    );
+    const totalUncachedInputTokens = logs.reduce(
+      (sum: number, l: AIPerformanceLog) => sum + (l.uncachedInputTokens || 0),
+      0,
+    );
+    const totalSavedByCache = logs.reduce(
+      (sum: number, l: AIPerformanceLog) =>
+        sum + (l.costBreakdown?.savedByCache || 0),
+      0,
+    );
+
+    const embeddingOperations = [
+      "generate_embedding",
+      "generate_embedding_batch",
+    ];
+    const nonEmbeddingLogs = logs.filter(
+      (l) => !embeddingOperations.includes(l.operation),
+    );
+
     const stats: AIPerformanceStats = {
       totalRequests: logs.length,
-      successRequests: logs.filter(l => l.success).length,
-      failedRequests: logs.filter(l => !l.success).length,
-      totalInputTokens: logs.reduce((sum: number, l: AIPerformanceLog) => sum + l.inputTokens, 0),
-      totalOutputTokens: logs.reduce((sum: number, l: AIPerformanceLog) => sum + l.outputTokens, 0),
+      successRequests: logs.filter((l) => l.success).length,
+      failedRequests: logs.filter((l) => !l.success).length,
+      totalInputTokens: logs.reduce(
+        (sum: number, l: AIPerformanceLog) => sum + l.inputTokens,
+        0,
+      ),
+      totalOutputTokens: logs.reduce(
+        (sum: number, l: AIPerformanceLog) => sum + l.outputTokens,
+        0,
+      ),
       totalCachedInputTokens,
       totalUncachedInputTokens,
-      totalTokens: logs.reduce((sum: number, l: AIPerformanceLog) => sum + l.totalTokens, 0),
-      totalCost: logs.reduce((sum: number, l: AIPerformanceLog) => sum + l.estimatedCost, 0),
+      totalTokens: logs.reduce(
+        (sum: number, l: AIPerformanceLog) => sum + l.totalTokens,
+        0,
+      ),
+      totalCost: logs.reduce(
+        (sum: number, l: AIPerformanceLog) => sum + l.estimatedCost,
+        0,
+      ),
       totalSavedByCache,
-      avgDuration: nonEmbeddingLogs.length > 0 
-        ? nonEmbeddingLogs.reduce((sum: number, l: AIPerformanceLog) => sum + l.duration, 0) / nonEmbeddingLogs.length 
-        : 0,
-      avgCacheHitRate: logs.length > 0 
-        ? logs.reduce((sum: number, l: AIPerformanceLog) => sum + (l.cacheHitRate || 0), 0) / logs.length 
-        : 0,
+      avgDuration:
+        nonEmbeddingLogs.length > 0
+          ? nonEmbeddingLogs.reduce(
+              (sum: number, l: AIPerformanceLog) => sum + l.duration,
+              0,
+            ) / nonEmbeddingLogs.length
+          : 0,
+      avgCacheHitRate:
+        logs.length > 0
+          ? logs.reduce(
+              (sum: number, l: AIPerformanceLog) => sum + (l.cacheHitRate || 0),
+              0,
+            ) / logs.length
+          : 0,
       byOperation: {},
       byModel: {},
     };
-    
+
     for (const log of logs) {
       if (!stats.byOperation[log.operation]) {
-        stats.byOperation[log.operation] = { count: 0, tokens: 0, cost: 0, cachedTokens: 0, savedCost: 0 };
+        stats.byOperation[log.operation] = {
+          count: 0,
+          tokens: 0,
+          cost: 0,
+          cachedTokens: 0,
+          savedCost: 0,
+        };
       }
       stats.byOperation[log.operation].count++;
       stats.byOperation[log.operation].tokens += log.totalTokens;
       stats.byOperation[log.operation].cost += log.estimatedCost;
-      stats.byOperation[log.operation].cachedTokens += log.cachedInputTokens || 0;
-      stats.byOperation[log.operation].savedCost += log.costBreakdown?.savedByCache || 0;
-      
+      stats.byOperation[log.operation].cachedTokens +=
+        log.cachedInputTokens || 0;
+      stats.byOperation[log.operation].savedCost +=
+        log.costBreakdown?.savedByCache || 0;
+
       const modelKey = `${log.provider}/${log.model}`;
       if (!stats.byModel[modelKey]) {
-        stats.byModel[modelKey] = { count: 0, tokens: 0, cost: 0, cachedTokens: 0, savedCost: 0 };
+        stats.byModel[modelKey] = {
+          count: 0,
+          tokens: 0,
+          cost: 0,
+          cachedTokens: 0,
+          savedCost: 0,
+        };
       }
       stats.byModel[modelKey].count++;
       stats.byModel[modelKey].tokens += log.totalTokens;
@@ -282,47 +366,83 @@ class PerformanceMonitor {
       stats.byModel[modelKey].cachedTokens += log.cachedInputTokens || 0;
       stats.byModel[modelKey].savedCost += log.costBreakdown?.savedByCache || 0;
     }
-    
+
     return stats;
+  }
+
+  getLogsBySession(sessionId: string): AIPerformanceLog[] {
+    return this.logs.filter((l) => l.sessionId === sessionId);
+  }
+
+  async getSessionStats(sessionId: string): Promise<{
+    logs: AIPerformanceLog[];
+    totalRequests: number;
+    totalTokens: number;
+    totalCost: number;
+    totalDuration: number;
+    successCount: number;
+    failedCount: number;
+  }> {
+    const { logs } = await this.getHistoricalLogs({ sessionId, limit: 100 });
+
+    return {
+      logs,
+      totalRequests: logs.length,
+      totalTokens: logs.reduce((sum, l) => sum + l.totalTokens, 0),
+      totalCost: logs.reduce((sum, l) => sum + l.estimatedCost, 0),
+      totalDuration: logs.reduce((sum, l) => sum + l.duration, 0),
+      successCount: logs.filter((l) => l.success).length,
+      failedCount: logs.filter((l) => !l.success).length,
+    };
   }
 
   clearLogs(beforeTimestamp?: number): number {
     if (beforeTimestamp) {
       const beforeCount = this.logs.length;
-      this.logs = this.logs.filter(l => l.timestamp >= beforeTimestamp);
-      
+      this.logs = this.logs.filter((l) => l.timestamp >= beforeTimestamp);
+
       // 异步清理数据库
       (async () => {
         try {
           await supabaseAdmin
-            .from('ai_performance_logs')
+            .from("ai_performance_logs")
             .delete()
-            .lt('timestamp', beforeTimestamp);
-          logger.info(`[PerformanceMonitor] Cleared database logs before ${new Date(beforeTimestamp).toISOString()}`);
+            .lt("timestamp", beforeTimestamp);
+          logger.info(
+            `[PerformanceMonitor] Cleared database logs before ${new Date(beforeTimestamp).toISOString()}`,
+          );
         } catch (error) {
-          logger.error('[PerformanceMonitor] Failed to clear database logs:', error);
+          logger.error(
+            "[PerformanceMonitor] Failed to clear database logs:",
+            error,
+          );
         }
       })();
-      
+
       return beforeCount - this.logs.length;
     }
     const count = this.logs.length;
     this.logs = [];
 
     // 清理所有数据库记录（可选：只清理30天前的）
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
     (async () => {
-        try {
-          await supabaseAdmin
-            .from('ai_performance_logs')
-            .delete()
-            .lt('timestamp', thirtyDaysAgo);
-          logger.info(`[PerformanceMonitor] Cleared old logs from database (kept last 30 days)`);
+      try {
+        await supabaseAdmin
+          .from("ai_performance_logs")
+          .delete()
+          .lt("timestamp", thirtyDaysAgo);
+        logger.info(
+          `[PerformanceMonitor] Cleared old logs from database (kept last 30 days)`,
+        );
       } catch (error) {
-        logger.error('[PerformanceMonitor] Failed to clear old database logs:', error);
+        logger.error(
+          "[PerformanceMonitor] Failed to clear old database logs:",
+          error,
+        );
       }
     })();
-    
+
     return count;
   }
 
@@ -334,34 +454,46 @@ class PerformanceMonitor {
     totalTokens: number;
   }> {
     const { count: totalRecords } = await supabaseAdmin
-      .from('ai_performance_logs')
-      .select('*', { count: 'exact', head: true });
+      .from("ai_performance_logs")
+      .select("*", { count: "exact", head: true });
 
     const { data: oldest } = await supabaseAdmin
-      .from('ai_performance_logs')
-      .select('timestamp')
-      .order('timestamp', { ascending: true })
+      .from("ai_performance_logs")
+      .select("timestamp")
+      .order("timestamp", { ascending: true })
       .limit(1)
       .single();
 
     const { data: newest } = await supabaseAdmin
-      .from('ai_performance_logs')
-      .select('timestamp')
-      .order('timestamp', { ascending: false })
+      .from("ai_performance_logs")
+      .select("timestamp")
+      .order("timestamp", { ascending: false })
       .limit(1)
       .single();
 
     const { data: aggData } = await supabaseAdmin
-      .from('ai_performance_logs')
-      .select('total_tokens, estimated_cost');
+      .from("ai_performance_logs")
+      .select("total_tokens, estimated_cost");
 
-    const totalTokens = (aggData || []).reduce((sum: number, row: { total_tokens?: number; estimated_cost?: number }) => sum + (row.total_tokens || 0), 0);
-    const totalCost = (aggData || []).reduce((sum: number, row: { total_tokens?: number; estimated_cost?: number }) => sum + parseFloat(String(row.estimated_cost || 0)), 0);
+    const totalTokens = (aggData || []).reduce(
+      (sum: number, row: { total_tokens?: number; estimated_cost?: number }) =>
+        sum + (row.total_tokens || 0),
+      0,
+    );
+    const totalCost = (aggData || []).reduce(
+      (sum: number, row: { total_tokens?: number; estimated_cost?: number }) =>
+        sum + parseFloat(String(row.estimated_cost || 0)),
+      0,
+    );
 
     return {
       totalRecords: totalRecords || 0,
-      oldestRecord: oldest ? new Date((oldest as { timestamp: number }).timestamp).toISOString() : null,
-      newestRecord: newest ? new Date((newest as { timestamp: number }).timestamp).toISOString() : null,
+      oldestRecord: oldest
+        ? new Date((oldest as { timestamp: number }).timestamp).toISOString()
+        : null,
+      newestRecord: newest
+        ? new Date((newest as { timestamp: number }).timestamp).toISOString()
+        : null,
       totalCost,
       totalTokens,
     };
@@ -388,7 +520,7 @@ export interface EnrichedMetadata {
 
 async function getGraphInfo(
   supabase: import("@supabase/supabase-js").SupabaseClient,
-  graphId: string
+  graphId: string,
 ): Promise<{ id: string; title: string; description?: string | null } | null> {
   const { data } = await supabase
     .from("knowledge_graphs")
@@ -400,7 +532,7 @@ async function getGraphInfo(
 
 async function getUserInfo(
   supabase: import("@supabase/supabase-js").SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<{ id: string; name?: string | null } | null> {
   const { data } = await supabase
     .from("profiles")
@@ -423,7 +555,7 @@ export async function enrichMetadata(
     depth?: number;
     documentName?: string;
     actionName?: string;
-  }
+  },
 ): Promise<EnrichedMetadata> {
   const [graphInfo, userInfo] = await Promise.all([
     baseMetadata.graphId ? getGraphInfo(supabase, baseMetadata.graphId) : null,

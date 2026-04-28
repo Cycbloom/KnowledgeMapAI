@@ -113,7 +113,6 @@ npm run dev
 
 1. 提交代码前：`npm run lint` + `npm run check`
 2. 功能开发完成后：`npx playwright test`
-3. 修改登录/认证代码后：`npx playwright test --grep="登录"`
 
 ### 测试原则
 
@@ -122,6 +121,38 @@ npm run dev
 - 避免硬编码等待
 - 测试独立性
 
+## 类型检查与代码检查
+
+### 增量检查机制
+
+项目已启用 TypeScript 增量编译和 ESLint 缓存，大幅提升检查速度：
+
+- **TypeScript 增量编译**：通过 `.tsbuildinfo` 文件缓存类型信息
+- **ESLint 缓存**：缓存检查结果到 `node_modules/.cache/eslint`
+- **增量检查脚本**：只检查 Git 变更的文件
+
+### 检查命令
+
+| 命令 | 用途 | 场景 |
+|------|------|------|
+| `npm run check:incremental` | 增量检查修改文件 | **开发时推荐** |
+| `npm run check` | 标准类型检查 | 提交前检查 |
+| `npm run check:full` | 强制全量检查 | CI/疑难问题排查 |
+| `npm run lint` | 带 ESLint 缓存检查 | 提交前检查 |
+| `npm run lint:full` | 全量 ESLint 检查 | CI |
+
+### 开发流程建议
+
+```bash
+# 开发过程中快速检查
+npm run check:incremental
+
+# 提交前完整检查
+npm run check && npm run lint
+
+# CI 环境
+npm run check:full && npm run lint:full
+```
 ## 代码规范
 
 ### 日志规范

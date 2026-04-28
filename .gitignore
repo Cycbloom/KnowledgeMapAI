@@ -14,6 +14,10 @@ dist-electron
 release
 *.local
 
+# TypeScript and ESLint cache
+node_modules/.cache/
+node_modules/.tmp/
+
 # TypeScript 编译产物 (api 目录)
 api/**/*.js
 api/**/*.js.map

@@ -38,6 +38,20 @@ export async function generateNodesForGraph(
     let totalNodes = 0;
     const effectiveSessionId = sessionId || crypto.randomUUID();
 
+    const { data: existingNodes } = await supabase
+      .from("graph_nodes")
+      .select("knowledge_points(title)")
+      .eq("graph_id", graphId)
+      .is("deleted_at", null);
+
+    const existingNodeTitles = new Set<string>();
+    existingNodes?.forEach((gn: any) => {
+      const kp = Array.isArray(gn.knowledge_points)
+        ? gn.knowledge_points[0]
+        : gn.knowledge_points;
+      if (kp?.title) existingNodeTitles.add(kp.title);
+    });
+
     const systemPrompt = await promptService.getRenderedPrompt(
       supabase,
       "auto_graph_init",
@@ -128,6 +142,14 @@ export async function generateNodesForGraph(
 
         for (let i = 0; i < coreNodes.length; i++) {
           const coreNode = coreNodes[i];
+
+          if (existingNodeTitles.has(coreNode.title)) {
+            logger.warn(
+              `[GraphTaskService] Skipping duplicate node: ${coreNode.title}`,
+            );
+            continue;
+          }
+
           const angle = (2 * Math.PI * i) / coreNodes.length;
           const radius = 200;
 
@@ -147,6 +169,7 @@ export async function generateNodesForGraph(
           if (childNodeResult) {
             totalNodes++;
             coreNodeIds.push(childNodeResult.id);
+            existingNodeTitles.add(coreNode.title);
 
             await supabase.from("edges").insert({
               graph_id: graphId,
@@ -205,6 +228,22 @@ export async function expandNodeForGraph(
     let totalNodes = 0;
     const effectiveSessionId = sessionId || crypto.randomUUID();
 
+    const { data: existingChildEdges } = await supabase
+      .from("edges")
+      .select(
+        "target_knowledge_point_id, knowledge_points!edges_target_knowledge_point_id_fkey(title)",
+      )
+      .eq("source_knowledge_point_id", parentNodeId)
+      .is("deleted_at", null);
+
+    const existingChildTitles = new Set<string>();
+    existingChildEdges?.forEach((edge: any) => {
+      const kp = Array.isArray(edge.knowledge_points)
+        ? edge.knowledge_points[0]
+        : edge.knowledge_points;
+      if (kp?.title) existingChildTitles.add(kp.title);
+    });
+
     const systemPrompt = await promptService.getRenderedPrompt(
       supabase,
       "auto_graph_expand",
@@ -216,7 +255,7 @@ export async function expandNodeForGraph(
         isAcademic: true,
         isPractical: false,
         isBeginner: false,
-        existingChildren: [],
+        existingChildren: Array.from(existingChildTitles),
       },
       userId,
     );
@@ -279,6 +318,14 @@ export async function expandNodeForGraph(
 
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
+
+        if (existingChildTitles.has(child.title)) {
+          logger.warn(
+            `[GraphTaskService] Skipping duplicate child node: ${child.title}, parent: ${parentNodeTitle}`,
+          );
+          continue;
+        }
+
         const angle = (2 * Math.PI * i) / children.length;
         const radius = 150;
 
@@ -298,6 +345,7 @@ export async function expandNodeForGraph(
         if (childNodeResult) {
           totalNodes++;
           childNodeIds.push(childNodeResult.id);
+          existingChildTitles.add(child.title);
 
           await supabase.from("edges").insert({
             graph_id: graphId,

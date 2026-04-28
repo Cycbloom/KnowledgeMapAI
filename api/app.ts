@@ -51,6 +51,7 @@ import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 import { Kernel } from "./services/kernel/Kernel";
 import { registerCoreEventTypes } from "./services/kernel/coreEvents";
+import { graphTaskEventHandler } from "./services/scheduler/graphTaskEventHandler";
 
 import { errorHandler } from "./middleware/errorHandler";
 import { csrfProtection, getCsrfToken } from "./middleware/csrf";
@@ -227,6 +228,7 @@ app.get("/api/health", (_req: Request, res: Response): void => {
 
 startAutoBackupScheduler();
 syncExistingBackups();
+graphTaskEventHandler.initialize();
 
 /**
  * error handler middleware

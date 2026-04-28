@@ -250,6 +250,7 @@
       "showAnswer": "Show Answer",
       "submitAnswer": "Submit Answer",
       "selectOption": "Select an option",
+      "swipeInstruction": "← Swipe to reveal answer  |  → Swipe to skip",
       "rateMemory": "Rate Memory"
     },
     "cardTypes": {
@@ -1170,17 +1171,26 @@
       "min": "min"
     },
     "pathOutline": {
+      "backToGraph": "Back to Graph",
       "backToGraphOutline": "Back to Graph Outline",
       "nodesCompleted": "{{completed}} / {{total}} nodes completed",
       "learningProgress": "Learning Progress",
       "targetDate": "Target completion date: ",
       "noNodes": "No learning nodes",
+      "pathNotFound": "Learning path not found",
       "pending": "Pending",
       "inProgress": "In Progress",
       "completed": "Completed",
       "skipped": "Skipped",
+      "statusPending": "Pending",
+      "statusInProgress": "In Progress",
+      "statusCompleted": "Completed",
+      "statusSkipped": "Skipped",
       "difficulty": "Difficulty {{level}}/5",
       "unknown": "Unknown",
+      "minutesOnly": "{{minutes}}m",
+      "hoursAndMinutes": "{{hours}}h {{minutes}}m",
+      "hoursOnly": "{{hours}}h",
       "minutes": "{{count}} min",
       "hoursMinutes": "{{hours}}h {{minutes}}m",
       "hours": "{{count}}h"

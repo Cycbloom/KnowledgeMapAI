@@ -249,6 +249,7 @@
       "showAnswer": "显示答案",
       "submitAnswer": "提交答案",
       "selectOption": "请选择选项",
+      "swipeInstruction": "← 滑动查看答案  |  → 滑动跳过",
       "rateMemory": "记忆程度评价"
     },
     "cardTypes": {
@@ -1602,17 +1603,26 @@
       "min": "分钟"
     },
     "pathOutline": {
+      "backToGraph": "返回图谱",
       "backToGraphOutline": "返回图谱大纲",
       "nodesCompleted": "{{completed}} / {{total}} 节点已完成",
       "learningProgress": "学习进度",
       "targetDate": "目标完成日期：",
       "noNodes": "暂无学习节点",
+      "pathNotFound": "学习路径未找到",
       "pending": "待学习",
       "inProgress": "学习中",
       "completed": "已完成",
       "skipped": "已跳过",
+      "statusPending": "待学习",
+      "statusInProgress": "学习中",
+      "statusCompleted": "已完成",
+      "statusSkipped": "已跳过",
       "difficulty": "难度 {{level}}/5",
       "unknown": "未知",
+      "minutesOnly": "{{minutes}}分钟",
+      "hoursAndMinutes": "{{hours}}小时{{minutes}}分钟",
+      "hoursOnly": "{{hours}}小时",
       "minutes": "{{count}}分钟",
       "hoursMinutes": "{{hours}}小时{{minutes}}分钟",
       "hours": "{{count}}小时"

@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import { graphTaskService } from "./graphTaskService";
 
 export interface LinkedTaskResult {
   taskId: string;
@@ -41,7 +42,7 @@ class SmartTaskLinker {
 
     const { data: graph, error: graphError } = await supabase
       .from("knowledge_graphs")
-      .select("id, title, task_id")
+      .select("id, title, task_id, user_id")
       .eq("id", graphId)
       .single();
 
@@ -62,26 +63,18 @@ class SmartTaskLinker {
         taskId: graph.task_id,
       });
       mainTaskId = graph.task_id;
+
+      await graphTaskService.updateTaskForGraph(supabase, mainTaskId, graphId);
     } else {
       logger.info("[SmartTaskLinker] Graph has no task_id, creating task");
-      const newTask = await this.createTaskForGraph(
+      
+      const result = await graphTaskService.createOrUpdateTaskForGraph(
         supabase,
         userId,
         graphId,
-        graph.title,
       );
 
-      await supabase
-        .from("knowledge_graphs")
-        .update({ task_id: newTask.id })
-        .eq("id", graphId);
-
-      logger.info("[SmartTaskLinker] Updated graph with task_id:", {
-        graphId,
-        taskId: newTask.id,
-      });
-
-      mainTaskId = newTask.id;
+      mainTaskId = result.taskId;
     }
 
     const nodes = await this.getGraphNodes(supabase, graphId);
@@ -174,50 +167,6 @@ class SmartTaskLinker {
       taskTitle: options?.title || "未知任务",
       source: "auto_generated" as const,
     };
-  }
-
-  private async createTaskForGraph(
-    supabase: SupabaseClient,
-    userId: string,
-    graphId: string,
-    graphName: string,
-  ) {
-    const { count } = await supabase
-      .from("user_tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("queue_level", 1)
-      .is("deleted_at", null);
-
-    const { data: task, error } = await supabase
-      .from("user_tasks")
-      .insert({
-        user_id: userId,
-        title: `学习图谱: ${graphName}`,
-        queue_level: 1,
-        position: count ?? 0,
-        priority: 5,
-        status: "pending",
-        task_type: "graph_learning",
-        estimated_duration: 60,
-        tags: ["图谱学习"],
-        context: { graph_id: graphId, auto_generated: true },
-        source: "system_recommendation",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("[SmartTaskLinker] Failed to create task:", error);
-      throw error;
-    }
-
-    logger.info("[SmartTaskLinker] Created task for graph:", {
-      taskId: task.id,
-      graphId,
-    });
-
-    return task;
   }
 
   private async getGraphNodes(supabase: SupabaseClient, graphId: string) {

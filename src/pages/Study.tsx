@@ -1,4 +1,4 @@
-﻿import { useLayoutEffect, useEffect, useState, useMemo } from "react";
+import { useLayoutEffect, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStudyCards } from "../hooks/queries";
@@ -1393,7 +1393,7 @@ export const Study = () => {
                                     {String.fromCharCode(65 + idx)}
                                   </span>
                                   <span className="truncate flex-1">
-                                    {option}
+                                    {option.replace(/^[A-Z]\.\s*/, "")}
                                   </span>
                                 </div>
                               ))}
@@ -1423,7 +1423,7 @@ export const Study = () => {
                                     {String.fromCharCode(65 + idx)}
                                   </span>
                                   <span className="truncate flex-1">
-                                    {option}
+                                    {option.replace(/^[A-Z]\.\s*/, "")}
                                   </span>
                                 </div>
                               ))}
@@ -1683,7 +1683,7 @@ export const Study = () => {
                             <span
                               className={`flex-1 ${isMobile ? "text-base" : "text-sm"} font-medium leading-snug`}
                             >
-                              {option}
+                              {option.replace(/^[A-Z]\.\s*/, "")}
                             </span>
                             {showAnswer && isCorrect && (
                               <Check
@@ -1763,7 +1763,7 @@ export const Study = () => {
                             <span
                               className={`flex-1 ${isMobile ? "text-base" : "text-sm"} font-medium leading-snug`}
                             >
-                              {option}
+                              {option.replace(/^[A-Z]\.\s*/, "")}
                             </span>
                             {showAnswer && isCorrect && (
                               <Check

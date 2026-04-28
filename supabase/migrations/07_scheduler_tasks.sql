@@ -58,12 +58,21 @@ COMMENT ON COLUMN user_tasks.queue_level IS 'Queue level: 0=Q0 (focus), 1=Q1 (st
 COMMENT ON COLUMN user_tasks.position IS 'Position within the queue for ordering';
 COMMENT ON COLUMN user_tasks.estimated_duration IS 'Estimated duration in minutes';
 COMMENT ON COLUMN user_tasks.actual_duration IS 'Actual duration in minutes';
-COMMENT ON COLUMN user_tasks.task_type IS 'Task type: one_time, long_term, periodic, learning, async';
+COMMENT ON COLUMN user_tasks.task_type IS 'Task type: one_time, long_term, periodic, learning, graph_learning, async';
 COMMENT ON COLUMN user_tasks.total_duration IS 'Total duration in minutes for long-term tasks';
 COMMENT ON COLUMN user_tasks.progress_mode IS 'Progress distribution mode: average, decreasing, increasing, custom';
 COMMENT ON COLUMN user_tasks.progress_percentage IS 'Current progress percentage (0-100)';
 COMMENT ON COLUMN user_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
-COMMENT ON COLUMN user_tasks.context IS 'Task context description for AI assistance';
+COMMENT ON COLUMN user_tasks.context IS 'Task context and metadata (JSONB for flexible task-type-specific data)';
+
+ALTER TABLE user_tasks DROP COLUMN IF EXISTS graph_id;
+ALTER TABLE user_tasks DROP COLUMN IF EXISTS knowledge_point_count;
+ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_duration;
+ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_deadline;
+ALTER TABLE user_tasks DROP COLUMN IF EXISTS context;
+ALTER TABLE user_tasks ADD COLUMN IF NOT EXISTS context JSONB DEFAULT '{}'::jsonb;
+
+CREATE INDEX IF NOT EXISTS idx_user_tasks_context_graph_id ON user_tasks ((context->>'graph_id')) WHERE task_type = 'graph_learning';
 
 -- Task executions table (execution history)
 CREATE TABLE IF NOT EXISTS task_executions (

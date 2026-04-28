@@ -307,6 +307,12 @@ Generate 3-5 child nodes for the given parent node. Each child should be a speci
 ## Existing Children
 The following child nodes already exist: {{existingChildren}}
 Generate NEW, DIFFERENT child nodes.
+{{/if}}
+
+{{#if existingNodesInGraph}}
+## Existing Nodes in Graph
+The following nodes already exist in this graph: {{existingNodesInGraph}}
+**IMPORTANT**: Do NOT generate nodes with these titles. Create NEW, UNIQUE nodes.
 {{/if}}', NOW(), NOW()),
 ('learning_path_generate', 'system', null, null, 'You are an expert learning path planner. Create an optimal learning path based on the given knowledge graph and user goals.
 

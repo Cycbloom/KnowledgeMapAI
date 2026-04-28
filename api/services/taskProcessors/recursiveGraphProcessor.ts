@@ -10,6 +10,7 @@ import { logger } from "../../utils/logger";
 import { getAutoGraphPrompt } from "./utils";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
+import { graphLockService } from "../common/graphLockService";
 
 export class RecursiveGraphProcessor implements TaskProcessor {
   async process(
@@ -46,6 +47,28 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         `Processing graph ${graph_id} with topic "${topic}", depth ${depth}, style ${style}`,
       );
 
+      let lockAcquired = false;
+      const maxRetries = 30;
+      const retryDelay = 2000;
+
+      for (let i = 0; i < maxRetries; i++) {
+        lockAcquired = await graphLockService.acquireLock(graph_id, taskId);
+        if (lockAcquired) break;
+
+        const lockInfo = graphLockService.getLockInfo(graph_id);
+        logger.info(
+          `[GraphLockService] Waiting for lock on graph ${graph_id} (attempt ${i + 1}/${maxRetries}), locked by task ${lockInfo?.taskId}`,
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+
+      if (!lockAcquired) {
+        throw new Error(
+          `Failed to acquire lock for graph ${graph_id} after ${maxRetries} attempts`,
+        );
+      }
+
       const { data: graph } = await supabase
         .from("knowledge_graphs")
         .select("id, title")
@@ -64,6 +87,26 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       let totalNodes = 0;
       let totalEdges = 0;
       const nodeMap = new Map<string, string>();
+
+      const { data: existingNodes } = await supabase
+        .from("graph_nodes")
+        .select("knowledge_points(title)")
+        .eq("graph_id", graph_id)
+        .is("deleted_at", null);
+
+      const existingNodeTitles = new Set<string>();
+      if (existingNodes) {
+        for (const node of existingNodes) {
+          if (node.knowledge_points) {
+            const kp = Array.isArray(node.knowledge_points)
+              ? node.knowledge_points[0]
+              : node.knowledge_points;
+            if (kp && kp.title) {
+              existingNodeTitles.add(kp.title);
+            }
+          }
+        }
+      }
 
       const systemPrompt = await getAutoGraphPrompt(
         supabase,
@@ -155,6 +198,13 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         totalNodes++;
 
         for (const coreNode of coreNodes) {
+          if (existingNodeTitles.has(coreNode.title)) {
+            logger.info(
+              `[GraphTaskService] Skipping duplicate node: ${coreNode.title}, parent: ${rootData.title}`,
+            );
+            continue;
+          }
+
           const childNodeResult = await createKnowledgePointWithGraphNode(
             supabase,
             userId,
@@ -171,6 +221,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           if (childNodeResult) {
             nodeMap.set(coreNode.title, childNodeResult.id);
             totalNodes++;
+            existingNodeTitles.add(coreNode.title);
 
             await supabase.from("edges").insert({
               graph_id,
@@ -291,6 +342,13 @@ export class RecursiveGraphProcessor implements TaskProcessor {
             const children = expandParsed.children || [];
 
             for (const child of children.slice(0, 5)) {
+              if (existingNodeTitles.has(child.title)) {
+                logger.info(
+                  `[GraphTaskService] Skipping duplicate node: ${child.title}, parent: ${nodeTitle}`,
+                );
+                continue;
+              }
+
               const subNodeResult = await createKnowledgePointWithGraphNode(
                 supabase,
                 userId,
@@ -307,6 +365,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
               if (subNodeResult) {
                 nodeMap.set(child.title, subNodeResult.id);
                 totalNodes++;
+                existingNodeTitles.add(child.title);
 
                 await supabase.from("edges").insert({
                   graph_id,
@@ -421,6 +480,13 @@ export class RecursiveGraphProcessor implements TaskProcessor {
             const children = expandParsed.children || [];
 
             for (const child of children.slice(0, 3)) {
+              if (existingNodeTitles.has(child.title)) {
+                logger.info(
+                  `[GraphTaskService] Skipping duplicate node: ${child.title}, parent: ${nodeTitle}`,
+                );
+                continue;
+              }
+
               const leafNodeResult = await createKnowledgePointWithGraphNode(
                 supabase,
                 userId,
@@ -436,6 +502,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
 
               if (leafNodeResult) {
                 totalNodes++;
+                existingNodeTitles.add(child.title);
 
                 await supabase.from("edges").insert({
                   graph_id,
@@ -483,6 +550,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         error.message,
         userId,
       );
+    } finally {
+      const { graph_id } = payload;
+      if (graph_id) {
+        graphLockService.releaseLock(graph_id, taskId);
+      }
     }
   }
 }

@@ -1385,6 +1385,7 @@
     },
     "chat": {
       "welcome": "Hello! I'm your AI learning assistant, how can I help you today?",
+      "welcomeShort": "Hi! I'm your AI tutor, how can I help you?",
       "offline": "AI tutor unavailable in offline mode",
       "error": "Sorry, I can't answer right now. Please try again later.",
       "aiTutor": "AI Tutor",

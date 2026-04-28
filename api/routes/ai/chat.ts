@@ -168,12 +168,23 @@ router.post(
         messages,
         model: model || provider.model,
         stream: true,
+        stream_options: { include_usage: true },
       });
+
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let cachedInputTokens = 0;
 
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
           sendStreamChunk(res, content);
+        }
+        if (chunk.usage) {
+          inputTokens = chunk.usage.prompt_tokens || 0;
+          outputTokens = chunk.usage.completion_tokens || 0;
+          cachedInputTokens =
+            chunk.usage.prompt_tokens_details?.cached_tokens || 0;
         }
       }
       const duration = Date.now() - startTime;
@@ -182,10 +193,10 @@ router.post(
         operation: "chat",
         provider: provider.providerType,
         model: model || provider.model,
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        cachedInputTokens: 0,
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        cachedInputTokens,
         duration,
         success: true,
         estimatedCost: 0,
@@ -322,18 +333,30 @@ Instructions:
 4. In free mode, identify key concepts that could be new nodes in the knowledge graph
 5. In guided mode, follow the learning path and check understanding
 6. Respond in the same language as the user (default to Chinese)
-7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`,
+7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$
+8. IMPORTANT: Directly output your answer content. Do NOT include any conversational filler, preamble, or transitional phrases such as "根据您提供的...", "以下是...", "好的，我来...", "Let me...", etc. Start immediately with the actual response content.`,
           },
           ...messages,
         ],
         model: model || provider.model,
         stream: true,
+        stream_options: { include_usage: true },
       });
+
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let cachedInputTokens = 0;
 
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
           sendStreamChunk(res, content);
+        }
+        if (chunk.usage) {
+          inputTokens = chunk.usage.prompt_tokens || 0;
+          outputTokens = chunk.usage.completion_tokens || 0;
+          cachedInputTokens =
+            chunk.usage.prompt_tokens_details?.cached_tokens || 0;
         }
       }
       const duration = Date.now() - startTime;
@@ -342,10 +365,10 @@ Instructions:
         operation: "tutor_chat",
         provider: provider.providerType,
         model: model || provider.model,
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        cachedInputTokens: 0,
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        cachedInputTokens,
         duration,
         success: true,
         estimatedCost: 0,

@@ -327,6 +327,7 @@ export const aiApi = {
       provider?: string;
       model?: string;
       language?: string;
+      session_id?: string;
     },
     onChunk: (content: string) => void,
   ) => {
@@ -347,6 +348,7 @@ export const aiApi = {
       provider?: string;
       model?: string;
       language?: string;
+      session_id?: string;
     },
     onChunk: (content: string) => void,
   ) => {

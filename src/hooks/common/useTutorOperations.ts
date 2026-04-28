@@ -4,6 +4,7 @@ import { HistoryAction } from './useHistory';
 import { GraphEditorState } from '../graphEditor';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
+import { useRef, useCallback } from 'react';
 
 interface UseTutorOperationsProps {
   id: string;
@@ -37,9 +38,19 @@ export const useTutorOperations = ({
 
   const { createNodeMutation, createEdgeMutation } = mutations;
 
+  const chatSessionIdRef = useRef<string>(crypto.randomUUID());
+
+  const getChatSessionId = useCallback(() => {
+    if (!chatSessionIdRef.current) {
+      chatSessionIdRef.current = crypto.randomUUID();
+    }
+    return chatSessionIdRef.current;
+  }, []);
+
   const handleTutorChat = async (message: string, history: any[] = [], onChunk: (content: string) => void) => {
     try {
       const contextNodeIds = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedNode ? [selectedNode.id] : []);
+      const sessionId = getChatSessionId();
 
       await api.ai.tutorChatStream(
         {
@@ -47,7 +58,8 @@ export const useTutorOperations = ({
           graph_id: id,
           history,
           context_node_ids: contextNodeIds,
-          mode: tutorMode
+          mode: tutorMode,
+          session_id: sessionId,
         },
         onChunk
       );

@@ -261,6 +261,7 @@ export const GraphMap = () => {
   );
   const [showPromptSelector, setShowPromptSelector] = useState(false);
   const [isDomainGeneratorOpen, setIsDomainGeneratorOpen] = useState(false);
+  const [domainBatchSessionId, setDomainBatchSessionId] = useState<string | null>(null);
   const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
   const [isGenerateCardsModalOpen, setIsGenerateCardsModalOpen] =
     useState(false);
@@ -1778,7 +1779,9 @@ export const GraphMap = () => {
           isOpen={isDomainGeneratorOpen}
           onClose={() => setIsDomainGeneratorOpen(false)}
           onGenerateDomain={async (domain: string, count: number) => {
-            const result = await api.graphs.analyzeDomain(domain, count);
+            const batchSessionId = crypto.randomUUID();
+            setDomainBatchSessionId(batchSessionId);
+            const result = await api.graphs.analyzeDomain(domain, count, batchSessionId);
             return {
               graphs: result.recommendations,
               relations: result.relations,

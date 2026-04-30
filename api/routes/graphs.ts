@@ -882,7 +882,7 @@ router.post(
   requireAuth,
   validate({ body: analyzeDomainSchema }),
   async (req: AuthRequest, res: Response) => {
-    const { domain, count = 10, context_domain_id } = req.body;
+    const { domain, count = 10, context_domain_id, session_id } = req.body;
     const userId = req.user.id;
 
     try {
@@ -969,7 +969,7 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
           },
           { role: "user", content: finalPrompt },
         ],
-        { timeout: 60000 },
+        { timeout: 60000, sessionId: session_id },
       );
 
       let recommendations: Array<{
@@ -1734,6 +1734,8 @@ router.post(
         reason?: string;
       }> = [];
 
+      const batchSessionId = crypto.randomUUID();
+
       for (const graph of graphs) {
         const { data: existingNodes } = await supabase
           .from("knowledge_points")
@@ -1759,6 +1761,7 @@ router.post(
             topic: graph.title,
             depth: 2,
             style,
+            batchSessionId,
           },
           `初始化知识图谱：${graph.title}`,
         );

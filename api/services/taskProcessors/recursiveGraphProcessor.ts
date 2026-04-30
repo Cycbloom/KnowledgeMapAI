@@ -25,7 +25,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       { payload },
     );
 
-    const sessionId = crypto.randomUUID();
+    const sessionId = payload.batchSessionId || crypto.randomUUID();
 
     try {
       await updateTaskStatus(

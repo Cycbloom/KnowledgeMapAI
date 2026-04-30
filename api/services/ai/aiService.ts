@@ -35,6 +35,7 @@ interface PerformanceTrackingOptions {
   operation: string;
   provider: AIProviderType;
   model: string;
+  sessionId?: string;
   metadata?: {
     graphId?: string;
     nodeId?: string;
@@ -150,6 +151,7 @@ async function withPerformanceTracking<T>(
       success,
       errorMessage,
       metadata: options.metadata,
+      sessionId: options.sessionId,
 
       cachedInputTokens,
       uncachedInputTokens,
@@ -347,6 +349,7 @@ export class AIService {
       provider?: AIProviderType;
       model?: string;
       timeout?: number;
+      sessionId?: string;
     } = {},
   ): Promise<string> {
     const provider = options.provider
@@ -375,6 +378,7 @@ export class AIService {
             operation: "chat",
             provider: provider.providerType,
             model,
+            sessionId: options.sessionId,
           },
           async () => {
             const completion = await withTimeoutAndRetry(

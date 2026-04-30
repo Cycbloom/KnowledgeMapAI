@@ -197,8 +197,8 @@ export const graphsApi = {
     node_depth?: number;
   }) => request(`/graphs/${graphId}/infinite-expand`, { method: 'POST', body: JSON.stringify(data) }),
   
-  analyzeDomain: (domain: string, count: number = 10): Promise<DomainAnalysisResult> => 
-    request('/graphs/domain/analyze', { method: 'POST', body: JSON.stringify({ domain, count }) }),
+  analyzeDomain: (domain: string, count: number = 10, sessionId?: string): Promise<DomainAnalysisResult> =>
+    request('/graphs/domain/analyze', { method: 'POST', body: JSON.stringify({ domain, count, session_id: sessionId }) }),
   
   expandDomain: (graphIds: string[], count: number = 10, domain?: string): Promise<DomainExpansionResult> => 
     request('/graphs/domain/expand', { method: 'POST', body: JSON.stringify({ graph_ids: graphIds, count, domain }) }),

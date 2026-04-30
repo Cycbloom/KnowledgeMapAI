@@ -95,11 +95,15 @@ interface SessionGroupProps {
 
 const getSessionName = (logs: AIPerformanceLog[], getOperationLabel: (operation: string) => string): string => {
   const operations = new Set(logs.map((l) => l.operation));
-  
+
   if (operations.has('auto_graph_init') || operations.has('auto_graph_expand')) {
     return '图谱自动生成';
   }
   if (operations.has('recursive_graph_init') || operations.has('recursive_graph_expand_depth2') || operations.has('recursive_graph_expand_depth3')) {
+    const graphIds = new Set(logs.map((l) => l.metadata?.graphId).filter(Boolean));
+    if (graphIds.size > 1) {
+      return `批量初始化知识图谱（${graphIds.size} 个图谱）`;
+    }
     return '递归图谱生成';
   }
   if (operations.has('generate_nodes_for_graph') || operations.has('expand_node_for_graph')) {
@@ -123,7 +127,7 @@ const getSessionName = (logs: AIPerformanceLog[], getOperationLabel: (operation:
   if (operations.has('text_to_graph') || operations.has('document_to_graph') || operations.has('image_to_graph')) {
     return '文档转图谱';
   }
-  
+
   const firstLog = logs.sort((a, b) => a.timestamp - b.timestamp)[0];
   return getOperationLabel(firstLog.operation);
 };

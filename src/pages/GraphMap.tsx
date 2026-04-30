@@ -1777,7 +1777,10 @@ export const GraphMap = () => {
       <Suspense fallback={<LoadingFallback />}>
         <DomainGraphGenerator
           isOpen={isDomainGeneratorOpen}
-          onClose={() => setIsDomainGeneratorOpen(false)}
+          onClose={() => {
+            setIsDomainGeneratorOpen(false);
+            setDomainBatchSessionId(null);
+          }}
           onGenerateDomain={async (domain: string, count: number) => {
             const batchSessionId = crypto.randomUUID();
             setDomainBatchSessionId(batchSessionId);
@@ -1808,6 +1811,7 @@ export const GraphMap = () => {
             const result = await api.graphs.batchInitializeGraphs({
               graph_ids: graphIds,
               style: "academic",
+              session_id: domainBatchSessionId || undefined,
             });
             frontendEventBus.publish("message_show", {
               type: "success",

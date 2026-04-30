@@ -350,6 +350,7 @@ export class AIService {
       model?: string;
       timeout?: number;
       sessionId?: string;
+      operation?: string;
     } = {},
   ): Promise<string> {
     const provider = options.provider
@@ -375,7 +376,7 @@ export class AIService {
 
         return withPerformanceTracking(
           {
-            operation: "chat",
+            operation: options.operation || "chat",
             provider: provider.providerType,
             model,
             sessionId: options.sessionId,

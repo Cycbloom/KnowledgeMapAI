@@ -969,7 +969,7 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
           },
           { role: "user", content: finalPrompt },
         ],
-        { timeout: 60000, sessionId: session_id },
+        { timeout: 60000, sessionId: session_id, operation: "domain_analysis" },
       );
 
       let recommendations: Array<{
@@ -1710,7 +1710,7 @@ router.post(
   requireAuth,
   validate({ body: batchInitializeSchema }),
   async (req: AuthRequest, res: Response) => {
-    const { graph_ids, style = "academic" } = req.body;
+    const { graph_ids, style = "academic", session_id } = req.body;
     const userId = req.user.id;
     const supabase = req.supabase!;
 
@@ -1734,7 +1734,7 @@ router.post(
         reason?: string;
       }> = [];
 
-      const batchSessionId = crypto.randomUUID();
+      const batchSessionId = session_id || crypto.randomUUID();
 
       for (const graph of graphs) {
         const { data: existingNodes } = await supabase

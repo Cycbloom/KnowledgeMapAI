@@ -224,7 +224,8 @@ export const graphsApi = {
   batchInitializeGraphs: (data: {
     graph_ids: string[];
     style?: 'academic' | 'practical' | 'beginner';
-  }): Promise<BatchInitializeResult> => 
+    session_id?: string;
+  }): Promise<BatchInitializeResult> =>
     request('/graphs/batch-initialize', { method: 'POST', body: JSON.stringify(data) }),
   
   discoverRelations: (data?: {

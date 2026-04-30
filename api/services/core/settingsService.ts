@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../supabase';
+import { getSupabaseAdmin } from '../../supabase';
 import { logger } from '../../utils/logger';
 
 export class SettingsService {
@@ -11,7 +11,7 @@ export class SettingsService {
       return cached.value as T;
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('app_settings')
       .select('value')
       .eq('key', key)
@@ -29,7 +29,7 @@ export class SettingsService {
   }
 
   async updateSetting(key: string, value: any, userId?: string) {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('app_settings')
       .upsert({
         key,

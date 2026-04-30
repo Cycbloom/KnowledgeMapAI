@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../supabase";
+import { getSupabaseAdmin } from "../supabase";
 import { taskService } from "../services/taskService";
 import type { Task } from "@shared/types/common";
 import { aiService } from "../services/ai/aiService";
@@ -20,7 +20,7 @@ class TaskProcessor {
     );
 
     try {
-      await taskService.updateTaskStatus(supabaseAdmin, task.id, "in_progress");
+      await taskService.updateTaskStatus(getSupabaseAdmin(), task.id, "in_progress");
 
       let result;
       switch (task.task_type) {
@@ -46,7 +46,7 @@ class TaskProcessor {
       }
 
       await taskService.updateTaskStatus(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         task.id,
         "completed",
         result,
@@ -68,7 +68,7 @@ class TaskProcessor {
     } catch (error: any) {
       logger.error(`Task ${task.id} failed:`, error);
       await taskService.updateTaskStatus(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         task.id,
         "failed",
         undefined,
@@ -98,7 +98,7 @@ class TaskProcessor {
     let totalCount = 0;
     const errors: string[] = [];
 
-    const { data: graphNodeData } = await supabaseAdmin
+    const { data: graphNodeData } = await getSupabaseAdmin()
       .from("graph_nodes")
       .select("graph_id, knowledge_point_id")
       .eq("knowledge_point_id", nodeId)
@@ -152,7 +152,7 @@ class TaskProcessor {
       }
       lastProgressUpdateAt = now;
       await taskService.updateTaskStatus(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         task.id,
         "in_progress",
         {
@@ -205,7 +205,7 @@ class TaskProcessor {
             fsrs_retrievability: 0,
           }));
 
-          const { error } = await supabaseAdmin
+          const { error } = await getSupabaseAdmin()
             .from("study_cards")
             .insert(cardsToInsert);
 
@@ -237,7 +237,7 @@ class TaskProcessor {
     }
 
     // Ensure we end at 100% even if throttled
-    await taskService.updateTaskStatus(supabaseAdmin, task.id, "in_progress", {
+    await taskService.updateTaskStatus(getSupabaseAdmin(), task.id, "in_progress", {
       progress: 100,
       current_node: "生成完成，正在收尾...",
     });
@@ -278,7 +278,7 @@ class TaskProcessor {
       model,
     } = payload;
 
-    const { data: allGraphNodes } = await supabaseAdmin
+    const { data: allGraphNodes } = await getSupabaseAdmin()
       .from("graph_nodes")
       .select(
         `
@@ -306,7 +306,7 @@ class TaskProcessor {
       (Array.isArray(existing_nodes) ? (existing_nodes as string[]) : []) ||
       [];
 
-    const { data: currentEdges } = await supabaseAdmin
+    const { data: currentEdges } = await getSupabaseAdmin()
       .from("edges")
       .select("target_knowledge_point_id")
       .eq("source_knowledge_point_id", node_id)
@@ -318,7 +318,7 @@ class TaskProcessor {
         (e: { target_knowledge_point_id: string }) =>
           e.target_knowledge_point_id,
       );
-      const { data: childGraphNodeData } = await supabaseAdmin
+      const { data: childGraphNodeData } = await getSupabaseAdmin()
         .from("graph_nodes")
         .select(
           `
@@ -348,7 +348,7 @@ class TaskProcessor {
         : [];
     }
 
-    const { data: currentGraphNode } = await supabaseAdmin
+    const { data: currentGraphNode } = await getSupabaseAdmin()
       .from("graph_nodes")
       .select("id, x_position, y_position, level")
       .eq("knowledge_point_id", node_id)
@@ -380,7 +380,7 @@ class TaskProcessor {
     if (Array.isArray(suggestions) && suggestions.length > 0) {
       for (const item of suggestions) {
         const suggestion = item as { title: string; content?: string };
-        const { data: existingGraphNode } = await supabaseAdmin
+        const { data: existingGraphNode } = await getSupabaseAdmin()
           .from("graph_nodes")
           .select("id, knowledge_point_id, knowledge_points (id, title)")
           .eq("graph_id", graph_id)
@@ -393,7 +393,7 @@ class TaskProcessor {
             (existingGraphNode as any).knowledge_points?.id ||
             existingGraphNode.knowledge_point_id;
           if (existingKpId && existingKpId !== node_id) {
-            const { data: existingEdge } = await supabaseAdmin
+            const { data: existingEdge } = await getSupabaseAdmin()
               .from("edges")
               .select("id")
               .or(
@@ -403,7 +403,7 @@ class TaskProcessor {
               .single();
 
             if (!existingEdge) {
-              const { data: edge } = await supabaseAdmin
+              const { data: edge } = await getSupabaseAdmin()
                 .from("edges")
                 .insert({
                   graph_id,
@@ -428,7 +428,7 @@ class TaskProcessor {
           );
 
           const newNodeResult = await createKnowledgePointWithGraphNode(
-            supabaseAdmin,
+            getSupabaseAdmin(),
             task.user_id,
             {
               graph_id: graph_id || "",
@@ -443,7 +443,7 @@ class TaskProcessor {
           if (newNodeResult) {
             newNodes.push({ id: newNodeResult.id, title: suggestion.title });
 
-            const { data: edge, error: edgeError } = await supabaseAdmin
+            const { data: edge, error: edgeError } = await getSupabaseAdmin()
               .from("edges")
               .insert({
                 graph_id,

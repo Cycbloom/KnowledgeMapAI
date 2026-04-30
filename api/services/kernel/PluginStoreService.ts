@@ -5,7 +5,7 @@ import type { Kernel } from "./Kernel";
 import type { PluginManifest } from "./types";
 import { validateManifest } from "./manifest";
 import { validatePermissions } from "./permissions";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 
 const PLUGINS_DIR = path.join(process.cwd(), "plugins");
 
@@ -62,7 +62,7 @@ export class PluginStoreService {
       "utf-8",
     );
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("installed_plugins")
       .upsert(
         {
@@ -114,7 +114,7 @@ export class PluginStoreService {
       fs.rmSync(pluginDir, { recursive: true, force: true });
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("installed_plugins")
       .delete()
       .eq("user_id", userId)
@@ -164,7 +164,7 @@ export class PluginStoreService {
       "utf-8",
     );
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("installed_plugins")
       .update({
         version: newManifest.version,
@@ -197,7 +197,7 @@ export class PluginStoreService {
       manifest: PluginManifest;
     }>
   > {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("installed_plugins")
       .select("plugin_name, version, state, manifest")
       .eq("user_id", userId);
@@ -217,7 +217,7 @@ export class PluginStoreService {
     userId: string,
     state: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("installed_plugins")
       .update({ state, updated_at: new Date().toISOString() })
       .eq("user_id", userId)
@@ -240,7 +240,7 @@ export class PluginStoreService {
   async getPluginRatings(
     pluginName: string,
   ): Promise<{ avgRating: number; count: number }> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("plugin_ratings")
       .select("rating")
       .eq("plugin_name", pluginName);
@@ -262,7 +262,7 @@ export class PluginStoreService {
     rating: number,
     review?: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("plugin_ratings")
       .upsert(
         {

@@ -18,7 +18,7 @@ import {
 import { edgeService } from "../../services/graph/index";
 import { logger } from "../../utils/logger";
 import { promptService } from "../../services/ai/promptService";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import { scrapeUrl } from "../../utils/scraper";
 import { upload } from "./utils";
 import { performanceMonitor, enrichMetadata } from "../../services/ai/performanceMonitor";
@@ -206,7 +206,7 @@ router.post(
 
     try {
       const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         "text_to_graph",
         {},
         req.user.id,
@@ -214,7 +214,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
         graphId: graph_id,
         userId: req.user.id,
         topic: text?.slice(0, 50),
@@ -373,7 +373,7 @@ router.post(
       );
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         "document_to_graph",
         {},
         req.user.id,
@@ -381,7 +381,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
         graphId: graph_id,
         userId: req.user.id,
         documentName: file.originalname,

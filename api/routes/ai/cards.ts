@@ -15,7 +15,7 @@ import { aiService } from '../../services/ai/aiService';
 import { taskService } from '../../services/taskService';
 import { graphNodeService } from '../../services/graph/index';
 import { logger } from '../../utils/logger';
-import { supabaseAdmin } from '../../supabase';
+import { getSupabaseAdmin } from '../../supabase';
 
 const router = Router();
 
@@ -55,7 +55,7 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
   try {
     const results: { nodeId: string; success: boolean; count: number; error?: string }[] = [];
     
-    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabaseAdmin, node_ids);
+    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(getSupabaseAdmin(), node_ids);
 
     if (!graphNodes || graphNodes.length === 0) {
       res.json({ success: true, results: [], message: 'No nodes found' });
@@ -102,7 +102,7 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
             fsrs_retrievability: 0,
           }));
 
-          const { error: insertError } = await supabaseAdmin
+          const { error: insertError } = await getSupabaseAdmin()
             .from('study_cards')
             .insert(cardsToInsert);
 

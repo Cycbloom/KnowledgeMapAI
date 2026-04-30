@@ -7,7 +7,7 @@ import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { performanceMonitor, enrichMetadata } from '../services/ai/performanceMonitor';
-import { supabaseAdmin } from '../supabase';
+import { getSupabaseAdmin } from '../supabase';
 import { getAIProviderForTask } from '../services/ai/factory';
 
 const router = Router();
@@ -54,7 +54,7 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
     });
     const duration = Date.now() - startTime;
 
-    const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+    const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
       graphId: graph_id,
       userId: req.user.id,
       topic: message?.slice(0, 50),
@@ -110,7 +110,7 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
     );
     const duration = Date.now() - startTime;
 
-    const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+    const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
       graphId: graph_id,
       userId: req.user.id,
       topic: message?.slice(0, 50),

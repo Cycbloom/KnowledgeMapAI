@@ -15,7 +15,7 @@ import {
 import { aiService } from "../ai/index";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
@@ -811,7 +811,7 @@ export class GraphService {
 export const graphService = new GraphService();
 
 export async function getUserAccessibleGraphs(userId: string): Promise<GraphWithCollaborators[]> {
-  const { data: ownedGraphs, error: ownedError } = await supabaseAdmin
+  const { data: ownedGraphs, error: ownedError } = await getSupabaseAdmin()
     .from("knowledge_graphs")
     .select("*")
     .eq("user_id", userId)
@@ -822,7 +822,7 @@ export async function getUserAccessibleGraphs(userId: string): Promise<GraphWith
     throw new Error(ownedError.message);
   }
 
-  const { data: collaboratedGraphs, error: collabError } = await supabaseAdmin
+  const { data: collaboratedGraphs, error: collabError } = await getSupabaseAdmin()
     .from("graph_collaborators")
     .select(
       `
@@ -867,7 +867,7 @@ export async function getGraphWithUserRole(
   graphId: string,
   userId: string
 ): Promise<{ graph: GraphWithCollaborators | null; error?: string }> {
-  const { data: graph, error } = await supabaseAdmin
+  const { data: graph, error } = await getSupabaseAdmin()
     .from("knowledge_graphs")
     .select("*")
     .eq("id", graphId)
@@ -886,7 +886,7 @@ export async function getGraphWithUserRole(
   if (graph.user_id === userId) {
     userRole = "owner";
   } else {
-    const { data: collaborator } = await supabaseAdmin
+    const { data: collaborator } = await getSupabaseAdmin()
       .from("graph_collaborators")
       .select("role")
       .eq("graph_id", graphId)
@@ -910,7 +910,7 @@ export async function checkGraphAccess(
   userId: string,
   requiredRole: "viewer" | "editor" | "owner" = "viewer"
 ): Promise<{ hasAccess: boolean; role?: CollaboratorRole; error?: string }> {
-  const { data: graph, error } = await supabaseAdmin
+  const { data: graph, error } = await getSupabaseAdmin()
     .from("knowledge_graphs")
     .select("user_id, is_public")
     .eq("id", graphId)
@@ -928,7 +928,7 @@ export async function checkGraphAccess(
     return { hasAccess: true, role: undefined };
   }
 
-  const { data: collaborator } = await supabaseAdmin
+  const { data: collaborator } = await getSupabaseAdmin()
     .from("graph_collaborators")
     .select("role")
     .eq("graph_id", graphId)

@@ -15,7 +15,7 @@ import { getAIProviderForTask, getAIProvider } from "../../services/ai/factory";
 import { logger } from "../../utils/logger";
 import { graphService } from "../../services/graph/index";
 import { promptService } from "../../services/ai/promptService";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import {
   setSSEHeaders,
   sendStreamChunk,
@@ -140,7 +140,7 @@ router.post(
       }
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         "chat",
         { contextText },
         req.user.id,
@@ -157,7 +157,7 @@ router.post(
         { role: "user", content: message },
       ];
 
-      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
         graphId: graph_id,
         userId: req.user.id,
         topic: message?.slice(0, 50),
@@ -302,7 +302,7 @@ router.post(
         { role: "user", content: message },
       ];
 
-      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
         graphId: graph_id,
         userId: req.user.id,
         topic: message?.slice(0, 50),

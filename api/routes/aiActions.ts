@@ -1,6 +1,6 @@
 import express from "express";
 import { requireAuth } from "../middleware/auth";
-import { supabaseAdmin } from "../supabase";
+import { getSupabaseAdmin } from "../supabase";
 import { aiActionService } from "../services/ai/aiActionService";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -13,7 +13,7 @@ router.get("/", requireAuth, async (req, res) => {
   const graphId = req.query.graph_id as string;
 
   const actions = await aiActionService.listActions(
-    supabaseAdmin,
+    getSupabaseAdmin(),
     userId,
     graphId,
   );
@@ -38,7 +38,7 @@ router.post("/", requireAuth, async (req, res) => {
       );
 
     // Check if user owns graph
-    const { data: graph, error } = await supabaseAdmin
+    const { data: graph, error } = await getSupabaseAdmin()
       .from("graphs")
       .select("user_id")
       .eq("id", action.graph_id)
@@ -57,7 +57,7 @@ router.post("/", requireAuth, async (req, res) => {
     // Only admin can create system actions (Skip check for now or assume backend protection)
   }
 
-  const newAction = await aiActionService.createAction(supabaseAdmin, action);
+  const newAction = await aiActionService.createAction(getSupabaseAdmin(), action);
   res.status(201).json(newAction);
 });
 
@@ -68,7 +68,7 @@ router.put("/:id", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
 
   // Check ownership
-  const existing = await aiActionService.getAction(supabaseAdmin, id);
+  const existing = await aiActionService.getAction(getSupabaseAdmin(), id);
   if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
 
   if (existing.scope !== "system" && existing.user_id !== userId) {
@@ -76,7 +76,7 @@ router.put("/:id", requireAuth, async (req, res) => {
   }
 
   const updated = await aiActionService.updateAction(
-    supabaseAdmin,
+    getSupabaseAdmin(),
     id,
     updates,
   );
@@ -89,14 +89,14 @@ router.delete("/:id", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
 
   // Check ownership
-  const existing = await aiActionService.getAction(supabaseAdmin, id);
+  const existing = await aiActionService.getAction(getSupabaseAdmin(), id);
   if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
 
   if (existing.scope !== "system" && existing.user_id !== userId) {
     throw new AppError(ErrorCodes.NOT_AUTHORIZED);
   }
 
-  await aiActionService.deleteAction(supabaseAdmin, id);
+  await aiActionService.deleteAction(getSupabaseAdmin(), id);
   res.json({ success: true });
 });
 

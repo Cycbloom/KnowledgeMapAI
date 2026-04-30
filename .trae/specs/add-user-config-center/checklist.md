@@ -1,0 +1,19 @@
+- [x] 后端 AI 配置管理 API 端点已实现（GET/PUT /api/ai/config/providers, POST /api/ai/config/providers/test）
+- [x] 后端数据库配置管理 API 端点已实现（GET/PUT /api/ai/config/database）
+- [x] `api/services/ai/config.ts` 的 `getProviderConfig` 优先从 `app_settings` 读取用户配置
+- [x] `api/supabase.ts` 支持动态重置 Supabase 客户端（`reinitializeSupabaseClients` 函数）
+- [x] Electron IPC 通道 `config:read` 和 `config:write` 已实现
+- [x] Electron preload 暴露了 `electronAPI.config.read()` 和 `electronAPI.config.write()` API
+- [x] Electron 主进程优先从本地配置文件读取数据库连接信息
+- [x] 设置页面 AI 服务配置区域包含每个服务商的 API Key、Base URL、默认模型输入
+- [x] API Key 以掩码形式显示，支持显示/隐藏切换
+- [x] AI 连接测试功能正常工作
+- [x] 设置页面数据库配置区域包含 Supabase URL、Anon Key、Service Role Key 输入
+- [x] 数据库连接状态正确显示（已连接/未连接/连接失败，本地/云端模式）
+- [x] 数据库配置保存后 Supabase 客户端动态重置
+- [x] AI 配置缺失时显示引导提示
+- [x] 数据库配置缺失时显示醒目引导横幅
+- [x] 前端 `authConfig.ts` 支持动态获取 Supabase 配置
+- [x] 前端 `supabase.ts` 支持配置变更后重置客户端
+- [x] 中英文国际化翻译已添加
+- [x] `npm run check` 和 `npm run lint` 通过

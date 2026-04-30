@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "../../../supabase";
+import { getSupabaseAdmin } from "../../../supabase";
 import { logger } from "../../../utils/logger";
 import { schedulerEventBus } from "./eventBus";
 import { appEventBus } from "../../core/eventBus";
@@ -87,7 +87,7 @@ class SchedulerCronService {
   private async executeDueSchedules() {
     const now = new Date().toISOString();
 
-    const { data: dueSchedules, error } = await supabaseAdmin
+    const { data: dueSchedules, error } = await getSupabaseAdmin()
       .from("task_schedules")
       .select("id, user_id, schedule_type, schedule_config, task_template_id")
       .eq("is_active", true)
@@ -105,7 +105,7 @@ class SchedulerCronService {
 
     for (const schedule of dueSchedules) {
       try {
-        const taskCreated = await this.executeSchedule(supabaseAdmin, schedule);
+        const taskCreated = await this.executeSchedule(getSupabaseAdmin(), schedule);
 
         await schedulerEventBus.publish<ScheduleExecutedPayload>(
           "schedule_executed",
@@ -118,7 +118,7 @@ class SchedulerCronService {
           "cron_service",
         );
 
-        await this.updateScheduleNextRun(supabaseAdmin, schedule);
+        await this.updateScheduleNextRun(getSupabaseAdmin(), schedule);
       } catch (error) {
         logger.error(`[CronService] Failed to execute schedule ${schedule.id}:`, error);
       }
@@ -253,7 +253,7 @@ class SchedulerCronService {
   private async checkReviewReminders() {
     const today = new Date().toISOString().split("T")[0];
 
-    const { data: overdueReviews, error } = await supabaseAdmin
+    const { data: overdueReviews, error } = await getSupabaseAdmin()
       .from("knowledge_review_tasks")
       .select("id, user_id, knowledge_point_id, next_review_date")
       .lte("next_review_date", new Date().toISOString())
@@ -295,7 +295,7 @@ class SchedulerCronService {
   private async aggregatePeriodicTaskProgress() {
     try {
       const { periodicTaskService } = await import("../periodicTaskService");
-      await periodicTaskService.aggregateAllProgress(supabaseAdmin);
+      await periodicTaskService.aggregateAllProgress(getSupabaseAdmin());
     } catch (error) {
       logger.error("[CronService] Failed to aggregate periodic task progress:", error);
     }

@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { TemplateEngine } from '../../utils/templateEngine';
 import { getAIProviderForTask } from './factory';
 import { logger } from '../../utils/logger';
-import { supabaseAdmin } from '../../supabase';
+import { getSupabaseAdmin } from '../../supabase';
 import { createKnowledgePointWithGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
 import { performanceMonitor, enrichMetadata } from './performanceMonitor';
 import { pricingService } from './pricingService';
@@ -102,11 +102,11 @@ export class AIActionService {
     logger.info(`Executing Action ${actionId} on Node ${nodeId}`);
 
     // 1. Fetch Action
-    const action = await this.getAction(supabaseAdmin, actionId); // Use admin to ensure we can read system actions
+    const action = await this.getAction(getSupabaseAdmin(), actionId); // Use admin to ensure we can read system actions
     if (!action) throw new Error('Action not found');
 
     // 2. Fetch Node Context
-    const { data: graphNode, error: nodeError } = await supabaseAdmin
+    const { data: graphNode, error: nodeError } = await getSupabaseAdmin()
       .from('graph_nodes')
       .select(GRAPH_NODES_SELECT)
       .eq('knowledge_point_id', nodeId)
@@ -137,7 +137,7 @@ export class AIActionService {
     if (action.variables) {
         // Parent Context
         if (action.variables.includeParent) {
-            const { data: edges } = await supabaseAdmin
+            const { data: edges } = await getSupabaseAdmin()
                 .from('edges')
                 .select('source_knowledge_point_id')
                 .eq('target_knowledge_point_id', nodeId)
@@ -145,7 +145,7 @@ export class AIActionService {
             
             if (edges && edges.length > 0) {
                 const parentIds = edges.map((e: any) => e.source_knowledge_point_id);
-                const { data: parentGraphNodes } = await supabaseAdmin
+                const { data: parentGraphNodes } = await getSupabaseAdmin()
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
                     .in('knowledge_point_id', parentIds)
@@ -162,7 +162,7 @@ export class AIActionService {
 
         // Children Context
         if (action.variables.includeChildren) {
-             const { data: edges } = await supabaseAdmin
+             const { data: edges } = await getSupabaseAdmin()
                 .from('edges')
                 .select('target_knowledge_point_id')
                 .eq('source_knowledge_point_id', nodeId)
@@ -170,7 +170,7 @@ export class AIActionService {
             
             if (edges && edges.length > 0) {
                 const childIds = edges.map((e: any) => e.target_knowledge_point_id);
-                const { data: childGraphNodes } = await supabaseAdmin
+                const { data: childGraphNodes } = await getSupabaseAdmin()
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
                     .in('knowledge_point_id', childIds)
@@ -187,7 +187,7 @@ export class AIActionService {
 
         // Siblings Context
         if (action.variables.includeSiblings) {
-            const { data: parentEdges } = await supabaseAdmin
+            const { data: parentEdges } = await getSupabaseAdmin()
                 .from('edges')
                 .select('source_knowledge_point_id')
                 .eq('target_knowledge_point_id', nodeId)
@@ -196,7 +196,7 @@ export class AIActionService {
             if (parentEdges && parentEdges.length > 0) {
                 const parentIds = parentEdges.map((e: any) => e.source_knowledge_point_id);
                 
-                const { data: siblingEdges } = await supabaseAdmin
+                const { data: siblingEdges } = await getSupabaseAdmin()
                     .from('edges')
                     .select('target_knowledge_point_id')
                     .in('source_knowledge_point_id', parentIds)
@@ -210,7 +210,7 @@ export class AIActionService {
                     )];
 
                     if (siblingIds.length > 0) {
-                        const { data: siblingGraphNodes } = await supabaseAdmin
+                        const { data: siblingGraphNodes } = await getSupabaseAdmin()
                             .from('graph_nodes')
                             .select(GRAPH_NODES_SELECT)
                             .in('knowledge_point_id', siblingIds)
@@ -247,7 +247,7 @@ export class AIActionService {
     }
 
     try {
-        const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+        const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
           graphId: graphId,
           userId: userId,
           nodeId: nodeId,
@@ -329,7 +329,7 @@ export class AIActionService {
         if (parsed.title) kpUpdates.title = parsed.title;
         
         if (parsed.tags && Array.isArray(parsed.tags)) {
-             const { data: kp } = await supabaseAdmin
+             const { data: kp } = await getSupabaseAdmin()
                .from('knowledge_points')
                .select('properties')
                .eq('id', nodeId)
@@ -339,7 +339,7 @@ export class AIActionService {
         }
 
         if (Object.keys(kpUpdates).length > 0) {
-            await supabaseAdmin
+            await getSupabaseAdmin()
               .from('knowledge_points')
               .update(kpUpdates)
               .eq('id', nodeId);
@@ -354,7 +354,7 @@ export class AIActionService {
             
             for (const child of parsed.children) {
               const result = await createKnowledgePointWithGraphNode(
-                supabaseAdmin,
+                getSupabaseAdmin(),
                 userId,
                 {
                   graph_id: graphId,
@@ -368,7 +368,7 @@ export class AIActionService {
               if (result) {
                 createdNodeIds.push(result.id);
                 
-                await supabaseAdmin
+                await getSupabaseAdmin()
                   .from('edges')
                   .insert({
                     graph_id: graphId,

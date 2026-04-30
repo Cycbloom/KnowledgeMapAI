@@ -111,13 +111,17 @@ if (!supabaseUrl || !supabaseServiceKey) {
   );
 }
 
-function createSupabaseClients(): {
+function createSupabaseClients(
+  url?: string,
+  serviceKey?: string,
+  anonKey?: string,
+): {
   admin: SupabaseClient;
   anon: SupabaseClient;
 } {
-  const validUrl = supabaseUrl || "https://placeholder.supabase.co";
-  const validKey = supabaseServiceKey || "placeholder-key";
-  const validAnonKey = supabaseAnonKey || validKey;
+  const validUrl = url || supabaseUrl || "https://placeholder.supabase.co";
+  const validKey = serviceKey || supabaseServiceKey || "placeholder-key";
+  const validAnonKey = anonKey || supabaseAnonKey || validKey;
 
   try {
     const admin = createClient(validUrl, validKey);
@@ -135,14 +139,50 @@ function createSupabaseClients(): {
   }
 }
 
-const { admin: supabaseAdmin, anon: supabaseAnon } = createSupabaseClients();
+const clients = createSupabaseClients();
 
-export { supabaseAdmin, supabaseAnon };
+let currentConfig = {
+  url: supabaseUrl,
+  serviceKey: supabaseServiceKey,
+  anonKey: supabaseAnonKey,
+};
+
+export const getSupabaseAdmin = () => clients.admin;
+export const getSupabaseAnon = () => clients.anon;
+
+export const reinitializeSupabaseClients = (
+  config: { url: string; serviceKey: string; anonKey: string },
+) => {
+  if (!config.url || !config.serviceKey) {
+    throw new Error("URL and service key are required");
+  }
+
+  try {
+    const newClients = createSupabaseClients(
+      config.url,
+      config.serviceKey,
+      config.anonKey,
+    );
+    clients.admin = newClients.admin;
+    clients.anon = newClients.anon;
+    currentConfig = {
+      url: config.url,
+      serviceKey: config.serviceKey,
+      anonKey: config.anonKey,
+    };
+    logger.info("Supabase clients reinitialized successfully");
+    return { success: true };
+  } catch (error) {
+    logger.error("Failed to reinitialize Supabase clients:", error);
+    return { success: false, error: "Failed to reinitialize clients" };
+  }
+};
+
+export const getCurrentSupabaseConfig = () => ({ ...currentConfig });
 
 export const createClientWithToken = (token: string): SupabaseClient => {
-  const tokenConfig = getSupabaseConfig();
-  const validUrl = tokenConfig.url || "https://placeholder.supabase.co";
-  const validAnonKey = tokenConfig.anonKey || "placeholder-key";
+  const validUrl = currentConfig.url || "https://placeholder.supabase.co";
+  const validAnonKey = currentConfig.anonKey || "placeholder-key";
 
   try {
     return createClient(validUrl, validAnonKey, {

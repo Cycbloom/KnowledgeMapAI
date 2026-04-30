@@ -22,7 +22,7 @@ import {
 } from "../../utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 
 export interface GeneratedTemplateNode extends TemplateNode {
   suggestedContent?: string;
@@ -585,7 +585,7 @@ export class TemplateGeneratorService {
     let templateTypeGuidance = "";
     if (templateType && templateType !== "blank") {
       templateTypeGuidance = await promptService.getRenderedPrompt(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         `template_type_${templateType}`,
         {},
         userId,
@@ -609,7 +609,7 @@ export class TemplateGeneratorService {
       : "";
 
     const customPrompt = await promptService.getRenderedPrompt(
-      supabaseAdmin,
+      getSupabaseAdmin(),
       "template_generation",
       {
         category: category || "knowledge",

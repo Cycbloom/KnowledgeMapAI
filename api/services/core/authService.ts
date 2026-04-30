@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../supabase';
+import { getSupabaseAdmin } from '../../supabase';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
@@ -20,7 +20,7 @@ export interface UpdateProfileData {
 
 export class AuthService {
   async getProfile(userId: string): Promise<UserProfile> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('users')
       .select('*')
       .eq('id', userId)
@@ -45,7 +45,7 @@ export class AuthService {
       return existingProfile;
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('users')
       .update(updateData)
       .eq('id', userId)

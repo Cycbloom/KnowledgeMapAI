@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../supabase';
+import { getSupabaseAdmin } from '../supabase';
 import { periodicTaskService } from './scheduler/periodicTaskService';
 
 export interface Achievement {
@@ -22,7 +22,7 @@ export class AchievementService {
     const today = new Date().toISOString().split('T')[0];
     
     // Check if tasks exist for today
-    const { count, error } = await supabaseAdmin
+    const { count, error } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
@@ -39,7 +39,7 @@ export class AchievementService {
       { user_id: userId, period_type: 'daily' as const, period_start: today, period_end: today, task_type: 'create_node', target: 1, xp_reward: 30 }
     ];
 
-    await supabaseAdmin.from('periodic_tasks').insert(tasks);
+    await getSupabaseAdmin().from('periodic_tasks').insert(tasks);
   }
 
   /**
@@ -49,7 +49,7 @@ export class AchievementService {
     await this.initDailyTasks(userId);
     
     const today = new Date().toISOString().split('T')[0];
-    const { data } = await supabaseAdmin
+    const { data } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
@@ -67,7 +67,7 @@ export class AchievementService {
     const today = new Date().toISOString().split('T')[0];
     
     // Get task
-    const { data: task } = await supabaseAdmin
+    const { data: task } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
@@ -88,7 +88,7 @@ export class AchievementService {
       // For now, let's just mark completed.
     }
 
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('periodic_tasks')
       .update(updates)
       .eq('id', task.id);
@@ -103,7 +103,7 @@ export class AchievementService {
    */
   async getAchievements(userId: string): Promise<Achievement[]> {
     // 1. Get all achievements
-    const { data: allAchievements, error: fetchError } = await supabaseAdmin
+    const { data: allAchievements, error: fetchError } = await getSupabaseAdmin()
       .from('achievements')
       .select('*')
       .order('condition_value', { ascending: true });
@@ -111,7 +111,7 @@ export class AchievementService {
     if (fetchError) throw fetchError;
 
     // 2. Get user's unlocked achievements
-    const { data: userAchievements, error: userError } = await supabaseAdmin
+    const { data: userAchievements, error: userError } = await getSupabaseAdmin()
       .from('user_achievements')
       .select('achievement_id, unlocked_at')
       .eq('user_id', userId);
@@ -132,7 +132,7 @@ export class AchievementService {
    */
   async checkAndUnlock(userId: string, type: string, currentValue: number): Promise<Achievement[]> {
     // 1. Find potential achievements of this type that are NOT yet unlocked
-    const { data: candidates, error: candidateError } = await supabaseAdmin
+    const { data: candidates, error: candidateError } = await getSupabaseAdmin()
       .from('achievements')
       .select('*')
       .eq('condition_type', type)
@@ -142,7 +142,7 @@ export class AchievementService {
     if (!candidates || candidates.length === 0) return [];
 
     // 2. Filter out already unlocked ones
-    const { data: unlocked, error: unlockedError } = await supabaseAdmin
+    const { data: unlocked, error: unlockedError } = await getSupabaseAdmin()
       .from('user_achievements')
       .select('achievement_id')
       .eq('user_id', userId)
@@ -162,7 +162,7 @@ export class AchievementService {
       unlocked_at: new Date().toISOString()
     }));
 
-    const { error: insertError } = await supabaseAdmin
+    const { error: insertError } = await getSupabaseAdmin()
       .from('user_achievements')
       .insert(unlocksToInsert);
 
@@ -186,7 +186,7 @@ export class AchievementService {
    */
   async addXp(userId: string, amount: number): Promise<{ newLevel: number, newXp: number, levelUp: boolean }> {
     // 1. Get current user stats
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await getSupabaseAdmin()
       .from('users')
       .select('xp, level')
       .eq('id', userId)
@@ -211,7 +211,7 @@ export class AchievementService {
     }
 
     // 2. Update user
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await getSupabaseAdmin()
       .from('users')
       .update({ xp, level })
       .eq('id', userId);
@@ -226,7 +226,7 @@ export class AchievementService {
    */
   async updateStudyStreak(userId: string): Promise<void> {
     // Get unique dates from focus_sessions
-    const { data: sessions, error } = await supabaseAdmin
+    const { data: sessions, error } = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('start_time')
       .eq('user_id', userId)
@@ -285,7 +285,7 @@ export class AchievementService {
    * Update focus achievements (total minutes)
    */
   async updateFocusStats(userId: string): Promise<void> {
-    const { error: _error } = await supabaseAdmin
+    const { error: _error } = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)
@@ -305,7 +305,7 @@ export class AchievementService {
     // But since we query DB, let's query today's total.
     
     const today = new Date().toISOString().split('T')[0];
-    const { data: todaySessions } = await supabaseAdmin
+    const { data: todaySessions } = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)
@@ -330,7 +330,7 @@ export class AchievementService {
     await this.updateDailyTaskProgress(userId, 'focus_time', todayMinutes);
 
     // 2. Update Lifetime Achievements (Total Focus Time)
-    const { data: allSessions } = await supabaseAdmin
+    const { data: allSessions } = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)
@@ -349,7 +349,7 @@ export class AchievementService {
    */
   async updateDailyTaskProgress(userId: string, type: string, currentTotal: number): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    const { data: task } = await supabaseAdmin
+    const { data: task } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
@@ -361,13 +361,13 @@ export class AchievementService {
     if (!task || task.status !== 'pending') return;
     
     if (currentTotal >= task.target) {
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('periodic_tasks')
         .update({ status: 'completed', progress: task.target, completed_at: new Date().toISOString() })
         .eq('id', task.id);
       await this.addXp(userId, task.xp_reward);
     } else {
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('periodic_tasks')
         .update({ progress: currentTotal })
         .eq('id', task.id);
@@ -379,7 +379,7 @@ export class AchievementService {
    * We define "mastered" as having a stability > 21 days (approx 3 weeks)
    */
   async updateMasteredStats(userId: string): Promise<void> {
-    const { count, error } = await supabaseAdmin
+    const { count, error } = await getSupabaseAdmin()
       .from('study_cards')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
@@ -397,7 +397,7 @@ export class AchievementService {
    * Update creation achievements (graphs/nodes created)
    */
   async updateCreationStats(userId: string): Promise<void> {
-    const { count: graphCount, error: graphError } = await supabaseAdmin
+    const { count: graphCount, error: graphError } = await getSupabaseAdmin()
       .from('graphs')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
@@ -408,7 +408,7 @@ export class AchievementService {
 
     await this.updateDailyTask(userId, 'create_node', 1);
 
-    const { count: nodeCount, error: nodeError } = await supabaseAdmin
+    const { count: nodeCount, error: nodeError } = await getSupabaseAdmin()
       .from('graph_nodes')
       .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
       .eq('knowledge_graphs.user_id', userId)

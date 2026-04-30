@@ -14,7 +14,7 @@ import { getMockResponse } from "../../services/ai/mock";
 import { getAIProviderForTask, getAIProvider } from "../../services/ai/factory";
 import { logger } from "../../utils/logger";
 import { promptService } from "../../services/ai/promptService";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import {
   setSSEHeaders,
   sendStreamChunk,
@@ -53,7 +53,7 @@ router.post(
 
     try {
       const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         "annotate_terms",
         { nodeContent: content },
         req.user.id,
@@ -68,7 +68,7 @@ router.post(
 内容：
 ${content}`;
 
-      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
         graphId: graph_id,
         userId: req.user.id,
         topic: content?.slice(0, 50),
@@ -229,7 +229,7 @@ router.post(
       };
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         "generate_content",
         templateContext,
         req.user.id,
@@ -237,7 +237,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
         graphId: graph_id,
         userId: req.user.id,
         topic,
@@ -362,7 +362,7 @@ router.post(
       };
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         "generate_content",
         templateContext,
         req.user.id,
@@ -370,7 +370,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
         graphId: graph_id,
         userId: req.user.id,
         topic,

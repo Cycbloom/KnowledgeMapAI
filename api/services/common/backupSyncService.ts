@@ -1,13 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { supabaseAdmin } from '../../supabase';
+import { getSupabaseAdmin } from '../../supabase';
 import { logger } from '../../utils/logger';
 
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
 
 export async function syncExistingBackups(): Promise<void> {
   try {
-    const { error: tableError } = await supabaseAdmin
+    const { error: tableError } = await getSupabaseAdmin()
       .from('backup_snapshots')
       .select('id')
       .limit(1);
@@ -40,7 +40,7 @@ export async function syncExistingBackups(): Promise<void> {
 
         const filePath = path.join(userDir, file);
         
-        const { data: existing } = await supabaseAdmin
+        const { data: existing } = await getSupabaseAdmin()
           .from('backup_snapshots')
           .select('id')
           .eq('file_path', filePath)
@@ -57,7 +57,7 @@ export async function syncExistingBackups(): Promise<void> {
         const content = await fs.readFile(filePath, 'utf-8');
         const data = JSON.parse(content);
 
-        await supabaseAdmin.from('backup_snapshots').insert({
+        await getSupabaseAdmin().from('backup_snapshots').insert({
           user_id: userId,
           type,
           file_path: filePath,

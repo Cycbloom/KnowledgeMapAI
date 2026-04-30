@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../supabase';
+import { getSupabaseAdmin } from '../supabase';
 import { createBackup, cleanupOldSnapshots } from '../services/common/backupService';
 import { logger } from '../utils/logger';
 
@@ -39,7 +39,7 @@ async function runAutoBackup(type: 'auto_30min' | 'auto_5hour' | 'auto_1day') {
   isRunning = true;
 
   try {
-    const { data: users, error } = await supabaseAdmin
+    const { data: users, error } = await getSupabaseAdmin()
       .from('users')
       .select('id');
 
@@ -50,11 +50,11 @@ async function runAutoBackup(type: 'auto_30min' | 'auto_5hour' | 'auto_1day') {
 
     for (const user of users) {
       try {
-        const result = await createBackup(supabaseAdmin, user.id, type);
+        const result = await createBackup(getSupabaseAdmin(), user.id, type);
         
-        await cleanupOldSnapshots(supabaseAdmin, user.id, type);
+        await cleanupOldSnapshots(getSupabaseAdmin(), user.id, type);
         
-        await supabaseAdmin.from('backup_snapshots').insert({
+        await getSupabaseAdmin().from('backup_snapshots').insert({
           user_id: user.id,
           type,
           file_path: result.filePath,

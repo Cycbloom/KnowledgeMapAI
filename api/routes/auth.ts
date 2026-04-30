@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { supabaseAdmin } from '../supabase';
+import { getSupabaseAdmin } from '../supabase';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { authService } from '../services/core/authService';
 import { validate } from '../middleware/validate';
@@ -29,7 +29,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
 
     logger.info('Calling Supabase signUp', { requestId, email: email?.substring(0, 3) + '***' });
     
-    const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
+    const { data: authData, error: authError } = await getSupabaseAdmin().auth.signUp({
       email,
       password,
       options: {
@@ -86,7 +86,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
       hasSession: !!authData.session,
     });
 
-    const { error: profileError } = await supabaseAdmin
+    const { error: profileError } = await getSupabaseAdmin()
       .from('users')
       .insert([
         {
@@ -109,7 +109,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     if (!session) {
       logger.info('No session returned, attempting to sign in', { requestId });
       
-      const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await getSupabaseAdmin().auth.signInWithPassword({
         email,
         password,
       });
@@ -160,7 +160,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
       hasPassword: !!password,
     });
 
-    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+    const { data, error } = await getSupabaseAdmin().auth.signInWithPassword({
       email,
       password,
     });
@@ -196,7 +196,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
       email: data.user.email?.substring(0, 3) + '***',
     });
 
-    const { data: existingProfile } = await supabaseAdmin
+    const { data: existingProfile } = await getSupabaseAdmin()
       .from('users')
       .select('id')
       .eq('id', data.user.id)
@@ -204,7 +204,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
 
     if (!existingProfile) {
       logger.info('Repairing missing public profile for user', { requestId, userId: data.user.id });
-      await supabaseAdmin.from('users').insert([
+      await getSupabaseAdmin().from('users').insert([
         {
           id: data.user.id,
           email,
@@ -233,7 +233,7 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
       throw new AppError(ErrorCodes.MISSING_REFRESH_TOKEN);
     }
 
-    const { data, error } = await supabaseAdmin.auth.refreshSession({
+    const { data, error } = await getSupabaseAdmin().auth.refreshSession({
       refresh_token: refreshToken,
     });
 
@@ -254,7 +254,7 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
 
 router.post('/logout', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
-    const { error } = await supabaseAdmin.auth.admin.signOut(req.user.id);
+    const { error } = await getSupabaseAdmin().auth.admin.signOut(req.user.id);
 
     if (error) {
       throw new AppError(ErrorCodes.LOGOUT_FAILED);

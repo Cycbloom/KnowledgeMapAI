@@ -18,23 +18,63 @@ function isDevelopment(): boolean {
   return mode === "development" || nodeEnv === "development" || !!devServerUrl;
 }
 
+const SUPABASE_CONFIG_KEY = "supabase_config";
+
+const getDefaultUrl = (): string =>
+  getEnv("VITE_SUPABASE_URL") ||
+  (isDevelopment()
+    ? LOCAL_SUPABASE_URL
+    : "https://gzceehtffqwlcyspmbvj.supabase.co");
+
+const getDefaultAnonKey = (): string =>
+  getEnv("VITE_SUPABASE_ANON_KEY") ||
+  (isDevelopment()
+    ? LOCAL_SUPABASE_ANON_KEY
+    : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y2VlaHRmZnF3bGN5c3BtYnZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMDMzMTgsImV4cCI6MjA4OTU3OTMxOH0.xg1HAD00-BQBGCA_t8vcs3DLrKo2T6wYBMqaeR99Juk");
+
 export const authConfig = {
   mode: "supabase" as AuthMode,
   isSupabase: () => true,
 
   supabase: {
-    url:
-      getEnv("VITE_SUPABASE_URL") ||
-      (isDevelopment()
-        ? LOCAL_SUPABASE_URL
-        : "https://gzceehtffqwlcyspmbvj.supabase.co"),
-    anonKey:
-      getEnv("VITE_SUPABASE_ANON_KEY") ||
-      (isDevelopment()
-        ? LOCAL_SUPABASE_ANON_KEY
-        : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y2VlaHRmZnF3bGN5c3BtYnZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMDMzMTgsImV4cCI6MjA4OTU3OTMxOH0.xg1HAD00-BQBGCA_t8vcs3DLrKo2T6wYBMqaeR99Juk"),
+    url: getDefaultUrl(),
+    anonKey: getDefaultAnonKey(),
   },
-} as const;
+};
+
+export const updateSupabaseConfig = (
+  url: string,
+  anonKey: string,
+): void => {
+  authConfig.supabase.url = url;
+  authConfig.supabase.anonKey = anonKey;
+
+  try {
+    localStorage.setItem(
+      SUPABASE_CONFIG_KEY,
+      JSON.stringify({ url, anonKey }),
+    );
+  } catch {
+    // ignore storage errors
+  }
+};
+
+export const loadSavedSupabaseConfig = (): void => {
+  try {
+    const saved = localStorage.getItem(SUPABASE_CONFIG_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.url && parsed.anonKey) {
+        authConfig.supabase.url = parsed.url;
+        authConfig.supabase.anonKey = parsed.anonKey;
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+};
+
+loadSavedSupabaseConfig();
 
 export const getAuthModeDisplay = (): string => {
   const url = authConfig.supabase.url;

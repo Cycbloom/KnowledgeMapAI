@@ -3,7 +3,7 @@ import type {
   AppEvent,
   GraphCreatedPayload,
 } from "@shared/types/events";
-import { supabaseAdmin } from "../../../supabase";
+import { getSupabaseAdmin } from "../../../supabase";
 import { logger } from "../../../utils/logger";
 
 class AchievementSubscriber {
@@ -54,7 +54,7 @@ class AchievementSubscriber {
   private async checkAchievements(userId: string) {
     try {
       const { achievementService } = await import("../../scheduler/achievementService");
-      await achievementService.checkAndUnlockAchievements(supabaseAdmin, userId);
+      await achievementService.checkAndUnlockAchievements(getSupabaseAdmin(), userId);
     } catch (error) {
       logger.error("[AchievementSubscriber] Failed to check achievements:", error);
     }

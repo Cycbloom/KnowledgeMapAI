@@ -4,7 +4,7 @@ import type {
   TaskCompletedPayload,
   FocusSessionEndedPayload,
 } from "@shared/types/events";
-import { supabaseAdmin } from "../../../supabase";
+import { getSupabaseAdmin } from "../../../supabase";
 import { logger } from "../../../utils/logger";
 
 class LearningProgressSubscriber {
@@ -56,7 +56,7 @@ class LearningProgressSubscriber {
     if (!payload.knowledgePointId) return;
     try {
       const { progressSyncService } = await import("../../scheduler/progressSyncService");
-      await progressSyncService.syncTaskCompletion(supabaseAdmin, {
+      await progressSyncService.syncTaskCompletion(getSupabaseAdmin(), {
         taskId: payload.taskId,
         userId,
       });
@@ -68,7 +68,7 @@ class LearningProgressSubscriber {
   private async updateLearningPathProgress(userId: string, payload: TaskCompletedPayload) {
     try {
       const { pathProgressService } = await import("../../scheduler/pathProgressService");
-      await pathProgressService.syncTaskCompletionToPath(supabaseAdmin, userId, payload.taskId);
+      await pathProgressService.syncTaskCompletionToPath(getSupabaseAdmin(), userId, payload.taskId);
     } catch (error) {
       logger.error("[LearningProgressSubscriber] Failed to update learning path progress:", error);
     }
@@ -96,7 +96,7 @@ class LearningProgressSubscriber {
   private async handleLearningLoopTaskCompleted(userId: string, payload: TaskCompletedPayload) {
     try {
       const { learningLoopOrchestrator } = await import("../../scheduler/core/learningLoopOrchestrator");
-      await learningLoopOrchestrator.handleTaskCompleted(supabaseAdmin, userId, payload);
+      await learningLoopOrchestrator.handleTaskCompleted(getSupabaseAdmin(), userId, payload);
     } catch (error) {
       logger.error("[LearningProgressSubscriber] Failed to handle learning loop task completed:", error);
     }
@@ -105,7 +105,7 @@ class LearningProgressSubscriber {
   private async handleLearningLoopFocusSession(userId: string, payload: FocusSessionEndedPayload) {
     try {
       const { learningLoopOrchestrator } = await import("../../scheduler/core/learningLoopOrchestrator");
-      await learningLoopOrchestrator.handleFocusSessionEnded(supabaseAdmin, userId, payload);
+      await learningLoopOrchestrator.handleFocusSessionEnded(getSupabaseAdmin(), userId, payload);
     } catch (error) {
       logger.error("[LearningProgressSubscriber] Failed to handle learning loop focus session:", error);
     }

@@ -6,6 +6,7 @@ import documentRouter from './document';
 import cardsRouter from './cards';
 import ttsRouter from './tts';
 import performanceRouter from './performance';
+import configRouter from './config';
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use(documentRouter);
 router.use(cardsRouter);
 router.use(ttsRouter);
 router.use('/performance', performanceRouter);
+router.use('/config', configRouter);
 
 export default router;

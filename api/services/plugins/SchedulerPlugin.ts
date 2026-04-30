@@ -27,7 +27,7 @@ import notificationsRouter from "../../routes/notifications";
 import { achievementSubscriber } from "../core/subscribers/achievementSubscriber";
 import { learningProgressSubscriber } from "../core/subscribers/learningProgressSubscriber";
 import { reviewSchedulerSubscriber } from "../core/subscribers/reviewSchedulerSubscriber";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 
 export const SchedulerPlugin: Plugin = {
   name: "scheduler",
@@ -74,7 +74,7 @@ export const SchedulerPlugin: Plugin = {
   },
 
   async onActivate(): Promise<void> {
-    schedulerSubscribers.initialize(supabaseAdmin);
+    schedulerSubscribers.initialize(getSupabaseAdmin());
     achievementSubscriber.initialize();
     learningProgressSubscriber.initialize();
     reviewSchedulerSubscriber.initialize();

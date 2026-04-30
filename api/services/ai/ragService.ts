@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import { AIService } from "./aiService";
 import { getAIProviderForTask } from "./factory";
 import type { AIProvider } from "@shared/types";
@@ -89,13 +89,13 @@ export class RAGService {
     }
 
     try {
-      let query_builder = supabaseAdmin
+      let query_builder = getSupabaseAdmin()
         .from("knowledge_points")
         .select("id, title, content, embedding")
         .not("embedding", "is", null);
 
       if (graphId) {
-        const { data: graphNodes } = await supabaseAdmin
+        const { data: graphNodes } = await getSupabaseAdmin()
           .from("graph_nodes")
           .select("knowledge_point_id")
           .eq("graph_id", graphId)
@@ -110,7 +110,7 @@ export class RAGService {
           return [];
         }
       } else {
-        const { data: userGraphs } = await supabaseAdmin
+        const { data: userGraphs } = await getSupabaseAdmin()
           .from("knowledge_graphs")
           .select("id")
           .eq("user_id", userId)
@@ -118,7 +118,7 @@ export class RAGService {
 
         if (userGraphs && userGraphs.length > 0) {
           const graphIds = (userGraphs as GraphRow[]).map((g) => g.id);
-          const { data: graphNodes } = await supabaseAdmin
+          const { data: graphNodes } = await getSupabaseAdmin()
             .from("graph_nodes")
             .select("knowledge_point_id")
             .in("graph_id", graphIds)
@@ -209,7 +209,7 @@ export class RAGService {
 
     let currentNodeContext = "";
     if (currentNodeId) {
-      const { data: currentGraphNode } = await supabaseAdmin
+      const { data: currentGraphNode } = await getSupabaseAdmin()
         .from("graph_nodes")
         .select(
           `
@@ -533,7 +533,7 @@ ${context || "(暂无相关上下文)"}`;
     }>;
     suggestions: string[];
   }> {
-    const { data: graphNodes } = await supabaseAdmin
+    const { data: graphNodes } = await getSupabaseAdmin()
       .from("graph_nodes")
       .select(
         `
@@ -565,7 +565,7 @@ ${context || "(暂无相关上下文)"}`;
       } as NodeInfo;
     });
 
-    const { data: edges } = await supabaseAdmin
+    const { data: edges } = await getSupabaseAdmin()
       .from("edges")
       .select("source_knowledge_point_id, target_knowledge_point_id")
       .eq("graph_id", graphId)

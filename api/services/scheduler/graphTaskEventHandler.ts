@@ -1,7 +1,7 @@
 import { appEventBus } from "../core/eventBus";
 import { graphTaskService } from "./graphTaskService";
 import { logger } from "../../utils/logger";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import type {
   AppEvent,
   NodeCreatedPayload,
@@ -30,7 +30,7 @@ class GraphTaskEventHandler {
 
     try {
       await graphTaskService.syncTaskWithGraphChanges(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         graphId,
       );
     } catch (error) {
@@ -48,7 +48,7 @@ class GraphTaskEventHandler {
 
     try {
       await graphTaskService.syncTaskWithGraphChanges(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         graphId,
       );
     } catch (error) {
@@ -66,7 +66,7 @@ class GraphTaskEventHandler {
 
     try {
       await graphTaskService.createOrUpdateTaskForGraph(
-        supabaseAdmin,
+        getSupabaseAdmin(),
         userId,
         graphId,
       );

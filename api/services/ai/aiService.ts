@@ -2,7 +2,7 @@ import { getAIProviderForTask, getAIProvider } from "./factory";
 import type { AIProviderType } from "@shared/types";
 import { promptService } from "./promptService";
 import { cacheService, CacheKeys } from "../common/cacheService";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
 import { parseAIResponse, buildTutorContext } from "./utils";
 import { performanceMonitor } from "./performanceMonitor";
@@ -439,7 +439,7 @@ export class AIService {
     }
 
     const systemPrompt = await promptService.getRenderedPrompt(
-      supabaseAdmin,
+      getSupabaseAdmin(),
       "podcast_system",
       {},
       undefined,
@@ -447,7 +447,7 @@ export class AIService {
       language,
     );
     const userPrompt = await promptService.getRenderedPrompt(
-      supabaseAdmin,
+      getSupabaseAdmin(),
       "podcast_script",
       {
         context,
@@ -633,7 +633,7 @@ export class AIService {
               types.map(async (type) => {
                 const code = `generate_cards_${type}`;
                 const rendered = await promptService.getRenderedPrompt(
-                  supabaseAdmin,
+                  getSupabaseAdmin(),
                   code,
                   { count: Math.ceil(count / types.length), difficulty },
                   options.userId,
@@ -658,7 +658,7 @@ export class AIService {
 
             if (!systemPrompt.trim()) {
               systemPrompt = await promptService.getRenderedPrompt(
-                supabaseAdmin,
+                getSupabaseAdmin(),
                 "generate_cards",
                 {
                   count,
@@ -832,7 +832,7 @@ Please respond with a valid JSON object.`;
           };
 
           const systemPrompt = await promptService.getRenderedPrompt(
-            supabaseAdmin,
+            getSupabaseAdmin(),
             "expand_knowledge",
             templateContext,
             options.userId,
@@ -984,7 +984,7 @@ Please respond with a valid JSON object.`;
             };
 
             const systemPrompt = await promptService.getRenderedPrompt(
-              supabaseAdmin,
+              getSupabaseAdmin(),
               "branch_suggestions",
               templateContext,
               options.userId,
@@ -1190,7 +1190,7 @@ Your task:
             };
 
             const systemPrompt = await promptService.getRenderedPrompt(
-              supabaseAdmin,
+              getSupabaseAdmin(),
               "learning_material",
               templateContext,
               options.userId,
@@ -1656,7 +1656,7 @@ Please respond in Chinese.`,
           };
 
           const systemPrompt = await promptService.getRenderedPrompt(
-            supabaseAdmin,
+            getSupabaseAdmin(),
             "cross_graph_connection_analysis",
             templateContext,
             options.userId,
@@ -1779,7 +1779,7 @@ Please respond in Chinese.`,
           },
           async () => {
             const systemPrompt = await promptService.getRenderedPrompt(
-              supabaseAdmin,
+              getSupabaseAdmin(),
               "generate_task_details",
               {
                 title,

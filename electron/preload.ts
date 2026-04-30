@@ -87,6 +87,10 @@ const electronAPI = {
   api: {
     getPort: () => ipcRenderer.invoke("api:getPort"),
   },
+  config: {
+    read: () => ipcRenderer.invoke("config:read"),
+    write: (data: Record<string, unknown>) => ipcRenderer.invoke("config:write", data),
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

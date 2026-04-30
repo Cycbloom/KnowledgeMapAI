@@ -37,6 +37,8 @@ const getEnvConfig = (provider: AIProviderType): AIProviderConfig => {
 export const getProviderConfig = async (
   provider: AIProviderType,
 ): Promise<AIProviderConfig> => {
+  const envConfig = getEnvConfig(provider);
+
   try {
     const allConfigs =
       await settingsService.getSetting<Record<string, any>>(
@@ -45,22 +47,20 @@ export const getProviderConfig = async (
 
     if (allConfigs && allConfigs[provider]) {
       const dbConfig = allConfigs[provider];
-      // Merge strategy: DB Config > Env Var
       return {
         apiKey:
           dbConfig.apiKey ||
-          process.env[`${provider.toUpperCase()}_API_KEY`] ||
-          "",
-        baseURL: dbConfig.baseURL,
-        model: dbConfig.model,
-        embeddingModel: dbConfig.embeddingModel,
+          envConfig.apiKey,
+        baseURL: dbConfig.baseURL || envConfig.baseURL,
+        model: dbConfig.model || envConfig.model,
+        embeddingModel: dbConfig.embeddingModel || envConfig.embeddingModel,
       };
     }
   } catch (error) {
     logger.error("Failed to load settings from DB, falling back to env", error);
   }
 
-  return getEnvConfig(provider);
+  return envConfig;
 };
 
 export const getDefaultProvider = async (): Promise<AIProviderType> => {

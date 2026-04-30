@@ -1,7 +1,7 @@
 import { Router } from "express";
 import os from "os";
 import { logger } from "../utils/logger";
-import { supabaseAdmin } from "../supabase";
+import { getSupabaseAdmin } from "../supabase";
 
 const router = Router();
 
@@ -91,7 +91,7 @@ router.get("/services", async (_req, res) => {
   const checkDatabase = async (): Promise<ServiceStatus> => {
     const start = Date.now();
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await getSupabaseAdmin()
         .from("knowledge_graphs")
         .select("id")
         .limit(1);
@@ -231,7 +231,7 @@ router.get("/dashboard", async (_req, res) => {
     let dbStatus = "healthy";
     let dbLatency = 0;
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await getSupabaseAdmin()
         .from("knowledge_graphs")
         .select("id")
         .limit(1);

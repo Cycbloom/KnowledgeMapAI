@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { supabaseAdmin } from '../api/supabase.js';
+import { getSupabaseAdmin } from '../api/supabase.js';
 import { AIService } from '../api/services/aiService.js';
 
 dotenv.config();
@@ -13,7 +13,7 @@ async function backfillEmbeddings() {
   console.log('🚀 开始为现有节点批量生成向量...');
 
   // 1. 获取所有节点（重新生成所有向量）
-  const { data: nodes, error } = await supabaseAdmin
+  const { data: nodes, error } = await getSupabaseAdmin()
     .from('nodes')
     .select('id, title, content')
     .or('embedding.is.null'); // 已移除过滤，强制重新生成所有
@@ -47,7 +47,7 @@ async function backfillEmbeddings() {
       const embedding = await aiService.generateEmbedding(textToEmbed);
 
       if (embedding) {
-        const { error: updateError } = await supabaseAdmin
+        const { error: updateError } = await getSupabaseAdmin()
           .from('nodes')
           .update({ embedding })
           .eq('id', node.id);

@@ -30,6 +30,21 @@ function loadEnvVariables() {
     }
     console.log("[Main] 尝试加载环境变量文件:", envPath);
     dotenv.config({ path: envPath });
+
+    const configPath = path.join(app.getPath('userData'), 'config.json');
+    if (fs.existsSync(configPath)) {
+      try {
+        const userConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        if (userConfig.database) {
+          if (userConfig.database.url) process.env.VITE_SUPABASE_URL = userConfig.database.url;
+          if (userConfig.database.anonKey) process.env.VITE_SUPABASE_ANON_KEY = userConfig.database.anonKey;
+          if (userConfig.database.serviceRoleKey) process.env.SUPABASE_SERVICE_ROLE_KEY = userConfig.database.serviceRoleKey;
+          console.log("[Main] 从用户配置文件加载数据库配置");
+        }
+      } catch (e) {
+        console.warn("[Main] 读取用户配置文件失败:", e);
+      }
+    }
     
     console.log("[Main] 环境变量加载结果:");
     console.log(`  VITE_SUPABASE_URL: ${process.env.VITE_SUPABASE_URL ? '已加载' : '未找到'}`);
@@ -394,4 +409,32 @@ ipcMain.handle("update:check", () => {
 ipcMain.handle("update:install", () => {
   autoUpdater.quitAndInstall();
   return { success: true };
+});
+
+ipcMain.handle("config:read", async () => {
+  try {
+    const configPath = path.join(app.getPath('userData'), 'config.json');
+    if (!fs.existsSync(configPath)) {
+      return {};
+    }
+    const content = fs.readFileSync(configPath, 'utf-8');
+    return JSON.parse(content);
+  } catch {
+    return {};
+  }
+});
+
+ipcMain.handle("config:write", async (_event, data: Record<string, unknown>) => {
+  try {
+    const userDataPath = app.getPath('userData');
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
+    }
+    const configPath = path.join(userDataPath, 'config.json');
+    fs.writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf-8');
+    return { success: true };
+  } catch (error) {
+    const err = error as Error;
+    return { success: false, error: err.message };
+  }
 });

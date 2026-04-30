@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
@@ -23,6 +23,15 @@ import {
   Globe,
   Puzzle,
   SwatchBook,
+  Database,
+  ChevronDown,
+  ChevronUp,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Zap,
+  Info,
 } from "lucide-react";
 import { AvailableModels } from "../types";
 import type { AIProviderType } from "@shared/types";
@@ -30,6 +39,49 @@ import { isCapacitorMobile } from "../config/mobileApiConfig";
 import { mobileAIService } from "../services/mobile/aiService";
 import type { MobileAIUserConfig } from "../services/mobile/aiService";
 import { PluginMarketplace } from "../components/PluginMarketplace/PluginMarketplace";
+import { apiClient } from "../services/api/createApiClient";
+import { isElectron } from "../config/electronConfig";
+import { updateSupabaseConfig } from "../config/authConfig";
+import { resetSupabaseClient } from "../lib/supabase";
+
+interface ProviderConfig {
+  configured: boolean;
+  apiKey: string;
+  baseURL: string;
+  model: string;
+  source: "user" | "env" | "none";
+}
+
+interface ProviderFormData {
+  apiKey: string;
+  baseURL: string;
+  model: string;
+}
+
+interface DatabaseConfig {
+  configured: boolean;
+  url: string;
+  mode: "cloud" | "local";
+  connected: boolean;
+}
+
+const PROVIDER_DEFAULTS: Record<string, { name: string; baseURL: string; model: string }> = {
+  deepseek: {
+    name: "Deepseek",
+    baseURL: "https://api.deepseek.com/v1",
+    model: "deepseek-chat",
+  },
+  volcengine: {
+    name: "火山引擎 (Volcengine)",
+    baseURL: "https://ark.cn-beijing.volces.com/api/v3",
+    model: "doubao-pro-4k",
+  },
+  aliyun: {
+    name: "阿里云 (Aliyun)",
+    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    model: "qwen-max",
+  },
+};
 
 export const Settings = () => {
   const navigate = useNavigate();
@@ -80,6 +132,33 @@ export const Settings = () => {
   const [mobileModel, setMobileModel] = useState("deepseek-chat");
   const [showMobileApiKey, setShowMobileApiKey] = useState(false);
 
+  const [providerConfigs, setProviderConfigs] = useState<Record<string, ProviderConfig>>({});
+  const [providerForms, setProviderForms] = useState<Record<string, ProviderFormData>>({});
+  const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({});
+  const [showProviderApiKeys, setShowProviderApiKeys] = useState<Record<string, boolean>>({});
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [providerLoading, setProviderLoading] = useState(false);
+
+  const [databaseConfig, setDatabaseConfig] = useState<DatabaseConfig>({
+    configured: false,
+    url: "",
+    mode: "cloud",
+    connected: false,
+  });
+  const [dbForm, setDbForm] = useState({ url: "", anonKey: "", serviceRoleKey: "" });
+  const [dbExpanded, setDbExpanded] = useState(false);
+  const [showDbAnonKey, setShowDbAnonKey] = useState(false);
+  const [showDbServiceRoleKey, setShowDbServiceRoleKey] = useState(false);
+  const [dbSaving, setDbSaving] = useState(false);
+  const [dbTesting, setDbTesting] = useState(false);
+  const [dbLoading, setDbLoading] = useState(false);
+
+  const dbSectionRef = useRef<HTMLDivElement>(null);
+
+  const scrollToDbSection = useCallback(() => {
+    dbSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   useLayoutEffect(() => {
     if (settings) {
       if (settings.request_retention)
@@ -115,6 +194,217 @@ export const Settings = () => {
       }
     }
   }, [isMobile]);
+
+  useLayoutEffect(() => {
+    if (token) {
+      fetchProviderConfigs();
+      fetchDatabaseConfig();
+    }
+  }, [token]);
+
+  const fetchProviderConfigs = async () => {
+    setProviderLoading(true);
+    try {
+      const response = await apiClient.get("/ai/config/providers") as { providers: Record<string, ProviderConfig> };
+      const providers = response.providers || {};
+      setProviderConfigs(providers);
+      const forms: Record<string, ProviderFormData> = {};
+      const expanded: Record<string, boolean> = {};
+      for (const [key, config] of Object.entries(providers)) {
+        forms[key] = {
+          apiKey: config.source === "user" ? config.apiKey : "",
+          baseURL: config.baseURL || PROVIDER_DEFAULTS[key]?.baseURL || "",
+          model: config.model || PROVIDER_DEFAULTS[key]?.model || "",
+        };
+        expanded[key] = false;
+      }
+      for (const key of Object.keys(PROVIDER_DEFAULTS)) {
+        if (!forms[key]) {
+          forms[key] = {
+            apiKey: "",
+            baseURL: PROVIDER_DEFAULTS[key].baseURL,
+            model: PROVIDER_DEFAULTS[key].model,
+          };
+        }
+      }
+      setProviderForms(forms);
+      setExpandedProviders(expanded);
+    } catch {
+      const forms: Record<string, ProviderFormData> = {};
+      for (const [key, defaults] of Object.entries(PROVIDER_DEFAULTS)) {
+        forms[key] = { apiKey: "", baseURL: defaults.baseURL, model: defaults.model };
+      }
+      setProviderForms(forms);
+    } finally {
+      setProviderLoading(false);
+    }
+  };
+
+  const fetchDatabaseConfig = async () => {
+    setDbLoading(true);
+    try {
+      const response = await apiClient.get("/ai/config/database") as DatabaseConfig;
+      setDatabaseConfig(response);
+    } catch {
+      setDatabaseConfig({ configured: false, url: "", mode: "cloud", connected: false });
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
+  const handleSaveProviderConfig = async (provider: string) => {
+    const form = providerForms[provider];
+    if (!form) return;
+
+    try {
+      const updateData: Record<string, { apiKey?: string; baseURL?: string; model?: string }> = {};
+      updateData[provider] = {
+        apiKey: form.apiKey,
+        baseURL: form.baseURL,
+        model: form.model,
+      };
+      await apiClient.put("/ai/config/providers", { providers: updateData });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("settings.providerConfigSaved", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+      });
+      await fetchProviderConfigs();
+    } catch {
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.providerConfigSaveFailed"),
+      });
+    }
+  };
+
+  const handleTestProviderConnection = async (provider: string) => {
+    const form = providerForms[provider];
+    if (!form) return;
+
+    setTestingProvider(provider);
+    try {
+      const response = await apiClient.post("/ai/config/providers/test", {
+        provider,
+        apiKey: form.apiKey,
+        baseURL: form.baseURL,
+        model: form.model,
+      }) as { success: boolean; message: string };
+      if (response.success) {
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("settings.providerTestSuccess", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+        });
+      } else {
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: response.message || t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+        });
+      }
+    } catch {
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+      });
+    } finally {
+      setTestingProvider(null);
+    }
+  };
+
+  const handleClearProviderConfig = async (provider: string) => {
+    try {
+      const updateData: Record<string, { apiKey: string; baseURL: string; model: string }> = {};
+      updateData[provider] = { apiKey: "", baseURL: "", model: "" };
+      await apiClient.put("/ai/config/providers", { providers: updateData });
+      setProviderForms((prev) => ({
+        ...prev,
+        [provider]: {
+          apiKey: "",
+          baseURL: PROVIDER_DEFAULTS[provider]?.baseURL || "",
+          model: PROVIDER_DEFAULTS[provider]?.model || "",
+        },
+      }));
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("settings.providerConfigCleared", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+      });
+      await fetchProviderConfigs();
+    } catch {
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.providerConfigSaveFailed"),
+      });
+    }
+  };
+
+  const handleSaveDatabaseConfig = async () => {
+    if (!dbForm.url.trim() || !dbForm.anonKey.trim()) {
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("settings.dbUrlAndAnonKeyRequired"),
+      });
+      return;
+    }
+
+    setDbSaving(true);
+    try {
+      if (isElectron() && window.electronAPI?.config) {
+        await window.electronAPI.config.write({
+          database: {
+            url: dbForm.url,
+            anonKey: dbForm.anonKey,
+            serviceRoleKey: dbForm.serviceRoleKey,
+          },
+        });
+      }
+
+      await apiClient.put("/ai/config/database", {
+        url: dbForm.url,
+        anonKey: dbForm.anonKey,
+        serviceRoleKey: dbForm.serviceRoleKey,
+      });
+
+      updateSupabaseConfig(dbForm.url, dbForm.anonKey);
+      resetSupabaseClient();
+
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("settings.dbConfigSaved"),
+      });
+      await fetchDatabaseConfig();
+    } catch {
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.dbConfigSaveFailed"),
+      });
+    } finally {
+      setDbSaving(false);
+    }
+  };
+
+  const handleTestDatabaseConnection = async () => {
+    setDbTesting(true);
+    try {
+      await fetchDatabaseConfig();
+      if (databaseConfig.connected) {
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("settings.dbConnected"),
+        });
+      } else {
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: t("settings.dbNotConnected"),
+        });
+      }
+    } catch {
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.dbTestFailed"),
+      });
+    } finally {
+      setDbTesting(false);
+    }
+  };
 
   const handleSaveAllSettings = async () => {
     try {
@@ -208,9 +498,46 @@ export const Settings = () => {
     });
   };
 
+  const renderProviderBadge = (config: ProviderConfig) => {
+    if (config.source === "env") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+          {t("settings.sourceEnv")}
+        </span>
+      );
+    }
+    if (config.configured && config.source === "user") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+          {t("settings.configured")}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        {t("settings.notConfigured")}
+      </span>
+    );
+  };
+
   return (
     <div className="h-full overflow-y-auto px-4 py-4 md:p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
       <div className="max-w-4xl mx-auto space-y-6">
+        {!databaseConfig.connected && !dbLoading && (
+          <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-200 flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <div className="flex-1 text-sm">
+              {t("settings.dbNotConfiguredWarning")}
+            </div>
+            <button
+              onClick={scrollToDbSection}
+              className="px-3 py-1.5 rounded-md bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-colors min-h-[44px]"
+            >
+              {t("settings.goToDbConfig")}
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
@@ -436,6 +763,185 @@ export const Settings = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+          <div className="flex items-center gap-2 mb-4">
+            <KeyRound className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              {t("settings.aiProviderConfig")}
+            </h2>
+          </div>
+
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            {t("settings.aiProviderConfigDesc")}
+          </p>
+
+          {providerLoading && (
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {t("common.loading")}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {Object.entries(PROVIDER_DEFAULTS).map(([providerKey, defaults]) => {
+              const config = providerConfigs[providerKey];
+              const form = providerForms[providerKey];
+              const isExpanded = expandedProviders[providerKey] ?? false;
+              const showApiKey = showProviderApiKeys[providerKey] ?? false;
+              const isEnvSource = config?.source === "env";
+
+              return (
+                <div
+                  key={providerKey}
+                  className="rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden"
+                >
+                  <button
+                    onClick={() =>
+                      setExpandedProviders((prev) => ({
+                        ...prev,
+                        [providerKey]: !prev[providerKey],
+                      }))
+                    }
+                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors min-h-[44px]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Zap className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                        {defaults.name}
+                      </span>
+                      {config && renderProviderBadge(config)}
+                    </div>
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+
+                  {isExpanded && form && (
+                    <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-700">
+                      {isEnvSource && (
+                        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                          <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                          {t("settings.envConfigHint")}
+                        </div>
+                      )}
+
+                      {config?.source === "none" && (
+                        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                          {t("settings.noApiKeyHint", { provider: defaults.name })}
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                          API Key
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showApiKey ? "text" : "password"}
+                            value={isEnvSource ? "" : form.apiKey}
+                            onChange={(e) =>
+                              setProviderForms((prev) => ({
+                                ...prev,
+                                [providerKey]: { ...prev[providerKey], apiKey: e.target.value },
+                              }))
+                            }
+                            placeholder={isEnvSource ? t("settings.envConfigPlaceholder") : t("settings.enterApiKey")}
+                            disabled={isEnvSource}
+                            className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowProviderApiKeys((prev) => ({
+                                ...prev,
+                                [providerKey]: !prev[providerKey],
+                              }))
+                            }
+                            className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          >
+                            {showApiKey ? t("settings.hide") : t("settings.show")}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                          Base URL
+                        </label>
+                        <input
+                          type="text"
+                          value={form.baseURL}
+                          onChange={(e) =>
+                            setProviderForms((prev) => ({
+                              ...prev,
+                              [providerKey]: { ...prev[providerKey], baseURL: e.target.value },
+                            }))
+                          }
+                          placeholder={defaults.baseURL}
+                          className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                          {t("settings.defaultModel")}
+                        </label>
+                        <input
+                          type="text"
+                          value={form.model}
+                          onChange={(e) =>
+                            setProviderForms((prev) => ({
+                              ...prev,
+                              [providerKey]: { ...prev[providerKey], model: e.target.value },
+                            }))
+                          }
+                          placeholder={defaults.model}
+                          className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <button
+                          onClick={() => handleTestProviderConnection(providerKey)}
+                          disabled={testingProvider === providerKey || isEnvSource}
+                          className="px-3 py-2 rounded-md border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 text-sm hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                        >
+                          {testingProvider === providerKey ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Zap className="w-4 h-4" />
+                          )}
+                          {t("settings.testConnection")}
+                        </button>
+                        <button
+                          onClick={() => handleSaveProviderConfig(providerKey)}
+                          disabled={isEnvSource}
+                          className="px-3 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4" />
+                          {t("settings.saveConfig")}
+                        </button>
+                        {config?.configured && config.source === "user" && (
+                          <button
+                            onClick={() => handleClearProviderConfig(providerKey)}
+                            className="px-3 py-2 rounded-md border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 min-h-[44px]"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            {t("settings.clear")}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -716,6 +1222,157 @@ export const Settings = () => {
               </div>
             </div>
           )}
+        </div>
+
+        <div
+          ref={dbSectionRef}
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Database className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                {t("settings.databaseConfig")}
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            {dbLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t("common.loading")}
+              </div>
+            ) : (
+              <>
+                {databaseConfig.connected ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {t("settings.dbConnected")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                    <XCircle className="w-3.5 h-3.5" />
+                    {t("settings.dbDisconnected")}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                  {databaseConfig.mode === "local"
+                    ? t("settings.dbModeLocal")
+                    : t("settings.dbModeCloud")}
+                </span>
+                {databaseConfig.url && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                    {databaseConfig.url}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
+            <button
+              onClick={() => setDbExpanded(!dbExpanded)}
+              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors min-h-[44px]"
+            >
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t("settings.dbConfigForm")}
+              </span>
+              {dbExpanded ? (
+                <ChevronUp className="w-4 h-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              )}
+            </button>
+
+            {dbExpanded && (
+              <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-700">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Supabase URL
+                  </label>
+                  <input
+                    type="text"
+                    value={dbForm.url}
+                    onChange={(e) => setDbForm((prev) => ({ ...prev, url: e.target.value }))}
+                    placeholder="https://xxx.supabase.co"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Anon Key
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showDbAnonKey ? "text" : "password"}
+                      value={dbForm.anonKey}
+                      onChange={(e) => setDbForm((prev) => ({ ...prev, anonKey: e.target.value }))}
+                      placeholder="eyJhbGciOi..."
+                      className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDbAnonKey(!showDbAnonKey)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      {showDbAnonKey ? t("settings.hide") : t("settings.show")}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Service Role Key
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showDbServiceRoleKey ? "text" : "password"}
+                      value={dbForm.serviceRoleKey}
+                      onChange={(e) => setDbForm((prev) => ({ ...prev, serviceRoleKey: e.target.value }))}
+                      placeholder="eyJhbGciOi..."
+                      className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDbServiceRoleKey(!showDbServiceRoleKey)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      {showDbServiceRoleKey ? t("settings.hide") : t("settings.show")}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    onClick={handleSaveDatabaseConfig}
+                    disabled={dbSaving}
+                    className="px-3 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                  >
+                    {dbSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {t("settings.saveAndReconnect")}
+                  </button>
+                  <button
+                    onClick={handleTestDatabaseConnection}
+                    disabled={dbTesting}
+                    className="px-3 py-2 rounded-md border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                  >
+                    {dbTesting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Zap className="w-4 h-4" />
+                    )}
+                    {t("settings.testConnection")}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {isMobile && (

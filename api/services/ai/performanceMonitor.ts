@@ -4,7 +4,7 @@ import type {
   GetPerformanceLogsQuery,
 } from "@shared/types";
 import { pricingService } from "./pricingService";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
 
 const MAX_LOGS = 1000;
@@ -54,7 +54,7 @@ class PerformanceMonitor {
   }
 
   private async loadFromDatabase(): Promise<void> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("*")
       .order("timestamp", { ascending: false })
@@ -130,7 +130,7 @@ class PerformanceMonitor {
 
   private async persistToDatabase(log: AIPerformanceLog): Promise<void> {
     try {
-      const { error } = await supabaseAdmin.from("ai_performance_logs").insert({
+      const { error } = await getSupabaseAdmin().from("ai_performance_logs").insert({
         id: log.id,
         timestamp: log.timestamp,
         operation: log.operation,
@@ -196,7 +196,7 @@ class PerformanceMonitor {
   async getHistoricalLogs(
     query: GetPerformanceLogsQuery & { days?: number; sessionId?: string } = {},
   ): Promise<{ logs: AIPerformanceLog[]; total: number }> {
-    let dbQuery = supabaseAdmin
+    let dbQuery = getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("*", { count: "exact" })
       .order("timestamp", { ascending: false });
@@ -404,7 +404,7 @@ class PerformanceMonitor {
       // 异步清理数据库
       (async () => {
         try {
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from("ai_performance_logs")
             .delete()
             .lt("timestamp", beforeTimestamp);
@@ -428,7 +428,7 @@ class PerformanceMonitor {
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
     (async () => {
       try {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from("ai_performance_logs")
           .delete()
           .lt("timestamp", thirtyDaysAgo);
@@ -453,25 +453,25 @@ class PerformanceMonitor {
     totalCost: number;
     totalTokens: number;
   }> {
-    const { count: totalRecords } = await supabaseAdmin
+    const { count: totalRecords } = await getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("*", { count: "exact", head: true });
 
-    const { data: oldest } = await supabaseAdmin
+    const { data: oldest } = await getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("timestamp")
       .order("timestamp", { ascending: true })
       .limit(1)
       .single();
 
-    const { data: newest } = await supabaseAdmin
+    const { data: newest } = await getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("timestamp")
       .order("timestamp", { ascending: false })
       .limit(1)
       .single();
 
-    const { data: aggData } = await supabaseAdmin
+    const { data: aggData } = await getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("total_tokens, estimated_cost");
 

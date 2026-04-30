@@ -3,7 +3,7 @@ import type {
   AppEvent,
   ReviewCompletedPayload,
 } from "@shared/types/events";
-import { supabaseAdmin } from "../../../supabase";
+import { getSupabaseAdmin } from "../../../supabase";
 import { logger } from "../../../utils/logger";
 
 class ReviewSchedulerSubscriber {
@@ -32,7 +32,7 @@ class ReviewSchedulerSubscriber {
   private async scheduleNextReview(userId: string, payload: ReviewCompletedPayload) {
     try {
       const { reviewTaskService } = await import("../../scheduler/reviewTaskService");
-      await reviewTaskService.updateReviewTask(supabaseAdmin, userId, payload.knowledgePointId, {
+      await reviewTaskService.updateReviewTask(getSupabaseAdmin(), userId, payload.knowledgePointId, {
         quality: payload.qualityScore,
       });
     } catch (error) {

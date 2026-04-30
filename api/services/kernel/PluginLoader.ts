@@ -4,7 +4,7 @@ import { logger } from "../../utils/logger";
 import type { Kernel } from "./Kernel";
 import type { Plugin, PluginManifest } from "./types";
 import { validateManifest } from "./manifest";
-import { supabaseAdmin } from "../../supabase";
+import { getSupabaseAdmin } from "../../supabase";
 
 export class PluginLoader {
   private kernel: Kernel;
@@ -16,7 +16,7 @@ export class PluginLoader {
   }
 
   async loadInstalledPlugins(): Promise<{ loaded: number; failed: number }> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("installed_plugins")
       .select("plugin_name, state, manifest")
       .eq("state", "active");
@@ -92,7 +92,7 @@ export class PluginLoader {
   }
 
   private async markPluginError(pluginName: string, errorMessage: string): Promise<void> {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("installed_plugins")
       .update({ state: "error" })
       .eq("plugin_name", pluginName);

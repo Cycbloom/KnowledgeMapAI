@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../supabase';
+import { getSupabaseAdmin } from '../../supabase';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
@@ -119,7 +119,7 @@ export class PeriodicTaskService {
     for (const periodType of periodTypes) {
       const { start, end } = getPeriodDates(periodType);
 
-      const { count, error: countError } = await supabaseAdmin
+      const { count, error: countError } = await getSupabaseAdmin()
         .from('periodic_tasks')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
@@ -172,7 +172,7 @@ export class PeriodicTaskService {
         },
       ];
 
-      await supabaseAdmin.from('periodic_tasks').upsert(tasks, {
+      await getSupabaseAdmin().from('periodic_tasks').upsert(tasks, {
         onConflict: 'user_id,period_type,period_start,task_type',
         ignoreDuplicates: true,
       });
@@ -182,7 +182,7 @@ export class PeriodicTaskService {
   }
 
   async initPass(userId: string, periodType: 'weekly' | 'monthly' | 'quarterly', start: string, end: string): Promise<void> {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('periodic_passes')
       .insert({
         user_id: userId,
@@ -201,7 +201,7 @@ export class PeriodicTaskService {
   async getPeriodicTasks(userId: string): Promise<PeriodicTask[]> {
     await this.initPeriodicTasks(userId);
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
@@ -223,7 +223,7 @@ export class PeriodicTaskService {
     for (const periodType of periodTypes) {
       const { start } = getPeriodDates(periodType);
 
-      const { data: task } = await supabaseAdmin
+      const { data: task } = await getSupabaseAdmin()
         .from('periodic_tasks')
         .select('*')
         .eq('user_id', userId)
@@ -240,7 +240,7 @@ export class PeriodicTaskService {
       if (newProgress >= task.target) {
         updates.status = 'completed';
 
-        const { data: currentPass } = await supabaseAdmin
+        const { data: currentPass } = await getSupabaseAdmin()
           .from('periodic_passes')
           .select('total_points')
           .eq('user_id', userId)
@@ -249,7 +249,7 @@ export class PeriodicTaskService {
           .single();
 
         if (currentPass) {
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from('periodic_passes')
             .update({ total_points: currentPass.total_points + task.pass_points })
             .eq('user_id', userId)
@@ -260,7 +260,7 @@ export class PeriodicTaskService {
         completedTasks.push(task);
       }
 
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('periodic_tasks')
         .update(updates)
         .eq('id', task.id);
@@ -289,7 +289,7 @@ export class PeriodicTaskService {
     for (const periodType of ['weekly', 'monthly', 'quarterly'] as const) {
       const { start } = getPeriodDates(periodType);
 
-      const { data: pass } = await supabaseAdmin
+      const { data: pass } = await getSupabaseAdmin()
         .from('periodic_passes')
         .select('*')
         .eq('user_id', userId)
@@ -300,7 +300,7 @@ export class PeriodicTaskService {
       result[periodType] = pass;
     }
 
-    const { data: rewards } = await supabaseAdmin
+    const { data: rewards } = await getSupabaseAdmin()
       .from('pass_rewards')
       .select('*')
       .order('period_type')
@@ -311,7 +311,7 @@ export class PeriodicTaskService {
     const passIds = [result.weekly?.id, result.monthly?.id, result.quarterly?.id].filter(Boolean);
 
     if (passIds.length > 0) {
-      const { data: progress } = await supabaseAdmin
+      const { data: progress } = await getSupabaseAdmin()
         .from('user_pass_progress')
         .select('*')
         .in('pass_id', passIds);
@@ -327,7 +327,7 @@ export class PeriodicTaskService {
     passId: string,
     level: number
   ): Promise<{ success: boolean; reward: PassReward | null; message: string }> {
-    const { data: pass } = await supabaseAdmin
+    const { data: pass } = await getSupabaseAdmin()
       .from('periodic_passes')
       .select('*')
       .eq('id', passId)
@@ -338,7 +338,7 @@ export class PeriodicTaskService {
       return { success: false, reward: null, message: '通行证不存在' };
     }
 
-    const { data: reward } = await supabaseAdmin
+    const { data: reward } = await getSupabaseAdmin()
       .from('pass_rewards')
       .select('*')
       .eq('period_type', pass.period_type)
@@ -353,7 +353,7 @@ export class PeriodicTaskService {
       return { success: false, reward: null, message: '积分不足' };
     }
 
-    const { data: existingProgress } = await supabaseAdmin
+    const { data: existingProgress } = await getSupabaseAdmin()
       .from('user_pass_progress')
       .select('*')
       .eq('pass_id', passId)
@@ -364,7 +364,7 @@ export class PeriodicTaskService {
       return { success: false, reward: null, message: '奖励已领取' };
     }
 
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('user_pass_progress')
       .upsert({
         user_id: userId,
@@ -375,7 +375,7 @@ export class PeriodicTaskService {
       }, { onConflict: 'user_id,pass_id,level' });
 
     if (reward.reward_type === 'xp' && reward.reward_value) {
-      const { data: user } = await supabaseAdmin
+      const { data: user } = await getSupabaseAdmin()
         .from('users')
         .select('xp, level')
         .eq('id', userId)
@@ -392,7 +392,7 @@ export class PeriodicTaskService {
           nextLevelThreshold = level * 500;
         }
 
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('users')
           .update({ xp, level })
           .eq('id', userId);
@@ -400,7 +400,7 @@ export class PeriodicTaskService {
     }
 
     if (pass.current_level < level) {
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('periodic_passes')
         .update({ current_level: level })
         .eq('id', passId);
@@ -412,7 +412,7 @@ export class PeriodicTaskService {
   async checkDailyTaskStreak(userId: string): Promise<{ streak: number; bonusAwarded: number }> {
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: dailyTasks } = await supabaseAdmin
+    const { data: dailyTasks } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
@@ -428,14 +428,14 @@ export class PeriodicTaskService {
       return { streak: 0, bonusAwarded: 0 };
     }
 
-    const { data: stats } = await supabaseAdmin
+    const { data: stats } = await getSupabaseAdmin()
       .from('user_focus_stats')
       .select('*')
       .eq('user_id', userId)
       .single();
 
     if (!stats) {
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('user_focus_stats')
         .insert({
           user_id: userId,
@@ -467,7 +467,7 @@ export class PeriodicTaskService {
       await this.checkAndUnlockAchievement(userId, 'daily_task_streak', newStreak);
     }
 
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('user_focus_stats')
       .update({
         daily_task_streak: newStreak,
@@ -487,7 +487,7 @@ export class PeriodicTaskService {
 
       if (today !== end) continue;
 
-      const { data: tasks } = await supabaseAdmin
+      const { data: tasks } = await getSupabaseAdmin()
         .from('periodic_tasks')
         .select('*')
         .eq('user_id', userId)
@@ -498,7 +498,7 @@ export class PeriodicTaskService {
 
       const allCompleted = tasks.every((t: any) => t.status === 'completed');
 
-      const { data: stats } = await supabaseAdmin
+      const { data: stats } = await getSupabaseAdmin()
         .from('user_focus_stats')
         .select('*')
         .eq('user_id', userId)
@@ -509,14 +509,14 @@ export class PeriodicTaskService {
       if (allCompleted) {
         const newStreak = ((stats?.[streakColumn] as number) || 0) + 1;
 
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('user_focus_stats')
           .update({ [streakColumn]: newStreak })
           .eq('user_id', userId);
 
         await this.checkAndUnlockAchievement(userId, `${periodType}_streak` as any, newStreak);
       } else {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('user_focus_stats')
           .update({ [streakColumn]: 0 })
           .eq('user_id', userId);
@@ -525,7 +525,7 @@ export class PeriodicTaskService {
   }
 
   private async awardXp(userId: string, amount: number): Promise<void> {
-    const { data: user } = await supabaseAdmin
+    const { data: user } = await getSupabaseAdmin()
       .from('users')
       .select('xp, level')
       .eq('id', userId)
@@ -543,14 +543,14 @@ export class PeriodicTaskService {
       nextLevelThreshold = level * 500;
     }
 
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('users')
       .update({ xp, level })
       .eq('id', userId);
   }
 
   private async checkAndUnlockAchievement(userId: string, conditionType: string, value: number): Promise<void> {
-    const { data: achievements } = await supabaseAdmin
+    const { data: achievements } = await getSupabaseAdmin()
       .from('achievements')
       .select('*')
       .eq('condition_type', conditionType)
@@ -558,7 +558,7 @@ export class PeriodicTaskService {
 
     if (!achievements || achievements.length === 0) return;
 
-    const { data: unlocked } = await supabaseAdmin
+    const { data: unlocked } = await getSupabaseAdmin()
       .from('user_achievements')
       .select('achievement_id')
       .eq('user_id', userId)
@@ -568,7 +568,7 @@ export class PeriodicTaskService {
     const newUnlocks = achievements.filter((a: any) => !unlockedIds.has(a.id));
 
     for (const achievement of newUnlocks) {
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('user_achievements')
         .insert({
           user_id: userId,

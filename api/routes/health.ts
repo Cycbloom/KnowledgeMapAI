@@ -4,7 +4,7 @@ import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { logger } from '../utils/logger';
 import { healthService } from '../services/core/healthService';
-import { supabaseAdmin } from '../supabase';
+import { getSupabaseAdmin } from '../supabase';
 
 const router = Router();
 
@@ -75,7 +75,7 @@ router.get('/system', async (_req, res) => {
 
   const dbStart = Date.now();
   try {
-    const { error } = await supabaseAdmin.from('users').select('id').limit(1);
+    const { error } = await getSupabaseAdmin().from('users').select('id').limit(1);
     if (error) {
       checks.database = { status: 'error', message: error.message };
     } else {

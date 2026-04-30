@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { supabaseAdmin, supabaseAnon, createClientWithToken } from '../supabase';
+import { getSupabaseAdmin, getSupabaseAnon, createClientWithToken } from '../supabase';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from './errorHandler';
 import { ErrorCodes, type ErrorCode } from '../../shared/types/errorCodes';
@@ -67,7 +67,7 @@ export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFu
     throw new AppError('Token missing', 401, ErrorCodes.TOKEN_MISSING);
   }
 
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+  const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
 
   if (error) {
     const tokenError = parseTokenError(error);
@@ -88,34 +88,34 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    req.supabase = supabaseAnon;
+    req.supabase = getSupabaseAnon();
     return next();
   }
 
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
-    req.supabase = supabaseAnon;
+    req.supabase = getSupabaseAnon();
     return next();
   }
 
   const token = parts[1];
 
   if (!token) {
-    req.supabase = supabaseAnon;
+    req.supabase = getSupabaseAnon();
     return next();
   }
 
   try {
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
 
     if (!error && user) {
       req.user = user;
       req.supabase = createClientWithToken(token);
     } else {
-      req.supabase = supabaseAnon;
+      req.supabase = getSupabaseAnon();
     }
   } catch {
-    req.supabase = supabaseAnon;
+    req.supabase = getSupabaseAnon();
   }
   
   next();
@@ -127,7 +127,7 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
       throw new AppError('User not authenticated', 401, ErrorCodes.UNAUTHORIZED);
     }
 
-    const { data: userRecord, error } = await supabaseAdmin
+    const { data: userRecord, error } = await getSupabaseAdmin()
       .from('users')
       .select('role')
       .eq('id', req.user.id)

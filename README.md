@@ -1,12 +1,25 @@
 # Knowledge Map
 
-一个 AI 驱动的知识管理与学习平台，帮助用户构建、管理和深化知识体系。
+<div align="center">
+
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/knowledgemap/knowledgemap-app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js->=20-green.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
+
+**AI 驱动的知识管理与学习平台**
+
+[功能特性](#功能特性) • [快速开始](#快速开始) • [安装](#安装步骤) • [使用指南](#使用指南) • [开发](#开发指南)
+
+</div>
+
+---
 
 ## 项目简介
 
 Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 辅助学习、间隔重复记忆和任务管理融为一体。用户可以通过可视化图谱组织知识，利用 AI 自动扩展知识点、生成学习材料，并通过科学的间隔重复算法进行高效学习。
 
-**目标平台：** 本项目以 **Electron 桌面应用** 为主要开发和发布目标，同时支持 Web 端和移动端（Android）访问。通过 Electron 实现跨平台桌面应用（Windows、macOS、Linux），提供原生桌面体验，包括系统托盘、自动更新、离线支持等特性。移动端使用 Capacitor 构建，直接连接 Supabase，支持离线存储和实时同步。
+**目标平台：** 本项目以 **Electron 桌面应用** 为主要开发和发布目标，同时支持 Web 端和移动端（Android）访问。
 
 **核心价值：**
 
@@ -137,6 +150,31 @@ Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 
 - 行级安全策略（RLS）
 
 ## 快速开始
+
+### 一键启动（推荐新手）
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/knowledgemap/knowledgemap-app.git
+cd knowledgemap-app
+
+# 2. 安装依赖
+npm install
+
+# 3. 复制环境配置
+cp .env.example .env.development
+
+# 4. 启动本地数据库（需要 Docker）
+npm run db:local:start
+
+# 5. 初始化数据库
+npm run db:local:reset
+
+# 6. 启动开发服务器
+npm run dev
+```
+
+访问 http://localhost:5173 即可使用。
 
 ### 环境要求
 
@@ -482,4 +520,10 @@ npm run test:ci  # 运行所有测试
 
 ---
 
-**Made with ❤️ by Knowledge Map Team**
+<div align="center">
+
+**Made with ❤️ by [KnowledgeMap Team](https://github.com/knowledgemap)**
+
+[⬆ 返回顶部](#knowledge-map)
+
+</div>

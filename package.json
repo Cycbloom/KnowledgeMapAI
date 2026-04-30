@@ -1,12 +1,30 @@
 {
   "name": "knowledgemap",
-  "private": true,
   "version": "1.0.0",
-  "description": "KnowledgeMap - A powerful knowledge management application",
+  "description": "KnowledgeMap - AI-powered knowledge management application with graph visualization, spaced repetition learning, and smart task scheduling",
   "author": {
     "name": "KnowledgeMap Team",
     "email": "support@knowledgemap.app"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/knowledgemap/knowledgemap-app.git"
+  },
+  "homepage": "https://github.com/knowledgemap/knowledgemap-app#readme",
+  "bugs": {
+    "url": "https://github.com/knowledgemap/knowledgemap-app/issues"
+  },
+  "keywords": [
+    "knowledge-management",
+    "knowledge-graph",
+    "spaced-repetition",
+    "ai",
+    "learning",
+    "electron",
+    "react",
+    "typescript"
+  ],
   "main": "dist-electron/electron/main.js",
   "type": "module",
   "engines": {

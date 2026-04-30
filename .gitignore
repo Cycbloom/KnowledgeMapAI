@@ -50,7 +50,17 @@ data/*.db-wal
 *.sw?
 .vite
 
+# Environment files with secrets
 .env
+.env.local
+.env.development
+.env.production
+.env.vercel
+.vercel.env
+.jwt_secret
+
+# Vercel
+.vercel/
 
 backups/
 

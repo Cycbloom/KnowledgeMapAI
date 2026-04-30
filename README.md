@@ -123,8 +123,6 @@ Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 
 | --------------------- | -------- |
 | Node.js + Express     | API 服务 |
 | Supabase (PostgreSQL) | 数据库   |
-| Redis                 | 缓存     |
-| BullMQ                | 任务队列 |
 | Supabase Auth         | 用户认证 |
 | Swagger               | API 文档 |
 
@@ -180,7 +178,6 @@ npm run dev
 
 - Node.js >= 20
 - npm 或 pnpm
-- Docker（可选，用于 Redis）
 - Supabase CLI（本地开发）
 
 ### 安装步骤
@@ -218,24 +215,12 @@ DEEPSEEK_API_KEY=your_deepseek_key
 VOLCENGINE_API_KEY=your_volcengine_key
 ALIYUN_API_KEY=your_aliyun_key
 
-# Redis 配置
-REDIS_URL=redis://localhost:6379
-
-# TTS 服务（可选）
-TTS_SERVICE_URL=http://localhost:8001
-
 # 测试账号
 TEST_USER_EMAIL=test@example.com
 TEST_USER_PASSWORD=test123456
 ```
 
-4. **启动 Redis（使用 Docker）**
-
-```bash
-docker-compose up -d
-```
-
-5. **初始化数据库**
+4. **初始化数据库**
 
 ```bash
 # 重置数据库（应用 schema 和 seed）
@@ -245,7 +230,7 @@ npx supabase db reset
 npm run db:seed
 ```
 
-6. **启动开发服务器**
+5. **启动开发服务器**
 
 ```bash
 npm run dev
@@ -440,8 +425,6 @@ SUPABASE_SERVICE_ROLE_KEY=
 DEEPSEEK_API_KEY=
 VOLCENGINE_API_KEY=
 ALIYUN_API_KEY=
-REDIS_URL=
-TTS_SERVICE_URL=
 ```
 
 ### 数据库
@@ -476,15 +459,6 @@ npx playwright install
 **Q: AI 功能不工作？**
 
 A: 确保至少配置了一个 AI 提供商的 API Key。
-
-**Q: Redis 连接失败？**
-
-A: 检查 Redis 是否启动：
-
-```bash
-docker-compose ps
-docker-compose up -d
-```
 
 ### 使用问题
 

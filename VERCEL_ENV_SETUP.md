@@ -30,7 +30,6 @@
 |--------|------|--------|
 | `FRONTEND_URL` | 前端 URL（用于 CORS） | 自动检测 Vercel 域名 |
 | `NODE_ENV` | 运行环境 | `production` |
-| `REDIS_URL` | Redis 连接 URL | 无（使用内存缓存） |
 
 ## 常见问题排查
 

@@ -52,11 +52,6 @@ const ENV_SCHEMA: Record<string, EnvConfig> = {
     type: 'string',
     description: 'Volcengine API key',
   },
-  TTS_SERVICE_URL: {
-    required: false,
-    type: 'url',
-    description: 'TTS service URL',
-  },
   TEST_USER_EMAIL: {
     required: false,
     type: 'string',

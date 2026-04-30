@@ -18,6 +18,7 @@ export const ragApi = {
     provider?: string; 
     model?: string; 
     language?: string;
+    session_id?: string;
   }) => {
     const config = getAIConfig('text');
     const payload = { ...data, language: data.language || getAILanguage() };
@@ -35,6 +36,7 @@ export const ragApi = {
       provider?: string; 
       model?: string; 
       language?: string;
+      session_id?: string;
     }, 
     onChunk: (content: string) => void,
     onSources?: (sources: Source[]) => void

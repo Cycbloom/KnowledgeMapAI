@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 export interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   sources?: Source[];
   timestamp: Date;
@@ -23,28 +23,32 @@ export interface ChatState {
   suggestedQuestions: string[];
   currentSpeakingMessageId: string | null;
   isResizing: boolean;
+  sessionId: string;
 }
 
 export const useChatState = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
-  const [currentSpeakingMessageId, setCurrentSpeakingMessageId] = useState<string | null>(null);
+  const [currentSpeakingMessageId, setCurrentSpeakingMessageId] = useState<
+    string | null
+  >(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [sessionId] = useState<string>(() => crypto.randomUUID());
 
   const addMessage = useCallback((message: Message) => {
-    setMessages(prev => [...prev, message]);
+    setMessages((prev) => [...prev, message]);
   }, []);
 
   const updateMessage = useCallback((id: string, updates: Partial<Message>) => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === id ? { ...msg, ...updates } : msg
-    ));
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg)),
+    );
   }, []);
 
   const clearInput = useCallback(() => {
-    setInput('');
+    setInput("");
   }, []);
 
   const setSuggestedQuestionsWrapper = useCallback((questions: string[]) => {
@@ -63,6 +67,7 @@ export const useChatState = () => {
     setCurrentSpeakingMessageId,
     isResizing,
     setIsResizing,
+    sessionId,
     addMessage,
     updateMessage,
     clearInput,

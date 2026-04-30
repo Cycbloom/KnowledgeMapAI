@@ -6,6 +6,9 @@ import { ragService } from '../services/ai/ragService';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { performanceMonitor, enrichMetadata } from '../services/ai/performanceMonitor';
+import { supabaseAdmin } from '../supabase';
+import { getAIProviderForTask } from '../services/ai/factory';
 
 const router = Router();
 
@@ -20,6 +23,7 @@ const ragChatSchema = z.object({
   provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
   model: z.string().optional(),
   language: z.string().optional(),
+  session_id: z.string().uuid().optional(),
 });
 
 const ragSearchSchema = z.object({
@@ -34,16 +38,40 @@ const analyzeGapsSchema = z.object({
 });
 
 router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, current_node_id, history, provider, model, language } = req.body;
+  const { message, graph_id, current_node_id, history, provider, model, language, session_id } = req.body;
+  const sessionId = session_id || crypto.randomUUID();
 
   try {
+    const startTime = Date.now();
     const result = await ragService.chat(message, req.user.id, {
       graphId: graph_id,
       currentNodeId: current_node_id,
       history,
       provider,
       model,
-      language
+      language,
+      sessionId,
+    });
+    const duration = Date.now() - startTime;
+
+    const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      graphId: graph_id,
+      userId: req.user.id,
+      topic: message?.slice(0, 50),
+    });
+
+    await performanceMonitor.recordLog({
+      operation: 'rag_chat',
+      provider: (await getAIProviderForTask('text')).providerType,
+      model: model || (await getAIProviderForTask('text')).model,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      estimatedCost: 0,
+      duration,
+      success: true,
+      metadata: enrichedMetadata,
+      sessionId,
     });
 
     res.json(result);
@@ -54,13 +82,16 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
 });
 
 router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, current_node_id, history, provider, model, language } = req.body;
+  const { message, graph_id, current_node_id, history, provider, model, language, session_id } = req.body;
+  const sessionId = session_id || crypto.randomUUID();
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Session-Id', sessionId);
 
   try {
+    const startTime = Date.now();
     const sources = await ragService.streamChat(
       message,
       req.user.id,
@@ -73,9 +104,31 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
         history,
         provider,
         model,
-        language
+        language,
+        sessionId,
       }
     );
+    const duration = Date.now() - startTime;
+
+    const enrichedMetadata = await enrichMetadata(supabaseAdmin, {
+      graphId: graph_id,
+      userId: req.user.id,
+      topic: message?.slice(0, 50),
+    });
+
+    await performanceMonitor.recordLog({
+      operation: 'rag_stream_chat',
+      provider: (await getAIProviderForTask('text')).providerType,
+      model: model || (await getAIProviderForTask('text')).model,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      estimatedCost: 0,
+      duration,
+      success: true,
+      metadata: enrichedMetadata,
+      sessionId,
+    });
 
     res.write(`data: ${JSON.stringify({ sources })}\n\n`);
     res.write('data: [DONE]\n\n');

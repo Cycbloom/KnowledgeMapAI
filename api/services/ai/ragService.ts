@@ -273,6 +273,7 @@ export class RAGService {
       provider?: string;
       model?: string;
       language?: string;
+      sessionId?: string;
     } = {},
   ): Promise<RAGResponse> {
     const { graphId, currentNodeId, history = [], model, language } = options;
@@ -444,6 +445,7 @@ ${context || "(暂无相关上下文)"}`;
       provider?: string;
       model?: string;
       language?: string;
+      sessionId?: string;
     } = {},
   ): Promise<RAGSearchResult[]> {
     const { graphId, currentNodeId, history = [], model, language } = options;

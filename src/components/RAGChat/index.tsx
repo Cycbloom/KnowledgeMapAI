@@ -244,6 +244,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             graph_id: graphId,
             current_node_id: currentNodeId,
             history,
+            session_id: chatState.sessionId,
           },
           (chunk) => {
             fullResponse += chunk;

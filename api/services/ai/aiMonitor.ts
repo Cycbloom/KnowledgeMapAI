@@ -12,6 +12,7 @@ export interface AIMonitoringOptions {
     userId?: string;
     batchCount?: number;
   };
+  sessionId?: string;
 }
 
 interface TokenUsage {
@@ -106,7 +107,7 @@ export async function withAIMonitoring<T>(
       success,
       errorMessage,
       metadata: options.metadata,
-      
+      sessionId: options.sessionId,
       cachedInputTokens,
       uncachedInputTokens,
       reasoningTokens,

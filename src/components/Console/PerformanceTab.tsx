@@ -773,7 +773,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   }, [filteredLogs]);
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full flex-1 min-h-0 flex flex-col">
       <div
         className={`px-4 py-3 border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}
       >

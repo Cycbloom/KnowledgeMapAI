@@ -16,6 +16,9 @@ const PROVIDER_ENV_KEY_MAP: Record<string, string[]> = {
   deepseek: ["DEEPSEEK_API_KEY", "AI_API_KEY"],
   volcengine: ["VOLCENGINE_API_KEY"],
   aliyun: ["ALIYUN_API_KEY"],
+  openai: ["OPENAI_API_KEY"],
+  zhipu: ["ZHIPU_API_KEY"],
+  moonshot: ["MOONSHOT_API_KEY"],
 };
 
 const PROVIDER_DEFAULTS: Record<
@@ -34,6 +37,18 @@ const PROVIDER_DEFAULTS: Record<
   aliyun: {
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     model: "qwen-long-latest",
+  },
+  openai: {
+    baseURL: "https://api.openai.com/v1",
+    model: "gpt-4o-mini",
+  },
+  zhipu: {
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    model: "glm-4-flash",
+  },
+  moonshot: {
+    baseURL: "https://api.moonshot.cn/v1",
+    model: "moonshot-v1-8k",
   },
 };
 
@@ -81,9 +96,7 @@ router.get(
 
       const providers: Record<string, Record<string, unknown>> = {};
       const allProviderTypes: AIProviderType[] = [
-        "deepseek",
-        "volcengine",
-        "aliyun",
+        "deepseek", "volcengine", "aliyun", "openai", "zhipu", "moonshot",
       ];
 
       for (const provider of allProviderTypes) {
@@ -376,6 +389,255 @@ router.put(
     } catch (error) {
       logger.error("Failed to update database config:", error);
       res.status(500).json({ error: "Failed to update database config" });
+    }
+  },
+);
+
+router.get(
+  "/config/main-ai",
+  requireAuth,
+  async (_req: AuthRequest, res: Response) => {
+    try {
+      const sysConfig = await settingsService.getSetting<{
+        main_ai?: { provider?: string; model?: string; baseURL?: string };
+      }>("system_config");
+
+      const mainAi = sysConfig?.main_ai;
+      const provider = mainAi?.provider || "";
+
+      let configured = false;
+      let source: "user" | "env" | "none" = "none";
+
+      if (provider) {
+        const allConfigs =
+          await settingsService.getSetting<Record<string, Record<string, string>>>(
+            "ai_provider_config",
+          );
+        const dbConfig = allConfigs?.[provider];
+        if (dbConfig?.apiKey) {
+          configured = true;
+          source = "user";
+        } else if (hasEnvFallback(provider)) {
+          configured = true;
+          source = "env";
+        }
+      }
+
+      const defaults = provider ? PROVIDER_DEFAULTS[provider] : undefined;
+
+      res.json({
+        provider: provider || undefined,
+        model: mainAi?.model || defaults?.model || undefined,
+        baseURL: mainAi?.baseURL || defaults?.baseURL || undefined,
+        configured,
+        source,
+      });
+    } catch (error) {
+      logger.error("Failed to get main AI config:", error);
+      res.status(500).json({ error: "Failed to get main AI config" });
+    }
+  },
+);
+
+router.put(
+  "/config/main-ai",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { provider, apiKey, model, baseURL } = req.body as {
+        provider?: string;
+        apiKey?: string;
+        model?: string;
+        baseURL?: string;
+      };
+
+      if (!provider) {
+        res.status(400).json({ error: "provider is required" });
+        return;
+      }
+
+      if (apiKey !== undefined && apiKey === "") {
+        res.status(400).json({ error: "apiKey must be non-empty if provided" });
+        return;
+      }
+
+      if (baseURL !== undefined) {
+        try {
+          new URL(baseURL);
+        } catch {
+          res.status(400).json({ error: "baseURL is not a valid URL" });
+          return;
+        }
+      }
+
+      const sysConfig =
+        (await settingsService.getSetting<Record<string, unknown>>(
+          "system_config",
+        )) || {};
+
+      sysConfig.main_ai = {
+        provider,
+        ...(model ? { model } : {}),
+        ...(baseURL ? { baseURL } : {}),
+      };
+
+      await settingsService.updateSetting("system_config", sysConfig);
+
+      if (apiKey) {
+        const allConfigs =
+          (await settingsService.getSetting<Record<string, Record<string, string>>>(
+            "ai_provider_config",
+          )) || {};
+
+        allConfigs[provider] = {
+          ...(allConfigs[provider] || {}),
+          apiKey,
+          ...(model ? { model } : {}),
+          ...(baseURL ? { baseURL } : {}),
+        };
+
+        await settingsService.updateSetting("ai_provider_config", allConfigs);
+      }
+
+      settingsService.clearCache();
+
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("Failed to update main AI config:", error);
+      res.status(500).json({ error: "Failed to update main AI config" });
+    }
+  },
+);
+
+router.get(
+  "/config/embedding",
+  requireAuth,
+  async (_req: AuthRequest, res: Response) => {
+    try {
+      const sysConfig = await settingsService.getSetting<{
+        embedding_ai?: { provider?: string; model?: string; baseURL?: string };
+      }>("system_config");
+
+      const embeddingAi = sysConfig?.embedding_ai;
+      const provider = embeddingAi?.provider || "";
+
+      let configured = false;
+      let source: "user" | "env" | "none" = "none";
+
+      if (provider) {
+        const allConfigs =
+          await settingsService.getSetting<Record<string, Record<string, string>>>(
+            "ai_provider_config",
+          );
+        const dbConfig = allConfigs?.[provider];
+        if (dbConfig?.apiKey) {
+          configured = true;
+          source = "user";
+        } else if (hasEnvFallback(provider)) {
+          configured = true;
+          source = "env";
+        }
+      }
+
+      const defaults = provider ? PROVIDER_DEFAULTS[provider] : undefined;
+
+      res.json({
+        provider: provider || undefined,
+        model: embeddingAi?.model || defaults?.model || defaults?.embeddingModel || undefined,
+        baseURL: embeddingAi?.baseURL || defaults?.baseURL || undefined,
+        configured,
+        source,
+      });
+    } catch (error) {
+      logger.error("Failed to get embedding config:", error);
+      res.status(500).json({ error: "Failed to get embedding config" });
+    }
+  },
+);
+
+router.put(
+  "/config/embedding",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { provider, apiKey, model, baseURL, enabled } = req.body as {
+        provider?: string;
+        apiKey?: string;
+        model?: string;
+        baseURL?: string;
+        enabled?: boolean;
+      };
+
+      if (enabled === false || (!provider && enabled === undefined)) {
+        const sysConfig =
+          (await settingsService.getSetting<Record<string, unknown>>(
+            "system_config",
+          )) || {};
+
+        if (sysConfig.embedding_ai) {
+          delete sysConfig.embedding_ai;
+          await settingsService.updateSetting("system_config", sysConfig);
+          settingsService.clearCache();
+        }
+
+        res.json({ success: true });
+        return;
+      }
+
+      if (!provider) {
+        res.status(400).json({ error: "provider is required" });
+        return;
+      }
+
+      if (apiKey !== undefined && apiKey === "") {
+        res.status(400).json({ error: "apiKey must be non-empty if provided" });
+        return;
+      }
+
+      if (baseURL !== undefined) {
+        try {
+          new URL(baseURL);
+        } catch {
+          res.status(400).json({ error: "baseURL is not a valid URL" });
+          return;
+        }
+      }
+
+      const sysConfig =
+        (await settingsService.getSetting<Record<string, unknown>>(
+          "system_config",
+        )) || {};
+
+      sysConfig.embedding_ai = {
+        provider,
+        ...(model ? { model } : {}),
+        ...(baseURL ? { baseURL } : {}),
+      };
+
+      await settingsService.updateSetting("system_config", sysConfig);
+
+      if (apiKey) {
+        const allConfigs =
+          (await settingsService.getSetting<Record<string, Record<string, string>>>(
+            "ai_provider_config",
+          )) || {};
+
+        allConfigs[provider] = {
+          ...(allConfigs[provider] || {}),
+          apiKey,
+          ...(model ? { model } : {}),
+          ...(baseURL ? { baseURL } : {}),
+        };
+
+        await settingsService.updateSetting("ai_provider_config", allConfigs);
+      }
+
+      settingsService.clearCache();
+
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("Failed to update embedding config:", error);
+      res.status(500).json({ error: "Failed to update embedding config" });
     }
   },
 );

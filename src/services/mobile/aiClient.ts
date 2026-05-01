@@ -43,9 +43,21 @@ const PROVIDER_CONFIGS: Record<
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     model: "qwen-long-latest",
   },
+  openai: {
+    baseURL: "https://api.openai.com/v1",
+    model: "gpt-4o-mini",
+  },
+  zhipu: {
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    model: "glm-4-flash",
+  },
+  moonshot: {
+    baseURL: "https://api.moonshot.cn/v1",
+    model: "moonshot-v1-8k",
+  },
 };
 
-const VALID_PROVIDERS: AIProviderType[] = ["deepseek", "volcengine", "aliyun"];
+const VALID_PROVIDERS: AIProviderType[] = ["deepseek", "volcengine", "aliyun", "openai", "zhipu", "moonshot"];
 
 function validateConfig(config: MobileAIConfig): void {
   if (!config) {

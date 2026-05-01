@@ -1,5 +1,6 @@
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import type { AIProviderType } from "@shared/types";
+import { getProviderForTask } from "./config";
 import { promptService } from "./promptService";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { getSupabaseAdmin } from "../../supabase";
@@ -220,6 +221,11 @@ export interface GenerateCardsOptions {
 
 export class AIService {
   async generateEmbedding(text: string): Promise<number[] | null> {
+    const embeddingProvider = await getProviderForTask("embedding");
+    if (!embeddingProvider) {
+      return null;
+    }
+
     const provider = await getAIProviderForTask("embedding");
 
     if (!provider.hasKey) {
@@ -265,6 +271,11 @@ export class AIService {
   }
 
   async generateEmbeddingsBatch(texts: string[]): Promise<(number[] | null)[]> {
+    const embeddingProvider = await getProviderForTask("embedding");
+    if (!embeddingProvider) {
+      return texts.map(() => null);
+    }
+
     const provider = await getAIProviderForTask("embedding");
 
     if (!provider.hasKey) {

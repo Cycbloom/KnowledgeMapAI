@@ -29,6 +29,24 @@ const getEnvConfig = (provider: AIProviderType): AIProviderConfig => {
         baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
         model: process.env.ALIYUN_MODEL || "qwen-long-latest",
       };
+    case "openai":
+      return {
+        apiKey: process.env.OPENAI_API_KEY || "",
+        baseURL: "https://api.openai.com/v1",
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      };
+    case "zhipu":
+      return {
+        apiKey: process.env.ZHIPU_API_KEY || "",
+        baseURL: "https://open.bigmodel.cn/api/paas/v4",
+        model: process.env.ZHIPU_MODEL || "glm-4-flash",
+      };
+    case "moonshot":
+      return {
+        apiKey: process.env.MOONSHOT_API_KEY || "",
+        baseURL: "https://api.moonshot.cn/v1",
+        model: process.env.MOONSHOT_MODEL || "moonshot-v1-8k",
+      };
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
@@ -79,25 +97,30 @@ export const getDefaultProvider = async (): Promise<AIProviderType> => {
 
 export const getProviderForTask = async (
   task: "text" | "embedding" | "reasoning" | "tts" = "text",
-): Promise<AIProviderType> => {
+): Promise<AIProviderType | null> => {
   try {
     const sysConfig = await settingsService.getSetting<{
-      task_mapping: Record<string, string>;
+      main_ai?: { provider: string };
+      embedding_ai?: { provider: string };
     }>("system_config");
-    if (sysConfig && sysConfig.task_mapping && sysConfig.task_mapping[task]) {
-      return sysConfig.task_mapping[task] as AIProviderType;
+
+    if (task === "embedding") {
+      if (sysConfig?.embedding_ai?.provider) {
+        return sysConfig.embedding_ai.provider as AIProviderType;
+      }
+      const envEmbeddingProvider = process.env.EMBEDDING_PROVIDER as AIProviderType;
+      if (envEmbeddingProvider) {
+        return envEmbeddingProvider;
+      }
+      return null;
+    }
+
+    if (sysConfig?.main_ai?.provider) {
+      return sysConfig.main_ai.provider as AIProviderType;
     }
   } catch (e) {
     // ignore
   }
 
-  // Default provider mapping fallback
-  const envMap: Record<string, string | undefined> = {
-    text: "deepseek",
-    embedding: "volcengine",
-    reasoning: "aliyun",
-    tts: "aliyun",
-  };
-
-  return (envMap[task] as AIProviderType) || (await getDefaultProvider());
+  return await getDefaultProvider();
 };

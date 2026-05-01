@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { aiService } from './aiService';
+import { getProviderForTask } from './config';
 import { logger } from '../../utils/logger';
 
 const BATCH_SIZE = 20;
@@ -24,6 +25,12 @@ export class EmbeddingService {
     let failed = 0;
 
     try {
+      const embeddingProvider = await getProviderForTask("embedding");
+      if (!embeddingProvider) {
+        logger.info('Embedding provider not configured, skipping batch generation');
+        return { processed: 0, failed: 0 };
+      }
+
       const { data: knowledgePoints, error } = await supabase
         .from('knowledge_points')
         .select('id, title, content')

@@ -1,6 +1,6 @@
 import type OpenAI from "openai";
 
-export type AIProviderType = "deepseek" | "volcengine" | "aliyun";
+export type AIProviderType = "deepseek" | "volcengine" | "aliyun" | "openai" | "zhipu" | "moonshot";
 
 export interface AIProviderConfig {
   apiKey: string;

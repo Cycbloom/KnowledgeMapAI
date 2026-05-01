@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useLayoutEffect, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
@@ -65,21 +65,48 @@ interface DatabaseConfig {
   connected: boolean;
 }
 
-const PROVIDER_DEFAULTS: Record<string, { name: string; baseURL: string; model: string }> = {
+const PROVIDER_DEFAULTS: Record<string, { name: string; baseURL: string; model: string; embeddingModel?: string; supportsEmbedding?: boolean }> = {
   deepseek: {
     name: "Deepseek",
     baseURL: "https://api.deepseek.com/v1",
     model: "deepseek-chat",
+    embeddingModel: undefined,
+    supportsEmbedding: false,
   },
   volcengine: {
     name: "火山引擎 (Volcengine)",
     baseURL: "https://ark.cn-beijing.volces.com/api/v3",
     model: "doubao-pro-4k",
+    embeddingModel: "doubao-embedding-vision-251215",
+    supportsEmbedding: true,
   },
   aliyun: {
     name: "阿里云 (Aliyun)",
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     model: "qwen-max",
+    embeddingModel: "text-embedding-v3",
+    supportsEmbedding: true,
+  },
+  openai: {
+    name: "OpenAI",
+    baseURL: "https://api.openai.com/v1",
+    model: "gpt-4o-mini",
+    embeddingModel: "text-embedding-3-small",
+    supportsEmbedding: true,
+  },
+  zhipu: {
+    name: "智谱 AI (Zhipu)",
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    model: "glm-4-flash",
+    embeddingModel: "embedding-3",
+    supportsEmbedding: true,
+  },
+  moonshot: {
+    name: "月之暗面 (Moonshot)",
+    baseURL: "https://api.moonshot.cn/v1",
+    model: "moonshot-v1-8k",
+    embeddingModel: undefined,
+    supportsEmbedding: false,
   },
 };
 
@@ -101,18 +128,25 @@ export const Settings = () => {
   const [retention, setRetention] = useState(0.9);
   const [maxInterval, setMaxInterval] = useState(36500);
 
-  const [textConfig, setTextConfig] = useState({
+  const [mainAiConfig, setMainAiConfig] = useState({
     provider: "deepseek",
+    apiKey: "",
     model: "deepseek-chat",
+    baseURL: "https://api.deepseek.com/v1",
   });
-  const [embeddingConfig, setEmbeddingConfig] = useState({
+  const [mainAiStatus, setMainAiStatus] = useState<{ configured: boolean; source: string } | null>(null);
+  const [embeddingAiConfig, setEmbeddingAiConfig] = useState({
     provider: "volcengine",
-    model: "doubao-embedding-1.5",
+    apiKey: "",
+    model: "doubao-embedding-vision-251215",
+    baseURL: "https://ark.cn-beijing.volces.com/api/v3",
+    enabled: true,
   });
-  const [reasoningConfig, setReasoningConfig] = useState({
-    provider: "aliyun",
-    model: "qwen-max",
-  });
+  const [embeddingAiStatus, setEmbeddingAiStatus] = useState<{ configured: boolean; source: string } | null>(null);
+  const [showMainAiApiKey, setShowMainAiApiKey] = useState(false);
+  const [showEmbeddingApiKey, setShowEmbeddingApiKey] = useState(false);
+  const [testingMainAi, setTestingMainAi] = useState(false);
+  const [testingEmbedding, setTestingEmbedding] = useState(false);
 
   const [availableModels, setAvailableModels] = useState<AvailableModels>({
     deepseek: ["deepseek-chat", "deepseek-reasoner"],
@@ -166,14 +200,6 @@ export const Settings = () => {
       if (settings.maximum_interval)
         setMaxInterval(Number(settings.maximum_interval));
 
-      if (settings.ai_config) {
-        if (settings.ai_config.text) setTextConfig(settings.ai_config.text);
-        if (settings.ai_config.embedding)
-          setEmbeddingConfig(settings.ai_config.embedding);
-        if (settings.ai_config.reasoning)
-          setReasoningConfig(settings.ai_config.reasoning);
-      }
-
       if (settings.available_models) {
         setAvailableModels((prev) => ({
           ...prev,
@@ -199,6 +225,50 @@ export const Settings = () => {
     if (token) {
       fetchProviderConfigs();
       fetchDatabaseConfig();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    const loadAiConfigs = async () => {
+      try {
+        const [mainRes, embRes] = await Promise.all([
+          apiClient.get("/ai/config/main-ai") as Promise<Record<string, unknown>>,
+          apiClient.get("/ai/config/embedding") as Promise<Record<string, unknown>>,
+        ]);
+
+        const mainProvider = mainRes.provider as string;
+        if (mainProvider) {
+          setMainAiConfig(prev => ({
+            ...prev,
+            provider: mainProvider,
+            model: (mainRes.model as string) || PROVIDER_DEFAULTS[mainProvider]?.model || "",
+            baseURL: (mainRes.baseURL as string) || PROVIDER_DEFAULTS[mainProvider]?.baseURL || "",
+            apiKey: "",
+          }));
+          setMainAiStatus({ configured: mainRes.configured as boolean, source: mainRes.source as string });
+        }
+
+        const embProvider = embRes.provider as string;
+        if (embProvider) {
+          setEmbeddingAiConfig(prev => ({
+            ...prev,
+            provider: embProvider,
+            model: (embRes.model as string) || "",
+            baseURL: (embRes.baseURL as string) || "",
+            apiKey: "",
+            enabled: true,
+          }));
+          setEmbeddingAiStatus({ configured: embRes.configured as boolean, source: embRes.source as string });
+        } else {
+          setEmbeddingAiConfig(prev => ({ ...prev, enabled: false }));
+          setEmbeddingAiStatus({ configured: false, source: "none" });
+        }
+      } catch {
+        // silently fail
+      }
+    };
+    if (token) {
+      loadAiConfigs();
     }
   }, [token]);
 
@@ -413,11 +483,6 @@ export const Settings = () => {
           ...settings,
           request_retention: Number(retention),
           maximum_interval: Number(maxInterval),
-          ai_config: {
-            text: textConfig,
-            embedding: embeddingConfig,
-            reasoning: reasoningConfig,
-          },
           available_models: availableModels,
         },
       });
@@ -496,6 +561,104 @@ export const Settings = () => {
       type: "success",
       content: t("settings.mobileConfigCleared"),
     });
+  };
+
+  const handleMainAiProviderChange = (provider: string) => {
+    const defaults = PROVIDER_DEFAULTS[provider];
+    setMainAiConfig(prev => ({
+      ...prev,
+      provider,
+      model: defaults?.model || "",
+      baseURL: defaults?.baseURL || "",
+    }));
+  };
+
+  const handleEmbeddingProviderChange = (provider: string) => {
+    const defaults = PROVIDER_DEFAULTS[provider];
+    setEmbeddingAiConfig(prev => ({
+      ...prev,
+      provider,
+      model: defaults?.embeddingModel || "",
+      baseURL: defaults?.baseURL || "",
+    }));
+  };
+
+  const handleSaveMainAi = async () => {
+    try {
+      await apiClient.put("/ai/config/main-ai", {
+        provider: mainAiConfig.provider,
+        apiKey: mainAiConfig.apiKey || undefined,
+        model: mainAiConfig.model,
+        baseURL: mainAiConfig.baseURL,
+      });
+      frontendEventBus.publish("message_show", { type: "success", content: t("settings.mainAiSaved") });
+      setMainAiStatus({ configured: true, source: "user" });
+    } catch {
+      frontendEventBus.publish("message_show", { type: "error", content: t("settings.mainAiSaveFailed") });
+    }
+  };
+
+  const handleSaveEmbedding = async () => {
+    try {
+      if (!embeddingAiConfig.enabled) {
+        await apiClient.put("/ai/config/embedding", { enabled: false });
+        setEmbeddingAiStatus({ configured: false, source: "none" });
+        frontendEventBus.publish("message_show", { type: "success", content: t("settings.embeddingDisabled") });
+        return;
+      }
+      await apiClient.put("/ai/config/embedding", {
+        provider: embeddingAiConfig.provider,
+        apiKey: embeddingAiConfig.apiKey || undefined,
+        model: embeddingAiConfig.model,
+        baseURL: embeddingAiConfig.baseURL,
+      });
+      setEmbeddingAiStatus({ configured: true, source: "user" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("settings.embeddingSaved") });
+    } catch {
+      frontendEventBus.publish("message_show", { type: "error", content: t("settings.embeddingSaveFailed") });
+    }
+  };
+
+  const handleTestMainAi = async () => {
+    setTestingMainAi(true);
+    try {
+      const response = await apiClient.post("/ai/config/providers/test", {
+        provider: mainAiConfig.provider,
+        apiKey: mainAiConfig.apiKey,
+        baseURL: mainAiConfig.baseURL,
+        model: mainAiConfig.model,
+      }) as { success: boolean; message: string };
+      if (response.success) {
+        frontendEventBus.publish("message_show", { type: "success", content: t("settings.providerTestSuccess", { provider: PROVIDER_DEFAULTS[mainAiConfig.provider]?.name || mainAiConfig.provider }) });
+      } else {
+        frontendEventBus.publish("message_show", { type: "error", content: response.message || t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[mainAiConfig.provider]?.name || mainAiConfig.provider }) });
+      }
+    } catch {
+      frontendEventBus.publish("message_show", { type: "error", content: t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[mainAiConfig.provider]?.name || mainAiConfig.provider }) });
+    } finally {
+      setTestingMainAi(false);
+    }
+  };
+
+  const handleTestEmbedding = async () => {
+    setTestingEmbedding(true);
+    try {
+      const response = await apiClient.post("/ai/config/providers/test", {
+        provider: embeddingAiConfig.provider,
+        apiKey: embeddingAiConfig.apiKey,
+        baseURL: embeddingAiConfig.baseURL,
+        model: embeddingAiConfig.model,
+      }) as { success: boolean; message: string };
+      if (response.success) {
+        frontendEventBus.publish("message_show", { type: "success", content: t("settings.providerTestSuccess", { provider: PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name || embeddingAiConfig.provider }) });
+      } else {
+        frontendEventBus.publish("message_show", { type: "error", content: response.message || t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name || embeddingAiConfig.provider }) });
+      }
+    } catch {
+      frontendEventBus.publish("message_show", { type: "error", content: t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name || embeddingAiConfig.provider }) });
+    } finally {
+      setTestingEmbedding(false);
+    }
   };
 
   const renderProviderBadge = (config: ProviderConfig) => {
@@ -972,9 +1135,9 @@ export const Settings = () => {
                 onChange={(e) => setSelectedProviderForAdd(e.target.value)}
                 className="p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
               >
-                <option value="deepseek">Deepseek</option>
-                <option value="volcengine">火山引擎 (Volcengine)</option>
-                <option value="aliyun">阿里云 (Aliyun)</option>
+                {Object.entries(PROVIDER_DEFAULTS).map(([key, defaults]) => (
+                  <option key={key} value={key}>{defaults.name}</option>
+                ))}
               </select>
               <div className="flex gap-2">
                 <input
@@ -1033,177 +1196,255 @@ export const Settings = () => {
 
           <div className="space-y-6">
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-primary-100 dark:bg-primary-900/30 rounded text-primary-700 dark:text-primary-400">
-                  <Brain className="w-4 h-4" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-primary-100 dark:bg-primary-900/30 rounded text-primary-700 dark:text-primary-400">
+                    <Brain className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    {t("settings.mainAiConfig")}
+                  </h3>
                 </div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  {t("settings.textTask")}
-                </h3>
+                {mainAiStatus && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                    mainAiStatus.source === "env"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                      : mainAiStatus.configured
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                  }`}>
+                    {mainAiStatus.source === "env" ? t("settings.sourceEnv") : mainAiStatus.configured ? t("settings.configured") : t("settings.notConfigured")}
+                  </span>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                {t("settings.mainAiConfigDesc")}
+              </p>
+
+              <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                     {t("settings.provider")}
                   </label>
                   <select
-                    value={textConfig.provider}
-                    onChange={(e) =>
-                      setTextConfig({
-                        ...textConfig,
-                        provider: e.target.value,
-                        model: availableModels[e.target.value]?.[0] || "",
-                      })
-                    }
+                    value={mainAiConfig.provider}
+                    onChange={(e) => handleMainAiProviderChange(e.target.value)}
                     className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
-                    <option value="deepseek">Deepseek</option>
-                    <option value="volcengine">火山引擎 (Volcengine)</option>
-                    <option value="aliyun">阿里云 (Aliyun)</option>
+                    {Object.entries(PROVIDER_DEFAULTS).map(([key, defaults]) => (
+                      <option key={key} value={key}>{defaults.name}</option>
+                    ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    API Key
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showMainAiApiKey ? "text" : "password"}
+                      value={mainAiConfig.apiKey}
+                      onChange={(e) => setMainAiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder={t("settings.enterApiKey")}
+                      className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMainAiApiKey(!showMainAiApiKey)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      {showMainAiApiKey ? t("settings.hide") : t("settings.show")}
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                     {t("settings.modelName")}
                   </label>
-                  <select
-                    value={textConfig.model}
-                    onChange={(e) =>
-                      setTextConfig({ ...textConfig, model: e.target.value })
-                    }
+                  <input
+                    type="text"
+                    value={mainAiConfig.model}
+                    onChange={(e) => setMainAiConfig(prev => ({ ...prev, model: e.target.value }))}
+                    placeholder={PROVIDER_DEFAULTS[mainAiConfig.provider]?.model || ""}
                     className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Base URL
+                  </label>
+                  <input
+                    type="text"
+                    value={mainAiConfig.baseURL}
+                    onChange={(e) => setMainAiConfig(prev => ({ ...prev, baseURL: e.target.value }))}
+                    placeholder={PROVIDER_DEFAULTS[mainAiConfig.provider]?.baseURL || ""}
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    onClick={handleTestMainAi}
+                    disabled={testingMainAi}
+                    className="px-3 py-2 rounded-md border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 text-sm hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
                   >
-                    {availableModels[textConfig.provider]?.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                    {!availableModels[textConfig.provider]?.length && (
-                      <option value="" disabled>
-                        {t("settings.noProviderModels")}
-                      </option>
+                    {testingMainAi ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Zap className="w-4 h-4" />
                     )}
-                  </select>
+                    {t("settings.testConnection")}
+                  </button>
+                  <button
+                    onClick={handleSaveMainAi}
+                    className="px-3 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors flex items-center gap-1.5 min-h-[44px]"
+                  >
+                    <Save className="w-4 h-4" />
+                    {t("settings.saveConfig")}
+                  </button>
                 </div>
               </div>
             </div>
 
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded text-green-700 dark:text-green-400">
-                  <Cpu className="w-4 h-4" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded text-green-700 dark:text-green-400">
+                    <Cpu className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    {t("settings.embeddingConfig")}
+                  </h3>
                 </div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  {t("settings.embeddingTask")}
-                </h3>
+                {embeddingAiStatus && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                    embeddingAiStatus.source === "env"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                      : embeddingAiStatus.configured
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                  }`}>
+                    {embeddingAiStatus.source === "env" ? t("settings.sourceEnv") : embeddingAiStatus.configured ? t("settings.embeddingEnabled") : t("settings.embeddingDisabled")}
+                  </span>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    {t("settings.provider")}
-                  </label>
-                  <select
-                    value={embeddingConfig.provider}
-                    onChange={(e) =>
-                      setEmbeddingConfig({
-                        ...embeddingConfig,
-                        provider: e.target.value,
-                        model: availableModels[e.target.value]?.[0] || "",
-                      })
-                    }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                  >
-                    <option value="volcengine">火山引擎 (Volcengine)</option>
-                    <option value="aliyun">阿里云 (Aliyun)</option>
-                    <option value="deepseek">Deepseek</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    {t("settings.modelName")}
-                  </label>
-                  <select
-                    value={embeddingConfig.model}
-                    onChange={(e) =>
-                      setEmbeddingConfig({
-                        ...embeddingConfig,
-                        model: e.target.value,
-                      })
-                    }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                  >
-                    {availableModels[embeddingConfig.provider]?.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                    {!availableModels[embeddingConfig.provider]?.length && (
-                      <option value="" disabled>
-                        {t("settings.noProviderModels")}
-                      </option>
-                    )}
-                  </select>
-                </div>
-              </div>
-            </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                {t("settings.embeddingConfigDesc")}
+              </p>
 
-            <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded text-orange-700 dark:text-orange-400">
-                  <KeyRound className="w-4 h-4" />
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  {t("settings.reasoningTask")}
-                </h3>
+              <div className="flex items-center gap-3 mb-4">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={embeddingAiConfig.enabled}
+                    onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, enabled: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-gray-600 peer-checked:bg-green-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t("settings.enableEmbedding")}
+                  </span>
+                </label>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    {t("settings.provider")}
-                  </label>
-                  <select
-                    value={reasoningConfig.provider}
-                    onChange={(e) =>
-                      setReasoningConfig({
-                        ...reasoningConfig,
-                        provider: e.target.value,
-                        model: availableModels[e.target.value]?.[0] || "",
-                      })
-                    }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                  >
-                    <option value="aliyun">阿里云 (Aliyun)</option>
-                    <option value="deepseek">Deepseek</option>
-                    <option value="volcengine">火山引擎 (Volcengine)</option>
-                  </select>
+
+              {embeddingAiConfig.enabled ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      {t("settings.provider")}
+                    </label>
+                    <select
+                      value={embeddingAiConfig.provider}
+                      onChange={(e) => handleEmbeddingProviderChange(e.target.value)}
+                      className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                    >
+                      {Object.entries(PROVIDER_DEFAULTS)
+                        .filter(([, defaults]) => defaults.supportsEmbedding)
+                        .map(([key, defaults]) => (
+                          <option key={key} value={key}>{defaults.name}</option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      API Key
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showEmbeddingApiKey ? "text" : "password"}
+                        value={embeddingAiConfig.apiKey}
+                        onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
+                        placeholder={t("settings.enterApiKey")}
+                        className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEmbeddingApiKey(!showEmbeddingApiKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        {showEmbeddingApiKey ? t("settings.hide") : t("settings.show")}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      {t("settings.modelName")}
+                    </label>
+                    <input
+                      type="text"
+                      value={embeddingAiConfig.model}
+                      onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, model: e.target.value }))}
+                      placeholder={PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.embeddingModel || ""}
+                      className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Base URL
+                    </label>
+                    <input
+                      type="text"
+                      value={embeddingAiConfig.baseURL}
+                      onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, baseURL: e.target.value }))}
+                      placeholder={PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.baseURL || ""}
+                      className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      onClick={handleTestEmbedding}
+                      disabled={testingEmbedding}
+                      className="px-3 py-2 rounded-md border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 text-sm hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                    >
+                      {testingEmbedding ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Zap className="w-4 h-4" />
+                      )}
+                      {t("settings.testConnection")}
+                    </button>
+                    <button
+                      onClick={handleSaveEmbedding}
+                      className="px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700 transition-colors flex items-center gap-1.5 min-h-[44px]"
+                    >
+                      <Save className="w-4 h-4" />
+                      {t("settings.saveConfig")}
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    {t("settings.modelName")}
-                  </label>
-                  <select
-                    value={reasoningConfig.model}
-                    onChange={(e) =>
-                      setReasoningConfig({
-                        ...reasoningConfig,
-                        model: e.target.value,
-                      })
-                    }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                  >
-                    {availableModels[reasoningConfig.provider]?.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                    {!availableModels[reasoningConfig.provider]?.length && (
-                      <option value="" disabled>
-                        {t("settings.noProviderModels")}
-                      </option>
-                    )}
-                  </select>
+              ) : (
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                  <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                  {t("settings.embeddingNotConfigured")}
                 </div>
-              </div>
+              )}
             </div>
           </div>
 

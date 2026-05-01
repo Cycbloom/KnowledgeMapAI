@@ -21,6 +21,9 @@ const ENV_API_KEYS: Record<AIProviderType, string | undefined> = {
   deepseek: import.meta.env.VITE_DEEPSEEK_API_KEY,
   volcengine: import.meta.env.VITE_VOLCENGINE_API_KEY,
   aliyun: import.meta.env.VITE_ALIYUN_API_KEY,
+  openai: import.meta.env.VITE_OPENAI_API_KEY,
+  zhipu: import.meta.env.VITE_ZHIPU_API_KEY,
+  moonshot: import.meta.env.VITE_MOONSHOT_API_KEY,
 };
 
 function getStoredAIConfig(): MobileAIUserConfig | null {

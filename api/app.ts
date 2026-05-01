@@ -47,6 +47,7 @@ import collaboratorRoutes from "./routes/collaborators";
 import agentRoutes from "./routes/agent";
 import domainRoutes from "./routes/domains";
 import pluginsRoutes from "./routes/plugins";
+import databaseRoutes from "./routes/database";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 import { Kernel } from "./services/kernel/Kernel";
@@ -216,6 +217,7 @@ app.use("/api/collaborations", collaboratorRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api", quizSetRoutes);
 app.use("/api/plugins", pluginsRoutes);
+app.use("/api/database", databaseRoutes);
 
 applyKernelRoutes(app, kernel);
 

@@ -313,10 +313,11 @@ router.put(
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { url, anonKey, serviceRoleKey } = req.body as {
+      const { url, anonKey, serviceRoleKey, databaseUrl } = req.body as {
         url?: string;
         anonKey?: string;
         serviceRoleKey?: string;
+        databaseUrl?: string;
       };
 
       if (!url) {
@@ -345,6 +346,7 @@ router.put(
         url,
         anonKey,
         serviceRoleKey,
+        ...(databaseUrl ? { databaseUrl } : {}),
       });
 
       const result = reinitializeSupabaseClients({
@@ -385,7 +387,22 @@ router.put(
 
       settingsService.clearCache();
 
-      res.json({ success: true, message: "Database configuration updated successfully" });
+      let schemaStatus = null;
+      try {
+        const { migrationService } = await import("../../services/migration/migrationService");
+        if (databaseUrl) {
+          migrationService.setDatabaseUrl(databaseUrl);
+        }
+        schemaStatus = await migrationService.getDatabaseStatus();
+      } catch {
+        // migration service not available, skip schema status
+      }
+
+      res.json({
+        success: true,
+        message: "Database configuration updated successfully",
+        schemaStatus,
+      });
     } catch (error) {
       logger.error("Failed to update database config:", error);
       res.status(500).json({ error: "Failed to update database config" });

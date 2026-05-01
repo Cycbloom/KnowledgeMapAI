@@ -179,13 +179,17 @@ export const Settings = () => {
     mode: "cloud",
     connected: false,
   });
-  const [dbForm, setDbForm] = useState({ url: "", anonKey: "", serviceRoleKey: "" });
+  const [dbForm, setDbForm] = useState({ url: "", anonKey: "", serviceRoleKey: "", databaseUrl: "" });
   const [dbExpanded, setDbExpanded] = useState(false);
   const [showDbAnonKey, setShowDbAnonKey] = useState(false);
   const [showDbServiceRoleKey, setShowDbServiceRoleKey] = useState(false);
   const [dbSaving, setDbSaving] = useState(false);
   const [dbTesting, setDbTesting] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
+  const [schemaStatus, setSchemaStatus] = useState<{ status: string; executedCount: number; totalMigrations: number; missingVersions: string[] } | null>(null);
+  const [migrating, setMigrating] = useState(false);
+  const [reinitializing, setReinitializing] = useState(false);
+  const [reinitConfirm, setReinitConfirm] = useState(false);
 
   const dbSectionRef = useRef<HTMLDivElement>(null);
 
@@ -225,6 +229,7 @@ export const Settings = () => {
     if (token) {
       fetchProviderConfigs();
       fetchDatabaseConfig();
+      fetchSchemaStatus();
     }
   }, [token]);
 
@@ -319,6 +324,15 @@ export const Settings = () => {
       setDatabaseConfig({ configured: false, url: "", mode: "cloud", connected: false });
     } finally {
       setDbLoading(false);
+    }
+  };
+
+  const fetchSchemaStatus = async () => {
+    try {
+      const response = await apiClient.get("/database/status") as { status: string; executedCount: number; totalMigrations: number; missingVersions: string[] };
+      setSchemaStatus(response);
+    } catch {
+      setSchemaStatus(null);
     }
   };
 
@@ -423,6 +437,7 @@ export const Settings = () => {
             url: dbForm.url,
             anonKey: dbForm.anonKey,
             serviceRoleKey: dbForm.serviceRoleKey,
+            databaseUrl: dbForm.databaseUrl,
           },
         });
       }
@@ -431,6 +446,7 @@ export const Settings = () => {
         url: dbForm.url,
         anonKey: dbForm.anonKey,
         serviceRoleKey: dbForm.serviceRoleKey,
+        databaseUrl: dbForm.databaseUrl,
       });
 
       updateSupabaseConfig(dbForm.url, dbForm.anonKey);
@@ -1511,6 +1527,41 @@ export const Settings = () => {
             )}
           </div>
 
+          {schemaStatus && (
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              {schemaStatus.status === "ready" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {t("settings.schemaReady", { executed: schemaStatus.executedCount, total: schemaStatus.totalMigrations })}
+                </span>
+              )}
+              {schemaStatus.status === "empty" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                  <XCircle className="w-3.5 h-3.5" />
+                  {t("settings.schemaEmpty")}
+                </span>
+              )}
+              {schemaStatus.status === "partial" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {t("settings.schemaPartial", { executed: schemaStatus.executedCount, total: schemaStatus.totalMigrations })}
+                </span>
+              )}
+              {schemaStatus.status === "needs_upgrade" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {t("settings.schemaNeedsUpgrade", { executed: schemaStatus.executedCount, total: schemaStatus.totalMigrations })}
+                </span>
+              )}
+              {schemaStatus.status === "not_configured" && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                  <XCircle className="w-3.5 h-3.5" />
+                  {t("settings.schemaNotConfigured")}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
             <button
               onClick={() => setDbExpanded(!dbExpanded)}
@@ -1585,6 +1636,28 @@ export const Settings = () => {
                   </div>
                 </div>
 
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                      {t("settings.databaseUrl")}
+                    </label>
+                    <div className="group relative">
+                      <Info className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 cursor-help" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-gray-900 dark:bg-gray-700 text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
+                        {t("settings.databaseUrlTooltip")}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    value={dbForm.databaseUrl}
+                    onChange={(e) => setDbForm((prev) => ({ ...prev, databaseUrl: e.target.value }))}
+                    placeholder={t("settings.databaseUrlPlaceholder")}
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                  />
+                </div>
+
                 <div className="flex flex-wrap gap-2 pt-1">
                   <button
                     onClick={handleSaveDatabaseConfig}
@@ -1609,6 +1682,76 @@ export const Settings = () => {
                       <Zap className="w-4 h-4" />
                     )}
                     {t("settings.testConnection")}
+                  </button>
+                  {schemaStatus && schemaStatus.status !== "ready" && (
+                    <button
+                      onClick={async () => {
+                        setMigrating(true);
+                        try {
+                          await apiClient.post("/database/migrate");
+                          frontendEventBus.publish("message_show", {
+                            type: "success",
+                            content: t("settings.migrationsSuccess"),
+                          });
+                          await fetchSchemaStatus();
+                        } catch {
+                          frontendEventBus.publish("message_show", {
+                            type: "error",
+                            content: t("settings.migrationsFailed"),
+                          });
+                        } finally {
+                          setMigrating(false);
+                        }
+                      }}
+                      disabled={migrating}
+                      className="px-3 py-2 rounded-md border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                    >
+                      {migrating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Database className="w-4 h-4" />
+                      )}
+                      {t("settings.runMigrations")}
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      if (!reinitConfirm) {
+                        setReinitConfirm(true);
+                        setTimeout(() => setReinitConfirm(false), 3000);
+                        return;
+                      }
+                      setReinitializing(true);
+                      setReinitConfirm(false);
+                      try {
+                        await apiClient.post("/database/reinitialize", { confirm: true });
+                        frontendEventBus.publish("message_show", {
+                          type: "success",
+                          content: t("settings.reinitializeSuccess"),
+                        });
+                        await fetchSchemaStatus();
+                      } catch {
+                        frontendEventBus.publish("message_show", {
+                          type: "error",
+                          content: t("settings.reinitializeFailed"),
+                        });
+                      } finally {
+                        setReinitializing(false);
+                      }
+                    }}
+                    disabled={reinitializing}
+                    className={`px-3 py-2 rounded-md border text-sm transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50 ${
+                      reinitConfirm
+                        ? "border-red-500 dark:border-red-500 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+                        : "border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    }`}
+                  >
+                    {reinitializing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4" />
+                    )}
+                    {reinitConfirm ? t("settings.reinitializeConfirm") : t("settings.reinitializeDatabase")}
                   </button>
                 </div>
               </div>

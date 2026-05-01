@@ -115,6 +115,11 @@ const QuizPractice = lazy(() =>
     default: module.QuizPractice,
   })),
 );
+const SetupWizard = lazy(() =>
+  import("./pages/SetupWizard").then((module) => ({
+    default: module.SetupWizard,
+  })),
+);
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -193,6 +198,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/setup" element={<SetupWizard />} />
           <Route path="/graph/:id" element={<GraphEditor />} />
 
           <Route

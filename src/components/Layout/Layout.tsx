@@ -26,6 +26,7 @@ import {
   Zap,
   Calendar,
   Route,
+  AlertTriangle,
 } from "lucide-react";
 import {
   ErrorBoundary,
@@ -45,6 +46,7 @@ import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
 import { Console } from "../Console/Console";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
+import { apiClient } from "../../services/api/createApiClient";
 
 interface SidebarLinkProps {
   to: string;
@@ -79,6 +81,7 @@ export const Layout = () => {
   const { isMobile } = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [schemaStatus, setSchemaStatus] = useState<string | null>(null);
 
   const isFullScreenPage =
     location.pathname.startsWith("/graph/") ||
@@ -114,6 +117,23 @@ export const Layout = () => {
   );
   const logoutMutation = useLogoutMutation();
   useTaskEvents();
+
+  useEffect(() => {
+    if (!token) return;
+    const checkSchema = async () => {
+      try {
+        const response = await apiClient.get("/database/status") as { status?: string; error?: string };
+        if (response.status && response.status !== "ready" && response.status !== "not_configured") {
+          setSchemaStatus(response.status);
+        } else {
+          setSchemaStatus(null);
+        }
+      } catch {
+        setSchemaStatus(null);
+      }
+    };
+    checkSchema();
+  }, [token]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -390,6 +410,27 @@ export const Layout = () => {
           <div
             className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMobile && !isFullScreenPage ? "pb-16" : ""}`}
           >
+            {schemaStatus && (
+              <div
+                className="mx-4 mt-3 p-3 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-200 flex items-center gap-3 cursor-pointer"
+                onClick={() => navigate("/settings")}
+              >
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <div className="flex-1 text-sm">
+                  {schemaStatus === "empty"
+                    ? t("layout.schemaEmpty")
+                    : schemaStatus === "partial"
+                      ? t("layout.schemaPartial")
+                      : t("layout.schemaNeedsUpgrade")}
+                </div>
+                <button
+                  className="px-3 py-1.5 rounded-md bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-colors min-h-[36px]"
+                  onClick={(e) => { e.stopPropagation(); navigate("/settings"); }}
+                >
+                  {t("layout.goToSettings")}
+                </button>
+              </div>
+            )}
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

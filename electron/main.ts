@@ -39,6 +39,7 @@ function loadEnvVariables() {
           if (userConfig.database.url) process.env.VITE_SUPABASE_URL = userConfig.database.url;
           if (userConfig.database.anonKey) process.env.VITE_SUPABASE_ANON_KEY = userConfig.database.anonKey;
           if (userConfig.database.serviceRoleKey) process.env.SUPABASE_SERVICE_ROLE_KEY = userConfig.database.serviceRoleKey;
+          if (userConfig.database.databaseUrl) process.env.DATABASE_URL = userConfig.database.databaseUrl;
           console.log("[Main] 从用户配置文件加载数据库配置");
         }
       } catch (e) {
@@ -82,6 +83,18 @@ async function loadApiApp() {
     apiApp = module.default || module;
   }
   console.log("[Main] API 应用加载成功");
+
+  try {
+    const { migrationService } = await import("../api/services/migration/migrationService.js");
+    const isPackaged = app.isPackaged;
+    const migrationsPath = isPackaged
+      ? path.join(process.resourcesPath, "migrations")
+      : path.join(__dirname, "..", "supabase", "migrations");
+    migrationService.setMigrationsPath(migrationsPath);
+    console.log(`[Main] 迁移服务已配置，路径: ${migrationsPath}`);
+  } catch (error) {
+    console.warn("[Main] 迁移服务配置失败:", error);
+  }
 }
 
 let mainWindow: BrowserWindow | null = null;

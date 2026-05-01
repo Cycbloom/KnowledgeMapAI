@@ -12,9 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 function loadEnvVariables() {
   try {
     let envPath;
-    const isPackaged = process.mainModule && process.mainModule.filename.indexOf('app.asar') !== -1;
-    
-    if (isPackaged) {
+    if (app.isPackaged) {
       envPath = path.join(process.resourcesPath, ".env.production");
     } else {
       const devEnvPath = path.join(__dirname, "..", "..", ".env.development");
@@ -85,8 +83,11 @@ async function loadApiApp() {
   console.log("[Main] API 应用加载成功");
 
   try {
-    const { migrationService } = await import("../api/services/migration/migrationService.js");
     const isPackaged = app.isPackaged;
+    const migrationServicePath = isPackaged
+      ? path.join(process.resourcesPath, "api", "services", "migration", "migrationService.js")
+      : "../api/services/migration/migrationService.js";
+    const { migrationService } = await import(migrationServicePath);
     const migrationsPath = isPackaged
       ? path.join(process.resourcesPath, "migrations")
       : path.join(__dirname, "..", "supabase", "migrations");

@@ -54,7 +54,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
     const activity = await activityService.recordActivity(
       supabase,
       req.user.id,
-      parsed.data,
+      parsed.data as import("../../services/scheduler/activityService").RecordActivityData,
     );
     res.status(201).json({ success: true, data: activity });
   } catch (error) {

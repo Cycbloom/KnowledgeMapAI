@@ -244,12 +244,9 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*",
-      "api/**/*",
-      "shared/**/*",
+      "dist-electron/electron/**/*",
       "node_modules/**/*",
       "package.json",
-      ".env.production",
       "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,LICENSE,license}",
       "!**/node_modules/.bin/**",
       "!**/node_modules/**/*.ts",

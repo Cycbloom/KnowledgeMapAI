@@ -151,9 +151,9 @@ export class TaskService {
         supabase = defaultClient;
         taskId = arg1 as string;
         status = arg2!;
-        result = arg3 as Record<string, unknown> | undefined;
-        errorMsg = arg4 as string | undefined;
-        userId = arg5 as string | undefined;
+        result = arg3 as unknown as Record<string, unknown> | undefined;
+        errorMsg = arg4 as unknown as string | undefined;
+        userId = arg5 as unknown as string | undefined;
         progress = undefined;
       }
     }

@@ -54,7 +54,6 @@ data/*.db-wal
 .env
 .env.local
 .env.development
-.env.production
 .env.vercel
 .vercel.env
 .jwt_secret

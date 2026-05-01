@@ -1,0 +1,17 @@
+- [x] `.env.production` 不包含任何 AI API Key
+- [x] `.env.production` 中 Supabase 凭证为空值占位符
+- [x] `.env.production` 在 git 中被跟踪（不被 .gitignore 忽略）
+- [x] `electron/main.ts` 打包后 API 路径加载逻辑正确（使用 `app.isPackaged` 替代弃用的 `process.mainModule`）
+- [x] `electron/main.ts` 打包后迁移文件路径正确（打包时使用 `process.resourcesPath` 导入迁移服务）
+- [x] `package.json` 中 `extraResources` 配置包含 api、shared、migrations、.env.production
+- [x] `package.json` 中 `files` 配置优化，避免重复打包 api 和 shared
+- [x] `tsconfig.electron.json` 编译输出包含 api 和 shared 目录
+- [x] GitHub Actions `release.yml` 在推送 `v*.*.*` tag 时触发
+- [x] Release 工作流包含 Windows、macOS、Linux 三个平台的构建 job
+- [x] Release 工作流构建前执行类型检查和 lint
+- [x] Release 工作流将构建产物上传到 GitHub Releases
+- [x] `npm run check` 和 `npm run check:electron` 通过
+- [x] `npm run lint` 通过
+- [x] `npm run electron:build:win` 成功生成安装包
+- [x] `release/` 目录包含 `KnowledgeMap-1.0.0-x64-setup.exe` 和 `KnowledgeMap-1.0.0-portable.exe`
+- [x] 打包后的 `resources/` 目录包含 api、migrations、.env.production

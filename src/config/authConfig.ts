@@ -24,13 +24,13 @@ const getDefaultUrl = (): string =>
   getEnv("VITE_SUPABASE_URL") ||
   (isDevelopment()
     ? LOCAL_SUPABASE_URL
-    : "https://gzceehtffqwlcyspmbvj.supabase.co");
+    : "");
 
 const getDefaultAnonKey = (): string =>
   getEnv("VITE_SUPABASE_ANON_KEY") ||
   (isDevelopment()
     ? LOCAL_SUPABASE_ANON_KEY
-    : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6Y2VlaHRmZnF3bGN5c3BtYnZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMDMzMTgsImV4cCI6MjA4OTU3OTMxOH0.xg1HAD00-BQBGCA_t8vcs3DLrKo2T6wYBMqaeR99Juk");
+    : "");
 
 export const authConfig = {
   mode: "supabase" as AuthMode,
@@ -78,8 +78,13 @@ loadSavedSupabaseConfig();
 
 export const getAuthModeDisplay = (): string => {
   const url = authConfig.supabase.url;
+  if (!url) return "";
   if (url.includes("127.0.0.1") || url.includes("localhost")) {
     return "本地模式";
   }
   return "云端模式";
+};
+
+export const isSupabaseConfigured = (): boolean => {
+  return !!(authConfig.supabase.url && authConfig.supabase.anonKey);
 };

@@ -5,7 +5,7 @@ import { useStore } from "./store/useStore";
 import { LoadingBar, ErrorBoundary } from "./components/common";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
-import { authConfig } from "./config/authConfig";
+import { authConfig, isSupabaseConfigured } from "./config/authConfig";
 import { toUser } from "@shared/types/database";
 import { initializeFrontendPlugins } from "./services/kernel/plugins";
 import "./i18n";
@@ -17,9 +17,6 @@ frontendKernel.activateAll().catch((err: unknown) => {
 
 const Login = lazy(() =>
   import("./pages/Login").then((module) => ({ default: module.Login })),
-);
-const Register = lazy(() =>
-  import("./pages/Register").then((module) => ({ default: module.Register })),
 );
 const Dashboard = lazy(() =>
   import("./pages/Dashboard").then((module) => ({ default: module.Dashboard })),
@@ -129,6 +126,7 @@ const LoadingFallback = () => (
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token } = useStore();
+  if (!isSupabaseConfigured()) return <Navigate to="/login" replace />;
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
@@ -152,6 +150,7 @@ function App() {
 
   useEffect(() => {
     if (!authConfig.isSupabase()) return;
+    if (!isSupabaseConfigured()) return;
 
     const client = getSupabaseClient();
     if (!client) return;
@@ -197,7 +196,6 @@ function App() {
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/setup" element={<SetupWizard />} />
           <Route path="/graph/:id" element={<GraphEditor />} />
 

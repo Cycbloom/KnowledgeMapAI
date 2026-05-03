@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { apiClient } from '../services/api/createApiClient';
-import { updateSupabaseConfig, isSupabaseConfigured, authConfig } from '../config/authConfig';
-import { getSupabaseClient, resetSupabaseClient } from '../lib/supabase';
-import { useStore } from '../store/useStore';
-import { useTheme } from '../hooks';
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { apiClient } from "../services/api/createApiClient";
+import {
+  updateSupabaseConfig,
+  isSupabaseConfigured,
+  authConfig,
+} from "../config/authConfig";
+import { getSupabaseClient, resetSupabaseClient } from "../lib/supabase";
+import { useStore } from "../store/useStore";
+import { useTheme } from "../hooks";
+import { isElectron } from "../config/electronConfig";
 import {
   Database,
   Bot,
@@ -18,13 +23,27 @@ import {
   EyeOff,
   AlertTriangle,
   ChevronDown,
-} from 'lucide-react';
+  Zap,
+  Settings,
+  Key,
+  Building2,
+  Globe,
+  Lock,
+  RefreshCw,
+  ExternalLink,
+} from "lucide-react";
 
-type AIProviderType = 'deepseek' | 'volcengine' | 'aliyun' | 'openai' | 'zhipu' | 'moonshot';
+type AIProviderType =
+  | "deepseek"
+  | "volcengine"
+  | "aliyun"
+  | "openai"
+  | "zhipu"
+  | "moonshot";
 
 interface MigrationResult {
   name: string;
-  status: 'success' | 'failed' | 'running' | 'pending';
+  status: "success" | "failed" | "running" | "pending";
   message?: string;
 }
 
@@ -33,58 +52,141 @@ interface ConfiguredProvider {
   label: string;
 }
 
-const AI_PROVIDERS: { value: AIProviderType; label: string; defaultBaseURL: string; defaultModel: string }[] = [
-  { value: 'deepseek', label: 'DeepSeek', defaultBaseURL: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat' },
-  { value: 'volcengine', label: 'Volcengine', defaultBaseURL: 'https://ark.cn-beijing.volces.com/api/v3', defaultModel: 'doubao-pro-32k' },
-  { value: 'aliyun', label: 'Aliyun', defaultBaseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', defaultModel: 'qwen-turbo' },
-  { value: 'openai', label: 'OpenAI', defaultBaseURL: 'https://api.openai.com/v1', defaultModel: 'gpt-4o-mini' },
-  { value: 'zhipu', label: 'Zhipu', defaultBaseURL: 'https://open.bigmodel.cn/api/paas/v4', defaultModel: 'glm-4-flash' },
-  { value: 'moonshot', label: 'Moonshot', defaultBaseURL: 'https://api.moonshot.cn/v1', defaultModel: 'moonshot-v1-8k' },
+const AI_PROVIDERS: {
+  value: AIProviderType;
+  label: string;
+  defaultBaseURL: string;
+  defaultModel: string;
+}[] = [
+  {
+    value: "deepseek",
+    label: "DeepSeek",
+    defaultBaseURL: "https://api.deepseek.com/v1",
+    defaultModel: "deepseek-chat",
+  },
+  {
+    value: "volcengine",
+    label: "Volcengine",
+    defaultBaseURL: "https://ark.cn-beijing.volces.com/api/v3",
+    defaultModel: "doubao-pro-32k",
+  },
+  {
+    value: "aliyun",
+    label: "Aliyun",
+    defaultBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    defaultModel: "qwen-turbo",
+  },
+  {
+    value: "openai",
+    label: "OpenAI",
+    defaultBaseURL: "https://api.openai.com/v1",
+    defaultModel: "gpt-4o-mini",
+  },
+  {
+    value: "zhipu",
+    label: "Zhipu",
+    defaultBaseURL: "https://open.bigmodel.cn/api/paas/v4",
+    defaultModel: "glm-4-flash",
+  },
+  {
+    value: "moonshot",
+    label: "Moonshot",
+    defaultBaseURL: "https://api.moonshot.cn/v1",
+    defaultModel: "moonshot-v1-8k",
+  },
 ];
+
+const generatePassword = () => {
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
+  return Array.from(
+    { length: 16 },
+    () => chars[Math.floor(Math.random() * chars.length)],
+  ).join("");
+};
+
+const openExternal = (url: string) => {
+  if (isElectron() && window.electronAPI?.ipc) {
+    window.electronAPI.ipc.send("shell:openExternal", url);
+  } else {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+};
 
 export const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const setUser = useStore(state => state.setUser);
+  const setUser = useStore((state) => state.setUser);
   const { isDark, toggleTheme } = useTheme();
 
+  const [activeTab, setActiveTab] = useState<"quick" | "manual">("quick");
+  const [quickStep, setQuickStep] = useState(1);
+  const [pat, setPat] = useState("");
+  const [showPat, setShowPat] = useState(false);
+  const [patVerifying, setPatVerifying] = useState(false);
+  const [patError, setPatError] = useState("");
+  const [organizations, setOrganizations] = useState<
+    Array<{ id: string; name: string; slug: string }>
+  >([]);
+  const [selectedOrg, setSelectedOrg] = useState("");
+  const [projectName, setProjectName] = useState("KnowledgeMap");
+  const [dbPassword, setDbPassword] = useState("");
+  const [showDbPassword, setShowDbPassword] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [regions, setRegions] = useState<
+    Array<{ code: string; name: string; location: string }>
+  >([]);
+  const [creating, setCreating] = useState(false);
+  const [createProgress, setCreateProgress] = useState(0);
+  const [createError, setCreateError] = useState("");
+  const [createdProject, setCreatedProject] = useState<{
+    ref: string;
+    url: string;
+  } | null>(null);
+
   const [dbForm, setDbForm] = useState({
-    url: '',
-    anonKey: '',
-    serviceRoleKey: '',
-    databaseUrl: '',
+    url: "",
+    anonKey: "",
+    serviceRoleKey: "",
+    databaseUrl: "",
   });
   const [showAnonKey, setShowAnonKey] = useState(false);
   const [showServiceRoleKey, setShowServiceRoleKey] = useState(false);
   const [dbTesting, setDbTesting] = useState(false);
   const [dbConnected, setDbConnected] = useState(false);
-  const [dbError, setDbError] = useState('');
-  const [dbStatus, setDbStatus] = useState<'empty' | 'partial' | 'ready' | 'unknown' | 'loading'>('loading');
+  const [dbError, setDbError] = useState("");
+  const [dbStatus, setDbStatus] = useState<
+    "empty" | "partial" | "ready" | "unknown" | "loading"
+  >("loading");
   const [dbInitializing, setDbInitializing] = useState(false);
   const [migrations, setMigrations] = useState<MigrationResult[]>([]);
 
-  const [aiProvider, setAiProvider] = useState<AIProviderType>('deepseek');
-  const [aiApiKey, setAiApiKey] = useState('');
+  const [aiProvider, setAiProvider] = useState<AIProviderType>("deepseek");
+  const [aiApiKey, setAiApiKey] = useState("");
   const [showAiApiKey, setShowAiApiKey] = useState(false);
-  const [aiBaseURL, setAiBaseURL] = useState('https://api.deepseek.com/v1');
-  const [aiModel, setAiModel] = useState('deepseek-chat');
+  const [aiBaseURL, setAiBaseURL] = useState("https://api.deepseek.com/v1");
+  const [aiModel, setAiModel] = useState("deepseek-chat");
   const [aiSaving, setAiSaving] = useState(false);
   const [aiTesting, setAiTesting] = useState(false);
-  const [aiTestResult, setAiTestResult] = useState<'success' | 'error' | null>(null);
-  const [aiTestMessage, setAiTestMessage] = useState('');
-  const [configuredProviders, setConfiguredProviders] = useState<ConfiguredProvider[]>([]);
+  const [aiTestResult, setAiTestResult] = useState<"success" | "error" | null>(
+    null,
+  );
+  const [aiTestMessage, setAiTestMessage] = useState("");
+  const [configuredProviders, setConfiguredProviders] = useState<
+    ConfiguredProvider[]
+  >([]);
 
-  const [authForm, setAuthForm] = useState({ email: '', password: '' });
+  const [authForm, setAuthForm] = useState({ email: "", password: "" });
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
-  const [authError, setAuthError] = useState('');
+  const [authError, setAuthError] = useState("");
 
   useEffect(() => {
     loadSavedConfig();
   }, []);
 
   useEffect(() => {
-    const provider = AI_PROVIDERS.find(p => p.value === aiProvider);
+    const provider = AI_PROVIDERS.find((p) => p.value === aiProvider);
     if (provider) {
       setAiBaseURL(provider.defaultBaseURL);
       setAiModel(provider.defaultModel);
@@ -95,18 +197,21 @@ export const Login = () => {
     const savedUrl = authConfig.supabase.url;
     const savedAnonKey = authConfig.supabase.anonKey;
     if (savedUrl) {
-      setDbForm(prev => ({ ...prev, url: savedUrl }));
+      setDbForm((prev) => ({ ...prev, url: savedUrl }));
     }
     if (savedAnonKey) {
-      setDbForm(prev => ({ ...prev, anonKey: savedAnonKey }));
+      setDbForm((prev) => ({ ...prev, anonKey: savedAnonKey }));
     }
 
     if (window.electronAPI?.config) {
       try {
-        const electronConfig = await window.electronAPI.config.read() as Record<string, unknown>;
-        const db = electronConfig?.database as Record<string, string> | undefined;
+        const electronConfig =
+          (await window.electronAPI.config.read()) as Record<string, unknown>;
+        const db = electronConfig?.database as
+          | Record<string, string>
+          | undefined;
         if (db) {
-          setDbForm(prev => ({
+          setDbForm((prev) => ({
             ...prev,
             url: db.url || prev.url,
             anonKey: db.anonKey || prev.anonKey,
@@ -115,14 +220,17 @@ export const Login = () => {
           }));
         }
       } catch {
-        // ignore electron config read errors
+        // ignore
       }
     }
 
     try {
-      const response = await apiClient.get('/ai/config/database') as Record<string, string>;
+      const response = (await apiClient.get("/ai/config/database")) as Record<
+        string,
+        string
+      >;
       if (response) {
-        setDbForm(prev => ({
+        setDbForm((prev) => ({
           ...prev,
           url: response.url || prev.url,
           anonKey: response.anonKey || prev.anonKey,
@@ -131,14 +239,14 @@ export const Login = () => {
         }));
       }
     } catch {
-      // ignore database config read errors
+      // ignore
     }
 
     if (isSupabaseConfigured()) {
       checkDatabaseStatus();
       setDbConnected(true);
     } else {
-      setDbStatus('unknown');
+      setDbStatus("unknown");
     }
 
     loadConfiguredProviders();
@@ -146,12 +254,15 @@ export const Login = () => {
 
   const loadConfiguredProviders = async () => {
     try {
-      const response = await apiClient.get('/ai/config/providers') as Record<string, Record<string, string>>;
+      const response = (await apiClient.get("/ai/config/providers")) as Record<
+        string,
+        Record<string, string>
+      >;
       const providers: ConfiguredProvider[] = [];
-      if (response && typeof response === 'object') {
+      if (response && typeof response === "object") {
         for (const [key, value] of Object.entries(response)) {
           if (value?.apiKey) {
-            const providerInfo = AI_PROVIDERS.find(p => p.value === key);
+            const providerInfo = AI_PROVIDERS.find((p) => p.value === key);
             providers.push({
               provider: key as AIProviderType,
               label: providerInfo?.label || key,
@@ -161,28 +272,30 @@ export const Login = () => {
       }
       setConfiguredProviders(providers);
     } catch {
-      // ignore provider config read errors
+      // ignore
     }
   };
 
   const checkDatabaseStatus = async () => {
-    setDbStatus('loading');
+    setDbStatus("loading");
     try {
-      const response = await apiClient.get('/database/status') as { status: string };
-      setDbStatus(response.status as 'empty' | 'partial' | 'ready');
+      const response = (await apiClient.get("/database/status")) as {
+        status: string;
+      };
+      setDbStatus(response.status as "empty" | "partial" | "ready");
     } catch {
-      setDbStatus('unknown');
+      setDbStatus("unknown");
     }
   };
 
   const handleTestConnection = async () => {
     if (!dbForm.url.trim() || !dbForm.anonKey.trim()) {
-      setDbError(t('configPage.urlAndAnonKeyRequired'));
+      setDbError(t("configPage.urlAndAnonKeyRequired"));
       return;
     }
 
     setDbTesting(true);
-    setDbError('');
+    setDbError("");
     setDbConnected(false);
 
     try {
@@ -197,7 +310,7 @@ export const Login = () => {
         });
       }
 
-      await apiClient.put('/ai/config/database', {
+      await apiClient.put("/ai/config/database", {
         url: dbForm.url,
         anonKey: dbForm.anonKey,
         serviceRoleKey: dbForm.serviceRoleKey,
@@ -209,10 +322,12 @@ export const Login = () => {
 
       setDbConnected(true);
       checkDatabaseStatus();
-      attemptAutoAuth();
+      attemptAutoAuth().catch(() => {
+        setAuthError(t("configPage.authSkipped"));
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      setDbError(message || t('configPage.connectionFailed'));
+      setDbError(message || t("configPage.connectionFailed"));
     } finally {
       setDbTesting(false);
     }
@@ -220,7 +335,7 @@ export const Login = () => {
 
   const attemptAutoAuth = async () => {
     setAuthenticating(true);
-    setAuthError('');
+    setAuthError("");
 
     try {
       const client = getSupabaseClient();
@@ -236,18 +351,19 @@ export const Login = () => {
           sessionData.session.access_token,
           sessionData.session.refresh_token,
         );
-        navigate('/');
+        navigate("/");
         return;
       }
 
-      const { data: anonData, error: anonError } = await client.auth.signInAnonymously();
+      const { data: anonData, error: anonError } =
+        await client.auth.signInAnonymously();
       if (!anonError && anonData.session) {
         setUser(
           anonData.session.user as unknown as Parameters<typeof setUser>[0],
           anonData.session.access_token,
           anonData.session.refresh_token,
         );
-        navigate('/');
+        navigate("/");
         return;
       }
 
@@ -264,12 +380,12 @@ export const Login = () => {
     if (!authForm.email.trim() || !authForm.password.trim()) return;
 
     setAuthenticating(true);
-    setAuthError('');
+    setAuthError("");
 
     try {
       const client = getSupabaseClient();
       if (!client) {
-        setAuthError(t('configPage.noSupabaseClient'));
+        setAuthError(t("configPage.noSupabaseClient"));
         return;
       }
 
@@ -279,10 +395,11 @@ export const Login = () => {
       });
 
       if (error) {
-        const { data: signInData, error: signInError } = await client.auth.signInWithPassword({
-          email: authForm.email,
-          password: authForm.password,
-        });
+        const { data: signInData, error: signInError } =
+          await client.auth.signInWithPassword({
+            email: authForm.email,
+            password: authForm.password,
+          });
         if (signInError) {
           setAuthError(signInError.message);
           return;
@@ -293,7 +410,7 @@ export const Login = () => {
             signInData.session.access_token,
             signInData.session.refresh_token,
           );
-          navigate('/');
+          navigate("/");
         }
         return;
       }
@@ -304,9 +421,9 @@ export const Login = () => {
           data.session.access_token,
           data.session.refresh_token,
         );
-        navigate('/');
+        navigate("/");
       } else {
-        setAuthError(t('configPage.confirmEmail'));
+        setAuthError(t("configPage.confirmEmail"));
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -321,27 +438,35 @@ export const Login = () => {
     setMigrations([]);
 
     try {
-      const response = await apiClient.post('/database/migrate') as {
+      const response = (await apiClient.post("/database/migrate")) as {
         migrations?: Array<{ name: string; status: string; message?: string }>;
         results?: Array<{ name: string; status: string; message?: string }>;
       };
 
       const rawMigrations = response.migrations || response.results || [];
-      const mapped: MigrationResult[] = rawMigrations.map(m => ({
+      const mapped: MigrationResult[] = rawMigrations.map((m) => ({
         name: m.name,
-        status: m.status === 'success' || m.status === 'applied' ? 'success' : m.status === 'failed' ? 'failed' : 'success',
+        status:
+          m.status === "success" || m.status === "applied"
+            ? "success"
+            : m.status === "failed"
+              ? "failed"
+              : "success",
         message: m.message,
       }));
 
       setMigrations(mapped);
 
-      const allSuccess = mapped.every(m => m.status === 'success');
+      const allSuccess = mapped.every((m) => m.status === "success");
       if (allSuccess && mapped.length > 0) {
-        setDbStatus('ready');
+        setDbStatus("ready");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      setMigrations(prev => [...prev, { name: t('configPage.migrationError'), status: 'failed', message }]);
+      setMigrations((prev) => [
+        ...prev,
+        { name: t("configPage.migrationError"), status: "failed", message },
+      ]);
     } finally {
       setDbInitializing(false);
     }
@@ -349,26 +474,29 @@ export const Login = () => {
 
   const handleSaveAIConfig = async () => {
     if (!aiApiKey.trim()) {
-      setAiTestResult('error');
-      setAiTestMessage(t('configPage.apiKeyRequired'));
+      setAiTestResult("error");
+      setAiTestMessage(t("configPage.apiKeyRequired"));
       return;
     }
 
     setAiSaving(true);
     try {
-      const updateData: Record<string, { apiKey?: string; baseURL?: string; model?: string }> = {};
+      const updateData: Record<
+        string,
+        { apiKey?: string; baseURL?: string; model?: string }
+      > = {};
       updateData[aiProvider] = {
         apiKey: aiApiKey,
         baseURL: aiBaseURL,
         model: aiModel,
       };
-      await apiClient.put('/ai/config/providers', { providers: updateData });
-      setAiTestResult('success');
-      setAiTestMessage(t('configPage.aiConfigSaved'));
+      await apiClient.put("/ai/config/providers", { providers: updateData });
+      setAiTestResult("success");
+      setAiTestMessage(t("configPage.aiConfigSaved"));
       loadConfiguredProviders();
     } catch {
-      setAiTestResult('error');
-      setAiTestMessage(t('configPage.aiConfigSaveFailed'));
+      setAiTestResult("error");
+      setAiTestMessage(t("configPage.aiConfigSaveFailed"));
     } finally {
       setAiSaving(false);
     }
@@ -376,32 +504,194 @@ export const Login = () => {
 
   const handleTestAIConfig = async () => {
     if (!aiApiKey.trim()) {
-      setAiTestResult('error');
-      setAiTestMessage(t('configPage.apiKeyRequired'));
+      setAiTestResult("error");
+      setAiTestMessage(t("configPage.apiKeyRequired"));
       return;
     }
 
     setAiTesting(true);
     setAiTestResult(null);
     try {
-      const response = await apiClient.post('/ai/config/providers/test', {
+      const response = (await apiClient.post("/ai/config/providers/test", {
         provider: aiProvider,
         apiKey: aiApiKey,
         baseURL: aiBaseURL,
         model: aiModel,
-      }) as { success: boolean; message: string };
+      })) as { success: boolean; message: string };
       if (response.success) {
-        setAiTestResult('success');
-        setAiTestMessage(t('configPage.aiTestSuccess'));
+        setAiTestResult("success");
+        setAiTestMessage(t("configPage.aiTestSuccess"));
       } else {
-        setAiTestResult('error');
-        setAiTestMessage(response.message || t('configPage.aiTestFailed'));
+        setAiTestResult("error");
+        setAiTestMessage(response.message || t("configPage.aiTestFailed"));
       }
     } catch {
-      setAiTestResult('error');
-      setAiTestMessage(t('configPage.aiTestFailed'));
+      setAiTestResult("error");
+      setAiTestMessage(t("configPage.aiTestFailed"));
     } finally {
       setAiTesting(false);
+    }
+  };
+
+  const handleVerifyPat = async () => {
+    if (!pat.trim()) return;
+
+    setPatVerifying(true);
+    setPatError("");
+
+    try {
+      const response = (await apiClient.get(
+        `/api/supabase/organizations?accessToken=${encodeURIComponent(pat)}`,
+      )) as Array<{ id: string; name: string; slug: string }>;
+      if (Array.isArray(response) && response.length > 0) {
+        setOrganizations(response);
+        setQuickStep(2);
+      } else {
+        setPatError(t("quickSetup.patInvalid"));
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setPatError(message || t("quickSetup.patInvalid"));
+    } finally {
+      setPatVerifying(false);
+    }
+  };
+
+  const loadRegions = useCallback(async () => {
+    try {
+      const response = (await apiClient.get(
+        `/api/supabase/regions?accessToken=${encodeURIComponent(pat)}`,
+      )) as Array<{ code: string; name: string; location: string }>;
+      if (Array.isArray(response)) {
+        setRegions(response);
+      }
+    } catch {
+      // ignore
+    }
+  }, [pat]);
+
+  useEffect(() => {
+    if (quickStep === 3 && regions.length === 0) {
+      loadRegions();
+    }
+  }, [quickStep, regions.length, loadRegions]);
+
+  const handleCreateProject = async () => {
+    if (!selectedOrg || !dbPassword || !selectedRegion) return;
+
+    setCreating(true);
+    setCreateError("");
+    setCreateProgress(0);
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    timers.push(setTimeout(() => setCreateProgress(1), 0));
+    timers.push(setTimeout(() => setCreateProgress(2), 5000));
+    timers.push(setTimeout(() => setCreateProgress(3), 15000));
+
+    try {
+      const response = (await apiClient.post("/api/supabase/quick-setup", {
+        accessToken: pat,
+        organizationId: selectedOrg,
+        projectName,
+        databasePassword: dbPassword,
+        region: selectedRegion,
+      })) as {
+        ref: string;
+        url: string;
+        anonKey?: string;
+        serviceRoleKey?: string;
+        databaseUrl?: string;
+      };
+
+      setCreatedProject({ ref: response.ref, url: response.url });
+
+      if (response.url && response.anonKey) {
+        setDbForm((prev) => ({
+          ...prev,
+          url: response.url ?? prev.url,
+          anonKey: response.anonKey ?? prev.anonKey,
+          serviceRoleKey: response.serviceRoleKey ?? prev.serviceRoleKey,
+          databaseUrl: response.databaseUrl ?? prev.databaseUrl,
+        }));
+
+        if (window.electronAPI?.config) {
+          await window.electronAPI.config.write({
+            database: {
+              url: response.url,
+              anonKey: response.anonKey,
+              serviceRoleKey: response.serviceRoleKey ?? "",
+              databaseUrl: response.databaseUrl ?? "",
+            },
+          });
+        }
+
+        await apiClient.put("/ai/config/database", {
+          url: response.url,
+          anonKey: response.anonKey,
+          serviceRoleKey: response.serviceRoleKey ?? "",
+          databaseUrl: response.databaseUrl ?? "",
+        });
+
+        updateSupabaseConfig(response.url, response.anonKey);
+        resetSupabaseClient();
+      }
+
+      setCreateProgress(4);
+      timers.forEach(clearTimeout);
+
+      setTimeout(() => {
+        setQuickStep(5);
+        setCreating(false);
+      }, 500);
+    } catch (err: unknown) {
+      timers.forEach(clearTimeout);
+      const message = err instanceof Error ? err.message : String(err);
+      setCreateError(message);
+      setCreating(false);
+    }
+  };
+
+  const handleQuickSetupComplete = async () => {
+    setAuthenticating(true);
+    setAuthError("");
+
+    try {
+      const client = getSupabaseClient();
+      if (!client) {
+        setShowAuthForm(true);
+        setAuthenticating(false);
+        return;
+      }
+
+      const { data: sessionData } = await client.auth.getSession();
+      if (sessionData.session) {
+        setUser(
+          sessionData.session.user as unknown as Parameters<typeof setUser>[0],
+          sessionData.session.access_token,
+          sessionData.session.refresh_token,
+        );
+        navigate("/");
+        return;
+      }
+
+      const { data: anonData, error: anonError } =
+        await client.auth.signInAnonymously();
+      if (!anonError && anonData.session) {
+        setUser(
+          anonData.session.user as unknown as Parameters<typeof setUser>[0],
+          anonData.session.access_token,
+          anonData.session.refresh_token,
+        );
+        navigate("/");
+        return;
+      }
+
+      setShowAuthForm(true);
+    } catch {
+      setShowAuthForm(true);
+    } finally {
+      setAuthenticating(false);
     }
   };
 
@@ -414,9 +704,9 @@ export const Login = () => {
   ) => (
     <div className="relative">
       <input
-        type={show ? 'text' : 'password'}
+        type={show ? "text" : "password"}
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full p-2.5 pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
       />
@@ -430,6 +720,453 @@ export const Login = () => {
     </div>
   );
 
+  const renderStepIndicator = () => (
+    <div className="flex items-center justify-center gap-1 mb-6">
+      {[1, 2, 3, 4, 5].map((step) => (
+        <div key={step} className="flex items-center">
+          <div
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${
+              step === quickStep
+                ? "bg-primary-500 text-white scale-110 shadow-lg shadow-primary-500/30"
+                : step < quickStep
+                  ? "bg-primary-500/20 text-primary-600 dark:text-primary-400"
+                  : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
+            }`}
+          >
+            {step < quickStep ? <Check className="w-3.5 h-3.5" /> : step}
+          </div>
+          {step < 5 && (
+            <div
+              className={`w-4 h-0.5 mx-0.5 transition-colors duration-300 ${
+                step < quickStep
+                  ? "bg-primary-500"
+                  : "bg-gray-200 dark:bg-slate-700"
+              }`}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderQuickStep1 = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+          <Key className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {t("quickSetup.step1Title")}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("quickSetup.step1Desc")}
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() =>
+          openExternal("https://supabase.com/dashboard/account/tokens")
+        }
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 text-sm font-medium transition-colors"
+      >
+        <ExternalLink className="w-4 h-4" />
+        {t("quickSetup.getPat")}
+      </button>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          Personal Access Token
+        </label>
+        {renderPasswordField(
+          pat,
+          setPat,
+          showPat,
+          () => setShowPat(!showPat),
+          t("quickSetup.patPlaceholder"),
+        )}
+      </div>
+
+      {patError && (
+        <div className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+          <X className="w-4 h-4" />
+          {patError}
+        </div>
+      )}
+
+      <button
+        onClick={handleVerifyPat}
+        disabled={patVerifying || !pat.trim()}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {patVerifying ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {t("quickSetup.verifying")}
+          </>
+        ) : (
+          t("quickSetup.verify")
+        )}
+      </button>
+    </div>
+  );
+
+  const renderQuickStep2 = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+          <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {t("quickSetup.step2Title")}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("quickSetup.step2Desc")}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {organizations.map((org) => (
+          <label
+            key={org.id}
+            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+              selectedOrg === org.id
+                ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
+                : "border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+            }`}
+          >
+            <input
+              type="radio"
+              name="organization"
+              value={org.id}
+              checked={selectedOrg === org.id}
+              onChange={() => setSelectedOrg(org.id)}
+              className="text-primary-600 focus:ring-primary-500"
+            />
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {org.name}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {org.slug}
+              </p>
+            </div>
+          </label>
+        ))}
+      </div>
+
+      <button
+        onClick={() => setQuickStep(3)}
+        disabled={!selectedOrg}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Next
+      </button>
+    </div>
+  );
+
+  const renderQuickStep3 = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+          <Globe className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {t("quickSetup.step3Title")}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("quickSetup.step3Desc")}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          {t("quickSetup.projectName")}
+        </label>
+        <input
+          type="text"
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+          className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          {t("quickSetup.dbPassword")}
+        </label>
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <input
+              type={showDbPassword ? "text" : "password"}
+              value={dbPassword}
+              onChange={(e) => setDbPassword(e.target.value)}
+              placeholder={t("quickSetup.dbPasswordPlaceholder")}
+              className="w-full p-2.5 pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+            />
+            <button
+              type="button"
+              onClick={() => setShowDbPassword(!showDbPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              {showDbPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDbPassword(generatePassword())}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 text-sm font-medium transition-colors whitespace-nowrap"
+          >
+            <Lock className="w-4 h-4" />
+            {t("quickSetup.generate")}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          {t("quickSetup.region")}
+        </label>
+        <div className="relative">
+          <select
+            value={selectedRegion}
+            onChange={(e) => setSelectedRegion(e.target.value)}
+            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+          >
+            <option value="">{t("quickSetup.selectRegion")}</option>
+            {regions.map((r) => (
+              <option key={r.code} value={r.code}>
+                {r.name} ({r.location})
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        </div>
+      </div>
+
+      <button
+        onClick={handleCreateProject}
+        disabled={
+          creating ||
+          !projectName.trim() ||
+          !dbPassword.trim() ||
+          !selectedRegion
+        }
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {creating ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {t("quickSetup.createAndConfigure")}
+          </>
+        ) : (
+          t("quickSetup.createAndConfigure")
+        )}
+      </button>
+    </div>
+  );
+
+  const renderQuickStep4 = () => {
+    const steps = [
+      { label: t("quickSetup.creatingProject"), progress: 1 },
+      { label: t("quickSetup.waitingForProject"), progress: 2 },
+      { label: t("quickSetup.gettingCredentials"), progress: 3 },
+      { label: t("quickSetup.initializingDb"), progress: 4 },
+    ];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+            <Loader2 className="w-5 h-5 text-cyan-600 dark:text-cyan-400 animate-spin" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {t("quickSetup.step4Title")}
+          </h3>
+        </div>
+
+        <div className="space-y-3">
+          {steps.map((step, index) => (
+            <div key={index} className="flex items-center gap-3">
+              {createProgress > step.progress - 1 ? (
+                <div className="w-6 h-6 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30">
+                  <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
+              ) : createProgress === step.progress - 1 ? (
+                <div className="w-6 h-6 rounded-full flex items-center justify-center bg-primary-100 dark:bg-primary-900/30">
+                  <Loader2 className="w-4 h-4 text-primary-600 dark:text-primary-400 animate-spin" />
+                </div>
+              ) : (
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600" />
+              )}
+              <span
+                className={`text-sm ${
+                  createProgress >= step.progress - 1
+                    ? "text-gray-900 dark:text-gray-100"
+                    : "text-gray-400 dark:text-gray-500"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {createError && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+              <X className="w-4 h-4" />
+              {createError}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCreateProject}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                {t("quickSetup.retry")}
+              </button>
+              <button
+                onClick={() => setActiveTab("manual")}
+                className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+              >
+                {t("quickSetup.switchToManual")}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderQuickStep5 = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+          <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          {t("quickSetup.step5Title")}
+        </h3>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div className="px-3 py-2 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700">
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+            {t("quickSetup.projectSummary")}
+          </span>
+        </div>
+        <div className="divide-y divide-gray-100 dark:divide-slate-700">
+          <div className="px-3 py-2.5 flex items-center justify-between">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {t("quickSetup.projectName")}
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {projectName}
+            </span>
+          </div>
+          <div className="px-3 py-2.5 flex items-center justify-between">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {t("quickSetup.supabaseUrl")}
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 font-mono truncate max-w-[200px]">
+              {createdProject?.url || dbForm.url || "—"}
+            </span>
+          </div>
+          <div className="px-3 py-2.5 flex items-center justify-between">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {t("quickSetup.regionLabel")}
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {selectedRegion || "—"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {showAuthForm && (
+        <div className="pt-3 border-t border-gray-100 dark:border-slate-700">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            {t("configPage.signInRequired")}
+          </p>
+          <form onSubmit={handleAuthSubmit} className="space-y-3">
+            <input
+              type="email"
+              value={authForm.email}
+              onChange={(e) =>
+                setAuthForm((prev) => ({ ...prev, email: e.target.value }))
+              }
+              placeholder={t("configPage.email")}
+              className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <input
+              type="password"
+              value={authForm.password}
+              onChange={(e) =>
+                setAuthForm((prev) => ({ ...prev, password: e.target.value }))
+              }
+              placeholder={t("configPage.password")}
+              className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            {authError && <p className="text-xs text-red-500">{authError}</p>}
+            <button
+              type="submit"
+              disabled={authenticating}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {authenticating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t("configPage.signingIn")}
+                </>
+              ) : (
+                t("configPage.signIn")
+              )}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {authenticating && !showAuthForm && (
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          {t("configPage.authenticating")}
+        </div>
+      )}
+
+      {!showAuthForm && !authenticating && (
+        <button
+          onClick={handleQuickSetupComplete}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+        >
+          {t("quickSetup.startUsing")}
+        </button>
+      )}
+    </div>
+  );
+
+  const renderQuickSetup = () => (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+      {renderStepIndicator()}
+
+      {quickStep === 1 && renderQuickStep1()}
+      {quickStep === 2 && renderQuickStep2()}
+      {quickStep === 3 && renderQuickStep3()}
+      {quickStep === 4 && renderQuickStep4()}
+      {quickStep === 5 && renderQuickStep5()}
+    </div>
+  );
+
   const renderSupabaseCard = () => (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
       <div className="flex items-center gap-3 mb-5">
@@ -437,16 +1174,16 @@ export const Login = () => {
           <Database className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {t('configPage.connectSupabase')}
+          {t("configPage.connectSupabase")}
         </h2>
         {dbConnected ? (
           <span className="ml-auto inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
             <Check className="w-3 h-3" />
-            {t('configPage.connected')}
+            {t("configPage.connected")}
           </span>
         ) : (
           <span className="ml-auto inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400">
-            {t('configPage.notConnected')}
+            {t("configPage.notConnected")}
           </span>
         )}
       </div>
@@ -454,12 +1191,14 @@ export const Login = () => {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.supabaseUrl')}
+            {t("configPage.supabaseUrl")}
           </label>
           <input
             type="text"
             value={dbForm.url}
-            onChange={e => setDbForm(prev => ({ ...prev, url: e.target.value }))}
+            onChange={(e) =>
+              setDbForm((prev) => ({ ...prev, url: e.target.value }))
+            }
             placeholder="https://xxx.supabase.co"
             className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
           />
@@ -467,43 +1206,45 @@ export const Login = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.anonKey')}
+            {t("configPage.anonKey")}
           </label>
           {renderPasswordField(
             dbForm.anonKey,
-            val => setDbForm(prev => ({ ...prev, anonKey: val })),
+            (val) => setDbForm((prev) => ({ ...prev, anonKey: val })),
             showAnonKey,
             () => setShowAnonKey(!showAnonKey),
-            'eyJhbGciOi...',
+            "eyJhbGciOi...",
           )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.serviceRoleKey')}
+            {t("configPage.serviceRoleKey")}
           </label>
           {renderPasswordField(
             dbForm.serviceRoleKey,
-            val => setDbForm(prev => ({ ...prev, serviceRoleKey: val })),
+            (val) => setDbForm((prev) => ({ ...prev, serviceRoleKey: val })),
             showServiceRoleKey,
             () => setShowServiceRoleKey(!showServiceRoleKey),
-            'eyJhbGciOi...',
+            "eyJhbGciOi...",
           )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.databaseUrl')}
+            {t("configPage.databaseUrl")}
           </label>
           <input
             type="text"
             value={dbForm.databaseUrl}
-            onChange={e => setDbForm(prev => ({ ...prev, databaseUrl: e.target.value }))}
+            onChange={(e) =>
+              setDbForm((prev) => ({ ...prev, databaseUrl: e.target.value }))
+            }
             placeholder="postgresql://postgres:...@db.xxx.supabase.co:5432/postgres"
             className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
           />
           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            {t('configPage.databaseUrlHelp')}
+            {t("configPage.databaseUrlHelp")}
           </p>
         </div>
       </div>
@@ -517,10 +1258,10 @@ export const Login = () => {
           {dbTesting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              {t('configPage.testing')}
+              {t("configPage.testing")}
             </>
           ) : (
-            t('configPage.testConnection')
+            t("configPage.testConnection")
           )}
         </button>
 
@@ -532,35 +1273,40 @@ export const Login = () => {
         )}
       </div>
 
-      {dbConnected && dbStatus !== 'ready' && dbStatus !== 'loading' && dbStatus !== 'unknown' && (
-        <div className="mt-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <span className="text-sm text-amber-600 dark:text-amber-400">
-              {dbStatus === 'empty' ? t('configPage.schemaEmpty') : t('configPage.schemaPartial')}
-            </span>
+      {dbConnected &&
+        dbStatus !== "ready" &&
+        dbStatus !== "loading" &&
+        dbStatus !== "unknown" && (
+          <div className="mt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span className="text-sm text-amber-600 dark:text-amber-400">
+                {dbStatus === "empty"
+                  ? t("configPage.schemaEmpty")
+                  : t("configPage.schemaPartial")}
+              </span>
+            </div>
+            <button
+              onClick={handleInitializeDatabase}
+              disabled={dbInitializing}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {dbInitializing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t("configPage.initializing")}
+                </>
+              ) : (
+                t("configPage.initializeDatabase")
+              )}
+            </button>
           </div>
-          <button
-            onClick={handleInitializeDatabase}
-            disabled={dbInitializing}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {dbInitializing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {t('configPage.initializing')}
-              </>
-            ) : (
-              t('configPage.initializeDatabase')
-            )}
-          </button>
-        </div>
-      )}
+        )}
 
-      {dbConnected && dbStatus === 'ready' && (
+      {dbConnected && dbStatus === "ready" && (
         <div className="mt-4 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
           <Check className="w-4 h-4" />
-          {t('configPage.schemaReady')}
+          {t("configPage.schemaReady")}
         </div>
       )}
 
@@ -568,20 +1314,32 @@ export const Login = () => {
         <div className="mt-4 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
           <div className="px-3 py-2 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700">
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              {t('configPage.migrationProgress')}
+              {t("configPage.migrationProgress")}
             </span>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-slate-700 max-h-48 overflow-y-auto">
             {migrations.map((migration, index) => (
               <div key={index} className="px-3 py-2 flex items-center gap-2">
-                {migration.status === 'success' && <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />}
-                {migration.status === 'failed' && <X className="w-3.5 h-3.5 text-red-500 shrink-0" />}
-                {migration.status === 'running' && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-500 shrink-0" />}
-                {migration.status === 'pending' && <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 dark:border-gray-600 shrink-0" />}
+                {migration.status === "success" && (
+                  <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                )}
+                {migration.status === "failed" && (
+                  <X className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                )}
+                {migration.status === "running" && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-500 shrink-0" />
+                )}
+                {migration.status === "pending" && (
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 dark:border-gray-600 shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-700 dark:text-gray-300 truncate">{migration.name}</p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 truncate">
+                    {migration.name}
+                  </p>
                   {migration.message && (
-                    <p className={`text-xs mt-0.5 ${migration.status === 'failed' ? 'text-red-500' : 'text-gray-400'}`}>
+                    <p
+                      className={`text-xs mt-0.5 ${migration.status === "failed" ? "text-red-500" : "text-gray-400"}`}
+                    >
                       {migration.message}
                     </p>
                   )}
@@ -595,26 +1353,28 @@ export const Login = () => {
       {showAuthForm && (
         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            {t('configPage.signInRequired')}
+            {t("configPage.signInRequired")}
           </p>
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             <input
               type="email"
               value={authForm.email}
-              onChange={e => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
-              placeholder={t('configPage.email')}
+              onChange={(e) =>
+                setAuthForm((prev) => ({ ...prev, email: e.target.value }))
+              }
+              placeholder={t("configPage.email")}
               className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <input
               type="password"
               value={authForm.password}
-              onChange={e => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
-              placeholder={t('configPage.password')}
+              onChange={(e) =>
+                setAuthForm((prev) => ({ ...prev, password: e.target.value }))
+              }
+              placeholder={t("configPage.password")}
               className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
-            {authError && (
-              <p className="text-xs text-red-500">{authError}</p>
-            )}
+            {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button
               type="submit"
               disabled={authenticating}
@@ -623,10 +1383,10 @@ export const Login = () => {
               {authenticating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {t('configPage.signingIn')}
+                  {t("configPage.signingIn")}
                 </>
               ) : (
-                t('configPage.signIn')
+                t("configPage.signIn")
               )}
             </button>
           </form>
@@ -636,7 +1396,7 @@ export const Login = () => {
       {dbConnected && authenticating && !showAuthForm && (
         <div className="mt-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <Loader2 className="w-4 h-4 animate-spin" />
-          {t('configPage.authenticating')}
+          {t("configPage.authenticating")}
         </div>
       )}
     </div>
@@ -649,23 +1409,25 @@ export const Login = () => {
           <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" />
         </div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {t('configPage.configureAI')}
+          {t("configPage.configureAI")}
         </h2>
       </div>
 
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.provider')}
+            {t("configPage.provider")}
           </label>
           <div className="relative">
             <select
               value={aiProvider}
-              onChange={e => setAiProvider(e.target.value as AIProviderType)}
+              onChange={(e) => setAiProvider(e.target.value as AIProviderType)}
               className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
             >
-              {AI_PROVIDERS.map(p => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+              {AI_PROVIDERS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
               ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -674,25 +1436,25 @@ export const Login = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.apiKey')}
+            {t("configPage.apiKey")}
           </label>
           {renderPasswordField(
             aiApiKey,
             setAiApiKey,
             showAiApiKey,
             () => setShowAiApiKey(!showAiApiKey),
-            t('configPage.apiKeyPlaceholder'),
+            t("configPage.apiKeyPlaceholder"),
           )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.baseUrl')}
+            {t("configPage.baseUrl")}
           </label>
           <input
             type="text"
             value={aiBaseURL}
-            onChange={e => setAiBaseURL(e.target.value)}
+            onChange={(e) => setAiBaseURL(e.target.value)}
             placeholder="https://api.example.com/v1"
             className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
           />
@@ -700,12 +1462,12 @@ export const Login = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {t('configPage.model')}
+            {t("configPage.model")}
           </label>
           <input
             type="text"
             value={aiModel}
-            onChange={e => setAiModel(e.target.value)}
+            onChange={(e) => setAiModel(e.target.value)}
             placeholder="model-name"
             className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
           />
@@ -721,10 +1483,10 @@ export const Login = () => {
           {aiSaving ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              {t('configPage.saving')}
+              {t("configPage.saving")}
             </>
           ) : (
-            t('configPage.save')
+            t("configPage.save")
           )}
         </button>
         <button
@@ -735,15 +1497,21 @@ export const Login = () => {
           {aiTesting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              {t('configPage.testing')}
+              {t("configPage.testing")}
             </>
           ) : (
-            t('configPage.test')
+            t("configPage.test")
           )}
         </button>
         {aiTestResult && (
-          <div className={`flex items-center gap-1.5 text-sm ${aiTestResult === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {aiTestResult === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+          <div
+            className={`flex items-center gap-1.5 text-sm ${aiTestResult === "success" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+          >
+            {aiTestResult === "success" ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <X className="w-4 h-4" />
+            )}
             {aiTestMessage}
           </div>
         )}
@@ -752,10 +1520,10 @@ export const Login = () => {
       {configuredProviders.length > 0 && (
         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-            {t('configPage.configuredProviders')}
+            {t("configPage.configuredProviders")}
           </p>
           <div className="flex flex-wrap gap-2">
-            {configuredProviders.map(p => (
+            {configuredProviders.map((p) => (
               <span
                 key={p.provider}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
@@ -774,21 +1542,60 @@ export const Login = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-4xl">
-          <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-8">
+          <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6">
             KnowledgeMap
           </h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {renderSupabaseCard()}
-            {renderAICard()}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1">
+              <button
+                onClick={() => setActiveTab("quick")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "quick"
+                    ? "bg-primary-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }`}
+              >
+                <Zap className="w-4 h-4" />
+                {t("quickSetup.quickSetup")}
+              </button>
+              <button
+                onClick={() => setActiveTab("manual")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "manual"
+                    ? "bg-primary-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                {t("quickSetup.manualSetup")}
+              </button>
+            </div>
           </div>
+
+          {activeTab === "quick" && renderQuickSetup()}
+
+          {activeTab === "manual" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {renderSupabaseCard()}
+              {renderAICard()}
+            </div>
+          )}
+
+          {activeTab === "quick" && (
+            <div className="mt-6">{renderAICard()}</div>
+          )}
         </div>
       </div>
 
       <button
         onClick={toggleTheme}
         className="fixed bottom-6 right-6 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-300"
-        title={isDark ? t('configPage.switchToLightMode') : t('configPage.switchToDarkMode')}
+        title={
+          isDark
+            ? t("configPage.switchToLightMode")
+            : t("configPage.switchToDarkMode")
+        }
       >
         {isDark ? <Sun size={20} /> : <Moon size={20} />}
       </button>

@@ -1,0 +1,21 @@
+- [x] `managementApi.ts` 实现 `listOrganizations()` 获取用户组织列表
+- [x] `managementApi.ts` 实现 `listRegions()` 获取可用区域列表
+- [x] `managementApi.ts` 实现 `createProject()` 创建项目并等待就绪
+- [x] `managementApi.ts` 实现 `getProjectApiKeys()` 获取项目 API Keys
+- [x] `managementApi.ts` 实现 `waitForProjectReady()` 轮询等待项目就绪（最长 3 分钟）
+- [x] `managementApi.ts` 实现 `quickSetup()` 完整一键配置流程
+- [x] `GET /api/supabase/organizations` 端点返回用户组织列表
+- [x] `GET /api/supabase/regions` 端点返回可用区域列表
+- [x] `POST /api/supabase/create-project` 端点创建项目并返回凭证
+- [x] `POST /api/supabase/quick-setup` 端点执行完整一键配置流程
+- [x] `/api/supabase` 路由已挂载到 app.ts
+- [x] 配置页面有「一键配置」和「手动配置」Tab 切换
+- [x] 一键配置步骤 1：输入 PAT（含获取链接）
+- [x] 一键配置步骤 2：选择组织（自动加载列表）
+- [x] 一键配置步骤 3：配置项目（名称、密码、区域）
+- [x] 一键配置步骤 4：一键创建（显示进度）
+- [x] 一键配置步骤 5：完成（自动认证跳转）
+- [x] 步骤间导航和验证正确
+- [x] 失败时显示错误信息和重试按钮
+- [x] 中英文国际化翻译已添加（quickSetup 前缀，28 个 key）
+- [x] `npm run check` 和 `npm run lint` 通过

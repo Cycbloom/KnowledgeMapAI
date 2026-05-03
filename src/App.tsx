@@ -143,10 +143,10 @@ function useKernelRoutes() {
 
 function App() {
   useMobileInit();
-  const setUser = useStore(state => state.setUser);
-  const clearAuth = useStore(state => state.clearAuth);
-  const storeToken = useStore(state => state.token);
-  const storeRefreshToken = useStore(state => state.refreshToken);
+  const setUser = useStore((state) => state.setUser);
+  const clearAuth = useStore((state) => state.clearAuth);
+  const storeToken = useStore((state) => state.token);
+  const storeRefreshToken = useStore((state) => state.refreshToken);
 
   useEffect(() => {
     if (!authConfig.isSupabase()) return;
@@ -156,34 +156,70 @@ function App() {
     if (!client) return;
 
     const restoreSession = async () => {
-      const { data: { session } } = await client.auth.getSession();
+      const {
+        data: { session },
+      } = await client.auth.getSession();
 
       if (session?.user) {
         setUser(
           toUser(session.user),
           session.access_token,
-          session.refresh_token
+          session.refresh_token,
         );
-      } else if (storeToken || storeRefreshToken) {
-        clearAuth();
+      } else {
+        const isDev =
+          authConfig.supabase.url.includes("127.0.0.1") ||
+          authConfig.supabase.url.includes("localhost");
+        if (isDev) {
+          try {
+            const testEmail = "test@example.com";
+            const testPassword = "test123456";
+            const { data } = await client.auth.signInWithPassword({
+              email: testEmail,
+              password: testPassword,
+            });
+            if (data.session?.user) {
+              setUser(
+                toUser(data.session.user),
+                data.session.access_token,
+                data.session.refresh_token,
+              );
+            }
+          } catch {
+            try {
+              const { data } = await client.auth.signInAnonymously();
+              if (data.session?.user) {
+                setUser(
+                  toUser(data.session.user),
+                  data.session.access_token,
+                  data.session.refresh_token,
+                );
+              }
+            } catch {
+              // auto auth failed
+            }
+          }
+        } else if (storeToken || storeRefreshToken) {
+          clearAuth();
+        }
       }
     };
 
     restoreSession();
 
-    const { data: { subscription } } = client.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session?.user) {
-          setUser(
-            toUser(session.user),
-            session.access_token,
-            session.refresh_token
-          );
-        } else {
-          setUser(null, null, null);
-        }
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(
+          toUser(session.user),
+          session.access_token,
+          session.refresh_token,
+        );
+      } else {
+        setUser(null, null, null);
       }
-    );
+    });
 
     return () => {
       subscription.unsubscribe();

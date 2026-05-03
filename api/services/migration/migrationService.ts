@@ -1,11 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { EventEmitter } from 'events';
-import { Pool, PoolConfig } from 'pg';
-import { logger } from '../../utils/logger';
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { EventEmitter } from "events";
+import { Pool, PoolConfig } from "pg";
+import { logger } from "../../utils/logger";
 
-export type DatabaseStatus = 'empty' | 'partial' | 'ready' | 'needs_upgrade';
+export type DatabaseStatus = "empty" | "partial" | "ready" | "needs_upgrade";
 
 export interface MigrationFile {
   filename: string;
@@ -41,12 +41,12 @@ export interface MigrationHistoryEntry {
   filename: string;
   checksum: string;
   executedAt: string | null;
-  status: 'executed' | 'pending' | 'checksum_mismatch';
+  status: "executed" | "pending" | "checksum_mismatch";
   storedChecksum: string | null;
 }
 
 const VERSION_PREFIX_REGEX = /^(\d+)[_a-zA-Z]/;
-const TEST_SEED_PREFIX = '99_';
+const TEST_SEED_PREFIX = "99_";
 
 class MigrationService extends EventEmitter {
   private migrationsPath: string | null = null;
@@ -64,7 +64,7 @@ class MigrationService extends EventEmitter {
       this.pool.end().catch(() => {});
       this.pool = null;
     }
-    logger.info('Database URL configured for migrations');
+    logger.info("Database URL configured for migrations");
   }
 
   private getPool(): Pool {
@@ -72,7 +72,7 @@ class MigrationService extends EventEmitter {
       const url = this.databaseUrl || process.env.DATABASE_URL;
       if (!url) {
         throw new Error(
-          'Database URL is not configured. Call setDatabaseUrl() or set DATABASE_URL environment variable.',
+          "Database URL is not configured. Call setDatabaseUrl() or set DATABASE_URL environment variable.",
         );
       }
 
@@ -85,8 +85,8 @@ class MigrationService extends EventEmitter {
 
       this.pool = new Pool(poolConfig);
 
-      this.pool.on('error', (err) => {
-        logger.error('Unexpected pool error:', err);
+      this.pool.on("error", (err) => {
+        logger.error("Unexpected pool error:", err);
       });
     }
 
@@ -99,17 +99,20 @@ class MigrationService extends EventEmitter {
     }
 
     const isPackaged =
-      (process as { resourcesPath?: string }).resourcesPath?.includes('resources') ?? false;
+      (process as { resourcesPath?: string }).resourcesPath?.includes(
+        "resources",
+      ) ?? false;
 
     if (isPackaged) {
-      const resourcesPath = (process as { resourcesPath?: string }).resourcesPath;
+      const resourcesPath = (process as { resourcesPath?: string })
+        .resourcesPath;
       if (resourcesPath) {
-        return path.join(resourcesPath, 'migrations');
+        return path.join(resourcesPath, "migrations");
       }
     }
 
     const projectRoot = path.resolve(process.cwd());
-    return path.join(projectRoot, 'supabase', 'migrations');
+    return path.join(projectRoot, "supabase", "migrations");
   }
 
   getMigrationFiles(): MigrationFile[] {
@@ -122,8 +125,7 @@ class MigrationService extends EventEmitter {
 
     const entries = fs.readdirSync(dirPath);
     const sqlFiles = entries.filter(
-      (file) =>
-        file.endsWith('.sql') && !file.startsWith(TEST_SEED_PREFIX),
+      (file) => file.endsWith(".sql") && !file.startsWith(TEST_SEED_PREFIX),
     );
 
     const sorted = sqlFiles.sort((a, b) => {
@@ -137,8 +139,8 @@ class MigrationService extends EventEmitter {
 
     const migrations: MigrationFile[] = sorted.map((filename) => {
       const filePath = path.join(dirPath, filename);
-      const content = fs.readFileSync(filePath, 'utf-8');
-      const version = filename.replace(/\.sql$/, '');
+      const content = fs.readFileSync(filePath, "utf-8");
+      const version = filename.replace(/\.sql$/, "");
       const checksum = this.computeChecksum(content);
 
       return { filename, version, content, checksum };
@@ -163,7 +165,7 @@ class MigrationService extends EventEmitter {
 
       if (!usersExists) {
         return {
-          status: 'empty',
+          status: "empty",
           executedVersions: [],
           missingVersions: this.getMigrationFiles().map((m) => m.version),
           totalMigrations: this.getMigrationFiles().length,
@@ -182,7 +184,7 @@ class MigrationService extends EventEmitter {
 
       if (!schemaVersionsExists) {
         return {
-          status: 'partial',
+          status: "partial",
           executedVersions: [],
           missingVersions: this.getMigrationFiles().map((m) => m.version),
           totalMigrations: this.getMigrationFiles().length,
@@ -191,19 +193,23 @@ class MigrationService extends EventEmitter {
       }
 
       const executedResult = await pool.query(
-        'SELECT version FROM _schema_versions ORDER BY id',
+        "SELECT version FROM _schema_versions ORDER BY id",
       );
-      const executedVersions = executedResult.rows.map((r: { version: string }) => r.version);
+      const executedVersions = executedResult.rows.map(
+        (r: { version: string }) => r.version,
+      );
 
       const allMigrations = this.getMigrationFiles();
       const allVersions = allMigrations.map((m) => m.version);
-      const missingVersions = allVersions.filter((v) => !executedVersions.includes(v));
+      const missingVersions = allVersions.filter(
+        (v) => !executedVersions.includes(v),
+      );
 
       let status: DatabaseStatus;
       if (missingVersions.length === 0) {
-        status = 'ready';
+        status = "ready";
       } else {
-        status = 'needs_upgrade';
+        status = "needs_upgrade";
       }
 
       return {
@@ -215,7 +221,7 @@ class MigrationService extends EventEmitter {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error('Failed to get database status:', message);
+      logger.error("Failed to get database status:", message);
       throw error;
     }
   }
@@ -225,7 +231,7 @@ class MigrationService extends EventEmitter {
     const pool = this.getPool();
 
     if (allMigrations.length === 0) {
-      logger.info('No migration files found');
+      logger.info("No migration files found");
       return [];
     }
 
@@ -239,7 +245,7 @@ class MigrationService extends EventEmitter {
     const schemaVersionsExists = schemaVersionsCheck.rows[0]?.exists ?? false;
 
     if (!schemaVersionsExists) {
-      logger.info('Creating _schema_versions table...');
+      logger.info("Creating _schema_versions table...");
       await pool.query(`
         CREATE TABLE IF NOT EXISTS _schema_versions (
           id SERIAL PRIMARY KEY,
@@ -251,7 +257,7 @@ class MigrationService extends EventEmitter {
     }
 
     const executedResult = await pool.query(
-      'SELECT version FROM _schema_versions ORDER BY id',
+      "SELECT version FROM _schema_versions ORDER BY id",
     );
     const executedVersions = new Set(
       executedResult.rows.map((r: { version: string }) => r.version),
@@ -262,7 +268,7 @@ class MigrationService extends EventEmitter {
     );
 
     if (pendingMigrations.length === 0) {
-      logger.info('All migrations already executed');
+      logger.info("All migrations already executed");
       return [];
     }
 
@@ -276,7 +282,7 @@ class MigrationService extends EventEmitter {
       const migration = pendingMigrations[i];
       const startTime = Date.now();
 
-      this.emit('progress', {
+      this.emit("progress", {
         current: i + 1,
         total: pendingMigrations.length,
         currentFile: migration.filename,
@@ -308,15 +314,13 @@ class MigrationService extends EventEmitter {
         };
         results.push(result);
 
-        logger.error(
-          `Migration ${migration.version} failed: ${message}`,
-        );
+        logger.error(`Migration ${migration.version} failed: ${message}`);
 
         break;
       }
     }
 
-    this.emit('complete', results);
+    this.emit("complete", results);
 
     return results;
   }
@@ -328,7 +332,7 @@ class MigrationService extends EventEmitter {
     const client = await pool.connect();
 
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       await client.query(migration.content);
 
@@ -341,9 +345,9 @@ class MigrationService extends EventEmitter {
         [migration.version, migration.checksum],
       );
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();
@@ -363,11 +367,14 @@ class MigrationService extends EventEmitter {
 
     const schemaVersionsExists = schemaVersionsCheck.rows[0]?.exists ?? false;
 
-    const executedMap = new Map<string, { executedAt: string; checksum: string }>();
+    const executedMap = new Map<
+      string,
+      { executedAt: string; checksum: string }
+    >();
 
     if (schemaVersionsExists) {
       const result = await pool.query(
-        'SELECT version, executed_at, checksum FROM _schema_versions ORDER BY id',
+        "SELECT version, executed_at, checksum FROM _schema_versions ORDER BY id",
       );
 
       for (const row of result.rows) {
@@ -387,7 +394,7 @@ class MigrationService extends EventEmitter {
           filename: migration.filename,
           checksum: migration.checksum,
           executedAt: null,
-          status: 'pending' as const,
+          status: "pending" as const,
           storedChecksum: null,
         };
       }
@@ -401,8 +408,8 @@ class MigrationService extends EventEmitter {
         checksum: migration.checksum,
         executedAt: executed.executedAt,
         status: checksumMismatch
-          ? ('checksum_mismatch' as const)
-          : ('executed' as const),
+          ? ("checksum_mismatch" as const)
+          : ("executed" as const),
         storedChecksum: executed.checksum,
       };
     });
@@ -412,13 +419,13 @@ class MigrationService extends EventEmitter {
     if (this.pool) {
       await this.pool.end();
       this.pool = null;
-      logger.info('Migration database pool closed');
+      logger.info("Migration database pool closed");
     }
   }
 
   private computeChecksum(content: string): string {
-    const normalized = content.replace(/\r\n/g, '\n').trim();
-    return crypto.createHash('sha256').update(normalized).digest('hex');
+    const normalized = content.replace(/\r\n/g, "\n").trim();
+    return crypto.createHash("sha256").update(normalized).digest("hex");
   }
 }
 

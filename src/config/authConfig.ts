@@ -21,16 +21,11 @@ function isDevelopment(): boolean {
 const SUPABASE_CONFIG_KEY = "supabase_config";
 
 const getDefaultUrl = (): string =>
-  getEnv("VITE_SUPABASE_URL") ||
-  (isDevelopment()
-    ? LOCAL_SUPABASE_URL
-    : "");
+  getEnv("VITE_SUPABASE_URL") || (isDevelopment() ? LOCAL_SUPABASE_URL : "");
 
 const getDefaultAnonKey = (): string =>
   getEnv("VITE_SUPABASE_ANON_KEY") ||
-  (isDevelopment()
-    ? LOCAL_SUPABASE_ANON_KEY
-    : "");
+  (isDevelopment() ? LOCAL_SUPABASE_ANON_KEY : "");
 
 export const authConfig = {
   mode: "supabase" as AuthMode,
@@ -42,18 +37,12 @@ export const authConfig = {
   },
 };
 
-export const updateSupabaseConfig = (
-  url: string,
-  anonKey: string,
-): void => {
+export const updateSupabaseConfig = (url: string, anonKey: string): void => {
   authConfig.supabase.url = url;
   authConfig.supabase.anonKey = anonKey;
 
   try {
-    localStorage.setItem(
-      SUPABASE_CONFIG_KEY,
-      JSON.stringify({ url, anonKey }),
-    );
+    localStorage.setItem(SUPABASE_CONFIG_KEY, JSON.stringify({ url, anonKey }));
   } catch {
     // ignore storage errors
   }

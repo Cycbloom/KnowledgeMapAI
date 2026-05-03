@@ -347,6 +347,12 @@ ipcMain.handle("window:close", () => {
   mainWindow?.close();
 });
 
+ipcMain.on("shell:openExternal", (_event, url: string) => {
+  if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+    shell.openExternal(url);
+  }
+});
+
 function configureAutoUpdater(): void {
   if (!app.isPackaged) {
     console.log(

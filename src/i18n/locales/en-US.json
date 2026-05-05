@@ -2343,6 +2343,7 @@
       "branchSuggestionTitle": "View branch suggestions",
       "aiAssistant": "AI Assistant",
       "textToGraph": "Text/Document Generation",
+      "literatureExtract": "Literature Extract",
       "intelligentExpand": "Intelligent Expansion (Infinite Mode)",
       "backgroundExpand": "Background Auto Expansion",
       "intelligentQnA": "Intelligent Q&A",
@@ -2655,7 +2656,8 @@
       "sub": "Sub Node",
       "normal": "Normal Node",
       "leaf": "Leaf Node",
-      "level": "Level"
+      "level": "Level",
+      "needsRefinement": "Needs Refinement"
     },
     "edge": {
       "sourceNode": "Select Source Node",
@@ -3127,5 +3129,107 @@
     "pause": "Pause",
     "resume": "Resume",
     "stop": "Stop"
+  },
+  "literatureExtract": {
+    "title": "Literature Extract",
+    "subtitle": "Extract knowledge concepts and relations from literature",
+    "backboneModule": {
+      "refined": "Refined",
+      "pending": "Pending",
+      "conceptCount": "{{count}} concepts"
+    },
+    "inputMode": {
+      "text": "Text",
+      "file": "File",
+      "url": "URL"
+    },
+    "textInput": {
+      "label": "Literature Content",
+      "placeholder": "Paste literature content here...\n\nSupports academic papers, technical documents, book chapters, etc. For best results, paste complete paragraphs or chapters.",
+      "hint": "Recommended to paste at least 500 characters",
+      "charCount": "{{count}} characters"
+    },
+    "fileInput": {
+      "label": "Upload File",
+      "dropzone": "Drag and drop file here or click to upload",
+      "supportedTypes": "Supports PDF, Word (.doc/.docx), Markdown (.md) formats, max 10MB"
+    },
+    "urlInput": {
+      "label": "Literature URL",
+      "placeholder": "https://example.com/article",
+      "hint": "Supports academic papers, technical blogs, online documents, etc."
+    },
+    "options": {
+      "advanced": "Advanced Options",
+      "conceptTypes": "Concept Types to Extract",
+      "maxConcepts": "Maximum Concepts",
+      "similarityThreshold": "Similarity Threshold"
+    },
+    "conceptTypes": {
+      "concept": "Concept",
+      "method": "Method",
+      "mechanism": "Mechanism",
+      "technology": "Technology",
+      "tool": "Tool",
+      "operation": "Operation"
+    },
+    "progress": {
+      "uploading": "Uploading...",
+      "parsing": "Parsing literature...",
+      "extracting": "Extracting knowledge concepts...",
+      "complete": "Extraction complete"
+    },
+    "errors": {
+      "textRequired": "Please enter literature content",
+      "textTooShort": "Text content is too short, recommended at least 100 characters",
+      "fileRequired": "Please upload a file",
+      "urlRequired": "Please enter a URL",
+      "invalidUrl": "Please enter a valid URL",
+      "unsupportedFileType": "Unsupported file type",
+      "fileTooLarge": "File size exceeds limit (max 10MB)",
+      "extractFailed": "Extraction failed, please try again"
+    },
+    "success": {
+      "extracted": "Successfully extracted {{count}} knowledge concepts"
+    },
+    "result": {
+      "title": "Extraction Complete",
+      "conceptsExtracted": "Extracted {{count}} knowledge concepts",
+      "relationsFound": "Found {{count}} concept relations",
+      "source": "Source"
+    },
+    "processing": "Processing...",
+    "startExtract": "Start Extraction",
+    "previewTitle": "Concept Preview",
+    "previewDescription": "The following concepts were extracted from the literature. Please select the concepts to add to the graph.",
+    "selectedCount": "{{selected}} / {{total}} concepts selected",
+    "confirmAdd": "Confirm Add ({{count}})",
+    "noConcepts": "No concepts extracted",
+    "similarity": "{{percent}}% similar",
+    "similarityHigh": "High similarity {{percent}}%",
+    "similarTo": "Similar to",
+    "conceptTitle": "Concept Title",
+    "description": "Description",
+    "conceptType": "Concept Type",
+    "moreInfo": "More Info",
+    "lessInfo": "Less Info",
+    "source": "Source",
+    "targetModule": "Target Module"
+  },
+  "backboneModules": {
+    "research_background": "Research Background",
+    "literature_review": "Literature Review",
+    "research_methods": "Research Methods",
+    "core_concepts": "Core Concepts",
+    "application_domains": "Application Domains",
+    "future_directions": "Future Directions"
+  },
+  "conceptTypes": {
+    "method": "Method",
+    "mechanism": "Mechanism",
+    "operation": "Operation",
+    "concept": "Concept",
+    "technology": "Technology",
+    "tool": "Tool"
   }
 }

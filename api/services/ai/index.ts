@@ -50,3 +50,20 @@ export {
   type GenerateTemplatesOptions,
   type GenerateTemplatesResult,
 } from "./templateGeneratorService";
+export {
+  conceptExtractorService,
+  ConceptExtractorService,
+  type ExtractConceptsOptions,
+  type ExtractConceptsResult,
+  type ParsedContent,
+} from "./conceptExtractorService";
+export {
+  backboneNetworkService,
+  BackboneNetworkService,
+  type BackboneNode,
+  type BackboneEdge,
+  type BackboneModuleConfig,
+  type BackboneNetwork,
+  type GenerateBackboneOptions,
+  type GenerateBackboneResult,
+} from "./backboneNetworkService";

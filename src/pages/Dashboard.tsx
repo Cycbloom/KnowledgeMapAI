@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useGraphs, useDashboardStats, queryKeys } from "../hooks/queries";
@@ -33,6 +33,12 @@ import {
   List,
   Clock,
   Calendar,
+  Microscope,
+  GraduationCap,
+  Route,
+  GitBranch,
+  Target,
+  Layers,
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
@@ -41,6 +47,20 @@ import { ConfirmationModal, SearchResults } from "../components/common";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile, useSearch } from "../hooks";
 import { api } from "../services/api";
+
+const TEMPLATE_TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bgColor: string; label: string }> = {
+  topic_research: { icon: Microscope, color: "text-purple-600 dark:text-purple-400", bgColor: "bg-purple-100 dark:bg-purple-900/30", label: "专题研究" },
+  knowledge_tree: { icon: GraduationCap, color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-100 dark:bg-blue-900/30", label: "知识树" },
+  learning_path: { icon: Route, color: "text-green-600 dark:text-green-400", bgColor: "bg-green-100 dark:bg-green-900/30", label: "学习路径" },
+  concept_network: { icon: GitBranch, color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-100 dark:bg-amber-900/30", label: "概念网络" },
+  skill_map: { icon: Target, color: "text-red-600 dark:text-red-400", bgColor: "bg-red-100 dark:bg-red-900/30", label: "技能图谱" },
+  project_lifecycle: { icon: Layers, color: "text-cyan-600 dark:text-cyan-400", bgColor: "bg-cyan-100 dark:bg-cyan-900/30", label: "项目生命周期" },
+};
+
+const getTemplateTypeConfig = (templateType?: string) => {
+  if (!templateType) return null;
+  return TEMPLATE_TYPE_CONFIG[templateType] || null;
+};
 
 export const Dashboard = () => {
   const { t } = useTranslation();
@@ -991,12 +1011,22 @@ export const Dashboard = () => {
                           <div className="flex items-center gap-3">
                             <div
                               className={`p-2 rounded-lg flex-shrink-0 ${
-                                isDark
-                                  ? "bg-primary-900/30 text-primary-400"
-                                  : "bg-primary-50 text-primary-600"
+                                graph.template_type && getTemplateTypeConfig(graph.template_type)
+                                  ? `${getTemplateTypeConfig(graph.template_type)?.bgColor} ${getTemplateTypeConfig(graph.template_type)?.color}`
+                                  : isDark
+                                    ? "bg-primary-900/30 text-primary-400"
+                                    : "bg-primary-50 text-primary-600"
                               }`}
                             >
-                              <BookOpen size={16} />
+                              {graph.template_type && getTemplateTypeConfig(graph.template_type) ? (
+                                (() => {
+                                  const config = getTemplateTypeConfig(graph.template_type)!;
+                                  const Icon = config.icon;
+                                  return <Icon size={16} />;
+                                })()
+                              ) : (
+                                <BookOpen size={16} />
+                              )}
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
@@ -1005,6 +1035,18 @@ export const Dashboard = () => {
                                 >
                                   {graph.title}
                                 </span>
+                                {graph.template_type && getTemplateTypeConfig(graph.template_type) && (() => {
+                                  const config = getTemplateTypeConfig(graph.template_type)!;
+                                  const Icon = config.icon;
+                                  return (
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${config.bgColor} ${config.color}`}
+                                    >
+                                      <Icon size={10} />
+                                      <span>{config.label}</span>
+                                    </span>
+                                  );
+                                })()}
                                 {graph.is_favorite && (
                                   <Star
                                     size={14}
@@ -1173,6 +1215,18 @@ export const Dashboard = () => {
                             >
                               {graph.title}
                             </span>
+                            {graph.template_type && getTemplateTypeConfig(graph.template_type) && (() => {
+                              const config = getTemplateTypeConfig(graph.template_type)!;
+                              const Icon = config.icon;
+                              return (
+                                <span
+                                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${config.bgColor} ${config.color}`}
+                                >
+                                  <Icon size={10} />
+                                  <span>{config.label}</span>
+                                </span>
+                              );
+                            })()}
                             {graph.is_favorite && (
                               <Star
                                 size={14}
@@ -1315,12 +1369,24 @@ export const Dashboard = () => {
                       className={`p-2.5 sm:p-3.5 rounded-xl transition-colors ${
                         isSelectMode && selectedIds.has(graph.id)
                           ? "bg-primary-500 text-white"
-                          : isDark
-                            ? "bg-primary-900/30 text-primary-400 group-hover:bg-primary-600 group-hover:text-white"
-                            : "bg-primary-50 text-primary-600 group-hover:bg-primary-600 group-hover:text-white"
+                          : graph.template_type && getTemplateTypeConfig(graph.template_type)
+                            ? isDark
+                              ? `${getTemplateTypeConfig(graph.template_type)?.bgColor} ${getTemplateTypeConfig(graph.template_type)?.color} group-hover:bg-primary-600 group-hover:text-white`
+                              : `${getTemplateTypeConfig(graph.template_type)?.bgColor} ${getTemplateTypeConfig(graph.template_type)?.color} group-hover:bg-primary-600 group-hover:text-white`
+                            : isDark
+                              ? "bg-primary-900/30 text-primary-400 group-hover:bg-primary-600 group-hover:text-white"
+                              : "bg-primary-50 text-primary-600 group-hover:bg-primary-600 group-hover:text-white"
                       }`}
                     >
-                      <BookOpen size={isMobile ? 20 : 24} />
+                      {graph.template_type && getTemplateTypeConfig(graph.template_type) ? (
+                        (() => {
+                          const config = getTemplateTypeConfig(graph.template_type)!;
+                          const Icon = config.icon;
+                          return <Icon size={isMobile ? 20 : 24} />;
+                        })()
+                      ) : (
+                        <BookOpen size={isMobile ? 20 : 24} />
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1 sm:gap-2">
@@ -1430,6 +1496,18 @@ export const Dashboard = () => {
                     }`}
                   >
                     {graph.title}
+                    {graph.template_type && getTemplateTypeConfig(graph.template_type) && (() => {
+                      const config = getTemplateTypeConfig(graph.template_type)!;
+                      const Icon = config.icon;
+                      return (
+                        <span
+                          className={`ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.bgColor} ${config.color}`}
+                        >
+                          <Icon size={12} />
+                          <span className="hidden sm:inline">{config.label}</span>
+                        </span>
+                      );
+                    })()}
                   </h3>
 
                   <p

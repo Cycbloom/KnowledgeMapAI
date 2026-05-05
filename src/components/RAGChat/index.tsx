@@ -13,7 +13,7 @@ import { api } from "../../services/api";
 import { useTheme } from "../../hooks";
 import { useTextToSpeech } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { ExtractedConcept, TutorMode, TTSEngine } from "../../types";
+import { TutorExtractedConcept, TutorMode, TTSEngine } from "../../types";
 import { useChatState, Message, Source } from "./hooks/useChatState";
 import { ChatMessage, LoadingMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
@@ -35,11 +35,11 @@ interface RAGChatPanelProps {
   aiEnabled?: boolean;
   isTutorMode?: boolean;
   tutorMode?: TutorMode;
-  extractedConcepts?: ExtractedConcept[];
+  extractedConcepts?: TutorExtractedConcept[];
   onToggleTutorMode?: () => void;
   onSwitchTutorMode?: (mode: TutorMode) => void;
   onExtractConcepts?: (text: string) => void;
-  onAddConceptToGraph?: (concept: ExtractedConcept) => void;
+  onAddConceptToGraph?: (concept: TutorExtractedConcept) => void;
   onAddAllConcepts?: () => void;
   onSuggestNextTopics?: () => void;
   suggestedNextTopics?: Array<{

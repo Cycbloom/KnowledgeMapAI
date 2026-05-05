@@ -109,7 +109,7 @@ export const graphsApi = {
       body: JSON.stringify({ topic, exclude_graph_id: excludeGraphId }) 
     }),
   
-  create: (data: { title: string; description?: string; domain?: string }) => 
+  create: (data: { title: string; description?: string; domain?: string; template_type?: string }) => 
     request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
   
   createFromTemplate: (data: { template_id: string; title?: string; description?: string }) => 

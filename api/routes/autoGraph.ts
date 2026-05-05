@@ -151,6 +151,7 @@ const initGraphSchema = z.object({
   model: z.string().optional(),
   language: z.string().optional(),
   session_id: z.string().uuid().optional(),
+  template_type: z.string().optional(),
 });
 
 const expandNodeSchema = z.object({
@@ -256,6 +257,7 @@ router.post(
       model,
       language,
       session_id,
+      template_type,
     } = req.body;
     const supabase = req.supabase;
     if (!supabase) {
@@ -263,6 +265,48 @@ router.post(
         message: "Unauthorized: No Supabase client",
       });
     }
+
+    const sessionId = session_id || crypto.randomUUID();
+
+    if (template_type === "topic_research") {
+      try {
+        const result = await templateGeneratorService.generateTemplates({
+          topic,
+          templateType: "topic_research",
+          provider: providerType as AIProviderType,
+          model,
+        });
+
+        const template = result.templates[0];
+        if (!template) {
+          throw new AppError("生成模板失败", 500, ErrorCodes.INTERNAL_ERROR);
+        }
+
+        const rootNode = template.nodes.find((n) => n.level === "root");
+        const coreNodes = template.nodes.filter((n) => n.level === "core");
+
+        res.json({
+          sessionId,
+          root: {
+            title: rootNode?.title || topic,
+            content: rootNode?.description || rootNode?.suggestedContent || "",
+          },
+          coreNodes: coreNodes.map((n) => ({
+            title: n.title,
+            content: n.description || n.suggestedContent || "",
+          })),
+        });
+        return;
+      } catch (error: any) {
+        logger.error("Topic Research Template Error:", error);
+        throw new AppError(
+          error.message || "专题研究模板生成失败",
+          500,
+          ErrorCodes.INTERNAL_ERROR,
+        );
+      }
+    }
+
     const provider = providerType
       ? await getAIProvider(providerType)
       : await getAIProviderForTask("text");
@@ -274,8 +318,6 @@ router.post(
         ErrorCodes.INTERNAL_ERROR,
       );
     }
-
-    const sessionId = session_id || crypto.randomUUID();
 
     try {
       let processedSources: string[] = [];

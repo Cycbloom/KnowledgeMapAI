@@ -209,7 +209,8 @@ RETURNS TABLE (
   updated_at TIMESTAMPTZ,
   deleted_at TIMESTAMPTZ,
   last_used_at TIMESTAMPTZ,
-  nodes_count BIGINT
+  nodes_count BIGINT,
+  template_type VARCHAR(64)
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -224,7 +225,8 @@ BEGIN
     g.updated_at,
     g.deleted_at,
     g.last_used_at,
-    COALESCE(n.count, 0) as nodes_count
+    COALESCE(n.count, 0) as nodes_count,
+    g.template_type
   FROM knowledge_graphs g
   LEFT JOIN (
     SELECT graph_id, COUNT(*) as count
@@ -249,7 +251,8 @@ RETURNS TABLE (
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
   deleted_at TIMESTAMPTZ,
-  nodes_count BIGINT
+  nodes_count BIGINT,
+  template_type VARCHAR(64)
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -262,7 +265,8 @@ BEGIN
     g.created_at,
     g.updated_at,
     g.deleted_at,
-    COALESCE(n.count, 0) as nodes_count
+    COALESCE(n.count, 0) as nodes_count,
+    g.template_type
   FROM knowledge_graphs g
   LEFT JOIN (
     SELECT graph_id, COUNT(*) as count

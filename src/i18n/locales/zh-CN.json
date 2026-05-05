@@ -2121,7 +2121,8 @@
       "parentLabel": "父节点",
       "noParent": "无父节点",
       "cancel": "取消",
-      "createButton": "创建节点"
+      "createButton": "创建节点",
+      "needsRefinement": "待完善"
     },
     "focus": {
       "title": "专注模式",
@@ -2577,6 +2578,7 @@
       "branchSuggestionTitle": "查看分支建议",
       "aiAssistant": "AI 助手",
       "textToGraph": "文本/文档生成",
+      "literatureExtract": "文献提取",
       "intelligentExpand": "智能拓展 (无限模式)",
       "backgroundExpand": "后台自动拓展",
       "intelligentQnA": "智能问答",
@@ -3095,5 +3097,107 @@
     "pause": "暂停",
     "resume": "继续",
     "stop": "停止"
+  },
+  "literatureExtract": {
+    "title": "文献提取",
+    "subtitle": "从文献中提取知识概念和关系",
+    "backboneModule": {
+      "refined": "已完善",
+      "pending": "待完善",
+      "conceptCount": "{{count}} 个概念"
+    },
+    "inputMode": {
+      "text": "文本",
+      "file": "文件",
+      "url": "URL"
+    },
+    "textInput": {
+      "label": "文献内容",
+      "placeholder": "请粘贴文献内容...\n\n支持学术论文、技术文档、书籍章节等文本内容。建议粘贴完整的段落或章节以获得更好的提取效果。",
+      "hint": "建议粘贴 500 字以上的文本内容",
+      "charCount": "{{count}} 字符"
+    },
+    "fileInput": {
+      "label": "上传文件",
+      "dropzone": "拖拽文件到此处或点击上传",
+      "supportedTypes": "支持 PDF、Word (.doc/.docx)、Markdown (.md) 格式，最大 10MB"
+    },
+    "urlInput": {
+      "label": "文献链接",
+      "placeholder": "https://example.com/article",
+      "hint": "支持学术论文、技术博客、在线文档等网页链接"
+    },
+    "options": {
+      "advanced": "高级选项",
+      "conceptTypes": "提取概念类型",
+      "maxConcepts": "最大概念数量",
+      "similarityThreshold": "相似度阈值"
+    },
+    "conceptTypes": {
+      "concept": "概念",
+      "method": "方法",
+      "mechanism": "机制",
+      "technology": "技术",
+      "tool": "工具",
+      "operation": "操作"
+    },
+    "progress": {
+      "uploading": "正在上传...",
+      "parsing": "正在解析文献...",
+      "extracting": "正在提取知识概念...",
+      "complete": "提取完成"
+    },
+    "errors": {
+      "textRequired": "请输入文献内容",
+      "textTooShort": "文本内容太短，建议至少 100 字",
+      "fileRequired": "请上传文件",
+      "urlRequired": "请输入 URL 链接",
+      "invalidUrl": "请输入有效的 URL 链接",
+      "unsupportedFileType": "不支持的文件类型",
+      "fileTooLarge": "文件大小超过限制（最大 10MB）",
+      "extractFailed": "提取失败，请重试"
+    },
+    "success": {
+      "extracted": "成功提取 {{count}} 个知识概念"
+    },
+    "result": {
+      "title": "提取完成",
+      "conceptsExtracted": "提取了 {{count}} 个知识概念",
+      "relationsFound": "发现 {{count}} 条概念关系",
+      "source": "来源"
+    },
+    "processing": "处理中...",
+    "startExtract": "开始提取",
+    "previewTitle": "概念预览",
+    "previewDescription": "以下是从文献中提取的概念，请选择要添加到图谱的概念。",
+    "selectedCount": "已选择 {{selected}} / {{total}} 个概念",
+    "confirmAdd": "确认添加 ({{count}})",
+    "noConcepts": "未提取到概念",
+    "similarity": "{{percent}}% 相似",
+    "similarityHigh": "高相似度 {{percent}}%",
+    "similarTo": "相似于",
+    "conceptTitle": "概念标题",
+    "description": "描述",
+    "conceptType": "概念类型",
+    "moreInfo": "更多信息",
+    "lessInfo": "收起信息",
+    "source": "来源",
+    "targetModule": "目标模块"
+  },
+  "backboneModules": {
+    "research_background": "研究背景",
+    "literature_review": "文献综述",
+    "research_methods": "研究方法",
+    "core_concepts": "核心概念",
+    "application_domains": "应用领域",
+    "future_directions": "未来方向"
+  },
+  "conceptTypes": {
+    "method": "方法",
+    "mechanism": "机制",
+    "operation": "操作",
+    "concept": "概念",
+    "technology": "技术",
+    "tool": "工具"
   }
 }

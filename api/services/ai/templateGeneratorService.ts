@@ -7,6 +7,11 @@ import type {
   TemplateType,
   LayoutSuggestion,
   NodeLevel,
+  BackboneModule,
+} from "@shared/types/graph";
+import {
+  BACKBONE_MODULE_LABELS,
+  BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import { promptService } from "./promptService";
@@ -23,9 +28,12 @@ import {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";
+import { backboneNetworkService } from "./backboneNetworkService";
 
 export interface GeneratedTemplateNode extends TemplateNode {
   suggestedContent?: string;
+  backboneModule?: BackboneModule;
+  needsRefinement?: boolean;
 }
 
 export interface GeneratedTemplateEdge extends TemplateEdge {
@@ -141,30 +149,150 @@ const TEMPLATE_VALIDATION_RULES = {
   maxNodes: 50,
   validLevels: ["root", "core", "sub", "normal", "leaf"] as NodeLevel[],
   validDifficulties: ["easy", "medium", "hard"] as TemplateDifficulty[],
-  validLayouts: ["radial", "tree", "network", "hierarchical"] as LayoutSuggestion[],
+  validLayouts: [
+    "radial",
+    "tree",
+    "network",
+    "hierarchical",
+  ] as LayoutSuggestion[],
 };
 
-function validateNode(node: unknown, index: number): GeneratedTemplateNode | null {
+function generateTopicResearchBackboneNodes(
+  topic: string,
+): GeneratedTemplateNode[] {
+  const backboneModules: BackboneModule[] = [
+    "research_background",
+    "literature_review",
+    "research_methods",
+    "core_concepts",
+    "application_domains",
+    "future_directions",
+  ];
+
+  const nodes: GeneratedTemplateNode[] = [
+    {
+      id: "root",
+      title: topic,
+      description: `${topic}专题研究的核心主题`,
+      level: "root",
+      suggestedContent: `${topic}的核心概念和研究价值`,
+      needsRefinement: false,
+    },
+  ];
+
+  backboneModules.forEach((module, index) => {
+    const angle = (2 * Math.PI * index) / backboneModules.length - Math.PI / 2;
+    const radius = 200;
+
+    nodes.push({
+      id: `core-${module}`,
+      title: BACKBONE_MODULE_LABELS[module],
+      description: `${BACKBONE_MODULE_LABELS[module]}模块，需要进一步补充内容`,
+      level: "core",
+      parentId: "root",
+      backboneModule: module,
+      suggestedContent: `待完善：${BACKBONE_MODULE_LABELS[module]}相关内容`,
+      needsRefinement: true,
+      color: BACKBONE_MODULE_COLORS[module],
+      x_position: 400 + radius * Math.cos(angle),
+      y_position: 300 + radius * Math.sin(angle),
+    });
+  });
+
+  return nodes;
+}
+
+function generateTopicResearchBackboneEdges(): GeneratedTemplateEdge[] {
+  const backboneModules: BackboneModule[] = [
+    "research_background",
+    "literature_review",
+    "research_methods",
+    "core_concepts",
+    "application_domains",
+    "future_directions",
+  ];
+
+  const edges: GeneratedTemplateEdge[] = [];
+
+  backboneModules.forEach((module) => {
+    edges.push({
+      source: "root",
+      target: `core-${module}`,
+      relationship_type: "related",
+      description: `${BACKBONE_MODULE_LABELS[module]}是专题研究的核心模块`,
+    });
+  });
+
+  edges.push({
+    source: "core-research_background",
+    target: "core-literature_review",
+    relationship_type: "related",
+    description: "研究背景为文献综述提供基础",
+  });
+
+  edges.push({
+    source: "core-literature_review",
+    target: "core-core_concepts",
+    relationship_type: "related",
+    description: "文献综述提炼核心概念",
+  });
+
+  edges.push({
+    source: "core-core_concepts",
+    target: "core-research_methods",
+    relationship_type: "related",
+    description: "核心概念指导研究方法选择",
+  });
+
+  edges.push({
+    source: "core-research_methods",
+    target: "core-application_domains",
+    relationship_type: "related",
+    description: "研究方法应用于具体领域",
+  });
+
+  edges.push({
+    source: "core-application_domains",
+    target: "core-future_directions",
+    relationship_type: "related",
+    description: "应用领域指引未来方向",
+  });
+
+  return edges;
+}
+
+function validateNode(
+  node: unknown,
+  index: number,
+): GeneratedTemplateNode | null {
   if (typeof node !== "object" || node === null) {
-    logger.warn(`[Template Generator] Invalid node at index ${index}: not an object`);
+    logger.warn(
+      `[Template Generator] Invalid node at index ${index}: not an object`,
+    );
     return null;
   }
 
   const n = node as Record<string, unknown>;
 
   if (typeof n.id !== "string" || !n.id.trim()) {
-    logger.warn(`[Template Generator] Invalid node at index ${index}: missing id`);
+    logger.warn(
+      `[Template Generator] Invalid node at index ${index}: missing id`,
+    );
     return null;
   }
 
   if (typeof n.title !== "string" || !n.title.trim()) {
-    logger.warn(`[Template Generator] Invalid node at index ${index}: missing title`);
+    logger.warn(
+      `[Template Generator] Invalid node at index ${index}: missing title`,
+    );
     return null;
   }
 
   const level = n.level as NodeLevel;
   if (!TEMPLATE_VALIDATION_RULES.validLevels.includes(level)) {
-    logger.warn(`[Template Generator] Invalid node at index ${index}: invalid level "${level}"`);
+    logger.warn(
+      `[Template Generator] Invalid node at index ${index}: invalid level "${level}"`,
+    );
     return null;
   }
 
@@ -177,24 +305,36 @@ function validateNode(node: unknown, index: number): GeneratedTemplateNode | nul
     aiPrompt: n.aiPrompt as string | undefined,
     color: n.color as string | undefined,
     suggestedContent: n.suggestedContent as string | undefined,
+    backboneModule: n.backboneModule as BackboneModule | undefined,
+    needsRefinement: n.needsRefinement as boolean | undefined,
   };
 }
 
-function validateEdge(edge: unknown, validNodeIds: Set<string>, index: number): GeneratedTemplateEdge | null {
+function validateEdge(
+  edge: unknown,
+  validNodeIds: Set<string>,
+  index: number,
+): GeneratedTemplateEdge | null {
   if (typeof edge !== "object" || edge === null) {
-    logger.warn(`[Template Generator] Invalid edge at index ${index}: not an object`);
+    logger.warn(
+      `[Template Generator] Invalid edge at index ${index}: not an object`,
+    );
     return null;
   }
 
   const e = edge as Record<string, unknown>;
 
   if (typeof e.source !== "string" || !validNodeIds.has(e.source)) {
-    logger.warn(`[Template Generator] Invalid edge at index ${index}: invalid source "${e.source}"`);
+    logger.warn(
+      `[Template Generator] Invalid edge at index ${index}: invalid source "${e.source}"`,
+    );
     return null;
   }
 
   if (typeof e.target !== "string" || !validNodeIds.has(e.target)) {
-    logger.warn(`[Template Generator] Invalid edge at index ${index}: invalid target "${e.target}"`);
+    logger.warn(
+      `[Template Generator] Invalid edge at index ${index}: invalid target "${e.target}"`,
+    );
     return null;
   }
 
@@ -206,21 +346,33 @@ function validateEdge(edge: unknown, validNodeIds: Set<string>, index: number): 
   };
 }
 
-function validateTemplate(template: unknown, index: number): GeneratedTemplateScheme | null {
+function validateTemplate(
+  template: unknown,
+  index: number,
+): GeneratedTemplateScheme | null {
   if (typeof template !== "object" || template === null) {
-    logger.warn(`[Template Generator] Invalid template at index ${index}: not an object`);
+    logger.warn(
+      `[Template Generator] Invalid template at index ${index}: not an object`,
+    );
     return null;
   }
 
   const t = template as Record<string, unknown>;
 
   if (typeof t.name !== "string" || !t.name.trim()) {
-    logger.warn(`[Template Generator] Invalid template at index ${index}: missing name`);
+    logger.warn(
+      `[Template Generator] Invalid template at index ${index}: missing name`,
+    );
     return null;
   }
 
-  if (!Array.isArray(t.nodes) || t.nodes.length < TEMPLATE_VALIDATION_RULES.minNodes) {
-    logger.warn(`[Template Generator] Invalid template at index ${index}: insufficient nodes`);
+  if (
+    !Array.isArray(t.nodes) ||
+    t.nodes.length < TEMPLATE_VALIDATION_RULES.minNodes
+  ) {
+    logger.warn(
+      `[Template Generator] Invalid template at index ${index}: insufficient nodes`,
+    );
     return null;
   }
 
@@ -233,7 +385,9 @@ function validateTemplate(template: unknown, index: number): GeneratedTemplateSc
   }
 
   if (validNodes.length < TEMPLATE_VALIDATION_RULES.minNodes) {
-    logger.warn(`[Template Generator] Template "${t.name}" has too few valid nodes`);
+    logger.warn(
+      `[Template Generator] Template "${t.name}" has too few valid nodes`,
+    );
     return null;
   }
 
@@ -250,12 +404,16 @@ function validateTemplate(template: unknown, index: number): GeneratedTemplateSc
   }
 
   const layoutSuggestion = t.layoutSuggestion as LayoutSuggestion;
-  const validLayout = TEMPLATE_VALIDATION_RULES.validLayouts.includes(layoutSuggestion)
+  const validLayout = TEMPLATE_VALIDATION_RULES.validLayouts.includes(
+    layoutSuggestion,
+  )
     ? layoutSuggestion
     : "radial";
 
   const difficulty = t.difficulty as TemplateDifficulty;
-  const validDifficulty = TEMPLATE_VALIDATION_RULES.validDifficulties.includes(difficulty)
+  const validDifficulty = TEMPLATE_VALIDATION_RULES.validDifficulties.includes(
+    difficulty,
+  )
     ? difficulty
     : "medium";
 
@@ -272,7 +430,10 @@ function validateTemplate(template: unknown, index: number): GeneratedTemplateSc
     layoutSuggestion: validLayout,
     estimatedNodes: Math.min(
       TEMPLATE_VALIDATION_RULES.maxNodes,
-      Math.max(TEMPLATE_VALIDATION_RULES.minNodes, (t.estimatedNodes as number) || validNodes.length)
+      Math.max(
+        TEMPLATE_VALIDATION_RULES.minNodes,
+        (t.estimatedNodes as number) || validNodes.length,
+      ),
     ),
     difficulty: validDifficulty,
     tags,
@@ -280,18 +441,80 @@ function validateTemplate(template: unknown, index: number): GeneratedTemplateSc
   };
 }
 
-function getMockTemplates(topic: string): GenerateTemplatesResult {
+function getMockTemplates(
+  topic: string,
+  templateType?: TemplateType,
+): GenerateTemplatesResult {
+  if (templateType === "topic_research") {
+    const backboneNodes = generateTopicResearchBackboneNodes(topic);
+    const backboneEdges = generateTopicResearchBackboneEdges();
+
+    const topicResearchTemplate: GeneratedTemplateScheme = {
+      id: "topic-research-backbone",
+      name: `${topic} - 专题研究骨架`,
+      description:
+        "采用专题研究结构，包含研究背景、文献综述、研究方法、核心概念、应用领域和未来方向六大模块",
+      nodes: backboneNodes,
+      edges: backboneEdges,
+      layoutSuggestion: "radial",
+      estimatedNodes: 7,
+      difficulty: "hard",
+      tags: ["专题研究", "学术调研", "深度分析", topic],
+      reasoning: "适合进行深度专题研究，六大骨干模块帮助系统化组织研究内容",
+    };
+
+    return {
+      templates: [topicResearchTemplate],
+      metadata: {
+        topic,
+        generatedAt: new Date().toISOString(),
+        provider: "mock",
+        model: "mock",
+      },
+    };
+  }
+
   const mockTemplates: GeneratedTemplateScheme[] = [
     {
       id: "mock-template-1",
       name: `${topic} - 层级结构`,
       description: "采用自上而下的层级结构，适合系统性学习",
       nodes: [
-        { id: "root", title: topic, level: "root", parentId: undefined, suggestedContent: `${topic}的核心概念和定义` },
-        { id: "core-1", title: "基础概念", level: "core", parentId: "root", suggestedContent: "基本定义和术语" },
-        { id: "core-2", title: "核心原理", level: "core", parentId: "root", suggestedContent: "核心理论和方法" },
-        { id: "sub-1", title: "应用场景", level: "sub", parentId: "core-2", suggestedContent: "实际应用案例" },
-        { id: "sub-2", title: "进阶内容", level: "sub", parentId: "core-2", suggestedContent: "深入研究方向" },
+        {
+          id: "root",
+          title: topic,
+          level: "root",
+          parentId: undefined,
+          suggestedContent: `${topic}的核心概念和定义`,
+        },
+        {
+          id: "core-1",
+          title: "基础概念",
+          level: "core",
+          parentId: "root",
+          suggestedContent: "基本定义和术语",
+        },
+        {
+          id: "core-2",
+          title: "核心原理",
+          level: "core",
+          parentId: "root",
+          suggestedContent: "核心理论和方法",
+        },
+        {
+          id: "sub-1",
+          title: "应用场景",
+          level: "sub",
+          parentId: "core-2",
+          suggestedContent: "实际应用案例",
+        },
+        {
+          id: "sub-2",
+          title: "进阶内容",
+          level: "sub",
+          parentId: "core-2",
+          suggestedContent: "深入研究方向",
+        },
       ],
       edges: [
         { source: "root", target: "core-1", relationship_type: "contains" },
@@ -310,11 +533,41 @@ function getMockTemplates(topic: string): GenerateTemplatesResult {
       name: `${topic} - 网络结构`,
       description: "采用网络状结构，展示概念间的关联",
       nodes: [
-        { id: "center", title: topic, level: "root", parentId: undefined, suggestedContent: "中心主题" },
-        { id: "node-1", title: "相关概念A", level: "core", parentId: "center", suggestedContent: "关联知识" },
-        { id: "node-2", title: "相关概念B", level: "core", parentId: "center", suggestedContent: "关联知识" },
-        { id: "node-3", title: "相关概念C", level: "core", parentId: "center", suggestedContent: "关联知识" },
-        { id: "node-4", title: "交叉领域", level: "sub", parentId: "node-1", suggestedContent: "跨领域知识" },
+        {
+          id: "center",
+          title: topic,
+          level: "root",
+          parentId: undefined,
+          suggestedContent: "中心主题",
+        },
+        {
+          id: "node-1",
+          title: "相关概念A",
+          level: "core",
+          parentId: "center",
+          suggestedContent: "关联知识",
+        },
+        {
+          id: "node-2",
+          title: "相关概念B",
+          level: "core",
+          parentId: "center",
+          suggestedContent: "关联知识",
+        },
+        {
+          id: "node-3",
+          title: "相关概念C",
+          level: "core",
+          parentId: "center",
+          suggestedContent: "关联知识",
+        },
+        {
+          id: "node-4",
+          title: "交叉领域",
+          level: "sub",
+          parentId: "node-1",
+          suggestedContent: "跨领域知识",
+        },
       ],
       edges: [
         { source: "center", target: "node-1", relationship_type: "related" },
@@ -334,16 +587,58 @@ function getMockTemplates(topic: string): GenerateTemplatesResult {
       name: `${topic} - 流程结构`,
       description: "采用流程化结构，展示知识的演进过程",
       nodes: [
-        { id: "start", title: `${topic}入门`, level: "root", parentId: undefined, suggestedContent: "入门基础" },
-        { id: "step-1", title: "第一步：理解基础", level: "core", parentId: "start", suggestedContent: "基础知识" },
-        { id: "step-2", title: "第二步：掌握方法", level: "core", parentId: "step-1", suggestedContent: "核心方法" },
-        { id: "step-3", title: "第三步：实践应用", level: "sub", parentId: "step-2", suggestedContent: "实践练习" },
-        { id: "end", title: "高级进阶", level: "leaf", parentId: "step-3", suggestedContent: "高级内容" },
+        {
+          id: "start",
+          title: `${topic}入门`,
+          level: "root",
+          parentId: undefined,
+          suggestedContent: "入门基础",
+        },
+        {
+          id: "step-1",
+          title: "第一步：理解基础",
+          level: "core",
+          parentId: "start",
+          suggestedContent: "基础知识",
+        },
+        {
+          id: "step-2",
+          title: "第二步：掌握方法",
+          level: "core",
+          parentId: "step-1",
+          suggestedContent: "核心方法",
+        },
+        {
+          id: "step-3",
+          title: "第三步：实践应用",
+          level: "sub",
+          parentId: "step-2",
+          suggestedContent: "实践练习",
+        },
+        {
+          id: "end",
+          title: "高级进阶",
+          level: "leaf",
+          parentId: "step-3",
+          suggestedContent: "高级内容",
+        },
       ],
       edges: [
-        { source: "start", target: "step-1", relationship_type: "prerequisite" },
-        { source: "step-1", target: "step-2", relationship_type: "prerequisite" },
-        { source: "step-2", target: "step-3", relationship_type: "prerequisite" },
+        {
+          source: "start",
+          target: "step-1",
+          relationship_type: "prerequisite",
+        },
+        {
+          source: "step-1",
+          target: "step-2",
+          relationship_type: "prerequisite",
+        },
+        {
+          source: "step-2",
+          target: "step-3",
+          relationship_type: "prerequisite",
+        },
         { source: "step-3", target: "end", relationship_type: "prerequisite" },
       ],
       layoutSuggestion: "hierarchical",
@@ -367,17 +662,77 @@ function getMockTemplates(topic: string): GenerateTemplatesResult {
 
 export class TemplateGeneratorService {
   async generateTemplates(
-    options: GenerateTemplatesOptions
+    options: GenerateTemplatesOptions,
   ): Promise<GenerateTemplatesResult> {
-    const { topic, provider: providerType } = options;
+    const { topic, provider: providerType, templateType } = options;
+
+    if (templateType === "topic_research") {
+      logger.info(
+        "[Template Generator] Using backboneNetworkService for topic_research",
+      );
+
+      const backboneResult = await backboneNetworkService.generateBackbone({
+        topic,
+        provider: providerType,
+        model: options.model,
+        userId: options.userId,
+        graphId: options.graphId,
+      });
+
+      const nodes: GeneratedTemplateNode[] = backboneResult.backbone.nodes.map(
+        (n) => ({
+          id: n.id,
+          title: n.title,
+          description: n.description,
+          level: n.level,
+          parentId: n.parentId,
+          suggestedContent: n.suggestedContent,
+          backboneModule: n.module,
+          needsRefinement: n.level === "core",
+          color: n.color,
+        }),
+      );
+
+      const edges: GeneratedTemplateEdge[] = backboneResult.backbone.edges.map(
+        (e) => ({
+          source: e.source,
+          target: e.target,
+          relationship_type: e.relationship_type,
+          description: e.description,
+        }),
+      );
+
+      return {
+        templates: [
+          {
+            id: "topic-research-backbone",
+            name: `${topic} - 专题研究骨架`,
+            description:
+              "采用专题研究结构，包含研究背景、文献综述、研究方法、核心概念、应用领域和未来方向六大模块",
+            nodes,
+            edges,
+            layoutSuggestion: backboneResult.backbone.layoutSuggestion,
+            estimatedNodes: backboneResult.backbone.estimatedNodes,
+            difficulty: "hard",
+            tags: ["专题研究", "学术调研", "深度分析", topic],
+            reasoning:
+              backboneResult.backbone.reasoning ||
+              "适合进行深度专题研究，六大骨干模块帮助系统化组织研究内容",
+          },
+        ],
+        metadata: backboneResult.metadata,
+      };
+    }
 
     const provider = providerType
       ? await getAIProvider(providerType)
       : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
-      logger.info("[Template Generator] No API key configured, returning mock templates");
-      return getMockTemplates(topic);
+      logger.info(
+        "[Template Generator] No API key configured, returning mock templates",
+      );
+      return getMockTemplates(topic, templateType);
     }
 
     const startTime = Date.now();
@@ -387,18 +742,21 @@ export class TemplateGeneratorService {
 
       const inputTokens = usage?.prompt_tokens || 0;
       const outputTokens = usage?.completion_tokens || 0;
-      const cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
+      const cachedInputTokens =
+        usage?.prompt_tokens_details?.cached_tokens || 0;
       const uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
-      const reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
+      const reasoningTokens =
+        usage?.completion_tokens_details?.reasoning_tokens || 0;
       const totalTokens = inputTokens + outputTokens;
-      const cacheHitRate = inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
+      const cacheHitRate =
+        inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
 
       const costBreakdown = pricingService.calculateDetailedCost(
         provider.providerType,
         options.model || provider.model,
         inputTokens,
         outputTokens,
-        cachedInputTokens
+        cachedInputTokens,
       );
 
       performanceMonitor.recordLog({
@@ -463,13 +821,35 @@ export class TemplateGeneratorService {
   }
 
   private async callAI(
-    provider: { providerType: AIProviderType; model: string; hasKey: boolean; client: unknown },
-    options: GenerateTemplatesOptions
-  ): Promise<{ result: GenerateTemplatesResult; usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number; audio_tokens?: number }; completion_tokens_details?: { reasoning_tokens?: number; audio_tokens?: number } } }> {
+    provider: {
+      providerType: AIProviderType;
+      model: string;
+      hasKey: boolean;
+      client: unknown;
+    },
+    options: GenerateTemplatesOptions,
+  ): Promise<{
+    result: GenerateTemplatesResult;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      prompt_tokens_details?: { cached_tokens?: number; audio_tokens?: number };
+      completion_tokens_details?: {
+        reasoning_tokens?: number;
+        audio_tokens?: number;
+      };
+    };
+  }> {
     const { topic, context, category, templateType, preferredLayout } = options;
     const model = options.model || provider.model;
 
-    const systemPrompt = await this.buildSystemPrompt(category, templateType, preferredLayout, options.userId, options.graphId);
+    const systemPrompt = await this.buildSystemPrompt(
+      category,
+      templateType,
+      preferredLayout,
+      options.userId,
+      options.graphId,
+    );
 
     const userPrompt = this.buildUserPrompt(topic, context);
 
@@ -516,10 +896,10 @@ export class TemplateGeneratorService {
         maxRetries: 3,
         onRetry: (attempt, error) => {
           logger.warn(
-            `[Template Generator] Retry attempt ${attempt}: ${error.message}`
+            `[Template Generator] Retry attempt ${attempt}: ${error.message}`,
           );
         },
-      }
+      },
     );
 
     const content = completion.choices[0].message.content;
@@ -533,7 +913,7 @@ export class TemplateGeneratorService {
 
     const parsed = parseAIResponse<{ templates: unknown[] }>(
       content,
-      "Template Generation"
+      "Template Generation",
     );
 
     const validatedTemplates: GeneratedTemplateScheme[] = [];
@@ -547,9 +927,11 @@ export class TemplateGeneratorService {
     }
 
     if (validatedTemplates.length === 0) {
-      logger.warn("[Template Generator] No valid templates generated, using mock");
+      logger.warn(
+        "[Template Generator] No valid templates generated, using mock",
+      );
       return {
-        result: getMockTemplates(topic),
+        result: getMockTemplates(topic, templateType),
         usage: completion.usage,
       };
     }
@@ -573,30 +955,36 @@ export class TemplateGeneratorService {
     templateType?: TemplateType,
     preferredLayout?: LayoutSuggestion,
     userId?: string,
-    graphId?: string
+    graphId?: string,
   ): Promise<string> {
     const categoryGuides: Record<TemplateCategory, string> = {
-      knowledge: "Focus on educational structure with clear learning paths and prerequisites.",
-      project: "Focus on project management structure with tasks, milestones, and dependencies.",
-      analysis: "Focus on analytical structure with factors, comparisons, and conclusions.",
-      architecture: "Focus on system architecture with modules, components, and their relationships.",
+      knowledge:
+        "Focus on educational structure with clear learning paths and prerequisites.",
+      project:
+        "Focus on project management structure with tasks, milestones, and dependencies.",
+      analysis:
+        "Focus on analytical structure with factors, comparisons, and conclusions.",
+      architecture:
+        "Focus on system architecture with modules, components, and their relationships.",
     };
 
     let templateTypeGuidance = "";
     if (templateType && templateType !== "blank") {
-      templateTypeGuidance = await promptService.getRenderedPrompt(
-        getSupabaseAdmin(),
-        `template_type_${templateType}`,
-        {},
-        userId,
-        graphId
-      ) || "";
+      templateTypeGuidance =
+        (await promptService.getRenderedPrompt(
+          getSupabaseAdmin(),
+          `template_type_${templateType}`,
+          {},
+          userId,
+          graphId,
+        )) || "";
     }
 
     const layoutGuides: Record<LayoutSuggestion, string> = {
       radial: "Center the main topic with related concepts radiating outward.",
       tree: "Use a hierarchical tree structure with clear parent-child relationships.",
-      network: "Create an interconnected network showing relationships between concepts.",
+      network:
+        "Create an interconnected network showing relationships between concepts.",
       hierarchical: "Use a top-down hierarchical structure with clear levels.",
     };
 
@@ -618,7 +1006,7 @@ export class TemplateGeneratorService {
         templateTypeGuidance,
         preferredLayout: preferredLayout || "radial",
         layoutGuidance,
-      }
+      },
     );
 
     if (customPrompt && customPrompt.trim().length > 0) {

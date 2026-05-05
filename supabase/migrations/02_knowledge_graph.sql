@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   reference_books JSONB DEFAULT '[]'::jsonb,
   external_links JSONB DEFAULT '[]'::jsonb,
-  learning_guide TEXT
+  learning_guide TEXT,
+  template_type VARCHAR(64)
 );
 
 COMMENT ON TABLE knowledge_graphs IS '知识图谱主表，存储图谱的基本信息和配置';
@@ -36,3 +37,4 @@ COMMENT ON COLUMN knowledge_graphs.parent_graph_id IS '父图谱ID，用于子�
 COMMENT ON COLUMN knowledge_graphs.last_used_at IS '最后使用时间，用于排序';
 COMMENT ON COLUMN knowledge_graphs.embedding IS '图谱嵌入向量，用于语义搜索';
 COMMENT ON COLUMN knowledge_graphs.deleted_at IS '软删除时间，非null表示已删除';
+COMMENT ON COLUMN knowledge_graphs.template_type IS '图谱模板类型，如 topic_research, knowledge_tree 等';

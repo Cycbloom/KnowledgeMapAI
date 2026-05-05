@@ -49,6 +49,7 @@ import domainRoutes from "./routes/domains";
 import pluginsRoutes from "./routes/plugins";
 import databaseRoutes from "./routes/database";
 import supabaseRoutes from "./routes/supabase";
+import literatureRoutes from "./routes/literature";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 import { Kernel } from "./services/kernel/Kernel";
@@ -220,6 +221,7 @@ app.use("/api", quizSetRoutes);
 app.use("/api/plugins", pluginsRoutes);
 app.use("/api/database", databaseRoutes);
 app.use("/api/supabase", supabaseRoutes);
+app.use("/api/literature", rateLimiters.aiHeavy, literatureRoutes);
 
 applyKernelRoutes(app, kernel);
 

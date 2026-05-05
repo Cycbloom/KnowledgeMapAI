@@ -32,6 +32,8 @@ interface GraphWithCount {
   updated_at: string;
   deleted_at: string | null;
   nodes_count: number;
+  template_type?: string;
+  tags?: string[];
 }
 
 export class GraphService {
@@ -112,6 +114,7 @@ export class GraphService {
       deleted_at: g.deleted_at as string | null,
       nodes_count: countMap.get(g.id as string) || 0,
       tags: Array.from(tagsMap.get(g.id as string) || []),
+      template_type: g.template_type as string | undefined,
     })) || []) as GraphWithCount[];
   }
 
@@ -201,7 +204,7 @@ export class GraphService {
     userId: string,
     title: string,
     description?: string,
-    options?: { skipDuplicateCheck?: boolean }
+    options?: { skipDuplicateCheck?: boolean; templateType?: string }
   ) {
     if (!options?.skipDuplicateCheck) {
       const duplicateCheck = await checkDuplicateGraphTopic(
@@ -237,6 +240,7 @@ export class GraphService {
         title,
         description: description || null,
         embedding: embedding ?? undefined,
+        template_type: options?.templateType || null,
       })
       .select()
       .single();

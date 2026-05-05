@@ -144,7 +144,7 @@ export interface StudyCard {
 
 export type TutorMode = "free" | "guided" | "learning-path";
 
-export interface ExtractedConcept {
+export interface TutorExtractedConcept {
   title: string;
   description: string;
   priority: "high" | "medium" | "low";
@@ -160,7 +160,7 @@ export interface TutorSession {
     content: string;
     timestamp: Date;
   }>;
-  extractedConcepts: ExtractedConcept[];
+  extractedConcepts: TutorExtractedConcept[];
   suggestedTopics: string[];
 }
 

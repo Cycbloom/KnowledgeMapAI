@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   useMemo,
   lazy,
   Suspense,
@@ -91,6 +91,18 @@ const RAGChatButton = lazy(() =>
   })),
 );
 
+const LiteratureExtractPanel = lazy(() =>
+  import("../components/LiteratureExtract/LiteratureExtractPanel").then((module) => ({
+    default: module.LiteratureExtractPanel,
+  })),
+);
+
+const ConceptPreviewList = lazy(() =>
+  import("../components/LiteratureExtract/ConceptPreviewList").then((module) => ({
+    default: module.ConceptPreviewList,
+  })),
+);
+
 const Console = lazy(() =>
   import("../components/Console/Console").then((module) => ({
     default: module.Console,
@@ -140,6 +152,9 @@ export const GraphEditor = () => {
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
   const [ragChatWidth, setRagChatWidth] = useState(420);
+  const [isLiteratureExtractOpen, setIsLiteratureExtractOpen] = useState(false);
+  const [extractedConcepts, setExtractedConcepts] = useState<any[]>([]);
+  const [isConceptPreviewOpen, setIsConceptPreviewOpen] = useState(false);
 
   const {
     isOpen: isConsoleOpen,
@@ -206,6 +221,60 @@ export const GraphEditor = () => {
       }
     },
     [],
+  );
+
+  const handleLiteratureExtractComplete = useCallback(
+    (result: any) => {
+      if (result.concepts && result.concepts.length > 0) {
+        setExtractedConcepts(result.concepts);
+        setIsConceptPreviewOpen(true);
+        setIsLiteratureExtractOpen(false);
+      } else {
+        frontendEventBus.publish("message_show", {
+          type: "info",
+          content: "未从文献中提取到概念",
+        });
+      }
+    },
+    [],
+  );
+
+  const handleConfirmConcepts = useCallback(
+    async (selectedConcepts: any[]) => {
+      if (!id || selectedConcepts.length === 0) return;
+
+      try {
+        const { literatureApi } = await import("../services/api/literature");
+        const result = await literatureApi.applyConcepts({
+          graph_id: id,
+          concepts: selectedConcepts,
+          relations: [],
+          literature: selectedConcepts[0]?.source || {
+            title: "文献来源",
+            type: "document",
+            processedAt: new Date().toISOString(),
+          },
+        });
+
+        if (result.success) {
+          frontendEventBus.publish("message_show", {
+            type: "success",
+            content: `已添加 ${result.addedCount} 个概念，合并 ${result.mergedCount} 个相似概念`,
+          });
+          await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
+        }
+      } catch (error) {
+        console.error("Failed to apply concepts:", error);
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: "添加概念失败",
+        });
+      } finally {
+        setIsConceptPreviewOpen(false);
+        setExtractedConcepts([]);
+      }
+    },
+    [id, queryClient],
   );
 
   // Command Palette Logic
@@ -1205,6 +1274,8 @@ export const GraphEditor = () => {
         isRAGChatOpen={isRAGChatOpen}
         ragChatWidth={ragChatWidth}
         isReadOnly={isReadOnly}
+        isLiteratureExtractOpen={isLiteratureExtractOpen}
+        setIsLiteratureExtractOpen={setIsLiteratureExtractOpen}
       />
 
       {state.isPresentationMode && (
@@ -1570,6 +1641,32 @@ export const GraphEditor = () => {
             context={consoleContext}
             onToggleMinimize={toggleConsoleMinimize}
             isMinimized={isConsoleMinimized}
+          />
+        </Suspense>
+      )}
+
+      {isLiteratureExtractOpen && id && (
+        <Suspense fallback={<ViewLoader />}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <LiteratureExtractPanel
+              graphId={id}
+              onExtractComplete={handleLiteratureExtractComplete}
+              onClose={() => setIsLiteratureExtractOpen(false)}
+            />
+          </div>
+        </Suspense>
+      )}
+
+      {isConceptPreviewOpen && extractedConcepts.length > 0 && (
+        <Suspense fallback={<ViewLoader />}>
+          <ConceptPreviewList
+            concepts={extractedConcepts}
+            isOpen={isConceptPreviewOpen}
+            onClose={() => {
+              setIsConceptPreviewOpen(false);
+              setExtractedConcepts([]);
+            }}
+            onConfirm={handleConfirmConcepts}
           />
         </Suspense>
       )}

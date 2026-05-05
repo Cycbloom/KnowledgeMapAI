@@ -1,4 +1,4 @@
-import type { Node, Edge, ExtractedConcept, TutorMode } from '../../types';
+import type { Node, Edge, TutorExtractedConcept, TutorMode } from '../../types';
 import { getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from '../graphEditor';
@@ -102,7 +102,7 @@ export const useTutorOperations = ({
     }
   };
 
-  const handleAddConceptToGraph = async (concept: ExtractedConcept) => {
+  const handleAddConceptToGraph = async (concept: TutorExtractedConcept) => {
     if (!id) return;
     setLoading(true);
     

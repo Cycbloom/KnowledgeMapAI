@@ -110,6 +110,7 @@ export const autoGraphApi = {
     model?: string;
     language?: string;
     session_id?: string;
+    template_type?: string;
   }): Promise<{
     sessionId: string;
     root: { title: string; content: string };

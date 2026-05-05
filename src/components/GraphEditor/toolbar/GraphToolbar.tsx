@@ -6,7 +6,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe, Keyboard, X, Eye, EyeOff
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe, Keyboard, X, Eye, EyeOff, FileText
 } from 'lucide-react';
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
@@ -108,6 +108,10 @@ interface GraphToolbarProps {
   
   // Read-only mode
   isReadOnly?: boolean;
+  
+  // Literature Extract
+  isLiteratureExtractOpen?: boolean;
+  setIsLiteratureExtractOpen?: (open: boolean) => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -126,6 +130,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isMobilePreviewMode, setIsMobilePreviewMode,
   isRAGChatOpen, ragChatWidth = 420,
   isReadOnly = false,
+  isLiteratureExtractOpen, setIsLiteratureExtractOpen,
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -219,6 +224,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     const menuItems: Record<'ai' | 'view' | 'more', MobileMenuItem[]> = {
       ai: [
         { icon: Sparkles, label: '文本/文档生成', onClick: () => { onTextToGraph(); onClose(); }, color: 'text-primary-500' },
+        { icon: FileText, label: isLiteratureExtractOpen ? '关闭文献提取' : '文献提取', onClick: () => { setIsLiteratureExtractOpen?.(!isLiteratureExtractOpen); onClose(); }, active: isLiteratureExtractOpen, color: 'text-amber-500' },
         { icon: Navigation, label: '智能拓展', onClick: () => { if (selectedNodeIds.size === 1 && onAIExpand) { onAIExpand(); } onClose(); }, disabled: selectedNodeIds.size !== 1, color: 'text-green-500' },
         { icon: MessageSquare, label: '智能问答', onClick: () => { setIsChatOpen(!isChatOpen); onClose(); }, active: isChatOpen, color: 'text-primary-500' },
         { icon: Navigation, label: isPathfindingMode ? '退出路径导航' : '路径导航', onClick: () => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); onClose(); }, active: isPathfindingMode },
@@ -651,8 +657,15 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       {/* 3. AI Tools Dropdown - Hidden in read-only mode */}
       {!isReadOnly && (
-        <DropdownButton id="ai" icon={Sparkles} label={t('graphEditor.toolbar.aiAssistant')} active={isChatOpen || isPathfindingMode}>
+        <DropdownButton id="ai" icon={Sparkles} label={t('graphEditor.toolbar.aiAssistant')} active={isChatOpen || isPathfindingMode || isLiteratureExtractOpen}>
           <MenuItem onClick={onTextToGraph} icon={Sparkles} label={t('graphEditor.toolbar.textToGraph')} colorClass="text-primary-500" />
+          <MenuItem 
+            onClick={() => setIsLiteratureExtractOpen?.(!isLiteratureExtractOpen)}
+            icon={FileText} 
+            label={t('graphEditor.toolbar.literatureExtract')} 
+            active={isLiteratureExtractOpen}
+            colorClass="text-amber-500"
+          />
           <MenuItem 
             onClick={() => {
               if (selectedNodeIds.size === 1 && onAIExpand) {

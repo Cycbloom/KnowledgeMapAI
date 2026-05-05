@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NodeLevel, TutorMode, ExtractedConcept } from '../../types';
+import { NodeLevel, TutorMode, TutorExtractedConcept } from '../../types';
 
 export interface FormState {
   nodeForm: {
@@ -20,8 +20,8 @@ export interface FormState {
   setAiPrompt: React.Dispatch<React.SetStateAction<string>>;
   tutorMode: TutorMode;
   setTutorMode: React.Dispatch<React.SetStateAction<TutorMode>>;
-  extractedConcepts: ExtractedConcept[];
-  setExtractedConcepts: React.Dispatch<React.SetStateAction<ExtractedConcept[]>>;
+  extractedConcepts: TutorExtractedConcept[];
+  setExtractedConcepts: React.Dispatch<React.SetStateAction<TutorExtractedConcept[]>>;
   isTutorMode: boolean;
   setIsTutorMode: React.Dispatch<React.SetStateAction<boolean>>;
   suggestedNextTopics: Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>;
@@ -44,7 +44,7 @@ export const useFormState = (): FormState => {
   });
   const [aiPrompt, setAiPrompt] = useState('');
   const [tutorMode, setTutorMode] = useState<TutorMode>('free');
-  const [extractedConcepts, setExtractedConcepts] = useState<ExtractedConcept[]>([]);
+  const [extractedConcepts, setExtractedConcepts] = useState<TutorExtractedConcept[]>([]);
   const [isTutorMode, setIsTutorMode] = useState(false);
   const [suggestedNextTopics, setSuggestedNextTopics] = useState<Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>>([]);
 

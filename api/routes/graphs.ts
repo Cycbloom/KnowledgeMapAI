@@ -256,6 +256,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
       updated_at: g.updated_at,
       deleted_at: g.deleted_at,
       nodes_count: countMap.get(g.id) || 0,
+      template_type: g.template_type,
     }));
 
     return res.json({ graphs: result, total: result.length });
@@ -542,12 +543,13 @@ router.post(
   requireAuth,
   validate({ body: createGraphSchema }),
   async (req: AuthRequest, res: Response) => {
-    const { title, description, domains } = req.body;
+    const { title, description, domains, template_type } = req.body;
     const data = await graphService.createGraph(
       req.supabase!,
       req.user.id,
       title,
       description,
+      { templateType: template_type },
     );
 
     if (domains && Array.isArray(domains) && domains.length > 0) {

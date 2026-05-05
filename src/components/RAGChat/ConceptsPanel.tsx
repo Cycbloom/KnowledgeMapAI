@@ -1,12 +1,12 @@
 import React from 'react';
 import { Lightbulb, Plus, X } from 'lucide-react';
-import { ExtractedConcept } from '../../types';
+import { TutorExtractedConcept } from '../../types';
 import { useTranslation } from 'react-i18next';
 
 interface ConceptsPanelProps {
-  concepts: ExtractedConcept[];
+  concepts: TutorExtractedConcept[];
   isDark: boolean;
-  onAddConcept: (concept: ExtractedConcept) => void;
+  onAddConcept: (concept: TutorExtractedConcept) => void;
   onAddAll?: () => void;
   onClose: () => void;
 }

@@ -605,7 +605,43 @@ INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, 
   ('template_type_skill_map', 'system', null, null, 'Create a skill map showing prerequisite relationships between skills. Focus on which skills must be learned before others. Use prerequisite relationships as the primary edge type. Show learning paths through connected skills. Each skill node should clearly state what it enables and what it requires. Organize skills from foundational to advanced, making the learning progression obvious.', NOW(), NOW()),
   ('template_type_concept_network', 'system', null, null, 'Create an interconnected concept network. Focus on how concepts relate to each other, including cross-connections between different areas. Use related relationships primarily. Show the web of connections between ideas. Concepts should be linked based on similarity, causation, or dependency. Highlight hub concepts that connect multiple areas. Allow for non-hierarchical connections that show the richness of the topic.', NOW(), NOW()),
   ('template_type_learning_path', 'system', null, null, 'Create a sequential learning path. Organize as a step-by-step progression from beginner to advanced. Use chain-like prerequisite relationships. Each step should build on the previous one. Include milestones and checkpoints. Make the progression logical and achievable, with clear prerequisites at each stage. Suggest estimated time or effort for each step if appropriate.', NOW(), NOW()),
-  ('template_type_topic_research', 'system', null, null, 'Create a deep research structure for a specific topic. Explore multiple angles and perspectives. Use radial structure from the central topic. Include cross-connections between different research aspects. Cover historical context, current state, key debates, and future directions. Ensure comprehensive coverage of the topic from academic, practical, and critical perspectives.', NOW(), NOW()),
+  ('template_type_topic_research', 'system', null, null, 'Create a deep research structure for a specific topic. This template uses a backbone network approach with six core modules.
+
+## Backbone Structure
+
+The topic research template consists of a root node and six core backbone modules:
+
+1. **研究背景 (Research Background)**: Origin, history, and development context of the topic
+2. **文献综述 (Literature Review)**: Key literature, theories, and research status
+3. **研究方法 (Research Methods)**: Methodologies, tools, and approaches used
+4. **核心概念 (Core Concepts)**: Fundamental concepts, definitions, and frameworks
+5. **应用领域 (Application Domains)**: Practical applications and use cases
+6. **未来方向 (Future Directions)**: Trends, challenges, and research opportunities
+
+## Node Structure
+
+- **Root Node**: The main research topic (level: root)
+- **Core Nodes**: Six backbone modules (level: core), each marked with needsRefinement=true
+- **Sub Nodes**: Detailed content within each module (level: sub) - to be expanded later
+
+## Edge Relationships
+
+- Root connects to all six core modules with "related" relationship
+- Core modules have sequential relationships showing research flow
+- Cross-connections between related modules are encouraged
+
+## Special Properties
+
+- Each core node has a `backboneModule` property indicating its module type
+- Core nodes have `needsRefinement=true` to indicate they need user input
+- Use radial layout for optimal visualization
+
+## Important Notes
+
+1. Only generate root and core level nodes during initialization
+2. Mark all core nodes with needsRefinement=true
+3. Assign appropriate backboneModule to each core node
+4. Use the predefined module colors for visual distinction', NOW(), NOW()),
   ('template_type_project_lifecycle', 'system', null, null, 'Create a project lifecycle structure showing phases from planning to execution to delivery. Use timeline/sequential organization. Include milestones and deliverables at each phase. Each phase should have clear objectives, key activities, and expected outcomes. Show dependencies between phases and critical path items. Include risk considerations at each stage.', NOW(), NOW()),
   ('template_type_dev_workflow', 'system', null, null, 'Create a software development workflow. Show the flow from requirements through design, development, testing, to deployment. Use prerequisite chain relationships. Include quality gates between phases. Each phase should define inputs, activities, outputs, and validation criteria. Consider both waterfall and iterative approaches. Include feedback loops where appropriate.', NOW(), NOW()),
   ('template_type_task_breakdown', 'system', null, null, 'Create a Work Breakdown Structure (WBS). Decompose the project into hierarchical tasks and subtasks. Use containment/parent-child relationships. Each task should be clearly scoped and assignable. Ensure tasks are MECE (Mutually Exclusive, Collectively Exhaustive). Include effort estimates and dependencies. Organize by deliverable or phase as appropriate.', NOW(), NOW()),
@@ -686,5 +722,82 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 2. 探索相关的知识节点
 3. 具有启发性和探索性
 
-返回 JSON 格式: { "questions": ["问题1", "问题2", "问题3"] }', NOW(), NOW())
+返回 JSON 格式: { "questions": ["问题1", "问题2", "问题3"] }', NOW(), NOW()),
+('literature_concept_extraction', 'system', null, null, '你是一个专业的文献分析专家。你的任务是从给定的文献内容中提取关键概念和知识点。
+
+## 任务目标
+
+从文献内容中识别并提取：
+1. **核心概念**：文献的主要研究对象或主题
+2. **关键术语**：专业术语、技术名词
+3. **重要理论**：文献涉及的理论框架
+4. **方法论**：研究方法和技术手段
+5. **关键发现**：重要的研究结论或数据
+
+## 输入信息
+
+文献标题：{{title}}
+{{#if authors}}作者：{{authors}}{{/if}}
+{{#if abstract}}摘要：{{abstract}}{{/if}}
+{{#if content}}正文内容：{{content}}{{/if}}
+
+## 提取原则
+
+1. **准确性**：概念必须准确反映文献内容
+2. **完整性**：覆盖文献的主要知识点
+3. **层次性**：区分核心概念和次要概念
+4. **去重**：避免重复提取相似概念
+5. **语言**：保持与原文一致的语言风格
+
+请以有效的 json 格式返回结果。', NOW(), NOW()),
+('literature_relation_inference', 'system', null, null, '你是一个知识图谱专家。你的任务是分析从文献中提取的概念，推断它们之间的关系。
+
+## 任务目标
+
+分析概念之间的语义关系，建立知识网络：
+1. **层级关系**：概念之间的上下位关系
+2. **关联关系**：概念之间的相关性和依赖性
+3. **因果关系**：概念之间的因果影响
+4. **对比关系**：概念之间的差异和对立
+
+## 输入信息
+
+文献标题：{{title}}
+已提取的概念列表：
+{{concepts}}
+
+{{#if existingNodes}}
+图谱中已存在的节点：
+{{existingNodes}}
+{{/if}}
+
+## 关系判断原则
+
+1. **置信度评估**：
+   - 高置信度(>0.8)：文献中明确陈述的关系
+   - 中置信度(0.5-0.8)：可从上下文推断的关系
+   - 低置信度(<0.5)：基于常识推测的关系
+
+2. **层级关系判断**：
+   - parent_of: A 是 B 的上位概念
+   - child_of: A 是 B 的下位概念
+
+3. **关联关系判断**：
+   - related_to: A 和 B 有相关性
+   - depends_on: A 依赖于 B
+
+4. **因果关系判断**：
+   - causes: A 导致或影响 B
+
+5. **对比关系判断**：
+   - contrasts_with: A 与 B 形成对比或对立
+
+## 注意事项
+
+1. 只返回置信度 >= 0.5 的关系
+2. 优先建立核心概念之间的关系
+3. 考虑与已有节点的连接可能性
+4. 提供文献中的证据支持
+
+请以有效的 json 格式返回结果。', NOW(), NOW())
 ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;

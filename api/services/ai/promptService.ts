@@ -126,6 +126,46 @@ Please respond with a valid JSON object.`,
 3. 具有启发性和探索性
 
 返回 JSON 格式: { "questions": ["问题1", "问题2", "问题3"] }`,
+
+  backbone_generation: `你是一个专业的知识图谱架构师，专门为学术研究和知识体系构建骨干网络结构。
+
+## 任务目标
+
+为给定的研究主题生成一个结构化的骨干网络，该网络将作为知识图谱的核心框架。
+
+## 骨干网络模块
+
+骨干网络由以下六个核心模块组成：
+
+1. **研究背景 (research_background)**: 研究主题的背景信息、发展历程和现状
+2. **文献综述 (literature_review)**: 相关文献的综述和分析
+3. **研究方法 (research_methods)**: 研究采用的方法论和技术手段
+4. **核心概念 (core_concepts)**: 研究的核心概念、定义和理论框架
+5. **应用领域 (application_domains)**: 研究成果的应用领域和实际场景
+6. **未来方向 (future_directions)**: 未来研究方向和发展趋势
+
+## 节点粒度要求
+
+**重要**: 只生成 root（根节点）和 core（核心节点）两个级别的节点：
+- **root**: 主题根节点，每个模块的根节点
+- **core**: 模块内的核心概念节点
+
+不要生成 sub、normal 或 leaf 级别的节点。
+
+## 本次生成的模块
+
+{{modules}}
+
+## 节点数量限制
+
+- 每个模块最多生成 {{maxNodesPerModule}} 个核心节点
+- 每个模块必须有 1 个 root 节点作为模块入口
+
+## 重要提示
+
+1. 每个节点的描述必须针对具体研究主题，不能使用通用描述
+2. 描述要具体、专业、有学术价值
+3. 请以有效的 json 格式返回结果`,
 };
 
 // Fixed output schemas (Hidden from user editing)
@@ -560,6 +600,110 @@ Important:
 - Provide clear reasons in Chinese
 - shared_concepts should list 2-5 key concepts that appear in both graphs
 - Use exact graph titles from the input for matching`,
+
+  backbone_generation: `
+Return a JSON object with the following structure:
+{
+  "backbone": {
+    "id": "unique-id",
+    "topic": "研究主题",
+    "description": "整体描述",
+    "nodes": [
+      {
+        "id": "node-id",
+        "title": "节点标题",
+        "description": "节点描述（针对主题的具体内容，50-100字）",
+        "level": "root 或 core",
+        "module": "所属模块标识（research_background, literature_review, research_methods, core_concepts, application_domains, future_directions）",
+        "parentId": "父节点ID（可选）",
+        "suggestedContent": "建议内容"
+      }
+    ],
+    "edges": [
+      {
+        "source": "源节点ID",
+        "target": "目标节点ID",
+        "relationship_type": "关系类型",
+        "description": "关系描述"
+      }
+    ],
+    "layoutSuggestion": "radial",
+    "estimatedNodes": 7,
+    "reasoning": "为什么这个结构适合该主题"
+  }
+}
+
+Important:
+- Generate exactly 1 root node (the main topic) and 6 core nodes (one for each module)
+- Each node description must be specific to the research topic, not generic
+- Node level must be either "root" or "core" only
+- The root node should have no parentId
+- Each core node should have parentId pointing to the root node id
+- Each core node must have a valid module identifier`,
+
+  literature_concept_extraction: `
+Return a JSON object with the following structure:
+{
+  "concepts": [
+    {
+      "name": "概念名称",
+      "type": "concept|term|theory|method|finding",
+      "description": "概念的简要描述（50-100字）",
+      "importance": "high|medium|low",
+      "context": "在文献中的上下文或出处"
+    }
+  ],
+  "metadata": {
+    "totalConcepts": 数字,
+    "mainTopics": ["主要主题1", "主要主题2"],
+    "keywords": ["关键词1", "关键词2", "关键词3"]
+  }
+}
+
+Important:
+- Extract 5-15 concepts from the literature
+- Each concept must have a unique name
+- type should be one of: concept, term, theory, method, finding
+- importance should reflect the concept's significance in the literature`,
+
+  literature_relation_inference: `
+Return a JSON object with the following structure:
+{
+  "relations": [
+    {
+      "source": "源概念名称",
+      "target": "目标概念名称",
+      "type": "hierarchical|associative|causal|contrastive",
+      "subtype": "parent_of|child_of|related_to|depends_on|causes|contrasts_with",
+      "description": "关系描述（20-50字）",
+      "confidence": 0.0-1.0,
+      "evidence": "文献中支持此关系的证据"
+    }
+  ],
+  "suggestedConnections": [
+    {
+      "concept": "概念名称",
+      "existingNode": "已存在节点名称",
+      "relationType": "关系类型",
+      "reason": "连接理由"
+    }
+  ],
+  "metadata": {
+    "totalRelations": 数字,
+    "relationTypeDistribution": {
+      "hierarchical": 数字,
+      "associative": 数字,
+      "causal": 数字,
+      "contrastive": 数字
+    }
+  }
+}
+
+Important:
+- Only return relations with confidence >= 0.5
+- type should be one of: hierarchical, associative, causal, contrastive
+- subtype should match the type appropriately
+- confidence should be between 0 and 1`,
 };
 
 export interface PromptListOptions {

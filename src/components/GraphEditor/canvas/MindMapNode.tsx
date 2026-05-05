@@ -9,6 +9,7 @@ import type {
   NodeSizeMode,
   Node,
 } from "../../../types";
+import type { BackboneModule } from "@shared/types/graph";
 import { NodeRing } from "./NodeRing";
 import {
   NODE_STYLE_CONFIG,
@@ -26,6 +27,7 @@ import {
 } from "../../../config/learningStatusColors";
 import { getLevel, calculateNodeImportance } from "../../../lib/graphUtils";
 import { truncateText } from "../../../utils/textUtils";
+import { BACKBONE_MODULE_COLORS } from "@shared/types/graph";
 
 interface MindMapNodeProps {
   node: LayoutNode;
@@ -136,6 +138,9 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     () => node.tags || node.properties?.tags || [],
     [node.tags, node.properties],
   );
+  const needsRefinement = node.properties?.needsRefinement ?? false;
+  const backboneModule = node.properties?.backboneModule as BackboneModule | undefined;
+  const sourceCount = node.properties?.sourceCount ?? (node.properties?.sources?.length ?? 0);
   const titleInfo = useMemo(
     () => truncateText(node.title || t('graphEditor.mindMap.unnamed')),
     [node.title, t],
@@ -572,6 +577,26 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
               />
             )}
 
+            {needsRefinement && (
+              <>
+                <circle
+                  r={styleConfig.baseRadius + 4}
+                  fill="none"
+                  stroke={backboneModule ? BACKBONE_MODULE_COLORS[backboneModule] : "#f59e0b"}
+                  strokeWidth={2}
+                  strokeDasharray="6 3"
+                  opacity={0.8}
+                >
+                  <animate
+                    attributeName="stroke-dashoffset"
+                    values="0;18"
+                    dur="2s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              </>
+            )}
+
             {multiSelected && !selected && (
               <>
                 <circle
@@ -679,6 +704,30 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         </text>
       )}
 
+      {textVisibility.visible && needsRefinement && (
+        <g transform={`translate(0, ${tagOffset + (tags && tags.length > 0 ? scaledFontSize * 1.2 : 0)})`}>
+          <rect
+            x={-30}
+            y={-8}
+            width={60}
+            height={16}
+            rx={8}
+            fill={backboneModule ? BACKBONE_MODULE_COLORS[backboneModule] : "#f59e0b"}
+            opacity={0.9}
+          />
+          <text
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={10}
+            fontWeight={500}
+            fill="white"
+            style={{ pointerEvents: "none" }}
+          >
+            {t('graphEditor.node.needsRefinement', '待完善')}
+          </text>
+        </g>
+      )}
+
       {learningOrder !== undefined && learningOrder > 0 && (
         <g
           transform={`translate(${styleConfig.baseRadius * 0.7}, ${-styleConfig.baseRadius * 0.7})`}
@@ -711,6 +760,30 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
               {learningOrder}
             </text>
           )}
+        </g>
+      )}
+
+      {sourceCount > 0 && !learningOrder && (
+        <g
+          transform={`translate(${styleConfig.baseRadius * 0.7}, ${-styleConfig.baseRadius * 0.7})`}
+        >
+          <circle
+            r={10}
+            fill="#6366f1"
+            style={{
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
+            }}
+          />
+          <text
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={9}
+            fontWeight={700}
+            fill="white"
+            style={{ pointerEvents: "none" }}
+          >
+            {sourceCount}
+          </text>
         </g>
       )}
     </g>

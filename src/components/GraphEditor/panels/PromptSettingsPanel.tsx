@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../../services/api';
 import { PromptEditor } from './PromptEditor';
-import { Edit, RotateCcw, Network, Layers, MessageSquare, Wrench, ChevronDown, LayoutTemplate } from 'lucide-react';
+import { Edit, RotateCcw, Network, Layers, MessageSquare, Wrench, ChevronDown, LayoutTemplate, BookOpen } from 'lucide-react';
 
 interface PromptSettingsPanelProps {
   graphId?: string;
@@ -30,6 +30,8 @@ const PROMPT_NAME_MAP: Record<string, string> = {
   auto_graph_init: '图谱初始化 (Auto Graph Init)',
   auto_graph_expand: '节点展开 (Auto Graph Expand)',
   generate_task_details: '任务详情生成 (Generate Task Details)',
+  literature_concept_extraction: '文献概念提取 (Literature Concept Extraction)',
+  literature_relation_inference: '文献关系推断 (Literature Relation Inference)',
   template_generation: '模板生成 (Template Generation)',
   template_type_knowledge_tree: '模板: 知识树 (Knowledge Tree)',
   template_type_skill_map: '模板: 技能图谱 (Skill Map)',
@@ -88,6 +90,13 @@ const PROMPT_CATEGORIES = [
     codes: ['generate_task_details']
   },
   {
+    id: 'literature_analysis',
+    name: '文献分析',
+    icon: BookOpen,
+    color: 'blue',
+    codes: ['literature_concept_extraction', 'literature_relation_inference']
+  },
+  {
     id: 'template_generation',
     name: '模板生成',
     icon: LayoutTemplate,
@@ -127,6 +136,12 @@ const CATEGORY_COLOR_MAP: Record<string, { bg: string; bgHover: string; icon: st
     bgHover: 'hover:bg-primary-100/80 dark:hover:bg-primary-900/50',
     icon: 'text-primary-600 dark:text-primary-400',
     border: 'border-primary-200 dark:border-primary-700'
+  },
+  blue: {
+    bg: 'bg-blue-50/70 dark:bg-blue-900/30',
+    bgHover: 'hover:bg-blue-100/80 dark:hover:bg-blue-900/50',
+    icon: 'text-blue-600 dark:text-blue-400',
+    border: 'border-blue-200 dark:border-blue-700'
   },
   rose: {
     bg: 'bg-rose-50/70 dark:bg-rose-900/30',
@@ -240,7 +255,9 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
     term_annotation: [],
     infinite_graph_expansion: ['domainTitle', 'domainDescription', 'maxGraphsPerLevel'],
     auto_graph_init: ['topic', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'hasSources', 'sources'],
-    auto_graph_expand: ['nodeTitle', 'nodeContent', 'nodeLevel', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'existingChildren']
+    auto_graph_expand: ['nodeTitle', 'nodeContent', 'nodeLevel', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'existingChildren'],
+    literature_concept_extraction: ['title', 'authors', 'abstract', 'content'],
+    literature_relation_inference: ['title', 'concepts', 'existingNodes']
   };
 
   if (editingCode) {

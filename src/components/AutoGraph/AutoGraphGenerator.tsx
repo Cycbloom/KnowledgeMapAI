@@ -366,6 +366,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         customPrompt: style === "custom" ? customPrompt : undefined,
         sources: sources.length > 0 ? sources : undefined,
         graph_id: graphId,
+        template_type: selectedTemplateType !== "blank" ? selectedTemplateType : undefined,
       });
 
       setSessionId(result.sessionId);
@@ -528,6 +529,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         const createResult = await api.graphs.create({
           title: topic,
           description: rootNode.content,
+          template_type: selectedTemplateType !== "blank" ? selectedTemplateType : undefined,
         });
         targetGraphId = createResult.id;
         if (targetGraphId) {

@@ -57,6 +57,8 @@ export interface TemplateTypeInfo {
   layoutSuggestion: LayoutSuggestion;
   primaryRelationType: string;
   structureHint: string;
+  backboneModules?: BackboneModule[];
+  initLevelOnly?: boolean;
 }
 
 export const TEMPLATE_TYPE_MAP: Record<TemplateType, TemplateTypeInfo> = {
@@ -94,6 +96,15 @@ export const TEMPLATE_TYPE_MAP: Record<TemplateType, TemplateTypeInfo> = {
     layoutSuggestion: "radial",
     primaryRelationType: "related",
     structureHint: "radial_network",
+    backboneModules: [
+      "research_background",
+      "literature_review",
+      "research_methods",
+      "core_concepts",
+      "application_domains",
+      "future_directions",
+    ],
+    initLevelOnly: true,
   },
   project_lifecycle: {
     type: "project_lifecycle",
@@ -237,6 +248,11 @@ export type CombinedViewLayoutMode = "grouped" | "merged" | "network";
 
 export interface NodeProperties {
   tags?: string[];
+  sources?: ConceptSource[];
+  conceptType?: ConceptType;
+  sourceCount?: number;
+  backboneModule?: BackboneModule;
+  needsRefinement?: boolean;
   [key: string]: unknown;
 }
 
@@ -310,6 +326,7 @@ export interface Graph {
   domainIds?: string[];
   domains?: Domain[];
   user_id?: string;
+  template_type?: TemplateType;
   settings?: {
     gamification_enabled?: boolean;
     learning_direction?: "top_down" | "bottom_up";
@@ -822,4 +839,133 @@ export const COLLABORATOR_ROLE_COLORS: Record<CollaboratorRole, string> = {
   owner: "#EF4444",
   editor: "#3B82F6",
   viewer: "#6B7280",
+};
+
+export type ConceptType =
+  | "method"
+  | "mechanism"
+  | "operation"
+  | "concept"
+  | "technology"
+  | "tool";
+
+export type BackboneModule =
+  | "research_background"
+  | "literature_review"
+  | "research_methods"
+  | "core_concepts"
+  | "application_domains"
+  | "future_directions";
+
+export interface ConceptSource {
+  title: string;
+  authors?: string[];
+  year?: number;
+  url?: string;
+  fileName?: string;
+  addedAt: string;
+}
+
+export interface LiteratureInfo {
+  title: string;
+  authors?: string[];
+  year?: number;
+  url?: string;
+  fileName?: string;
+  type: "paper" | "book" | "article" | "document";
+  processedAt: string;
+}
+
+export interface ExtractedConcept {
+  title: string;
+  description: string;
+  type: ConceptType;
+  source: LiteratureInfo;
+  targetModule?: BackboneModule;
+  similarTo?: string;
+  similarity?: number;
+}
+
+export interface ExtractedRelation {
+  source: string;
+  target: string;
+  type: string;
+  confidence: number;
+}
+
+export interface LiteratureExtractRequest {
+  content?: string;
+  file?: File;
+  url?: string;
+  graph_id: string;
+  options?: {
+    extractTypes?: ConceptType[];
+    maxConcepts?: number;
+    similarityThreshold?: number;
+  };
+}
+
+export interface LiteratureExtractResponse {
+  concepts: ExtractedConcept[];
+  relations: ExtractedRelation[];
+  literature: LiteratureInfo;
+}
+
+export interface LiteratureApplyRequest {
+  graph_id: string;
+  concepts: ExtractedConcept[];
+  relations: ExtractedRelation[];
+  literature: LiteratureInfo;
+}
+
+export interface LiteratureApplyResponse {
+  success: boolean;
+  addedCount: number;
+  mergedCount: number;
+  nodeMapping: Record<string, string>;
+}
+
+export const CONCEPT_TYPE_LABELS: Record<ConceptType, string> = {
+  method: "方法",
+  mechanism: "机制",
+  operation: "操作",
+  concept: "概念",
+  technology: "技术",
+  tool: "工具",
+};
+
+export const CONCEPT_TYPE_COLORS: Record<ConceptType, string> = {
+  method: "#3B82F6",
+  mechanism: "#10B981",
+  operation: "#F59E0B",
+  concept: "#8B5CF6",
+  technology: "#EC4899",
+  tool: "#6366F1",
+};
+
+export const BACKBONE_MODULE_LABELS: Record<BackboneModule, string> = {
+  research_background: "研究背景",
+  literature_review: "文献综述",
+  research_methods: "研究方法",
+  core_concepts: "核心概念",
+  application_domains: "应用领域",
+  future_directions: "未来方向",
+};
+
+export const BACKBONE_MODULE_COLORS: Record<BackboneModule, string> = {
+  research_background: "#6366F1",
+  literature_review: "#8B5CF6",
+  research_methods: "#3B82F6",
+  core_concepts: "#10B981",
+  application_domains: "#F59E0B",
+  future_directions: "#EC4899",
+};
+
+export const CONCEPT_TO_MODULE_MAP: Record<ConceptType, BackboneModule> = {
+  method: "research_methods",
+  mechanism: "core_concepts",
+  operation: "research_methods",
+  concept: "core_concepts",
+  technology: "application_domains",
+  tool: "research_methods",
 };

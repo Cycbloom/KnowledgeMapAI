@@ -81,10 +81,7 @@ export const BackboneModuleStatus: React.FC<BackboneModuleStatusProps> = ({
       {statusIcon}
 
       {showLabel && (
-        <span
-          className="font-medium"
-          style={{ color: moduleColor }}
-        >
+        <span className="font-medium" style={{ color: moduleColor }}>
           {moduleLabel}
         </span>
       )}

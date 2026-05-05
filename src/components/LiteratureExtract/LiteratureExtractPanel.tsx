@@ -111,10 +111,19 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const conceptTypeOptions: { value: ConceptType; labelKey: string }[] = [
     { value: "concept", labelKey: "literatureExtract.conceptTypes.concept" },
     { value: "method", labelKey: "literatureExtract.conceptTypes.method" },
-    { value: "mechanism", labelKey: "literatureExtract.conceptTypes.mechanism" },
-    { value: "technology", labelKey: "literatureExtract.conceptTypes.technology" },
+    {
+      value: "mechanism",
+      labelKey: "literatureExtract.conceptTypes.mechanism",
+    },
+    {
+      value: "technology",
+      labelKey: "literatureExtract.conceptTypes.technology",
+    },
     { value: "tool", labelKey: "literatureExtract.conceptTypes.tool" },
-    { value: "operation", labelKey: "literatureExtract.conceptTypes.operation" },
+    {
+      value: "operation",
+      labelKey: "literatureExtract.conceptTypes.operation",
+    },
   ];
 
   const handleFileSelect = useCallback(
@@ -155,7 +164,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         error: null,
       });
     },
-    [t]
+    [t],
   );
 
   const handleDrop = useCallback(
@@ -186,14 +195,14 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         });
       }
     },
-    [t]
+    [t],
   );
 
   const handleDragOver = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
     },
-    []
+    [],
   );
 
   const handleRemoveFile = useCallback(() => {
@@ -205,7 +214,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
   const handleToggleConceptType = useCallback((type: ConceptType) => {
     setSelectedConceptTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
   }, []);
 
@@ -347,7 +356,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   ]);
 
   const simulateExtract = async (
-    request: LiteratureExtractRequest
+    request: LiteratureExtractRequest,
   ): Promise<LiteratureExtractResponse> => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -621,7 +630,9 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
               max="1"
               step="0.1"
               value={similarityThreshold}
-              onChange={(e) => setSimilarityThreshold(parseFloat(e.target.value))}
+              onChange={(e) =>
+                setSimilarityThreshold(parseFloat(e.target.value))
+              }
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               disabled={isProcessing}
             />

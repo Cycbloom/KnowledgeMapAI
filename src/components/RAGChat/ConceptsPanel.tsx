@@ -1,7 +1,7 @@
-import React from 'react';
-import { Lightbulb, Plus, X } from 'lucide-react';
-import { TutorExtractedConcept } from '../../types';
-import { useTranslation } from 'react-i18next';
+import React from "react";
+import { Lightbulb, Plus, X } from "lucide-react";
+import { TutorExtractedConcept } from "../../types";
+import { useTranslation } from "react-i18next";
 
 interface ConceptsPanelProps {
   concepts: TutorExtractedConcept[];
@@ -16,29 +16,45 @@ export const ConceptsPanel: React.FC<ConceptsPanelProps> = ({
   isDark,
   onAddConcept,
   onAddAll,
-  onClose
+  onClose,
 }) => {
   const { t } = useTranslation();
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return isDark ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-red-100 text-red-700 border-red-200';
-      case 'medium': return isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-800' : 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'low': return isDark ? 'bg-green-900/30 text-green-300 border-green-800' : 'bg-green-100 text-green-700 border-green-200';
-      default: return isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-700 border-gray-200';
+      case "high":
+        return isDark
+          ? "bg-red-900/30 text-red-300 border-red-800"
+          : "bg-red-100 text-red-700 border-red-200";
+      case "medium":
+        return isDark
+          ? "bg-yellow-900/30 text-yellow-300 border-yellow-800"
+          : "bg-yellow-100 text-yellow-700 border-yellow-200";
+      case "low":
+        return isDark
+          ? "bg-green-900/30 text-green-300 border-green-800"
+          : "bg-green-100 text-green-700 border-green-200";
+      default:
+        return isDark
+          ? "bg-gray-800 text-gray-300 border-gray-700"
+          : "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
 
   return (
-    <div className={`border-t p-4 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+    <div
+      className={`border-t p-4 ${isDark ? "border-slate-700 bg-slate-800" : "border-gray-200 bg-white"}`}
+    >
       <div className="flex items-center justify-between mb-3">
-        <h3 className={`text-sm font-semibold flex items-center ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+        <h3
+          className={`text-sm font-semibold flex items-center ${isDark ? "text-slate-200" : "text-gray-800"}`}
+        >
           <Lightbulb size={16} className="mr-2 text-yellow-500" />
           {t("aiChat.addConceptsTitle")}
         </h3>
         <button
           onClick={onClose}
-          className={`transition-colors ${isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`transition-colors ${isDark ? "text-slate-400 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"}`}
         >
           <X size={16} />
         </button>

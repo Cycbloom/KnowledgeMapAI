@@ -1,4 +1,14 @@
-import { FileText, BrainCircuit, BookOpen, GraduationCap, Network, GitBranch, Route, AlertTriangle, LayoutTemplate } from 'lucide-react';
+import {
+  FileText,
+  BrainCircuit,
+  BookOpen,
+  GraduationCap,
+  Network,
+  GitBranch,
+  Route,
+  AlertTriangle,
+  LayoutTemplate,
+} from "lucide-react";
 
 export interface PromptScenario {
   id: string;
@@ -7,17 +17,17 @@ export interface PromptScenario {
   icon: React.ReactNode;
   variables: string[];
   defaultTemplate: string;
-  category: 'creation' | 'generation' | 'analysis';
+  category: "creation" | "generation" | "analysis";
   supportsThreeTier?: boolean;
 }
 
 export const PROMPT_SCENARIOS: PromptScenario[] = [
   {
-    id: 'learning_material',
-    name: '学习资料生成',
-    description: '生成学习教材时的提示词模板',
+    id: "learning_material",
+    name: "学习资料生成",
+    description: "生成学习教材时的提示词模板",
     icon: <GraduationCap size={20} />,
-    variables: ['topic', 'context', 'level'],
+    variables: ["topic", "context", "level"],
     defaultTemplate: `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
 
 Target Audience: University students or professionals learning this concept.
@@ -39,15 +49,15 @@ Formatting:
 Topic: {{topic}}
 Context/Background: {{context}}
 {{#if level}}Knowledge Level: {{level}}{{/if}}`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'graph_creation',
-    name: '图谱创建',
-    description: '创建新知识图谱时的AI生成提示词',
+    id: "graph_creation",
+    name: "图谱创建",
+    description: "创建新知识图谱时的AI生成提示词",
     icon: <BookOpen size={20} />,
-    variables: ['graphTitle', 'description', 'relatedGraph', 'relationType'],
+    variables: ["graphTitle", "description", "relatedGraph", "relationType"],
     defaultTemplate: `请根据以下信息创建知识图谱：
 
 图谱标题：{{graphTitle}}
@@ -66,19 +76,19 @@ Context/Background: {{context}}
 - 内容准确、专业
 - 结构清晰、层次分明
 - 适合学习者理解`,
-    category: 'creation',
+    category: "creation",
   },
   {
-    id: 'quiz_generation',
-    name: '测验生成',
-    description: 'AI生成测验题目时的提示词',
+    id: "quiz_generation",
+    name: "测验生成",
+    description: "AI生成测验题目时的提示词",
     icon: <BrainCircuit size={20} />,
     variables: [
-      'quizTitle',
-      'knowledgePoints',
-      'difficulty',
-      'questionTypes',
-      'cardsPerType',
+      "quizTitle",
+      "knowledgePoints",
+      "difficulty",
+      "questionTypes",
+      "cardsPerType",
     ],
     defaultTemplate: `请根据以下知识点生成测验题目：
 
@@ -99,14 +109,14 @@ Context/Background: {{context}}
 - 确保题目覆盖所有选定的知识点
 - 避免重复或相似的题目
 - 题目应具有实际应用价值`,
-    category: 'generation',
+    category: "generation",
   },
   {
-    id: 'content_expansion',
-    name: '内容扩充',
-    description: '扩充知识点内容时的提示词',
+    id: "content_expansion",
+    name: "内容扩充",
+    description: "扩充知识点内容时的提示词",
     icon: <FileText size={20} />,
-    variables: ['nodeTitle', 'nodeContent', 'parentContext', 'childContext'],
+    variables: ["nodeTitle", "nodeContent", "parentContext", "childContext"],
     defaultTemplate: `请扩充以下知识点的内容：
 
 标题：{{nodeTitle}}
@@ -129,14 +139,14 @@ Context/Background: {{context}}
 - 内容专业、准确
 - 语言简洁明了
 - 适合学习者理解`,
-    category: 'generation',
+    category: "generation",
   },
   {
-    id: 'relation_discovery',
-    name: '关系发现分析',
-    description: '发现图谱间潜在关联关系的AI提示词',
+    id: "relation_discovery",
+    name: "关系发现分析",
+    description: "发现图谱间潜在关联关系的AI提示词",
     icon: <Network size={20} />,
-    variables: ['graphs', 'existing_relations', 'concepts', 'max_suggestions'],
+    variables: ["graphs", "existing_relations", "concepts", "max_suggestions"],
     defaultTemplate: `分析以下知识图谱，发现它们之间潜在的关联关系。
 
 图谱列表：
@@ -167,15 +177,15 @@ Context/Background: {{context}}
     }
   ]
 }`,
-    category: 'analysis',
+    category: "analysis",
     supportsThreeTier: true,
   },
   {
-    id: 'cross_domain_insights',
-    name: '跨学科洞察',
-    description: '分析跨领域知识交叉点的AI提示词',
+    id: "cross_domain_insights",
+    name: "跨学科洞察",
+    description: "分析跨领域知识交叉点的AI提示词",
     icon: <GitBranch size={20} />,
-    variables: ['graphs', 'domains', 'concepts', 'min_intersection'],
+    variables: ["graphs", "domains", "concepts", "min_intersection"],
     defaultTemplate: `分析以下知识图谱，发现跨学科的洞察和交叉点。
 
 图谱列表：
@@ -206,15 +216,15 @@ Context/Background: {{context}}
   ],
   "domain_distribution": {"领域": 数量}
 }`,
-    category: 'analysis',
+    category: "analysis",
     supportsThreeTier: true,
   },
   {
-    id: 'learning_path_suggestions',
-    name: '学习路径建议',
-    description: '推荐最优学习顺序的AI提示词',
+    id: "learning_path_suggestions",
+    name: "学习路径建议",
+    description: "推荐最优学习顺序的AI提示词",
     icon: <Route size={20} />,
-    variables: ['graphs', 'relations', 'difficulty', 'user_level'],
+    variables: ["graphs", "relations", "difficulty", "user_level"],
     defaultTemplate: `基于以下知识图谱和关系，推荐最优的学习路径。
 
 图谱列表：
@@ -243,15 +253,15 @@ Context/Background: {{context}}
     }
   ]
 }`,
-    category: 'analysis',
+    category: "analysis",
     supportsThreeTier: true,
   },
   {
-    id: 'knowledge_gaps',
-    name: '知识缺口分析',
-    description: '识别知识体系空白的AI提示词',
+    id: "knowledge_gaps",
+    name: "知识缺口分析",
+    description: "识别知识体系空白的AI提示词",
     icon: <AlertTriangle size={20} />,
-    variables: ['graphs', 'concepts', 'relations', 'min_importance'],
+    variables: ["graphs", "concepts", "relations", "min_importance"],
     defaultTemplate: `分析以下知识图谱，识别知识体系中的缺口和空白。
 
 图谱列表：
@@ -279,15 +289,15 @@ Context/Background: {{context}}
     }
   ]
 }`,
-    category: 'analysis',
+    category: "analysis",
     supportsThreeTier: true,
   },
   {
-    id: 'template_generation',
-    name: '模板生成',
-    description: '自定义各模板类型的 AI 生成指导文本',
+    id: "template_generation",
+    name: "模板生成",
+    description: "自定义各模板类型的 AI 生成指导文本",
     icon: <LayoutTemplate size={20} />,
-    variables: ['templateType', 'topic'],
+    variables: ["templateType", "topic"],
     defaultTemplate: `请根据以下信息生成知识图谱模板：
 
 模板类型：{{templateType}}
@@ -302,15 +312,15 @@ Context/Background: {{context}}
 - 内容准确、专业
 - 结构清晰、层次分明
 - 适合学习者理解`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_knowledge_tree',
-    name: '模板: 知识树',
-    description: '层级学习，从基础到进阶的知识树模板生成提示词',
+    id: "template_type_knowledge_tree",
+    name: "模板: 知识树",
+    description: "层级学习，从基础到进阶的知识树模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成知识树结构的知识图谱模板。
 
 知识树特点：层级学习，从基础到进阶
@@ -325,15 +335,15 @@ Context/Background: {{context}}
 - 层级清晰，由浅入深
 - 每个节点内容简洁准确
 - 知识点之间逻辑连贯`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_skill_map',
-    name: '模板: 技能图谱',
-    description: '前置技能关系与学习路径的技能图谱模板生成提示词',
+    id: "template_type_skill_map",
+    name: "模板: 技能图谱",
+    description: "前置技能关系与学习路径的技能图谱模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成技能图谱结构的知识图谱模板。
 
 技能图谱特点：前置技能关系，学习路径
@@ -348,15 +358,15 @@ Context/Background: {{context}}
 - 明确技能间的依赖关系
 - 提供合理的学习顺序建议
 - 标注关键技能节点`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_concept_network',
-    name: '模板: 概念网络',
-    description: '概念间关联和交叉的概念网络模板生成提示词',
+    id: "template_type_concept_network",
+    name: "模板: 概念网络",
+    description: "概念间关联和交叉的概念网络模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成概念网络结构的知识图谱模板。
 
 概念网络特点：概念间关联和交叉
@@ -371,15 +381,15 @@ Context/Background: {{context}}
 - 突出概念间的多维度关联
 - 标注概念交叉区域
 - 体现知识的网络化特征`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_learning_path',
-    name: '模板: 学习路径',
-    description: '循序渐进的学习步骤模板生成提示词',
+    id: "template_type_learning_path",
+    name: "模板: 学习路径",
+    description: "循序渐进的学习步骤模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成学习路径结构的知识图谱模板。
 
 学习路径特点：循序渐进的学习步骤
@@ -394,15 +404,15 @@ Context/Background: {{context}}
 - 步骤清晰，循序渐进
 - 每个阶段有明确的学习目标
 - 标注阶段间的过渡条件`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_topic_research',
-    name: '模板: 专题研究',
-    description: '深度探索某个专题的模板生成提示词，包含六大骨干模块',
+    id: "template_type_topic_research",
+    name: "模板: 专题研究",
+    description: "深度探索某个专题的模板生成提示词，包含六大骨干模块",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成专题研究结构的知识图谱模板。
 
 专题研究特点：深度探索某个专题，采用骨干网络结构
@@ -441,15 +451,15 @@ Context/Background: {{context}}
 - 所有核心节点标记为待完善状态
 - 为每个核心节点分配对应的骨干模块类型
 - 使用预定义的模块颜色进行视觉区分`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_project_lifecycle',
-    name: '模板: 项目生命周期',
-    description: '规划→执行→交付全流程的项目生命周期模板生成提示词',
+    id: "template_type_project_lifecycle",
+    name: "模板: 项目生命周期",
+    description: "规划→执行→交付全流程的项目生命周期模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成项目生命周期结构的知识图谱模板。
 
 项目生命周期特点：规划→执行→交付全流程
@@ -465,15 +475,15 @@ Context/Background: {{context}}
 - 阶段划分清晰
 - 每个阶段包含关键活动和交付物
 - 标注阶段间的依赖关系`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_dev_workflow',
-    name: '模板: 开发流程',
-    description: '需求→设计→开发→测试→部署的开发流程模板生成提示词',
+    id: "template_type_dev_workflow",
+    name: "模板: 开发流程",
+    description: "需求→设计→开发→测试→部署的开发流程模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成开发流程结构的知识图谱模板。
 
 开发流程特点：需求→设计→开发→测试→部署
@@ -489,15 +499,15 @@ Context/Background: {{context}}
 - 流程步骤完整
 - 每个环节包含最佳实践
 - 标注关键质量门禁`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_task_breakdown',
-    name: '模板: 任务分解',
-    description: 'WBS 工作分解结构的任务分解模板生成提示词',
+    id: "template_type_task_breakdown",
+    name: "模板: 任务分解",
+    description: "WBS 工作分解结构的任务分解模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成任务分解结构的知识图谱模板。
 
 任务分解特点：WBS 工作分解结构
@@ -512,15 +522,15 @@ Context/Background: {{context}}
 - 遵循 MECE 原则（相互独立、完全穷尽）
 - 每个任务可度量、可分配
 - 标注任务间的依赖关系`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_sprint_planning',
-    name: '模板: 迭代规划',
-    description: 'Sprint 迭代规划的模板生成提示词',
+    id: "template_type_sprint_planning",
+    name: "模板: 迭代规划",
+    description: "Sprint 迭代规划的模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成迭代规划结构的知识图谱模板。
 
 迭代规划特点：Sprint 迭代规划
@@ -536,15 +546,15 @@ Context/Background: {{context}}
 - 迭代周期明确
 - 每个迭代有清晰的目标
 - 包含持续改进机制`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_root_cause',
-    name: '模板: 根因分析',
-    description: '5Why/鱼骨图式分析的根因分析模板生成提示词',
+    id: "template_type_root_cause",
+    name: "模板: 根因分析",
+    description: "5Why/鱼骨图式分析的根因分析模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成根因分析结构的知识图谱模板。
 
 根因分析特点：5Why/鱼骨图式分析
@@ -560,15 +570,15 @@ Context/Background: {{context}}
 - 逐层深入，找到根本原因
 - 区分症状和原因
 - 改进措施可执行、可验证`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_swot',
-    name: '模板: SWOT 分析',
-    description: '优势/劣势/机会/威胁的 SWOT 分析模板生成提示词',
+    id: "template_type_swot",
+    name: "模板: SWOT 分析",
+    description: "优势/劣势/机会/威胁的 SWOT 分析模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成 SWOT 分析结构的知识图谱模板。
 
 SWOT 分析特点：优势/劣势/机会/威胁
@@ -584,15 +594,15 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 内外部因素区分明确
 - 分析客观全面
 - 战略建议具有可操作性`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_comparison',
-    name: '模板: 对比分析',
-    description: '多维度对比分析的模板生成提示词',
+    id: "template_type_comparison",
+    name: "模板: 对比分析",
+    description: "多维度对比分析的模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成对比分析结构的知识图谱模板。
 
 对比分析特点：多维度对比分析
@@ -608,15 +618,15 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 对比维度全面客观
 - 数据支撑充分
 - 结论有理有据`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_decision_tree',
-    name: '模板: 决策树',
-    description: '条件分支决策的决策树模板生成提示词',
+    id: "template_type_decision_tree",
+    name: "模板: 决策树",
+    description: "条件分支决策的决策树模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成决策树结构的知识图谱模板。
 
 决策树特点：条件分支决策
@@ -632,15 +642,15 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 条件判断清晰明确
 - 分支覆盖所有可能情况
 - 结果可量化评估`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_tech_ecosystem',
-    name: '模板: 技术生态',
-    description: '技术栈关系和依赖的技术生态模板生成提示词',
+    id: "template_type_tech_ecosystem",
+    name: "模板: 技术生态",
+    description: "技术栈关系和依赖的技术生态模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成技术生态结构的知识图谱模板。
 
 技术生态特点：技术栈关系和依赖
@@ -656,15 +666,15 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 技术关系标注清晰
 - 包含版本和兼容性信息
 - 体现技术选型的权衡`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_org_structure',
-    name: '模板: 组织架构',
-    description: '层级与职能关系的组织架构模板生成提示词',
+    id: "template_type_org_structure",
+    name: "模板: 组织架构",
+    description: "层级与职能关系的组织架构模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成组织架构结构的知识图谱模板。
 
 组织架构特点：层级与职能关系
@@ -680,15 +690,15 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 层级关系清晰
 - 职责边界明确
 - 体现协作和决策流程`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_system_architecture',
-    name: '模板: 系统架构',
-    description: '模块与依赖关系的系统架构模板生成提示词',
+    id: "template_type_system_architecture",
+    name: "模板: 系统架构",
+    description: "模块与依赖关系的系统架构模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成系统架构结构的知识图谱模板。
 
 系统架构特点：模块与依赖关系
@@ -704,15 +714,15 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 架构层次分明
 - 依赖关系标注清晰
 - 包含关键设计决策及理由`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_knowledge_system',
-    name: '模板: 知识体系',
-    description: '跨领域知识关联的知识体系模板生成提示词',
+    id: "template_type_knowledge_system",
+    name: "模板: 知识体系",
+    description: "跨领域知识关联的知识体系模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成知识体系结构的知识图谱模板。
 
 知识体系特点：跨领域知识关联
@@ -728,15 +738,15 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 跨领域关联清晰
 - 知识层次分明
 - 体现知识的系统性`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
   {
-    id: 'template_type_blank',
-    name: '模板: 空白图谱',
-    description: '自由创建，不使用特定结构的空白图谱模板生成提示词',
+    id: "template_type_blank",
+    name: "模板: 空白图谱",
+    description: "自由创建，不使用特定结构的空白图谱模板生成提示词",
     icon: <LayoutTemplate size={20} />,
-    variables: ['topic'],
+    variables: ["topic"],
     defaultTemplate: `请为主题 "{{topic}}" 生成空白图谱结构的知识图谱模板。
 
 空白图谱特点：自由创建，不使用特定结构
@@ -750,7 +760,7 @@ SWOT 分析特点：优势/劣势/机会/威胁
 - 不限制结构形式
 - 鼓励自由发散思维
 - 知识点间关联自然`,
-    category: 'generation',
+    category: "generation",
     supportsThreeTier: true,
   },
 ];
@@ -760,7 +770,7 @@ export const getScenarioById = (id: string): PromptScenario | undefined => {
 };
 
 export const getScenariosByCategory = (
-  category: PromptScenario['category']
+  category: PromptScenario["category"],
 ): PromptScenario[] => {
   return PROMPT_SCENARIOS.filter((s) => s.category === category);
 };

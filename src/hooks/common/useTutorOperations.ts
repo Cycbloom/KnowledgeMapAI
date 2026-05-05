@@ -1,10 +1,10 @@
-import type { Node, Edge, TutorExtractedConcept, TutorMode } from '../../types';
-import { getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
-import { HistoryAction } from './useHistory';
-import { GraphEditorState } from '../graphEditor';
+import type { Node, Edge, TutorExtractedConcept, TutorMode } from "../../types";
+import { getNextLevel, getLevelColorHex } from "../../lib/graphUtils";
+import { HistoryAction } from "./useHistory";
+import { GraphEditorState } from "../graphEditor";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { api } from '../../services/api';
-import { useRef, useCallback } from 'react';
+import { api } from "../../services/api";
+import { useRef, useCallback } from "react";
 
 interface UseTutorOperationsProps {
   id: string;
@@ -24,16 +24,20 @@ export const useTutorOperations = ({
   edges: _edges,
   state,
   mutations,
-  record
+  record,
 }: UseTutorOperationsProps) => {
-  const { 
-    tutorMode, setTutorMode,
-    extractedConcepts, setExtractedConcepts,
-    isTutorMode, setIsTutorMode,
-    suggestedNextTopics: _suggestedNextTopics, setSuggestedNextTopics,
+  const {
+    tutorMode,
+    setTutorMode,
+    extractedConcepts,
+    setExtractedConcepts,
+    isTutorMode,
+    setIsTutorMode,
+    suggestedNextTopics: _suggestedNextTopics,
+    setSuggestedNextTopics,
     selectedNode,
     selectedNodeIds,
-    setLoading
+    setLoading,
   } = state;
 
   const { createNodeMutation, createEdgeMutation } = mutations;
@@ -47,9 +51,18 @@ export const useTutorOperations = ({
     return chatSessionIdRef.current;
   }, []);
 
-  const handleTutorChat = async (message: string, history: any[] = [], onChunk: (content: string) => void) => {
+  const handleTutorChat = async (
+    message: string,
+    history: any[] = [],
+    onChunk: (content: string) => void,
+  ) => {
     try {
-      const contextNodeIds = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedNode ? [selectedNode.id] : []);
+      const contextNodeIds =
+        selectedNodeIds.size > 0
+          ? Array.from(selectedNodeIds)
+          : selectedNode
+            ? [selectedNode.id]
+            : [];
       const sessionId = getChatSessionId();
 
       await api.ai.tutorChatStream(
@@ -61,11 +74,14 @@ export const useTutorOperations = ({
           mode: tutorMode,
           session_id: sessionId,
         },
-        onChunk
+        onChunk,
       );
     } catch (error: any) {
-      console.error('Tutor chat error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '助教对话失败，请重试' });
+      console.error("Tutor chat error:", error);
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "助教对话失败，请重试",
+      });
       throw error;
     }
   };
@@ -73,30 +89,33 @@ export const useTutorOperations = ({
   const handleExtractConcepts = async (text: string) => {
     setLoading(true);
     try {
-      const existingNodes = nodes.map(n => n.title);
-      
+      const existingNodes = nodes.map((n) => n.title);
+
       const result = await api.ai.extractConcepts({
         text,
         existing_nodes: existingNodes,
-        max_concepts: 5
+        max_concepts: 5,
       });
 
       setExtractedConcepts(result.concepts || []);
-      
+
       if (result.concepts && result.concepts.length > 0) {
-        frontendEventBus.publish("message_show", { 
-          type: 'success', 
-          content: `提取了 ${result.concepts.length} 个概念，可以添加到图谱中` 
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: `提取了 ${result.concepts.length} 个概念，可以添加到图谱中`,
         });
       } else {
-        frontendEventBus.publish("message_show", { 
-          type: 'info', 
-          content: '未提取到新的概念' 
+        frontendEventBus.publish("message_show", {
+          type: "info",
+          content: "未提取到新的概念",
         });
       }
     } catch (error: any) {
-      console.error('Extract concepts error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '概念提取失败' });
+      console.error("Extract concepts error:", error);
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "概念提取失败",
+      });
     } finally {
       setLoading(false);
     }
@@ -105,23 +124,26 @@ export const useTutorOperations = ({
   const handleAddConceptToGraph = async (concept: TutorExtractedConcept) => {
     if (!id) return;
     setLoading(true);
-    
+
     try {
-      const parentNode = selectedNode || nodes.find(n => n.level === 'root');
-      
+      const parentNode = selectedNode || nodes.find((n) => n.level === "root");
+
       if (!parentNode) {
-        frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个父节点' });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: "请先选择一个父节点",
+        });
         return;
       }
 
-      const parentLevel = parentNode.level || 'root';
+      const parentLevel = parentNode.level || "root";
       const newLevel = getNextLevel(parentLevel);
 
       const angle = Math.random() * Math.PI * 2;
       const radius = 4 + Math.random() * 4;
       const x = Math.round(parentNode.x_position + Math.cos(angle) * radius);
       const y = Math.round(parentNode.y_position + Math.sin(angle) * radius);
-      
+
       const newNode = await createNodeMutation.mutateAsync({
         graph_id: id,
         title: concept.title,
@@ -132,32 +154,37 @@ export const useTutorOperations = ({
         level: newLevel,
         properties: {
           isNew: true,
-          source: 'tutor-extraction'
-        }
+          source: "tutor-extraction",
+        },
       });
-      
-      record({ type: 'CREATE_NODE', payload: newNode });
+
+      record({ type: "CREATE_NODE", payload: newNode });
 
       const newEdge = await createEdgeMutation.mutateAsync({
         source_knowledge_point_id: parentNode.id,
         target_knowledge_point_id: newNode.id,
-        relationship_type: 'related',
-        graphId: id
+        relationship_type: "related",
+        graphId: id,
       });
-      
-      record({ type: 'CREATE_EDGE', payload: newEdge });
-      
-      setExtractedConcepts(prev => prev.filter(c => c.title !== concept.title));
-      
-      frontendEventBus.publish("message_show", { 
-        type: 'success', 
-        content: `已将 "${concept.title}" 添加到图谱中` 
+
+      record({ type: "CREATE_EDGE", payload: newEdge });
+
+      setExtractedConcepts((prev) =>
+        prev.filter((c) => c.title !== concept.title),
+      );
+
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: `已将 "${concept.title}" 添加到图谱中`,
       });
-      
+
       return newNode;
     } catch (error: any) {
-      console.error('Add concept to graph error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '添加概念失败' });
+      console.error("Add concept to graph error:", error);
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "添加概念失败",
+      });
       return null;
     } finally {
       setLoading(false);
@@ -166,19 +193,22 @@ export const useTutorOperations = ({
 
   const handleAddAllConcepts = async () => {
     if (extractedConcepts.length === 0) return;
-    
+
     setLoading(true);
     const addedNodes: Node[] = [];
-    
+
     try {
-      const parentNode = selectedNode || nodes.find(n => n.level === 'root');
-      
+      const parentNode = selectedNode || nodes.find((n) => n.level === "root");
+
       if (!parentNode) {
-        frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个父节点' });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: "请先选择一个父节点",
+        });
         return;
       }
 
-      const parentLevel = parentNode.level || 'root';
+      const parentLevel = parentNode.level || "root";
       const newLevel = getNextLevel(parentLevel);
 
       for (const concept of extractedConcepts) {
@@ -186,7 +216,7 @@ export const useTutorOperations = ({
         const radius = 4 + Math.random() * 4;
         const x = Math.round(parentNode.x_position + Math.cos(angle) * radius);
         const y = Math.round(parentNode.y_position + Math.sin(angle) * radius);
-        
+
         const newNode = await createNodeMutation.mutateAsync({
           graph_id: id,
           title: concept.title,
@@ -197,33 +227,36 @@ export const useTutorOperations = ({
           level: newLevel,
           properties: {
             isNew: true,
-            source: 'tutor-extraction'
-          }
+            source: "tutor-extraction",
+          },
         });
-        
-        record({ type: 'CREATE_NODE', payload: newNode });
+
+        record({ type: "CREATE_NODE", payload: newNode });
 
         const newEdge = await createEdgeMutation.mutateAsync({
           source_knowledge_point_id: parentNode.id,
           target_knowledge_point_id: newNode.id,
-          relationship_type: 'related',
-          graphId: id
+          relationship_type: "related",
+          graphId: id,
         });
-        
-        record({ type: 'CREATE_EDGE', payload: newEdge });
-        
+
+        record({ type: "CREATE_EDGE", payload: newEdge });
+
         addedNodes.push(newNode);
       }
-      
+
       setExtractedConcepts([]);
-      
-      frontendEventBus.publish("message_show", { 
-        type: 'success', 
-        content: `已将 ${addedNodes.length} 个概念添加到图谱中` 
+
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: `已将 ${addedNodes.length} 个概念添加到图谱中`,
       });
     } catch (error: any) {
-      console.error('Add all concepts error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '批量添加概念失败' });
+      console.error("Add all concepts error:", error);
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "批量添加概念失败",
+      });
     } finally {
       setLoading(false);
     }
@@ -232,37 +265,40 @@ export const useTutorOperations = ({
   const handleSuggestNextTopics = async () => {
     if (!selectedNode) return;
     setLoading(true);
-    
+
     try {
-      const existingNodes = nodes.map(n => n.title);
-      
+      const existingNodes = nodes.map((n) => n.title);
+
       const result = await api.ai.suggestNextTopic({
         node_title: selectedNode.title,
         node_content: selectedNode.content,
         existing_nodes: existingNodes,
         user_progress: {
-          mastered_count: nodes.filter(n => n.level === 'root').length,
+          mastered_count: nodes.filter((n) => n.level === "root").length,
           due_count: 0,
-          current_level: 'intermediate'
-        }
+          current_level: "intermediate",
+        },
       });
 
       setSuggestedNextTopics(result.suggestions || []);
-      
+
       if (result.suggestions && result.suggestions.length > 0) {
-        frontendEventBus.publish("message_show", { 
-          type: 'success', 
-          content: `生成了 ${result.suggestions.length} 个学习建议` 
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: `生成了 ${result.suggestions.length} 个学习建议`,
         });
       } else {
-        frontendEventBus.publish("message_show", { 
-          type: 'info', 
-          content: '暂无学习建议' 
+        frontendEventBus.publish("message_show", {
+          type: "info",
+          content: "暂无学习建议",
         });
       }
     } catch (error: any) {
-      console.error('Suggest next topics error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '生成学习建议失败' });
+      console.error("Suggest next topics error:", error);
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "生成学习建议失败",
+      });
     } finally {
       setLoading(false);
     }
@@ -271,24 +307,24 @@ export const useTutorOperations = ({
   const handleSwitchTutorMode = (mode: TutorMode) => {
     setTutorMode(mode);
     setIsTutorMode(true);
-    frontendEventBus.publish("message_show", { 
-      type: 'info', 
-      content: `已切换到${mode === 'free' ? '自由对话' : '引导学习'}模式` 
+    frontendEventBus.publish("message_show", {
+      type: "info",
+      content: `已切换到${mode === "free" ? "自由对话" : "引导学习"}模式`,
     });
   };
 
   const handleToggleTutorMode = () => {
     setIsTutorMode(!isTutorMode);
     if (!isTutorMode) {
-      setTutorMode('free');
-      frontendEventBus.publish("message_show", { 
-        type: 'info', 
-        content: '助教模式已开启' 
+      setTutorMode("free");
+      frontendEventBus.publish("message_show", {
+        type: "info",
+        content: "助教模式已开启",
       });
     } else {
-      frontendEventBus.publish("message_show", { 
-        type: 'info', 
-        content: '助教模式已关闭' 
+      frontendEventBus.publish("message_show", {
+        type: "info",
+        content: "助教模式已关闭",
       });
     }
   };
@@ -300,6 +336,6 @@ export const useTutorOperations = ({
     handleAddAllConcepts,
     handleSuggestNextTopics,
     handleSwitchTutorMode,
-    handleToggleTutorMode
+    handleToggleTutorMode,
   };
 };

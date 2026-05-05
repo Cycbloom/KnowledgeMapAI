@@ -72,11 +72,16 @@ interface ConceptExtractionResponse {
 }
 
 const CONCEPT_TYPE_DEFINITIONS: Record<ConceptType, string> = {
-  method: "方法 (method): 用于解决问题或达成目标的系统性步骤、流程或策略。例如：实验方法、分析方法、设计方法。",
-  mechanism: "机制 (mechanism): 系统或现象运作的内在原理、规律或过程。例如：作用机制、调节机制、反馈机制。",
-  operation: "操作 (operation): 具体的执行动作、操作步骤或技术手段。例如：计算操作、操作流程、操作规范。",
-  concept: "概念 (concept): 抽象的思维对象、理论概念或定义。例如：核心概念、理论概念、基本概念。",
-  technology: "技术 (technology): 具体的技术工具、技术方案或技术体系。例如：核心技术、新兴技术、技术框架。",
+  method:
+    "方法 (method): 用于解决问题或达成目标的系统性步骤、流程或策略。例如：实验方法、分析方法、设计方法。",
+  mechanism:
+    "机制 (mechanism): 系统或现象运作的内在原理、规律或过程。例如：作用机制、调节机制、反馈机制。",
+  operation:
+    "操作 (operation): 具体的执行动作、操作步骤或技术手段。例如：计算操作、操作流程、操作规范。",
+  concept:
+    "概念 (concept): 抽象的思维对象、理论概念或定义。例如：核心概念、理论概念、基本概念。",
+  technology:
+    "技术 (technology): 具体的技术工具、技术方案或技术体系。例如：核心技术、新兴技术、技术框架。",
   tool: "工具 (tool): 用于辅助研究、分析或实施的软件、硬件或平台。例如：分析工具、开发工具、研究工具。",
 };
 
@@ -208,7 +213,8 @@ function parseTextContent(content: string): ParsedContent {
         content: "",
       };
     } else if (currentSection) {
-      currentSection.content += (currentSection.content ? "\n" : "") + trimmedLine;
+      currentSection.content +=
+        (currentSection.content ? "\n" : "") + trimmedLine;
     } else if (!result.title && trimmedLine.length > 0) {
       result.title = trimmedLine;
     }
@@ -392,24 +398,31 @@ export class ConceptExtractorService {
             "concept_extraction",
             {
               maxConcepts: options.maxConcepts || 10,
-              extractTypes: (options.extractTypes || [
-                "method",
-                "mechanism",
-                "operation",
-                "concept",
-                "technology",
-                "tool",
-              ]).join(", "),
+              extractTypes: (
+                options.extractTypes || [
+                  "method",
+                  "mechanism",
+                  "operation",
+                  "concept",
+                  "technology",
+                  "tool",
+                ]
+              ).join(", "),
             },
             options.userId,
             options.graphId,
             options.language,
           );
 
-          const userPrompt = buildExtractionPrompt(content, parsedContent, options);
+          const userPrompt = buildExtractionPrompt(
+            content,
+            parsedContent,
+            options,
+          );
           const schema = buildExtractionSchema();
 
-          const finalSystemPrompt = systemPrompt || `${userPrompt}\n\n${schema}`;
+          const finalSystemPrompt =
+            systemPrompt || `${userPrompt}\n\n${schema}`;
 
           const completion = await withTimeoutAndRetry(
             () =>
@@ -626,7 +639,9 @@ ${typeDescriptions}
           model,
         },
         async () => {
-          const moduleDescriptions = Object.entries(BACKBONE_MODULE_DESCRIPTIONS)
+          const moduleDescriptions = Object.entries(
+            BACKBONE_MODULE_DESCRIPTIONS,
+          )
             .map(([_key, desc]) => `- ${desc}`)
             .join("\n");
 
@@ -766,7 +781,10 @@ ${contextInfo}
       }>(rawContent, "Find Similar Concepts");
 
       return (parsed.similarities || [])
-        .filter((s) => s.similarity >= threshold && s.index <= existingConcepts.length)
+        .filter(
+          (s) =>
+            s.similarity >= threshold && s.index <= existingConcepts.length,
+        )
         .map((s) => ({
           concept: existingConcepts[s.index - 1],
           similarity: s.similarity,

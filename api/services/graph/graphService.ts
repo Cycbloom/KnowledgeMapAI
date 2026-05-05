@@ -19,7 +19,11 @@ import { getSupabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
-import type { GraphCreatedPayload, GraphUpdatedPayload, GraphDeletedPayload } from "@shared/types/events";
+import type {
+  GraphCreatedPayload,
+  GraphUpdatedPayload,
+  GraphDeletedPayload,
+} from "@shared/types/events";
 
 interface GraphWithCount {
   id: string;
@@ -80,7 +84,7 @@ export class GraphService {
           knowledge_points (
             properties
           )
-        `
+        `,
         )
         .in("graph_id", graphIds)
         .is("deleted_at", null),
@@ -99,7 +103,7 @@ export class GraphService {
           tagsMap.set(gn.graph_id, new Set());
         }
         tags.forEach((tag: string) => tagsMap.get(gn.graph_id)!.add(tag));
-      }
+      },
     );
 
     return (graphs?.map((g: Record<string, unknown>) => ({
@@ -170,7 +174,7 @@ export class GraphService {
   async getGraph(
     supabase: SupabaseClient,
     graphId: string,
-    _userId: string | null
+    _userId: string | null,
   ) {
     const { data, error } = await supabase
       .from("knowledge_graphs")
@@ -190,7 +194,7 @@ export class GraphService {
   async updateLastUsedAt(
     supabase: SupabaseClient,
     graphId: string,
-    userId: string
+    userId: string,
   ) {
     await supabase
       .from("knowledge_graphs")
@@ -204,14 +208,14 @@ export class GraphService {
     userId: string,
     title: string,
     description?: string,
-    options?: { skipDuplicateCheck?: boolean; templateType?: string }
+    options?: { skipDuplicateCheck?: boolean; templateType?: string },
   ) {
     if (!options?.skipDuplicateCheck) {
       const duplicateCheck = await checkDuplicateGraphTopic(
         supabase,
         userId,
         title,
-        { threshold: 0.85 }
+        { threshold: 0.85 },
       );
       if (duplicateCheck.isDuplicate) {
         const similarGraph = duplicateCheck.similarGraphs[0];
@@ -220,7 +224,7 @@ export class GraphService {
             similarGraph.similarity * 100
           ).toFixed(1)}%`,
           400,
-          ErrorCodes.DUPLICATE_TOPIC
+          ErrorCodes.DUPLICATE_TOPIC,
         );
       }
     }
@@ -263,7 +267,12 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
-    await appEventBus.publish("graph_created", { graphId: data.id, title, userId } as GraphCreatedPayload, userId, "graph_service");
+    await appEventBus.publish(
+      "graph_created",
+      { graphId: data.id, title, userId } as GraphCreatedPayload,
+      userId,
+      "graph_service",
+    );
 
     return data;
   }
@@ -272,7 +281,7 @@ export class GraphService {
     supabase: SupabaseClient,
     userId: string,
     topic: string,
-    excludeGraphId?: string
+    excludeGraphId?: string,
   ): Promise<GraphTopicCheckResult> {
     return checkDuplicateGraphTopic(supabase, userId, topic, {
       excludeGraphId,
@@ -282,7 +291,7 @@ export class GraphService {
   async updateGraphEmbedding(
     supabase: SupabaseClient,
     graphId: string,
-    title: string
+    title: string,
   ) {
     try {
       const embedding = await aiService.generateEmbedding(title);
@@ -301,14 +310,14 @@ export class GraphService {
     supabase: SupabaseClient,
     graphId: string,
     userId: string,
-    updates: { 
-      title?: string; 
-      description?: string; 
+    updates: {
+      title?: string;
+      description?: string;
       is_public?: boolean;
       reference_books?: unknown;
       external_links?: unknown;
       learning_guide?: string;
-    }
+    },
   ) {
     if (updates.title) {
       const duplicateCheck = await checkDuplicateGraphTopic(
@@ -317,7 +326,7 @@ export class GraphService {
         updates.title,
         {
           excludeGraphId: graphId,
-        }
+        },
       );
       if (duplicateCheck.isDuplicate) {
         const similarGraph = duplicateCheck.similarGraphs[0];
@@ -326,7 +335,7 @@ export class GraphService {
             similarGraph.similarity * 100
           ).toFixed(1)}%`,
           400,
-          ErrorCodes.DUPLICATE_TOPIC
+          ErrorCodes.DUPLICATE_TOPIC,
         );
       }
     }
@@ -360,7 +369,12 @@ export class GraphService {
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     await cacheService.del(CacheKeys.GRAPH(graphId));
 
-    await appEventBus.publish("graph_updated", { graphId, userId, changes: updates } as GraphUpdatedPayload, userId, "graph_service");
+    await appEventBus.publish(
+      "graph_updated",
+      { graphId, userId, changes: updates } as GraphUpdatedPayload,
+      userId,
+      "graph_service",
+    );
 
     return data;
   }
@@ -369,7 +383,7 @@ export class GraphService {
     supabase: SupabaseClient,
     graphId: string,
     userId: string,
-    isFavorite: boolean
+    isFavorite: boolean,
   ) {
     const { data, error } = await supabase
       .from("knowledge_graphs")
@@ -386,7 +400,12 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
-    await appEventBus.publish("graph_updated", { graphId, userId } as GraphUpdatedPayload, userId, "graph_service");
+    await appEventBus.publish(
+      "graph_updated",
+      { graphId, userId } as GraphUpdatedPayload,
+      userId,
+      "graph_service",
+    );
 
     return data;
   }
@@ -400,10 +419,19 @@ export class GraphService {
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     await cacheService.del(CacheKeys.GRAPH(graphId));
 
-    await appEventBus.publish("graph_deleted", { graphId, userId } as GraphDeletedPayload, userId, "graph_service");
+    await appEventBus.publish(
+      "graph_deleted",
+      { graphId, userId } as GraphDeletedPayload,
+      userId,
+      "graph_service",
+    );
   }
 
-  async deleteGraphs(supabase: SupabaseClient, graphIds: string[], userId: string) {
+  async deleteGraphs(
+    supabase: SupabaseClient,
+    graphIds: string[],
+    userId: string,
+  ) {
     const { data, error } = await supabase
       .from("knowledge_graphs")
       .update({ deleted_at: new Date().toISOString() })
@@ -415,8 +443,13 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
-    for (const id of (data?.map((g: { id: string }) => g.id) || [])) {
-      await appEventBus.publish("graph_deleted", { graphId: id, userId } as GraphDeletedPayload, userId, "graph_service");
+    for (const id of data?.map((g: { id: string }) => g.id) || []) {
+      await appEventBus.publish(
+        "graph_deleted",
+        { graphId: id, userId } as GraphDeletedPayload,
+        userId,
+        "graph_service",
+      );
     }
 
     return { count: data?.length || 0 };
@@ -425,7 +458,7 @@ export class GraphService {
   async restoreGraph(
     supabase: SupabaseClient,
     graphId: string,
-    userId: string
+    userId: string,
   ) {
     const { error } = await supabase
       .from("knowledge_graphs")
@@ -437,13 +470,18 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
-    await appEventBus.publish("graph_updated", { graphId, userId } as GraphUpdatedPayload, userId, "graph_service");
+    await appEventBus.publish(
+      "graph_updated",
+      { graphId, userId } as GraphUpdatedPayload,
+      userId,
+      "graph_service",
+    );
   }
 
   async permanentDeleteGraph(
     supabase: SupabaseClient,
     graphId: string,
-    userId: string
+    userId: string,
   ) {
     const { error } = await supabase
       .from("knowledge_graphs")
@@ -455,13 +493,18 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
-    await appEventBus.publish("graph_deleted", { graphId, userId } as GraphDeletedPayload, userId, "graph_service");
+    await appEventBus.publish(
+      "graph_deleted",
+      { graphId, userId } as GraphDeletedPayload,
+      userId,
+      "graph_service",
+    );
   }
 
   async restoreGraphs(
     supabase: SupabaseClient,
     graphIds: string[],
-    userId: string
+    userId: string,
   ) {
     const { data, error } = await supabase
       .from("knowledge_graphs")
@@ -474,8 +517,13 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
-    for (const id of (data?.map((g: { id: string }) => g.id) || [])) {
-      await appEventBus.publish("graph_updated", { graphId: id, userId } as GraphUpdatedPayload, userId, "graph_service");
+    for (const id of data?.map((g: { id: string }) => g.id) || []) {
+      await appEventBus.publish(
+        "graph_updated",
+        { graphId: id, userId } as GraphUpdatedPayload,
+        userId,
+        "graph_service",
+      );
     }
 
     return { count: data?.length || 0 };
@@ -484,7 +532,7 @@ export class GraphService {
   async permanentDeleteGraphs(
     supabase: SupabaseClient,
     graphIds: string[],
-    userId: string
+    userId: string,
   ) {
     const { data, error } = await supabase
       .from("knowledge_graphs")
@@ -497,8 +545,13 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
-    for (const id of (data?.map((g: { id: string }) => g.id) || [])) {
-      await appEventBus.publish("graph_deleted", { graphId: id, userId } as GraphDeletedPayload, userId, "graph_service");
+    for (const id of data?.map((g: { id: string }) => g.id) || []) {
+      await appEventBus.publish(
+        "graph_deleted",
+        { graphId: id, userId } as GraphDeletedPayload,
+        userId,
+        "graph_service",
+      );
     }
 
     return { count: data?.length || 0 };
@@ -507,9 +560,11 @@ export class GraphService {
   async getGraphNodes(
     supabase: SupabaseClient,
     userId: string | null,
-    graphId: string
+    graphId: string,
   ) {
-    const cacheKey = userId ? CacheKeys.GRAPH_NODES(userId, graphId) : `graph_nodes_${graphId}`;
+    const cacheKey = userId
+      ? CacheKeys.GRAPH_NODES(userId, graphId)
+      : `graph_nodes_${graphId}`;
 
     return cacheService.getOrSet(cacheKey, async () => {
       const { data: graphNodes, error: gnError } = await supabase
@@ -563,12 +618,12 @@ export class GraphService {
   async getGraphNodeStatus(
     supabase: SupabaseClient,
     userId: string,
-    graphId: string
+    graphId: string,
   ) {
     const { data: cards, error } = await supabase
       .from("study_cards")
       .select(
-        "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, review_count"
+        "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, review_count",
       )
       .eq("user_id", userId)
       .eq("graph_id", graphId);
@@ -607,7 +662,7 @@ export class GraphService {
   async getLearningPath(
     supabase: SupabaseClient,
     _userId: string | null,
-    graphId: string
+    graphId: string,
   ) {
     const { data, error } = await supabase
       .from("learning_paths")
@@ -622,27 +677,29 @@ export class GraphService {
   async analyzeGraph(
     supabase: SupabaseClient,
     userId: string,
-    graphId: string
+    graphId: string,
   ) {
     const { nodes, edges } = await this.getGraphNodes(
       supabase,
       userId,
-      graphId
+      graphId,
     );
 
-    const validNodes = nodes.filter((n): n is NonNullable<typeof n> => n !== null);
+    const validNodes = nodes.filter(
+      (n): n is NonNullable<typeof n> => n !== null,
+    );
     const nodeCount = validNodes.length;
     const edgeCount = edges.length;
     const avgConnections = nodeCount > 0 ? (edgeCount * 2) / nodeCount : 0;
 
-    const levels = validNodes.reduce(
-      (acc: Record<number, number>, node) => {
-        const level = typeof node.level === 'string' ? parseInt(node.level, 10) || 0 : (node.level as number) || 0;
-        acc[level] = (acc[level] || 0) + 1;
-        return acc;
-      },
-      {}
-    );
+    const levels = validNodes.reduce((acc: Record<number, number>, node) => {
+      const level =
+        typeof node.level === "string"
+          ? parseInt(node.level, 10) || 0
+          : (node.level as number) || 0;
+      acc[level] = (acc[level] || 0) + 1;
+      return acc;
+    }, {});
 
     return {
       nodeCount,
@@ -658,21 +715,21 @@ export class GraphService {
     supabase: SupabaseClient,
     userId: string,
     graphId: string,
-    maxSuggestions: number
+    maxSuggestions: number,
   ) {
     const { nodes, edges } = await this.getGraphNodes(
       supabase,
       userId,
-      graphId
+      graphId,
     );
 
     const connectedPairs = new Set<string>();
     edges.forEach((edge: Record<string, unknown>) => {
       connectedPairs.add(
-        `${edge.source_knowledge_point_id}-${edge.target_knowledge_point_id}`
+        `${edge.source_knowledge_point_id}-${edge.target_knowledge_point_id}`,
       );
       connectedPairs.add(
-        `${edge.target_knowledge_point_id}-${edge.source_knowledge_point_id}`
+        `${edge.target_knowledge_point_id}-${edge.source_knowledge_point_id}`,
       );
     });
 
@@ -682,8 +739,10 @@ export class GraphService {
       score: number;
     }> = [];
 
-    const validNodes = nodes.filter((n): n is NonNullable<typeof n> => n !== null);
-    
+    const validNodes = nodes.filter(
+      (n): n is NonNullable<typeof n> => n !== null,
+    );
+
     for (
       let i = 0;
       i < validNodes.length && suggestions.length < maxSuggestions;
@@ -720,7 +779,7 @@ export class GraphService {
   async getCombinedView(
     supabase: SupabaseClient,
     userId: string,
-    graphIds: string[]
+    graphIds: string[],
   ) {
     const { data: graphs, error: graphsError } = await supabase
       .from("knowledge_graphs")
@@ -756,7 +815,7 @@ export class GraphService {
           visibility,
           owner_id
         )
-      `
+      `,
       )
       .in("graph_id", graphIds)
       .is("deleted_at", null);
@@ -768,7 +827,7 @@ export class GraphService {
     const { data: edges, error: edgesError } = await supabase
       .from("edges")
       .select(
-        "id, graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight"
+        "id, graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight",
       )
       .in("graph_id", graphIds)
       .is("deleted_at", null);
@@ -814,7 +873,9 @@ export class GraphService {
 
 export const graphService = new GraphService();
 
-export async function getUserAccessibleGraphs(userId: string): Promise<GraphWithCollaborators[]> {
+export async function getUserAccessibleGraphs(
+  userId: string,
+): Promise<GraphWithCollaborators[]> {
   const { data: ownedGraphs, error: ownedError } = await getSupabaseAdmin()
     .from("knowledge_graphs")
     .select("*")
@@ -826,16 +887,17 @@ export async function getUserAccessibleGraphs(userId: string): Promise<GraphWith
     throw new Error(ownedError.message);
   }
 
-  const { data: collaboratedGraphs, error: collabError } = await getSupabaseAdmin()
-    .from("graph_collaborators")
-    .select(
-      `
+  const { data: collaboratedGraphs, error: collabError } =
+    await getSupabaseAdmin()
+      .from("graph_collaborators")
+      .select(
+        `
       role,
       graph:knowledge_graphs (*)
-    `
-    )
-    .eq("user_id", userId)
-    .not("accepted_at", "is", null);
+    `,
+      )
+      .eq("user_id", userId)
+      .not("accepted_at", "is", null);
 
   if (collabError) {
     throw new Error(collabError.message);
@@ -861,7 +923,7 @@ export async function getUserAccessibleGraphs(userId: string): Promise<GraphWith
 
   const allGraphs = [...ownedResults, ...collabResults];
   const uniqueGraphs = allGraphs.filter(
-    (graph, index, self) => index === self.findIndex((g) => g.id === graph.id)
+    (graph, index, self) => index === self.findIndex((g) => g.id === graph.id),
   );
 
   return uniqueGraphs as GraphWithCollaborators[];
@@ -869,7 +931,7 @@ export async function getUserAccessibleGraphs(userId: string): Promise<GraphWith
 
 export async function getGraphWithUserRole(
   graphId: string,
-  userId: string
+  userId: string,
 ): Promise<{ graph: GraphWithCollaborators | null; error?: string }> {
   const { data: graph, error } = await getSupabaseAdmin()
     .from("knowledge_graphs")
@@ -912,7 +974,7 @@ export async function getGraphWithUserRole(
 export async function checkGraphAccess(
   graphId: string,
   userId: string,
-  requiredRole: "viewer" | "editor" | "owner" = "viewer"
+  requiredRole: "viewer" | "editor" | "owner" = "viewer",
 ): Promise<{ hasAccess: boolean; role?: CollaboratorRole; error?: string }> {
   const { data: graph, error } = await getSupabaseAdmin()
     .from("knowledge_graphs")

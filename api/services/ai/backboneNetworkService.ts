@@ -271,10 +271,23 @@ function validateBackboneNode(
     return null;
   }
 
+  let description = n.description as string | undefined;
+  if (!description || !description.trim()) {
+    const moduleConfig = BACKBONE_MODULE_CONFIGS[module];
+    if (level === "root") {
+      description = `${n.title}：${moduleConfig.description}`;
+    } else {
+      description = `${n.title}：${moduleConfig.label}中的核心概念`;
+    }
+    logger.info(
+      `[Backbone Network] Generated default description for node "${n.title}": ${description}`,
+    );
+  }
+
   return {
     id: n.id as string,
     title: n.title as string,
-    description: n.description as string | undefined,
+    description,
     level,
     module,
     parentId: n.parentId as string | undefined,
@@ -776,7 +789,10 @@ ${moduleDescriptions}
       prompt += `\n\n请为这个研究主题生成包含以下模块的骨干网络：${moduleLabels}`;
     }
 
-    prompt += `\n\n注意：只生成 root 和 core 级别的节点，不要生成更细粒度的节点。`;
+    prompt += `\n\n注意：`;
+    prompt += `\n1. 只生成 root 和 core 级别的节点，不要生成更细粒度的节点`;
+    prompt += `\n2. **每个节点都必须有 description 字段**，描述应该针对具体研究主题，不能使用通用描述`;
+    prompt += `\n3. 根节点的描述应该概括该模块或主题的核心内容`;
     prompt += `\n\n请以有效的 json 格式返回结果。`;
 
     return prompt;

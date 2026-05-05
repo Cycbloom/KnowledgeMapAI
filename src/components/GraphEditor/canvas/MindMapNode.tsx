@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import type {
   LayoutNode,
   NodeLevel,
@@ -139,10 +139,13 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     [node.tags, node.properties],
   );
   const needsRefinement = node.properties?.needsRefinement ?? false;
-  const backboneModule = node.properties?.backboneModule as BackboneModule | undefined;
-  const sourceCount = node.properties?.sourceCount ?? (node.properties?.sources?.length ?? 0);
+  const backboneModule = node.properties?.backboneModule as
+    | BackboneModule
+    | undefined;
+  const sourceCount =
+    node.properties?.sourceCount ?? node.properties?.sources?.length ?? 0;
   const titleInfo = useMemo(
-    () => truncateText(node.title || t('graphEditor.mindMap.unnamed')),
+    () => truncateText(node.title || t("graphEditor.mindMap.unnamed")),
     [node.title, t],
   );
 
@@ -582,7 +585,11 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
                 <circle
                   r={styleConfig.baseRadius + 4}
                   fill="none"
-                  stroke={backboneModule ? BACKBONE_MODULE_COLORS[backboneModule] : "#f59e0b"}
+                  stroke={
+                    backboneModule
+                      ? BACKBONE_MODULE_COLORS[backboneModule]
+                      : "#f59e0b"
+                  }
                   strokeWidth={2}
                   strokeDasharray="6 3"
                   opacity={0.8}
@@ -705,14 +712,20 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       )}
 
       {textVisibility.visible && needsRefinement && (
-        <g transform={`translate(0, ${tagOffset + (tags && tags.length > 0 ? scaledFontSize * 1.2 : 0)})`}>
+        <g
+          transform={`translate(0, ${tagOffset + (tags && tags.length > 0 ? scaledFontSize * 1.2 : 0)})`}
+        >
           <rect
             x={-30}
             y={-8}
             width={60}
             height={16}
             rx={8}
-            fill={backboneModule ? BACKBONE_MODULE_COLORS[backboneModule] : "#f59e0b"}
+            fill={
+              backboneModule
+                ? BACKBONE_MODULE_COLORS[backboneModule]
+                : "#f59e0b"
+            }
             opacity={0.9}
           />
           <text
@@ -723,7 +736,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
             fill="white"
             style={{ pointerEvents: "none" }}
           >
-            {t('graphEditor.node.needsRefinement', '待完善')}
+            {t("graphEditor.node.needsRefinement", "待完善")}
           </text>
         </g>
       )}

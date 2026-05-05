@@ -1,5 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginAsTestUser } from './utils/auth';
+import { test, expect, Page } from "@playwright/test";
+import { loginAsTestUser } from "./utils/auth";
 
 /**
  * 文献概念提取功能 E2E 测试
@@ -46,26 +46,26 @@ const SAMPLE_TEXT_CONTENT = `
 为自然语言处理领域的发展提供了新的思路。
 `;
 
-const SAMPLE_URL = 'https://arxiv.org/abs/2301.07041';
+const SAMPLE_URL = "https://arxiv.org/abs/2301.07041";
 
 // 骨干模块定义
 const BACKBONE_MODULES = [
-  'research_background',
-  'literature_review',
-  'research_methods',
-  'core_concepts',
-  'application_domains',
-  'future_directions',
+  "research_background",
+  "literature_review",
+  "research_methods",
+  "core_concepts",
+  "application_domains",
+  "future_directions",
 ] as const;
 
 // 概念类型定义
 const CONCEPT_TYPES = [
-  'method',
-  'mechanism',
-  'operation',
-  'concept',
-  'technology',
-  'tool',
+  "method",
+  "mechanism",
+  "operation",
+  "concept",
+  "technology",
+  "tool",
 ] as const;
 
 /**
@@ -76,15 +76,15 @@ class LiteratureExtractPage {
 
   // 选择器
   private get panel() {
-    return this.page.locator('.literature-extract-panel');
+    return this.page.locator(".literature-extract-panel");
   }
 
   private get inputModeSelector() {
-    return this.panel.locator('button').filter({ hasText: /文本|文件|URL/ });
+    return this.panel.locator("button").filter({ hasText: /文本|文件|URL/ });
   }
 
   private get textInput() {
-    return this.panel.locator('textarea');
+    return this.panel.locator("textarea");
   }
 
   private get urlInput() {
@@ -96,23 +96,25 @@ class LiteratureExtractPage {
   }
 
   private get fileDropzone() {
-    return this.panel.locator('.border-dashed');
+    return this.panel.locator(".border-dashed");
   }
 
   private get extractButton() {
-    return this.panel.locator('button').filter({ hasText: /开始提取|处理中/ });
+    return this.panel.locator("button").filter({ hasText: /开始提取|处理中/ });
   }
 
   private get progressBar() {
-    return this.panel.locator('.bg-gray-200.rounded-full.h-2');
+    return this.panel.locator(".bg-gray-200.rounded-full.h-2");
   }
 
   private get advancedOptionsToggle() {
-    return this.panel.locator('button').filter({ hasText: /高级选项/ });
+    return this.panel.locator("button").filter({ hasText: /高级选项/ });
   }
 
   private get conceptTypeButtons() {
-    return this.panel.locator('button').filter({ has: this.page.locator('text=/方法|机制|操作|概念|技术|工具/') });
+    return this.panel.locator("button").filter({
+      has: this.page.locator("text=/方法|机制|操作|概念|技术|工具/"),
+    });
   }
 
   private get maxConceptsSlider() {
@@ -124,21 +126,26 @@ class LiteratureExtractPage {
   }
 
   private get resultPanel() {
-    return this.panel.locator('.bg-green-50, .bg-green-900\\/20');
+    return this.panel.locator(".bg-green-50, .bg-green-900\\/20");
   }
 
   // 操作方法
   async openPanel() {
     // 尝试通过多种方式打开文献提取面板
-    const extractButton = this.page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+    const extractButton = this.page
+      .locator("button")
+      .filter({ hasText: /文献提取|提取概念/ })
+      .first();
     if (await extractButton.isVisible()) {
       await extractButton.click();
     }
     await expect(this.panel).toBeVisible({ timeout: 10000 });
   }
 
-  async selectInputMode(mode: 'text' | 'file' | 'url') {
-    const modeButton = this.inputModeSelector.filter({ hasText: mode === 'text' ? '文本' : mode === 'file' ? '文件' : 'URL' });
+  async selectInputMode(mode: "text" | "file" | "url") {
+    const modeButton = this.inputModeSelector.filter({
+      hasText: mode === "text" ? "文本" : mode === "file" ? "文件" : "URL",
+    });
     await modeButton.click();
   }
 
@@ -176,7 +183,9 @@ class LiteratureExtractPage {
   }
 
   async closePanel() {
-    const closeButton = this.panel.locator('button').filter({ has: this.page.locator('svg.lucide-x') });
+    const closeButton = this.panel
+      .locator("button")
+      .filter({ has: this.page.locator("svg.lucide-x") });
     if (await closeButton.isVisible()) {
       await closeButton.click();
     }
@@ -190,7 +199,7 @@ class ConceptPreviewPage {
   constructor(private page: Page) {}
 
   private get modal() {
-    return this.page.locator('.fixed.inset-0.bg-black\\/50');
+    return this.page.locator(".fixed.inset-0.bg-black\\/50");
   }
 
   private get conceptCards() {
@@ -198,19 +207,19 @@ class ConceptPreviewPage {
   }
 
   private get selectAllButton() {
-    return this.modal.locator('button').filter({ hasText: '全选' });
+    return this.modal.locator("button").filter({ hasText: "全选" });
   }
 
   private get deselectAllButton() {
-    return this.modal.locator('button').filter({ hasText: '取消全选' });
+    return this.modal.locator("button").filter({ hasText: "取消全选" });
   }
 
   private get confirmButton() {
-    return this.modal.locator('button').filter({ hasText: /确认添加/ });
+    return this.modal.locator("button").filter({ hasText: /确认添加/ });
   }
 
   private get cancelButton() {
-    return this.modal.locator('button').filter({ hasText: '取消' });
+    return this.modal.locator("button").filter({ hasText: "取消" });
   }
 
   async waitForOpen() {
@@ -223,19 +232,21 @@ class ConceptPreviewPage {
 
   async selectConcept(index: number) {
     const card = this.conceptCards.nth(index);
-    const checkbox = card.locator('button').first();
+    const checkbox = card.locator("button").first();
     await checkbox.click();
   }
 
   async editConcept(index: number) {
     const card = this.conceptCards.nth(index);
-    const editButton = card.locator('button').filter({ has: this.page.locator('svg.lucide-edit-3') });
+    const editButton = card
+      .locator("button")
+      .filter({ has: this.page.locator("svg.lucide-edit-3") });
     await editButton.click();
   }
 
   async changeModule(index: number, module: string) {
     const card = this.conceptCards.nth(index);
-    const moduleSelect = card.locator('select');
+    const moduleSelect = card.locator("select");
     await moduleSelect.selectOption(module);
   }
 
@@ -256,7 +267,9 @@ class ConceptPreviewPage {
   }
 
   async close() {
-    const closeButton = this.modal.locator('button').filter({ has: this.page.locator('svg.lucide-x') });
+    const closeButton = this.modal
+      .locator("button")
+      .filter({ has: this.page.locator("svg.lucide-x") });
     await closeButton.click();
   }
 }
@@ -268,19 +281,25 @@ class BackboneNetworkPage {
   constructor(private page: Page) {}
 
   private get backboneContainer() {
-    return this.page.locator('[class*="backbone"], [data-testid="backbone-network"]');
+    return this.page.locator(
+      '[class*="backbone"], [data-testid="backbone-network"]',
+    );
   }
 
   private get moduleNodes() {
-    return this.page.locator('[class*="backbone-module"], [data-testid="backbone-module"]');
+    return this.page.locator(
+      '[class*="backbone-module"], [data-testid="backbone-module"]',
+    );
   }
 
   async waitForBackboneVisible() {
-    await expect(this.backboneContainer.or(this.moduleNodes.first())).toBeVisible({ timeout: 10000 });
+    await expect(
+      this.backboneContainer.or(this.moduleNodes.first()),
+    ).toBeVisible({ timeout: 10000 });
   }
 
   async getModuleNode(module: string) {
-    return this.moduleNodes.filter({ hasText: new RegExp(module, 'i') });
+    return this.moduleNodes.filter({ hasText: new RegExp(module, "i") });
   }
 
   async clickModule(module: string) {
@@ -290,48 +309,52 @@ class BackboneNetworkPage {
 
   async getConceptsInModule(module: string) {
     const node = await this.getModuleNode(module);
-    return node.locator('[class*="concept-item"], [data-testid="concept-node"]');
+    return node.locator(
+      '[class*="concept-item"], [data-testid="concept-node"]',
+    );
   }
 }
 
-test.describe('文献概念提取功能测试', () => {
+test.describe("文献概念提取功能测试", () => {
   let extractPage: LiteratureExtractPage;
   let previewPage: ConceptPreviewPage;
   let backbonePage: BackboneNetworkPage;
 
   test.beforeEach(async ({ page }) => {
     await loginAsTestUser(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState("networkidle");
 
     extractPage = new LiteratureExtractPage(page);
     previewPage = new ConceptPreviewPage(page);
     backbonePage = new BackboneNetworkPage(page);
   });
 
-  test.describe('骨干网络生成流程', () => {
-    test('应该显示骨干网络模块状态', async ({ page }) => {
+  test.describe("骨干网络生成流程", () => {
+    test("应该显示骨干网络模块状态", async ({ page }) => {
       // 导航到图谱页面
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
       // 检查骨干网络模块是否可见
-      const moduleStatus = page.locator('[class*="backbone-module"], [data-testid="backbone-module-status"]');
+      const moduleStatus = page.locator(
+        '[class*="backbone-module"], [data-testid="backbone-module-status"]',
+      );
       await expect(moduleStatus.first()).toBeVisible({ timeout: 10000 });
     });
 
-    test('应该显示六个骨干模块', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示六个骨干模块", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
       // 检查所有骨干模块
       for (const module of BACKBONE_MODULES) {
         const moduleLabels: Record<string, string> = {
-          research_background: '研究背景',
-          literature_review: '文献综述',
-          research_methods: '研究方法',
-          core_concepts: '核心概念',
-          application_domains: '应用领域',
-          future_directions: '未来方向',
+          research_background: "研究背景",
+          literature_review: "文献综述",
+          research_methods: "研究方法",
+          core_concepts: "核心概念",
+          application_domains: "应用领域",
+          future_directions: "未来方向",
         };
 
         const moduleElement = page.locator(`text=${moduleLabels[module]}`);
@@ -339,45 +362,53 @@ test.describe('文献概念提取功能测试', () => {
       }
     });
 
-    test('应该显示模块完善状态', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示模块完善状态", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
       // 检查模块状态标签
-      const statusLabels = page.locator('text=/已完善|待完善/');
+      const statusLabels = page.locator("text=/已完善|待完善/");
       const count = await statusLabels.count();
       expect(count).toBeGreaterThan(0);
     });
   });
 
-  test.describe('文本输入提取流程', () => {
-    test('应该打开文献提取面板', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+  test.describe("文本输入提取流程", () => {
+    test("应该打开文献提取面板", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
       // 查找并点击文献提取按钮
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
-        await expect(page.locator('.literature-extract-panel')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator(".literature-extract-panel")).toBeVisible({
+          timeout: 10000,
+        });
       }
     });
 
-    test('应该支持文本输入模式', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持文本输入模式", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
       // 打开提取面板
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 检查文本输入区域
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await expect(textArea).toBeVisible();
 
       // 填充测试文本
@@ -385,95 +416,119 @@ test.describe('文献概念提取功能测试', () => {
       await expect(textArea).toHaveValue(SAMPLE_TEXT_CONTENT);
     });
 
-    test('应该验证文本输入最小长度', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该验证文本输入最小长度", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 输入过短的文本
-      const textArea = panel.locator('textarea');
-      await textArea.fill('短文本');
+      const textArea = panel.locator("textarea");
+      await textArea.fill("短文本");
 
       // 点击提取按钮
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 应该显示警告消息
-      await expect(page.locator('text=/字以上|至少|过短/')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator("text=/字以上|至少|过短/")).toBeVisible({
+        timeout: 5000,
+      });
     });
 
-    test('应该显示文本字符计数', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示文本字符计数", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
       // 检查字符计数显示
-      const charCount = panel.locator('text=/\\d+.*字|字符/');
+      const charCount = panel.locator("text=/\\d+.*字|字符/");
       await expect(charCount).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该执行文本提取并显示进度', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该执行文本提取并显示进度", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 填充有效文本
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
       // 点击提取
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 检查进度显示
-      const progressBar = panel.locator('.bg-gray-200.rounded-full.h-2, [role="progressbar"]');
+      const progressBar = panel.locator(
+        '.bg-gray-200.rounded-full.h-2, [role="progressbar"]',
+      );
       await expect(progressBar).toBeVisible({ timeout: 5000 });
 
       // 等待完成或超时
-      const resultPanel = panel.locator('.bg-green-50, .bg-green-900\\/20, text=/提取.*概念|成功/');
+      const resultPanel = panel.locator(
+        ".bg-green-50, .bg-green-900\\/20, text=/提取.*概念|成功/",
+      );
       await expect(resultPanel).toBeVisible({ timeout: 60000 });
     });
   });
 
-  test.describe('文件上传提取流程', () => {
-    test('应该切换到文件上传模式', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+  test.describe("文件上传提取流程", () => {
+    test("应该切换到文件上传模式", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 点击文件模式按钮
-      const fileModeButton = panel.locator('button').filter({ hasText: '文件' });
+      const fileModeButton = panel
+        .locator("button")
+        .filter({ hasText: "文件" });
       await fileModeButton.click();
 
       // 检查文件上传区域
@@ -481,98 +536,122 @@ test.describe('文献概念提取功能测试', () => {
       await expect(dropzone.first()).toBeVisible({ timeout: 5000 });
     });
 
-    test('应该显示支持的文件类型', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示支持的文件类型", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 切换到文件模式
-      const fileModeButton = panel.locator('button').filter({ hasText: '文件' });
+      const fileModeButton = panel
+        .locator("button")
+        .filter({ hasText: "文件" });
       await fileModeButton.click();
 
       // 检查支持的文件类型提示
-      const supportedTypes = panel.locator('text=/PDF|DOC|MD|支持.*类型/');
+      const supportedTypes = panel.locator("text=/PDF|DOC|MD|支持.*类型/");
       await expect(supportedTypes.first()).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该验证文件大小限制', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该验证文件大小限制", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 切换到文件模式
-      const fileModeButton = panel.locator('button').filter({ hasText: '文件' });
+      const fileModeButton = panel
+        .locator("button")
+        .filter({ hasText: "文件" });
       await fileModeButton.click();
 
       // 检查文件大小限制提示
-      const sizeLimit = panel.locator('text=/10.*MB|最大.*10/');
+      const sizeLimit = panel.locator("text=/10.*MB|最大.*10/");
       await expect(sizeLimit).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该显示文件上传后预览', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示文件上传后预览", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 切换到文件模式
-      const fileModeButton = panel.locator('button').filter({ hasText: '文件' });
+      const fileModeButton = panel
+        .locator("button")
+        .filter({ hasText: "文件" });
       await fileModeButton.click();
 
       // 创建测试文件
-      const testContent = 'Test PDF content for literature extraction';
+      const testContent = "Test PDF content for literature extraction";
       await page.evaluate((content) => {
-        const blob = new Blob([content], { type: 'application/pdf' });
-        const file = new File([blob], 'test-document.pdf', { type: 'application/pdf' });
+        const blob = new Blob([content], { type: "application/pdf" });
+        const file = new File([blob], "test-document.pdf", {
+          type: "application/pdf",
+        });
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
-        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+        const input = document.querySelector(
+          'input[type="file"]',
+        ) as HTMLInputElement;
         if (input) {
           input.files = dataTransfer.files;
-          input.dispatchEvent(new Event('change', { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
         }
       }, testContent);
 
       // 检查文件名显示
-      await expect(panel.locator('text=test-document.pdf')).toBeVisible({ timeout: 5000 });
+      await expect(panel.locator("text=test-document.pdf")).toBeVisible({
+        timeout: 5000,
+      });
     });
   });
 
-  test.describe('URL 抓取提取流程', () => {
-    test('应该切换到 URL 输入模式', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+  test.describe("URL 抓取提取流程", () => {
+    test("应该切换到 URL 输入模式", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 点击 URL 模式按钮
-      const urlModeButton = panel.locator('button').filter({ hasText: 'URL' });
+      const urlModeButton = panel.locator("button").filter({ hasText: "URL" });
       await urlModeButton.click();
 
       // 检查 URL 输入框
@@ -580,115 +659,140 @@ test.describe('文献概念提取功能测试', () => {
       await expect(urlInput).toBeVisible({ timeout: 5000 });
     });
 
-    test('应该验证 URL 格式', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该验证 URL 格式", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 切换到 URL 模式
-      const urlModeButton = panel.locator('button').filter({ hasText: 'URL' });
+      const urlModeButton = panel.locator("button").filter({ hasText: "URL" });
       await urlModeButton.click();
 
       // 输入无效 URL
       const urlInput = panel.locator('input[type="url"]');
-      await urlInput.fill('invalid-url');
+      await urlInput.fill("invalid-url");
 
       // 点击提取
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 应该显示 URL 格式错误
-      await expect(page.locator('text=/URL.*无效|格式.*错误|请输入.*URL/')).toBeVisible({ timeout: 5000 });
+      await expect(
+        page.locator("text=/URL.*无效|格式.*错误|请输入.*URL/"),
+      ).toBeVisible({ timeout: 5000 });
     });
 
-    test('应该显示 URL 输入提示', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示 URL 输入提示", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 切换到 URL 模式
-      const urlModeButton = panel.locator('button').filter({ hasText: 'URL' });
+      const urlModeButton = panel.locator("button").filter({ hasText: "URL" });
       await urlModeButton.click();
 
       // 检查提示信息
-      const hint = panel.locator('text=/arXiv|论文|文章|支持.*网站/');
+      const hint = panel.locator("text=/arXiv|论文|文章|支持.*网站/");
       await expect(hint.first()).toBeVisible({ timeout: 3000 });
     });
   });
 
-  test.describe('概念聚合逻辑', () => {
-    test('应该显示高级选项', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+  test.describe("概念聚合逻辑", () => {
+    test("应该显示高级选项", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 点击高级选项
-      const advancedToggle = panel.locator('button').filter({ hasText: /高级|选项/ });
+      const advancedToggle = panel
+        .locator("button")
+        .filter({ hasText: /高级|选项/ });
       await advancedToggle.click();
 
       // 检查高级选项面板
-      const advancedPanel = panel.locator('text=/概念类型|最大数量|相似度/');
+      const advancedPanel = panel.locator("text=/概念类型|最大数量|相似度/");
       await expect(advancedPanel.first()).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该支持选择概念类型', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持选择概念类型", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 打开高级选项
-      const advancedToggle = panel.locator('button').filter({ hasText: /高级|选项/ });
+      const advancedToggle = panel
+        .locator("button")
+        .filter({ hasText: /高级|选项/ });
       await advancedToggle.click();
 
       // 检查概念类型按钮
-      for (const type of ['方法', '机制', '概念', '技术', '工具', '操作']) {
-        const typeButton = panel.locator('button').filter({ hasText: type });
+      for (const type of ["方法", "机制", "概念", "技术", "工具", "操作"]) {
+        const typeButton = panel.locator("button").filter({ hasText: type });
         await expect(typeButton).toBeVisible({ timeout: 3000 });
       }
     });
 
-    test('应该支持调整最大概念数量', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持调整最大概念数量", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 打开高级选项
-      const advancedToggle = panel.locator('button').filter({ hasText: /高级|选项/ });
+      const advancedToggle = panel
+        .locator("button")
+        .filter({ hasText: /高级|选项/ });
       await advancedToggle.click();
 
       // 检查滑块
@@ -696,24 +800,29 @@ test.describe('文献概念提取功能测试', () => {
       await expect(slider).toBeVisible({ timeout: 3000 });
 
       // 检查当前值显示
-      const valueDisplay = panel.locator('text=/\\d+/').first();
+      const valueDisplay = panel.locator("text=/\\d+/").first();
       await expect(valueDisplay).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该支持调整相似度阈值', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持调整相似度阈值", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 打开高级选项
-      const advancedToggle = panel.locator('button').filter({ hasText: /高级|选项/ });
+      const advancedToggle = panel
+        .locator("button")
+        .filter({ hasText: /高级|选项/ });
       await advancedToggle.click();
 
       // 检查相似度滑块
@@ -721,158 +830,194 @@ test.describe('文献概念提取功能测试', () => {
       await expect(similaritySlider).toBeVisible({ timeout: 3000 });
 
       // 检查百分比显示
-      const percentDisplay = panel.locator('text=/%/');
+      const percentDisplay = panel.locator("text=/%/");
       await expect(percentDisplay.first()).toBeVisible({ timeout: 3000 });
     });
   });
 
-  test.describe('预览确认流程', () => {
-    test('应该显示概念预览弹窗', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+  test.describe("预览确认流程", () => {
+    test("应该显示概念预览弹窗", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 填充文本并提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待提取完成
-      const resultPanel = panel.locator('.bg-green-50, .bg-green-900\\/20');
+      const resultPanel = panel.locator(".bg-green-50, .bg-green-900\\/20");
       await expect(resultPanel).toBeVisible({ timeout: 60000 });
 
       // 检查概念预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 5000 });
     });
 
-    test('应该显示提取的概念列表', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示提取的概念列表", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 检查概念卡片
-      const conceptCards = previewModal.locator('[class*="rounded-lg"][class*="border"]');
+      const conceptCards = previewModal.locator(
+        '[class*="rounded-lg"][class*="border"]',
+      );
       const count = await conceptCards.count();
       expect(count).toBeGreaterThan(0);
     });
 
-    test('应该支持选择/取消选择概念', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持选择/取消选择概念", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 点击全选按钮
-      const selectAllButton = previewModal.locator('button').filter({ hasText: '全选' });
+      const selectAllButton = previewModal
+        .locator("button")
+        .filter({ hasText: "全选" });
       if (await selectAllButton.isVisible()) {
         await selectAllButton.click();
       }
 
       // 点击取消全选按钮
-      const deselectAllButton = previewModal.locator('button').filter({ hasText: '取消全选' });
+      const deselectAllButton = previewModal
+        .locator("button")
+        .filter({ hasText: "取消全选" });
       if (await deselectAllButton.isVisible()) {
         await deselectAllButton.click();
       }
     });
 
-    test('应该显示已选择概念数量', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示已选择概念数量", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 检查选择计数
-      const selectedCount = previewModal.locator('text=/已选择.*\\d+.*\\/.*\\d+/');
+      const selectedCount = previewModal.locator(
+        "text=/已选择.*\\d+.*\\/.*\\d+/",
+      );
       await expect(selectedCount).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该支持编辑概念', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持编辑概念", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 点击编辑按钮
-      const editButton = previewModal.locator('button').filter({ has: page.locator('svg.lucide-edit-3') }).first();
+      const editButton = previewModal
+        .locator("button")
+        .filter({ has: page.locator("svg.lucide-edit-3") })
+        .first();
       if (await editButton.isVisible()) {
         await editButton.click();
 
@@ -882,158 +1027,194 @@ test.describe('文献概念提取功能测试', () => {
       }
     });
 
-    test('应该支持确认添加概念', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持确认添加概念", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 点击确认按钮
-      const confirmButton = previewModal.locator('button').filter({ hasText: /确认添加/ });
+      const confirmButton = previewModal
+        .locator("button")
+        .filter({ hasText: /确认添加/ });
       if (await confirmButton.isEnabled()) {
         await confirmButton.click();
 
         // 等待成功提示
-        await expect(page.locator('text=/成功|添加/')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator("text=/成功|添加/")).toBeVisible({
+          timeout: 10000,
+        });
       }
     });
   });
 
-  test.describe('概念定位到骨干模块', () => {
-    test('应该显示概念的目标模块', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+  test.describe("概念定位到骨干模块", () => {
+    test("应该显示概念的目标模块", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 检查模块标签
-      const moduleLabels = previewModal.locator('text=/研究背景|文献综述|研究方法|核心概念|应用领域|未来方向/');
+      const moduleLabels = previewModal.locator(
+        "text=/研究背景|文献综述|研究方法|核心概念|应用领域|未来方向/",
+      );
       await expect(moduleLabels.first()).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该支持修改概念的目标模块', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持修改概念的目标模块", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 点击编辑按钮
-      const editButton = previewModal.locator('button').filter({ has: page.locator('svg.lucide-edit-3') }).first();
+      const editButton = previewModal
+        .locator("button")
+        .filter({ has: page.locator("svg.lucide-edit-3") })
+        .first();
       if (await editButton.isVisible()) {
         await editButton.click();
 
         // 检查模块选择器
-        const moduleSelect = previewModal.locator('select').first();
+        const moduleSelect = previewModal.locator("select").first();
         if (await moduleSelect.isVisible()) {
-          await moduleSelect.selectOption('core_concepts');
+          await moduleSelect.selectOption("core_concepts");
         }
       }
     });
 
-    test('应该显示概念类型标签', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示概念类型标签", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 检查概念类型标签
-      const typeLabels = previewModal.locator('text=/方法|机制|操作|概念|技术|工具/');
+      const typeLabels = previewModal.locator(
+        "text=/方法|机制|操作|概念|技术|工具/",
+      );
       await expect(typeLabels.first()).toBeVisible({ timeout: 3000 });
     });
 
-    test('应该显示相似度警告', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示相似度警告", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 检查相似度标签（如果存在）
-      const similarityLabel = previewModal.locator('text=/相似|高相似度/');
+      const similarityLabel = previewModal.locator("text=/相似|高相似度/");
       // 相似度标签可能不存在，取决于提取结果
       const count = await similarityLabel.count();
       // 只检查是否有显示，不强制要求
@@ -1042,136 +1223,168 @@ test.describe('文献概念提取功能测试', () => {
       }
     });
 
-    test('应该显示概念来源信息', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该显示概念来源信息", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 展开概念详情
-      const expandButton = previewModal.locator('button').filter({ hasText: /更多信息|收起/ }).first();
+      const expandButton = previewModal
+        .locator("button")
+        .filter({ hasText: /更多信息|收起/ })
+        .first();
       if (await expandButton.isVisible()) {
         await expandButton.click();
 
         // 检查来源信息
-        const sourceInfo = previewModal.locator('text=/来源|文本输入/');
+        const sourceInfo = previewModal.locator("text=/来源|文本输入/");
         await expect(sourceInfo.first()).toBeVisible({ timeout: 3000 });
       }
     });
   });
 
-  test.describe('错误处理和边界情况', () => {
-    test('应该处理空输入', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+  test.describe("错误处理和边界情况", () => {
+    test("应该处理空输入", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 不输入任何内容直接点击提取
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 应该显示错误提示
-      await expect(page.locator('text=/请输入|不能为空|必填/')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator("text=/请输入|不能为空|必填/")).toBeVisible({
+        timeout: 5000,
+      });
     });
 
-    test('应该处理网络错误', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该处理网络错误", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 切换到 URL 模式
-      const urlModeButton = panel.locator('button').filter({ hasText: 'URL' });
+      const urlModeButton = panel.locator("button").filter({ hasText: "URL" });
       await urlModeButton.click();
 
       // 输入一个可能失败的 URL
       const urlInput = panel.locator('input[type="url"]');
-      await urlInput.fill('https://nonexistent-domain-12345.com/article');
+      await urlInput.fill("https://nonexistent-domain-12345.com/article");
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 应该显示错误提示或处理失败
-      const errorIndicator = page.locator('text=/失败|错误|无法|超时/');
+      const errorIndicator = page.locator("text=/失败|错误|无法|超时/");
       // 等待一段时间让请求失败
       await page.waitForTimeout(5000);
     });
 
-    test('应该支持关闭提取面板', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持关闭提取面板", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 点击关闭按钮
-      const closeButton = panel.locator('button').filter({ has: page.locator('svg.lucide-x') });
+      const closeButton = panel
+        .locator("button")
+        .filter({ has: page.locator("svg.lucide-x") });
       await closeButton.click();
 
       // 面板应该关闭
       await expect(panel).not.toBeVisible({ timeout: 3000 });
     });
 
-    test('应该支持取消预览', async ({ page }) => {
-      await page.goto('/graph');
-      await page.waitForLoadState('networkidle');
+    test("应该支持取消预览", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 执行提取
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await textArea.fill(SAMPLE_TEXT_CONTENT);
 
-      const startButton = panel.locator('button').filter({ hasText: /开始提取/ });
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
       await startButton.click();
 
       // 等待预览弹窗
-      const previewModal = page.locator('.fixed.inset-0.bg-black\\/50');
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
       await expect(previewModal).toBeVisible({ timeout: 60000 });
 
       // 点击取消按钮
-      const cancelButton = previewModal.locator('button').filter({ hasText: '取消' });
+      const cancelButton = previewModal
+        .locator("button")
+        .filter({ hasText: "取消" });
       await cancelButton.click();
 
       // 弹窗应该关闭
@@ -1179,43 +1392,51 @@ test.describe('文献概念提取功能测试', () => {
     });
   });
 
-  test.describe('移动端适配', () => {
-    test('应该在移动端正确显示', async ({ page }) => {
+  test.describe("移动端适配", () => {
+    test("应该在移动端正确显示", async ({ page }) => {
       // 设置移动端视口
       await page.setViewportSize({ width: 375, height: 667 });
 
       await loginAsTestUser(page);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 检查移动端布局
-      const textArea = panel.locator('textarea');
+      const textArea = panel.locator("textarea");
       await expect(textArea).toBeVisible();
     });
 
-    test('应该在移动端支持触摸操作', async ({ page }) => {
+    test("应该在移动端支持触摸操作", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
 
       await loginAsTestUser(page);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState("networkidle");
 
-      const extractButton = page.locator('button').filter({ hasText: /文献提取|提取概念/ }).first();
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
       if (await extractButton.isVisible()) {
         await extractButton.click();
       }
 
-      const panel = page.locator('.literature-extract-panel');
+      const panel = page.locator(".literature-extract-panel");
       await expect(panel).toBeVisible({ timeout: 10000 });
 
       // 切换输入模式
-      const fileModeButton = panel.locator('button').filter({ hasText: '文件' });
+      const fileModeButton = panel
+        .locator("button")
+        .filter({ hasText: "文件" });
       await fileModeButton.click();
 
       // 检查文件模式是否激活

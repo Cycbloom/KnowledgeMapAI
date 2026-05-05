@@ -285,15 +285,23 @@ router.post(
         const rootNode = template.nodes.find((n) => n.level === "root");
         const coreNodes = template.nodes.filter((n) => n.level === "core");
 
+        const rootContent =
+          rootNode?.description ||
+          rootNode?.suggestedContent ||
+          `${topic}：本专题研究的核心主题，涵盖研究背景、文献综述、研究方法、核心概念、应用领域和未来方向六大模块`;
+
         res.json({
           sessionId,
           root: {
             title: rootNode?.title || topic,
-            content: rootNode?.description || rootNode?.suggestedContent || "",
+            content: rootContent,
           },
           coreNodes: coreNodes.map((n) => ({
             title: n.title,
-            content: n.description || n.suggestedContent || "",
+            content:
+              n.description ||
+              n.suggestedContent ||
+              `${n.title}：${(n as any).backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
           })),
         });
         return;

@@ -910,8 +910,8 @@ router.post(
           );
           domainContext = context;
 
-          const { data: domainInfo } = await req.supabase!
-            .from("domains")
+          const { data: domainInfo } = await req
+            .supabase!.from("domains")
             .select("name")
             .eq("id", context_domain_id)
             .single();
@@ -959,7 +959,11 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
 已有图谱：${existingTitles.length > 0 ? existingTitles.slice(0, 15).join("、") : "无"}`;
 
       const finalPrompt = domainContext
-        ? domainContextService.buildDomainAwarePrompt(basePrompt, domainContext, domainName)
+        ? domainContextService.buildDomainAwarePrompt(
+            basePrompt,
+            domainContext,
+            domainName,
+          )
         : basePrompt;
 
       const response = await aiService.chat(
@@ -1145,7 +1149,11 @@ router.post(
       let targetDomainName: string | null = null;
 
       if (domain) {
-        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(domain)) {
+        if (
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            domain,
+          )
+        ) {
           const { data: domainData } = await supabase
             .from("domains")
             .select("id, name")
@@ -1194,7 +1202,7 @@ router.post(
           domainContext = await domainContextService.getDomainContext(
             supabase,
             targetDomainId,
-            userId
+            userId,
           );
           logger.info("扩展分析使用领域上下文", {
             domainId: targetDomainId,
@@ -1207,11 +1215,11 @@ router.post(
 
       const basePrompt = `你是知识图谱专家。基于用户已有的知识图谱，推荐相关的扩展学习内容。
 
-${sourceGraphs.length > 0 ? `用户已有 ${sourceGraphs.length} 个图谱：\n${sourceGraphs.map((g, i) => `${i+1}. ${g.title}${g.description ? ` - ${g.description}` : ''}`).join('\n')}` : ''}
+${sourceGraphs.length > 0 ? `用户已有 ${sourceGraphs.length} 个图谱：\n${sourceGraphs.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.description}` : ""}`).join("\n")}` : ""}
 
-${domainContext ? `\n[目标领域上下文 - ${targetDomainName}]\n${domainContext}\n[/目标领域上下文]` : ''}
+${domainContext ? `\n[目标领域上下文 - ${targetDomainName}]\n${domainContext}\n[/目标领域上下文]` : ""}
 
-${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关的扩展方向。` : ''}
+${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关的扩展方向。` : ""}
 
 请推荐 ${count} 个扩展知识图谱，并分析它们之间的学习依赖关系。
 
@@ -1347,7 +1355,9 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
         recommendations: recommendations.slice(0, count),
         relations: graphRelations,
         source_graphs: sourceGraphs,
-        ...(targetDomainId ? { target_domain: { id: targetDomainId, name: targetDomainName } } : {}),
+        ...(targetDomainId
+          ? { target_domain: { id: targetDomainId, name: targetDomainName } }
+          : {}),
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "领域扩展失败";
@@ -1438,11 +1448,7 @@ router.post(
 
       if (queryError) {
         logger.error("Failed to query existing graphs:", queryError);
-        throw new AppError(
-          "查询现有图谱失败",
-          500,
-          ErrorCodes.INTERNAL_ERROR,
-        );
+        throw new AppError("查询现有图谱失败", 500, ErrorCodes.INTERNAL_ERROR);
       }
 
       if (allExistingGraphs) {
@@ -1673,9 +1679,7 @@ router.post(
           // 关系创建的整体错误不应该影响主响应
           const errorMessage =
             error instanceof Error ? error.message : String(error);
-          logger.error(
-            `Error during relation creation phase: ${errorMessage}`,
-          );
+          logger.error(`Error during relation creation phase: ${errorMessage}`);
           // 不抛出错误，继续返回图谱创建结果
         }
       }

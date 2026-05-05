@@ -2,10 +2,7 @@
  * This is a API server
  */
 
-import express, {
-  type Request,
-  type Response,
-} from "express";
+import express, { type Request, type Response } from "express";
 import "express-async-errors";
 import cors from "cors";
 import helmet from "helmet";
@@ -59,10 +56,7 @@ import { graphTaskEventHandler } from "./services/scheduler/graphTaskEventHandle
 import { errorHandler } from "./middleware/errorHandler";
 import { csrfProtection, getCsrfToken } from "./middleware/csrf";
 import { rateLimiters } from "./middleware/rateLimiter";
-import {
-  requestLogger,
-  slowRequestLogger,
-} from "./middleware/requestLogger";
+import { requestLogger, slowRequestLogger } from "./middleware/requestLogger";
 import { requestIdMiddleware } from "./middleware/requestId";
 import { logger } from "./utils/logger";
 
@@ -139,9 +133,11 @@ const allowedOrigins = [
 ].filter(Boolean) as string[];
 
 const isVercelOrigin = (origin: string): boolean => {
-  return origin.endsWith('.vercel.app') || 
-         origin.includes('.vercel.app') ||
-         /^https?:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+  return (
+    origin.endsWith(".vercel.app") ||
+    origin.includes(".vercel.app") ||
+    /^https?:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
+  );
 };
 
 app.use(
@@ -149,12 +145,12 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       // Allow Vercel preview deployments
       if (isVercelOrigin(origin)) {
         return callback(null, true);
       }
-      
+
       if (
         allowedOrigins.indexOf(origin) !== -1 ||
         !process.env.NODE_ENV ||
@@ -162,7 +158,7 @@ app.use(
       ) {
         callback(null, true);
       } else {
-        logger.warn('CORS blocked origin', { origin, allowedOrigins });
+        logger.warn("CORS blocked origin", { origin, allowedOrigins });
         callback(new Error("Not allowed by CORS"));
       }
     },

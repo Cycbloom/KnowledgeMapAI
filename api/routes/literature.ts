@@ -120,7 +120,26 @@ async function withLiteratureTracking<T>(
 
 const literatureExtractSchema = z.object({
   content: z.string().max(100000).optional(),
-  url: z.string().url().max(2000).optional(),
+  url: z
+    .string()
+    .url()
+    .max(2000)
+    .refine(
+      (val) => val.startsWith("http://") || val.startsWith("https://"),
+      { message: "URL 必须以 http:// 或 https:// 开头" }
+    )
+    .refine(
+      (val) => {
+        try {
+          const parsed = new URL(val);
+          return !parsed.hostname.match(/^(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/i);
+        } catch {
+          return false;
+        }
+      },
+      { message: "禁止访问内网地址" }
+    )
+    .optional(),
   graph_id: z.string().uuid(),
   options: z
     .object({

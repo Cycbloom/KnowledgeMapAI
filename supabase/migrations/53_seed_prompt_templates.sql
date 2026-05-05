@@ -379,22 +379,7 @@ Based on the knowledge graph information, generate:
 - Questions should be relevant to the graph content
 - Each question should have 4 options: 不了解, 了解一点, 比较熟悉, 非常熟悉
 
-## Output Format
-Return a JSON object with:
-{
-  "suggestedGoals": [
-    "Goal 1 description",
-    "Goal 2 description",
-    "Goal 3 description"
-  ],
-  "prerequisiteQuestions": [
-    {
-      "topic": "Knowledge area name",
-      "description": "Brief description of what this includes",
-      "options": ["不了解", "了解一点", "比较熟悉", "非常熟悉"]
-    }
-  ]
-}', NOW(), NOW()),
+Please return a valid json format result.', NOW(), NOW()),
 ('infinite_graph_expansion', 'system', null, null, '你是一个知识图谱专家。你的任务是根据给定的知识领域，分析并生成**其他独立的知识领域**。
 
 ## 重要概念区分
@@ -713,16 +698,16 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 {{context}}', NOW(), NOW()),
 ('knowledge_gap_analysis', 'system', null, null, '你是一个知识图谱分析专家。分析给定的知识节点列表，找出可能缺失的知识领域或概念。
 
-返回 JSON 格式: { "suggestions": ["建议1", "建议2", "建议3"] }
+每个建议应该是一个简短的知识领域或概念名称。
 
-每个建议应该是一个简短的知识领域或概念名称。', NOW(), NOW()),
+请以有效的 json 格式返回结果。', NOW(), NOW()),
 ('suggest_questions', 'system', null, null, '基于用户的原始问题和回答，生成 2-3 个相关的后续问题。
 这些问题应该：
 1. 帮助用户深入理解当前话题
 2. 探索相关的知识节点
 3. 具有启发性和探索性
 
-返回 JSON 格式: { "questions": ["问题1", "问题2", "问题3"] }', NOW(), NOW()),
+请以有效的 json 格式返回结果。', NOW(), NOW()),
 ('literature_concept_extraction', 'system', null, null, '你是一个专业的文献分析专家。你的任务是从给定的文献内容中提取关键概念和知识点。
 
 ## 任务目标

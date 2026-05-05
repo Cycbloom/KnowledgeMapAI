@@ -115,9 +115,9 @@ Please respond with a valid JSON object.`,
 
   knowledge_gap_analysis: `你是一个知识图谱分析专家。分析给定的知识节点列表，找出可能缺失的知识领域或概念。
 
-返回 JSON 格式: { "suggestions": ["建议1", "建议2", "建议3"] }
+每个建议应该是一个简短的知识领域或概念名称。
 
-每个建议应该是一个简短的知识领域或概念名称。`,
+请以有效的 json 格式返回结果。`,
 
   suggest_questions: `基于用户的原始问题和回答，生成 2-3 个相关的后续问题。
 这些问题应该：
@@ -125,7 +125,7 @@ Please respond with a valid JSON object.`,
 2. 探索相关的知识节点
 3. 具有启发性和探索性
 
-返回 JSON 格式: { "questions": ["问题1", "问题2", "问题3"] }`,
+请以有效的 json 格式返回结果。`,
 
   backbone_generation: `你是一个专业的知识图谱架构师，专门为学术研究和知识体系构建骨干网络结构。
 
@@ -704,6 +704,27 @@ Important:
 - type should be one of: hierarchical, associative, causal, contrastive
 - subtype should match the type appropriately
 - confidence should be between 0 and 1`,
+
+  knowledge_gap_analysis: `
+Return a JSON object with the following structure:
+{
+  "suggestions": ["建议1", "建议2", "建议3"]
+}
+
+Important:
+- Generate 3-5 suggestions
+- Each suggestion should be a short knowledge domain or concept name`,
+
+  suggest_questions: `
+Return a JSON object with the following structure:
+{
+  "questions": ["问题1", "问题2", "问题3"]
+}
+
+Important:
+- Generate 2-3 follow-up questions
+- Questions should help users understand the topic deeply
+- Questions should be exploratory and inspiring`,
 };
 
 export interface PromptListOptions {

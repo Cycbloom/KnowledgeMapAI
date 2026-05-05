@@ -1,8 +1,0 @@
-- [x] `syncSchemaVersions()` 方法能正确检测 `supabase_migrations.schema_migrations` 表是否存在且有记录
-- [x] 当 Supabase CLI 已执行迁移但 `_schema_versions` 为空时，`syncSchemaVersions()` 自动插入所有迁移版本记录
-- [x] 同步逻辑仅插入缺失记录，不修改已有记录的 checksum 或 executed_at
-- [x] `getDatabaseStatus()` 在 `supabase db reset` 后返回 `ready` 而非 `needs_upgrade`
-- [x] 全新数据库（无迁移记录）仍返回 `empty` 或 `partial` 状态
-- [x] 已有完整 `_schema_versions` 记录时，行为不变
-- [x] 类型检查通过 (`npm run check`)
-- [x] 代码规范检查通过 (`npm run lint`)

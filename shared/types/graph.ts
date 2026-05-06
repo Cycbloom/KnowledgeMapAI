@@ -309,6 +309,12 @@ export interface ReferenceBook {
   isbn?: string;
   description?: string;
   url?: string;
+  type?: "paper" | "book" | "article" | "document" | "report" | "webpage";
+  year?: number;
+  journal?: string;
+  doi?: string;
+  processedAt?: string;
+  conceptCount?: number;
 }
 
 export interface ExternalLink {
@@ -866,14 +872,34 @@ export interface ConceptSource {
   addedAt: string;
 }
 
+export interface LiteratureMetadata {
+  title?: string;
+  authors?: string[];
+  year?: number;
+  type: "paper" | "book" | "article" | "report" | "webpage" | "document";
+  journal?: string;
+  doi?: string;
+  keywords?: string[];
+  abstract?: string;
+}
+
 export interface LiteratureInfo {
   title: string;
   authors?: string[];
   year?: number;
   url?: string;
   fileName?: string;
-  type: "paper" | "book" | "article" | "document";
+  type: "paper" | "book" | "article" | "document" | "report" | "webpage";
   processedAt: string;
+  journal?: string;
+  doi?: string;
+  keywords?: string[];
+  abstract?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  publisher?: string;
+  notes?: string;
 }
 
 export interface ExtractedConcept {
@@ -898,10 +924,19 @@ export interface LiteratureExtractRequest {
   file?: File;
   url?: string;
   graph_id: string;
+  literature?: {
+    title?: string;
+    authors?: string[];
+    year?: number;
+    url?: string;
+    fileName?: string;
+    type?: "paper" | "book" | "article" | "document" | "report" | "webpage";
+  };
   options?: {
     extractTypes?: ConceptType[];
     maxConcepts?: number;
     similarityThreshold?: number;
+    autoDetectMetadata?: boolean;
   };
 }
 

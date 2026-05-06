@@ -1,4 +1,4 @@
-﻿﻿import { useState, useEffect, useRef } from "react";
+﻿﻿﻿import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { TermTooltip } from "../components/common";
@@ -32,6 +32,7 @@ import {
   MessageCircle,
   Brain,
   Settings,
+  FileText,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
@@ -65,6 +66,7 @@ import { LearningPathOutline } from "../components/Learning/LearningPathOutline"
 import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
 import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
+import { LiteratureExtractPanel } from "../components/LiteratureExtract/LiteratureExtractPanel";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 import { useActivityTracker } from "../hooks/useActivityTracker";
@@ -101,7 +103,7 @@ export const LearningMode = () => {
 
   const [isCreateNodeModalOpen, setIsCreateNodeModalOpen] = useState(false);
   const [rightPanelMode, setRightPanelMode] = useState<
-    "chat" | "learning-path"
+    "chat" | "learning-path" | "literature-extract"
   >("chat");
   const [newNodeTitle, setNewNodeTitle] = useState("");
   const [newNodeContent, setNewNodeContent] = useState("");
@@ -1792,21 +1794,27 @@ export const LearningMode = () => {
                     <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400">
                       {rightPanelMode === "chat" ? (
                         <Bot size={18} />
-                      ) : (
+                      ) : rightPanelMode === "learning-path" ? (
                         <Route size={18} />
+                      ) : (
+                        <FileText size={18} />
                       )}
                     </div>
                     <div>
                       <h3 className="font-bold text-sm">
                         {rightPanelMode === "chat"
                           ? t("learning.chat.aiTutor")
-                          : t("learning.path.title")}
+                          : rightPanelMode === "learning-path"
+                            ? t("learning.path.title")
+                            : t("literatureExtract.title")}
                       </h3>
                       <div className="flex items-center text-[10px] text-green-500">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
                         {rightPanelMode === "chat"
                           ? t("learning.chat.online")
-                          : t("learning.path.aiDriven")}
+                          : rightPanelMode === "learning-path"
+                            ? t("learning.path.aiDriven")
+                            : t("literatureExtract.subtitle")}
                       </div>
                     </div>
                   </div>
@@ -1837,6 +1845,19 @@ export const LearningMode = () => {
                         title={t("learning.path.title")}
                       >
                         <Route size={14} />
+                      </button>
+                      <button
+                        onClick={() => setRightPanelMode("literature-extract")}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          rightPanelMode === "literature-extract"
+                            ? "bg-primary-500 text-white"
+                            : isDark
+                              ? "hover:bg-slate-700 text-slate-400"
+                              : "hover:bg-gray-100 text-gray-500"
+                        }`}
+                        title={t("literatureExtract.title")}
+                      >
+                        <FileText size={14} />
                       </button>
                     </div>
                     <button
@@ -1871,7 +1892,27 @@ export const LearningMode = () => {
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                  {rightPanelMode === "learning-path" ? (
+                  {rightPanelMode === "literature-extract" ? (
+                    <div className="h-full">
+                      <LiteratureExtractPanel
+                        graphId={graphId || ""}
+                        onExtractComplete={(result) => {
+                          if (result.concepts.length > 0) {
+                            frontendEventBus.publish("message_show", {
+                              type: "success",
+                              content: t(
+                                "literatureExtract.success.extracted",
+                                {
+                                  count: result.concepts.length,
+                                },
+                              ),
+                            });
+                          }
+                        }}
+                        className="h-full"
+                      />
+                    </div>
+                  ) : rightPanelMode === "learning-path" ? (
                     <div className="p-4">
                       <LearningPathPanel
                         graphId={graphId || ""}

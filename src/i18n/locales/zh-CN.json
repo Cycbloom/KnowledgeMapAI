@@ -3082,6 +3082,7 @@
     "modeFree": "自由对话",
     "modeGuided": "引导学习",
     "modeLearningPath": "学习路径",
+    "modeLiteratureExtract": "文献提取",
     "aiNotConfigured": "AI 未配置：当前为模拟回复，请配置 AI Key 获取真实结果",
     "sendFailed": "发送失败，请重试",
     "errorOccurred": "抱歉，发生了错误，请稍后再试。",
@@ -3155,7 +3156,9 @@
       "invalidUrl": "请输入有效的 URL 链接",
       "unsupportedFileType": "不支持的文件类型",
       "fileTooLarge": "文件大小超过限制（最大 10MB）",
-      "extractFailed": "提取失败，请重试"
+      "extractFailed": "提取失败，请重试",
+      "noCitationText": "请输入引用信息",
+      "metadataDetectionFailed": "元数据识别失败，请重试"
     },
     "success": {
       "extracted": "成功提取 {{count}} 个知识概念"
@@ -3182,7 +3185,83 @@
     "moreInfo": "更多信息",
     "lessInfo": "收起信息",
     "source": "来源",
-    "targetModule": "目标模块"
+    "targetModule": "目标模块",
+    "metadata": {
+      "noSource": "未填写来源",
+      "sourceWith": "来源：{{source}}",
+      "autoDetect": "自动识别",
+      "citationInput": "引用信息",
+      "citationPlaceholder": "粘贴文献引用信息，如：张三, 李四. 知识图谱构建方法综述[J]. 计算机学报, 2024, 47(1): 1-20.",
+      "citationHint": "粘贴文献引用信息后点击「自动识别」，AI 将自动解析并填充表单",
+      "manualEdit": "手动编辑字段",
+      "fields": {
+        "title": "标题",
+        "authors": "作者",
+        "year": "年份",
+        "type": "类型",
+        "journal": "期刊/会议",
+        "doi": "DOI",
+        "keywords": "关键词",
+        "notes": "备注"
+      },
+      "placeholders": {
+        "title": "请输入文献标题",
+        "authors": "多个作者用逗号分隔",
+        "year": "如 2024",
+        "journal": "期刊或会议名称",
+        "doi": "如 10.1000/xyz123",
+        "keywords": "多个关键词用逗号分隔",
+        "notes": "添加备注信息..."
+      },
+      "hints": {
+        "authors": "多个作者请用英文逗号分隔",
+        "keywords": "多个关键词请用英文逗号分隔"
+      },
+      "types": {
+        "paper": "论文",
+        "book": "书籍",
+        "article": "文章",
+        "report": "报告",
+        "webpage": "网页"
+      }
+    },
+    "metadataForm": {
+      "title": "来源信息",
+      "titlePlaceholder": "文献标题",
+      "authors": "作者",
+      "authorsPlaceholder": "作者1, 作者2, ...",
+      "year": "年份",
+      "type": "类型",
+      "journal": "期刊/会议",
+      "journalPlaceholder": "期刊或会议名称",
+      "doi": "DOI",
+      "doiPlaceholder": "例如: 10.1000/xxx",
+      "keywords": "关键词",
+      "keywordsPlaceholder": "关键词1, 关键词2, ...",
+      "notes": "备注",
+      "notesPlaceholder": "其他备注信息",
+      "autoDetect": "自动识别",
+      "detecting": "识别中...",
+      "noSource": "未填写来源",
+      "expand": "展开",
+      "collapse": "收起",
+      "optional": "（可选）"
+    },
+    "literatureTypes": {
+      "paper": "论文",
+      "book": "书籍",
+      "article": "文章",
+      "report": "报告",
+      "webpage": "网页",
+      "document": "文档"
+    },
+    "metadataCard": {
+      "source": "来源",
+      "noAuthor": "未知作者",
+      "noYear": "未知年份",
+      "editSource": "编辑来源",
+      "deleteSource": "删除来源"
+    }
   },
   "backboneModules": {
     "research_background": "研究背景",

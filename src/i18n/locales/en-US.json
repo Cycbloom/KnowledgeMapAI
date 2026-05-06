@@ -3114,6 +3114,7 @@
     "modeFree": "Free Chat",
     "modeGuided": "Guided Learning",
     "modeLearningPath": "Learning Path",
+    "modeLiteratureExtract": "Literature Extract",
     "aiNotConfigured": "AI not configured: Currently using simulated responses, please configure AI Key for real results",
     "sendFailed": "Send failed, please retry",
     "errorOccurred": "Sorry, an error occurred. Please try again later.",
@@ -3187,7 +3188,9 @@
       "invalidUrl": "Please enter a valid URL",
       "unsupportedFileType": "Unsupported file type",
       "fileTooLarge": "File size exceeds limit (max 10MB)",
-      "extractFailed": "Extraction failed, please try again"
+      "extractFailed": "Extraction failed, please try again",
+      "noCitationText": "Please enter citation information",
+      "metadataDetectionFailed": "Metadata detection failed, please try again"
     },
     "success": {
       "extracted": "Successfully extracted {{count}} knowledge concepts"
@@ -3214,7 +3217,83 @@
     "moreInfo": "More Info",
     "lessInfo": "Less Info",
     "source": "Source",
-    "targetModule": "Target Module"
+    "targetModule": "Target Module",
+    "metadata": {
+      "noSource": "No source information",
+      "sourceWith": "Source: {{source}}",
+      "autoDetect": "Auto Detect",
+      "citationInput": "Citation Information",
+      "citationPlaceholder": "Paste citation, e.g., Smith, J., & Doe, A. (2024). Knowledge Graph Survey. Journal of AI, 47(1), 1-20.",
+      "citationHint": "Paste citation and click 'Auto Detect', AI will parse and fill the form",
+      "manualEdit": "Edit fields manually",
+      "fields": {
+        "title": "Title",
+        "authors": "Authors",
+        "year": "Year",
+        "type": "Type",
+        "journal": "Journal/Conference",
+        "doi": "DOI",
+        "keywords": "Keywords",
+        "notes": "Notes"
+      },
+      "placeholders": {
+        "title": "Enter literature title",
+        "authors": "Separate multiple authors with commas",
+        "year": "e.g. 2024",
+        "journal": "Journal or conference name",
+        "doi": "e.g. 10.1000/xyz123",
+        "keywords": "Separate multiple keywords with commas",
+        "notes": "Add notes..."
+      },
+      "hints": {
+        "authors": "Separate multiple authors with commas",
+        "keywords": "Separate multiple keywords with commas"
+      },
+      "types": {
+        "paper": "Paper",
+        "book": "Book",
+        "article": "Article",
+        "report": "Report",
+        "webpage": "Webpage"
+      }
+    },
+    "metadataForm": {
+      "title": "Source Information",
+      "titlePlaceholder": "Literature title",
+      "authors": "Authors",
+      "authorsPlaceholder": "Author 1, Author 2, ...",
+      "year": "Year",
+      "type": "Type",
+      "journal": "Journal/Conference",
+      "journalPlaceholder": "Journal or conference name",
+      "doi": "DOI",
+      "doiPlaceholder": "e.g., 10.1000/xxx",
+      "keywords": "Keywords",
+      "keywordsPlaceholder": "keyword1, keyword2, ...",
+      "notes": "Notes",
+      "notesPlaceholder": "Additional notes",
+      "autoDetect": "Auto Detect",
+      "detecting": "Detecting...",
+      "noSource": "No source provided",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "optional": "(Optional)"
+    },
+    "literatureTypes": {
+      "paper": "Paper",
+      "book": "Book",
+      "article": "Article",
+      "report": "Report",
+      "webpage": "Webpage",
+      "document": "Document"
+    },
+    "metadataCard": {
+      "source": "Source",
+      "noAuthor": "Unknown author",
+      "noYear": "Unknown year",
+      "editSource": "Edit source",
+      "deleteSource": "Delete source"
+    }
   },
   "backboneModules": {
     "research_background": "Research Background",

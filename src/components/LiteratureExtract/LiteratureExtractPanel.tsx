@@ -18,12 +18,16 @@ import {
 } from "lucide-react";
 import { useErrorHandler, useIsMobile } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { literatureApi } from "../../services/api/literature";
 import type {
   LiteratureExtractRequest,
   LiteratureExtractResponse,
   LiteratureInfo,
   ConceptType,
 } from "@shared/types/graph";
+import { LiteratureMetadataForm } from "./LiteratureMetadataForm";
+import LiteratureMetadataCard from "./LiteratureMetadataCard";
+import type { LiteratureMetadata } from "./LiteratureMetadataForm";
 
 type InputMode = "text" | "file" | "url";
 
@@ -107,6 +111,8 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   >(["concept", "method", "mechanism", "technology", "tool", "operation"]);
   const [maxConcepts, setMaxConcepts] = useState(50);
   const [similarityThreshold, setSimilarityThreshold] = useState(0.7);
+  const [metadata, setMetadata] = useState<Partial<LiteratureMetadata>>({});
+  const [isDetectingMetadata, setIsDetectingMetadata] = useState(false);
 
   const conceptTypeOptions: { value: ConceptType; labelKey: string }[] = [
     { value: "concept", labelKey: "literatureExtract.conceptTypes.concept" },
@@ -125,6 +131,58 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       labelKey: "literatureExtract.conceptTypes.operation",
     },
   ];
+
+  const handleAutoDetectMetadata = useCallback(async (citationText: string) => {
+    if (!citationText.trim()) {
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("literatureExtract.errors.noCitationText"),
+      });
+      return;
+    }
+
+    setIsDetectingMetadata(true);
+    try {
+      const result = await literatureApi.extractMetadata({
+        content: citationText.trim(),
+      });
+
+      const detectedMetadata: Partial<LiteratureMetadata> = {
+        title: result.metadata.title,
+        authors: result.metadata.authors,
+        year: result.metadata.year,
+        type: result.metadata.type,
+        journal: result.metadata.journal,
+        doi: result.metadata.doi,
+        keywords: result.metadata.keywords,
+      };
+
+      setMetadata(detectedMetadata);
+
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("literatureExtract.success.metadataDetected", {
+          confidence: (result.confidence * 100).toFixed(0),
+        }),
+      });
+    } catch (error) {
+      handleError(error, {
+        context: "AutoDetectMetadata",
+        fallbackMessage: t("literatureExtract.errors.metadataDetectionFailed"),
+      });
+    } finally {
+      setIsDetectingMetadata(false);
+    }
+  }, [handleError, t]);
+
+  const extractTitleFromFileName = useCallback((fileName: string): string => {
+    const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+    const cleanedName = nameWithoutExt
+      .replace(/[-_]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return cleanedName;
+  }, []);
 
   const handleFileSelect = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,8 +221,16 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         progress: 0,
         error: null,
       });
+
+      const inferredTitle = extractTitleFromFileName(file.name);
+      if (inferredTitle && !metadata.title) {
+        setMetadata((prev) => ({
+          ...prev,
+          title: inferredTitle,
+        }));
+      }
     },
-    [t],
+    [t, extractTitleFromFileName, metadata.title],
   );
 
   const handleDrop = useCallback(
@@ -281,10 +347,24 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     try {
       const request: LiteratureExtractRequest = {
         graph_id: graphId,
+        literature: metadata.title
+          ? {
+              title: metadata.title,
+              authors: metadata.authors,
+              year: metadata.year,
+              type: metadata.type,
+              url: inputMode === "url" ? urlInput : undefined,
+              fileName:
+                inputMode === "file" && fileState.file
+                  ? fileState.file.name
+                  : undefined,
+            }
+          : undefined,
         options: {
           extractTypes: selectedConceptTypes,
           maxConcepts,
           similarityThreshold,
+          autoDetectMetadata: !metadata.title,
         },
       };
 
@@ -350,6 +430,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     selectedConceptTypes,
     maxConcepts,
     similarityThreshold,
+    metadata,
     handleError,
     t,
     onExtractComplete,
@@ -705,39 +786,57 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const renderResult = () => {
     if (!extractedResult) return null;
 
+    const hasMetadata = metadata.title || extractedResult.literature.title;
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`${isMobile ? "p-3" : "p-4"} bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg`}
+        className="space-y-3"
       >
-        <div className="flex items-center gap-2 mb-2">
-          <CheckCircle2 size={18} className="text-green-500" />
-          <span
-            className={`${isMobile ? "text-sm" : "text-base"} font-medium text-green-700 dark:text-green-400`}
-          >
-            {t("literatureExtract.result.title")}
-          </span>
-        </div>
+        {hasMetadata && (
+          <LiteratureMetadataCard
+            metadata={{
+              title: metadata.title || extractedResult.literature.title,
+              authors:
+                metadata.authors || extractedResult.literature.authors || [],
+              year: metadata.year || extractedResult.literature.year,
+              type:
+                metadata.type || extractedResult.literature.type || "document",
+              journal: metadata.journal,
+              doi: metadata.doi,
+              keywords: metadata.keywords || [],
+            }}
+            isDark={false}
+            compact
+          />
+        )}
+
         <div
-          className={`${isMobile ? "text-xs" : "text-sm"} text-green-600 dark:text-green-300 space-y-1`}
+          className={`${isMobile ? "p-3" : "p-4"} bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg`}
         >
-          <p>
-            {t("literatureExtract.result.conceptsExtracted", {
-              count: extractedResult.concepts.length,
-            })}
-          </p>
-          <p>
-            {t("literatureExtract.result.relationsFound", {
-              count: extractedResult.relations.length,
-            })}
-          </p>
-          <p
-            className={`${isMobile ? "text-[10px]" : "text-xs"} text-green-500 dark:text-green-400`}
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle2 size={18} className="text-green-500" />
+            <span
+              className={`${isMobile ? "text-sm" : "text-base"} font-medium text-green-700 dark:text-green-400`}
+            >
+              {t("literatureExtract.result.title")}
+            </span>
+          </div>
+          <div
+            className={`${isMobile ? "text-xs" : "text-sm"} text-green-600 dark:text-green-300 space-y-1`}
           >
-            {t("literatureExtract.result.source")}:{" "}
-            {extractedResult.literature.title}
-          </p>
+            <p>
+              {t("literatureExtract.result.conceptsExtracted", {
+                count: extractedResult.concepts.length,
+              })}
+            </p>
+            <p>
+              {t("literatureExtract.result.relationsFound", {
+                count: extractedResult.relations.length,
+              })}
+            </p>
+          </div>
         </div>
       </motion.div>
     );
@@ -781,6 +880,15 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
       <div className="space-y-4">
         {renderInputModeSelector()}
+
+        <LiteratureMetadataForm
+          metadata={metadata}
+          onMetadataChange={setMetadata}
+          onAutoDetect={handleAutoDetectMetadata}
+          isDetecting={isDetectingMetadata}
+          isDark={false}
+          disabled={isProcessing}
+        />
 
         <AnimatePresence mode="wait">
           <motion.div

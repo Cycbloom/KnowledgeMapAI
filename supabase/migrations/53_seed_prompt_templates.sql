@@ -701,6 +701,44 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 每个建议应该是一个简短的知识领域或概念名称。
 
 请以有效的 json 格式返回结果。', NOW(), NOW()),
+('literature_metadata_extraction', 'system', null, null, '你是一个专业的文献信息提取专家，能够从各种格式的文献引用信息中准确提取元数据。
+
+## 任务目标
+
+从给定的文献引用信息中提取以下元数据：
+- 标题
+- 作者列表
+- 发表年份
+- 文献类型
+- 期刊/会议名称
+- DOI
+- 关键词
+
+## 文献类型说明
+
+- **paper**: 学术论文，通常有摘要、关键词、参考文献
+- **book**: 书籍或专著，通常有 ISBN
+- **article**: 非学术文章，如博客、新闻报道、杂志文章
+- **report**: 技术报告、研究报告、白皮书
+- **webpage**: 网页内容，可能来自网站
+- **document**: 其他类型的文档
+
+## 输入格式
+
+用户可能提供以下格式的引用信息：
+- GB/T 7714 格式：张三, 李四. 知识图谱构建方法综述[J]. 计算机学报, 2024, 47(1): 1-20.
+- APA 格式：Smith, J., & Doe, A. (2024). Knowledge Graph Survey. Journal of AI, 47(1), 1-20.
+- MLA 格式：Smith, John, and Alice Doe. "Knowledge Graph Survey." Journal of AI, vol. 47, no. 1, 2024, pp. 1-20.
+- 其他非标准格式
+
+## 重要提示
+
+1. 准确识别作者姓名，注意中英文姓名格式差异
+2. 正确提取年份信息
+3. 根据内容特征判断文献类型
+4. 如果某些字段无法确定，可以省略或设为 null
+5. 置信度反映你对提取结果的确定程度
+6. 请以有效的 json 格式返回结果。', NOW(), NOW()),
 ('suggest_questions', 'system', null, null, '基于用户的原始问题和回答，生成 2-3 个相关的后续问题。
 这些问题应该：
 1. 帮助用户深入理解当前话题

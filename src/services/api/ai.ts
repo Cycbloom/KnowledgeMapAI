@@ -344,7 +344,7 @@ export const aiApi = {
       graph_id?: string;
       history?: unknown[];
       context_node_ids?: string[];
-      mode?: "free" | "guided" | "learning-path";
+      mode?: "free" | "guided" | "learning-path" | "literature-extract";
       provider?: string;
       model?: string;
       language?: string;

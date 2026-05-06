@@ -15,6 +15,7 @@ import { scrapeUrl } from "../utils/scraper";
 import { conceptExtractorService } from "../services/ai/conceptExtractorService";
 import { conceptAggregationService } from "../services/graph/conceptAggregationService";
 import { autoGraphService } from "../services/graph/index";
+import { literatureMetadataService } from "../services/ai/literatureMetadataService";
 import { cacheService, CacheKeys } from "../services/common/cacheService";
 import { aiService } from "../services/ai/aiService";
 import type {
@@ -118,29 +119,69 @@ async function withLiteratureTracking<T>(
   }
 }
 
+const metadataRequestSchema = z.object({
+  content: z.string().max(100000).optional(),
+  url: z
+    .string()
+    .url()
+    .max(2000)
+    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
+      message: "URL 必须以 http:// 或 https:// 开头",
+    })
+    .refine(
+      (val) => {
+        try {
+          const parsed = new URL(val);
+          return !parsed.hostname.match(
+            /^(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/i,
+          );
+        } catch {
+          return false;
+        }
+      },
+      { message: "禁止访问内网地址" },
+    )
+    .optional(),
+  file: z.any().optional(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+  language: z.string().optional(),
+});
+
 const literatureExtractSchema = z.object({
   content: z.string().max(100000).optional(),
   url: z
     .string()
     .url()
     .max(2000)
-    .refine(
-      (val) => val.startsWith("http://") || val.startsWith("https://"),
-      { message: "URL 必须以 http:// 或 https:// 开头" }
-    )
+    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
+      message: "URL 必须以 http:// 或 https:// 开头",
+    })
     .refine(
       (val) => {
         try {
           const parsed = new URL(val);
-          return !parsed.hostname.match(/^(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/i);
+          return !parsed.hostname.match(
+            /^(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/i,
+          );
         } catch {
           return false;
         }
       },
-      { message: "禁止访问内网地址" }
+      { message: "禁止访问内网地址" },
     )
     .optional(),
   graph_id: z.string().uuid(),
+  literature: z
+    .object({
+      title: z.string().optional(),
+      authors: z.array(z.string()).optional(),
+      year: z.number().optional(),
+      url: z.string().optional(),
+      fileName: z.string().optional(),
+      type: z.enum(["paper", "book", "article", "document"]).optional(),
+    })
+    .optional(),
   options: z
     .object({
       extractTypes: z
@@ -157,6 +198,7 @@ const literatureExtractSchema = z.object({
         .optional(),
       maxConcepts: z.number().min(1).max(50).optional(),
       similarityThreshold: z.number().min(0).max(1).optional(),
+      autoDetectMetadata: z.boolean().optional(),
     })
     .optional(),
   provider: z.string().optional(),
@@ -222,11 +264,91 @@ const literatureApplySchema = z.object({
 });
 
 router.post(
+  "/metadata",
+  requireAuth,
+  validate(metadataRequestSchema),
+  async (req: AuthRequest, res: Response) => {
+    const {
+      content,
+      url,
+      file,
+      provider: providerType,
+      model,
+      language,
+    } = req.body;
+    const supabase = req.supabase;
+
+    if (!supabase) {
+      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+        message: "Unauthorized: No Supabase client",
+      });
+    }
+
+    if (!content && !url && !file) {
+      throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD, {
+        message: "必须提供 content、url 或 file 参数",
+      });
+    }
+
+    try {
+      let textContent = content || "";
+
+      if (url && !content) {
+        logger.info(`Fetching URL content for metadata extraction: ${url}`);
+        const scrapedResult = await scrapeUrl(url);
+        textContent = scrapedResult.text;
+      }
+
+      const metadata = await literatureMetadataService.extractMetadata(
+        textContent,
+        {
+          provider: providerType as AIProviderType | undefined,
+          model,
+          userId: req.user.id,
+          language,
+        },
+      );
+
+      logger.info("Literature metadata extracted successfully", {
+        title: metadata.title,
+        type: metadata.type,
+        confidence: metadata.confidence,
+        userId: req.user.id,
+      });
+
+      res.json({
+        metadata,
+        confidence: metadata.confidence,
+      });
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("Literature Metadata Extract Error:", error);
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        err.message || "文献元数据提取失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  },
+);
+
+router.post(
   "/extract",
   requireAuth,
   validate(literatureExtractSchema),
   async (req: AuthRequest, res: Response) => {
-    const { content, url, graph_id, options, provider: providerType, model, language, session_id } = req.body;
+    const {
+      content,
+      url,
+      graph_id,
+      literature: inputLiterature,
+      options,
+      provider: providerType,
+      model,
+      language,
+      session_id,
+    } = req.body;
     const supabase = req.supabase;
 
     if (!supabase) {
@@ -266,16 +388,63 @@ router.post(
         textContent = scrapedResult.text;
         literatureTitle = scrapedResult.title;
       } else if (content) {
-        const firstLine = content.split("\n").find((line: string) => line.trim());
+        const firstLine = content
+          .split("\n")
+          .find((line: string) => line.trim());
         literatureTitle = firstLine?.slice(0, 100) || "文本内容";
       }
 
-      const literature: LiteratureInfo = {
-        title: literatureTitle,
-        url: literatureUrl,
-        type: url ? "article" : "document",
-        processedAt: new Date().toISOString(),
-      };
+      const hasManualLiterature = inputLiterature && inputLiterature.title;
+
+      let literature: LiteratureInfo;
+
+      if (hasManualLiterature) {
+        literature = {
+          title: inputLiterature.title || literatureTitle,
+          authors: inputLiterature.authors,
+          year: inputLiterature.year,
+          url: inputLiterature.url || literatureUrl,
+          fileName: inputLiterature.fileName,
+          type: inputLiterature.type || (url ? "article" : "document"),
+          processedAt: new Date().toISOString(),
+        };
+      } else if (options?.autoDetectMetadata) {
+        logger.info("Auto-detecting literature metadata");
+        const detectedMetadata = await literatureMetadataService.extractMetadata(
+          textContent,
+          {
+            provider: providerType as AIProviderType | undefined,
+            model,
+            userId: req.user.id,
+            graphId: graph_id,
+            language,
+          },
+        );
+
+        literature = {
+          title: detectedMetadata.title || literatureTitle,
+          authors: detectedMetadata.authors,
+          year: detectedMetadata.year,
+          url: literatureUrl,
+          type: detectedMetadata.type === "report" || detectedMetadata.type === "webpage"
+            ? "document"
+            : detectedMetadata.type,
+          processedAt: new Date().toISOString(),
+        };
+
+        logger.info("Literature metadata auto-detected", {
+          title: literature.title,
+          type: literature.type,
+          confidence: detectedMetadata.confidence,
+        });
+      } else {
+        literature = {
+          title: literatureTitle,
+          url: literatureUrl,
+          type: url ? "article" : "document",
+          processedAt: new Date().toISOString(),
+        };
+      }
 
       const extractOptions = {
         provider: providerType as AIProviderType | undefined,
@@ -432,17 +601,19 @@ router.post(
 
         let merged = false;
         for (const [existingId, existingNode] of existingNodesMap) {
-          const similarity = await conceptAggregationService.calculateSimilarity(
-            embedding,
-            existingNode.embedding,
-          );
+          const similarity =
+            await conceptAggregationService.calculateSimilarity(
+              embedding,
+              existingNode.embedding,
+            );
 
           if (similarity >= 0.85) {
-            const upgradeResult = await conceptAggregationService.upgradeNodeLevel(
-              supabase,
-              existingId,
-              [conceptSource],
-            );
+            const upgradeResult =
+              await conceptAggregationService.upgradeNodeLevel(
+                supabase,
+                existingId,
+                [conceptSource],
+              );
 
             if (upgradeResult.success) {
               const { data: existingGN } = await supabase
@@ -457,7 +628,9 @@ router.post(
                 nodeMapping[concept.title] = existingId;
                 merged = true;
                 mergedCount++;
-                logger.info(`Merged concept "${concept.title}" with existing "${existingNode.title}"`);
+                logger.info(
+                  `Merged concept "${concept.title}" with existing "${existingNode.title}"`,
+                );
                 break;
               }
             }
@@ -499,7 +672,9 @@ router.post(
           aiNodesData,
         );
 
-        for (const [tempId, mapping] of Object.entries(createResult.nodeMapping)) {
+        for (const [tempId, mapping] of Object.entries(
+          createResult.nodeMapping,
+        )) {
           nodeMapping[tempId] = mapping.knowledgePointId;
           addedCount++;
 
@@ -511,9 +686,8 @@ router.post(
                 properties: {
                   sources: [nodeData.source],
                   sourceCount: 1,
-                  conceptType: conceptsToProcess.find(
-                    (c) => c.title === tempId,
-                  )?.type,
+                  conceptType: conceptsToProcess.find((c) => c.title === tempId)
+                    ?.type,
                   backboneModule: nodeData.targetModule,
                 },
               })
@@ -560,7 +734,8 @@ router.post(
         .eq("id", graph_id)
         .single();
 
-      const currentReferenceBooks = (currentGraph?.reference_books || []) as ReferenceBook[];
+      const currentReferenceBooks = (currentGraph?.reference_books ||
+        []) as ReferenceBook[];
       const existingBookIndex = currentReferenceBooks.findIndex(
         (book) =>
           book.title === referenceBook.title ||

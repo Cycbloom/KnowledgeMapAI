@@ -307,9 +307,15 @@ export const useTutorOperations = ({
   const handleSwitchTutorMode = (mode: TutorMode) => {
     setTutorMode(mode);
     setIsTutorMode(true);
+    const modeLabels: Record<TutorMode, string> = {
+      free: "自由对话",
+      guided: "引导学习",
+      "learning-path": "学习路径",
+      "literature-extract": "文献提取",
+    };
     frontendEventBus.publish("message_show", {
       type: "info",
-      content: `已切换到${mode === "free" ? "自由对话" : "引导学习"}模式`,
+      content: `已切换到${modeLabels[mode]}模式`,
     });
   };
 

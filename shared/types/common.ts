@@ -142,7 +142,11 @@ export interface StudyCard {
   created_at?: string;
 }
 
-export type TutorMode = "free" | "guided" | "learning-path";
+export type TutorMode =
+  | "free"
+  | "guided"
+  | "learning-path"
+  | "literature-extract";
 
 export interface TutorExtractedConcept {
   title: string;

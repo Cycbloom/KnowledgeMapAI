@@ -21,6 +21,7 @@ import { VoiceSettings, VoiceControl } from "./VoiceSettings";
 import { ConceptsPanel } from "./ConceptsPanel";
 import { SuggestionsPanel } from "./SuggestionsPanel";
 import { LearningPathPanel } from "../Learning/LearningPathPanel";
+import { LiteratureExtractPanel } from "../LiteratureExtract/LiteratureExtractPanel";
 import "katex/dist/katex.min.css";
 import { useTranslation } from "react-i18next";
 
@@ -408,13 +409,13 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
         <div
           className={`px-4 py-2 border-b ${isDark ? "bg-slate-800 border-slate-700" : "bg-amber-50 border-amber-100"}`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className={`text-xs font-medium ${isDark ? "text-amber-300" : "text-amber-600"}`}
             >
               {t("aiChat.modeLabel")}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               <button
                 onClick={() => onSwitchTutorMode?.("free")}
                 className={`px-3 py-1 text-xs rounded-md transition-all ${
@@ -451,6 +452,18 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               >
                 {t("aiChat.modeLearningPath")}
               </button>
+              <button
+                onClick={() => onSwitchTutorMode?.("literature-extract")}
+                className={`px-3 py-1 text-xs rounded-md transition-all ${
+                  tutorMode === "literature-extract"
+                    ? "bg-amber-500 text-white"
+                    : isDark
+                      ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      : "bg-white text-amber-600 hover:bg-amber-100"
+                }`}
+              >
+                {t("aiChat.modeLiteratureExtract")}
+              </button>
             </div>
           </div>
         </div>
@@ -471,6 +484,21 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             onNodeSelect={onLearningPathNodeClick || onNodeClick}
             onPathSelect={onPathSelect}
             selectedPathId={selectedLearningPathId}
+          />
+        ) : isTutorMode && tutorMode === "literature-extract" && graphId ? (
+          <LiteratureExtractPanel
+            graphId={graphId}
+            onExtractComplete={(result) => {
+              if (result.concepts.length > 0) {
+                frontendEventBus.publish("message_show", {
+                  type: "success",
+                  content: t("literatureExtract.success.extracted", {
+                    count: result.concepts.length,
+                  }),
+                });
+              }
+            }}
+            className="h-full"
           />
         ) : (
           <>
@@ -636,7 +664,10 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
           </div>
         )}
 
-      {!(isTutorMode && tutorMode === "learning-path") && (
+      {!(
+        isTutorMode &&
+        (tutorMode === "learning-path" || tutorMode === "literature-extract")
+      ) && (
         <ChatInput
           input={chatState.input}
           isDark={isDark}

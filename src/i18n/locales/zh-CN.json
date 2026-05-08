@@ -3105,7 +3105,13 @@
     "backboneModule": {
       "refined": "已完善",
       "pending": "待完善",
-      "conceptCount": "{{count}} 个概念"
+      "conceptCount": "{{count}} 个概念",
+      "research_background": "研究背景",
+      "literature_review": "文献综述",
+      "research_methods": "研究方法",
+      "core_concepts": "核心概念",
+      "application_domains": "应用领域",
+      "future_directions": "未来方向"
     },
     "inputMode": {
       "text": "文本",
@@ -3140,7 +3146,11 @@
       "mechanism": "机制",
       "technology": "技术",
       "tool": "工具",
-      "operation": "操作"
+      "operation": "操作",
+      "theory": "理论",
+      "finding": "发现",
+      "trend": "趋势",
+      "challenge": "挑战"
     },
     "progress": {
       "uploading": "正在上传...",
@@ -3158,19 +3168,27 @@
       "fileTooLarge": "文件大小超过限制（最大 10MB）",
       "extractFailed": "提取失败，请重试",
       "noCitationText": "请输入引用信息",
-      "metadataDetectionFailed": "元数据识别失败，请重试"
+      "metadataDetectionFailed": "元数据识别失败，请重试",
+      "saveFailed": "保存失败，请重试"
     },
     "success": {
-      "extracted": "成功提取 {{count}} 个知识概念"
+      "extracted": "成功提取 {{count}} 个知识概念",
+      "saved": "成功保存到图谱！新增 {{addedCount}} 个概念，合并 {{mergedCount}} 个概念"
     },
     "result": {
       "title": "提取完成",
       "conceptsExtracted": "提取了 {{count}} 个知识概念",
       "relationsFound": "发现 {{count}} 条概念关系",
-      "source": "来源"
+      "source": "来源",
+      "conceptList": "概念列表",
+      "relationList": "关系列表",
+      "similarity": "相似度 {{value}}%",
+      "confidence": "置信度 {{value}}%"
     },
     "processing": "处理中...",
     "startExtract": "开始提取",
+    "saving": "保存中...",
+    "saveToGraph": "保存到图谱",
     "previewTitle": "概念预览",
     "previewDescription": "以下是从文献中提取的概念，请选择要添加到图谱的概念。",
     "selectedCount": "已选择 {{selected}} / {{total}} 个概念",
@@ -3277,6 +3295,10 @@
     "operation": "操作",
     "concept": "概念",
     "technology": "技术",
-    "tool": "工具"
+    "tool": "工具",
+    "theory": "理论",
+    "finding": "发现",
+    "trend": "趋势",
+    "challenge": "挑战"
   }
 }

@@ -1,4 +1,10 @@
-import { useState, useLayoutEffect, useRef, useCallback, useEffect } from "react";
+import {
+  useState,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
@@ -65,7 +71,16 @@ interface DatabaseConfig {
   connected: boolean;
 }
 
-const PROVIDER_DEFAULTS: Record<string, { name: string; baseURL: string; model: string; embeddingModel?: string; supportsEmbedding?: boolean }> = {
+const PROVIDER_DEFAULTS: Record<
+  string,
+  {
+    name: string;
+    baseURL: string;
+    model: string;
+    embeddingModel?: string;
+    supportsEmbedding?: boolean;
+  }
+> = {
   deepseek: {
     name: "Deepseek",
     baseURL: "https://api.deepseek.com/v1",
@@ -130,21 +145,21 @@ export const Settings = () => {
 
   const [mainAiConfig, setMainAiConfig] = useState({
     provider: "deepseek",
-    apiKey: "",
     model: "deepseek-chat",
-    baseURL: "https://api.deepseek.com/v1",
   });
-  const [mainAiStatus, setMainAiStatus] = useState<{ configured: boolean; source: string } | null>(null);
+  const [mainAiStatus, setMainAiStatus] = useState<{
+    configured: boolean;
+    source: string;
+  } | null>(null);
   const [embeddingAiConfig, setEmbeddingAiConfig] = useState({
     provider: "volcengine",
-    apiKey: "",
     model: "doubao-embedding-vision-251215",
-    baseURL: "https://ark.cn-beijing.volces.com/api/v3",
     enabled: true,
   });
-  const [embeddingAiStatus, setEmbeddingAiStatus] = useState<{ configured: boolean; source: string } | null>(null);
-  const [showMainAiApiKey, setShowMainAiApiKey] = useState(false);
-  const [showEmbeddingApiKey, setShowEmbeddingApiKey] = useState(false);
+  const [embeddingAiStatus, setEmbeddingAiStatus] = useState<{
+    configured: boolean;
+    source: string;
+  } | null>(null);
   const [testingMainAi, setTestingMainAi] = useState(false);
   const [testingEmbedding, setTestingEmbedding] = useState(false);
 
@@ -166,10 +181,18 @@ export const Settings = () => {
   const [mobileModel, setMobileModel] = useState("deepseek-chat");
   const [showMobileApiKey, setShowMobileApiKey] = useState(false);
 
-  const [providerConfigs, setProviderConfigs] = useState<Record<string, ProviderConfig>>({});
-  const [providerForms, setProviderForms] = useState<Record<string, ProviderFormData>>({});
-  const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({});
-  const [showProviderApiKeys, setShowProviderApiKeys] = useState<Record<string, boolean>>({});
+  const [providerConfigs, setProviderConfigs] = useState<
+    Record<string, ProviderConfig>
+  >({});
+  const [providerForms, setProviderForms] = useState<
+    Record<string, ProviderFormData>
+  >({});
+  const [expandedProviders, setExpandedProviders] = useState<
+    Record<string, boolean>
+  >({});
+  const [showProviderApiKeys, setShowProviderApiKeys] = useState<
+    Record<string, boolean>
+  >({});
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [providerLoading, setProviderLoading] = useState(false);
 
@@ -179,14 +202,24 @@ export const Settings = () => {
     mode: "cloud",
     connected: false,
   });
-  const [dbForm, setDbForm] = useState({ url: "", anonKey: "", serviceRoleKey: "", databaseUrl: "" });
+  const [dbForm, setDbForm] = useState({
+    url: "",
+    anonKey: "",
+    serviceRoleKey: "",
+    databaseUrl: "",
+  });
   const [dbExpanded, setDbExpanded] = useState(false);
   const [showDbAnonKey, setShowDbAnonKey] = useState(false);
   const [showDbServiceRoleKey, setShowDbServiceRoleKey] = useState(false);
   const [dbSaving, setDbSaving] = useState(false);
   const [dbTesting, setDbTesting] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
-  const [schemaStatus, setSchemaStatus] = useState<{ status: string; executedCount: number; totalMigrations: number; missingVersions: string[] } | null>(null);
+  const [schemaStatus, setSchemaStatus] = useState<{
+    status: string;
+    executedCount: number;
+    totalMigrations: number;
+    missingVersions: string[];
+  } | null>(null);
   const [migrating, setMigrating] = useState(false);
   const [reinitializing, setReinitializing] = useState(false);
   const [reinitConfirm, setReinitConfirm] = useState(false);
@@ -194,7 +227,10 @@ export const Settings = () => {
   const dbSectionRef = useRef<HTMLDivElement>(null);
 
   const scrollToDbSection = useCallback(() => {
-    dbSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    dbSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }, []);
 
   useLayoutEffect(() => {
@@ -237,25 +273,38 @@ export const Settings = () => {
     const loadAiConfigs = async () => {
       try {
         const [mainRes, embRes] = await Promise.all([
-          apiClient.get("/ai/config/main-ai") as Promise<Record<string, unknown>>,
-          apiClient.get("/ai/config/embedding") as Promise<Record<string, unknown>>,
+          apiClient.get("/ai/config/main-ai") as Promise<
+            Record<string, unknown>
+          >,
+          apiClient.get("/ai/config/embedding") as Promise<
+            Record<string, unknown>
+          >,
         ]);
 
         const mainProvider = mainRes.provider as string;
         if (mainProvider) {
-          setMainAiConfig(prev => ({
+          setMainAiConfig((prev) => ({
             ...prev,
             provider: mainProvider,
-            model: (mainRes.model as string) || PROVIDER_DEFAULTS[mainProvider]?.model || "",
-            baseURL: (mainRes.baseURL as string) || PROVIDER_DEFAULTS[mainProvider]?.baseURL || "",
+            model:
+              (mainRes.model as string) ||
+              PROVIDER_DEFAULTS[mainProvider]?.model ||
+              "",
+            baseURL:
+              (mainRes.baseURL as string) ||
+              PROVIDER_DEFAULTS[mainProvider]?.baseURL ||
+              "",
             apiKey: "",
           }));
-          setMainAiStatus({ configured: mainRes.configured as boolean, source: mainRes.source as string });
+          setMainAiStatus({
+            configured: mainRes.configured as boolean,
+            source: mainRes.source as string,
+          });
         }
 
         const embProvider = embRes.provider as string;
         if (embProvider) {
-          setEmbeddingAiConfig(prev => ({
+          setEmbeddingAiConfig((prev) => ({
             ...prev,
             provider: embProvider,
             model: (embRes.model as string) || "",
@@ -263,9 +312,12 @@ export const Settings = () => {
             apiKey: "",
             enabled: true,
           }));
-          setEmbeddingAiStatus({ configured: embRes.configured as boolean, source: embRes.source as string });
+          setEmbeddingAiStatus({
+            configured: embRes.configured as boolean,
+            source: embRes.source as string,
+          });
         } else {
-          setEmbeddingAiConfig(prev => ({ ...prev, enabled: false }));
+          setEmbeddingAiConfig((prev) => ({ ...prev, enabled: false }));
           setEmbeddingAiStatus({ configured: false, source: "none" });
         }
       } catch {
@@ -280,7 +332,9 @@ export const Settings = () => {
   const fetchProviderConfigs = async () => {
     setProviderLoading(true);
     try {
-      const response = await apiClient.get("/ai/config/providers") as { providers: Record<string, ProviderConfig> };
+      const response = (await apiClient.get("/ai/config/providers")) as {
+        providers: Record<string, ProviderConfig>;
+      };
       const providers = response.providers || {};
       setProviderConfigs(providers);
       const forms: Record<string, ProviderFormData> = {};
@@ -307,7 +361,11 @@ export const Settings = () => {
     } catch {
       const forms: Record<string, ProviderFormData> = {};
       for (const [key, defaults] of Object.entries(PROVIDER_DEFAULTS)) {
-        forms[key] = { apiKey: "", baseURL: defaults.baseURL, model: defaults.model };
+        forms[key] = {
+          apiKey: "",
+          baseURL: defaults.baseURL,
+          model: defaults.model,
+        };
       }
       setProviderForms(forms);
     } finally {
@@ -318,10 +376,17 @@ export const Settings = () => {
   const fetchDatabaseConfig = async () => {
     setDbLoading(true);
     try {
-      const response = await apiClient.get("/ai/config/database") as DatabaseConfig;
+      const response = (await apiClient.get(
+        "/ai/config/database",
+      )) as DatabaseConfig;
       setDatabaseConfig(response);
     } catch {
-      setDatabaseConfig({ configured: false, url: "", mode: "cloud", connected: false });
+      setDatabaseConfig({
+        configured: false,
+        url: "",
+        mode: "cloud",
+        connected: false,
+      });
     } finally {
       setDbLoading(false);
     }
@@ -329,7 +394,12 @@ export const Settings = () => {
 
   const fetchSchemaStatus = async () => {
     try {
-      const response = await apiClient.get("/database/status") as { status: string; executedCount: number; totalMigrations: number; missingVersions: string[] };
+      const response = (await apiClient.get("/database/status")) as {
+        status: string;
+        executedCount: number;
+        totalMigrations: number;
+        missingVersions: string[];
+      };
       setSchemaStatus(response);
     } catch {
       setSchemaStatus(null);
@@ -341,7 +411,10 @@ export const Settings = () => {
     if (!form) return;
 
     try {
-      const updateData: Record<string, { apiKey?: string; baseURL?: string; model?: string }> = {};
+      const updateData: Record<
+        string,
+        { apiKey?: string; baseURL?: string; model?: string }
+      > = {};
       updateData[provider] = {
         apiKey: form.apiKey,
         baseURL: form.baseURL,
@@ -350,7 +423,9 @@ export const Settings = () => {
       await apiClient.put("/ai/config/providers", { providers: updateData });
       frontendEventBus.publish("message_show", {
         type: "success",
-        content: t("settings.providerConfigSaved", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+        content: t("settings.providerConfigSaved", {
+          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+        }),
       });
       await fetchProviderConfigs();
     } catch {
@@ -367,27 +442,35 @@ export const Settings = () => {
 
     setTestingProvider(provider);
     try {
-      const response = await apiClient.post("/ai/config/providers/test", {
+      const response = (await apiClient.post("/ai/config/providers/test", {
         provider,
         apiKey: form.apiKey,
         baseURL: form.baseURL,
         model: form.model,
-      }) as { success: boolean; message: string };
+      })) as { success: boolean; message: string };
       if (response.success) {
         frontendEventBus.publish("message_show", {
           type: "success",
-          content: t("settings.providerTestSuccess", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+          content: t("settings.providerTestSuccess", {
+            provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+          }),
         });
       } else {
         frontendEventBus.publish("message_show", {
           type: "error",
-          content: response.message || t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+          content:
+            response.message ||
+            t("settings.providerTestFailed", {
+              provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+            }),
         });
       }
     } catch {
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+        content: t("settings.providerTestFailed", {
+          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+        }),
       });
     } finally {
       setTestingProvider(null);
@@ -396,7 +479,10 @@ export const Settings = () => {
 
   const handleClearProviderConfig = async (provider: string) => {
     try {
-      const updateData: Record<string, { apiKey: string; baseURL: string; model: string }> = {};
+      const updateData: Record<
+        string,
+        { apiKey: string; baseURL: string; model: string }
+      > = {};
       updateData[provider] = { apiKey: "", baseURL: "", model: "" };
       await apiClient.put("/ai/config/providers", { providers: updateData });
       setProviderForms((prev) => ({
@@ -409,7 +495,9 @@ export const Settings = () => {
       }));
       frontendEventBus.publish("message_show", {
         type: "success",
-        content: t("settings.providerConfigCleared", { provider: PROVIDER_DEFAULTS[provider]?.name || provider }),
+        content: t("settings.providerConfigCleared", {
+          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+        }),
       });
       await fetchProviderConfigs();
     } catch {
@@ -581,7 +669,7 @@ export const Settings = () => {
 
   const handleMainAiProviderChange = (provider: string) => {
     const defaults = PROVIDER_DEFAULTS[provider];
-    setMainAiConfig(prev => ({
+    setMainAiConfig((prev) => ({
       ...prev,
       provider,
       model: defaults?.model || "",
@@ -591,11 +679,10 @@ export const Settings = () => {
 
   const handleEmbeddingProviderChange = (provider: string) => {
     const defaults = PROVIDER_DEFAULTS[provider];
-    setEmbeddingAiConfig(prev => ({
+    setEmbeddingAiConfig((prev) => ({
       ...prev,
       provider,
       model: defaults?.embeddingModel || "",
-      baseURL: defaults?.baseURL || "",
     }));
   };
 
@@ -603,14 +690,18 @@ export const Settings = () => {
     try {
       await apiClient.put("/ai/config/main-ai", {
         provider: mainAiConfig.provider,
-        apiKey: mainAiConfig.apiKey || undefined,
         model: mainAiConfig.model,
-        baseURL: mainAiConfig.baseURL,
       });
-      frontendEventBus.publish("message_show", { type: "success", content: t("settings.mainAiSaved") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("settings.mainAiSaved"),
+      });
       setMainAiStatus({ configured: true, source: "user" });
     } catch {
-      frontendEventBus.publish("message_show", { type: "error", content: t("settings.mainAiSaveFailed") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.mainAiSaveFailed"),
+      });
     }
   };
 
@@ -619,38 +710,66 @@ export const Settings = () => {
       if (!embeddingAiConfig.enabled) {
         await apiClient.put("/ai/config/embedding", { enabled: false });
         setEmbeddingAiStatus({ configured: false, source: "none" });
-        frontendEventBus.publish("message_show", { type: "success", content: t("settings.embeddingDisabled") });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("settings.embeddingDisabled"),
+        });
         return;
       }
       await apiClient.put("/ai/config/embedding", {
         provider: embeddingAiConfig.provider,
-        apiKey: embeddingAiConfig.apiKey || undefined,
         model: embeddingAiConfig.model,
-        baseURL: embeddingAiConfig.baseURL,
       });
       setEmbeddingAiStatus({ configured: true, source: "user" });
-      frontendEventBus.publish("message_show", { type: "success", content: t("settings.embeddingSaved") });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("settings.embeddingSaved"),
+      });
     } catch {
-      frontendEventBus.publish("message_show", { type: "error", content: t("settings.embeddingSaveFailed") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.embeddingSaveFailed"),
+      });
     }
   };
 
   const handleTestMainAi = async () => {
     setTestingMainAi(true);
     try {
-      const response = await apiClient.post("/ai/config/providers/test", {
+      const response = (await apiClient.post("/ai/config/providers/test", {
         provider: mainAiConfig.provider,
-        apiKey: mainAiConfig.apiKey,
-        baseURL: mainAiConfig.baseURL,
         model: mainAiConfig.model,
-      }) as { success: boolean; message: string };
+      })) as { success: boolean; message: string };
       if (response.success) {
-        frontendEventBus.publish("message_show", { type: "success", content: t("settings.providerTestSuccess", { provider: PROVIDER_DEFAULTS[mainAiConfig.provider]?.name || mainAiConfig.provider }) });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("settings.providerTestSuccess", {
+            provider:
+              PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
+              mainAiConfig.provider,
+          }),
+        });
       } else {
-        frontendEventBus.publish("message_show", { type: "error", content: response.message || t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[mainAiConfig.provider]?.name || mainAiConfig.provider }) });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content:
+            response.message ||
+            t("settings.providerTestFailed", {
+              provider:
+                PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
+                mainAiConfig.provider,
+            }),
+        });
       }
     } catch {
-      frontendEventBus.publish("message_show", { type: "error", content: t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[mainAiConfig.provider]?.name || mainAiConfig.provider }) });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.providerTestFailed", {
+          provider:
+            PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
+            mainAiConfig.provider,
+        }),
+      });
     } finally {
       setTestingMainAi(false);
     }
@@ -659,19 +778,40 @@ export const Settings = () => {
   const handleTestEmbedding = async () => {
     setTestingEmbedding(true);
     try {
-      const response = await apiClient.post("/ai/config/providers/test", {
+      const response = (await apiClient.post("/ai/config/providers/test", {
         provider: embeddingAiConfig.provider,
-        apiKey: embeddingAiConfig.apiKey,
-        baseURL: embeddingAiConfig.baseURL,
         model: embeddingAiConfig.model,
-      }) as { success: boolean; message: string };
+      })) as { success: boolean; message: string };
       if (response.success) {
-        frontendEventBus.publish("message_show", { type: "success", content: t("settings.providerTestSuccess", { provider: PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name || embeddingAiConfig.provider }) });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("settings.providerTestSuccess", {
+            provider:
+              PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
+              embeddingAiConfig.provider,
+          }),
+        });
       } else {
-        frontendEventBus.publish("message_show", { type: "error", content: response.message || t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name || embeddingAiConfig.provider }) });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content:
+            response.message ||
+            t("settings.providerTestFailed", {
+              provider:
+                PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
+                embeddingAiConfig.provider,
+            }),
+        });
       }
     } catch {
-      frontendEventBus.publish("message_show", { type: "error", content: t("settings.providerTestFailed", { provider: PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name || embeddingAiConfig.provider }) });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("settings.providerTestFailed", {
+          provider:
+            PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
+            embeddingAiConfig.provider,
+        }),
+      });
     } finally {
       setTestingEmbedding(false);
     }
@@ -834,9 +974,7 @@ export const Settings = () => {
                         {
                           backgroundColor: color,
                           "--tw-ring-color":
-                            themePreset === preset.key
-                              ? color
-                              : "transparent",
+                            themePreset === preset.key ? color : "transparent",
                         } as React.CSSProperties
                       }
                     />
@@ -965,162 +1103,189 @@ export const Settings = () => {
           )}
 
           <div className="space-y-3">
-            {Object.entries(PROVIDER_DEFAULTS).map(([providerKey, defaults]) => {
-              const config = providerConfigs[providerKey];
-              const form = providerForms[providerKey];
-              const isExpanded = expandedProviders[providerKey] ?? false;
-              const showApiKey = showProviderApiKeys[providerKey] ?? false;
-              const isEnvSource = config?.source === "env";
+            {Object.entries(PROVIDER_DEFAULTS).map(
+              ([providerKey, defaults]) => {
+                const config = providerConfigs[providerKey];
+                const form = providerForms[providerKey];
+                const isExpanded = expandedProviders[providerKey] ?? false;
+                const showApiKey = showProviderApiKeys[providerKey] ?? false;
+                const isEnvSource = config?.source === "env";
 
-              return (
-                <div
-                  key={providerKey}
-                  className="rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden"
-                >
-                  <button
-                    onClick={() =>
-                      setExpandedProviders((prev) => ({
-                        ...prev,
-                        [providerKey]: !prev[providerKey],
-                      }))
-                    }
-                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors min-h-[44px]"
+                return (
+                  <div
+                    key={providerKey}
+                    className="rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden"
                   >
-                    <div className="flex items-center gap-3">
-                      <Zap className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                      <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                        {defaults.name}
-                      </span>
-                      {config && renderProviderBadge(config)}
-                    </div>
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
-
-                  {isExpanded && form && (
-                    <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-700">
-                      {isEnvSource && (
-                        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
-                          <Info className="w-4 h-4 mt-0.5 shrink-0" />
-                          {t("settings.envConfigHint")}
-                        </div>
+                    <button
+                      onClick={() =>
+                        setExpandedProviders((prev) => ({
+                          ...prev,
+                          [providerKey]: !prev[providerKey],
+                        }))
+                      }
+                      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors min-h-[44px]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Zap className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                        <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                          {defaults.name}
+                        </span>
+                        {config && renderProviderBadge(config)}
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
                       )}
+                    </button>
 
-                      {config?.source === "none" && (
-                        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm text-amber-700 dark:text-amber-300 flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                          {t("settings.noApiKeyHint", { provider: defaults.name })}
+                    {isExpanded && form && (
+                      <div className="p-4 pt-0 space-y-3 border-t border-gray-100 dark:border-slate-700">
+                        {isEnvSource && (
+                          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                            <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                            {t("settings.envConfigHint")}
+                          </div>
+                        )}
+
+                        {config?.source === "none" && (
+                          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                            {t("settings.noApiKeyHint", {
+                              provider: defaults.name,
+                            })}
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            API Key
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showApiKey ? "text" : "password"}
+                              value={isEnvSource ? "" : form.apiKey}
+                              onChange={(e) =>
+                                setProviderForms((prev) => ({
+                                  ...prev,
+                                  [providerKey]: {
+                                    ...prev[providerKey],
+                                    apiKey: e.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder={
+                                isEnvSource
+                                  ? t("settings.envConfigPlaceholder")
+                                  : t("settings.enterApiKey")
+                              }
+                              disabled={isEnvSource}
+                              className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowProviderApiKeys((prev) => ({
+                                  ...prev,
+                                  [providerKey]: !prev[providerKey],
+                                }))
+                              }
+                              className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            >
+                              {showApiKey
+                                ? t("settings.hide")
+                                : t("settings.show")}
+                            </button>
+                          </div>
                         </div>
-                      )}
 
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                          API Key
-                        </label>
-                        <div className="relative">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            Base URL
+                          </label>
                           <input
-                            type={showApiKey ? "text" : "password"}
-                            value={isEnvSource ? "" : form.apiKey}
+                            type="text"
+                            value={form.baseURL}
                             onChange={(e) =>
                               setProviderForms((prev) => ({
                                 ...prev,
-                                [providerKey]: { ...prev[providerKey], apiKey: e.target.value },
+                                [providerKey]: {
+                                  ...prev[providerKey],
+                                  baseURL: e.target.value,
+                                },
                               }))
                             }
-                            placeholder={isEnvSource ? t("settings.envConfigPlaceholder") : t("settings.enterApiKey")}
-                            disabled={isEnvSource}
-                            className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                            placeholder={defaults.baseURL}
+                            className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                           />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShowProviderApiKeys((prev) => ({
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            {t("settings.defaultModel")}
+                          </label>
+                          <input
+                            type="text"
+                            value={form.model}
+                            onChange={(e) =>
+                              setProviderForms((prev) => ({
                                 ...prev,
-                                [providerKey]: !prev[providerKey],
+                                [providerKey]: {
+                                  ...prev[providerKey],
+                                  model: e.target.value,
+                                },
                               }))
                             }
-                            className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            placeholder={defaults.model}
+                            className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button
+                            onClick={() =>
+                              handleTestProviderConnection(providerKey)
+                            }
+                            disabled={
+                              testingProvider === providerKey || isEnvSource
+                            }
+                            className="px-3 py-2 rounded-md border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 text-sm hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
                           >
-                            {showApiKey ? t("settings.hide") : t("settings.show")}
+                            {testingProvider === providerKey ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Zap className="w-4 h-4" />
+                            )}
+                            {t("settings.testConnection")}
                           </button>
+                          <button
+                            onClick={() =>
+                              handleSaveProviderConfig(providerKey)
+                            }
+                            disabled={isEnvSource}
+                            className="px-3 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+                          >
+                            <Save className="w-4 h-4" />
+                            {t("settings.saveConfig")}
+                          </button>
+                          {config?.configured && config.source === "user" && (
+                            <button
+                              onClick={() =>
+                                handleClearProviderConfig(providerKey)
+                              }
+                              className="px-3 py-2 rounded-md border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 min-h-[44px]"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              {t("settings.clear")}
+                            </button>
+                          )}
                         </div>
                       </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                          Base URL
-                        </label>
-                        <input
-                          type="text"
-                          value={form.baseURL}
-                          onChange={(e) =>
-                            setProviderForms((prev) => ({
-                              ...prev,
-                              [providerKey]: { ...prev[providerKey], baseURL: e.target.value },
-                            }))
-                          }
-                          placeholder={defaults.baseURL}
-                          className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                          {t("settings.defaultModel")}
-                        </label>
-                        <input
-                          type="text"
-                          value={form.model}
-                          onChange={(e) =>
-                            setProviderForms((prev) => ({
-                              ...prev,
-                              [providerKey]: { ...prev[providerKey], model: e.target.value },
-                            }))
-                          }
-                          placeholder={defaults.model}
-                          className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <button
-                          onClick={() => handleTestProviderConnection(providerKey)}
-                          disabled={testingProvider === providerKey || isEnvSource}
-                          className="px-3 py-2 rounded-md border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 text-sm hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
-                        >
-                          {testingProvider === providerKey ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Zap className="w-4 h-4" />
-                          )}
-                          {t("settings.testConnection")}
-                        </button>
-                        <button
-                          onClick={() => handleSaveProviderConfig(providerKey)}
-                          disabled={isEnvSource}
-                          className="px-3 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
-                        >
-                          <Save className="w-4 h-4" />
-                          {t("settings.saveConfig")}
-                        </button>
-                        {config?.configured && config.source === "user" && (
-                          <button
-                            onClick={() => handleClearProviderConfig(providerKey)}
-                            className="px-3 py-2 rounded-md border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 min-h-[44px]"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            {t("settings.clear")}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </div>
+                );
+              },
+            )}
           </div>
         </div>
 
@@ -1152,7 +1317,9 @@ export const Settings = () => {
                 className="p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
               >
                 {Object.entries(PROVIDER_DEFAULTS).map(([key, defaults]) => (
-                  <option key={key} value={key}>{defaults.name}</option>
+                  <option key={key} value={key}>
+                    {defaults.name}
+                  </option>
                 ))}
               </select>
               <div className="flex gap-2">
@@ -1222,20 +1389,31 @@ export const Settings = () => {
                   </h3>
                 </div>
                 {mainAiStatus && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                    mainAiStatus.source === "env"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      mainAiStatus.source === "env"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                        : mainAiStatus.configured
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                    }`}
+                  >
+                    {mainAiStatus.source === "env"
+                      ? t("settings.sourceEnv")
                       : mainAiStatus.configured
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-                  }`}>
-                    {mainAiStatus.source === "env" ? t("settings.sourceEnv") : mainAiStatus.configured ? t("settings.configured") : t("settings.notConfigured")}
+                        ? t("settings.configured")
+                        : t("settings.notConfigured")}
                   </span>
                 )}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                 {t("settings.mainAiConfigDesc")}
               </p>
+
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2 mb-4">
+                <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>API Key 请在上方「AI 服务密钥配置」中为此提供商设置</span>
+              </div>
 
               <div className="space-y-3">
                 <div>
@@ -1247,32 +1425,14 @@ export const Settings = () => {
                     onChange={(e) => handleMainAiProviderChange(e.target.value)}
                     className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   >
-                    {Object.entries(PROVIDER_DEFAULTS).map(([key, defaults]) => (
-                      <option key={key} value={key}>{defaults.name}</option>
-                    ))}
+                    {Object.entries(PROVIDER_DEFAULTS).map(
+                      ([key, defaults]) => (
+                        <option key={key} value={key}>
+                          {defaults.name}
+                        </option>
+                      ),
+                    )}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    API Key
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showMainAiApiKey ? "text" : "password"}
-                      value={mainAiConfig.apiKey}
-                      onChange={(e) => setMainAiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
-                      placeholder={t("settings.enterApiKey")}
-                      className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowMainAiApiKey(!showMainAiApiKey)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    >
-                      {showMainAiApiKey ? t("settings.hide") : t("settings.show")}
-                    </button>
-                  </div>
                 </div>
 
                 <div>
@@ -1282,21 +1442,15 @@ export const Settings = () => {
                   <input
                     type="text"
                     value={mainAiConfig.model}
-                    onChange={(e) => setMainAiConfig(prev => ({ ...prev, model: e.target.value }))}
-                    placeholder={PROVIDER_DEFAULTS[mainAiConfig.provider]?.model || ""}
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Base URL
-                  </label>
-                  <input
-                    type="text"
-                    value={mainAiConfig.baseURL}
-                    onChange={(e) => setMainAiConfig(prev => ({ ...prev, baseURL: e.target.value }))}
-                    placeholder={PROVIDER_DEFAULTS[mainAiConfig.provider]?.baseURL || ""}
+                    onChange={(e) =>
+                      setMainAiConfig((prev) => ({
+                        ...prev,
+                        model: e.target.value,
+                      }))
+                    }
+                    placeholder={
+                      PROVIDER_DEFAULTS[mainAiConfig.provider]?.model || ""
+                    }
                     className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   />
                 </div>
@@ -1336,14 +1490,20 @@ export const Settings = () => {
                   </h3>
                 </div>
                 {embeddingAiStatus && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                    embeddingAiStatus.source === "env"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      embeddingAiStatus.source === "env"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                        : embeddingAiStatus.configured
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                    }`}
+                  >
+                    {embeddingAiStatus.source === "env"
+                      ? t("settings.sourceEnv")
                       : embeddingAiStatus.configured
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-                  }`}>
-                    {embeddingAiStatus.source === "env" ? t("settings.sourceEnv") : embeddingAiStatus.configured ? t("settings.embeddingEnabled") : t("settings.embeddingDisabled")}
+                        ? t("settings.embeddingEnabled")
+                        : t("settings.embeddingDisabled")}
                   </span>
                 )}
               </div>
@@ -1356,7 +1516,12 @@ export const Settings = () => {
                   <input
                     type="checkbox"
                     checked={embeddingAiConfig.enabled}
-                    onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, enabled: e.target.checked }))}
+                    onChange={(e) =>
+                      setEmbeddingAiConfig((prev) => ({
+                        ...prev,
+                        enabled: e.target.checked,
+                      }))
+                    }
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-gray-600 peer-checked:bg-green-600"></div>
@@ -1368,43 +1533,32 @@ export const Settings = () => {
 
               {embeddingAiConfig.enabled ? (
                 <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2 mb-2">
+                    <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                      API Key 请在上方「AI 服务密钥配置」中为此提供商设置
+                    </span>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                       {t("settings.provider")}
                     </label>
                     <select
                       value={embeddingAiConfig.provider}
-                      onChange={(e) => handleEmbeddingProviderChange(e.target.value)}
+                      onChange={(e) =>
+                        handleEmbeddingProviderChange(e.target.value)
+                      }
                       className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
                     >
                       {Object.entries(PROVIDER_DEFAULTS)
                         .filter(([, defaults]) => defaults.supportsEmbedding)
                         .map(([key, defaults]) => (
-                          <option key={key} value={key}>{defaults.name}</option>
+                          <option key={key} value={key}>
+                            {defaults.name}
+                          </option>
                         ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      API Key
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showEmbeddingApiKey ? "text" : "password"}
-                        value={embeddingAiConfig.apiKey}
-                        onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
-                        placeholder={t("settings.enterApiKey")}
-                        className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowEmbeddingApiKey(!showEmbeddingApiKey)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      >
-                        {showEmbeddingApiKey ? t("settings.hide") : t("settings.show")}
-                      </button>
-                    </div>
                   </div>
 
                   <div>
@@ -1414,21 +1568,16 @@ export const Settings = () => {
                     <input
                       type="text"
                       value={embeddingAiConfig.model}
-                      onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, model: e.target.value }))}
-                      placeholder={PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.embeddingModel || ""}
-                      className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Base URL
-                    </label>
-                    <input
-                      type="text"
-                      value={embeddingAiConfig.baseURL}
-                      onChange={(e) => setEmbeddingAiConfig(prev => ({ ...prev, baseURL: e.target.value }))}
-                      placeholder={PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.baseURL || ""}
+                      onChange={(e) =>
+                        setEmbeddingAiConfig((prev) => ({
+                          ...prev,
+                          model: e.target.value,
+                        }))
+                      }
+                      placeholder={
+                        PROVIDER_DEFAULTS[embeddingAiConfig.provider]
+                          ?.embeddingModel || ""
+                      }
                       className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
                     />
                   </div>
@@ -1532,7 +1681,10 @@ export const Settings = () => {
               {schemaStatus.status === "ready" && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {t("settings.schemaReady", { executed: schemaStatus.executedCount, total: schemaStatus.totalMigrations })}
+                  {t("settings.schemaReady", {
+                    executed: schemaStatus.executedCount,
+                    total: schemaStatus.totalMigrations,
+                  })}
                 </span>
               )}
               {schemaStatus.status === "empty" && (
@@ -1544,13 +1696,19 @@ export const Settings = () => {
               {schemaStatus.status === "partial" && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  {t("settings.schemaPartial", { executed: schemaStatus.executedCount, total: schemaStatus.totalMigrations })}
+                  {t("settings.schemaPartial", {
+                    executed: schemaStatus.executedCount,
+                    total: schemaStatus.totalMigrations,
+                  })}
                 </span>
               )}
               {schemaStatus.status === "needs_upgrade" && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  {t("settings.schemaNeedsUpgrade", { executed: schemaStatus.executedCount, total: schemaStatus.totalMigrations })}
+                  {t("settings.schemaNeedsUpgrade", {
+                    executed: schemaStatus.executedCount,
+                    total: schemaStatus.totalMigrations,
+                  })}
                 </span>
               )}
               {schemaStatus.status === "not_configured" && (
@@ -1586,7 +1744,9 @@ export const Settings = () => {
                   <input
                     type="text"
                     value={dbForm.url}
-                    onChange={(e) => setDbForm((prev) => ({ ...prev, url: e.target.value }))}
+                    onChange={(e) =>
+                      setDbForm((prev) => ({ ...prev, url: e.target.value }))
+                    }
                     placeholder="https://xxx.supabase.co"
                     className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
                   />
@@ -1600,7 +1760,12 @@ export const Settings = () => {
                     <input
                       type={showDbAnonKey ? "text" : "password"}
                       value={dbForm.anonKey}
-                      onChange={(e) => setDbForm((prev) => ({ ...prev, anonKey: e.target.value }))}
+                      onChange={(e) =>
+                        setDbForm((prev) => ({
+                          ...prev,
+                          anonKey: e.target.value,
+                        }))
+                      }
                       placeholder="eyJhbGciOi..."
                       className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
                     />
@@ -1622,16 +1787,25 @@ export const Settings = () => {
                     <input
                       type={showDbServiceRoleKey ? "text" : "password"}
                       value={dbForm.serviceRoleKey}
-                      onChange={(e) => setDbForm((prev) => ({ ...prev, serviceRoleKey: e.target.value }))}
+                      onChange={(e) =>
+                        setDbForm((prev) => ({
+                          ...prev,
+                          serviceRoleKey: e.target.value,
+                        }))
+                      }
                       placeholder="eyJhbGciOi..."
                       className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
                     />
                     <button
                       type="button"
-                      onClick={() => setShowDbServiceRoleKey(!showDbServiceRoleKey)}
+                      onClick={() =>
+                        setShowDbServiceRoleKey(!showDbServiceRoleKey)
+                      }
                       className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
-                      {showDbServiceRoleKey ? t("settings.hide") : t("settings.show")}
+                      {showDbServiceRoleKey
+                        ? t("settings.hide")
+                        : t("settings.show")}
                     </button>
                   </div>
                 </div>
@@ -1652,7 +1826,12 @@ export const Settings = () => {
                   <input
                     type="text"
                     value={dbForm.databaseUrl}
-                    onChange={(e) => setDbForm((prev) => ({ ...prev, databaseUrl: e.target.value }))}
+                    onChange={(e) =>
+                      setDbForm((prev) => ({
+                        ...prev,
+                        databaseUrl: e.target.value,
+                      }))
+                    }
                     placeholder={t("settings.databaseUrlPlaceholder")}
                     className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
                   />
@@ -1724,7 +1903,9 @@ export const Settings = () => {
                       setReinitializing(true);
                       setReinitConfirm(false);
                       try {
-                        await apiClient.post("/database/reinitialize", { confirm: true });
+                        await apiClient.post("/database/reinitialize", {
+                          confirm: true,
+                        });
                         frontendEventBus.publish("message_show", {
                           type: "success",
                           content: t("settings.reinitializeSuccess"),
@@ -1751,7 +1932,9 @@ export const Settings = () => {
                     ) : (
                       <AlertTriangle className="w-4 h-4" />
                     )}
-                    {reinitConfirm ? t("settings.reinitializeConfirm") : t("settings.reinitializeDatabase")}
+                    {reinitConfirm
+                      ? t("settings.reinitializeConfirm")
+                      : t("settings.reinitializeDatabase")}
                   </button>
                 </div>
               </div>

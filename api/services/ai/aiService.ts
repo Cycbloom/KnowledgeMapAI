@@ -223,12 +223,14 @@ export class AIService {
   async generateEmbedding(text: string): Promise<number[] | null> {
     const embeddingProvider = await getProviderForTask("embedding");
     if (!embeddingProvider) {
+      logger.warn("No embedding provider available");
       return null;
     }
 
     const provider = await getAIProviderForTask("embedding");
 
     if (!provider.hasKey) {
+      logger.warn("Embedding provider has no API key configured");
       return null;
     }
 

@@ -853,7 +853,11 @@ export type ConceptType =
   | "operation"
   | "concept"
   | "technology"
-  | "tool";
+  | "tool"
+  | "theory"
+  | "finding"
+  | "trend"
+  | "challenge";
 
 export type BackboneModule =
   | "research_background"
@@ -967,6 +971,10 @@ export const CONCEPT_TYPE_LABELS: Record<ConceptType, string> = {
   concept: "概念",
   technology: "技术",
   tool: "工具",
+  theory: "理论",
+  finding: "发现",
+  trend: "趋势",
+  challenge: "挑战",
 };
 
 export const CONCEPT_TYPE_COLORS: Record<ConceptType, string> = {
@@ -976,6 +984,10 @@ export const CONCEPT_TYPE_COLORS: Record<ConceptType, string> = {
   concept: "#8B5CF6",
   technology: "#EC4899",
   tool: "#6366F1",
+  theory: "#8B5CF6",
+  finding: "#6366F1",
+  trend: "#EC4899",
+  challenge: "#F59E0B",
 };
 
 export const BACKBONE_MODULE_LABELS: Record<BackboneModule, string> = {
@@ -1003,4 +1015,8 @@ export const CONCEPT_TO_MODULE_MAP: Record<ConceptType, BackboneModule> = {
   concept: "core_concepts",
   technology: "application_domains",
   tool: "research_methods",
+  theory: "literature_review",
+  finding: "research_background",
+  trend: "future_directions",
+  challenge: "future_directions",
 };

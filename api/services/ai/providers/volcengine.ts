@@ -13,7 +13,8 @@ export class VolcengineProvider extends BaseAIProvider {
   async createEmbedding(text: string) {
     if (!this.embeddingModel) return null;
 
-    // Check if using the multimodal model
+    logger.info(`[Volcengine] Creating embedding. Model: ${this.embeddingModel}, Is Vision/Multimodal: ${this.embeddingModel.includes('vision') || this.embeddingModel.includes('multimodal')}`);
+
     if (this.embeddingModel.includes('vision') || this.embeddingModel.includes('multimodal')) {
       return this.createMultimodalEmbedding(text);
     }
@@ -38,10 +39,10 @@ export class VolcengineProvider extends BaseAIProvider {
   // Special handler for doubao-embedding-vision-251215
   private async createMultimodalEmbedding(text: string) {
     if (!this.embeddingModel) return null;
-    
-    // Construct the endpoint URL manually since it differs from standard OpenAI
+
     const endpoint = `${this.client.baseURL}/embeddings/multimodal`;
-    
+    logger.info(`[Volcengine] Using Multimodal Embedding Endpoint: ${endpoint}`);
+
     const payload = {
       model: this.embeddingModel,
       input: [

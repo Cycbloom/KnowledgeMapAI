@@ -3137,7 +3137,13 @@
     "backboneModule": {
       "refined": "Refined",
       "pending": "Pending",
-      "conceptCount": "{{count}} concepts"
+      "conceptCount": "{{count}} concepts",
+      "research_background": "Research Background",
+      "literature_review": "Literature Review",
+      "research_methods": "Research Methods",
+      "core_concepts": "Core Concepts",
+      "application_domains": "Application Domains",
+      "future_directions": "Future Directions"
     },
     "inputMode": {
       "text": "Text",
@@ -3172,7 +3178,11 @@
       "mechanism": "Mechanism",
       "technology": "Technology",
       "tool": "Tool",
-      "operation": "Operation"
+      "operation": "Operation",
+      "theory": "Theory",
+      "finding": "Finding",
+      "trend": "Trend",
+      "challenge": "Challenge"
     },
     "progress": {
       "uploading": "Uploading...",
@@ -3190,19 +3200,27 @@
       "fileTooLarge": "File size exceeds limit (max 10MB)",
       "extractFailed": "Extraction failed, please try again",
       "noCitationText": "Please enter citation information",
-      "metadataDetectionFailed": "Metadata detection failed, please try again"
+      "metadataDetectionFailed": "Metadata detection failed, please try again",
+      "saveFailed": "Save failed, please try again"
     },
     "success": {
-      "extracted": "Successfully extracted {{count}} knowledge concepts"
+      "extracted": "Successfully extracted {{count}} knowledge concepts",
+      "saved": "Successfully saved to graph! Added {{addedCount}} concepts, merged {{mergedCount}} concepts"
     },
     "result": {
       "title": "Extraction Complete",
       "conceptsExtracted": "Extracted {{count}} knowledge concepts",
       "relationsFound": "Found {{count}} concept relations",
-      "source": "Source"
+      "source": "Source",
+      "conceptList": "Concept List",
+      "relationList": "Relation List",
+      "similarity": "{{value}}% Similar",
+      "confidence": "{{value}}% Confidence"
     },
     "processing": "Processing...",
     "startExtract": "Start Extraction",
+    "saving": "Saving...",
+    "saveToGraph": "Save to Graph",
     "previewTitle": "Concept Preview",
     "previewDescription": "The following concepts were extracted from the literature. Please select the concepts to add to the graph.",
     "selectedCount": "{{selected}} / {{total}} concepts selected",
@@ -3309,6 +3327,10 @@
     "operation": "Operation",
     "concept": "Concept",
     "technology": "Technology",
-    "tool": "Tool"
+    "tool": "Tool",
+    "theory": "Theory",
+    "finding": "Finding",
+    "trend": "Trend",
+    "challenge": "Challenge"
   }
 }

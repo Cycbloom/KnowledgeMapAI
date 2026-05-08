@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import type { AIProviderType } from "@shared/types";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { settingsService } from "../../services/core/settingsService";
+import { getEnvConfig } from "../../services/ai/config";
 import { logger } from "../../utils/logger";
 import {
   getSupabaseAdmin,
@@ -62,10 +63,7 @@ function maskApiKey(key: string): string {
 function maskUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    if (
-      parsed.hostname === "127.0.0.1" ||
-      parsed.hostname === "localhost"
-    ) {
+    if (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") {
       return `${parsed.protocol}//${parsed.hostname}:${parsed.port}`;
     }
     const parts = parsed.hostname.split(".");
@@ -90,13 +88,18 @@ router.get(
   async (_req: AuthRequest, res: Response) => {
     try {
       const allConfigs =
-        await settingsService.getSetting<Record<string, Record<string, string>>>(
-          "ai_provider_config",
-        );
+        await settingsService.getSetting<
+          Record<string, Record<string, string>>
+        >("ai_provider_config");
 
       const providers: Record<string, Record<string, unknown>> = {};
       const allProviderTypes: AIProviderType[] = [
-        "deepseek", "volcengine", "aliyun", "openai", "zhipu", "moonshot",
+        "deepseek",
+        "volcengine",
+        "aliyun",
+        "openai",
+        "zhipu",
+        "moonshot",
       ];
 
       for (const provider of allProviderTypes) {
@@ -147,7 +150,12 @@ router.put(
       const { providers } = req.body as {
         providers: Record<
           string,
-          { apiKey?: string; baseURL?: string; model?: string; embeddingModel?: string }
+          {
+            apiKey?: string;
+            baseURL?: string;
+            model?: string;
+            embeddingModel?: string;
+          }
         >;
       };
 
@@ -160,7 +168,9 @@ router.put(
         if (config.apiKey !== undefined && config.apiKey === "") {
           res
             .status(400)
-            .json({ error: `apiKey for ${provider} must be non-empty if provided` });
+            .json({
+              error: `apiKey for ${provider} must be non-empty if provided`,
+            });
           return;
         }
         if (config.baseURL !== undefined) {
@@ -176,9 +186,9 @@ router.put(
       }
 
       const existingConfigs =
-        (await settingsService.getSetting<Record<string, Record<string, string>>>(
-          "ai_provider_config",
-        )) || {};
+        (await settingsService.getSetting<
+          Record<string, Record<string, string>>
+        >("ai_provider_config")) || {};
 
       const merged = { ...existingConfigs };
 
@@ -224,24 +234,41 @@ router.post(
 
       if (!testApiKey || !testBaseURL) {
         const allConfigs =
-          await settingsService.getSetting<Record<string, Record<string, string>>>(
-            "ai_provider_config",
-          );
+          await settingsService.getSetting<
+            Record<string, Record<string, string>>
+          >("ai_provider_config");
         const dbConfig = allConfigs?.[provider];
         const defaults = PROVIDER_DEFAULTS[provider];
+        const envConfig = getEnvConfig(provider as AIProviderType);
 
-        testApiKey = testApiKey || dbConfig?.apiKey || "";
-        testBaseURL = testBaseURL || dbConfig?.baseURL || defaults?.baseURL || "";
-        testModel = testModel || dbConfig?.model || defaults?.model || "";
+        testApiKey = testApiKey || dbConfig?.apiKey || envConfig.apiKey || "";
+        testBaseURL =
+          testBaseURL ||
+          dbConfig?.baseURL ||
+          envConfig.baseURL ||
+          defaults?.baseURL ||
+          "";
+        testModel =
+          testModel ||
+          dbConfig?.model ||
+          envConfig.model ||
+          defaults?.model ||
+          "";
       }
 
       if (!testApiKey) {
-        res.json({ success: false, message: "No API key available for testing" });
+        res.json({
+          success: false,
+          message: "No API key available for testing",
+        });
         return;
       }
 
       if (!testBaseURL) {
-        res.json({ success: false, message: "No base URL available for testing" });
+        res.json({
+          success: false,
+          message: "No base URL available for testing",
+        });
         return;
       }
 
@@ -250,12 +277,51 @@ router.post(
         baseURL: testBaseURL,
       });
 
+      const isEmbeddingModel =
+        testModel?.includes("embedding") ||
+        Object.values(PROVIDER_DEFAULTS).some(
+          (d) => d.embeddingModel === testModel,
+        );
+
+      const isVolcengineMultimodal =
+        provider === "volcengine" &&
+        (testModel?.includes("vision") || testModel?.includes("multimodal"));
+
       const startTime = Date.now();
-      await client.chat.completions.create({
-        model: testModel || "gpt-3.5-turbo",
-        messages: [{ role: "user", content: "Hi" }],
-        max_tokens: 1,
-      });
+
+      if (isEmbeddingModel && isVolcengineMultimodal) {
+        const multimodalEndpoint = `${testBaseURL}/embeddings/multimodal`;
+        logger.info(`[Provider Test] Using Volcengine Multimodal Endpoint: ${multimodalEndpoint}`);
+
+        const response = await fetch(multimodalEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${testApiKey}`
+          },
+          body: JSON.stringify({
+            model: testModel,
+            input: [{ type: "text", text: "test" }]
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Volcengine API Error: ${response.status} ${errorText}`);
+        }
+      } else if (isEmbeddingModel) {
+        await client.embeddings.create({
+          model: testModel || "",
+          input: "test",
+        });
+      } else {
+        await client.chat.completions.create({
+          model: testModel || "gpt-3.5-turbo",
+          messages: [{ role: "user", content: "Hi" }],
+          max_tokens: 1,
+        });
+      }
+
       const duration = Date.now() - startTime;
 
       res.json({
@@ -280,8 +346,7 @@ router.get(
     try {
       const config = getCurrentSupabaseConfig();
       const url = config.url || "";
-      const isLocal =
-        url.includes("127.0.0.1") || url.includes("localhost");
+      const isLocal = url.includes("127.0.0.1") || url.includes("localhost");
       const mode = isLocal ? "local" : "cloud";
       let connected = false;
 
@@ -389,7 +454,8 @@ router.put(
 
       let schemaStatus = null;
       try {
-        const { migrationService } = await import("../../services/migration/migrationService");
+        const { migrationService } =
+          await import("../../services/migration/migrationService");
         if (databaseUrl) {
           migrationService.setDatabaseUrl(databaseUrl);
         }
@@ -427,9 +493,9 @@ router.get(
 
       if (provider) {
         const allConfigs =
-          await settingsService.getSetting<Record<string, Record<string, string>>>(
-            "ai_provider_config",
-          );
+          await settingsService.getSetting<
+            Record<string, Record<string, string>>
+          >("ai_provider_config");
         const dbConfig = allConfigs?.[provider];
         if (dbConfig?.apiKey) {
           configured = true;
@@ -461,30 +527,14 @@ router.put(
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { provider, apiKey, model, baseURL } = req.body as {
+      const { provider, model } = req.body as {
         provider?: string;
-        apiKey?: string;
         model?: string;
-        baseURL?: string;
       };
 
       if (!provider) {
         res.status(400).json({ error: "provider is required" });
         return;
-      }
-
-      if (apiKey !== undefined && apiKey === "") {
-        res.status(400).json({ error: "apiKey must be non-empty if provided" });
-        return;
-      }
-
-      if (baseURL !== undefined) {
-        try {
-          new URL(baseURL);
-        } catch {
-          res.status(400).json({ error: "baseURL is not a valid URL" });
-          return;
-        }
       }
 
       const sysConfig =
@@ -495,26 +545,9 @@ router.put(
       sysConfig.main_ai = {
         provider,
         ...(model ? { model } : {}),
-        ...(baseURL ? { baseURL } : {}),
       };
 
       await settingsService.updateSetting("system_config", sysConfig);
-
-      if (apiKey) {
-        const allConfigs =
-          (await settingsService.getSetting<Record<string, Record<string, string>>>(
-            "ai_provider_config",
-          )) || {};
-
-        allConfigs[provider] = {
-          ...(allConfigs[provider] || {}),
-          apiKey,
-          ...(model ? { model } : {}),
-          ...(baseURL ? { baseURL } : {}),
-        };
-
-        await settingsService.updateSetting("ai_provider_config", allConfigs);
-      }
 
       settingsService.clearCache();
 
@@ -543,9 +576,9 @@ router.get(
 
       if (provider) {
         const allConfigs =
-          await settingsService.getSetting<Record<string, Record<string, string>>>(
-            "ai_provider_config",
-          );
+          await settingsService.getSetting<
+            Record<string, Record<string, string>>
+          >("ai_provider_config");
         const dbConfig = allConfigs?.[provider];
         if (dbConfig?.apiKey) {
           configured = true;
@@ -560,7 +593,11 @@ router.get(
 
       res.json({
         provider: provider || undefined,
-        model: embeddingAi?.model || defaults?.model || defaults?.embeddingModel || undefined,
+        model:
+          embeddingAi?.model ||
+          defaults?.model ||
+          defaults?.embeddingModel ||
+          undefined,
         baseURL: embeddingAi?.baseURL || defaults?.baseURL || undefined,
         configured,
         source,
@@ -577,11 +614,9 @@ router.put(
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { provider, apiKey, model, baseURL, enabled } = req.body as {
+      const { provider, model, enabled } = req.body as {
         provider?: string;
-        apiKey?: string;
         model?: string;
-        baseURL?: string;
         enabled?: boolean;
       };
 
@@ -606,20 +641,6 @@ router.put(
         return;
       }
 
-      if (apiKey !== undefined && apiKey === "") {
-        res.status(400).json({ error: "apiKey must be non-empty if provided" });
-        return;
-      }
-
-      if (baseURL !== undefined) {
-        try {
-          new URL(baseURL);
-        } catch {
-          res.status(400).json({ error: "baseURL is not a valid URL" });
-          return;
-        }
-      }
-
       const sysConfig =
         (await settingsService.getSetting<Record<string, unknown>>(
           "system_config",
@@ -628,26 +649,9 @@ router.put(
       sysConfig.embedding_ai = {
         provider,
         ...(model ? { model } : {}),
-        ...(baseURL ? { baseURL } : {}),
       };
 
       await settingsService.updateSetting("system_config", sysConfig);
-
-      if (apiKey) {
-        const allConfigs =
-          (await settingsService.getSetting<Record<string, Record<string, string>>>(
-            "ai_provider_config",
-          )) || {};
-
-        allConfigs[provider] = {
-          ...(allConfigs[provider] || {}),
-          apiKey,
-          ...(model ? { model } : {}),
-          ...(baseURL ? { baseURL } : {}),
-        };
-
-        await settingsService.updateSetting("ai_provider_config", allConfigs);
-      }
 
       settingsService.clearCache();
 

@@ -82,7 +82,15 @@ const CONCEPT_TYPE_DEFINITIONS: Record<ConceptType, string> = {
     "概念 (concept): 抽象的思维对象、理论概念或定义。例如：核心概念、理论概念、基本概念。",
   technology:
     "技术 (technology): 具体的技术工具、技术方案或技术体系。例如：核心技术、新兴技术、技术框架。",
-  tool: "工具 (tool): 用于辅助研究、分析或实施的软件、硬件或平台。例如：分析工具、开发工具、研究工具。",
+  tool: "工具: 用于辅助研究、分析或实施的软件、硬件或平台。例如：分析工具、开发工具、研究工具。",
+  theory:
+    "理论: 理论框架、理论体系或理论模型。例如：理论基础、理论构建、理论创新。",
+  finding:
+    "发现: 研究发现、实验结果或重要结论。例如：研究发现、实验发现、关键发现。",
+  trend:
+    "趋势: 发展趋势、演进方向或未来走向。例如：发展趋势、技术趋势、研究趋势。",
+  challenge:
+    "挑战: 面临的困难、待解决的问题或限制因素。例如：技术挑战、研究挑战、应用挑战。",
 };
 
 const BACKBONE_MODULE_DESCRIPTIONS: Record<BackboneModule, string> = {
@@ -257,6 +265,10 @@ function mapConceptToModule(conceptType: ConceptType): BackboneModule {
     concept: "core_concepts",
     technology: "application_domains",
     tool: "research_methods",
+    theory: "literature_review",
+    finding: "research_background",
+    trend: "future_directions",
+    challenge: "future_directions",
   };
   return mapping[conceptType];
 }
@@ -321,6 +333,27 @@ ${content.slice(0, 8000)}
 6. 重要性评分反映概念在文献中的核心程度
 7. 同时提取概念之间的关系（如依赖、关联、对比等）
 
+## 概念筛选原则
+**优先提取：**
+- 核心理论、概念、定义
+- 研究方法、技术手段、算法
+- 关键技术、工具、框架
+- 重要发现、结论、趋势
+- 实际应用场景、案例
+
+**避免提取：**
+- 纯粹的性能指标（如"准确率提升"、"召回率提升"、"F1分数提升"）
+- 简单的数值变化或对比（如"提升了X%"、"降低了Y%"）
+- 实验结果的细节数据（如具体的数值、百分比）
+- 过于细碎的技术细节（如参数调优、超参数设置）
+- 重复或相似的概念
+
+**判断标准：**
+- 该概念是否具有独立的知识价值？
+- 该概念是否可以在其他场景中复用？
+- 该概念是否有助于理解文献的核心思想？
+- 该概念是否值得在知识图谱中长期保存？
+
 请严格按照 JSON 格式返回结果。`;
 }
 
@@ -332,7 +365,7 @@ function buildExtractionSchema(): string {
     {
       "title": "概念标题（简洁准确，不超过20字）",
       "description": "概念描述（50-100字，说明核心内容和作用）",
-      "type": "method|mechanism|operation|concept|technology|tool",
+      "type": "method|mechanism|operation|concept|technology|tool|theory|finding|trend|challenge",
       "targetModule": "research_background|literature_review|research_methods|core_concepts|application_domains|future_directions",
       "importance": 1-5的数字,
       "context": "概念在原文中的上下文引用（原文片段）"
@@ -395,7 +428,7 @@ export class ConceptExtractorService {
         async () => {
           const systemPrompt = await promptService.getRenderedPrompt(
             getSupabaseAdmin(),
-            "concept_extraction",
+            "literature_concept_extraction",
             {
               maxConcepts: options.maxConcepts || 10,
               extractTypes: (
@@ -414,15 +447,16 @@ export class ConceptExtractorService {
             options.language,
           );
 
-          const userPrompt = buildExtractionPrompt(
+          const fallbackPrompt = buildExtractionPrompt(
             content,
             parsedContent,
             options,
           );
           const schema = buildExtractionSchema();
 
-          const finalSystemPrompt =
-            systemPrompt || `${userPrompt}\n\n${schema}`;
+          const finalSystemPrompt = systemPrompt
+            ? `${systemPrompt}\n\n${schema}`
+            : `${fallbackPrompt}\n\n${schema}`;
 
           const completion = await withTimeoutAndRetry(
             () =>
@@ -431,7 +465,7 @@ export class ConceptExtractorService {
                   { role: "system", content: finalSystemPrompt },
                   {
                     role: "user",
-                    content: `请从上述文献中提取概念和关系。`,
+                    content: `请从以下文献内容中提取概念和关系：\n\n${content.slice(0, 8000)}`,
                   },
                 ],
                 model,

@@ -6,7 +6,7 @@ import { logger } from "../../utils/logger";
 dotenv.config();
 
 // Fallback env configs
-const getEnvConfig = (provider: AIProviderType): AIProviderConfig => {
+export const getEnvConfig = (provider: AIProviderType): AIProviderConfig => {
   switch (provider) {
     case "deepseek":
       return {

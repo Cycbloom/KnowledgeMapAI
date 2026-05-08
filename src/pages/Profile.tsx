@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '../hooks/queries';
@@ -9,6 +9,7 @@ import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X,
 import { PromptSettingsPanel } from '../components/GraphEditor/panels/PromptSettingsPanel';
 import { AIActionSettingsPanel } from '../components/GraphEditor/panels/AIActionSettingsPanel';
 import { backupApi, BackupSnapshot } from '../services/api/backup';
+import { queryClient } from '../main';
 
 export const Profile = () => {
   const { t } = useTranslation();
@@ -28,6 +29,16 @@ export const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: userData, isLoading } = useUser(!!token);
+
+  const refreshAllData = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['graphs'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] }),
+      queryClient.invalidateQueries({ queryKey: ['studyCards'] }),
+      queryClient.invalidateQueries({ queryKey: ['statistics'] }),
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+    ]);
+  };
 
   const loadSnapshots = async () => {
     setIsLoadingSnapshots(true);
@@ -106,6 +117,7 @@ export const Profile = () => {
           cards: result.stats.study_cards
         })
       });
+      await refreshAllData();
       loadSnapshots();
     } catch (e: any) {
       console.error(e);
@@ -145,6 +157,7 @@ export const Profile = () => {
           nodes: result.stats.nodes
         })
       });
+      await refreshAllData();
     } catch (e: any) {
       frontendEventBus.publish("message_show", { type: 'error', content: e.message || t('profile.messages.snapshotRestoreFailed') });
     } finally {

@@ -15,6 +15,9 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  BookOpen,
+  Layers,
+  Tag,
 } from "lucide-react";
 import { useErrorHandler, useIsMobile } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
@@ -22,8 +25,12 @@ import { literatureApi } from "../../services/api/literature";
 import type {
   LiteratureExtractRequest,
   LiteratureExtractResponse,
-  LiteratureInfo,
   ConceptType,
+} from "@shared/types/graph";
+import {
+  CONCEPT_TYPE_COLORS,
+  BACKBONE_MODULE_COLORS,
+  CONCEPT_TO_MODULE_MAP,
 } from "@shared/types/graph";
 import { LiteratureMetadataForm } from "./LiteratureMetadataForm";
 import LiteratureMetadataCard from "./LiteratureMetadataCard";
@@ -108,11 +115,23 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [selectedConceptTypes, setSelectedConceptTypes] = useState<
     ConceptType[]
-  >(["concept", "method", "mechanism", "technology", "tool", "operation"]);
+  >([
+    "concept",
+    "method",
+    "mechanism",
+    "technology",
+    "tool",
+    "operation",
+    "theory",
+    "finding",
+    "trend",
+    "challenge",
+  ]);
   const [maxConcepts, setMaxConcepts] = useState(50);
   const [similarityThreshold, setSimilarityThreshold] = useState(0.7);
   const [metadata, setMetadata] = useState<Partial<LiteratureMetadata>>({});
   const [isDetectingMetadata, setIsDetectingMetadata] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const conceptTypeOptions: { value: ConceptType; labelKey: string }[] = [
     { value: "concept", labelKey: "literatureExtract.conceptTypes.concept" },
@@ -130,50 +149,62 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       value: "operation",
       labelKey: "literatureExtract.conceptTypes.operation",
     },
+    { value: "theory", labelKey: "literatureExtract.conceptTypes.theory" },
+    { value: "finding", labelKey: "literatureExtract.conceptTypes.finding" },
+    { value: "trend", labelKey: "literatureExtract.conceptTypes.trend" },
+    {
+      value: "challenge",
+      labelKey: "literatureExtract.conceptTypes.challenge",
+    },
   ];
 
-  const handleAutoDetectMetadata = useCallback(async (citationText: string) => {
-    if (!citationText.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("literatureExtract.errors.noCitationText"),
-      });
-      return;
-    }
+  const handleAutoDetectMetadata = useCallback(
+    async (citationText: string) => {
+      if (!citationText.trim()) {
+        frontendEventBus.publish("message_show", {
+          type: "warning",
+          content: t("literatureExtract.errors.noCitationText"),
+        });
+        return;
+      }
 
-    setIsDetectingMetadata(true);
-    try {
-      const result = await literatureApi.extractMetadata({
-        content: citationText.trim(),
-      });
+      setIsDetectingMetadata(true);
+      try {
+        const result = await literatureApi.extractMetadata({
+          content: citationText.trim(),
+        });
 
-      const detectedMetadata: Partial<LiteratureMetadata> = {
-        title: result.metadata.title,
-        authors: result.metadata.authors,
-        year: result.metadata.year,
-        type: result.metadata.type,
-        journal: result.metadata.journal,
-        doi: result.metadata.doi,
-        keywords: result.metadata.keywords,
-      };
+        const detectedMetadata: Partial<LiteratureMetadata> = {
+          title: result.metadata.title,
+          authors: result.metadata.authors,
+          year: result.metadata.year,
+          type: result.metadata.type,
+          journal: result.metadata.journal,
+          doi: result.metadata.doi,
+          keywords: result.metadata.keywords,
+        };
 
-      setMetadata(detectedMetadata);
+        setMetadata(detectedMetadata);
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("literatureExtract.success.metadataDetected", {
-          confidence: (result.confidence * 100).toFixed(0),
-        }),
-      });
-    } catch (error) {
-      handleError(error, {
-        context: "AutoDetectMetadata",
-        fallbackMessage: t("literatureExtract.errors.metadataDetectionFailed"),
-      });
-    } finally {
-      setIsDetectingMetadata(false);
-    }
-  }, [handleError, t]);
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("literatureExtract.success.metadataDetected", {
+            confidence: (result.confidence * 100).toFixed(0),
+          }),
+        });
+      } catch (error) {
+        handleError(error, {
+          context: "AutoDetectMetadata",
+          fallbackMessage: t(
+            "literatureExtract.errors.metadataDetectionFailed",
+          ),
+        });
+      } finally {
+        setIsDetectingMetadata(false);
+      }
+    },
+    [handleError, t],
+  );
 
   const extractTitleFromFileName = useCallback((fileName: string): string => {
     const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
@@ -390,7 +421,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         message: t("literatureExtract.progress.extracting"),
       });
 
-      const result = await simulateExtract(request);
+      const result = await literatureApi.extractConcepts(request);
 
       setProcessingProgress({
         stage: "complete",
@@ -436,31 +467,36 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     onExtractComplete,
   ]);
 
-  const simulateExtract = async (
-    request: LiteratureExtractRequest,
-  ): Promise<LiteratureExtractResponse> => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  const handleSave = useCallback(async () => {
+    if (!extractedResult) return;
 
-    const literature: LiteratureInfo = {
-      title: request.content
-        ? "文本输入"
-        : request.file
-          ? request.file.name
-          : request.url || "URL 来源",
-      type: request.file
-        ? request.file.name.endsWith(".pdf")
-          ? "paper"
-          : "document"
-        : "article",
-      processedAt: new Date().toISOString(),
-    };
+    setIsSaving(true);
+    try {
+      const result = await literatureApi.applyConcepts({
+        graph_id: graphId,
+        concepts: extractedResult.concepts,
+        relations: extractedResult.relations,
+        literature: extractedResult.literature,
+      });
 
-    return {
-      concepts: [],
-      relations: [],
-      literature,
-    };
-  };
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("literatureExtract.success.saved", {
+          addedCount: result.addedCount,
+          mergedCount: result.mergedCount,
+        }),
+      });
+
+      onClose?.();
+    } catch (error) {
+      handleError(error, {
+        context: "SaveConcepts",
+        fallbackMessage: t("literatureExtract.errors.saveFailed"),
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [extractedResult, graphId, handleError, t, onClose]);
 
   const renderInputModeSelector = () => (
     <div
@@ -838,6 +874,150 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
             </p>
           </div>
         </div>
+
+        {extractedResult.concepts.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Layers size={16} className="text-primary-500" />
+              <h3
+                className={`${isMobile ? "text-sm" : "text-base"} font-semibold text-gray-900 dark:text-white`}
+              >
+                {t("literatureExtract.result.conceptList")}
+              </h3>
+            </div>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {extractedResult.concepts.map((concept, index) => {
+                const typeColor =
+                  CONCEPT_TYPE_COLORS[concept.type] || "#6B7280";
+                const typeLabel = t(
+                  `literatureExtract.conceptTypes.${concept.type}`,
+                  concept.type,
+                );
+
+                const targetModule =
+                  concept.targetModule ||
+                  CONCEPT_TO_MODULE_MAP[concept.type] ||
+                  "core_concepts";
+                const moduleColor = targetModule
+                  ? BACKBONE_MODULE_COLORS[targetModule]
+                  : "#6B7280";
+                const moduleLabel = targetModule
+                  ? t(
+                      `literatureExtract.backboneModule.${targetModule}`,
+                      targetModule,
+                    )
+                  : null;
+
+                return (
+                  <motion.div
+                    key={`${concept.title}-${index}`}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`${isMobile ? "p-2" : "p-3"} bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:shadow-md transition-shadow`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span
+                            className={`${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-900 dark:text-white truncate`}
+                          >
+                            {concept.title}
+                          </span>
+                          <span
+                            className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full font-medium`}
+                            style={{
+                              backgroundColor: `${typeColor}20`,
+                              color: typeColor,
+                            }}
+                          >
+                            {typeLabel}
+                          </span>
+                          {moduleLabel && (
+                            <span
+                              className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full font-medium`}
+                              style={{
+                                backgroundColor: `${moduleColor}20`,
+                                color: moduleColor,
+                              }}
+                            >
+                              {moduleLabel}
+                            </span>
+                          )}
+                        </div>
+                        {concept.description && (
+                          <p
+                            className={`${isMobile ? "text-[10px]" : "text-xs"} text-gray-600 dark:text-gray-400 line-clamp-2`}
+                          >
+                            {concept.description}
+                          </p>
+                        )}
+                        {concept.similarity !== undefined && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Tag size={12} className="text-gray-400" />
+                            <span className="text-[10px] text-gray-500">
+                              {t("literatureExtract.result.similarity", {
+                                value: (concept.similarity * 100).toFixed(0),
+                              })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {extractedResult.relations.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <BookOpen size={16} className="text-primary-500" />
+              <h3
+                className={`${isMobile ? "text-sm" : "text-base"} font-semibold text-gray-900 dark:text-white`}
+              >
+                {t("literatureExtract.result.relationList")}
+              </h3>
+            </div>
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {extractedResult.relations.map((relation, index) => (
+                <motion.div
+                  key={`${relation.source}-${relation.target}-${index}`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`${isMobile ? "p-2" : "p-3"} bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-lg`}
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`${isMobile ? "text-[10px]" : "text-xs"} font-medium text-gray-900 dark:text-white`}
+                    >
+                      {relation.source}
+                    </span>
+                    <span className="text-gray-400">→</span>
+                    <span
+                      className={`${isMobile ? "text-[10px]" : "text-xs"} font-medium text-gray-900 dark:text-white`}
+                    >
+                      {relation.target}
+                    </span>
+                    <span
+                      className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}
+                    >
+                      {relation.type}
+                    </span>
+                    <span className="text-[10px] text-gray-500">
+                      {t("literatureExtract.result.confidence", {
+                        value: (relation.confidence * 100).toFixed(0),
+                      })}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </motion.div>
     );
   };
@@ -941,6 +1121,30 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
             </>
           )}
         </button>
+
+        {extractedResult && (
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`w-full ${isMobile ? "py-2.5 px-3 text-sm" : "py-3 px-4"} bg-gradient-to-r from-green-500 to-green-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+          >
+            {isSaving ? (
+              <>
+                <Loader2
+                  className={`${isMobile ? "w-4 h-4" : "w-5 h-5"} animate-spin`}
+                />
+                {t("literatureExtract.saving")}
+              </>
+            ) : (
+              <>
+                <CheckCircle2
+                  className={`${isMobile ? "w-4 h-4" : "w-5 h-5"}`}
+                />
+                {t("literatureExtract.saveToGraph")}
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -48,45 +48,52 @@ export const literatureApi = {
     },
   ): Promise<LiteratureExtractResponse> => {
     const config = getAIConfig("text");
-    const formData = new FormData();
-
-    formData.append("graph_id", data.graph_id);
-
-    if (data.content) {
-      formData.append("content", data.content);
-    }
 
     if (data.file) {
+      const formData = new FormData();
+      formData.append("graph_id", data.graph_id);
       formData.append("file", data.file);
-    }
 
-    if (data.url) {
-      formData.append("url", data.url);
-    }
+      if (data.content) {
+        formData.append("content", data.content);
+      }
+      if (data.url) {
+        formData.append("url", data.url);
+      }
+      if (data.options) {
+        formData.append("options", JSON.stringify(data.options));
+      }
+      if (data.literature) {
+        formData.append("literature", JSON.stringify(data.literature));
+      }
+      if (data.autoDetectMetadata !== undefined) {
+        formData.append("autoDetectMetadata", String(data.autoDetectMetadata));
+      }
+      if (config.provider) {
+        formData.append("provider", config.provider);
+      }
+      if (config.model) {
+        formData.append("model", config.model);
+      }
 
-    if (data.options) {
-      formData.append("options", JSON.stringify(data.options));
-    }
-
-    if (data.literature) {
-      formData.append("literature", JSON.stringify(data.literature));
-    }
-
-    if (data.autoDetectMetadata !== undefined) {
-      formData.append("autoDetectMetadata", String(data.autoDetectMetadata));
-    }
-
-    if (config.provider) {
-      formData.append("provider", config.provider);
-    }
-
-    if (config.model) {
-      formData.append("model", config.model);
+      return request("/literature/extract", {
+        method: "POST",
+        body: formData,
+      });
     }
 
     return request("/literature/extract", {
       method: "POST",
-      body: formData,
+      body: JSON.stringify({
+        graph_id: data.graph_id,
+        content: data.content,
+        url: data.url,
+        literature: data.literature,
+        options: data.options,
+        autoDetectMetadata: data.autoDetectMetadata,
+        provider: config.provider,
+        model: config.model,
+      }),
     });
   },
 

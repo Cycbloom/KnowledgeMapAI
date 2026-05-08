@@ -18,6 +18,7 @@ import { autoGraphService } from "../services/graph/index";
 import { literatureMetadataService } from "../services/ai/literatureMetadataService";
 import { cacheService, CacheKeys } from "../services/common/cacheService";
 import { aiService } from "../services/ai/aiService";
+import { upload } from "./ai/utils";
 import type {
   ExtractedConcept,
   LiteratureInfo,
@@ -148,65 +149,6 @@ const metadataRequestSchema = z.object({
   language: z.string().optional(),
 });
 
-const literatureExtractSchema = z.object({
-  content: z.string().max(100000).optional(),
-  url: z
-    .string()
-    .url()
-    .max(2000)
-    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
-      message: "URL 必须以 http:// 或 https:// 开头",
-    })
-    .refine(
-      (val) => {
-        try {
-          const parsed = new URL(val);
-          return !parsed.hostname.match(
-            /^(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/i,
-          );
-        } catch {
-          return false;
-        }
-      },
-      { message: "禁止访问内网地址" },
-    )
-    .optional(),
-  graph_id: z.string().uuid(),
-  literature: z
-    .object({
-      title: z.string().optional(),
-      authors: z.array(z.string()).optional(),
-      year: z.number().optional(),
-      url: z.string().optional(),
-      fileName: z.string().optional(),
-      type: z.enum(["paper", "book", "article", "document"]).optional(),
-    })
-    .optional(),
-  options: z
-    .object({
-      extractTypes: z
-        .array(
-          z.enum([
-            "method",
-            "mechanism",
-            "operation",
-            "concept",
-            "technology",
-            "tool",
-          ]),
-        )
-        .optional(),
-      maxConcepts: z.number().min(1).max(50).optional(),
-      similarityThreshold: z.number().min(0).max(1).optional(),
-      autoDetectMetadata: z.boolean().optional(),
-    })
-    .optional(),
-  provider: z.string().optional(),
-  model: z.string().optional(),
-  language: z.string().optional(),
-  session_id: z.string().uuid().optional(),
-});
-
 const literatureApplySchema = z.object({
   graph_id: z.string().uuid(),
   concepts: z.array(
@@ -220,6 +162,10 @@ const literatureApplySchema = z.object({
         "concept",
         "technology",
         "tool",
+        "theory",
+        "finding",
+        "trend",
+        "challenge",
       ]),
       source: z.object({
         title: z.string(),
@@ -227,8 +173,9 @@ const literatureApplySchema = z.object({
         year: z.number().optional(),
         url: z.string().optional(),
         fileName: z.string().optional(),
-        type: z.enum(["paper", "book", "article", "document"]),
-        processedAt: z.string(),
+        type: z.enum(["paper", "book", "article", "document"]).optional(),
+        processedAt: z.string().optional(),
+        addedAt: z.string().optional(),
       }),
       targetModule: z
         .enum([
@@ -336,7 +283,7 @@ router.post(
 router.post(
   "/extract",
   requireAuth,
-  validate(literatureExtractSchema),
+  upload.single("file"),
   async (req: AuthRequest, res: Response) => {
     const {
       content,
@@ -349,6 +296,7 @@ router.post(
       language,
       session_id,
     } = req.body;
+    const file = req.file;
     const supabase = req.supabase;
 
     if (!supabase) {
@@ -357,9 +305,26 @@ router.post(
       });
     }
 
-    if (!content && !url) {
+    const parsedLiterature = inputLiterature
+      ? typeof inputLiterature === "string"
+        ? JSON.parse(inputLiterature)
+        : inputLiterature
+      : undefined;
+    const parsedOptions = options
+      ? typeof options === "string"
+        ? JSON.parse(options)
+        : options
+      : undefined;
+
+    if (!content && !url && !file) {
       throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD, {
-        message: "必须提供 content 或 url 参数",
+        message: "必须提供 content、url 或 file 参数",
+      });
+    }
+
+    if (!graph_id) {
+      throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD, {
+        message: "必须提供 graph_id 参数",
       });
     }
 
@@ -382,7 +347,13 @@ router.post(
       let literatureTitle = "未知文献";
       let literatureUrl = url;
 
-      if (url && !content) {
+      if (file) {
+        logger.info(`Processing uploaded file: ${file.originalname}`);
+        const fileBuffer = file.buffer;
+        const fileContent = fileBuffer.toString("utf-8");
+        textContent = fileContent;
+        literatureTitle = file.originalname.replace(/\.[^/.]+$/, "");
+      } else if (url && !content) {
         logger.info(`Fetching URL content: ${url}`);
         const scrapedResult = await scrapeUrl(url);
         textContent = scrapedResult.text;
@@ -394,41 +365,44 @@ router.post(
         literatureTitle = firstLine?.slice(0, 100) || "文本内容";
       }
 
-      const hasManualLiterature = inputLiterature && inputLiterature.title;
+      const hasManualLiterature = parsedLiterature && parsedLiterature.title;
 
       let literature: LiteratureInfo;
 
       if (hasManualLiterature) {
         literature = {
-          title: inputLiterature.title || literatureTitle,
-          authors: inputLiterature.authors,
-          year: inputLiterature.year,
-          url: inputLiterature.url || literatureUrl,
-          fileName: inputLiterature.fileName,
-          type: inputLiterature.type || (url ? "article" : "document"),
+          title: parsedLiterature.title || literatureTitle,
+          authors: parsedLiterature.authors,
+          year: parsedLiterature.year,
+          url: parsedLiterature.url || literatureUrl,
+          fileName:
+            parsedLiterature.fileName || (file ? file.originalname : undefined),
+          type:
+            parsedLiterature.type ||
+            (file ? "document" : url ? "article" : "document"),
           processedAt: new Date().toISOString(),
         };
-      } else if (options?.autoDetectMetadata) {
+      } else if (parsedOptions?.autoDetectMetadata) {
         logger.info("Auto-detecting literature metadata");
-        const detectedMetadata = await literatureMetadataService.extractMetadata(
-          textContent,
-          {
+        const detectedMetadata =
+          await literatureMetadataService.extractMetadata(textContent, {
             provider: providerType as AIProviderType | undefined,
             model,
             userId: req.user.id,
             graphId: graph_id,
             language,
-          },
-        );
+          });
 
         literature = {
           title: detectedMetadata.title || literatureTitle,
           authors: detectedMetadata.authors,
           year: detectedMetadata.year,
           url: literatureUrl,
-          type: detectedMetadata.type === "report" || detectedMetadata.type === "webpage"
-            ? "document"
-            : detectedMetadata.type,
+          type:
+            detectedMetadata.type === "report" ||
+            detectedMetadata.type === "webpage"
+              ? "document"
+              : detectedMetadata.type,
           processedAt: new Date().toISOString(),
         };
 
@@ -449,9 +423,9 @@ router.post(
       const extractOptions = {
         provider: providerType as AIProviderType | undefined,
         model,
-        maxConcepts: options?.maxConcepts || 10,
-        extractTypes: options?.extractTypes as ConceptType[] | undefined,
-        similarityThreshold: options?.similarityThreshold,
+        maxConcepts: parsedOptions?.maxConcepts || 10,
+        extractTypes: parsedOptions?.extractTypes as ConceptType[] | undefined,
+        similarityThreshold: parsedOptions?.similarityThreshold,
         userId: req.user.id,
         graphId: graph_id,
         language,
@@ -524,17 +498,36 @@ router.post(
       const conceptsToProcess: ExtractedConcept[] = concepts;
       const conceptsWithEmbedding: Array<{
         concept: ExtractedConcept;
-        embedding: number[];
+        embedding: number[] | null;
       }> = [];
 
+      logger.info("Processing concepts for embedding", {
+        totalConcepts: conceptsToProcess.length,
+        conceptTitles: conceptsToProcess.map((c) => c.title),
+      });
+
       for (const concept of conceptsToProcess) {
-        const embedding = await aiService.generateEmbedding(
-          `${concept.title}: ${concept.description}`,
-        );
-        if (embedding) {
+        try {
+          const embedding = await aiService.generateEmbedding(
+            `${concept.title}: ${concept.description}`,
+          );
           conceptsWithEmbedding.push({ concept, embedding });
+        } catch (error) {
+          logger.warn(
+            `Failed to generate embedding for concept: ${concept.title}`,
+            error,
+          );
+          conceptsWithEmbedding.push({ concept, embedding: null });
         }
       }
+
+      const successCount = conceptsWithEmbedding.filter(
+        (c) => c.embedding !== null,
+      ).length;
+      logger.info("Embeddings generated", {
+        successCount,
+        failedCount: conceptsToProcess.length - successCount,
+      });
 
       const { data: existingGraphNodes } = await supabase
         .from("graph_nodes")
@@ -576,6 +569,10 @@ router.post(
         }
       }
 
+      logger.info("Existing nodes loaded", {
+        existingNodeCount: existingNodesMap.size,
+      });
+
       const nodesToCreate: Array<{
         tempId: string;
         title: string;
@@ -600,38 +597,41 @@ router.post(
         const { concept, embedding } = conceptsWithEmbedding[i];
 
         let merged = false;
-        for (const [existingId, existingNode] of existingNodesMap) {
-          const similarity =
-            await conceptAggregationService.calculateSimilarity(
-              embedding,
-              existingNode.embedding,
-            );
 
-          if (similarity >= 0.85) {
-            const upgradeResult =
-              await conceptAggregationService.upgradeNodeLevel(
-                supabase,
-                existingId,
-                [conceptSource],
+        if (embedding) {
+          for (const [existingId, existingNode] of existingNodesMap) {
+            const similarity =
+              await conceptAggregationService.calculateSimilarity(
+                embedding,
+                existingNode.embedding,
               );
 
-            if (upgradeResult.success) {
-              const { data: existingGN } = await supabase
-                .from("graph_nodes")
-                .select("id")
-                .eq("knowledge_point_id", existingId)
-                .eq("graph_id", graph_id)
-                .is("deleted_at", null)
-                .single();
-
-              if (existingGN) {
-                nodeMapping[concept.title] = existingId;
-                merged = true;
-                mergedCount++;
-                logger.info(
-                  `Merged concept "${concept.title}" with existing "${existingNode.title}"`,
+            if (similarity >= 0.85) {
+              const upgradeResult =
+                await conceptAggregationService.upgradeNodeLevel(
+                  supabase,
+                  existingId,
+                  [conceptSource],
                 );
-                break;
+
+              if (upgradeResult.success) {
+                const { data: existingGN } = await supabase
+                  .from("graph_nodes")
+                  .select("id")
+                  .eq("knowledge_point_id", existingId)
+                  .eq("graph_id", graph_id)
+                  .is("deleted_at", null)
+                  .single();
+
+                if (existingGN) {
+                  nodeMapping[concept.title] = existingId;
+                  merged = true;
+                  mergedCount++;
+                  logger.info(
+                    `Merged concept "${concept.title}" with existing "${existingNode.title}"`,
+                  );
+                  break;
+                }
               }
             }
           }
@@ -653,6 +653,12 @@ router.post(
           });
         }
       }
+
+      logger.info("Nodes to create determined", {
+        nodesToCreateCount: nodesToCreate.length,
+        mergedCount,
+        conceptsWithEmbeddingCount: conceptsWithEmbedding.length,
+      });
 
       if (nodesToCreate.length > 0) {
         const aiNodesData = nodesToCreate.map((node) => ({

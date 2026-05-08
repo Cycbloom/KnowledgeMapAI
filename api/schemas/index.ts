@@ -457,6 +457,24 @@ export const batchUpdatePositionsSchema = z.object({
     .min(1, "至少需要一个节点位置"),
 });
 
+export const batchUpdateNodesSchema = z.object({
+  nodes: z
+    .array(
+      z.object({
+        id: z.string().uuid("无效的节点ID"),
+        title: z.string().min(1, "标题不能为空").optional(),
+        content: z.string().optional(),
+        learning_material: z.string().optional(),
+        properties: z.record(z.any()).optional(),
+        x_position: z.number().optional(),
+        y_position: z.number().optional(),
+        level: z.enum(["root", "core", "sub", "normal", "leaf"]).optional(),
+        is_accepted: z.boolean().optional(),
+      }),
+    )
+    .min(1, "至少需要一个节点"),
+});
+
 // --- Data Import Schemas ---
 export const importMarkdownSchema = z.object({
   graph_id: z.string().uuid("无效的图谱ID").optional(),

@@ -1,12 +1,10 @@
 import type { AIProviderType } from "@shared/types";
-import type {
-  BackboneModule,
-  NodeLevel,
-  LayoutSuggestion,
-} from "@shared/types/graph";
+import type { NodeLevel, LayoutSuggestion } from "@shared/types/graph";
 import {
+  BackboneModule,
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_COLORS,
+  BACKBONE_MODULE_TITLES,
 } from "@shared/types/graph";
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import { promptService } from "./promptService";
@@ -33,6 +31,10 @@ export interface BackboneNode {
   parentId?: string;
   suggestedContent?: string;
   color?: string;
+  properties?: {
+    backboneModule?: BackboneModule;
+    [key: string]: unknown;
+  };
 }
 
 export interface BackboneEdge {
@@ -149,11 +151,32 @@ const BACKBONE_GENERATION_PROMPT = `你是一个专业的知识图谱架构师�
 5. **应用领域 (application_domains)**: 研究成果的应用领域和实际场景
 6. **未来方向 (future_directions)**: 未来研究方向和发展趋势
 
+## 标准标题要求
+
+**重要**: 骨干网络的结构如下：
+
+1. **根节点（root 级别）**：研究主题本身，只有一个根节点，标题为研究主题，**不需要**固定标题
+2. **核心节点（core 级别）**：六个骨干模块，必须使用以下标准标题，不允许使用任何变体：
+   - 研究背景模块必须使用标题："研究背景"
+   - 文献综述模块必须使用标题："文献综述"
+   - 研究方法模块必须使用标题："研究方法"
+   - 核心概念模块必须使用标题："核心概念"
+   - 应用领域模块必须使用标题："应用领域"
+   - 未来方向模块必须使用标题："未来方向"
+
+不允许使用以下变体：
+- ❌ "背景介绍"、"研究背景介绍"、"背景概述"
+- ❌ "文献回顾"、"相关文献"、"文献分析"
+- ❌ "方法论"、"研究方法论"、"技术方法"
+- ❌ "核心理论"、"关键概念"、"基本概念"
+- ❌ "应用场景"、"实践应用"、"应用实践"
+- ❌ "未来展望"、"发展趋势"、"研究展望"
+
 ## 节点粒度要求
 
-**重要**: 只生成 root（根节点）和 core（核心节点）两个级别的节点：
-- **root**: 主题根节点，每个模块的根节点
-- **core**: 模块内的核心概念节点
+**重要**: 生成的节点级别：
+- **root**: 主题根节点，只有一个，标题为研究主题本身
+- **core**: 六个骨干模块节点，标题必须使用标准标题
 
 不要生成 sub、normal 或 leaf 级别的节点。
 
@@ -202,20 +225,23 @@ const BACKBONE_GENERATION_PROMPT = `你是一个专业的知识图谱架构师�
 
 ## 注意事项
 
-1. 每个模块至少生成 1 个 root 节点和 2-4 个 core 节点
-2. 确保所有边的 source 和 target 指向有效的节点 ID
-3. 节点颜色应与模块颜色一致
-4. 所有描述和内容使用中文`;
+1. **必须且只能生成 1 个根节点**：研究主题本身
+2. **必须且只能生成 6 个核心节点**：每个骨干模块恰好一个核心节点
+3. 每个骨干模块的核心节点必须使用上述标准标题
+4. 不要为同一个模块生成多个核心节点
+5. 确保所有边的 source 和 target 指向有效的节点 ID
+6. 节点颜色应与模块颜色一致
+7. 所有描述和内容使用中文`;
 
 const BACKBONE_VALIDATION_RULES = {
   validLevels: ["root", "core"] as NodeLevel[],
   validModules: [
-    "research_background",
-    "literature_review",
-    "research_methods",
-    "core_concepts",
-    "application_domains",
-    "future_directions",
+    BackboneModule.RESEARCH_BACKGROUND,
+    BackboneModule.LITERATURE_REVIEW,
+    BackboneModule.RESEARCH_METHODS,
+    BackboneModule.CORE_CONCEPTS,
+    BackboneModule.APPLICATION_DOMAINS,
+    BackboneModule.FUTURE_DIRECTIONS,
   ] as BackboneModule[],
   validLayouts: [
     "radial",
@@ -404,6 +430,36 @@ function validateBackbone(
   };
 }
 
+function validateAndCorrectBackboneNodeTitle(node: BackboneNode): {
+  correctedNode: BackboneNode;
+  wasCorrected: boolean;
+  originalTitle?: string;
+} {
+  if (node.level !== "core") {
+    return { correctedNode: node, wasCorrected: false };
+  }
+
+  const expectedTitle = BACKBONE_MODULE_TITLES[node.module];
+
+  if (node.title !== expectedTitle) {
+    const originalTitle = node.title;
+    logger.info(
+      `[Backbone Network] Correcting core node title: "${originalTitle}" -> "${expectedTitle}" for module ${node.module}`,
+    );
+
+    return {
+      correctedNode: {
+        ...node,
+        title: expectedTitle,
+      },
+      wasCorrected: true,
+      originalTitle,
+    };
+  }
+
+  return { correctedNode: node, wasCorrected: false };
+}
+
 function getMockBackbone(
   topic: string,
   includeModules: BackboneModule[],
@@ -417,49 +473,52 @@ function getMockBackbone(
     title: topic,
     description: `${topic}研究的核心主题`,
     level: "root",
-    module: "core_concepts",
+    module: BackboneModule.CORE_CONCEPTS,
     suggestedContent: `关于${topic}的核心概念和定义`,
-    color: BACKBONE_MODULE_COLORS.core_concepts,
+    color: BACKBONE_MODULE_COLORS[BackboneModule.CORE_CONCEPTS],
   });
 
   for (const module of includeModules) {
     const config = BACKBONE_MODULE_CONFIGS[module];
-    const moduleRootId = `root-${module}`;
+    const coreNodeId = `core-${module}`;
 
     nodes.push({
-      id: moduleRootId,
+      id: coreNodeId,
       title: config.label,
       description: config.description,
-      level: "root",
+      level: "core",
       module,
       suggestedContent: config.description,
       color: config.color,
+      properties: {
+        backboneModule: module,
+      },
     });
 
     edges.push({
       source: mainRootId,
-      target: moduleRootId,
+      target: coreNodeId,
       relationship_type: "contains",
       description: `${topic}包含${config.label}模块`,
     });
 
     const suggestedNodes = config.suggestedNodes.slice(0, 3);
     suggestedNodes.forEach((suggestedTitle, idx) => {
-      const coreNodeId = `core-${module}-${idx}`;
+      const subNodeId = `sub-${module}-${idx}`;
       nodes.push({
-        id: coreNodeId,
+        id: subNodeId,
         title: suggestedTitle,
         description: `${config.label}中的核心概念`,
-        level: "core",
+        level: "sub",
         module,
-        parentId: moduleRootId,
+        parentId: coreNodeId,
         suggestedContent: `关于${suggestedTitle}的详细内容`,
         color: config.color,
       });
 
       edges.push({
-        source: moduleRootId,
-        target: coreNodeId,
+        source: coreNodeId,
+        target: subNodeId,
         relationship_type: "contains",
         description: `${config.label}包含${suggestedTitle}`,
       });
@@ -498,12 +557,12 @@ export class BackboneNetworkService {
       topic,
       provider: providerType,
       includeModules = [
-        "research_background",
-        "literature_review",
-        "research_methods",
-        "core_concepts",
-        "application_domains",
-        "future_directions",
+        BackboneModule.RESEARCH_BACKGROUND,
+        BackboneModule.LITERATURE_REVIEW,
+        BackboneModule.RESEARCH_METHODS,
+        BackboneModule.CORE_CONCEPTS,
+        BackboneModule.APPLICATION_DOMAINS,
+        BackboneModule.FUTURE_DIRECTIONS,
       ],
     } = options;
 
@@ -604,6 +663,42 @@ export class BackboneNetworkService {
         message: err.message || "AI backbone generation failed",
       });
     }
+  }
+
+  private deduplicateBackboneNodes(nodes: BackboneNode[]): BackboneNode[] {
+    const moduleMap = new Map<BackboneModule, BackboneNode>();
+    const rootNodes: BackboneNode[] = [];
+    const otherNodes: BackboneNode[] = [];
+
+    for (const node of nodes) {
+      if (node.level === "root" && !node.properties?.backboneModule) {
+        rootNodes.push(node);
+        continue;
+      }
+
+      if (
+        node.level === "core" &&
+        node.properties?.backboneModule &&
+        BACKBONE_MODULE_TITLES[
+          node.properties.backboneModule as BackboneModule
+        ] === node.title
+      ) {
+        const existing = moduleMap.get(
+          node.properties.backboneModule as BackboneModule,
+        );
+        if (!existing) {
+          moduleMap.set(node.properties.backboneModule as BackboneModule, node);
+        } else {
+          logger.info(
+            `[Backbone Network] Duplicating backbone node for module ${node.properties.backboneModule}, keeping first one`,
+          );
+        }
+      } else {
+        otherNodes.push(node);
+      }
+    }
+
+    return [...rootNodes, ...Array.from(moduleMap.values()), ...otherNodes];
   }
 
   private async callAI(
@@ -715,9 +810,65 @@ export class BackboneNetworkService {
       };
     }
 
+    const correctedNodes: BackboneNode[] = [];
+    const titleCorrections: Array<{
+      nodeId: string;
+      originalTitle: string;
+      correctedTitle: string;
+      module: BackboneModule;
+    }> = [];
+
+    for (const node of validatedBackbone.nodes) {
+      const { correctedNode, wasCorrected, originalTitle } =
+        validateAndCorrectBackboneNodeTitle(node);
+
+      if (wasCorrected && originalTitle) {
+        titleCorrections.push({
+          nodeId: node.id,
+          originalTitle,
+          correctedTitle: correctedNode.title,
+          module: node.module,
+        });
+      }
+
+      const nodeWithModule: BackboneNode = {
+        ...correctedNode,
+        properties: {
+          ...correctedNode.properties,
+          backboneModule: correctedNode.module,
+        },
+      };
+
+      correctedNodes.push(nodeWithModule);
+    }
+
+    if (titleCorrections.length > 0) {
+      logger.info("[Backbone Network] Title corrections applied:", {
+        count: titleCorrections.length,
+        corrections: titleCorrections.map(
+          (c) => `"${c.originalTitle}" -> "${c.correctedTitle}" (${c.module})`,
+        ),
+      });
+    }
+
+    const deduplicatedNodes = this.deduplicateBackboneNodes(correctedNodes);
+
+    if (deduplicatedNodes.length < correctedNodes.length) {
+      logger.info("[Backbone Network] Deduplicated backbone nodes:", {
+        originalCount: correctedNodes.length,
+        deduplicatedCount: deduplicatedNodes.length,
+        removedCount: correctedNodes.length - deduplicatedNodes.length,
+      });
+    }
+
+    const finalBackbone: BackboneNetwork = {
+      ...validatedBackbone,
+      nodes: deduplicatedNodes,
+    };
+
     return {
       result: {
-        backbone: validatedBackbone,
+        backbone: finalBackbone,
         metadata: {
           topic,
           generatedAt: new Date().toISOString(),

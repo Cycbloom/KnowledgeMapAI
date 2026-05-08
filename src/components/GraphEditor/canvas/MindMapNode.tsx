@@ -28,6 +28,7 @@ import {
 import { getLevel, calculateNodeImportance } from "../../../lib/graphUtils";
 import { truncateText } from "../../../utils/textUtils";
 import { BACKBONE_MODULE_COLORS } from "@shared/types/graph";
+import { BackboneNodeIcon } from "../BackboneNodeIcon";
 
 interface MindMapNodeProps {
   node: LayoutNode;
@@ -666,9 +667,30 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         onMouseDown={handleCircleMouseDown}
       />
 
+      {backboneModule && textVisibility.visible && (
+        <g
+          transform={`translate(${-styleConfig.baseRadius * 0.6}, ${-styleConfig.baseRadius * 0.8})`}
+          opacity={textVisibility.opacity}
+        >
+          <foreignObject
+            x={-10}
+            y={-10}
+            width={20}
+            height={20}
+            style={{ overflow: "visible" }}
+          >
+            <BackboneNodeIcon
+              module={backboneModule}
+              size="small"
+              showTooltip={true}
+            />
+          </foreignObject>
+        </g>
+      )}
+
       {textVisibility.visible && (
         <text
-          x={0}
+          x={backboneModule ? styleConfig.baseRadius * 0.3 : 0}
           y={textOffset}
           textAnchor="middle"
           dominantBaseline="middle"

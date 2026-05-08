@@ -594,19 +594,28 @@ INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, 
 
 ## Backbone Structure
 
-The topic research template consists of a root node and six core backbone modules:
+The topic research template consists of:
+1. **Root Node**: The research topic itself (level: root), title can be customized
+2. **Core Nodes**: Six backbone modules (level: core), MUST use standard titles
 
-1. **研究背景 (Research Background)**: Origin, history, and development context of the topic
-2. **文献综述 (Literature Review)**: Key literature, theories, and research status
-3. **研究方法 (Research Methods)**: Methodologies, tools, and approaches used
-4. **核心概念 (Core Concepts)**: Fundamental concepts, definitions, and frameworks
-5. **应用领域 (Application Domains)**: Practical applications and use cases
-6. **未来方向 (Future Directions)**: Trends, challenges, and research opportunities
+## CRITICAL REQUIREMENT: Standard Titles for Core Nodes
+
+You MUST use EXACTLY these six standard titles for the core nodes (level: core):
+- "研究背景" (NOT "背景介绍", "研究背景介绍", or any other variation)
+- "文献综述" (NOT "文献回顾", "相关文献", or any other variation)
+- "研究方法" (NOT "方法论", "研究手段", or any other variation)
+- "核心概念" (NOT "核心理论", "基本概念", or any other variation)
+- "应用领域" (NOT "应用场景", "实际应用", or any other variation)
+- "未来方向" (NOT "未来展望", "发展趋势", or any other variation)
+
+DO NOT add prefixes, suffixes, or modify these standard titles in any way.
+
+**Important**: The root node (level: root) should use the research topic as its title, NOT a fixed standard title.
 
 ## Node Structure
 
-- **Root Node**: The main research topic (level: root)
-- **Core Nodes**: Six backbone modules (level: core), each marked with needsRefinement=true
+- **Root Node**: The main research topic (level: root), title is the research topic itself - ONLY 1 ROOT NODE ALLOWED
+- **Core Nodes**: Six backbone modules (level: core), each with standard title and backboneModule property - EXACTLY 6 CORE NODES, ONE PER MODULE
 - **Sub Nodes**: Detailed content within each module (level: sub) - to be expanded later
 
 ## Edge Relationships
@@ -619,14 +628,19 @@ The topic research template consists of a root node and six core backbone module
 
 - Each core node has a `backboneModule` property indicating its module type
 - Core nodes have `needsRefinement=true` to indicate they need user input
+- Root node does NOT have backboneModule property
 - Use radial layout for optimal visualization
 
 ## Important Notes
 
 1. Only generate root and core level nodes during initialization
-2. Mark all core nodes with needsRefinement=true
-3. Assign appropriate backboneModule to each core node
-4. Use the predefined module colors for visual distinction', NOW(), NOW()),
+2. Root node title is the research topic, NOT a fixed standard title
+3. Core nodes MUST use the six standard titles listed above
+4. **CRITICAL: Each backbone module must have EXACTLY ONE core node**
+5. Do NOT generate multiple nodes with the same backbone module type
+6. Mark all core nodes with needsRefinement=true
+7. Assign appropriate backboneModule to each core node
+8. Use the predefined module colors for visual distinction', NOW(), NOW()),
   ('template_type_project_lifecycle', 'system', null, null, 'Create a project lifecycle structure showing phases from planning to execution to delivery. Use timeline/sequential organization. Include milestones and deliverables at each phase. Each phase should have clear objectives, key activities, and expected outcomes. Show dependencies between phases and critical path items. Include risk considerations at each stage.', NOW(), NOW()),
   ('template_type_dev_workflow', 'system', null, null, 'Create a software development workflow. Show the flow from requirements through design, development, testing, to deployment. Use prerequisite chain relationships. Include quality gates between phases. Each phase should define inputs, activities, outputs, and validation criteria. Consider both waterfall and iterative approaches. Include feedback loops where appropriate.', NOW(), NOW()),
   ('template_type_task_breakdown', 'system', null, null, 'Create a Work Breakdown Structure (WBS). Decompose the project into hierarchical tasks and subtasks. Use containment/parent-child relationships. Each task should be clearly scoped and assignable. Ensure tasks are MECE (Mutually Exclusive, Collectively Exhaustive). Include effort estimates and dependencies. Organize by deliverable or phase as appropriate.', NOW(), NOW()),

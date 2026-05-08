@@ -16,11 +16,11 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type {
   ConceptType,
-  BackboneModule,
   ExtractedConcept,
   LiteratureInfo,
   ExtractedRelation,
 } from "@shared/types/graph";
+import { BackboneModule } from "@shared/types/graph";
 
 export interface ExtractConceptsOptions {
   provider?: AIProviderType;
@@ -259,16 +259,16 @@ function parseTextContent(content: string): ParsedContent {
 
 function mapConceptToModule(conceptType: ConceptType): BackboneModule {
   const mapping: Record<ConceptType, BackboneModule> = {
-    method: "research_methods",
-    mechanism: "core_concepts",
-    operation: "research_methods",
-    concept: "core_concepts",
-    technology: "application_domains",
-    tool: "research_methods",
-    theory: "literature_review",
-    finding: "research_background",
-    trend: "future_directions",
-    challenge: "future_directions",
+    method: BackboneModule.RESEARCH_METHODS,
+    mechanism: BackboneModule.CORE_CONCEPTS,
+    operation: BackboneModule.RESEARCH_METHODS,
+    concept: BackboneModule.CORE_CONCEPTS,
+    technology: BackboneModule.APPLICATION_DOMAINS,
+    tool: BackboneModule.RESEARCH_METHODS,
+    theory: BackboneModule.LITERATURE_REVIEW,
+    finding: BackboneModule.RESEARCH_BACKGROUND,
+    trend: BackboneModule.FUTURE_DIRECTIONS,
+    challenge: BackboneModule.FUTURE_DIRECTIONS,
   };
   return mapping[conceptType];
 }
@@ -549,7 +549,7 @@ export class ConceptExtractorService {
     if (!provider.hasKey) {
       return {
         type: "concept",
-        targetModule: "core_concepts",
+        targetModule: BackboneModule.CORE_CONCEPTS,
         confidence: 0.5,
       };
     }
@@ -618,7 +618,7 @@ ${typeDescriptions}
       logger.error("Classify Concept Error:", error);
       return {
         type: "concept",
-        targetModule: "core_concepts",
+        targetModule: BackboneModule.CORE_CONCEPTS,
         confidence: 0.5,
       };
     }
@@ -837,21 +837,21 @@ ${contextInfo}
           description: "从文献中提取的核心概念描述，这是模拟数据。",
           type: "concept",
           source: literature,
-          targetModule: "core_concepts",
+          targetModule: BackboneModule.CORE_CONCEPTS,
         },
         {
           title: "研究方法",
           description: "文献中采用的主要研究方法，这是模拟数据。",
           type: "method",
           source: literature,
-          targetModule: "research_methods",
+          targetModule: BackboneModule.RESEARCH_METHODS,
         },
         {
           title: "应用技术",
           description: "文献中涉及的关键技术，这是模拟数据。",
           type: "technology",
           source: literature,
-          targetModule: "application_domains",
+          targetModule: BackboneModule.APPLICATION_DOMAINS,
         },
       ],
       relations: [

@@ -7,9 +7,9 @@ import type {
   TemplateType,
   LayoutSuggestion,
   NodeLevel,
-  BackboneModule,
 } from "@shared/types/graph";
 import {
+  BackboneModule,
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
@@ -29,6 +29,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";
 import { backboneNetworkService } from "./backboneNetworkService";
+import { backboneValidatorService } from "./backboneValidatorService";
 
 export interface GeneratedTemplateNode extends TemplateNode {
   suggestedContent?: string;
@@ -161,12 +162,12 @@ function generateTopicResearchBackboneNodes(
   topic: string,
 ): GeneratedTemplateNode[] {
   const backboneModules: BackboneModule[] = [
-    "research_background",
-    "literature_review",
-    "research_methods",
-    "core_concepts",
-    "application_domains",
-    "future_directions",
+    BackboneModule.RESEARCH_BACKGROUND,
+    BackboneModule.LITERATURE_REVIEW,
+    BackboneModule.RESEARCH_METHODS,
+    BackboneModule.CORE_CONCEPTS,
+    BackboneModule.APPLICATION_DOMAINS,
+    BackboneModule.FUTURE_DIRECTIONS,
   ];
 
   const nodes: GeneratedTemplateNode[] = [
@@ -204,12 +205,12 @@ function generateTopicResearchBackboneNodes(
 
 function generateTopicResearchBackboneEdges(): GeneratedTemplateEdge[] {
   const backboneModules: BackboneModule[] = [
-    "research_background",
-    "literature_review",
-    "research_methods",
-    "core_concepts",
-    "application_domains",
-    "future_directions",
+    BackboneModule.RESEARCH_BACKGROUND,
+    BackboneModule.LITERATURE_REVIEW,
+    BackboneModule.RESEARCH_METHODS,
+    BackboneModule.CORE_CONCEPTS,
+    BackboneModule.APPLICATION_DOMAINS,
+    BackboneModule.FUTURE_DIRECTIONS,
   ];
 
   const edges: GeneratedTemplateEdge[] = [];
@@ -701,6 +702,50 @@ export class TemplateGeneratorService {
           description: e.description,
         }),
       );
+
+      const coreNodes = nodes.filter((n) => n.level === "core");
+      if (coreNodes.length > 0) {
+        const nodesToValidate = coreNodes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          properties: {
+            backboneModule: n.backboneModule,
+          },
+        }));
+
+        const validationResult = await backboneValidatorService.validateNodes(
+          nodesToValidate,
+          {
+            graphId: options.graphId,
+            userId: options.userId,
+            provider: providerType,
+            model: options.model,
+          },
+        );
+
+        if (
+          !validationResult.valid &&
+          validationResult.corrections.length > 0
+        ) {
+          logger.info(
+            "[Template Generator] Applying corrections to backbone nodes",
+            {
+              correctionCount: validationResult.corrections.length,
+            },
+          );
+
+          for (const correction of validationResult.corrections) {
+            const node = nodes.find((n) => n.id === correction.nodeId);
+            if (node) {
+              node.title = correction.correctedTitle;
+              node.backboneModule = correction.backboneModule;
+              logger.info(
+                `[Template Generator] Corrected node ${correction.nodeId}: "${correction.originalTitle}" -> "${correction.correctedTitle}"`,
+              );
+            }
+          }
+        }
+      }
 
       return {
         templates: [

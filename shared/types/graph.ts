@@ -51,6 +51,15 @@ export type TemplateType =
   | "knowledge_system"
   | "blank";
 
+export enum BackboneModule {
+  RESEARCH_BACKGROUND = "research_background",
+  LITERATURE_REVIEW = "literature_review",
+  RESEARCH_METHODS = "research_methods",
+  CORE_CONCEPTS = "core_concepts",
+  APPLICATION_DOMAINS = "application_domains",
+  FUTURE_DIRECTIONS = "future_directions",
+}
+
 export interface TemplateTypeInfo {
   type: TemplateType;
   category: TemplateCategory;
@@ -97,12 +106,12 @@ export const TEMPLATE_TYPE_MAP: Record<TemplateType, TemplateTypeInfo> = {
     primaryRelationType: "related",
     structureHint: "radial_network",
     backboneModules: [
-      "research_background",
-      "literature_review",
-      "research_methods",
-      "core_concepts",
-      "application_domains",
-      "future_directions",
+      BackboneModule.RESEARCH_BACKGROUND,
+      BackboneModule.LITERATURE_REVIEW,
+      BackboneModule.RESEARCH_METHODS,
+      BackboneModule.CORE_CONCEPTS,
+      BackboneModule.APPLICATION_DOMAINS,
+      BackboneModule.FUTURE_DIRECTIONS,
     ],
     initLevelOnly: true,
   },
@@ -859,14 +868,6 @@ export type ConceptType =
   | "trend"
   | "challenge";
 
-export type BackboneModule =
-  | "research_background"
-  | "literature_review"
-  | "research_methods"
-  | "core_concepts"
-  | "application_domains"
-  | "future_directions";
-
 export interface ConceptSource {
   title: string;
   authors?: string[];
@@ -991,32 +992,59 @@ export const CONCEPT_TYPE_COLORS: Record<ConceptType, string> = {
 };
 
 export const BACKBONE_MODULE_LABELS: Record<BackboneModule, string> = {
-  research_background: "研究背景",
-  literature_review: "文献综述",
-  research_methods: "研究方法",
-  core_concepts: "核心概念",
-  application_domains: "应用领域",
-  future_directions: "未来方向",
+  [BackboneModule.RESEARCH_BACKGROUND]: "研究背景",
+  [BackboneModule.LITERATURE_REVIEW]: "文献综述",
+  [BackboneModule.RESEARCH_METHODS]: "研究方法",
+  [BackboneModule.CORE_CONCEPTS]: "核心概念",
+  [BackboneModule.APPLICATION_DOMAINS]: "应用领域",
+  [BackboneModule.FUTURE_DIRECTIONS]: "未来方向",
 };
 
 export const BACKBONE_MODULE_COLORS: Record<BackboneModule, string> = {
-  research_background: "#6366F1",
-  literature_review: "#8B5CF6",
-  research_methods: "#3B82F6",
-  core_concepts: "#10B981",
-  application_domains: "#F59E0B",
-  future_directions: "#EC4899",
+  [BackboneModule.RESEARCH_BACKGROUND]: "#6366F1",
+  [BackboneModule.LITERATURE_REVIEW]: "#8B5CF6",
+  [BackboneModule.RESEARCH_METHODS]: "#3B82F6",
+  [BackboneModule.CORE_CONCEPTS]: "#10B981",
+  [BackboneModule.APPLICATION_DOMAINS]: "#F59E0B",
+  [BackboneModule.FUTURE_DIRECTIONS]: "#EC4899",
+};
+
+export const BACKBONE_MODULE_TITLES: Record<BackboneModule, string> = {
+  [BackboneModule.RESEARCH_BACKGROUND]: "研究背景",
+  [BackboneModule.LITERATURE_REVIEW]: "文献综述",
+  [BackboneModule.RESEARCH_METHODS]: "研究方法",
+  [BackboneModule.CORE_CONCEPTS]: "核心概念",
+  [BackboneModule.APPLICATION_DOMAINS]: "应用领域",
+  [BackboneModule.FUTURE_DIRECTIONS]: "未来方向",
+};
+
+export const BACKBONE_MODULE_ICONS: Record<BackboneModule, string> = {
+  [BackboneModule.RESEARCH_BACKGROUND]: "📚",
+  [BackboneModule.LITERATURE_REVIEW]: "📄",
+  [BackboneModule.RESEARCH_METHODS]: "🔬",
+  [BackboneModule.CORE_CONCEPTS]: "💡",
+  [BackboneModule.APPLICATION_DOMAINS]: "🎯",
+  [BackboneModule.FUTURE_DIRECTIONS]: "🚀",
+};
+
+export const BACKBONE_MODULE_DESCRIPTIONS: Record<BackboneModule, string> = {
+  [BackboneModule.RESEARCH_BACKGROUND]: "研究领域的背景知识和发展历程",
+  [BackboneModule.LITERATURE_REVIEW]: "相关文献的综述和分析",
+  [BackboneModule.RESEARCH_METHODS]: "研究采用的方法论和技术手段",
+  [BackboneModule.CORE_CONCEPTS]: "领域的核心概念和理论框架",
+  [BackboneModule.APPLICATION_DOMAINS]: "理论和方法的应用场景",
+  [BackboneModule.FUTURE_DIRECTIONS]: "未来发展趋势和研究方向",
 };
 
 export const CONCEPT_TO_MODULE_MAP: Record<ConceptType, BackboneModule> = {
-  method: "research_methods",
-  mechanism: "core_concepts",
-  operation: "research_methods",
-  concept: "core_concepts",
-  technology: "application_domains",
-  tool: "research_methods",
-  theory: "literature_review",
-  finding: "research_background",
-  trend: "future_directions",
-  challenge: "future_directions",
+  method: BackboneModule.RESEARCH_METHODS,
+  mechanism: BackboneModule.CORE_CONCEPTS,
+  operation: BackboneModule.RESEARCH_METHODS,
+  concept: BackboneModule.CORE_CONCEPTS,
+  technology: BackboneModule.APPLICATION_DOMAINS,
+  tool: BackboneModule.RESEARCH_METHODS,
+  theory: BackboneModule.LITERATURE_REVIEW,
+  finding: BackboneModule.RESEARCH_BACKGROUND,
+  trend: BackboneModule.FUTURE_DIRECTIONS,
+  challenge: BackboneModule.FUTURE_DIRECTIONS,
 };

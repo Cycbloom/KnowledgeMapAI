@@ -22,6 +22,7 @@ import { cacheService } from "../services/common/cacheService";
 import { logger } from "../utils/logger";
 import { relationDiscoveryService } from "../services/graph/index";
 import { checkDuplicateGraphTopic } from "../utils/similaritySearch";
+import { backboneValidatorService } from "../services/ai/backboneValidatorService";
 import { z } from "zod";
 
 const checkTopicSchema = z.object({
@@ -2062,6 +2063,100 @@ router.post(
       const message =
         error instanceof Error ? error.message : "知识缺口分析失败";
       logger.error("Knowledge gaps analysis failed", error);
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+const validateBackboneSchema = z.object({
+  nodes: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().min(1).max(200),
+        properties: z
+          .object({
+            backboneModule: z.enum([
+              "research_background",
+              "literature_review",
+              "research_methods",
+              "core_concepts",
+              "application_domains",
+              "future_directions",
+            ]).optional(),
+          })
+          .optional(),
+      }),
+    )
+    .min(1)
+    .max(100),
+  context: z.string().max(1000).optional(),
+  useAI: z.boolean().optional(),
+});
+
+router.post(
+  "/:graphId/nodes/validate-backbone",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: validateBackboneSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graphId } = req.params;
+    const { nodes, context, useAI } = req.body;
+    const userId = req.user.id;
+
+    try {
+      logger.info("Backbone validation request", {
+        graphId,
+        userId,
+        nodeCount: nodes.length,
+        useAI,
+      });
+
+      const { data: graph } = await req
+        .supabase!.from("knowledge_graphs")
+        .select("id, title")
+        .eq("id", graphId)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .single();
+
+      if (!graph) {
+        throw new AppError("图谱不存在", 404, ErrorCodes.NOT_FOUND);
+      }
+
+      const validationContext =
+        context || `图谱主题：${graph.title}`;
+
+      let result;
+      if (useAI) {
+        result = await backboneValidatorService.validateNodesWithAI(
+          nodes,
+          validationContext,
+          {
+            graphId,
+            userId,
+          },
+        );
+      } else {
+        result = await backboneValidatorService.validateNodes(nodes, {
+          graphId,
+          userId,
+        });
+      }
+
+      logger.info("Backbone validation completed", {
+        graphId,
+        userId,
+        valid: result.valid,
+        correctionCount: result.corrections.length,
+        errorCount: result.errors.length,
+      });
+
+      res.json(result);
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      const message =
+        error instanceof Error ? error.message : "骨干节点验证失败";
+      logger.error("Backbone validation failed", error);
       throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },

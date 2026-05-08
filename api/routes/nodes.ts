@@ -8,14 +8,20 @@ import {
   uuidParamsSchema,
   batchDeleteNodesSchema,
   batchUpdatePositionsSchema,
+  batchUpdateNodesSchema,
 } from "../schemas/index";
 import { cacheService } from "../services/common/cacheService";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
+import { BackboneModule } from "../../shared/types/graph";
 import { aiService } from "../services/ai/aiService";
 import { achievementService } from "../services/achievementService";
 import { logger } from "../utils/logger";
-import { knowledgePointService, graphNodeService, edgeService } from "../services/graph/index";
+import {
+  knowledgePointService,
+  graphNodeService,
+  edgeService,
+} from "../services/graph/index";
 import { buildNodeFromGraphNode } from "../utils/nodeHelpers";
 
 const router = Router();
@@ -236,6 +242,19 @@ router.put(
       );
     }
 
+    const kp = existingNode.knowledge_points as any;
+    const isBackboneNode =
+      kp?.properties?.backboneModule &&
+      Object.values(BackboneModule).includes(kp.properties.backboneModule);
+
+    if (
+      isBackboneNode &&
+      updates.title !== undefined &&
+      updates.title !== kp?.title
+    ) {
+      throw new AppError("骨干节点标题不可修改", 403, ErrorCodes.FORBIDDEN);
+    }
+
     const kpUpdates: any = {};
     const gnUpdates: any = {};
 
@@ -247,8 +266,7 @@ router.put(
       kpUpdates.properties = updates.properties;
     if (updates.visibility !== undefined)
       kpUpdates.visibility = updates.visibility;
-    if (updates.keywords !== undefined)
-      kpUpdates.keywords = updates.keywords;
+    if (updates.keywords !== undefined) kpUpdates.keywords = updates.keywords;
 
     if (updates.x_position !== undefined)
       gnUpdates.x_position = updates.x_position;
@@ -592,6 +610,142 @@ router.post(
     res.json({
       message: `成功更新 ${positions.length} 个节点位置`,
       count: positions.length,
+    });
+  },
+);
+
+router.post(
+  "/nodes/batch-update",
+  requireAuth,
+  validate(batchUpdateNodesSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { nodes } = req.body;
+
+    const nodeIds = nodes.map((n: { id: string }) => n.id);
+    const { data: graphNodes, error: findError } = await req
+      .supabase!.from("graph_nodes")
+      .select(
+        `
+        id,
+        graph_id,
+        knowledge_point_id,
+        knowledge_points (
+          id,
+          title,
+          content,
+          learning_material,
+          properties
+        )
+      `,
+      )
+      .in("knowledge_point_id", nodeIds)
+      .is("deleted_at", null);
+
+    if (findError) {
+      logger.error("Find nodes for batch update error:", findError);
+    }
+
+    if (!graphNodes || graphNodes.length === 0) {
+      return res.json({ message: "未找到匹配的节点", count: 0 });
+    }
+
+    const kpIdToGnMap = new Map(
+      graphNodes.map((gn) => {
+        const kp = Array.isArray(gn.knowledge_points)
+          ? gn.knowledge_points[0]
+          : gn.knowledge_points;
+        return [kp?.id, gn];
+      }),
+    );
+
+    let skippedCount = 0;
+    const updateResults: Array<{
+      id: string;
+      updated: boolean;
+      reason?: string;
+    }> = [];
+
+    for (const nodeUpdate of nodes) {
+      const graphNode = kpIdToGnMap.get(nodeUpdate.id);
+      if (!graphNode) continue;
+
+      const kp = graphNode.knowledge_points as any;
+      const isBackboneNode =
+        kp?.properties?.backboneModule &&
+        Object.values(BackboneModule).includes(kp.properties.backboneModule);
+
+      const kpUpdates: any = {};
+      const gnUpdates: any = {};
+
+      if (nodeUpdate.title !== undefined) {
+        if (isBackboneNode && nodeUpdate.title !== kp?.title) {
+          skippedCount++;
+          updateResults.push({
+            id: nodeUpdate.id,
+            updated: false,
+            reason: "骨干节点标题不可修改",
+          });
+          continue;
+        }
+        kpUpdates.title = nodeUpdate.title;
+      }
+
+      if (nodeUpdate.content !== undefined)
+        kpUpdates.content = nodeUpdate.content;
+      if (nodeUpdate.learning_material !== undefined)
+        kpUpdates.learning_material = nodeUpdate.learning_material;
+      if (nodeUpdate.properties !== undefined)
+        kpUpdates.properties = nodeUpdate.properties;
+
+      if (nodeUpdate.x_position !== undefined)
+        gnUpdates.x_position = nodeUpdate.x_position;
+      if (nodeUpdate.y_position !== undefined)
+        gnUpdates.y_position = nodeUpdate.y_position;
+      if (nodeUpdate.level !== undefined) gnUpdates.level = nodeUpdate.level;
+      if (nodeUpdate.is_accepted !== undefined)
+        gnUpdates.is_accepted = nodeUpdate.is_accepted;
+
+      try {
+        if (Object.keys(kpUpdates).length > 0) {
+          await knowledgePointService.update(
+            req.supabase!,
+            graphNode.knowledge_point_id,
+            kpUpdates,
+          );
+        }
+
+        if (Object.keys(gnUpdates).length > 0) {
+          await req
+            .supabase!.from("graph_nodes")
+            .update(gnUpdates)
+            .eq("id", graphNode.id);
+        }
+
+        updateResults.push({ id: nodeUpdate.id, updated: true });
+      } catch (error: unknown) {
+        logger.error("Batch update node error:", error);
+        updateResults.push({
+          id: nodeUpdate.id,
+          updated: false,
+          reason: error instanceof Error ? error.message : "更新失败",
+        });
+      }
+    }
+
+    const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
+    for (const gid of graphIds) {
+      await cacheService.invalidateGraphCache(req.user.id, gid);
+    }
+
+    const successCount = updateResults.filter((r) => r.updated).length;
+    const failedCount = updateResults.filter((r) => !r.updated).length;
+
+    res.json({
+      message: `成功更新 ${successCount} 个节点${skippedCount > 0 ? `，已跳过 ${skippedCount} 个骨干节点的标题修改` : ""}`,
+      count: successCount,
+      skipped: skippedCount,
+      failed: failedCount,
+      results: updateResults,
     });
   },
 );

@@ -222,6 +222,7 @@ export interface GenerateCardsOptions {
 export class AIService {
   async generateEmbedding(text: string): Promise<number[] | null> {
     const embeddingProvider = await getProviderForTask("embedding");
+
     if (!embeddingProvider) {
       logger.warn("No embedding provider available");
       return null;

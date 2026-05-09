@@ -151,10 +151,22 @@ export const Settings = () => {
     configured: boolean;
     source: string;
   } | null>(null);
-  const [embeddingAiConfig, setEmbeddingAiConfig] = useState({
+  const [embeddingAiConfig, setEmbeddingAiConfig] = useState<{
+    provider: string;
+    model: string;
+    baseURL: string;
+    apiKey: string;
+    enabled: boolean;
+    loaded: boolean;
+    isDefault: boolean; // 标记是否为默认值（未从数据库加载）
+  }>({
     provider: "volcengine",
     model: "doubao-embedding-vision-251215",
+    baseURL: "",
+    apiKey: "",
     enabled: true,
+    loaded: false,
+    isDefault: true, // 初始是默认值
   });
   const [embeddingAiStatus, setEmbeddingAiStatus] = useState<{
     configured: boolean;
@@ -302,26 +314,82 @@ export const Settings = () => {
           });
         }
 
+        // 修复：正确处理 embedding 配置加载
         const embProvider = embRes.provider as string;
         if (embProvider) {
-          setEmbeddingAiConfig((prev) => ({
-            ...prev,
+          // 数据库中有配置 → 使用数据库的值
+          setEmbeddingAiConfig({
             provider: embProvider,
             model: (embRes.model as string) || "",
             baseURL: (embRes.baseURL as string) || "",
             apiKey: "",
             enabled: true,
-          }));
+            loaded: true,
+            isDefault: false, // 从数据库加载，不是默认值
+          });
           setEmbeddingAiStatus({
             configured: embRes.configured as boolean,
             source: embRes.source as string,
           });
         } else {
-          setEmbeddingAiConfig((prev) => ({ ...prev, enabled: false }));
-          setEmbeddingAiStatus({ configured: false, source: "none" });
+          // 数据库中没有 embedding 配置 → 自动保存默认值到数据库
+          try {
+            await apiClient.put("/ai/config/embedding", {
+              provider: "volcengine",
+              model: "doubao-embedding-vision-251215",
+            });
+
+            setEmbeddingAiConfig({
+              provider: "volcengine",
+              model: "doubao-embedding-vision-251215",
+              baseURL: "",
+              apiKey: "",
+              enabled: true,
+              loaded: true,
+              isDefault: false,
+            });
+            setEmbeddingAiStatus({ configured: true, source: "auto" });
+
+            frontendEventBus.publish("message_show", {
+              type: "info",
+              content:
+                t("settings.embeddingAutoConfigured") ||
+                "Embedding service auto-configured with default settings",
+            });
+          } catch (saveError) {
+            console.error(
+              "[Settings] Failed to save default embedding config:",
+              saveError,
+            );
+
+            setEmbeddingAiConfig((prev) => ({
+              ...prev,
+              loaded: true,
+              isDefault: true,
+            }));
+            setEmbeddingAiStatus({ configured: false, source: "none" });
+
+            frontendEventBus.publish("message_show", {
+              type: "warning",
+              content:
+                t("settings.embeddingAutoConfigFailed") ||
+                "Failed to auto-configure embedding service. Please configure manually.",
+            });
+          }
         }
-      } catch {
-        // silently fail
+      } catch (error) {
+        console.error("Failed to load AI configs:", error);
+        // 不再静默失败 - 标记加载完成但保持未配置状态
+        setEmbeddingAiConfig((prev) => ({
+          ...prev,
+          enabled: false,
+          loaded: true,
+        }));
+        frontendEventBus.publish("message_show", {
+          type: "warning",
+          content:
+            t("settings.loadConfigFailed") || "Failed to load AI configuration",
+        });
       }
     };
     if (token) {
@@ -716,16 +784,29 @@ export const Settings = () => {
         });
         return;
       }
+
+      // 验证必填字段
+      if (!embeddingAiConfig.provider) {
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: t("settings.providerRequired") || "Please select a provider",
+        });
+        return;
+      }
+
       await apiClient.put("/ai/config/embedding", {
         provider: embeddingAiConfig.provider,
         model: embeddingAiConfig.model,
       });
+
+      setEmbeddingAiConfig((prev) => ({ ...prev, loaded: true }));
       setEmbeddingAiStatus({ configured: true, source: "user" });
       frontendEventBus.publish("message_show", {
         type: "success",
         content: t("settings.embeddingSaved"),
       });
-    } catch {
+    } catch (error) {
+      console.error("Failed to save embedding config:", error);
       frontendEventBus.publish("message_show", {
         type: "error",
         content: t("settings.embeddingSaveFailed"),
@@ -1492,18 +1573,22 @@ export const Settings = () => {
                 {embeddingAiStatus && (
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                      embeddingAiStatus.source === "env"
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                        : embeddingAiStatus.configured
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                          : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                      embeddingAiStatus.source === "auto"
+                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                        : embeddingAiStatus.source === "env"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          : embeddingAiStatus.configured
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
                     }`}
                   >
-                    {embeddingAiStatus.source === "env"
-                      ? t("settings.sourceEnv")
-                      : embeddingAiStatus.configured
-                        ? t("settings.embeddingEnabled")
-                        : t("settings.embeddingDisabled")}
+                    {embeddingAiStatus.source === "auto"
+                      ? t("settings.sourceAuto") || "Auto"
+                      : embeddingAiStatus.source === "env"
+                        ? t("settings.sourceEnv")
+                        : embeddingAiStatus.configured
+                          ? t("settings.embeddingEnabled")
+                          : t("settings.embeddingDisabled")}
                   </span>
                 )}
               </div>
@@ -1522,16 +1607,28 @@ export const Settings = () => {
                         enabled: e.target.checked,
                       }))
                     }
+                    disabled={!embeddingAiConfig.loaded}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-gray-600 peer-checked:bg-green-600"></div>
+                  <div
+                    className={`w-11 h-6 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-gray-600 ${
+                      embeddingAiConfig.loaded
+                        ? "bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 peer-checked:bg-green-600"
+                        : "bg-gray-100 cursor-not-allowed"
+                    }`}
+                  ></div>
                   <span className="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t("settings.enableEmbedding")}
+                    {!embeddingAiConfig.loaded && (
+                      <span className="ml-2 text-xs text-gray-400">
+                        ({t("settings.loading") || "Loading..."})
+                      </span>
+                    )}
                   </span>
                 </label>
               </div>
 
-              {embeddingAiConfig.enabled ? (
+              {embeddingAiConfig.enabled && embeddingAiConfig.loaded ? (
                 <div className="space-y-3">
                   <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2 mb-2">
                     <Info className="w-4 h-4 mt-0.5 shrink-0" />

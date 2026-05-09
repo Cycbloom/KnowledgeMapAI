@@ -166,11 +166,9 @@ router.put(
 
       for (const [provider, config] of Object.entries(providers)) {
         if (config.apiKey !== undefined && config.apiKey === "") {
-          res
-            .status(400)
-            .json({
-              error: `apiKey for ${provider} must be non-empty if provided`,
-            });
+          res.status(400).json({
+            error: `apiKey for ${provider} must be non-empty if provided`,
+          });
           return;
         }
         if (config.baseURL !== undefined) {
@@ -291,23 +289,27 @@ router.post(
 
       if (isEmbeddingModel && isVolcengineMultimodal) {
         const multimodalEndpoint = `${testBaseURL}/embeddings/multimodal`;
-        logger.info(`[Provider Test] Using Volcengine Multimodal Endpoint: ${multimodalEndpoint}`);
+        logger.info(
+          `[Provider Test] Using Volcengine Multimodal Endpoint: ${multimodalEndpoint}`,
+        );
 
         const response = await fetch(multimodalEndpoint, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${testApiKey}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${testApiKey}`,
           },
           body: JSON.stringify({
             model: testModel,
-            input: [{ type: "text", text: "test" }]
-          })
+            input: [{ type: "text", text: "test" }],
+          }),
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(`Volcengine API Error: ${response.status} ${errorText}`);
+          throw new Error(
+            `Volcengine API Error: ${response.status} ${errorText}`,
+          );
         }
       } else if (isEmbeddingModel) {
         await client.embeddings.create({
@@ -477,7 +479,7 @@ router.put(
 );
 
 router.get(
-  "/config/main-ai",
+  "/main-ai",
   requireAuth,
   async (_req: AuthRequest, res: Response) => {
     try {
@@ -522,45 +524,41 @@ router.get(
   },
 );
 
-router.put(
-  "/config/main-ai",
-  requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { provider, model } = req.body as {
-        provider?: string;
-        model?: string;
-      };
+router.put("/main-ai", requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { provider, model } = req.body as {
+      provider?: string;
+      model?: string;
+    };
 
-      if (!provider) {
-        res.status(400).json({ error: "provider is required" });
-        return;
-      }
-
-      const sysConfig =
-        (await settingsService.getSetting<Record<string, unknown>>(
-          "system_config",
-        )) || {};
-
-      sysConfig.main_ai = {
-        provider,
-        ...(model ? { model } : {}),
-      };
-
-      await settingsService.updateSetting("system_config", sysConfig);
-
-      settingsService.clearCache();
-
-      res.json({ success: true });
-    } catch (error) {
-      logger.error("Failed to update main AI config:", error);
-      res.status(500).json({ error: "Failed to update main AI config" });
+    if (!provider) {
+      res.status(400).json({ error: "provider is required" });
+      return;
     }
-  },
-);
+
+    const sysConfig =
+      (await settingsService.getSetting<Record<string, unknown>>(
+        "system_config",
+      )) || {};
+
+    sysConfig.main_ai = {
+      provider,
+      ...(model ? { model } : {}),
+    };
+
+    await settingsService.updateSetting("system_config", sysConfig);
+
+    settingsService.clearCache();
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error("Failed to update main AI config:", error);
+    res.status(500).json({ error: "Failed to update main AI config" });
+  }
+});
 
 router.get(
-  "/config/embedding",
+  "/embedding",
   requireAuth,
   async (_req: AuthRequest, res: Response) => {
     try {
@@ -610,7 +608,7 @@ router.get(
 );
 
 router.put(
-  "/config/embedding",
+  "/embedding",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     try {

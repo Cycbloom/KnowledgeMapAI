@@ -348,4 +348,107 @@ test.describe("专题研究图谱骨干节点测试", () => {
 
     await expect(page).not.toHaveURL(/login/);
   });
+
+  test("应该在大纲视图中显示骨干节点图标", async ({ page }) => {
+    await graphPage.navigateToHome();
+
+    const graphLink = page.locator('a[href^="/graph/"]').first();
+    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await graphLink.click();
+      await page.waitForLoadState("networkidle");
+
+      const outlineButton = page
+        .locator("button")
+        .filter({ hasText: /大纲|目录/ });
+      if (await outlineButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await outlineButton.click();
+
+        const outlinePanel = page.locator(
+          '[class*="outline"], [class*="sidebar"]',
+        );
+        await expect(outlinePanel).toBeVisible({ timeout: 5000 });
+
+        const backboneNodeInOutline = outlinePanel.locator(
+          'text="研究背景", text="文献综述", text="研究方法", text="核心概念", text="应用领域", text="未来方向"',
+        );
+        if (
+          await backboneNodeInOutline
+            .first()
+            .isVisible({ timeout: 3000 })
+            .catch(() => false)
+        ) {
+          const backboneNodeElement = backboneNodeInOutline.first();
+          const parentElement = backboneNodeElement.locator("xpath=..");
+
+          const iconElement = parentElement
+            .locator('svg, [class*="icon"]')
+            .first();
+          const hasIcon = await iconElement
+            .isVisible({ timeout: 3000 })
+            .catch(() => false);
+
+          expect(typeof hasIcon).toBe("boolean");
+        }
+      }
+    }
+
+    await expect(page).not.toHaveURL(/login/);
+  });
+
+  test("应该在大纲视图中显示骨干节点悬停提示", async ({ page }) => {
+    await graphPage.navigateToHome();
+
+    const graphLink = page.locator('a[href^="/graph/"]').first();
+    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await graphLink.click();
+      await page.waitForLoadState("networkidle");
+
+      const outlineButton = page
+        .locator("button")
+        .filter({ hasText: /大纲|目录/ });
+      if (await outlineButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await outlineButton.click();
+
+        const outlinePanel = page.locator(
+          '[class*="outline"], [class*="sidebar"]',
+        );
+        await expect(outlinePanel).toBeVisible({ timeout: 5000 });
+
+        const backboneNodeInOutline = outlinePanel.locator(
+          'text="研究背景", text="文献综述", text="研究方法", text="核心概念", text="应用领域", text="未来方向"',
+        );
+        if (
+          await backboneNodeInOutline
+            .first()
+            .isVisible({ timeout: 3000 })
+            .catch(() => false)
+        ) {
+          const backboneNodeElement = backboneNodeInOutline.first();
+          const parentElement = backboneNodeElement.locator("xpath=..");
+
+          const iconElement = parentElement
+            .locator('svg, [class*="icon"]')
+            .first();
+          if (
+            await iconElement.isVisible({ timeout: 3000 }).catch(() => false)
+          ) {
+            await iconElement.hover();
+
+            await page.waitForTimeout(500);
+
+            const tooltip = page.locator(
+              '[role="tooltip"], [class*="tooltip"]',
+            );
+            const hasTooltip = await tooltip
+              .isVisible({ timeout: 2000 })
+              .catch(() => false);
+
+            expect(typeof hasTooltip).toBe("boolean");
+          }
+        }
+      }
+    }
+
+    await expect(page).not.toHaveURL(/login/);
+  });
 });

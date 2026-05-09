@@ -5,6 +5,14 @@ import { logger } from "../../utils/logger";
 
 dotenv.config();
 
+// Providers that support embedding functionality
+const EMBEDDING_CAPABLE_PROVIDERS: AIProviderType[] = [
+  "volcengine",
+  "aliyun",
+  "openai",
+  "zhipu",
+];
+
 // Fallback env configs
 export const getEnvConfig = (provider: AIProviderType): AIProviderConfig => {
   switch (provider) {
@@ -66,9 +74,7 @@ export const getProviderConfig = async (
     if (allConfigs && allConfigs[provider]) {
       const dbConfig = allConfigs[provider];
       return {
-        apiKey:
-          dbConfig.apiKey ||
-          envConfig.apiKey,
+        apiKey: dbConfig.apiKey || envConfig.apiKey,
         baseURL: dbConfig.baseURL || envConfig.baseURL,
         model: dbConfig.model || envConfig.model,
         embeddingModel: dbConfig.embeddingModel || envConfig.embeddingModel,
@@ -105,13 +111,26 @@ export const getProviderForTask = async (
     }>("system_config");
 
     if (task === "embedding") {
+      // 1. 优先使用专门配置的 embedding provider
       if (sysConfig?.embedding_ai?.provider) {
         return sysConfig.embedding_ai.provider as AIProviderType;
       }
-      const envEmbeddingProvider = process.env.EMBEDDING_PROVIDER as AIProviderType;
+
+      // 2. 检查环境变量
+      const envEmbeddingProvider = process.env
+        .EMBEDDING_PROVIDER as AIProviderType;
       if (envEmbeddingProvider) {
         return envEmbeddingProvider;
       }
+
+      // 3. Fallback: 检查 main_ai provider 是否支持 embedding
+      if (sysConfig?.main_ai?.provider) {
+        const mainProvider = sysConfig.main_ai.provider as AIProviderType;
+        if (EMBEDDING_CAPABLE_PROVIDERS.includes(mainProvider)) {
+          return mainProvider;
+        }
+      }
+
       return null;
     }
 
@@ -119,7 +138,7 @@ export const getProviderForTask = async (
       return sysConfig.main_ai.provider as AIProviderType;
     }
   } catch (e) {
-    // ignore
+    logger.error(`[getProviderForTask] Error reading config for task=${task}:`, e);
   }
 
   return await getDefaultProvider();

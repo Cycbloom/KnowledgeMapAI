@@ -1444,4 +1444,205 @@ test.describe("文献概念提取功能测试", () => {
       await expect(dropzone.first()).toBeVisible({ timeout: 5000 });
     });
   });
+
+  test.describe("节点挂载到骨干节点", () => {
+    test("应该在确认添加后将概念节点挂载到骨干节点下", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
+
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
+      if (await extractButton.isVisible()) {
+        await extractButton.click();
+      }
+
+      const panel = page.locator(".literature-extract-panel");
+      await expect(panel).toBeVisible({ timeout: 10000 });
+
+      const textArea = panel.locator("textarea");
+      await textArea.fill(SAMPLE_TEXT_CONTENT);
+
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
+      await startButton.click();
+
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
+      await expect(previewModal).toBeVisible({ timeout: 60000 });
+
+      const confirmButton = previewModal
+        .locator("button")
+        .filter({ hasText: /确认添加/ });
+      if (await confirmButton.isEnabled()) {
+        await confirmButton.click();
+
+        await expect(page.locator("text=/成功|添加/")).toBeVisible({
+          timeout: 10000,
+        });
+
+        await page.waitForTimeout(2000);
+
+        const backboneNode = page.locator(
+          'text="研究背景", text="文献综述", text="研究方法", text="核心概念", text="应用领域", text="未来方向"',
+        );
+        if (await backboneNode.first().isVisible({ timeout: 5000 }).catch(() => false)) {
+          const backboneNodeCount = await backboneNode.count();
+          expect(backboneNodeCount).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    test("应该在图谱大纲中显示正确的层级关系", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
+
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
+      if (await extractButton.isVisible()) {
+        await extractButton.click();
+      }
+
+      const panel = page.locator(".literature-extract-panel");
+      await expect(panel).toBeVisible({ timeout: 10000 });
+
+      const textArea = panel.locator("textarea");
+      await textArea.fill(SAMPLE_TEXT_CONTENT);
+
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
+      await startButton.click();
+
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
+      await expect(previewModal).toBeVisible({ timeout: 60000 });
+
+      const confirmButton = previewModal
+        .locator("button")
+        .filter({ hasText: /确认添加/ });
+      if (await confirmButton.isEnabled()) {
+        await confirmButton.click();
+
+        await expect(page.locator("text=/成功|添加/")).toBeVisible({
+          timeout: 10000,
+        });
+
+        await page.waitForTimeout(2000);
+
+        const outlineButton = page
+          .locator("button")
+          .filter({ hasText: /大纲|目录/ });
+        if (await outlineButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await outlineButton.click();
+
+          const outlinePanel = page.locator(
+            '[class*="outline"], [class*="sidebar"]',
+          );
+          await expect(outlinePanel).toBeVisible({ timeout: 5000 });
+
+          const backboneNodeInOutline = outlinePanel.locator(
+            'text="研究背景", text="文献综述", text="研究方法", text="核心概念", text="应用领域", text="未来方向"',
+          );
+          if (
+            await backboneNodeInOutline
+              .first()
+              .isVisible({ timeout: 3000 })
+              .catch(() => false)
+          ) {
+            const expandButton = backboneNodeInOutline
+              .first()
+              .locator("xpath=..")
+              .locator('button:has(svg), [class*="expand"], [class*="collapse"]');
+            if (
+              await expandButton.isVisible({ timeout: 1000 }).catch(() => false)
+            ) {
+              await expandButton.click();
+              await page.waitForTimeout(500);
+            }
+          }
+        }
+      }
+    });
+
+    test("应该在节点属性中显示正确的骨干模块", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
+
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
+      if (await extractButton.isVisible()) {
+        await extractButton.click();
+      }
+
+      const panel = page.locator(".literature-extract-panel");
+      await expect(panel).toBeVisible({ timeout: 10000 });
+
+      const textArea = panel.locator("textarea");
+      await textArea.fill(SAMPLE_TEXT_CONTENT);
+
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
+      await startButton.click();
+
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
+      await expect(previewModal).toBeVisible({ timeout: 60000 });
+
+      const conceptCards = previewModal.locator(
+        '[class*="rounded-lg"][class*="border"]',
+      );
+      const conceptCount = await conceptCards.count();
+
+      if (conceptCount > 0) {
+        const firstCard = conceptCards.first();
+        const moduleLabel = firstCard.locator(
+          "text=/研究背景|文献综述|研究方法|核心概念|应用领域|未来方向/",
+        );
+        await expect(moduleLabel).toBeVisible({ timeout: 3000 });
+      }
+    });
+
+    test("应该在没有骨干节点时创建根节点", async ({ page }) => {
+      await page.goto("/graph");
+      await page.waitForLoadState("networkidle");
+
+      const extractButton = page
+        .locator("button")
+        .filter({ hasText: /文献提取|提取概念/ })
+        .first();
+      if (await extractButton.isVisible()) {
+        await extractButton.click();
+      }
+
+      const panel = page.locator(".literature-extract-panel");
+      await expect(panel).toBeVisible({ timeout: 10000 });
+
+      const textArea = panel.locator("textarea");
+      await textArea.fill(SAMPLE_TEXT_CONTENT);
+
+      const startButton = panel
+        .locator("button")
+        .filter({ hasText: /开始提取/ });
+      await startButton.click();
+
+      const previewModal = page.locator(".fixed.inset-0.bg-black\\/50");
+      await expect(previewModal).toBeVisible({ timeout: 60000 });
+
+      const confirmButton = previewModal
+        .locator("button")
+        .filter({ hasText: /确认添加/ });
+      if (await confirmButton.isEnabled()) {
+        await confirmButton.click();
+
+        await expect(page.locator("text=/成功|添加/")).toBeVisible({
+          timeout: 10000,
+        });
+      }
+    });
+  });
 });

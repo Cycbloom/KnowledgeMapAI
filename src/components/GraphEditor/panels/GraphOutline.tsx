@@ -5,6 +5,8 @@ import { BatchGenerateDialog } from '../modals/BatchGenerateDialog';
 import { GraphStatsSummary } from '../shared/GraphStatsSummary';
 import { getLevelColors } from '../../../config/learningStatusColors';
 import { useTranslation } from 'react-i18next';
+import { BackboneNodeIcon } from '../BackboneNodeIcon';
+import { BackboneModule } from '@shared/types/graph';
 
 interface GraphOutlineProps {
   nodes: Node[];
@@ -370,6 +372,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     return processedNodes.map(node => {
       const level = node.level || 'leaf';
       const isSelected = selectedNodeIds.has(node.id);
+      const backboneModule = node.properties?.backboneModule as BackboneModule | undefined;
 
       return (
         <div
@@ -397,7 +400,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: getLevelColors(node.level || 'leaf').primary }}
           />
-          <span className="truncate flex-1 font-medium">
+          <span className="truncate flex-1 font-medium flex items-center gap-1.5">
+            {backboneModule && (
+              <BackboneNodeIcon 
+                module={backboneModule} 
+                size="small" 
+                showTooltip={true} 
+              />
+            )}
             {node.title || t('graphEditor.outline.unnamedNode')}
           </span>
           <span 
@@ -461,6 +471,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     const hasChildren = children.length > 0;
     const isExpanded = expandedNodeIds.has(node.id);
     const isSelected = selectedNodeIds.has(node.id);
+    const backboneModule = node.properties?.backboneModule as BackboneModule | undefined;
     
     const paddingLeft = 12 + depth * 16;
 
@@ -509,7 +520,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             style={{ backgroundColor: getLevelColors(node.level || 'leaf').primary }}
           />
           
-          <span className="truncate flex-1 font-medium">
+          <span className="truncate flex-1 font-medium flex items-center gap-1.5">
+            {backboneModule && (
+              <BackboneNodeIcon 
+                module={backboneModule} 
+                size="small" 
+                showTooltip={true} 
+              />
+            )}
             {node.title || t('graphEditor.outline.unnamedNode')}
           </span>
           

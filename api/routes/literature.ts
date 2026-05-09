@@ -660,16 +660,66 @@ router.post(
         conceptsWithEmbeddingCount: conceptsWithEmbedding.length,
       });
 
+      const { data: backboneNodes } = await supabase
+        .from("graph_nodes")
+        .select(
+          `
+          id,
+          knowledge_point_id,
+          knowledge_points (
+            id,
+            title,
+            properties
+          )
+        `,
+        )
+        .eq("graph_id", graph_id)
+        .is("deleted_at", null);
+
+      const backboneModuleMap = new Map<BackboneModule, string>();
+      const backboneNodeIds = new Set<string>();
+
+      if (backboneNodes) {
+        for (const gn of backboneNodes) {
+          const kp = gn.knowledge_points as unknown as {
+            id: string;
+            title: string;
+            properties?: { backboneModule?: BackboneModule };
+          };
+          if (kp?.properties?.backboneModule) {
+            backboneModuleMap.set(kp.properties.backboneModule, gn.id);
+            backboneNodeIds.add(gn.id);
+          }
+        }
+      }
+
+      logger.info("Backbone nodes loaded", {
+        backboneModuleCount: backboneModuleMap.size,
+        modules: Array.from(backboneModuleMap.keys()),
+      });
+
       if (nodesToCreate.length > 0) {
-        const aiNodesData = nodesToCreate.map((node) => ({
-          tempId: node.tempId,
-          parentId: null,
-          title: node.title,
-          content: node.content,
-          level: node.level,
-          x_position: node.x_position,
-          y_position: node.y_position,
-        }));
+        const aiNodesData = nodesToCreate.map((node) => {
+          const backboneNodeId = node.targetModule
+            ? backboneModuleMap.get(node.targetModule)
+            : null;
+
+          if (node.targetModule && !backboneNodeId) {
+            logger.warn(
+              `Backbone node not found for module: ${node.targetModule}, concept "${node.title}" will be created as root node`,
+            );
+          }
+
+          return {
+            tempId: node.tempId,
+            parentId: backboneNodeId || null,
+            title: node.title,
+            content: node.content,
+            level: node.level,
+            x_position: node.x_position,
+            y_position: node.y_position,
+          };
+        });
 
         const createResult = await autoGraphService.processAINodes(
           supabase,

@@ -1,4 +1,4 @@
-﻿﻿import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { TermTooltip } from "../components/common";
@@ -9,6 +9,7 @@ import rehypeKatex from "rehype-katex";
 import {
   ArrowLeft,
   BookOpen,
+  Microscope,
   MessageSquare,
   Send,
   Bot,
@@ -1287,13 +1288,27 @@ export const LearningMode = () => {
 
           <div className="flex items-center space-x-2">
             <div
-              className={`p-1 rounded-lg ${isDark ? "bg-primary-900/50 text-primary-400" : "bg-primary-50 text-primary-600"}`}
+              className={`p-1 rounded-lg ${
+                graphMeta?.template_type === "topic_research"
+                  ? isDark
+                    ? "bg-purple-900/30 text-purple-400"
+                    : "bg-purple-100 text-purple-600"
+                  : isDark
+                    ? "bg-primary-900/50 text-primary-400"
+                    : "bg-primary-50 text-primary-600"
+              }`}
             >
-              <BookOpen size={isMobile ? 16 : 20} />
+              {graphMeta?.template_type === "topic_research" ? (
+                <Microscope size={isMobile ? 16 : 20} />
+              ) : (
+                <BookOpen size={isMobile ? 16 : 20} />
+              )}
             </div>
             <div className={isMobile && nodeId ? "hidden sm:block" : "block"}>
               <h1 className="font-bold text-sm lg:text-lg whitespace-nowrap">
-                {t("learning.header.title")}
+                {graphMeta?.template_type === "topic_research"
+                  ? "专题研究"
+                  : t("learning.header.title")}
               </h1>
               {!isMobile && (
                 <p
@@ -1553,6 +1568,7 @@ export const LearningMode = () => {
                 onSelectionChange={setSelectedNodeIds}
                 onBatchAction={handleBatchAction}
                 onAddNode={() => setIsCreateNodeModalOpen(true)}
+                templateType={graphMeta?.template_type}
                 className="h-full border-none"
               />
             ) : (
@@ -1755,6 +1771,7 @@ export const LearningMode = () => {
           >
             <GraphOverviewPanel
               graph={graphMeta || null}
+              templateType={graphMeta?.template_type}
               onEdit={() => setIsOverviewEditModalOpen(true)}
             />
           </div>
@@ -1908,6 +1925,10 @@ export const LearningMode = () => {
                               ),
                             });
                           }
+                        }}
+                        onConceptsSaved={async () => {
+                          await queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
+                          await queryClient.invalidateQueries({ queryKey: ["graphNodeStatus", graphId] });
                         }}
                         className="h-full"
                       />

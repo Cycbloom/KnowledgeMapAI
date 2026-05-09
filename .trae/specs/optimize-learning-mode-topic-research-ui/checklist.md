@@ -1,0 +1,9 @@
+- [x] 标题栏图标根据 template_type 动态切换，专题研究显示 Microscope 图标和紫色主题色
+- [x] 标题栏标题文字根据 template_type 动态显示，专题研究显示"专题研究"
+- [x] GraphOverviewPanel 概览面板图标根据 template_type 动态切换
+- [x] LearningMode.tsx 正确传递 template_type 给 GraphOverviewPanel 和 GraphOutline
+- [x] 大纲面板在专题研究图谱中按骨干模块分组展示节点
+- [x] 每个骨干模块组显示模块图标、模块名称、节点数量
+- [x] 每个骨干模块组显示完善状态（已完善/待完善）
+- [x] 非专题研究图谱的 UI 保持不变，无回归问题
+- [x] 深色模式下所有新增 UI 元素显示正确

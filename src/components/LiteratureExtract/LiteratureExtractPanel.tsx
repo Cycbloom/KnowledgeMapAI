@@ -41,6 +41,7 @@ type InputMode = "text" | "file" | "url";
 interface LiteratureExtractPanelProps {
   graphId: string;
   onExtractComplete?: (result: LiteratureExtractResponse) => void;
+  onConceptsSaved?: (result: { addedCount: number; mergedCount: number }) => void;
   onClose?: () => void;
   className?: string;
 }
@@ -89,6 +90,7 @@ const getFileSizeDisplay = (bytes: number) => {
 export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   graphId,
   onExtractComplete,
+  onConceptsSaved,
   onClose,
   className = "",
 }) => {
@@ -487,6 +489,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         }),
       });
 
+      onConceptsSaved?.({ addedCount: result.addedCount, mergedCount: result.mergedCount });
       onClose?.();
     } catch (error) {
       handleError(error, {
@@ -496,7 +499,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [extractedResult, graphId, handleError, t, onClose]);
+  }, [extractedResult, graphId, handleError, t, onClose, onConceptsSaved]);
 
   const renderInputModeSelector = () => (
     <div

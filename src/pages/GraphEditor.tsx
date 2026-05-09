@@ -19,9 +19,24 @@ import { GraphStyleSettings } from "../components/GraphEditor/shared/GraphStyleS
 import { RelationshipTypeSettings } from "../components/GraphEditor/shared/RelationshipTypeSettings";
 
 import { GraphModalManager } from "../components/GraphEditor/modals/GraphModalManager";
-import { useGraphEffects, useGraphEditorState, useGraphHistoryHandlers, useGraphNodeOperations, useGraphExportOperations, useGraphInteraction, useExplorationPath } from "../hooks/graphEditor";
+import {
+  useGraphEffects,
+  useGraphEditorState,
+  useGraphHistoryHandlers,
+  useGraphNodeOperations,
+  useGraphExportOperations,
+  useGraphInteraction,
+  useExplorationPath,
+} from "../hooks/graphEditor";
 import { useGraphAIOperations } from "../hooks/graphAI";
-import { useTheme, useIsMobile, useKeyboardShortcuts, useGlobalShortcuts, useTutorOperations, useConsole } from "../hooks";
+import {
+  useTheme,
+  useIsMobile,
+  useKeyboardShortcuts,
+  useGlobalShortcuts,
+  useTutorOperations,
+  useConsole,
+} from "../hooks";
 import {
   useGraph,
   useGraphData,
@@ -74,15 +89,19 @@ const PlanetView = lazy(() =>
 );
 
 const GraphSidebarManager = lazy(() =>
-  import("../components/GraphEditor/sidebar/GraphSidebarManager").then((module) => ({
-    default: module.GraphSidebarManager,
-  })),
+  import("../components/GraphEditor/sidebar/GraphSidebarManager").then(
+    (module) => ({
+      default: module.GraphSidebarManager,
+    }),
+  ),
 );
 
 const GraphAnalysisPanel = lazy(() =>
-  import("../components/GraphEditor/panels/GraphAnalysisPanel").then((module) => ({
-    default: module.GraphAnalysisPanel,
-  })),
+  import("../components/GraphEditor/panels/GraphAnalysisPanel").then(
+    (module) => ({
+      default: module.GraphAnalysisPanel,
+    }),
+  ),
 );
 
 const RAGChatButton = lazy(() =>
@@ -92,15 +111,19 @@ const RAGChatButton = lazy(() =>
 );
 
 const LiteratureExtractPanel = lazy(() =>
-  import("../components/LiteratureExtract/LiteratureExtractPanel").then((module) => ({
-    default: module.LiteratureExtractPanel,
-  })),
+  import("../components/LiteratureExtract/LiteratureExtractPanel").then(
+    (module) => ({
+      default: module.LiteratureExtractPanel,
+    }),
+  ),
 );
 
 const ConceptPreviewList = lazy(() =>
-  import("../components/LiteratureExtract/ConceptPreviewList").then((module) => ({
-    default: module.ConceptPreviewList,
-  })),
+  import("../components/LiteratureExtract/ConceptPreviewList").then(
+    (module) => ({
+      default: module.ConceptPreviewList,
+    }),
+  ),
 );
 
 const Console = lazy(() =>
@@ -164,7 +187,7 @@ export const GraphEditor = () => {
     close: closeConsole,
     toggleMinimize: toggleConsoleMinimize,
   } = useConsole({
-    userId: user?.id || '',
+    userId: user?.id || "",
     autoRegisterCommands: true,
   });
   const [isSelectingParentNode, setIsSelectingParentNode] = useState(false);
@@ -217,27 +240,27 @@ export const GraphEditor = () => {
         }
       } catch (error) {
         console.error("Failed to fetch learning path:", error);
-        frontendEventBus.publish("message_show", { type: "error", content: "获取学习路径失败" });
-      }
-    },
-    [],
-  );
-
-  const handleLiteratureExtractComplete = useCallback(
-    (result: any) => {
-      if (result.concepts && result.concepts.length > 0) {
-        setExtractedConcepts(result.concepts);
-        setIsConceptPreviewOpen(true);
-        setIsLiteratureExtractOpen(false);
-      } else {
         frontendEventBus.publish("message_show", {
-          type: "info",
-          content: "未从文献中提取到概念",
+          type: "error",
+          content: "获取学习路径失败",
         });
       }
     },
     [],
   );
+
+  const handleLiteratureExtractComplete = useCallback((result: any) => {
+    if (result.concepts && result.concepts.length > 0) {
+      setExtractedConcepts(result.concepts);
+      setIsConceptPreviewOpen(true);
+      setIsLiteratureExtractOpen(false);
+    } else {
+      frontendEventBus.publish("message_show", {
+        type: "info",
+        content: "未从文献中提取到概念",
+      });
+    }
+  }, []);
 
   const handleConfirmConcepts = useCallback(
     async (selectedConcepts: any[]) => {
@@ -683,10 +706,16 @@ export const GraphEditor = () => {
           graphId: id || "",
           relationship_type: "related",
         });
-        frontendEventBus.publish("message_show", { content: "连接已创建", type: "success" });
+        frontendEventBus.publish("message_show", {
+          content: "连接已创建",
+          type: "success",
+        });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "未知错误";
-        frontendEventBus.publish("message_show", { content: `创建连接失败: ${message}`, type: "error" });
+        frontendEventBus.publish("message_show", {
+          content: `创建连接失败: ${message}`,
+          type: "error",
+        });
       }
     },
     [mutations.createEdgeMutation, id],
@@ -769,7 +798,10 @@ export const GraphEditor = () => {
 
   const handleExecuteAction = async (action: AIAction, nodeId: string) => {
     try {
-      frontendEventBus.publish("message_show", { type: "info", content: `正在执行动作: ${action.name}...` });
+      frontendEventBus.publish("message_show", {
+        type: "info",
+        content: `正在执行动作: ${action.name}...`,
+      });
       const res = await api.aiActions.execute({
         action_id: action.id,
         node_id: nodeId,
@@ -788,7 +820,10 @@ export const GraphEditor = () => {
               ? res.data
               : JSON.stringify(res.data, null, 2),
         });
-        frontendEventBus.publish("message_show", { type: "success", content: `动作执行成功` });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: `动作执行成功`,
+        });
       } else {
         // Invalidate graphData to trigger refetch of nodes/edges
         await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
@@ -809,11 +844,17 @@ export const GraphEditor = () => {
           feedback += `。已生成 ${res.data.createdCount} 个子节点`;
         }
 
-        frontendEventBus.publish("message_show", { type: "success", content: feedback });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: feedback,
+        });
       }
     } catch (err: any) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: "error", content: `执行失败: ${err.message}` });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: `执行失败: ${err.message}`,
+      });
     }
   };
 
@@ -827,7 +868,10 @@ export const GraphEditor = () => {
     setViewMode,
     setIsFocusMode,
     handleDeleteNode: nodeOps.handleDeleteNode,
-    addMessage: (msg: { type: "success" | "error" | "warning" | "info" | "loading"; content: string }) => {
+    addMessage: (msg: {
+      type: "success" | "error" | "warning" | "info" | "loading";
+      content: string;
+    }) => {
       frontendEventBus.publish("message_show", msg);
     },
   });
@@ -841,7 +885,9 @@ export const GraphEditor = () => {
         <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <Lock size={16} />
-            <span className="text-sm font-medium">只读模式 - 您正在查看公开图谱</span>
+            <span className="text-sm font-medium">
+              只读模式 - 您正在查看公开图谱
+            </span>
           </div>
           <button
             onClick={() => navigate(`/login?redirect=/graph/${id}`)}
@@ -984,7 +1030,10 @@ export const GraphEditor = () => {
                   await queryClient.invalidateQueries({
                     queryKey: ["graphNodeStatus", id],
                   });
-                  frontendEventBus.publish("message_show", { type: "success", content: "节点状态已更新" });
+                  frontendEventBus.publish("message_show", {
+                    type: "success",
+                    content: "节点状态已更新",
+                  });
                 } catch (err) {
                   console.error("Failed to update node status:", err);
                 }
@@ -1519,10 +1568,17 @@ export const GraphEditor = () => {
                 graphId: id || "",
                 relationship_type: "related",
               });
-              frontendEventBus.publish("message_show", { content: "连接已创建", type: "success" });
+              frontendEventBus.publish("message_show", {
+                content: "连接已创建",
+                type: "success",
+              });
             } catch (error: unknown) {
-              const message = error instanceof Error ? error.message : "未知错误";
-              frontendEventBus.publish("message_show", { content: `创建连接失败: ${message}`, type: "error" });
+              const message =
+                error instanceof Error ? error.message : "未知错误";
+              frontendEventBus.publish("message_show", {
+                content: `创建连接失败: ${message}`,
+                type: "error",
+              });
             }
           }}
         />
@@ -1575,7 +1631,9 @@ export const GraphEditor = () => {
           onTutorChat={tutorOps.handleTutorChat}
           width={ragChatWidth}
           onWidthChange={setRagChatWidth}
-          isMobilePreviewMode={isMobile && isMobilePreviewMode && !!selectedNode}
+          isMobilePreviewMode={
+            isMobile && isMobilePreviewMode && !!selectedNode
+          }
           selectedLearningPathId={selectedLearningPathId}
           onPathSelect={handleSelectLearningPath}
           onLearningPathNodeClick={handleLearningPathNodeClick}
@@ -1651,6 +1709,14 @@ export const GraphEditor = () => {
             <LiteratureExtractPanel
               graphId={id}
               onExtractComplete={handleLiteratureExtractComplete}
+              onConceptsSaved={async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: ["graphData", id],
+                });
+                await queryClient.invalidateQueries({
+                  queryKey: ["graphNodeStatus", id],
+                });
+              }}
               onClose={() => setIsLiteratureExtractOpen(false)}
             />
           </div>

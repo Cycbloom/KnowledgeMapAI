@@ -1,6 +1,7 @@
 import React from "react";
 import {
   BookOpen,
+  Microscope,
   ExternalLink,
   Edit3,
   FileText,
@@ -20,11 +21,13 @@ import type { Graph, ReferenceBook, ExternalLink as ExternalLinkType } from "../
 
 interface GraphOverviewPanelProps {
   graph: Graph | null;
+  templateType?: string;
   onEdit?: () => void;
 }
 
 export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
   graph,
+  templateType,
   onEdit,
 }) => {
   const { t } = useTranslation();
@@ -78,8 +81,12 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
     <div className="graph-overview-panel h-full w-full flex flex-col p-6 overflow-hidden">
       <div className="flex items-center justify-between flex-shrink-0 mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-500 rounded-lg">
-            <BookOpen className="w-5 h-5 text-white" />
+          <div className={`p-2 bg-gradient-to-br ${templateType === "topic_research" ? "from-purple-500 to-purple-600" : "from-primary-500 to-primary-500"} rounded-lg`}>
+            {templateType === "topic_research" ? (
+              <Microscope className="w-5 h-5 text-white" />
+            ) : (
+              <BookOpen className="w-5 h-5 text-white" />
+            )}
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">

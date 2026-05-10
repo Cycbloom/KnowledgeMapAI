@@ -17,7 +17,11 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { useTranslation } from "react-i18next";
-import type { Graph, ReferenceBook, ExternalLink as ExternalLinkType } from "../../../shared/types/graph";
+import type {
+  Graph,
+  ReferenceBook,
+  ExternalLink as ExternalLinkType,
+} from "../../../shared/types/graph";
 
 interface GraphOverviewPanelProps {
   graph: Graph | null;
@@ -71,17 +75,19 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
     );
   }
 
-  const hasContent = 
-    graph.description || 
-    (graph.reference_books && graph.reference_books.length > 0) || 
-    (graph.external_links && graph.external_links.length > 0) || 
+  const hasContent =
+    graph.description ||
+    (graph.reference_books && graph.reference_books.length > 0) ||
+    (graph.external_links && graph.external_links.length > 0) ||
     graph.learning_guide;
 
   return (
     <div className="graph-overview-panel h-full w-full flex flex-col p-6 overflow-hidden">
       <div className="flex items-center justify-between flex-shrink-0 mb-4">
         <div className="flex items-center gap-3">
-          <div className={`p-2 bg-gradient-to-br ${templateType === "topic_research" ? "from-purple-500 to-purple-600" : "from-primary-500 to-primary-500"} rounded-lg`}>
+          <div
+            className={`p-2 bg-gradient-to-br ${templateType === "topic_research" ? "from-purple-500 to-purple-600" : "from-primary-500 to-primary-500"} rounded-lg`}
+          >
             {templateType === "topic_research" ? (
               <Microscope className="w-5 h-5 text-white" />
             ) : (
@@ -157,44 +163,46 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                 </span>
               </div>
               <div className="space-y-3">
-                {graph.reference_books.map((book: ReferenceBook, index: number) => (
-                  <div
-                    key={index}
-                    className="border-l-2 border-primary-200 dark:border-primary-700 pl-3 py-1"
-                  >
-                    <div className="flex items-start justify-between gap-1">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                          {book.title}
-                        </h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {t("learning.overview.author")}: {book.author}
-                        </p>
-                        {book.description && (
-                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 line-clamp-1">
-                            {book.description}
+                {graph.reference_books.map(
+                  (book: ReferenceBook, index: number) => (
+                    <div
+                      key={index}
+                      className="border-l-2 border-primary-200 dark:border-primary-700 pl-3 py-1"
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            {book.title}
+                          </h4>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {t("learning.overview.author")}: {book.author}
                           </p>
+                          {book.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 line-clamp-1">
+                              {book.description}
+                            </p>
+                          )}
+                        </div>
+                        {book.url && (
+                          <a
+                            href={book.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
+                            title={t("learning.overview.viewLink")}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
                         )}
                       </div>
-                      {book.url && (
-                        <a
-                          href={book.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-shrink-0 p-1.5 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
-                          title={t("learning.overview.viewLink")}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
+                      {book.isbn && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          ISBN: {book.isbn}
+                        </p>
                       )}
                     </div>
-                    {book.isbn && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        ISBN: {book.isbn}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
           )}
@@ -211,38 +219,40 @@ export const GraphOverviewPanel: React.FC<GraphOverviewPanelProps> = ({
                 </span>
               </div>
               <div className="space-y-2">
-                {graph.external_links.map((link: ExternalLinkType, index: number) => {
-                  const LinkIcon = getExternalLinkIcon(link.type);
-                  return (
-                    <a
-                      key={index}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors group"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 bg-primary-50 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-                        <LinkIcon className="w-4 h-4 text-primary-500 dark:text-primary-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 truncate">
-                            {link.title}
-                          </span>
-                          <span className="flex-shrink-0 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300 rounded">
-                            {getExternalLinkTypeLabel(link.type)}
-                          </span>
+                {graph.external_links.map(
+                  (link: ExternalLinkType, index: number) => {
+                    const LinkIcon = getExternalLinkIcon(link.type);
+                    return (
+                      <a
+                        key={index}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors group"
+                      >
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary-50 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                          <LinkIcon className="w-4 h-4 text-primary-500 dark:text-primary-400" />
                         </div>
-                        {link.description && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                            {link.description}
-                          </p>
-                        )}
-                      </div>
-                      <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 flex-shrink-0" />
-                    </a>
-                  );
-                })}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 truncate">
+                              {link.title}
+                            </span>
+                            <span className="flex-shrink-0 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300 rounded">
+                              {getExternalLinkTypeLabel(link.type)}
+                            </span>
+                          </div>
+                          {link.description && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                              {link.description}
+                            </p>
+                          )}
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 flex-shrink-0" />
+                      </a>
+                    );
+                  },
+                )}
               </div>
             </div>
           )}

@@ -22,6 +22,8 @@ import {
   Link2,
   CheckCircle2,
   Circle,
+  FileText,
+  FolderOpen,
 } from "lucide-react";
 import { Node, Edge } from "../../../types";
 import { BatchGenerateDialog } from "../modals/BatchGenerateDialog";
@@ -34,6 +36,7 @@ import {
   BACKBONE_MODULE_LABELS,
   BACKBONE_MODULE_ICONS,
   BACKBONE_MODULE_COLORS,
+  ConceptSource,
 } from "@shared/types/graph";
 
 interface GraphOutlineProps {
@@ -83,9 +86,9 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const [isBatchGenerateOpen, setIsBatchGenerateOpen] = useState(false);
   const [showConnectionDiscovery, setShowConnectionDiscovery] = useState(false);
 
-  const [viewMode, setViewMode] = useState<"tree" | "list" | "module">(
-    templateType === "topic_research" ? "module" : "tree",
-  );
+  const [viewMode, setViewMode] = useState<
+    "tree" | "list" | "module" | "literature"
+  >(templateType === "topic_research" ? "module" : "tree");
   const [sortMode, setSortMode] = useState<"default" | "title" | "level">(
     "default",
   );
@@ -483,6 +486,9 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set(),
   );
+  const [expandedLiteratures, setExpandedLiteratures] = useState<Set<string>>(
+    new Set(),
+  );
 
   const moduleGroups = useMemo(() => {
     if (templateType !== "topic_research") return [];
@@ -525,11 +531,78 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     return groups;
   }, [nodes, templateType]);
 
+  const literatureGroups = useMemo(() => {
+    if (templateType !== "topic_research") return [];
+
+    const literatureMap = new Map<
+      string,
+      {
+        key: string;
+        title: string;
+        authors?: string[];
+        year?: number;
+        nodes: Node[];
+      }
+    >();
+
+    for (const node of nodes) {
+      const sources =
+        (node.properties?.sources as ConceptSource[] | undefined) || [];
+      if (sources.length === 0) continue;
+
+      for (const source of sources) {
+        const key = source.title;
+        if (!literatureMap.has(key)) {
+          literatureMap.set(key, {
+            key,
+            title: source.title,
+            authors: source.authors,
+            year: source.year,
+            nodes: [],
+          });
+        }
+        literatureMap.get(key)!.nodes.push(node);
+      }
+    }
+
+    const groups = Array.from(literatureMap.values());
+
+    const uncategorizedNodes = nodes.filter((n) => {
+      const sources =
+        (n.properties?.sources as ConceptSource[] | undefined) || [];
+      return (
+        sources.length === 0 &&
+        n.level !== "root" &&
+        n.level !== "core" &&
+        !n.properties?.backboneModule
+      );
+    });
+
+    if (uncategorizedNodes.length > 0) {
+      groups.push({
+        key: "__uncategorized__",
+        title: "未分类",
+        nodes: uncategorizedNodes,
+      });
+    }
+
+    return groups;
+  }, [nodes, templateType]);
+
   const toggleModuleExpand = useCallback((moduleKey: string) => {
     setExpandedModules((prev) => {
       const next = new Set(prev);
       if (next.has(moduleKey)) next.delete(moduleKey);
       else next.add(moduleKey);
+      return next;
+    });
+  }, []);
+
+  const toggleLiteratureExpand = useCallback((key: string) => {
+    setExpandedLiteratures((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }, []);
@@ -660,7 +733,124 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     });
   };
 
-  // List Mode: Flat List (Used for Search, Filter, or explicit List View)
+  const renderLiteratureView = () => {
+    if (literatureGroups.length === 0) {
+      return (
+        <div className="text-center py-8 text-slate-500 text-sm">
+          {t("graphEditor.outline.noNodes")}
+        </div>
+      );
+    }
+
+    return literatureGroups.map((group) => {
+      const isExpanded = expandedLiteratures.has(group.key);
+      const isUncategorized = group.key === "__uncategorized__";
+
+      return (
+        <div key={group.key} className="mb-1">
+          <div
+            className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors ${
+              isUncategorized
+                ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600"
+                : "hover:bg-slate-50 dark:hover:bg-slate-800"
+            }`}
+            style={{
+              borderLeft: isUncategorized
+                ? "3px solid #94a3b8"
+                : "3px solid #8b5cf6",
+            }}
+            onClick={() => toggleLiteratureExpand(group.key)}
+          >
+            {isUncategorized ? (
+              <FolderOpen size={14} className="text-slate-400" />
+            ) : (
+              <FileText size={14} className="text-purple-500" />
+            )}
+            <div className="flex-1 min-w-0">
+              <span
+                className={`text-sm truncate block ${
+                  isUncategorized
+                    ? "font-normal text-slate-500 dark:text-slate-400"
+                    : "font-medium text-slate-700 dark:text-slate-300"
+                }`}
+              >
+                {group.title}
+              </span>
+              {isUncategorized ? (
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 italic block">
+                  无来源信息的概念节点
+                </span>
+              ) : (
+                group.authors &&
+                group.authors.length > 0 && (
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate block">
+                    {group.authors.join(", ")}
+                    {group.year ? ` (${group.year})` : ""}
+                  </span>
+                )
+              )}
+            </div>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                isUncategorized
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              {group.nodes.length}
+            </span>
+            {isExpanded ? (
+              <ChevronDown size={14} className="text-slate-400 flex-shrink-0" />
+            ) : (
+              <ChevronRight
+                size={14}
+                className="text-slate-400 flex-shrink-0"
+              />
+            )}
+          </div>
+          {isExpanded && (
+            <div className="ml-2 mt-0.5 space-y-0.5">
+              {group.nodes.map((node) => {
+                const backboneModule = node.properties?.backboneModule as
+                  | BackboneModule
+                  | undefined;
+
+                return (
+                  <div
+                    key={node.id}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
+                      selectedNodeId === node.id
+                        ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNodeClick(node);
+                    }}
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: getLevelColors(node.level || "leaf")
+                          .primary,
+                      }}
+                    />
+                    {backboneModule && (
+                      <BackboneNodeIcon module={backboneModule} size="small" />
+                    )}
+                    <span className="text-sm truncate flex-1">
+                      {node.title}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
   const renderList = () => {
     // processedNodes is already sorted and filtered
     if (processedNodes.length === 0) {
@@ -1014,6 +1204,15 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                 <Network size={14} />
               </button>
             )}
+            {templateType === "topic_research" && (
+              <button
+                onClick={() => setViewMode("literature")}
+                className={`p-1.5 rounded ${viewMode === "literature" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
+                title="文献视图"
+              >
+                <FileText size={14} />
+              </button>
+            )}
             <button
               onClick={() => setViewMode("tree")}
               className={`p-1.5 rounded ${viewMode === "tree" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
@@ -1195,6 +1394,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         !searchQuery.trim() &&
         filterLevel === "all" ? (
           <div className="space-y-0.5 px-2">{renderModuleView()}</div>
+        ) : viewMode === "literature" &&
+          !searchQuery.trim() &&
+          filterLevel === "all" ? (
+          <div className="space-y-0.5 px-2">{renderLiteratureView()}</div>
         ) : viewMode === "list" ||
           searchQuery.trim() ||
           filterLevel !== "all" ? (

@@ -691,19 +691,12 @@ router.post(
 
           const tempId = node.id || `temp-${index}`;
 
-          const nodeProperties: Record<string, unknown> = {};
-          if (node.backboneModule) {
-            nodeProperties.backboneModule = node.backboneModule;
-          }
-          if (node.needsRefinement !== undefined) {
-            nodeProperties.needsRefinement = node.needsRefinement;
-          }
-          if (node.suggestedContent) {
-            nodeProperties.suggestedContent = node.suggestedContent;
-          }
-          if (node.color) {
-            nodeProperties.color = node.color;
-          }
+          const properties = {
+            ...(node.backboneModule && { backboneModule: node.backboneModule }),
+            ...(node.needsRefinement !== undefined && { needsRefinement: node.needsRefinement }),
+            ...(node.suggestedContent && { suggestedContent: node.suggestedContent }),
+            ...(node.color && { color: node.color }),
+          };
 
           return {
             tempId,
@@ -713,7 +706,7 @@ router.post(
             level: node.level || "normal",
             x_position: Math.round(Math.cos(angle) * radius),
             y_position: Math.round(Math.sin(angle) * radius),
-            properties: Object.keys(nodeProperties).length > 0 ? nodeProperties : undefined,
+            properties: Object.keys(properties).length > 0 ? properties : undefined,
           };
         });
 

@@ -26,7 +26,7 @@ import type {
   ConceptSource,
   ReferenceBook,
 } from "@shared/types/graph";
-import { BackboneModule } from "@shared/types/graph";
+import { BackboneModule, TITLE_TO_BACKBONE_MODULE } from "@shared/types/graph";
 import { z } from "zod";
 
 const router = Router();
@@ -685,15 +685,6 @@ router.post(
         .eq("graph_id", graph_id)
         .is("deleted_at", null);
 
-      const TITLE_TO_MODULE_MAP: Record<string, BackboneModule> = {
-        研究背景: BackboneModule.RESEARCH_BACKGROUND,
-        文献综述: BackboneModule.LITERATURE_REVIEW,
-        研究方法: BackboneModule.RESEARCH_METHODS,
-        核心概念: BackboneModule.CORE_CONCEPTS,
-        应用领域: BackboneModule.APPLICATION_DOMAINS,
-        未来方向: BackboneModule.FUTURE_DIRECTIONS,
-      };
-
       const backboneModuleMap = new Map<BackboneModule, string>();
       const backboneNodeIds = new Set<string>();
 
@@ -710,7 +701,7 @@ router.post(
           let moduleValue = kp?.properties?.backboneModule;
 
           if (!moduleValue) {
-            const matchedModule = TITLE_TO_MODULE_MAP[kp.title.trim()];
+            const matchedModule = TITLE_TO_BACKBONE_MODULE[kp.title.trim()];
             if (matchedModule) {
               moduleValue = matchedModule;
               logger.info(`Auto-matched backbone node by title`, {

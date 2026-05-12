@@ -1018,6 +1018,15 @@ export const BACKBONE_MODULE_TITLES: Record<BackboneModule, string> = {
   [BackboneModule.FUTURE_DIRECTIONS]: "未来方向",
 };
 
+export const TITLE_TO_BACKBONE_MODULE: Record<string, BackboneModule> = {
+  "研究背景": BackboneModule.RESEARCH_BACKGROUND,
+  "文献综述": BackboneModule.LITERATURE_REVIEW,
+  "研究方法": BackboneModule.RESEARCH_METHODS,
+  "核心概念": BackboneModule.CORE_CONCEPTS,
+  "应用领域": BackboneModule.APPLICATION_DOMAINS,
+  "未来方向": BackboneModule.FUTURE_DIRECTIONS,
+};
+
 export const BACKBONE_MODULE_ICONS: Record<BackboneModule, string> = {
   [BackboneModule.RESEARCH_BACKGROUND]: "📚",
   [BackboneModule.LITERATURE_REVIEW]: "📄",

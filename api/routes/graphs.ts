@@ -24,6 +24,7 @@ import { relationDiscoveryService } from "../services/graph/index";
 import { checkDuplicateGraphTopic } from "../utils/similaritySearch";
 import { backboneValidatorService } from "../services/ai/backboneValidatorService";
 import { z } from "zod";
+import { BackboneModule, TITLE_TO_BACKBONE_MODULE } from "@shared/types/graph";
 
 const checkTopicSchema = z.object({
   topic: z.string().min(2).max(200),
@@ -2192,15 +2193,6 @@ router.post(
         );
       }
 
-      const backboneModuleMap: Record<string, string> = {
-        "研究背景": "research_background",
-        "文献综述": "literature_review",
-        "研究方法": "research_methods",
-        "核心概念": "core_concepts",
-        "应用领域": "application_domains",
-        "未来方向": "future_directions",
-      };
-
       const { data: coreNodes, error: nodesError } = await supabase
         .from("graph_nodes")
         .select(
@@ -2225,7 +2217,7 @@ router.post(
         nodeId: string;
         title: string;
         fixed: boolean;
-        assignedModule?: string;
+        assignedModule?: BackboneModule;
       }> = [];
       let fixedCount = 0;
 
@@ -2237,7 +2229,7 @@ router.post(
         if (!kp) continue;
 
         const properties = (kp.properties || {}) as Record<string, any>;
-        const currentModule = properties.backboneModule;
+        const currentModule = properties.backboneModule as BackboneModule | undefined;
 
         if (currentModule) {
           details.push({
@@ -2248,7 +2240,7 @@ router.post(
           continue;
         }
 
-        const matchedModule = backboneModuleMap[kp.title.trim()];
+        const matchedModule = TITLE_TO_BACKBONE_MODULE[kp.title.trim()];
 
         if (!matchedModule) {
           details.push({

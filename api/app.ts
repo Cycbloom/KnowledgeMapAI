@@ -47,6 +47,7 @@ import pluginsRoutes from "./routes/plugins";
 import databaseRoutes from "./routes/database";
 import supabaseRoutes from "./routes/supabase";
 import literatureRoutes from "./routes/literature";
+import regionRoutes from "./routes/regions";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 import { Kernel } from "./services/kernel/Kernel";
@@ -218,6 +219,7 @@ app.use("/api/plugins", pluginsRoutes);
 app.use("/api/database", databaseRoutes);
 app.use("/api/supabase", supabaseRoutes);
 app.use("/api/literature", rateLimiters.aiHeavy, literatureRoutes);
+app.use("/api/graphs/:graphId/regions", regionRoutes);
 
 applyKernelRoutes(app, kernel);
 

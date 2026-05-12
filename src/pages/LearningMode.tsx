@@ -1090,7 +1090,7 @@ export const LearningMode = () => {
   };
 
   const handleBatchAction = async (
-    action: "expand_graph" | "delete" | "batch_generate_questions",
+    action: "expand_graph" | "delete" | "batch_generate_questions" | "create_region",
     data?: any,
   ) => {
     const nodeIds = Array.from(selectedNodeIds);
@@ -1220,6 +1220,11 @@ export const LearningMode = () => {
       } finally {
         setIsGeneratingCards(false);
       }
+    } else if (action === "create_region") {
+      frontendEventBus.publish("message_show", {
+        type: "info",
+        content: t("graphEditor.region.createRegion") + " - " + t("common.comingSoon"),
+      });
     }
   };
 

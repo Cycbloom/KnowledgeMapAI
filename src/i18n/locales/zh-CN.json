@@ -2591,6 +2591,8 @@
       "timeline": "时间线",
       "treeView": "树形视图",
       "knowledgePlanet": "知识星球",
+      "quadrant": "象限",
+      "switchView": "切换视图",
       "sidebarOutline": "侧边栏大纲",
       "searchNodes": "搜索节点",
       "explorationMode": "探索分支模式",
@@ -2662,6 +2664,29 @@
       "establishConnection": "建立连接",
       "ignore": "忽略",
       "noNodes": "暂无节点"
+    },
+    "region": {
+      "title": "区域管理",
+      "createRegion": "创建区域",
+      "editRegion": "编辑区域",
+      "deleteRegion": "删除区域",
+      "regionName": "区域名称",
+      "regionNamePlaceholder": "请输入区域名称",
+      "regionColor": "区域颜色",
+      "selectedNodes": "已选节点",
+      "noSelectedNodes": "暂无选中的节点",
+      "noAvailableNodes": "暂无可用节点",
+      "backboneRegions": "骨干节点区域",
+      "customRegions": "自定义区域",
+      "noCustomRegions": "暂无自定义区域",
+      "nodeCount": "{{count}} 个节点",
+      "manageNodes": "管理节点",
+      "inRegion": "区域内节点",
+      "availableNodes": "可用节点",
+      "deleteConfirm": "确定要删除区域「{{name}}」吗？",
+      "createSuccess": "区域创建成功",
+      "updateSuccess": "区域更新成功",
+      "deleteSuccess": "区域已删除"
     }
   },
   "achievements": {

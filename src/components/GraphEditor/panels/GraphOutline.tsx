@@ -24,6 +24,7 @@ import {
   Circle,
   FileText,
   FolderOpen,
+  Palette,
 } from "lucide-react";
 import { Node, Edge } from "../../../types";
 import { BatchGenerateDialog } from "../modals/BatchGenerateDialog";
@@ -48,7 +49,11 @@ interface GraphOutlineProps {
   selectedNodeIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
   onBatchAction?: (
-    action: "expand_graph" | "delete" | "batch_generate_questions",
+    action:
+      | "expand_graph"
+      | "delete"
+      | "batch_generate_questions"
+      | "create_region",
     data?: any,
   ) => void;
   onAddNode?: () => void;
@@ -1292,6 +1297,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => onBatchAction?.("create_region")}
+                disabled={selectedNodeIds.size < 2}
+                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                title={t("graphEditor.region.createRegion")}
+              >
+                <Palette size={16} />
+              </button>
               <button
                 onClick={() => setIsBatchGenerateOpen(true)}
                 disabled={selectedNodeIds.size === 0}

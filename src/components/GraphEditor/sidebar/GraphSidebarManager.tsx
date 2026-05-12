@@ -14,6 +14,8 @@ import { GraphOutline } from "../panels/GraphOutline";
 import { ErrorBoundary } from "../../common";
 import { X, GripHorizontal } from "lucide-react";
 import { VersionHistoryModal } from "../modals/VersionHistoryModal";
+import { CreateRegionDialog } from "../modals/CreateRegionDialog";
+import type { CustomRegion } from "@shared/types/graph";
 
 interface GraphSidebarManagerProps {
   state: GraphEditorState;
@@ -32,6 +34,8 @@ interface GraphSidebarManagerProps {
   onSelectParentFromGraph?: (nodeId: string) => void;
   onConnectNodes?: (sourceId: string, targetId: string) => void;
   isReadOnly?: boolean;
+  customRegions?: CustomRegion[];
+  onCreateRegion?: (region: Omit<CustomRegion, "id" | "createdAt" | "updatedAt">) => void;
 }
 
 export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
@@ -50,6 +54,8 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   onCancelSelectingParent,
   onConnectNodes,
   isReadOnly = false,
+  customRegions: _customRegions = [],
+  onCreateRegion,
 }) => {
   const {
     sidebarMode,
@@ -77,6 +83,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   const { isMobile } = useIsMobile();
   const [isResizing, setIsResizing] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [isCreateRegionOpen, setIsCreateRegionOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const touchCurrentY = useRef<number>(0);
@@ -184,6 +191,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
               else if (action === "delete") nodeOps.handleBatchDelete();
               else if (action === "batch_generate_questions")
                 aiOps.handleBackgroundTask("batch_generate_questions", data);
+              else if (action === "create_region") setIsCreateRegionOpen(true);
             }}
             onConnectNodes={onConnectNodes}
             className="h-full"
@@ -317,6 +325,17 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           </motion.div>
         </AnimatePresence>
         {versionHistoryModal}
+        <CreateRegionDialog
+          isOpen={isCreateRegionOpen}
+          onClose={() => setIsCreateRegionOpen(false)}
+          onCreate={(region) => {
+            onCreateRegion?.(region);
+            setIsCreateRegionOpen(false);
+            setSelectedNodeIds(new Set());
+          }}
+          selectedNodeIds={selectedNodeIds}
+          nodes={nodes}
+        />
       </>
     );
   }
@@ -351,6 +370,17 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
         </div>
       </ErrorBoundary>
       {versionHistoryModal}
+      <CreateRegionDialog
+        isOpen={isCreateRegionOpen}
+        onClose={() => setIsCreateRegionOpen(false)}
+        onCreate={(region) => {
+          onCreateRegion?.(region);
+          setIsCreateRegionOpen(false);
+          setSelectedNodeIds(new Set());
+        }}
+        selectedNodeIds={selectedNodeIds}
+        nodes={nodes}
+      />
     </>
   );
 };

@@ -8,3 +8,4 @@ export * from "./useConsole";
 export * from "./useScrollDirection";
 export * from "./useAILanguage";
 export * from "./useActivityTracker";
+export * from "./useQuadrantViewState";

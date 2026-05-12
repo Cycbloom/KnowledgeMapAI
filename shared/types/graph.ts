@@ -15,7 +15,12 @@ export type RelationshipCategory =
 
 export type LearningStatus = "mastered" | "due" | "locked" | "new" | "learning";
 
-export type GraphViewMode = "mindmap" | "timeline" | "tree" | "planet";
+export type GraphViewMode =
+  | "mindmap"
+  | "timeline"
+  | "tree"
+  | "planet"
+  | "quadrant";
 
 export type GraphColorMode = "level" | "status";
 
@@ -1019,12 +1024,12 @@ export const BACKBONE_MODULE_TITLES: Record<BackboneModule, string> = {
 };
 
 export const TITLE_TO_BACKBONE_MODULE: Record<string, BackboneModule> = {
-  "研究背景": BackboneModule.RESEARCH_BACKGROUND,
-  "文献综述": BackboneModule.LITERATURE_REVIEW,
-  "研究方法": BackboneModule.RESEARCH_METHODS,
-  "核心概念": BackboneModule.CORE_CONCEPTS,
-  "应用领域": BackboneModule.APPLICATION_DOMAINS,
-  "未来方向": BackboneModule.FUTURE_DIRECTIONS,
+  研究背景: BackboneModule.RESEARCH_BACKGROUND,
+  文献综述: BackboneModule.LITERATURE_REVIEW,
+  研究方法: BackboneModule.RESEARCH_METHODS,
+  核心概念: BackboneModule.CORE_CONCEPTS,
+  应用领域: BackboneModule.APPLICATION_DOMAINS,
+  未来方向: BackboneModule.FUTURE_DIRECTIONS,
 };
 
 export const BACKBONE_MODULE_ICONS: Record<BackboneModule, string> = {
@@ -1057,3 +1062,29 @@ export const CONCEPT_TO_MODULE_MAP: Record<ConceptType, BackboneModule> = {
   trend: BackboneModule.FUTURE_DIRECTIONS,
   challenge: BackboneModule.FUTURE_DIRECTIONS,
 };
+
+export interface CustomRegion {
+  id: string;
+  name: string;
+  color: string;
+  nodeIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuadrantViewState {
+  originPosition: { x: number; y: number };
+  collapsedRegions: string[];
+  customRegions: CustomRegion[];
+}
+
+export interface RegionInfo {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  angleStart: number;
+  angleEnd: number;
+  nodes: Node[];
+  isCollapsed: boolean;
+}

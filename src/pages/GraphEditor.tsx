@@ -14,6 +14,7 @@ import { ArrowLeft, Loader2, Lock, LogIn } from "lucide-react";
 
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
 import { MindMapCanvas } from "../components/GraphEditor/canvas/MindMapCanvas";
+import { QuadrantCanvas } from "../components/GraphEditor/canvas/QuadrantCanvas";
 import { ExplorationTimeline } from "../components/GraphEditor/shared/ExplorationTimeline";
 import { GraphStyleSettings } from "../components/GraphEditor/shared/GraphStyleSettings";
 import { RelationshipTypeSettings } from "../components/GraphEditor/shared/RelationshipTypeSettings";
@@ -59,6 +60,13 @@ import type {
   NodeSizeMode,
   EdgeWidthMode,
 } from "../types";
+import type { CustomRegion, RegionInfo } from "@shared/types/graph";
+import {
+  BackboneModule,
+  BACKBONE_MODULE_TITLES,
+  BACKBONE_MODULE_COLORS,
+  BACKBONE_MODULE_ICONS,
+} from "@shared/types/graph";
 import { PresentationControls } from "../components/GraphEditor/toolbar/PresentationControls";
 import { ActionResultModal } from "../components/GraphEditor/modals/ActionResultModal";
 import { NodeContextMenu } from "../components/GraphEditor/context-menu/NodeContextMenu";
@@ -202,6 +210,9 @@ export const GraphEditor = () => {
   const [learningPathOrderMap, setLearningPathOrderMap] = useState<
     Map<string, number>
   >(new Map());
+  const [customRegions, setCustomRegions] = useState<CustomRegion[]>([]);
+  const [originPosition, setOriginPosition] = useState({ x: 400, y: 300 });
+  const [collapsedRegions, setCollapsedRegions] = useState<string[]>([]);
 
   const handleStartSelectingParent = useCallback(() => {
     setIsSelectingParentNode(true);
@@ -248,6 +259,37 @@ export const GraphEditor = () => {
     },
     [],
   );
+
+  const handleCreateRegion = useCallback(
+    (region: Omit<CustomRegion, "id" | "createdAt" | "updatedAt">) => {
+      const newRegion: CustomRegion = {
+        ...region,
+        id: `region-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setCustomRegions((prev) => [...prev, newRegion]);
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: `区域「${region.name}」创建成功`,
+      });
+    },
+    [],
+  );
+
+  const handleOriginMove = useCallback((position: { x: number; y: number }) => {
+    setOriginPosition(position);
+  }, []);
+
+  const handleRegionToggle = useCallback((regionId: string) => {
+    setCollapsedRegions((prev) => {
+      if (prev.includes(regionId)) {
+        return prev.filter((id) => id !== regionId);
+      } else {
+        return [...prev, regionId];
+      }
+    });
+  }, []);
 
   const handleLiteratureExtractComplete = useCallback((result: any) => {
     if (result.concepts && result.concepts.length > 0) {
@@ -613,6 +655,123 @@ export const GraphEditor = () => {
     dueTodayNodeIds.size,
   ]);
 
+  const regions = useMemo<RegionInfo[]>(() => {
+    if (nodes.length === 0) return [];
+
+    const isTopicResearch = graphMeta?.template_type === "topic_research";
+
+    if (isTopicResearch) {
+      const backboneNodes = nodes.filter((n) => n.properties?.backboneModule);
+
+      const orderedBackboneModules = [
+        BackboneModule.RESEARCH_BACKGROUND,
+        BackboneModule.LITERATURE_REVIEW,
+        BackboneModule.RESEARCH_METHODS,
+        BackboneModule.CORE_CONCEPTS,
+        BackboneModule.APPLICATION_DOMAINS,
+        BackboneModule.FUTURE_DIRECTIONS,
+      ];
+
+      const angleStep = (2 * Math.PI) / 6;
+
+      return orderedBackboneModules.map((module, index) => {
+        const backboneNode = backboneNodes.find(
+          (n) => n.properties?.backboneModule === module,
+        );
+
+        const angleStart = index * angleStep;
+        const angleEnd = (index + 1) * angleStep;
+
+        const childNodeIds = new Set<string>();
+        if (backboneNode) {
+          const queue = [backboneNode.knowledge_point_id];
+          while (queue.length > 0) {
+            const currentId = queue.shift()!;
+            edges
+              .filter((e) => e.source_knowledge_point_id === currentId)
+              .forEach((e) => {
+                if (!childNodeIds.has(e.target_knowledge_point_id)) {
+                  childNodeIds.add(e.target_knowledge_point_id);
+                  queue.push(e.target_knowledge_point_id);
+                }
+              });
+          }
+        }
+
+        const regionNodes = nodes.filter(
+          (n) =>
+            childNodeIds.has(n.knowledge_point_id) &&
+            n.knowledge_point_id !== backboneNode?.knowledge_point_id,
+        );
+
+        return {
+          id: `region-${module}`,
+          name: BACKBONE_MODULE_TITLES[module],
+          color: BACKBONE_MODULE_COLORS[module],
+          icon: BACKBONE_MODULE_ICONS[module],
+          angleStart,
+          angleEnd,
+          nodes: regionNodes,
+          isCollapsed: collapsedRegions.includes(`region-${module}`),
+        };
+      });
+    } else {
+      if (customRegions.length === 0) {
+        const levelGroups = new Map<string, typeof nodes>();
+
+        nodes.forEach((node) => {
+          const level = node.level || "leaf";
+          if (!levelGroups.has(level)) {
+            levelGroups.set(level, []);
+          }
+          levelGroups.get(level)!.push(node);
+        });
+
+        const levels = Array.from(levelGroups.keys());
+        const angleStep = (2 * Math.PI) / levels.length;
+
+        return levels.map((level, index) => {
+          const angleStart = index * angleStep;
+          const angleEnd = (index + 1) * angleStep;
+
+          return {
+            id: `region-${level}`,
+            name:
+              level === "root"
+                ? "根节点"
+                : level === "core"
+                  ? "骨干节点"
+                  : "叶节点",
+            color: `hsl(${(index * 360) / levels.length}, 70%, 50%)`,
+            angleStart,
+            angleEnd,
+            nodes: levelGroups.get(level) || [],
+            isCollapsed: collapsedRegions.includes(`region-${level}`),
+          };
+        });
+      }
+
+      const angleStep = (2 * Math.PI) / customRegions.length;
+
+      return customRegions.map((region, index) => {
+        const angleStart = index * angleStep;
+        const angleEnd = (index + 1) * angleStep;
+
+        const regionNodes = nodes.filter((n) => region.nodeIds.includes(n.id));
+
+        return {
+          id: region.id,
+          name: region.name,
+          color: region.color,
+          angleStart,
+          angleEnd,
+          nodes: regionNodes,
+          isCollapsed: collapsedRegions.includes(region.id),
+        };
+      });
+    }
+  }, [nodes, edges, graphMeta?.template_type, customRegions, collapsedRegions]);
+
   // Keyboard Shortcuts
   useKeyboardShortcuts({
     undo,
@@ -653,6 +812,7 @@ export const GraphEditor = () => {
       "setViewMode:timeline": () => setViewMode("timeline"),
       "setViewMode:tree": () => setViewMode("tree"),
       "setViewMode:planet": () => setViewMode("planet"),
+      "setViewMode:quadrant": () => setViewMode("quadrant"),
       goHome: () => navigate("/"),
       presentationNext: () => {
         if (state.isPresentationMode) {
@@ -1229,6 +1389,23 @@ export const GraphEditor = () => {
               />
             </Suspense>
           )}
+          {viewMode === "quadrant" && (
+            <QuadrantCanvas
+              ref={graphRef}
+              nodes={nodes}
+              edges={edges}
+              regions={regions}
+              originPosition={originPosition}
+              collapsedRegions={collapsedRegions}
+              onOriginMove={handleOriginMove}
+              onRegionToggle={handleRegionToggle}
+              onNodeClick={handleNodeClick}
+              selectedNodeId={selectedNode?.id ?? null}
+              nodeStatus={nodeStatus}
+              colorScheme={colorScheme}
+              coloringMode={coloringMode}
+            />
+          )}
         </div>
       </div>
 
@@ -1547,6 +1724,8 @@ export const GraphEditor = () => {
           onSelectParentFromGraph={handleSelectParentFromGraph}
           onConnectNodes={handleConnectNodes}
           isReadOnly={isReadOnly}
+          customRegions={customRegions}
+          onCreateRegion={handleCreateRegion}
         />
       </Suspense>
 

@@ -1,5 +1,10 @@
 import { getMobileSupabaseClient } from "./client";
-import type { Graph, KnowledgeGraphRow, GraphNodeRow, StudyCardRow } from "@shared/types";
+import type {
+  Graph,
+  KnowledgeGraphRow,
+  GraphNodeRow,
+  StudyCardRow,
+} from "@shared/types";
 import { toGraph } from "@shared/types/database";
 import type { NodeStatus } from "@shared/types/graph";
 import { mobileNodesApi } from "./nodes";
@@ -90,7 +95,9 @@ export const mobileGraphsApi = {
     return { nodes, edges };
   },
 
-  getNodeStatus: async (graphId: string): Promise<Record<string, NodeStatus>> => {
+  getNodeStatus: async (
+    graphId: string,
+  ): Promise<Record<string, NodeStatus>> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -125,8 +132,11 @@ export const mobileGraphsApi = {
     ((cards || []) as StudyCardRow[]).forEach((card) => {
       const nextReview = card.next_review ? new Date(card.next_review) : null;
       const isDue = nextReview ? nextReview <= now : false;
-      const isDueToday = nextReview ? nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000) : false;
-      const isMastered = card.fsrs_stability != null && card.fsrs_stability > 21;
+      const isDueToday = nextReview
+        ? nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000)
+        : false;
+      const isMastered =
+        card.fsrs_stability != null && card.fsrs_stability > 21;
 
       statusMap[card.knowledge_point_id] = {
         mastered: isMastered,
@@ -227,9 +237,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { error } = await (client.from("knowledge_graphs") as any)
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id);
 
@@ -244,9 +252,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { data, error } = await (client.from("knowledge_graphs") as any)
       .update({ deleted_at: null })
       .eq("id", id)
       .select()
@@ -265,9 +271,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { error } = await (client.from("knowledge_graphs") as any)
       .delete()
       .eq("id", id);
 
@@ -282,9 +286,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { error } = await (client.from("knowledge_graphs") as any)
       .update({ deleted_at: null })
       .in("id", ids);
 
@@ -301,9 +303,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { error } = await (client.from("knowledge_graphs") as any)
       .update({ deleted_at: new Date().toISOString() })
       .in("id", ids);
 
@@ -320,9 +320,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { error } = await (client.from("knowledge_graphs") as any)
       .delete()
       .in("id", ids);
 
@@ -358,9 +356,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { data, error } = await (client.from("knowledge_graphs") as any)
       .update({ is_favorite })
       .eq("id", id)
       .select()
@@ -399,7 +395,7 @@ export const mobileGraphsApi = {
     }
 
     const allTags = new Set<string>();
-    ((data || []) as Pick<KnowledgeGraphRow, 'tags'>[]).forEach((g) => {
+    ((data || []) as Pick<KnowledgeGraphRow, "tags">[]).forEach((g) => {
       (g.tags || []).forEach((tag: string) => allTags.add(tag));
     });
 
@@ -433,7 +429,7 @@ export const mobileGraphsApi = {
     }
 
     const domainMap = new Map<string, number>();
-    ((data || []) as Pick<KnowledgeGraphRow, 'domain'>[]).forEach((g) => {
+    ((data || []) as Pick<KnowledgeGraphRow, "domain">[]).forEach((g) => {
       if (g.domain) {
         domainMap.set(g.domain, (domainMap.get(g.domain) || 0) + 1);
       }
@@ -457,9 +453,7 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { data, error } = await (client.from("knowledge_graphs") as any)
       .update({ is_public })
       .eq("id", id)
       .select()
@@ -503,9 +497,7 @@ export const mobileGraphsApi = {
 
     if (graphIds.length > 0) {
       const [nodeCountsResult, relationsResult] = await Promise.all([
-        (
-          client.from("graph_nodes") as any
-        )
+        (client.from("graph_nodes") as any)
           .select("graph_id")
           .in("graph_id", graphIds)
           .is("deleted_at", null),
@@ -655,7 +647,7 @@ export const mobileGraphsApi = {
 
   getLearningPathSuggestions: async (_options?: {
     graph_ids?: string[];
-    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+    difficulty?: "beginner" | "intermediate" | "advanced";
   }) => {
     return {
       learning_path_suggestions: [],
@@ -665,11 +657,48 @@ export const mobileGraphsApi = {
 
   getKnowledgeGaps: async (_options?: {
     graph_ids?: string[];
-    min_importance?: 'high' | 'medium' | 'low';
+    min_importance?: "high" | "medium" | "low";
   }) => {
     return {
       knowledge_gaps: [],
       analysis_summary: { total_gaps: 0, high_priority_count: 0 },
     };
+  },
+
+  updateViewMode: async (id: string, viewMode: string): Promise<Graph> => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new Error("Supabase client not initialized");
+    }
+
+    const { data: graph, error: graphError } = await client
+      .from("knowledge_graphs")
+      .select("id, settings")
+      .eq("id", id)
+      .single();
+
+    if (graphError || !graph) {
+      throw new Error("图谱不存在");
+    }
+
+    const currentSettings = (graph as any).settings || {};
+    const updatedSettings = {
+      ...currentSettings,
+      viewMode,
+    };
+
+    const { data: result, error: updateError } = await (
+      client.from("knowledge_graphs") as any
+    )
+      .update({ settings: updatedSettings })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    return toGraph(result as KnowledgeGraphRow);
   },
 };

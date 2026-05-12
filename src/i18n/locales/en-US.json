@@ -2356,6 +2356,8 @@
       "timeline": "Timeline",
       "treeView": "Tree View",
       "knowledgePlanet": "Knowledge Planet",
+      "quadrant": "Quadrant",
+      "switchView": "Switch View",
       "sidebarOutline": "Sidebar Outline",
       "searchNodes": "Search Nodes",
       "explorationMode": "Exploration Mode",
@@ -2427,6 +2429,29 @@
       "establishConnection": "Establish connection",
       "ignore": "Ignore",
       "noNodes": "No nodes"
+    },
+    "region": {
+      "title": "Region Management",
+      "createRegion": "Create Region",
+      "editRegion": "Edit Region",
+      "deleteRegion": "Delete Region",
+      "regionName": "Region Name",
+      "regionNamePlaceholder": "Enter region name",
+      "regionColor": "Region Color",
+      "selectedNodes": "Selected Nodes",
+      "noSelectedNodes": "No selected nodes",
+      "noAvailableNodes": "No available nodes",
+      "backboneRegions": "Backbone Regions",
+      "customRegions": "Custom Regions",
+      "noCustomRegions": "No custom regions",
+      "nodeCount": "{{count}} nodes",
+      "manageNodes": "Manage Nodes",
+      "inRegion": "In Region",
+      "availableNodes": "Available Nodes",
+      "deleteConfirm": "Are you sure you want to delete region \"{{name}}\"?",
+      "createSuccess": "Region created successfully",
+      "updateSuccess": "Region updated successfully",
+      "deleteSuccess": "Region deleted"
     }
   },
   "autoGraph": {

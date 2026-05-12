@@ -686,6 +686,58 @@ router.put(
   },
 );
 
+const updateViewModeSchema = z.object({
+  viewMode: z.enum(["mindmap", "timeline", "tree", "planet", "quadrant"]),
+});
+
+router.put(
+  "/:id/view-mode",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: updateViewModeSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { viewMode } = req.body;
+    const userId = req.user.id;
+    const supabase = req.supabase!;
+
+    const { data: graph, error: graphError } = await supabase
+      .from("knowledge_graphs")
+      .select("id, settings")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .single();
+
+    if (graphError || !graph) {
+      throw new AppError("图谱不存在", 404, ErrorCodes.NOT_FOUND);
+    }
+
+    const currentSettings = (graph.settings as Record<string, unknown>) || {};
+    const updatedSettings = {
+      ...currentSettings,
+      viewMode,
+    };
+
+    const { data: updatedGraph, error: updateError } = await supabase
+      .from("knowledge_graphs")
+      .update({ settings: updatedSettings })
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new AppError(
+        "更新视图模式失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    res.json(updatedGraph);
+  },
+);
+
 // Delete a graph (Soft Delete)
 router.delete(
   "/:id",

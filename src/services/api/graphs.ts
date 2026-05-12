@@ -160,6 +160,12 @@ export const graphsApi = {
       body: JSON.stringify({ is_favorite }),
     }),
 
+  updateViewMode: (id: string, viewMode: string) =>
+    request(`/graphs/${id}/view-mode`, {
+      method: "PUT",
+      body: JSON.stringify({ viewMode }),
+    }),
+
   delete: (id: string) => request(`/graphs/${id}`, { method: "DELETE" }),
 
   restore: (id: string) => request(`/graphs/${id}/restore`, { method: "POST" }),

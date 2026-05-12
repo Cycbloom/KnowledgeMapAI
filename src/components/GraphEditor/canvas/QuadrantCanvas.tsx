@@ -1,0 +1,524 @@
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import type {
+  Node,
+  Edge,
+  RegionInfo,
+  GraphColorMode,
+} from "@shared/types/graph";
+import type { ColorScheme } from "@shared/types/styles";
+import { RegionBackground } from "./RegionBackground";
+import { RegionHeader } from "./RegionHeader";
+import { QuadrantNode } from "./QuadrantNode";
+import { useTheme } from "../../../hooks";
+import { THEME_COLORS } from "../../../config/learningStatusColors";
+
+interface Transform {
+  x: number;
+  y: number;
+  k: number;
+}
+
+interface QuadrantCanvasProps {
+  nodes: Node[];
+  edges: Edge[];
+  regions: RegionInfo[];
+  originPosition: { x: number; y: number };
+  collapsedRegions: string[];
+  onOriginMove: (position: { x: number; y: number }) => void;
+  onRegionToggle: (regionId: string) => void;
+  onNodeClick: (node: Node) => void;
+  selectedNodeId?: string | null;
+  nodeStatus?: Record<string, any>;
+  colorScheme?: ColorScheme;
+  coloringMode?: GraphColorMode;
+  width?: number;
+  height?: number;
+}
+
+export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
+  (
+    {
+      nodes: _nodes,
+      edges,
+      regions,
+      originPosition,
+      collapsedRegions: externalCollapsedRegions,
+      onOriginMove,
+      onRegionToggle,
+      onNodeClick,
+      selectedNodeId = null,
+      nodeStatus,
+      colorScheme: _colorScheme = "default",
+      coloringMode: _coloringMode = "status",
+      width = 800,
+      height = 600,
+    },
+    ref
+  ) => {
+    const { isDark } = useTheme();
+    const svgRef = useRef<SVGSVGElement>(null);
+    const contentRef = useRef<SVGGElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const [internalCollapsedRegions, setInternalCollapsedRegions] = useState<
+      Set<string>
+    >(new Set());
+
+    const collapsedRegions = useMemo(() => {
+      if (externalCollapsedRegions && externalCollapsedRegions.length > 0) {
+        return new Set(externalCollapsedRegions);
+      }
+      return internalCollapsedRegions;
+    }, [externalCollapsedRegions, internalCollapsedRegions]);
+
+    const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
+    const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [isDraggingOrigin, setIsDraggingOrigin] = useState(false);
+
+    const [containerSize, setContainerSize] = useState({
+      width: typeof window !== "undefined" ? window.innerWidth : width,
+      height: typeof window !== "undefined" ? window.innerHeight : height,
+    });
+
+    const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
+
+    const regionRadius = useMemo(() => {
+      const minDimension = Math.min(containerSize.width, containerSize.height);
+      return minDimension * 0.4;
+    }, [containerSize]);
+
+    const updateTransformDOM = useCallback((t: Transform) => {
+      if (contentRef.current) {
+        contentRef.current.setAttribute(
+          "transform",
+          `translate(${t.x}, ${t.y}) scale(${t.k})`
+        );
+      }
+    }, []);
+
+    const handleRegionToggle = useCallback(
+      (regionId: string) => {
+        if (onRegionToggle) {
+          onRegionToggle(regionId);
+        } else {
+          setInternalCollapsedRegions((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(regionId)) {
+              newSet.delete(regionId);
+            } else {
+              newSet.add(regionId);
+            }
+            return newSet;
+          });
+        }
+      },
+      [onRegionToggle]
+    );
+
+    useImperativeHandle(ref, () => ({
+      zoomIn: () => {
+        const newK = Math.min(transformRef.current.k * 1.3, 5);
+        const centerX = containerSize.width / 2;
+        const centerY = containerSize.height / 2;
+        const newX =
+          centerX -
+          (centerX - transformRef.current.x) * (newK / transformRef.current.k);
+        const newY =
+          centerY -
+          (centerY - transformRef.current.y) * (newK / transformRef.current.k);
+        const newTransform = { x: newX, y: newY, k: newK };
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        setTransform(newTransform);
+      },
+      zoomOut: () => {
+        const newK = Math.max(transformRef.current.k / 1.3, 0.1);
+        const centerX = containerSize.width / 2;
+        const centerY = containerSize.height / 2;
+        const newX =
+          centerX -
+          (centerX - transformRef.current.x) * (newK / transformRef.current.k);
+        const newY =
+          centerY -
+          (centerY - transformRef.current.y) * (newK / transformRef.current.k);
+        const newTransform = { x: newX, y: newY, k: newK };
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        setTransform(newTransform);
+      },
+      resetView: () => {
+        const newTransform = { x: 0, y: 0, k: 1 };
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        setTransform(newTransform);
+      },
+      toggleRegionCollapse: (regionId: string) => {
+        handleRegionToggle(regionId);
+      },
+      expandAllRegions: () => {
+        setInternalCollapsedRegions(new Set());
+      },
+      collapseAllRegions: () => {
+        setInternalCollapsedRegions(new Set(regions.map((r) => r.id)));
+      },
+    }));
+
+    useEffect(() => {
+      const updateContainerSize = () => {
+        if (containerRef.current) {
+          setContainerSize({
+            width: containerRef.current.clientWidth,
+            height: containerRef.current.clientHeight,
+          });
+        }
+      };
+
+      updateContainerSize();
+
+      const resizeObserver = new ResizeObserver(updateContainerSize);
+      if (containerRef.current) {
+        resizeObserver.observe(containerRef.current);
+      }
+
+      return () => resizeObserver.disconnect();
+    }, []);
+
+    useEffect(() => {
+      updateTransformDOM(transformRef.current);
+    }, [updateTransformDOM]);
+
+    const handleWheel = useCallback(
+      (e: WheelEvent) => {
+        e.preventDefault();
+        const scaleFactor = 1.1;
+        const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
+
+        const prev = transformRef.current;
+        const newK = Math.max(0.1, Math.min(5, prev.k * delta));
+
+        const isMinZoom = Math.abs(prev.k - 0.1) < 0.001;
+        const isMaxZoom = Math.abs(prev.k - 5) < 0.001;
+
+        if ((isMinZoom && e.deltaY > 0) || (isMaxZoom && e.deltaY < 0)) {
+          return;
+        }
+
+        const rect = svgRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const newX = mouseX - (mouseX - prev.x) * delta;
+        const newY = mouseY - (mouseY - prev.y) * delta;
+
+        const newTransform = { x: newX, y: newY, k: newK };
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        setTransform(newTransform);
+      },
+      [updateTransformDOM]
+    );
+
+    useEffect(() => {
+      const svg = svgRef.current;
+      if (!svg) return;
+
+      svg.addEventListener("wheel", handleWheel, { passive: false });
+
+      return () => {
+        svg.removeEventListener("wheel", handleWheel);
+      };
+    }, [handleWheel]);
+
+    const handleMouseDown = useCallback(
+      (e: React.MouseEvent<SVGSVGElement>) => {
+        const target = e.target as SVGElement;
+        const originElement = target.closest("[data-origin]");
+        const regionHeaderElement = target.closest("[data-region-id]");
+
+        if (regionHeaderElement) {
+          return;
+        }
+
+        if (originElement) {
+          setIsDraggingOrigin(true);
+          setDragStart({
+            x: e.clientX - originPosition.x * transformRef.current.k,
+            y: e.clientY - originPosition.y * transformRef.current.k,
+          });
+        } else if (e.target === svgRef.current) {
+          setIsDragging(true);
+          setDragStart({
+            x: e.clientX - transformRef.current.x,
+            y: e.clientY - transformRef.current.y,
+          });
+        }
+      },
+      [originPosition]
+    );
+
+    const handleMouseMove = useCallback(
+      (e: React.MouseEvent<SVGSVGElement>) => {
+        if (isDraggingOrigin) {
+          const newX = (e.clientX - dragStart.x) / transformRef.current.k;
+          const newY = (e.clientY - dragStart.y) / transformRef.current.k;
+          onOriginMove({ x: newX, y: newY });
+        } else if (isDragging) {
+          const newTransform = {
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y,
+            k: transformRef.current.k,
+          };
+          transformRef.current = newTransform;
+          updateTransformDOM(newTransform);
+          setTransform(newTransform);
+        }
+      },
+      [isDragging, isDraggingOrigin, dragStart, onOriginMove, updateTransformDOM]
+    );
+
+    const handleMouseUp = useCallback(() => {
+      setIsDragging(false);
+      setIsDraggingOrigin(false);
+    }, []);
+
+    const handleNodeClick = useCallback(
+      (node: Node) => {
+        onNodeClick(node);
+      },
+      [onNodeClick]
+    );
+
+    const getNodeAngle = useCallback(
+      (_node: Node, region: RegionInfo, index: number, total: number) => {
+        const angleRange = region.angleEnd - region.angleStart;
+        const angleStep = angleRange / (total + 1);
+        return region.angleStart + angleStep * (index + 1);
+      },
+      []
+    );
+
+    const getRegionOpacity = useCallback(
+      (regionId: string) => {
+        return collapsedRegions.has(regionId) ? 0.3 : 0.15;
+      },
+      [collapsedRegions]
+    );
+
+    const isRegionCollapsed = useCallback(
+      (regionId: string) => collapsedRegions.has(regionId),
+      [collapsedRegions]
+    );
+
+    return (
+      <div ref={containerRef} className="relative w-full h-full overflow-hidden">
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          style={{
+            backgroundColor: colors.background,
+            cursor: isDragging
+              ? "grabbing"
+              : isDraggingOrigin
+                ? "move"
+                : "grab",
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          <g ref={contentRef}>
+            {regions.map((region) => {
+              const isCollapsed = isRegionCollapsed(region.id);
+              return (
+                <g key={region.id}>
+                  <motion.g
+                    initial={false}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <RegionBackground
+                      region={region}
+                      opacity={getRegionOpacity(region.id)}
+                      radius={regionRadius}
+                      originX={originPosition.x}
+                      originY={originPosition.y}
+                    />
+                  </motion.g>
+                  <RegionHeader
+                    region={region}
+                    isCollapsed={isCollapsed}
+                    onToggle={() => handleRegionToggle(region.id)}
+                    originX={originPosition.x}
+                    originY={originPosition.y}
+                    radius={regionRadius}
+                  />
+                  <AnimatePresence mode="popLayout">
+                    {!isCollapsed &&
+                      region.nodes
+                        .filter((node) => !node.properties?.backboneModule)
+                        .map((node, index) => (
+                        <motion.g
+                          key={node.id}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.2, delay: index * 0.02 }}
+                        >
+                          <QuadrantNode
+                            node={node}
+                            edges={edges}
+                            nodeStatus={nodeStatus}
+                            selected={node.id === selectedNodeId}
+                            isDark={isDark}
+                            zoomLevel={transform.k}
+                            onClick={() => handleNodeClick(node)}
+                            colorScheme={_colorScheme}
+                            originX={originPosition.x}
+                            originY={originPosition.y}
+                            regionRadius={regionRadius}
+                            angle={getNodeAngle(
+                              node,
+                              region,
+                              index,
+                              region.nodes.filter((n) => !n.properties?.backboneModule).length
+                            )}
+                          />
+                        </motion.g>
+                      ))}
+                  </AnimatePresence>
+                </g>
+              );
+            })}
+
+            <g
+              data-origin
+              transform={`translate(${originPosition.x}, ${originPosition.y})`}
+              style={{ cursor: "move" }}
+            >
+              <circle
+                r={12}
+                fill={isDark ? "#475569" : "#e2e8f0"}
+                stroke={isDark ? "#64748b" : "#94a3b8"}
+                strokeWidth={2}
+                style={{
+                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+                }}
+              />
+              <circle r={4} fill={isDark ? "#94a3b8" : "#64748b"} />
+            </g>
+          </g>
+        </svg>
+
+        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+          <button
+            onClick={() => {
+              const newK = Math.min(5, transformRef.current.k * 1.2);
+              const centerX = containerSize.width / 2;
+              const centerY = containerSize.height / 2;
+              const newX =
+                centerX -
+                (centerX - transformRef.current.x) *
+                  (newK / transformRef.current.k);
+              const newY =
+                centerY -
+                (centerY - transformRef.current.y) *
+                  (newK / transformRef.current.k);
+              const newTransform = { x: newX, y: newY, k: newK };
+              transformRef.current = newTransform;
+              updateTransformDOM(newTransform);
+              setTransform(newTransform);
+            }}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => {
+              const newK = Math.max(0.1, transformRef.current.k / 1.2);
+              const centerX = containerSize.width / 2;
+              const centerY = containerSize.height / 2;
+              const newX =
+                centerX -
+                (centerX - transformRef.current.x) *
+                  (newK / transformRef.current.k);
+              const newY =
+                centerY -
+                (centerY - transformRef.current.y) *
+                  (newK / transformRef.current.k);
+              const newTransform = { x: newX, y: newY, k: newK };
+              transformRef.current = newTransform;
+              updateTransformDOM(newTransform);
+              setTransform(newTransform);
+            }}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M5 12h14" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => {
+              const newTransform = { x: 0, y: 0, k: 1 };
+              transformRef.current = newTransform;
+              updateTransformDOM(newTransform);
+              setTransform(newTransform);
+            }}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                d="M3 3v5h5M21 21v-5h-5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="absolute left-4 bottom-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
+          缩放: {Math.round(transform.k * 100)}%
+        </div>
+      </div>
+    );
+  }
+);

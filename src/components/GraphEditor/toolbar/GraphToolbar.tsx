@@ -45,6 +45,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  LayoutGrid,
 } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
@@ -457,6 +458,16 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             onClose();
           },
           active: viewMode === "planet",
+          color: "text-primary-600",
+        },
+        {
+          icon: LayoutGrid,
+          label: "象限",
+          onClick: () => {
+            setViewMode("quadrant");
+            onClose();
+          },
+          active: viewMode === "quadrant",
           color: "text-primary-600",
         },
         {
@@ -1204,6 +1215,11 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                 mode: "planet" as const,
                 label: t("graphEditor.toolbar.knowledgePlanet"),
                 icon: Globe,
+              },
+              {
+                mode: "quadrant" as const,
+                label: t("graphEditor.toolbar.quadrant"),
+                icon: LayoutGrid,
               },
             ].map(({ mode, label, icon: Icon }) => (
               <MenuItem

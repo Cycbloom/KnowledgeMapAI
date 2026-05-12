@@ -62,7 +62,15 @@ export class Logger {
       return true;
     });
     
-    console.log(`${timestamp} ${header}`, ...styles, ...this.formatMeta(meta));
+    const logArgs = [`${timestamp} ${header}`, ...styles, ...this.formatMeta(meta)];
+    
+    if (level === LogLevel.ERROR) {
+      console.error(...logArgs);
+    } else if (level === LogLevel.WARN) {
+      console.warn(...logArgs);
+    } else {
+      console.debug(...logArgs);
+    }
   }
 
   info(message: string, meta?: unknown) {

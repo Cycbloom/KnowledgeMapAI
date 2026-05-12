@@ -1,0 +1,74 @@
+import React, { memo, useMemo } from "react";
+import type {
+  Edge,
+  LayoutLink,
+  LinkStyle,
+  LinkAnimation,
+  GraphRelationType,
+} from "../../../types";
+import { MindMapLink } from "../../GraphEditor/canvas/MindMapLink";
+import { getRelationColor } from "../../../utils/graphMapAdapter";
+
+interface GraphEdgesProps {
+  links: LayoutLink[];
+  edges: Edge[];
+  nodeMap: Map<string, any>;
+  focusedGraphId: string | null;
+  neighborLinkIds: Set<string>;
+  linkHighlightState: Map<string, boolean>;
+  selectedDomainIds: Set<string>;
+  isDark: boolean;
+  linkStyle: LinkStyle;
+  linkAnimation: LinkAnimation;
+}
+
+const GraphEdgesComponent: React.FC<GraphEdgesProps> = ({
+  links,
+  edges,
+  nodeMap,
+  focusedGraphId,
+  neighborLinkIds,
+  linkHighlightState,
+  selectedDomainIds,
+  isDark,
+  linkStyle,
+  linkAnimation,
+}) => {
+  const edgeColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    edges.forEach((edge) => {
+      const relationType = edge.relationship_type as GraphRelationType;
+      map.set(edge.id, getRelationColor(relationType));
+    });
+    return map;
+  }, [edges]);
+
+  return (
+    <>
+      {links.map((link) => {
+        const edgeColor = edgeColorMap.get(link.id) ?? "#6B7280";
+        const isFocused = focusedGraphId
+          ? neighborLinkIds.has(link.id)
+          : false;
+        const hasFocus = focusedGraphId !== null;
+
+        return (
+          <MindMapLink
+            key={link.id}
+            link={link}
+            nodes={nodeMap}
+            isDark={isDark}
+            highlighted={linkHighlightState.get(link.id) || false}
+            focused={isFocused}
+            hasFocusMode={hasFocus || selectedDomainIds.size > 0}
+            linkStyle={linkStyle}
+            linkAnimation={linkAnimation}
+            customColor={edgeColor}
+          />
+        );
+      })}
+    </>
+  );
+};
+
+export const GraphEdges = memo(GraphEdgesComponent);

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { TermTooltip } from "../components/common";

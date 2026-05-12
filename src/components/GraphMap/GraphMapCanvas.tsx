@@ -9,17 +9,13 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import type {
-  Edge,
   ColorScheme,
   LinkStyle,
   LinkAnimation,
   GraphRelation,
-  GraphRelationType,
   GraphMapFilterMode,
   Graph,
 } from "../../types";
-import { MindMapNode } from "../GraphEditor/canvas/MindMapNode";
-import { MindMapLink } from "../GraphEditor/canvas/MindMapLink";
 import { CanvasLayout } from "../GraphEditor/canvas/CanvasLayout";
 import { MiniMap } from "../GraphEditor/canvas/MiniMap";
 import { createMindMapLayout } from "../../utils/mindmapLayout";
@@ -27,13 +23,16 @@ import {
   convertGraphsToNodes,
   convertRelationsToEdges,
   filterRelationsByType,
-  getRelationColor,
   getDomainGroups,
 } from "../../utils/graphMapAdapter";
 import { THEME_COLORS } from "../../config/learningStatusColors";
 import { useTheme } from "../../hooks";
 import { DomainBackground } from "./DomainBackground";
 import { RelationshipLegend } from "./RelationshipLegend";
+import { GraphNodes } from "./canvas/GraphNodes";
+import { GraphEdges } from "./canvas/GraphEdges";
+import { SelectionBox } from "./canvas/SelectionBox";
+import { TransformControls } from "./canvas/TransformControls";
 
 interface GraphMapCanvasProps {
   graphs: Array<Graph & { node_count?: number }>;
@@ -104,7 +103,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStartRef = useRef({ x: 0, y: 0 });
-    const [_hoveredNodeId, _setHoveredNodeId] = useState<string | null>(null);
     const [containerSize, setContainerSize] = useState({
       width: typeof window !== "undefined" ? window.innerWidth : width,
       height: typeof window !== "undefined" ? window.innerHeight : height,
@@ -362,8 +360,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         const prev = transformRef.current;
         const newK = Math.max(0.1, Math.min(5, prev.k * delta));
 
-        // 当已经达到最小或最大缩放级别且用户继续相应方向的滚轮时，不做任何变换
-        // 使用近似比较解决浮点数精度问题
         const isMinZoom = Math.abs(prev.k - 0.1) < 0.001;
         const isMaxZoom = Math.abs(prev.k - 5) < 0.001;
 
@@ -672,11 +668,11 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         };
 
         if (box.width > 10 && box.height > 10) {
-          const transform = transformRef.current;
+          const transformCurrent = transformRef.current;
           const selectedIds = layout.nodes
             .filter((node) => {
-              const screenX = node.x * transform.k + transform.x;
-              const screenY = node.y * transform.k + transform.y;
+              const screenX = node.x * transformCurrent.k + transformCurrent.x;
+              const screenY = node.y * transformCurrent.k + transformCurrent.y;
               return (
                 screenX >= box.x &&
                 screenX <= box.x + box.width &&
@@ -753,10 +749,31 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       [updateTransformDOM, updateTransformState],
     );
 
-    const getEdgeColor = (edge: Edge): string => {
-      const relationType = edge.relationship_type as GraphRelationType;
-      return getRelationColor(relationType);
-    };
+    const handleZoomIn = useCallback(() => {
+      const newK = Math.min(5, transformRef.current.k * 1.2);
+      animateCamera(
+        transformRef.current.x,
+        transformRef.current.y,
+        newK,
+      );
+    }, [animateCamera]);
+
+    const handleZoomOut = useCallback(() => {
+      const newK = Math.max(0.1, transformRef.current.k / 1.2);
+      animateCamera(
+        transformRef.current.x,
+        transformRef.current.y,
+        newK,
+      );
+    }, [animateCamera]);
+
+    const handleToggleMiniMap = useCallback(() => {
+      setShowMiniMap((prev) => !prev);
+    }, []);
+
+    const handleToggleLegend = useCallback(() => {
+      setShowLegend((prev) => !prev);
+    }, []);
 
     if (!layout) {
       return (
@@ -817,253 +834,59 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
               graphs={graphs}
               zoomLevel={transform.k}
             />
-            {layout.links.map((link) => {
-              const edge = edges.find((e) => e.id === link.id);
-              const edgeColor = edge ? getEdgeColor(edge) : "#6B7280";
-              const isFocused = focusedGraphId
-                ? neighborLinkIds.has(link.id)
-                : false;
-              const hasFocus = focusedGraphId !== null;
-
-              return (
-                <MindMapLink
-                  key={link.id}
-                  link={link}
-                  nodes={nodeMap}
-                  isDark={isDark}
-                  highlighted={linkHighlightState.get(link.id) || false}
-                  focused={isFocused}
-                  hasFocusMode={hasFocus || selectedDomainIds.size > 0}
-                  linkStyle={linkStyle}
-                  linkAnimation={linkAnimation}
-                  customColor={edgeColor}
-                />
-              );
-            })}
-            {layout.nodes.map((node) => {
-              const graph = graphs.find((g) => g.id === node.id);
-              const isFocused = focusedGraphId
-                ? neighborGraphIds.has(node.id)
-                : false;
-              const hasFocus = focusedGraphId !== null;
-              const isNodeHighlighted = nodeHighlightState.get(node.id) ?? true;
-
-              return (
-                <g
-                  style={{
-                    opacity: isNodeHighlighted ? 1 : 0.3,
-                    transition: "opacity 0.3s ease",
-                    pointerEvents: isNodeHighlighted ? "auto" : "none",
-                  }}
-                >
-                  <MindMapNode
-                    key={node.id}
-                    node={node}
-                    edges={edges}
-                    selected={node.id === selectedGraphId}
-                    multiSelected={multiSelectedGraphIds?.has(node.id) || false}
-                    isDark={isDark}
-                    zoomLevel={transform.k}
-                    onClick={(e) => {
-                      if (graph) {
-                        const isMultiSelect = e?.ctrlKey || e?.metaKey || false;
-                        const isRangeSelect = e?.shiftKey || false;
-                        if (
-                          (isMultiSelect || isRangeSelect) &&
-                          onMultiSelectGraph
-                        ) {
-                          onMultiSelectGraph(
-                            node.id,
-                            isMultiSelect,
-                            isRangeSelect,
-                          );
-                        } else if (
-                          !isMultiSelect &&
-                          !isRangeSelect &&
-                          onGraphClick
-                        ) {
-                          onGraphClick(graph);
-                          setFocusedGraphId(node.id);
-
-                          const visualCenterX = containerSize.width / 2;
-                          const visualCenterY = containerSize.height / 2;
-                          const targetK = transformRef.current.k;
-                          const targetX = visualCenterX - node.x * targetK;
-                          const targetY = visualCenterY - node.y * targetK;
-                          animateCamera(targetX, targetY, targetK, 400);
-                        }
-                      }
-                    }}
-                    onMouseEnter={() => _setHoveredNodeId(node.id)}
-                    onMouseLeave={() => _setHoveredNodeId(null)}
-                    focused={isFocused}
-                    forceShowText={true}
-                    hasFocusMode={hasFocus}
-                    colorScheme={colorScheme}
-                    nodeSizeMode="fixed"
-                    allNodes={nodes}
-                    coloringMode="level"
-                  />
-                </g>
-              );
-            })}
+            <GraphEdges
+              links={layout.links}
+              edges={edges}
+              nodeMap={nodeMap}
+              focusedGraphId={focusedGraphId}
+              neighborLinkIds={neighborLinkIds}
+              linkHighlightState={linkHighlightState}
+              selectedDomainIds={selectedDomainIds}
+              isDark={isDark}
+              linkStyle={linkStyle}
+              linkAnimation={linkAnimation}
+            />
+            <GraphNodes
+              nodes={layout.nodes}
+              graphs={graphs}
+              edges={edges}
+              allNodes={nodes}
+              selectedGraphId={selectedGraphId}
+              multiSelectedGraphIds={multiSelectedGraphIds}
+              focusedGraphId={focusedGraphId}
+              neighborGraphIds={neighborGraphIds}
+              nodeHighlightState={nodeHighlightState}
+              isDark={isDark}
+              zoomLevel={transform.k}
+              colorScheme={colorScheme}
+              onGraphClick={onGraphClick}
+              onMultiSelectGraph={onMultiSelectGraph}
+              setFocusedGraphId={setFocusedGraphId}
+              animateCamera={animateCamera}
+              containerWidth={containerSize.width}
+              containerHeight={containerSize.height}
+              transformRef={transformRef}
+            />
           </g>
 
-          {isSelecting && selectionBox && (
-            <rect
-              x={Math.min(selectionBox.start.x, selectionBox.end.x)}
-              y={Math.min(selectionBox.start.y, selectionBox.end.y)}
-              width={Math.abs(selectionBox.end.x - selectionBox.start.x)}
-              height={Math.abs(selectionBox.end.y - selectionBox.start.y)}
-              fill="rgba(59, 130, 246, 0.1)"
-              stroke="rgba(59, 130, 246, 0.5)"
-              strokeWidth={2}
-              strokeDasharray="5,5"
-              style={{ pointerEvents: "none" }}
-            />
-          )}
+          <SelectionBox isSelecting={isSelecting} selectionBox={selectionBox} />
         </svg>
 
-        <div className="absolute bottom-[calc(3.5rem+var(--safe-area-inset-bottom))] md:bottom-4 right-4 flex flex-col gap-2">
-          <div className="flex flex-col gap-2">
-            {fromGraphId && onReturnToGraph && (
-              <button
-                onClick={onReturnToGraph}
-                className="p-2 bg-primary-500 dark:bg-primary-600 rounded shadow-lg hover:bg-primary-600 dark:hover:bg-primary-700 text-white transition-colors"
-                title={`返回 ${fromGraphTitle || "来源图谱"}`}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-            )}
-            <button
-              onClick={() => setShowMiniMap(!showMiniMap)}
-              className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title={showMiniMap ? "隐藏小地图" : "显示小地图"}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <line x1="3" y1="9" x2="21" y2="9" />
-                <line x1="9" y1="21" x2="9" y2="9" />
-              </svg>
-            </button>
-
-            <button
-              onClick={() => {
-                const newK = Math.min(5, transformRef.current.k * 1.2);
-                animateCamera(
-                  transformRef.current.x,
-                  transformRef.current.y,
-                  newK,
-                );
-              }}
-              className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title="放大"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  d="M12 5v14M5 12h14"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-
-            <button
-              onClick={() => {
-                const newK = Math.max(0.1, transformRef.current.k / 1.2);
-                animateCamera(
-                  transformRef.current.x,
-                  transformRef.current.y,
-                  newK,
-                );
-              }}
-              className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title="缩小"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  d="M5 12h14"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-
-            <button
-              onClick={handleResetView}
-              className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title="重置视角"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  d="M3 3v5h5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-
-            <button
-              onClick={() => setShowLegend(!showLegend)}
-              className={`p-2 rounded shadow-lg transition-colors ${
-                showLegend
-                  ? "bg-primary-500 dark:bg-primary-600 text-white"
-                  : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-              }`}
-              title={showLegend ? "隐藏图例" : "显示关系类型图例"}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <TransformControls
+          fromGraphId={fromGraphId}
+          fromGraphTitle={fromGraphTitle}
+          onReturnToGraph={onReturnToGraph}
+          showMiniMap={showMiniMap}
+          onToggleMiniMap={handleToggleMiniMap}
+          showLegend={showLegend}
+          onToggleLegend={handleToggleLegend}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetView={handleResetView}
+          transformK={transform.k}
+          graphsCount={graphs.length}
+          relationsCount={relations.length}
+        />
 
         {showLegend && (
           <div className="absolute top-4 right-4">
@@ -1090,11 +913,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             />
           </div>
         )}
-
-        <div className="absolute bottom-[calc(3.5rem+var(--safe-area-inset-bottom))] md:bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
-          缩放: {Math.round(transform.k * 100)}% | 图谱: {graphs.length} | 关系:{" "}
-          {relations.length}
-        </div>
       </div>
     );
   },

@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { cacheService, CacheKeys } from "../common/cacheService";
+import { cacheService, CacheKeys, CacheTTL } from "../common/cacheService";
 import {
   buildNodeFromGraphNode,
   GRAPH_NODES_SELECT,
@@ -40,17 +40,68 @@ interface GraphWithCount {
   tags?: string[];
 }
 
+/**
+ * 图谱服务
+ *
+ * 提供知识图谱的 CRUD 操作、缓存管理、事件发布等功能。
+ * 支持图谱的创建、更新、删除、恢复、永久删除等操作，
+ * 并自动处理缓存失效和事件通知。
+ *
+ * ## 主要功能
+ *
+ * - 图谱列表查询（支持缓存）
+ * - 图谱创建（含主题重复检测）
+ * - 图谱更新（含嵌入向量更新）
+ * - 图谱删除/恢复（软删除机制）
+ * - 图谱节点查询
+ * - 图谱分析（统计、连接建议）
+ *
+ * @example
+ * ```typescript
+ * const graphService = new GraphService();
+ *
+ * // 创建图谱
+ * const graph = await graphService.createGraph(supabase, userId, '我的图谱');
+ *
+ * // 获取图谱列表
+ * const graphs = await graphService.listGraphs(supabase, userId);
+ *
+ * // 更新图谱
+ * await graphService.updateGraph(supabase, graphId, userId, { title: '新标题' });
+ * ```
+ */
 export class GraphService {
+  /**
+   * 获取用户的图谱列表
+   *
+   * 返回用户的所有图谱，包含节点数量和标签信息。
+   * 结果会被缓存以提高性能。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @returns 图谱列表，包含节点数量
+   *
+   * @example
+   * ```typescript
+   * const graphs = await graphService.listGraphs(supabase, 'user-123');
+   * console.log(graphs[0].nodes_count); // 节点数量
+   * ```
+   */
   async listGraphs(supabase: SupabaseClient, userId: string) {
     const cacheKey = CacheKeys.USER_GRAPHS(userId);
 
-    return cacheService.getOrSet(cacheKey, async () => {
-      return withRpcFallback<GraphWithCount[]>(supabase, {
-        rpcName: "get_user_graphs_with_counts",
-        rpcParams: { p_user_id: userId },
-        fallbackFn: () => this.listGraphsFallback(supabase, userId),
-      });
-    });
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        return withRpcFallback<GraphWithCount[]>(supabase, {
+          rpcName: "get_user_graphs_with_counts",
+          rpcParams: { p_user_id: userId },
+          fallbackFn: () => this.listGraphsFallback(supabase, userId),
+        });
+      },
+      CacheTTL.DYNAMIC,
+      [`user:${userId}`]
+    );
   }
 
   private async listGraphsFallback(supabase: SupabaseClient, userId: string) {
@@ -122,6 +173,13 @@ export class GraphService {
     })) || []) as GraphWithCount[];
   }
 
+  /**
+   * 获取回收站中的图谱列表
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @returns 已删除的图谱列表
+   */
   async listTrash(supabase: SupabaseClient, userId: string) {
     return withRpcFallback<GraphWithCount[]>(supabase, {
       rpcName: "get_user_trashed_graphs",
@@ -171,6 +229,14 @@ export class GraphService {
     })) || []) as GraphWithCount[];
   }
 
+  /**
+   * 获取单个图谱详情
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param _userId - 用户 ID（可选，用于权限验证）
+   * @returns 图谱详情，如果不存在则返回 null
+   */
   async getGraph(
     supabase: SupabaseClient,
     graphId: string,
@@ -191,6 +257,13 @@ export class GraphService {
     return data;
   }
 
+  /**
+   * 更新图谱最后使用时间
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param userId - 用户 ID
+   */
   async updateLastUsedAt(
     supabase: SupabaseClient,
     graphId: string,
@@ -203,6 +276,35 @@ export class GraphService {
       .eq("user_id", userId);
   }
 
+  /**
+   * 创建新图谱
+   *
+   * 创建图谱时会自动：
+   * 1. 检测主题是否重复（可通过 skipDuplicateCheck 跳过）
+   * 2. 生成标题的嵌入向量
+   * 3. 创建关联的学习任务
+   * 4. 发布 graph_created 事件
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @param title - 图谱标题
+   * @param description - 图谱描述（可选）
+   * @param options - 可选配置
+   * @param options.skipDuplicateCheck - 跳过主题重复检测
+   * @param options.templateType - 模板类型
+   * @returns 创建的图谱数据
+   * @throws {AppError} 如果主题重复（DUPLICATE_TOPIC）
+   *
+   * @example
+   * ```typescript
+   * const graph = await graphService.createGraph(
+   *   supabase,
+   *   'user-123',
+   *   'TypeScript 学习笔记',
+   *   '记录 TypeScript 学习过程中的知识点'
+   * );
+   * ```
+   */
   async createGraph(
     supabase: SupabaseClient,
     userId: string,
@@ -265,7 +367,7 @@ export class GraphService {
       logger.warn("[GraphService] Failed to create task for graph:", taskError);
     }
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.invalidateUserGraphsCache(userId);
 
     await appEventBus.publish(
       "graph_created",
@@ -277,6 +379,17 @@ export class GraphService {
     return data;
   }
 
+  /**
+   * 检查主题是否重复
+   *
+   * 使用向量相似度检测是否存在相似主题的图谱。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @param topic - 要检查的主题
+   * @param excludeGraphId - 排除的图谱 ID（用于更新时排除自身）
+   * @returns 检查结果，包含是否重复和相似图谱列表
+   */
   async checkTopicDuplicate(
     supabase: SupabaseClient,
     userId: string,
@@ -288,6 +401,15 @@ export class GraphService {
     });
   }
 
+  /**
+   * 更新图谱的嵌入向量
+   *
+   * 根据标题重新生成嵌入向量并更新到数据库。
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param title - 新标题
+   */
   async updateGraphEmbedding(
     supabase: SupabaseClient,
     graphId: string,
@@ -306,6 +428,33 @@ export class GraphService {
     }
   }
 
+  /**
+   * 更新图谱信息
+   *
+   * 更新图谱的标题、描述、可见性等信息。
+   * 如果更新标题，会自动检测重复并更新嵌入向量。
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param userId - 用户 ID
+   * @param updates - 要更新的字段
+   * @param updates.title - 新标题
+   * @param updates.description - 新描述
+   * @param updates.is_public - 是否公开
+   * @param updates.reference_books - 参考书籍
+   * @param updates.external_links - 外部链接
+   * @param updates.learning_guide - 学习指南
+   * @returns 更新后的图谱数据
+   * @throws {AppError} 如果标题重复（DUPLICATE_TOPIC）
+   *
+   * @example
+   * ```typescript
+   * await graphService.updateGraph(supabase, graphId, userId, {
+   *   title: '新标题',
+   *   is_public: true
+   * });
+   * ```
+   */
   async updateGraph(
     supabase: SupabaseClient,
     graphId: string,
@@ -366,8 +515,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
-    await cacheService.del(CacheKeys.GRAPH(graphId));
+    await cacheService.invalidateGraphCache(userId, graphId);
 
     await appEventBus.publish(
       "graph_updated",
@@ -379,6 +527,15 @@ export class GraphService {
     return data;
   }
 
+  /**
+   * 切换图谱收藏状态
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param userId - 用户 ID
+   * @param isFavorite - 是否收藏
+   * @returns 更新后的图谱数据
+   */
   async toggleFavorite(
     supabase: SupabaseClient,
     graphId: string,
@@ -398,7 +555,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.invalidateUserGraphsCache(userId);
 
     await appEventBus.publish(
       "graph_updated",
@@ -410,14 +567,24 @@ export class GraphService {
     return data;
   }
 
+  /**
+   * 删除图谱（软删除）
+   *
+   * 将图谱移动到回收站，不会真正删除数据。
+   * 可以通过 restoreGraph 恢复。
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param userId - 用户 ID
+   * @throws {AppError} 如果图谱不存在（RESOURCE_GRAPH_NOT_FOUND）
+   */
   async deleteGraph(supabase: SupabaseClient, graphId: string, userId: string) {
     const result = await softDelete(supabase, "knowledge_graphs", graphId);
     if (!result.success) {
       throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
-    await cacheService.del(CacheKeys.GRAPH(graphId));
+    await cacheService.invalidateAllGraphRelated(userId, graphId);
 
     await appEventBus.publish(
       "graph_deleted",
@@ -427,6 +594,14 @@ export class GraphService {
     );
   }
 
+  /**
+   * 批量删除图谱（软删除）
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphIds - 图谱 ID 数组
+   * @param userId - 用户 ID
+   * @returns 删除的图谱数量
+   */
   async deleteGraphs(
     supabase: SupabaseClient,
     graphIds: string[],
@@ -441,7 +616,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.invalidateUserGraphsCache(userId);
 
     for (const id of data?.map((g: { id: string }) => g.id) || []) {
       await appEventBus.publish(
@@ -455,6 +630,13 @@ export class GraphService {
     return { count: data?.length || 0 };
   }
 
+  /**
+   * 从回收站恢复图谱
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param userId - 用户 ID
+   */
   async restoreGraph(
     supabase: SupabaseClient,
     graphId: string,
@@ -468,7 +650,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.invalidateUserGraphsCache(userId);
 
     await appEventBus.publish(
       "graph_updated",
@@ -478,6 +660,15 @@ export class GraphService {
     );
   }
 
+  /**
+   * 永久删除图谱
+   *
+   * 彻底删除图谱及其所有数据，无法恢复。
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphId - 图谱 ID
+   * @param userId - 用户 ID
+   */
   async permanentDeleteGraph(
     supabase: SupabaseClient,
     graphId: string,
@@ -491,7 +682,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.invalidateAllGraphRelated(userId, graphId);
 
     await appEventBus.publish(
       "graph_deleted",
@@ -501,6 +692,14 @@ export class GraphService {
     );
   }
 
+  /**
+   * 批量恢复图谱
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphIds - 图谱 ID 数组
+   * @param userId - 用户 ID
+   * @returns 恢复的图谱数量
+   */
   async restoreGraphs(
     supabase: SupabaseClient,
     graphIds: string[],
@@ -515,7 +714,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.invalidateUserGraphsCache(userId);
 
     for (const id of data?.map((g: { id: string }) => g.id) || []) {
       await appEventBus.publish(
@@ -529,6 +728,14 @@ export class GraphService {
     return { count: data?.length || 0 };
   }
 
+  /**
+   * 批量永久删除图谱
+   *
+   * @param supabase - Supabase 客户端
+   * @param graphIds - 图谱 ID 数组
+   * @param userId - 用户 ID
+   * @returns 删除的图谱数量
+   */
   async permanentDeleteGraphs(
     supabase: SupabaseClient,
     graphIds: string[],
@@ -543,7 +750,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.invalidateUserGraphsCache(userId);
 
     for (const id of data?.map((g: { id: string }) => g.id) || []) {
       await appEventBus.publish(
@@ -557,6 +764,22 @@ export class GraphService {
     return { count: data?.length || 0 };
   }
 
+  /**
+   * 获取图谱的所有节点和边
+   *
+   * 返回图谱中的所有节点和边数据，结果会被缓存。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID（可选）
+   * @param graphId - 图谱 ID
+   * @returns 包含节点和边的对象
+   *
+   * @example
+   * ```typescript
+   * const { nodes, edges } = await graphService.getGraphNodes(supabase, userId, graphId);
+   * console.log(`图谱有 ${nodes.length} 个节点`);
+   * ```
+   */
   async getGraphNodes(
     supabase: SupabaseClient,
     userId: string | null,
@@ -566,55 +789,70 @@ export class GraphService {
       ? CacheKeys.GRAPH_NODES(userId, graphId)
       : `graph_nodes_${graphId}`;
 
-    return cacheService.getOrSet(cacheKey, async () => {
-      const { data: graphNodes, error: gnError } = await supabase
-        .from("graph_nodes")
-        .select(GRAPH_NODES_SELECT)
-        .eq("graph_id", graphId)
-        .is("deleted_at", null);
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data: graphNodes, error: gnError } = await supabase
+          .from("graph_nodes")
+          .select(GRAPH_NODES_SELECT)
+          .eq("graph_id", graphId)
+          .is("deleted_at", null);
 
-      if (gnError) {
-        logger.error("getGraphNodes error:", gnError);
-        throw gnError;
-      }
+        if (gnError) {
+          logger.error("getGraphNodes error:", gnError);
+          throw gnError;
+        }
 
-      const nodes = (graphNodes || [])
-        .map((gn) => {
-          const node = buildNodeFromGraphNode(gn);
-          if (!node) return null;
-          return {
-            id: node.id,
-            graph_id: node.graph_id,
-            graph_node_id: node.id,
-            title: node.title,
-            content: node.content,
-            x_position: node.x_position,
-            y_position: node.y_position,
-            level: node.level,
-            properties: node.properties,
-            learning_material: node.learning_material,
-            is_accepted: node.is_accepted,
-            knowledge_point_id: node.knowledge_point_id,
-            visibility: node.visibility,
-            owner_id: node.owner_id,
-            created_at: node.created_at,
-            updated_at: node.updated_at,
-          };
-        })
-        .filter(Boolean);
+        const nodes = (graphNodes || [])
+          .map((gn) => {
+            const node = buildNodeFromGraphNode(gn);
+            if (!node) return null;
+            return {
+              id: node.id,
+              graph_id: node.graph_id,
+              graph_node_id: node.id,
+              title: node.title,
+              content: node.content,
+              x_position: node.x_position,
+              y_position: node.y_position,
+              level: node.level,
+              properties: node.properties,
+              learning_material: node.learning_material,
+              is_accepted: node.is_accepted,
+              knowledge_point_id: node.knowledge_point_id,
+              visibility: node.visibility,
+              owner_id: node.owner_id,
+              created_at: node.created_at,
+              updated_at: node.updated_at,
+            };
+          })
+          .filter(Boolean);
 
-      const { data: edges, error: edgesError } = await supabase
-        .from("edges")
-        .select("*")
-        .eq("graph_id", graphId)
-        .is("deleted_at", null);
+        const { data: edges, error: edgesError } = await supabase
+          .from("edges")
+          .select("*")
+          .eq("graph_id", graphId)
+          .is("deleted_at", null);
 
-      if (edgesError) throw edgesError;
+        if (edgesError) throw edgesError;
 
-      return { nodes, edges: edges || [] };
-    });
+        return { nodes, edges: edges || [] };
+      },
+      CacheTTL.GRAPH_NODES,
+      userId ? [`user:${userId}`, `graph:${graphId}`] : [`graph:${graphId}`]
+    );
   }
 
+  /**
+   * 获取图谱节点的学习状态
+   *
+   * 返回每个节点的掌握情况、复习次数、下次复习时间等信息。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @param graphId - 图谱 ID
+   * @returns 节点状态映射表
+   */
   async getGraphNodeStatus(
     supabase: SupabaseClient,
     userId: string,
@@ -659,6 +897,14 @@ export class GraphService {
     return statusMap;
   }
 
+  /**
+   * 获取图谱的学习路径
+   *
+   * @param supabase - Supabase 客户端
+   * @param _userId - 用户 ID（可选）
+   * @param graphId - 图谱 ID
+   * @returns 学习路径列表
+   */
   async getLearningPath(
     supabase: SupabaseClient,
     _userId: string | null,
@@ -674,6 +920,16 @@ export class GraphService {
     return data || [];
   }
 
+  /**
+   * 分析图谱统计信息
+   *
+   * 计算图谱的节点数、边数、平均连接数、层级分布、密度等统计指标。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @param graphId - 图谱 ID
+   * @returns 图谱统计信息
+   */
   async analyzeGraph(
     supabase: SupabaseClient,
     userId: string,
@@ -711,6 +967,18 @@ export class GraphService {
     };
   }
 
+  /**
+   * 查找缺失的连接
+   *
+   * 分析图谱中可能缺失的连接，返回建议的节点对。
+   * 基于节点层级差异计算建议分数。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @param graphId - 图谱 ID
+   * @param maxSuggestions - 最大建议数量
+   * @returns 建议连接列表，按分数排序
+   */
   async findMissingConnections(
     supabase: SupabaseClient,
     userId: string,
@@ -776,6 +1044,17 @@ export class GraphService {
       .slice(0, maxSuggestions);
   }
 
+  /**
+   * 获取多图谱合并视图
+   *
+   * 合并多个图谱的数据，并识别共享的知识点。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @param graphIds - 图谱 ID 数组
+   * @returns 合并视图数据，包含各图谱节点/边和共享知识点
+   * @throws {AppError} 如果图谱不存在
+   */
   async getCombinedView(
     supabase: SupabaseClient,
     userId: string,

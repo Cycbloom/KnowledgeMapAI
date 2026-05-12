@@ -16,6 +16,39 @@ import { ExtensionPoint } from "./ExtensionPoint";
 import { validateManifest } from "./manifest";
 import { logger } from "../../utils/logger";
 
+/**
+ * 插件系统核心内核
+ *
+ * Kernel 是整个插件系统的核心，负责管理插件的生命周期、服务注册、
+ * 事件系统、扩展点和配置管理。它实现了 KernelAPI 接口，为插件提供
+ * 统一的 API 入口。
+ *
+ * ## 架构概述
+ *
+ * - **插件管理**：注册、激活、停用、卸载插件
+ * - **服务容器**：提供依赖注入机制，插件可注册和获取服务
+ * - **事件系统**：发布-订阅模式，支持事件类型校验
+ * - **扩展点**：允许插件扩展系统功能
+ * - **路由注册**：插件可注册 Express 路由
+ * - **配置管理**：支持插件配置的 Schema 验证
+ *
+ * @example
+ * ```typescript
+ * const kernel = new Kernel();
+ *
+ * // 注册插件
+ * kernel.registerPlugin(myPlugin);
+ *
+ * // 激活插件
+ * await kernel.activatePlugin('my-plugin');
+ *
+ * // 注册服务
+ * kernel.registerService('logger', loggerService);
+ *
+ * // 发布事件
+ * await kernel.publish('user.created', { userId: '123' }, 'system');
+ * ```
+ */
 export class Kernel implements KernelAPI {
   private serviceContainer = new Map<string, unknown>();
   private pluginRegistry = new Map<string, PluginEntry>();
@@ -28,6 +61,25 @@ export class Kernel implements KernelAPI {
   private dependencyResolver = new DependencyResolver();
   private currentPluginName: string | null = null;
 
+  /**
+   * 注册插件到内核
+   *
+   * 将插件添加到注册表并调用其 onInstall 生命周期钩子。
+   * 如果插件已注册，则跳过并记录警告。
+   *
+   * @param plugin - 要注册的插件对象
+   *
+   * @example
+   * ```typescript
+   * kernel.registerPlugin({
+   *   name: 'my-plugin',
+   *   version: '1.0.0',
+   *   onInstall: (api) => {
+   *     api.registerService('myService', myService);
+   *   }
+   * });
+   * ```
+   */
   registerPlugin(plugin: Plugin): void {
     if (this.pluginRegistry.has(plugin.name)) {
       logger.warn(`[Kernel] Plugin "${plugin.name}" is already registered, skipping`);
@@ -54,6 +106,20 @@ export class Kernel implements KernelAPI {
     entry.state = "inactive";
   }
 
+  /**
+   * 激活指定插件
+   *
+   * 激活插件前会自动激活其依赖项。激活顺序按依赖关系拓扑排序。
+   * 调用插件的 onActivate 生命周期钩子。
+   *
+   * @param name - 插件名称
+   * @throws 如果插件未注册或依赖项未注册
+   *
+   * @example
+   * ```typescript
+   * await kernel.activatePlugin('my-plugin');
+   * ```
+   */
   async activatePlugin(name: string): Promise<void> {
     const entry = this.pluginRegistry.get(name);
     if (!entry) {
@@ -91,6 +157,20 @@ export class Kernel implements KernelAPI {
     logger.info(`[Kernel] Plugin "${name}" activated`);
   }
 
+  /**
+   * 停用指定插件
+   *
+   * 停用前会先停用所有依赖此插件的其他插件。
+   * 调用插件的 onDeactivate 生命周期钩子并清理注册的资源。
+   *
+   * @param name - 插件名称
+   * @throws 如果插件未注册
+   *
+   * @example
+   * ```typescript
+   * await kernel.deactivatePlugin('my-plugin');
+   * ```
+   */
   async deactivatePlugin(name: string): Promise<void> {
     const entry = this.pluginRegistry.get(name);
     if (!entry) {
@@ -124,6 +204,17 @@ export class Kernel implements KernelAPI {
     logger.info(`[Kernel] Plugin "${name}" deactivated`);
   }
 
+  /**
+   * 激活所有已注册的插件
+   *
+   * 按依赖关系的拓扑顺序激活所有插件。
+   * 确保依赖项先于依赖它们的插件被激活。
+   *
+   * @example
+   * ```typescript
+   * await kernel.activateAll();
+   * ```
+   */
   async activateAll(): Promise<void> {
     const plugins = Array.from(this.pluginRegistry.values()).map(
       (entry) => entry.plugin,
@@ -143,6 +234,17 @@ export class Kernel implements KernelAPI {
     );
   }
 
+  /**
+   * 停用所有已激活的插件
+   *
+   * 按依赖关系的逆拓扑顺序停用所有插件。
+   * 确保依赖项在依赖它们的插件之后被停用。
+   *
+   * @example
+   * ```typescript
+   * await kernel.deactivateAll();
+   * ```
+   */
   async deactivateAll(): Promise<void> {
     const plugins = Array.from(this.pluginRegistry.values()).map(
       (entry) => entry.plugin,
@@ -161,6 +263,21 @@ export class Kernel implements KernelAPI {
     logger.info("[Kernel] All plugins deactivated");
   }
 
+  /**
+   * 注册服务到服务容器
+   *
+   * 将服务实例注册到内核的服务容器中，供其他插件使用。
+   * 如果在插件上下文中调用，会自动关联到当前插件。
+   *
+   * @template T - 服务类型
+   * @param name - 服务名称
+   * @param service - 服务实例
+   *
+   * @example
+   * ```typescript
+   * kernel.registerService('logger', new LoggerService());
+   * ```
+   */
   registerService<T>(name: string, service: T): void {
     if (this.serviceContainer.has(name)) {
       logger.warn(`[Kernel] Service "${name}" is already registered, overwriting`);
@@ -180,11 +297,43 @@ export class Kernel implements KernelAPI {
     );
   }
 
+  /**
+   * 从服务容器获取服务
+   *
+   * 根据名称获取已注册的服务实例。
+   *
+   * @template T - 服务类型
+   * @param name - 服务名称
+   * @returns 服务实例，如果不存在则返回 undefined
+   *
+   * @example
+   * ```typescript
+   * const logger = kernel.getService<LoggerService>('logger');
+   * logger?.info('Hello');
+   * ```
+   */
   getService<T>(name: string): T | undefined {
     const service = this.serviceContainer.get(name);
     return service as T | undefined;
   }
 
+  /**
+   * 注册路由
+   *
+   * 注册 Express 路由到内核。如果在插件上下文中调用，
+   * 会自动关联到当前插件，便于后续清理。
+   *
+   * @param prefix - 路由前缀（如 '/api/my-plugin'）
+   * @param router - Express Router 实例
+   * @param options - 路由选项（如中间件配置）
+   *
+   * @example
+   * ```typescript
+   * const router = express.Router();
+   * router.get('/data', (req, res) => res.json({ data: 'hello' }));
+   * kernel.registerRoutes('/api/my-plugin', router);
+   * ```
+   */
   registerRoutes(prefix: string, router: Router, options?: RouteOptions): void {
     this.routeRegistry.set(prefix, { prefix, router, options });
 
@@ -200,10 +349,31 @@ export class Kernel implements KernelAPI {
     );
   }
 
+  /**
+   * 获取所有已注册的路由
+   *
+   * @returns 路由注册表的副本
+   */
   getRegisteredRoutes(): Map<string, { prefix: string; router: Router; options?: RouteOptions }> {
     return new Map(this.routeRegistry);
   }
 
+  /**
+   * 注册扩展
+   *
+   * 向指定扩展点注册扩展实现。扩展点允许插件扩展系统功能。
+   *
+   * @param pointName - 扩展点名称
+   * @param extension - 扩展实现
+   *
+   * @example
+   * ```typescript
+   * kernel.registerExtension('menu-items', {
+   *   label: '我的菜单',
+   *   action: () => console.log('clicked')
+   * });
+   * ```
+   */
   registerExtension(pointName: string, extension: unknown): void {
     const pluginName = this.currentPluginName ?? "unknown";
     this.extensionPoint.register(pointName, pluginName, extension);
@@ -220,10 +390,38 @@ export class Kernel implements KernelAPI {
     }
   }
 
+  /**
+   * 获取扩展点的所有扩展
+   *
+   * @param pointName - 扩展点名称
+   * @returns 该扩展点的所有扩展实现数组
+   *
+   * @example
+   * ```typescript
+   * const menuItems = kernel.getExtensions('menu-items');
+   * menuItems.forEach(item => console.log(item.label));
+   * ```
+   */
   getExtensions(pointName: string): unknown[] {
     return this.extensionPoint.getExtensions(pointName);
   }
 
+  /**
+   * 注册事件类型
+   *
+   * 注册一个事件类型，可选地关联 Zod Schema 用于事件负载验证。
+   *
+   * @param eventType - 事件类型名称
+   * @param schema - 可选的 Zod Schema，用于验证事件负载
+   *
+   * @example
+   * ```typescript
+   * kernel.registerEventType('user.created', z.object({
+   *   userId: z.string(),
+   *   email: z.string()
+   * }));
+   * ```
+   */
   registerEventType(eventType: string, schema?: ZodSchema): void {
     if (this.eventTypeRegistry.has(eventType)) {
       logger.warn(
@@ -248,6 +446,21 @@ export class Kernel implements KernelAPI {
     );
   }
 
+  /**
+   * 订阅事件
+   *
+   * 订阅指定类型的事件，当事件发布时调用处理函数。
+   *
+   * @param eventType - 事件类型名称
+   * @param handler - 事件处理函数
+   *
+   * @example
+   * ```typescript
+   * kernel.subscribe('user.created', async (event) => {
+   *   console.log('User created:', event.payload.userId);
+   * });
+   * ```
+   */
   subscribe(eventType: string, handler: AppEventHandler): void {
     if (!this.eventHandlers.has(eventType)) {
       this.eventHandlers.set(eventType, new Set());
@@ -267,6 +480,14 @@ export class Kernel implements KernelAPI {
     );
   }
 
+  /**
+   * 取消订阅事件
+   *
+   * 移除指定事件类型的处理函数。
+   *
+   * @param eventType - 事件类型名称
+   * @param handler - 要移除的事件处理函数
+   */
   unsubscribe(eventType: string, handler: AppEventHandler): void {
     const handlers = this.eventHandlers.get(eventType);
     if (handlers) {
@@ -287,6 +508,27 @@ export class Kernel implements KernelAPI {
     }
   }
 
+  /**
+   * 发布事件
+   *
+   * 发布事件到所有订阅者。如果事件类型注册了 Schema，
+   * 会先验证事件负载。事件会异步分发给所有处理函数。
+   *
+   * @template T - 事件负载类型
+   * @param eventType - 事件类型名称
+   * @param payload - 事件负载数据
+   * @param userId - 用户 ID
+   * @param source - 可选的事件来源标识
+   * @throws 如果事件负载验证失败
+   *
+   * @example
+   * ```typescript
+   * await kernel.publish('user.created', {
+   *   userId: '123',
+   *   email: 'user@example.com'
+   * }, 'system');
+   * ```
+   */
   async publish<T>(
     eventType: string,
     payload: T,
@@ -339,6 +581,22 @@ export class Kernel implements KernelAPI {
     await Promise.allSettled(promises);
   }
 
+  /**
+   * 注册插件配置 Schema
+   *
+   * 注册 Zod Schema 用于验证插件配置。
+   *
+   * @param pluginName - 插件名称
+   * @param schema - Zod Schema
+   *
+   * @example
+   * ```typescript
+   * kernel.registerConfigSchema('my-plugin', z.object({
+   *   apiKey: z.string(),
+   *   timeout: z.number().optional()
+   * }));
+   * ```
+   */
   registerConfigSchema(pluginName: string, schema: ZodSchema): void {
     this.configSchemas.set(pluginName, schema);
 
@@ -349,10 +607,25 @@ export class Kernel implements KernelAPI {
     logger.info(`[Kernel] Config schema registered for plugin "${pluginName}"`);
   }
 
+  /**
+   * 获取插件配置
+   *
+   * @param pluginName - 插件名称
+   * @returns 插件配置对象，如果不存在则返回空对象
+   */
   getPluginConfig(pluginName: string): Record<string, unknown> {
     return this.configValues.get(pluginName) ?? {};
   }
 
+  /**
+   * 设置插件配置
+   *
+   * 设置插件配置，如果注册了 Schema 会先验证配置。
+   *
+   * @param pluginName - 插件名称
+   * @param config - 配置对象
+   * @throws 如果配置验证失败
+   */
   setPluginConfig(
     pluginName: string,
     config: Record<string, unknown>,
@@ -369,20 +642,44 @@ export class Kernel implements KernelAPI {
     this.configValues.set(pluginName, config);
   }
 
+  /**
+   * 获取插件条目
+   *
+   * @param name - 插件名称
+   * @returns 插件条目，如果不存在则返回 undefined
+   */
   getPlugin(name: string): PluginEntry | undefined {
     return this.pluginRegistry.get(name);
   }
 
+  /**
+   * 获取所有插件名称
+   *
+   * @returns 所有已注册插件的名称数组
+   */
   getPluginNames(): string[] {
     return [...this.pluginRegistry.keys()];
   }
 
+  /**
+   * 获取所有已激活插件名称
+   *
+   * @returns 所有已激活插件的名称数组
+   */
   getActivePluginNames(): string[] {
     return [...this.pluginRegistry.entries()]
       .filter(([, entry]) => entry.state === "active")
       .map(([name]) => name);
   }
 
+  /**
+   * 卸载插件
+   *
+   * 完全移除插件，包括停用、清理所有注册的资源、
+   * 调用 onUninstall 生命周期钩子。
+   *
+   * @param name - 插件名称
+   */
   unregisterPlugin(name: string): void {
     const entry = this.pluginRegistry.get(name);
     if (!entry) {
@@ -436,6 +733,22 @@ export class Kernel implements KernelAPI {
     logger.info(`[Kernel] Plugin "${name}" unregistered`);
   }
 
+  /**
+   * 从清单文件加载插件
+   *
+   * 读取并验证插件清单文件，加载插件模块并注册到内核。
+   *
+   * @param manifestPath - 清单文件路径（manifest.json）
+   * @returns 加载结果，包含成功状态和可选的错误信息
+   *
+   * @example
+   * ```typescript
+   * const result = await kernel.loadPluginFromManifest('/path/to/plugin/manifest.json');
+   * if (!result.success) {
+   *   console.error('Failed to load plugin:', result.error);
+   * }
+   * ```
+   */
   async loadPluginFromManifest(manifestPath: string): Promise<{ success: boolean; error?: string }> {
     if (!fs.existsSync(manifestPath)) {
       return { success: false, error: `Manifest file not found: ${manifestPath}` };
@@ -493,6 +806,12 @@ export class Kernel implements KernelAPI {
     return { success: true };
   }
 
+  /**
+   * 获取插件状态
+   *
+   * @param name - 插件名称
+   * @returns 插件状态信息，如果插件不存在则返回 undefined
+   */
   getPluginState(name: string): { state: string; errorMessage?: string } | undefined {
     const entry = this.pluginRegistry.get(name);
     if (!entry) {

@@ -18,12 +18,16 @@ export const registerServiceWorker = async (config: ServiceWorkerConfig = {}): P
           installingWorker.addEventListener('statechange', () => {
             if (installingWorker.state === 'installed') {
               if (navigator.serviceWorker.controller) {
-                console.log('[SW] New content available, please refresh.');
+                if (import.meta.env.DEV) {
+                  console.debug('[SW] New content available, please refresh.');
+                }
                 if (config.onUpdate) {
                   config.onUpdate(registration);
                 }
               } else {
-                console.log('[SW] Content cached for offline use.');
+                if (import.meta.env.DEV) {
+                  console.debug('[SW] Content cached for offline use.');
+                }
                 if (config.onSuccess) {
                   config.onSuccess(registration);
                 }
@@ -34,14 +38,18 @@ export const registerServiceWorker = async (config: ServiceWorkerConfig = {}): P
       });
 
       window.addEventListener('online', () => {
-        console.log('[SW] Back online');
+        if (import.meta.env.DEV) {
+          console.debug('[SW] Back online');
+        }
         if (config.onOnline) {
           config.onOnline();
         }
       });
 
       window.addEventListener('offline', () => {
-        console.log('[SW] Gone offline');
+        if (import.meta.env.DEV) {
+          console.debug('[SW] Gone offline');
+        }
         if (config.onOffline) {
           config.onOffline();
         }

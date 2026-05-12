@@ -152,7 +152,9 @@ const reportMetrics = async (): Promise<void> => {
     }
   });
 
-  console.log('[Performance] Web Vitals:', webVitals);
+  if (import.meta.env.DEV) {
+    console.debug('[Performance] Web Vitals:', webVitals);
+  }
 
   try {
     await request('/analytics/performance', {

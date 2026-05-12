@@ -1521,6 +1521,9 @@ export const GraphEditor = () => {
         isReadOnly={isReadOnly}
         isLiteratureExtractOpen={isLiteratureExtractOpen}
         setIsLiteratureExtractOpen={setIsLiteratureExtractOpen}
+        regions={regions}
+        collapsedRegions={collapsedRegions}
+        onRegionToggle={handleRegionToggle}
       />
 
       {state.isPresentationMode && (

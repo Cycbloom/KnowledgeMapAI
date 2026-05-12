@@ -727,11 +727,7 @@ router.put(
       .single();
 
     if (updateError) {
-      throw new AppError(
-        "更新视图模式失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("更新视图模式失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     res.json(updatedGraph);
@@ -2129,14 +2125,16 @@ const validateBackboneSchema = z.object({
         title: z.string().min(1).max(200),
         properties: z
           .object({
-            backboneModule: z.enum([
-              "research_background",
-              "literature_review",
-              "research_methods",
-              "core_concepts",
-              "application_domains",
-              "future_directions",
-            ]).optional(),
+            backboneModule: z
+              .enum([
+                "research_background",
+                "literature_review",
+                "research_methods",
+                "core_concepts",
+                "application_domains",
+                "future_directions",
+              ])
+              .optional(),
           })
           .optional(),
       }),
@@ -2176,8 +2174,7 @@ router.post(
         throw new AppError("图谱不存在", 404, ErrorCodes.NOT_FOUND);
       }
 
-      const validationContext =
-        context || `图谱主题：${graph.title}`;
+      const validationContext = context || `图谱主题：${graph.title}`;
 
       let result;
       if (useAI) {
@@ -2261,7 +2258,10 @@ router.post(
         .is("deleted_at", null);
 
       if (nodesError) {
-        logger.error("查询核心节点失败", { graphId, error: nodesError.message });
+        logger.error("查询核心节点失败", {
+          graphId,
+          error: nodesError.message,
+        });
         throw new AppError("查询节点失败", 500, ErrorCodes.INTERNAL_ERROR);
       }
 
@@ -2281,7 +2281,9 @@ router.post(
         if (!kp) continue;
 
         const properties = (kp.properties || {}) as Record<string, any>;
-        const currentModule = properties.backboneModule as BackboneModule | undefined;
+        const currentModule = properties.backboneModule as
+          | BackboneModule
+          | undefined;
 
         if (currentModule) {
           details.push({

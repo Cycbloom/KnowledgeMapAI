@@ -43,11 +43,7 @@ export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
   const lineStyle = LINE_STYLES[relationType] || LINE_STYLES.default;
 
   const strokeDasharray =
-    lineStyle === "dashed"
-      ? "8,4"
-      : lineStyle === "dotted"
-        ? "2,4"
-        : "none";
+    lineStyle === "dashed" ? "8,4" : lineStyle === "dotted" ? "2,4" : "none";
 
   const opacity = highlighted ? 0.9 : isDark ? 0.4 : 0.5;
 

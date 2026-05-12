@@ -10,17 +10,20 @@ export const useQuadrantViewState = (graphId: string) => {
   const updateGraphMutation = useUpdateGraphMutation();
 
   const [collapsedRegions, setCollapsedRegions] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
-  const [originPosition, setOriginPosition] = useState<{ x: number; y: number }>(
-    DEFAULT_ORIGIN_POSITION
-  );
+  const [originPosition, setOriginPosition] = useState<{
+    x: number;
+    y: number;
+  }>(DEFAULT_ORIGIN_POSITION);
   const [customRegions, setCustomRegions] = useState<CustomRegion[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (graph?.settings && !isInitialized) {
-      const viewState = graph.settings.quadrantViewState as QuadrantViewState | undefined;
+      const viewState = graph.settings.quadrantViewState as
+        | QuadrantViewState
+        | undefined;
       if (viewState) {
         if (viewState.collapsedRegions) {
           setCollapsedRegions(new Set(viewState.collapsedRegions));
@@ -41,11 +44,12 @@ export const useQuadrantViewState = (graphId: string) => {
       if (!graphId) return;
 
       const currentSettings = graph?.settings || {};
-      const currentViewState = (currentSettings.quadrantViewState as QuadrantViewState) || {
-        originPosition: DEFAULT_ORIGIN_POSITION,
-        collapsedRegions: [],
-        customRegions: [],
-      };
+      const currentViewState =
+        (currentSettings.quadrantViewState as QuadrantViewState) || {
+          originPosition: DEFAULT_ORIGIN_POSITION,
+          collapsedRegions: [],
+          customRegions: [],
+        };
 
       const newViewState: QuadrantViewState = {
         ...currentViewState,
@@ -66,7 +70,7 @@ export const useQuadrantViewState = (graphId: string) => {
         console.error("Failed to save quadrant view state:", error);
       }
     },
-    [graphId, graph?.settings, updateGraphMutation]
+    [graphId, graph?.settings, updateGraphMutation],
   );
 
   const toggleRegion = useCallback(
@@ -82,7 +86,7 @@ export const useQuadrantViewState = (graphId: string) => {
         return newSet;
       });
     },
-    [saveViewState]
+    [saveViewState],
   );
 
   const updateOriginPosition = useCallback(
@@ -90,7 +94,7 @@ export const useQuadrantViewState = (graphId: string) => {
       setOriginPosition(position);
       saveViewState({ originPosition: position });
     },
-    [saveViewState]
+    [saveViewState],
   );
 
   const addCustomRegion = useCallback(
@@ -108,7 +112,7 @@ export const useQuadrantViewState = (graphId: string) => {
       });
       return newRegion;
     },
-    [saveViewState]
+    [saveViewState],
   );
 
   const updateCustomRegion = useCallback(
@@ -117,13 +121,13 @@ export const useQuadrantViewState = (graphId: string) => {
         const newRegions = prev.map((region) =>
           region.id === regionId
             ? { ...region, ...updates, updatedAt: new Date().toISOString() }
-            : region
+            : region,
         );
         saveViewState({ customRegions: newRegions });
         return newRegions;
       });
     },
-    [saveViewState]
+    [saveViewState],
   );
 
   const removeCustomRegion = useCallback(
@@ -134,7 +138,7 @@ export const useQuadrantViewState = (graphId: string) => {
         return newRegions;
       });
     },
-    [saveViewState]
+    [saveViewState],
   );
 
   const expandAllRegions = useCallback(() => {
@@ -148,12 +152,12 @@ export const useQuadrantViewState = (graphId: string) => {
       setCollapsedRegions(newSet);
       saveViewState({ collapsedRegions: Array.from(newSet) });
     },
-    [saveViewState]
+    [saveViewState],
   );
 
   const isRegionCollapsed = useCallback(
     (regionId: string) => collapsedRegions.has(regionId),
-    [collapsedRegions]
+    [collapsedRegions],
   );
 
   return {

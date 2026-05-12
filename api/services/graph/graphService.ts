@@ -106,7 +106,7 @@ export class GraphService {
         });
       },
       CacheTTL.DYNAMIC,
-      [`user:${userId}`]
+      [`user:${userId}`],
     );
   }
 
@@ -881,7 +881,7 @@ export class GraphService {
         return { nodes, edges: edges || [] };
       },
       CacheTTL.GRAPH_NODES,
-      userId ? [`user:${userId}`, `graph:${graphId}`] : [`graph:${graphId}`]
+      userId ? [`user:${userId}`, `graph:${graphId}`] : [`graph:${graphId}`],
     );
   }
 

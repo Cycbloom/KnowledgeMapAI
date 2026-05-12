@@ -5,7 +5,6 @@ import type { RegionInfo } from "@shared/types/graph";
 interface RegionHeaderProps {
   region: RegionInfo;
   isCollapsed: boolean;
-  onToggle: () => void;
   originX: number;
   originY: number;
   radius: number;
@@ -15,7 +14,6 @@ interface RegionHeaderProps {
 export const RegionHeader: React.FC<RegionHeaderProps> = ({
   region,
   isCollapsed,
-  onToggle,
   originX,
   originY,
   radius,
@@ -53,11 +51,7 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
   const collapsedCircleStroke = region.color;
 
   return (
-    <g
-      onClick={onToggle}
-      style={{ cursor: "pointer" }}
-      data-region-id={region.id}
-    >
+    <g data-region-id={region.id}>
       <motion.g
         initial={false}
         animate={{ opacity: isCollapsed ? 0.6 : 1 }}

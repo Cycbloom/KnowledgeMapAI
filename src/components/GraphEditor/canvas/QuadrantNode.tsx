@@ -107,11 +107,11 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   const distanceRatio = useMemo(() => {
     const seed = hashCode(node.id);
     const random = seededRandom(seed);
-    const baseRatio = 0.5;
-    const randomOffset = (random - 0.5) * 0.4;
+    const baseRatio = 0.55;
+    const randomOffset = (random - 0.5) * 0.5;
     const levelFactor = node.level === "sub" ? 0.05 : 0;
     const ratio = baseRatio + randomOffset + levelFactor;
-    return Math.max(0.3, Math.min(0.8, ratio));
+    return Math.max(0.25, Math.min(0.85, ratio));
   }, [node.id, node.level]);
 
   const distance = regionRadius * distanceRatio;

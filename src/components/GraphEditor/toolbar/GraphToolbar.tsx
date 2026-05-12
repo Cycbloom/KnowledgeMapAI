@@ -160,6 +160,17 @@ interface GraphToolbarProps {
   // Literature Extract
   isLiteratureExtractOpen?: boolean;
   setIsLiteratureExtractOpen?: (open: boolean) => void;
+
+  // Region Control (Quadrant View)
+  regions?: Array<{
+    id: string;
+    name: string;
+    color: string;
+    icon?: string;
+    nodes: Array<{ id: string }>;
+  }>;
+  collapsedRegions?: string[];
+  onRegionToggle?: (regionId: string) => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -228,6 +239,9 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isReadOnly = false,
   isLiteratureExtractOpen,
   setIsLiteratureExtractOpen,
+  regions,
+  collapsedRegions,
+  onRegionToggle,
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -240,6 +254,13 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState<
     "ai" | "view" | "more" | null
   >(null);
+  const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (openDropdown !== "view") {
+      setIsSubMenuOpen(false);
+    }
+  }, [openDropdown]);
 
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(null);
@@ -889,14 +910,42 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     activeClass,
     disabled,
     children,
+    keepOpenOnChildClick,
+    subMenuOpen,
+    onSubMenuToggle,
   }: any) => {
+    const [internalSubMenuOpen, setInternalSubMenuOpen] = useState(false);
+
+    const isOpen =
+      keepOpenOnChildClick && subMenuOpen !== undefined
+        ? subMenuOpen
+        : internalSubMenuOpen;
+
+    const handleToggle = keepOpenOnChildClick
+      ? onSubMenuToggle || (() => setInternalSubMenuOpen(!internalSubMenuOpen))
+      : undefined;
+
     return (
-      <div className="relative w-full group">
+      <div
+        className="relative w-full"
+        onMouseEnter={() => {
+          if (children && !keepOpenOnChildClick) {
+            setInternalSubMenuOpen(true);
+          }
+        }}
+        onMouseLeave={() => {
+          if (children && !keepOpenOnChildClick) {
+            setInternalSubMenuOpen(false);
+          }
+        }}
+      >
         <button
           disabled={disabled}
           onClick={(e) => {
             e.stopPropagation();
-            if (!children) {
+            if (children && keepOpenOnChildClick) {
+              handleToggle?.();
+            } else if (!children) {
               onClick?.();
               setOpenDropdown(null);
             }
@@ -914,12 +963,22 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         >
           <Icon size={18} className="flex-shrink-0" />
           <span className="flex-grow text-left font-medium">{label}</span>
-          {children && <ChevronRight size={14} className="opacity-50" />}
+          {children && (
+            <ChevronRight
+              size={14}
+              className={`opacity-50 transition-transform ${isOpen && keepOpenOnChildClick ? "rotate-90" : ""}`}
+            />
+          )}
         </button>
 
-        {children && (
+        {children && isOpen && (
           <div
-            className={`absolute top-0 left-full ml-1 p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in slide-in-from-left-2 duration-150 hidden group-hover:flex`}
+            className={`absolute top-0 left-full ml-1 p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in slide-in-from-left-2 duration-150`}
+            onClick={(e) => {
+              if (keepOpenOnChildClick) {
+                e.stopPropagation();
+              }
+            }}
           >
             {children}
           </div>
@@ -1233,6 +1292,76 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             ))}
           </div>
         </div>
+        {viewMode === "quadrant" && regions && regions.length > 0 && (
+          <>
+            <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+            <MenuItem
+              icon={Layers}
+              label="区域控制"
+              keepOpenOnChildClick
+              subMenuOpen={isSubMenuOpen}
+              onSubMenuToggle={() => setIsSubMenuOpen(!isSubMenuOpen)}
+            >
+              {regions.map((region) => {
+                const isCollapsed = collapsedRegions?.includes(region.id);
+                const nodeCount = region.nodes.length;
+                return (
+                  <button
+                    key={region.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRegionToggle?.(region.id);
+                    }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all ${
+                      isDark
+                        ? "hover:bg-slate-700 text-gray-300"
+                        : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                        isCollapsed
+                          ? "border-gray-400 bg-transparent"
+                          : "border-primary-500 bg-primary-500"
+                      }`}
+                    >
+                      {!isCollapsed && (
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: region.color }}
+                    />
+                    <span className="flex-1 text-left truncate">
+                      {region.icon ? `${region.icon} ` : ""}
+                      {region.name}
+                    </span>
+                    <span
+                      className={`text-xs ${
+                        isDark ? "text-gray-500" : "text-gray-400"
+                      }`}
+                    >
+                      ({nodeCount})
+                    </span>
+                  </button>
+                );
+              })}
+            </MenuItem>
+          </>
+        )}
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem
           onClick={() =>

@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { GraphViewMode } from '../../types';
-import { useGraph } from '../queries/useGraphQueries';
-import { useUpdateGraphMutation } from '../mutations/useGraphMutations';
+import { useState, useEffect, useCallback } from "react";
+import { GraphViewMode } from "../../types";
+import { useGraph } from "../queries/useGraphQueries";
+import { useUpdateGraphMutation } from "../mutations/useGraphMutations";
 
 export interface ViewState {
   showGrid: boolean;
@@ -22,14 +22,16 @@ export interface ViewState {
 
 export const useViewState = (graphId?: string): ViewState => {
   const [showGrid, setShowGrid] = useState(false);
-  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<GraphViewMode>('mindmap');
+  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [viewMode, setViewMode] = useState<GraphViewMode>("mindmap");
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const { data: graph } = useGraph(graphId || '');
+  const { data: graph } = useGraph(graphId || "");
   const updateGraphMutation = useUpdateGraphMutation();
 
   useEffect(() => {
@@ -42,36 +44,41 @@ export const useViewState = (graphId?: string): ViewState => {
     }
   }, [graph?.settings, isInitialized, graphId]);
 
-  const saveViewMode = useCallback(async (mode: GraphViewMode) => {
-    if (!graphId) return;
+  const saveViewMode = useCallback(
+    async (mode: GraphViewMode) => {
+      if (!graphId) return;
 
-    try {
-      await updateGraphMutation.mutateAsync({
-        id: graphId,
-        data: {
-          settings: {
-            ...(graph?.settings || {}),
-            viewMode: mode,
+      try {
+        await updateGraphMutation.mutateAsync({
+          id: graphId,
+          data: {
+            settings: {
+              ...(graph?.settings || {}),
+              viewMode: mode,
+            },
           },
-        },
-      });
-    } catch (error) {
-      console.error('Failed to save view mode:', error);
-    }
-  }, [graphId, graph, updateGraphMutation]);
-
-  const handleSetViewMode: React.Dispatch<React.SetStateAction<GraphViewMode>> = useCallback(
-    (action) => {
-      setViewMode((prevMode) => {
-        const newMode = typeof action === 'function' ? action(prevMode) : action;
-        if (newMode !== prevMode && graphId) {
-          saveViewMode(newMode);
-        }
-        return newMode;
-      });
+        });
+      } catch (error) {
+        console.error("Failed to save view mode:", error);
+      }
     },
-    [graphId, saveViewMode]
+    [graphId, graph, updateGraphMutation],
   );
+
+  const handleSetViewMode: React.Dispatch<React.SetStateAction<GraphViewMode>> =
+    useCallback(
+      (action) => {
+        setViewMode((prevMode) => {
+          const newMode =
+            typeof action === "function" ? action(prevMode) : action;
+          if (newMode !== prevMode && graphId) {
+            saveViewMode(newMode);
+          }
+          return newMode;
+        });
+      },
+      [graphId, saveViewMode],
+    );
 
   return {
     showGrid,

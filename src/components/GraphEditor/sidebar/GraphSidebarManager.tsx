@@ -35,7 +35,9 @@ interface GraphSidebarManagerProps {
   onConnectNodes?: (sourceId: string, targetId: string) => void;
   isReadOnly?: boolean;
   customRegions?: CustomRegion[];
-  onCreateRegion?: (region: Omit<CustomRegion, "id" | "createdAt" | "updatedAt">) => void;
+  onCreateRegion?: (
+    region: Omit<CustomRegion, "id" | "createdAt" | "updatedAt">,
+  ) => void;
 }
 
 export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({

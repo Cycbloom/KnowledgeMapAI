@@ -77,11 +77,11 @@ function getNodePosition(
 
   const seed = hashCode(node.id);
   const random = seededRandom(seed);
-  const baseRatio = 0.5;
-  const randomOffset = (random - 0.5) * 0.4;
+  const baseRatio = 0.55;
+  const randomOffset = (random - 0.5) * 0.5;
   const levelFactor = node.level === "sub" ? 0.05 : 0;
   const ratio = baseRatio + randomOffset + levelFactor;
-  const distanceRatio = Math.max(0.3, Math.min(0.8, ratio));
+  const distanceRatio = Math.max(0.25, Math.min(0.85, ratio));
 
   const distance = regionRadius * distanceRatio;
 
@@ -145,18 +145,40 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
 
     const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
 
+    const visibleRegions = useMemo(() => {
+      const filtered = regions.filter(
+        (region) => !collapsedRegions.has(region.id),
+      );
+      if (filtered.length === 0) return [];
+
+      const angleStep = (2 * Math.PI) / filtered.length;
+
+      return filtered.map((region, index) => ({
+        ...region,
+        angleStart: index * angleStep,
+        angleEnd: (index + 1) * angleStep,
+      }));
+    }, [regions, collapsedRegions]);
+
+    const totalNodeCount = useMemo(() => {
+      return visibleRegions.reduce(
+        (sum, region) => sum + region.nodes.length,
+        0,
+      );
+    }, [visibleRegions]);
+
     const regionRadius = useMemo(() => {
       const minDimension = Math.min(containerSize.width, containerSize.height);
-      return minDimension * 0.4;
-    }, [containerSize]);
+      const baseRadius = minDimension * 0.35;
+      const nodeDensityFactor = Math.min(1.5, 1 + totalNodeCount / 50);
+      return baseRadius * nodeDensityFactor;
+    }, [containerSize, totalNodeCount]);
 
     const nodePositions = useMemo(() => {
-      const positions: Record<
-        string,
-        { x: number; y: number; angle: number }
-      > = {};
+      const positions: Record<string, { x: number; y: number; angle: number }> =
+        {};
 
-      regions.forEach((region) => {
+      visibleRegions.forEach((region) => {
         const regionNodes = region.nodes.filter((n) => n.level !== "core");
         regionNodes.forEach((node, index) => {
           positions[node.id] = getNodePosition(
@@ -172,7 +194,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
       });
 
       return positions;
-    }, [regions, originPosition, regionRadius]);
+    }, [visibleRegions, originPosition, regionRadius]);
 
     const regionEdges = useMemo(() => {
       const nodeIds = new Set(Object.keys(nodePositions));
@@ -372,7 +394,13 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
           setTransform(newTransform);
         }
       },
-      [isDragging, isDraggingOrigin, dragStart, onOriginMove, updateTransformDOM],
+      [
+        isDragging,
+        isDraggingOrigin,
+        dragStart,
+        onOriginMove,
+        updateTransformDOM,
+      ],
     );
 
     const handleMouseUp = useCallback(() => {
@@ -396,20 +424,11 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
       [],
     );
 
-    const getRegionOpacity = useCallback(
-      (regionId: string) => {
-        return collapsedRegions.has(regionId) ? 0.3 : 0.15;
-      },
-      [collapsedRegions],
-    );
-
-    const isRegionCollapsed = useCallback(
-      (regionId: string) => collapsedRegions.has(regionId),
-      [collapsedRegions],
-    );
-
     return (
-      <div ref={containerRef} className="relative w-full h-full overflow-hidden">
+      <div
+        ref={containerRef}
+        className="relative w-full h-full overflow-hidden"
+      >
         <svg
           ref={svgRef}
           width="100%"
@@ -428,8 +447,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
           onMouseLeave={handleMouseUp}
         >
           <g ref={contentRef}>
-            {regions.map((region) => {
-              const isCollapsed = isRegionCollapsed(region.id);
+            {visibleRegions.map((region) => {
               return (
                 <g key={region.id}>
                   <motion.g
@@ -439,7 +457,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                   >
                     <RegionBackground
                       region={region}
-                      opacity={getRegionOpacity(region.id)}
+                      opacity={0.15}
                       radius={regionRadius}
                       originX={originPosition.x}
                       originY={originPosition.y}
@@ -447,8 +465,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                   </motion.g>
                   <RegionHeader
                     region={region}
-                    isCollapsed={isCollapsed}
-                    onToggle={() => handleRegionToggle(region.id)}
+                    isCollapsed={false}
                     originX={originPosition.x}
                     originY={originPosition.y}
                     radius={regionRadius}
@@ -458,70 +475,66 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
               );
             })}
 
-            {!collapsedRegions ||
-              (collapsedRegions.size === 0 &&
-                regionEdges.map((edge) => {
-                  const sourcePos = nodePositions[edge.source_knowledge_point_id];
-                  const targetPos = nodePositions[edge.target_knowledge_point_id];
+            {regionEdges.map((edge) => {
+              const sourcePos = nodePositions[edge.source_knowledge_point_id];
+              const targetPos = nodePositions[edge.target_knowledge_point_id];
 
-                  if (!sourcePos || !targetPos) return null;
+              if (!sourcePos || !targetPos) return null;
 
-                  return (
-                    <QuadrantEdge
-                      key={edge.id}
-                      edge={edge}
-                      sourceX={sourcePos.x}
-                      sourceY={sourcePos.y}
-                      targetX={targetPos.x}
-                      targetY={targetPos.y}
-                      isDark={isDark}
-                    />
-                  );
-                }))}
+              return (
+                <QuadrantEdge
+                  key={edge.id}
+                  edge={edge}
+                  sourceX={sourcePos.x}
+                  sourceY={sourcePos.y}
+                  targetX={targetPos.x}
+                  targetY={targetPos.y}
+                  isDark={isDark}
+                />
+              );
+            })}
 
-            {regions.map((region) => {
-              const isCollapsed = isRegionCollapsed(region.id);
+            {visibleRegions.map((region) => {
               return (
                 <g key={`nodes-${region.id}`}>
                   <AnimatePresence mode="popLayout">
-                    {!isCollapsed &&
-                      region.nodes
-                        .filter((node) => node.level !== "core")
-                        .map((node, index) => (
-                          <motion.g
-                            key={node.id}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.2, delay: index * 0.02 }}
-                          >
-                            <QuadrantNode
-                              node={node}
-                              edges={edges}
-                              nodeStatus={nodeStatus}
-                              selected={node.id === selectedNodeId}
-                              isDark={isDark}
-                              zoomLevel={transform.k}
-                              onClick={() => handleNodeClick(node)}
-                              colorScheme={_colorScheme}
-                              originX={originPosition.x}
-                              originY={originPosition.y}
-                              regionRadius={regionRadius}
-                              angle={getNodeAngle(
-                                node,
-                                region,
-                                index,
-                                region.nodes.filter((n) => n.level !== "core")
-                                  .length,
-                              )}
-                              focused={
-                                focusedNodeIds.has(node.id) ||
-                                node.id === focusedNodeId
-                              }
-                              hasFocusMode={hasFocusMode}
-                            />
-                          </motion.g>
-                        ))}
+                    {region.nodes
+                      .filter((node) => node.level !== "core")
+                      .map((node, index) => (
+                        <motion.g
+                          key={node.id}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.2, delay: index * 0.02 }}
+                        >
+                          <QuadrantNode
+                            node={node}
+                            edges={edges}
+                            nodeStatus={nodeStatus}
+                            selected={node.id === selectedNodeId}
+                            isDark={isDark}
+                            zoomLevel={transform.k}
+                            onClick={() => handleNodeClick(node)}
+                            colorScheme={_colorScheme}
+                            originX={originPosition.x}
+                            originY={originPosition.y}
+                            regionRadius={regionRadius}
+                            angle={getNodeAngle(
+                              node,
+                              region,
+                              index,
+                              region.nodes.filter((n) => n.level !== "core")
+                                .length,
+                            )}
+                            focused={
+                              focusedNodeIds.has(node.id) ||
+                              node.id === focusedNodeId
+                            }
+                            hasFocusMode={hasFocusMode}
+                          />
+                        </motion.g>
+                      ))}
                   </AnimatePresence>
                 </g>
               );

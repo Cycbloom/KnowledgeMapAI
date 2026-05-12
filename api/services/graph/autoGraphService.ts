@@ -17,6 +17,7 @@ export interface AINodeData {
   x_position: number;
   y_position: number;
   relationshipType?: string;
+  properties?: Record<string, unknown>;
 }
 
 export interface CreateEdgeData {
@@ -140,10 +141,29 @@ export class AutoGraphService {
                 graphNodeId: nodeData.parentId,
                 knowledgePointId: existingNode.knowledge_point_id,
               };
+              logger.info(`Found parent node in database`, {
+                parentId: nodeData.parentId,
+                knowledgePointId: existingNode.knowledge_point_id,
+                childTempId: nodeData.tempId,
+              });
+            } else {
+              logger.warn(`Parent node not found in database`, {
+                parentId: nodeData.parentId,
+                error: error?.message,
+                childTempId: nodeData.tempId,
+              });
             }
           } catch (e) {
-            logger.warn(`Could not find parent node ${nodeData.parentId} in database`);
+            logger.warn(`Could not find parent node ${nodeData.parentId} in database`, {
+              error: (e as Error).message,
+              childTempId: nodeData.tempId,
+            });
           }
+        } else if (parentInfo) {
+          logger.info(`Parent found in nodeMap`, {
+            parentId: nodeData.parentId,
+            childTempId: nodeData.tempId,
+          });
         }
 
         if (parentInfo && childInfo) {
@@ -153,12 +173,63 @@ export class AutoGraphService {
             target_knowledge_point_id: childInfo.knowledgePointId,
             relationship_type: nodeData.relationshipType || 'contains',
           });
+        } else {
+          logger.warn(`Could not create edge for node`, {
+            tempId: nodeData.tempId,
+            parentId: nodeData.parentId,
+            hasParentInfo: !!parentInfo,
+            hasChildInfo: !!childInfo,
+          });
         }
       }
     }
 
+    logger.info("Edges to create", {
+      count: edgesToCreate.length,
+      edges: edgesToCreate.map((e) => ({
+        source: e.source_knowledge_point_id,
+        target: e.target_knowledge_point_id,
+        type: e.relationship_type,
+      })),
+    });
+
     logger.info(`Inserting ${edgesToCreate.length} edges in batch...`);
     const edgeCount = await this.createEdgesBatch(supabase, edgesToCreate);
+
+    // Verify edges were created
+    if (edgesToCreate.length > 0) {
+      try {
+        const { data: createdEdges, error: verifyError } = await supabase
+          .from('edges')
+          .select('id, source_knowledge_point_id, target_knowledge_point_id, relationship_type')
+          .in('source_knowledge_point_id', edgesToCreate.map(e => e.source_knowledge_point_id))
+          .in('target_knowledge_point_id', edgesToCreate.map(e => e.target_knowledge_point_id))
+          .eq('graph_id', graphId)
+          .is('deleted_at', null);
+
+        if (verifyError) {
+          logger.error("Edge verification failed", {
+            error: verifyError.message,
+            code: verifyError.code,
+          });
+        } else {
+          logger.info("Edges verified", {
+            expected: edgesToCreate.length,
+            actual: createdEdges?.length || 0,
+            success: createdEdges?.length === edgesToCreate.length,
+            createdEdges: createdEdges?.map(e => ({
+              source: e.source_knowledge_point_id,
+              target: e.target_knowledge_point_id,
+              type: e.relationship_type,
+            })),
+          });
+        }
+      } catch (e) {
+        logger.error("Edge verification exception", {
+          error: (e as Error).message,
+        });
+      }
+    }
 
     logger.info(`Completed: ${graphNodeIds.length} nodes, ${edgeCount} edges`);
 
@@ -208,7 +279,8 @@ export class AutoGraphService {
         content: node.content || '',
         properties: {
           source: 'ai-generated',
-          generated_at: new Date().toISOString()
+          generated_at: new Date().toISOString(),
+          ...(node.properties || {}),
         },
         embedding: null,
         visibility: 'private' as const,
@@ -230,7 +302,10 @@ export class AutoGraphService {
                 .insert([{
                   title: batchNodes[j].title,
                   content: batchNodes[j].content || '',
-                  properties: { source: 'ai-generated' },
+                  properties: { 
+                    source: 'ai-generated',
+                    ...(batchNodes[j].properties || {}),
+                  },
                   embedding: null,
                   visibility: 'private',
                   owner_id: userId,

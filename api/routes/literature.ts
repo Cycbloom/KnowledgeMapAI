@@ -23,10 +23,10 @@ import type {
   ExtractedConcept,
   LiteratureInfo,
   ConceptType,
-  BackboneModule,
   ConceptSource,
   ReferenceBook,
 } from "@shared/types/graph";
+import { BackboneModule } from "@shared/types/graph";
 import { z } from "zod";
 
 const router = Router();
@@ -495,6 +495,15 @@ router.post(
       let addedCount = 0;
       let mergedCount = 0;
 
+      // Track mounting statistics
+      const mountingDetails: Array<{
+        conceptTitle: string;
+        targetModule?: BackboneModule;
+        mountedTo: string | null;
+        status: "success" | "failed";
+        reason?: string;
+      }> = [];
+
       const conceptsToProcess: ExtractedConcept[] = concepts;
       const conceptsWithEmbedding: Array<{
         concept: ExtractedConcept;
@@ -676,6 +685,15 @@ router.post(
         .eq("graph_id", graph_id)
         .is("deleted_at", null);
 
+      const TITLE_TO_MODULE_MAP: Record<string, BackboneModule> = {
+        研究背景: BackboneModule.RESEARCH_BACKGROUND,
+        文献综述: BackboneModule.LITERATURE_REVIEW,
+        研究方法: BackboneModule.RESEARCH_METHODS,
+        核心概念: BackboneModule.CORE_CONCEPTS,
+        应用领域: BackboneModule.APPLICATION_DOMAINS,
+        未来方向: BackboneModule.FUTURE_DIRECTIONS,
+      };
+
       const backboneModuleMap = new Map<BackboneModule, string>();
       const backboneNodeIds = new Set<string>();
 
@@ -686,8 +704,25 @@ router.post(
             title: string;
             properties?: { backboneModule?: BackboneModule };
           };
-          if (kp?.properties?.backboneModule) {
-            backboneModuleMap.set(kp.properties.backboneModule, gn.id);
+
+          if (!kp) continue;
+
+          let moduleValue = kp?.properties?.backboneModule;
+
+          if (!moduleValue) {
+            const matchedModule = TITLE_TO_MODULE_MAP[kp.title.trim()];
+            if (matchedModule) {
+              moduleValue = matchedModule;
+              logger.info(`Auto-matched backbone node by title`, {
+                nodeId: gn.id,
+                nodeTitle: kp.title,
+                matchedModule,
+              });
+            }
+          }
+
+          if (moduleValue) {
+            backboneModuleMap.set(moduleValue, gn.id);
             backboneNodeIds.add(gn.id);
           }
         }
@@ -696,6 +731,19 @@ router.post(
       logger.info("Backbone nodes loaded", {
         backboneModuleCount: backboneModuleMap.size,
         modules: Array.from(backboneModuleMap.keys()),
+        moduleDetails: Array.from(backboneModuleMap.entries()).map(
+          ([module, id]) => ({
+            module,
+            nodeId: id,
+          }),
+        ),
+        totalBackboneNodes: backboneNodes?.length || 0,
+        nodesWithoutModule: (backboneNodes || []).filter((gn) => {
+          const kp = gn.knowledge_points as unknown as {
+            properties?: { backboneModule?: BackboneModule };
+          };
+          return !kp?.properties?.backboneModule;
+        }).length,
       });
 
       if (nodesToCreate.length > 0) {
@@ -721,6 +769,18 @@ router.post(
           };
         });
 
+        logger.info("Nodes to create with parentId", {
+          nodeCount: aiNodesData.length,
+          nodesWithParent: aiNodesData.filter((n) => n.parentId).length,
+          nodesWithoutParent: aiNodesData.filter((n) => !n.parentId).length,
+          nodeDetails: aiNodesData.map((n) => ({
+            title: n.title,
+            parentId: n.parentId,
+            targetModule: nodesToCreate.find((nd) => nd.tempId === n.tempId)
+              ?.targetModule,
+          })),
+        });
+
         const createResult = await autoGraphService.processAINodes(
           supabase,
           req.user.id,
@@ -736,19 +796,63 @@ router.post(
 
           const nodeData = nodesToCreate.find((n) => n.tempId === tempId);
           if (nodeData && nodeData.source) {
-            await supabase
+            // First, get the current properties
+            const { data: currentKP } = await supabase
+              .from("knowledge_points")
+              .select("properties")
+              .eq("id", mapping.knowledgePointId)
+              .single();
+
+            const currentProperties =
+              (currentKP?.properties as Record<string, any>) || {};
+
+            // Merge the new properties with existing ones
+            const updatedProperties = {
+              ...currentProperties,
+              sources: [nodeData.source],
+              sourceCount: 1,
+              conceptType: conceptsToProcess.find((c) => c.title === tempId)
+                ?.type,
+              backboneModule: nodeData.targetModule,
+            };
+
+            const { error: updateError } = await supabase
               .from("knowledge_points")
               .update({
-                properties: {
-                  sources: [nodeData.source],
-                  sourceCount: 1,
-                  conceptType: conceptsToProcess.find((c) => c.title === tempId)
-                    ?.type,
-                  backboneModule: nodeData.targetModule,
-                },
+                properties: updatedProperties,
               })
               .eq("id", mapping.knowledgePointId);
+
+            if (updateError) {
+              logger.error("Failed to update knowledge point properties", {
+                knowledgePointId: mapping.knowledgePointId,
+                error: updateError.message,
+              });
+            } else {
+              logger.info("Updated knowledge point properties", {
+                knowledgePointId: mapping.knowledgePointId,
+                backboneModule: nodeData.targetModule,
+                conceptType: updatedProperties.conceptType,
+              });
+            }
           }
+
+          // Track mounting status
+          const nodeDataForMounting = nodesToCreate.find(
+            (n) => n.tempId === tempId,
+          );
+          const aiNodeData = aiNodesData.find((n) => n.tempId === tempId);
+
+          mountingDetails.push({
+            conceptTitle: tempId,
+            targetModule: nodeDataForMounting?.targetModule,
+            mountedTo: aiNodeData?.parentId || null,
+            status: aiNodeData?.parentId ? "success" : "failed",
+            reason:
+              nodeDataForMounting?.targetModule && !aiNodeData?.parentId
+                ? "骨干节点不存在"
+                : undefined,
+          });
         }
       }
 
@@ -817,12 +921,32 @@ router.post(
 
       const duration = Date.now() - startTime;
 
+      const mountingSuccessCount = mountingDetails.filter(
+        (m) => m.status === "success",
+      ).length;
+      const mountingFailedCount = mountingDetails.filter(
+        (m) => m.status === "failed",
+      ).length;
+      const mountingFailedDetails = mountingDetails
+        .filter((m) => m.status === "failed")
+        .map((m) => ({
+          concept: m.conceptTitle,
+          targetModule: m.targetModule,
+          reason: m.reason,
+        }));
+
       logger.info("Literature concepts applied successfully", {
         graphId: graph_id,
         addedCount,
         mergedCount,
         edgeCount: edgesToCreate.length,
         duration,
+        mountingStats: {
+          total: mountingDetails.length,
+          success: mountingSuccessCount,
+          failed: mountingFailedCount,
+          failedDetails: mountingFailedDetails,
+        },
       });
 
       performanceMonitor.recordLog({
@@ -846,6 +970,7 @@ router.post(
         addedCount,
         mergedCount,
         nodeMapping,
+        mountingDetails,
       });
     } catch (error: unknown) {
       const err = error as Error;

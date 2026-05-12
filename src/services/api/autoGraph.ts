@@ -172,6 +172,10 @@ export const autoGraphApi = {
       content?: string;
       level?: string;
       parentId?: string;
+      backboneModule?: string;
+      needsRefinement?: boolean;
+      color?: string;
+      properties?: Record<string, unknown>;
     }>;
   }) =>
     request("/auto-graph/save-nodes", {

@@ -302,6 +302,10 @@ router.post(
               n.description ||
               n.suggestedContent ||
               `${n.title}：${(n as any).backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
+            level: n.level || "core",
+            backboneModule: (n as any).backboneModule,
+            needsRefinement: (n as any).needsRefinement,
+            color: (n as any).color,
           })),
         });
         return;
@@ -687,6 +691,20 @@ router.post(
 
           const tempId = node.id || `temp-${index}`;
 
+          const nodeProperties: Record<string, unknown> = {};
+          if (node.backboneModule) {
+            nodeProperties.backboneModule = node.backboneModule;
+          }
+          if (node.needsRefinement !== undefined) {
+            nodeProperties.needsRefinement = node.needsRefinement;
+          }
+          if (node.suggestedContent) {
+            nodeProperties.suggestedContent = node.suggestedContent;
+          }
+          if (node.color) {
+            nodeProperties.color = node.color;
+          }
+
           return {
             tempId,
             parentId: node.parentId || null,
@@ -695,6 +713,7 @@ router.post(
             level: node.level || "normal",
             x_position: Math.round(Math.cos(angle) * radius),
             y_position: Math.round(Math.sin(angle) * radius),
+            properties: Object.keys(nodeProperties).length > 0 ? nodeProperties : undefined,
           };
         });
 

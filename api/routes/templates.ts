@@ -132,8 +132,11 @@ router.post(
             title: node.title,
             level: node.level || "core",
             properties: {
-              aiPrompt: node.aiPrompt,
-              color: node.color,
+              ...(node.aiPrompt && { aiPrompt: node.aiPrompt }),
+              ...(node.color && { color: node.color }),
+              ...(node.backboneModule && { backboneModule: node.backboneModule }),
+              ...(node.needsRefinement !== undefined && { needsRefinement: node.needsRefinement }),
+              ...(node.suggestedContent && { suggestedContent: node.suggestedContent }),
             },
           })),
         )

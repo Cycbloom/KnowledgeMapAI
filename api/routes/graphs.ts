@@ -2162,4 +2162,156 @@ router.post(
   },
 );
 
+router.post(
+  "/:graphId/fix-backbone-modules",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graphId } = req.params;
+    const userId = req.user.id;
+    const supabase = req.supabase!;
+
+    try {
+      const { data: graph, error: graphError } = await supabase
+        .from("knowledge_graphs")
+        .select("id, template_type")
+        .eq("id", graphId)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .single();
+
+      if (graphError || !graph) {
+        throw new AppError("图谱不存在", 404, ErrorCodes.NOT_FOUND);
+      }
+
+      if (graph.template_type !== "topic_research") {
+        throw new AppError(
+          "该端点仅支持专题研究图谱",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
+      }
+
+      const backboneModuleMap: Record<string, string> = {
+        "研究背景": "research_background",
+        "文献综述": "literature_review",
+        "研究方法": "research_methods",
+        "核心概念": "core_concepts",
+        "应用领域": "application_domains",
+        "未来方向": "future_directions",
+      };
+
+      const { data: coreNodes, error: nodesError } = await supabase
+        .from("graph_nodes")
+        .select(
+          `
+          id,
+          knowledge_points (
+            id,
+            title,
+            properties
+          )
+        `,
+        )
+        .eq("graph_id", graphId)
+        .is("deleted_at", null);
+
+      if (nodesError) {
+        logger.error("查询核心节点失败", { graphId, error: nodesError.message });
+        throw new AppError("查询节点失败", 500, ErrorCodes.INTERNAL_ERROR);
+      }
+
+      const details: Array<{
+        nodeId: string;
+        title: string;
+        fixed: boolean;
+        assignedModule?: string;
+      }> = [];
+      let fixedCount = 0;
+
+      for (const graphNode of coreNodes || []) {
+        const kp = Array.isArray(graphNode.knowledge_points)
+          ? graphNode.knowledge_points[0]
+          : graphNode.knowledge_points;
+
+        if (!kp) continue;
+
+        const properties = (kp.properties || {}) as Record<string, any>;
+        const currentModule = properties.backboneModule;
+
+        if (currentModule) {
+          details.push({
+            nodeId: kp.id,
+            title: kp.title,
+            fixed: false,
+          });
+          continue;
+        }
+
+        const matchedModule = backboneModuleMap[kp.title.trim()];
+
+        if (!matchedModule) {
+          details.push({
+            nodeId: kp.id,
+            title: kp.title,
+            fixed: false,
+          });
+          continue;
+        }
+
+        const updatedProperties = {
+          ...properties,
+          backboneModule: matchedModule,
+        };
+
+        const { error: updateError } = await supabase
+          .from("knowledge_points")
+          .update({ properties: updatedProperties })
+          .eq("id", kp.id);
+
+        if (updateError) {
+          logger.error("更新节点属性失败", {
+            nodeId: kp.id,
+            error: updateError.message,
+          });
+          details.push({
+            nodeId: kp.id,
+            title: kp.title,
+            fixed: false,
+          });
+          continue;
+        }
+
+        fixedCount++;
+        details.push({
+          nodeId: kp.id,
+          title: kp.title,
+          fixed: true,
+          assignedModule: matchedModule,
+        });
+      }
+
+      logger.info("骨干模块修复完成", {
+        graphId,
+        userId,
+        fixedCount,
+        totalNodes: details.length,
+      });
+
+      res.json({
+        success: true,
+        fixedCount,
+        totalNodes: details.length,
+        details,
+      });
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      const message =
+        error instanceof Error ? error.message : "修复骨干模块失败";
+      logger.error("修复骨干模块失败", error);
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
 export default router;

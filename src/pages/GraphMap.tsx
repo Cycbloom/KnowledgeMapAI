@@ -720,6 +720,9 @@ export const GraphMap = () => {
               title: n.title,
               content: n.content,
               level: n.level || "core",
+              backboneModule: n.backboneModule,
+              needsRefinement: n.needsRefinement,
+              color: n.color,
             })),
           ];
 

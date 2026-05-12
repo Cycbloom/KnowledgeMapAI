@@ -370,7 +370,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                   <AnimatePresence mode="popLayout">
                     {!isCollapsed &&
                       region.nodes
-                        .filter((node) => !node.properties?.backboneModule)
+                        .filter((node) => node.level !== "core")
                         .map((node, index) => (
                         <motion.g
                           key={node.id}
@@ -395,7 +395,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                               node,
                               region,
                               index,
-                              region.nodes.filter((n) => !n.properties?.backboneModule).length
+                              region.nodes.filter((n) => n.level !== "core").length
                             )}
                           />
                         </motion.g>

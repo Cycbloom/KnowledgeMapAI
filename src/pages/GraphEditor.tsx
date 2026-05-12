@@ -66,6 +66,7 @@ import {
   BACKBONE_MODULE_TITLES,
   BACKBONE_MODULE_COLORS,
   BACKBONE_MODULE_ICONS,
+  TITLE_TO_BACKBONE_MODULE,
 } from "@shared/types/graph";
 import { PresentationControls } from "../components/GraphEditor/toolbar/PresentationControls";
 import { ActionResultModal } from "../components/GraphEditor/modals/ActionResultModal";
@@ -660,8 +661,21 @@ export const GraphEditor = () => {
 
     const isTopicResearch = graphMeta?.template_type === "topic_research";
 
+    console.warn("=== Quadrant View Debug ===");
+    console.warn("isTopicResearch:", isTopicResearch);
+    console.warn("Total nodes:", nodes.length);
+    console.warn("Total edges:", edges.length);
+
     if (isTopicResearch) {
-      const backboneNodes = nodes.filter((n) => n.properties?.backboneModule);
+      const coreNodes = nodes.filter(
+        (n) => n.level === "core" && TITLE_TO_BACKBONE_MODULE[n.title],
+      );
+      console.warn("Core nodes found:", coreNodes.length);
+      coreNodes.forEach((n) => {
+        console.warn(
+          `  - ${n.title}: level=${n.level}, kp_id=${n.knowledge_point_id}`,
+        );
+      });
 
       const orderedBackboneModules = [
         BackboneModule.RESEARCH_BACKGROUND,
@@ -675,34 +689,20 @@ export const GraphEditor = () => {
       const angleStep = (2 * Math.PI) / 6;
 
       return orderedBackboneModules.map((module, index) => {
-        const backboneNode = backboneNodes.find(
-          (n) => n.properties?.backboneModule === module,
+        const coreNode = coreNodes.find(
+          (n) => TITLE_TO_BACKBONE_MODULE[n.title] === module,
         );
 
         const angleStart = index * angleStep;
         const angleEnd = (index + 1) * angleStep;
 
-        const childNodeIds = new Set<string>();
-        if (backboneNode) {
-          const queue = [backboneNode.knowledge_point_id];
-          while (queue.length > 0) {
-            const currentId = queue.shift()!;
-            edges
-              .filter((e) => e.source_knowledge_point_id === currentId)
-              .forEach((e) => {
-                if (!childNodeIds.has(e.target_knowledge_point_id)) {
-                  childNodeIds.add(e.target_knowledge_point_id);
-                  queue.push(e.target_knowledge_point_id);
-                }
-              });
-          }
-        }
-
         const regionNodes = nodes.filter(
           (n) =>
-            childNodeIds.has(n.knowledge_point_id) &&
-            n.knowledge_point_id !== backboneNode?.knowledge_point_id,
+            n.properties?.backboneModule === module &&
+            n.level !== "core" &&
+            n.knowledge_point_id !== coreNode?.knowledge_point_id,
         );
+        console.warn(`  Region nodes for ${module}: ${regionNodes.length}`);
 
         return {
           id: `region-${module}`,

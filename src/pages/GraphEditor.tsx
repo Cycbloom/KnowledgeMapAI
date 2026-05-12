@@ -60,13 +60,16 @@ import type {
   NodeSizeMode,
   EdgeWidthMode,
 } from "../types";
-import type { CustomRegion, RegionInfo } from "@shared/types/graph";
+import type {
+  CustomRegion,
+  RegionInfo,
+  GraphBackboneModule,
+} from "@shared/types/graph";
 import {
   BackboneModule,
   BACKBONE_MODULE_TITLES,
   BACKBONE_MODULE_COLORS,
   BACKBONE_MODULE_ICONS,
-  TITLE_TO_BACKBONE_MODULE,
 } from "@shared/types/graph";
 import { PresentationControls } from "../components/GraphEditor/toolbar/PresentationControls";
 import { ActionResultModal } from "../components/GraphEditor/modals/ActionResultModal";
@@ -661,21 +664,43 @@ export const GraphEditor = () => {
 
     const isTopicResearch = graphMeta?.template_type === "topic_research";
 
-    console.warn("=== Quadrant View Debug ===");
-    console.warn("isTopicResearch:", isTopicResearch);
-    console.warn("Total nodes:", nodes.length);
-    console.warn("Total edges:", edges.length);
-
     if (isTopicResearch) {
-      const coreNodes = nodes.filter(
-        (n) => n.level === "core" && TITLE_TO_BACKBONE_MODULE[n.title],
-      );
-      console.warn("Core nodes found:", coreNodes.length);
-      coreNodes.forEach((n) => {
-        console.warn(
-          `  - ${n.title}: level=${n.level}, kp_id=${n.knowledge_point_id}`,
-        );
-      });
+      const backboneModules = graphMeta?.backbone_modules;
+
+      if (backboneModules && backboneModules.length > 0) {
+        const angleStep = (2 * Math.PI) / backboneModules.length;
+
+        return backboneModules
+          .sort(
+            (a: GraphBackboneModule, b: GraphBackboneModule) =>
+              a.display_order - b.display_order,
+          )
+          .map((module: GraphBackboneModule, index: number) => {
+            const angleStart = index * angleStep;
+            const angleEnd = (index + 1) * angleStep;
+
+            const regionNodes = nodes.filter(
+              (n) => n.properties?.backboneModule === module.module_type,
+            );
+
+            return {
+              id: `region-${module.module_type}`,
+              name: module.title,
+              color:
+                module.color ||
+                BACKBONE_MODULE_COLORS[module.module_type as BackboneModule],
+              icon:
+                module.icon ||
+                BACKBONE_MODULE_ICONS[module.module_type as BackboneModule],
+              angleStart,
+              angleEnd,
+              nodes: regionNodes,
+              isCollapsed: collapsedRegions.includes(
+                `region-${module.module_type}`,
+              ),
+            };
+          });
+      }
 
       const orderedBackboneModules = [
         BackboneModule.RESEARCH_BACKGROUND,
@@ -689,20 +714,12 @@ export const GraphEditor = () => {
       const angleStep = (2 * Math.PI) / 6;
 
       return orderedBackboneModules.map((module, index) => {
-        const coreNode = coreNodes.find(
-          (n) => TITLE_TO_BACKBONE_MODULE[n.title] === module,
-        );
-
         const angleStart = index * angleStep;
         const angleEnd = (index + 1) * angleStep;
 
         const regionNodes = nodes.filter(
-          (n) =>
-            n.properties?.backboneModule === module &&
-            n.level !== "core" &&
-            n.knowledge_point_id !== coreNode?.knowledge_point_id,
+          (n) => n.properties?.backboneModule === module,
         );
-        console.warn(`  Region nodes for ${module}: ${regionNodes.length}`);
 
         return {
           id: `region-${module}`,

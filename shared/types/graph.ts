@@ -338,6 +338,19 @@ export interface ExternalLink {
   description?: string;
 }
 
+export interface GraphBackboneModule {
+  id: string;
+  graph_id: string;
+  module_type: BackboneModule;
+  title: string;
+  icon?: string;
+  color?: string;
+  description?: string;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Graph {
   id: string;
   title: string;
@@ -347,6 +360,7 @@ export interface Graph {
   domains?: Domain[];
   user_id?: string;
   template_type?: TemplateType;
+  backbone_modules?: GraphBackboneModule[];
   settings?: {
     gamification_enabled?: boolean;
     learning_direction?: "top_down" | "bottom_up";

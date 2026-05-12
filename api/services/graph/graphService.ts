@@ -17,6 +17,12 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
+import {
+  BackboneModule,
+  BACKBONE_MODULE_TITLES,
+  BACKBONE_MODULE_ICONS,
+  BACKBONE_MODULE_COLORS,
+} from "@shared/types/graph";
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import type {
@@ -352,6 +358,42 @@ export class GraphService {
       .single();
 
     if (error) throw error;
+
+    if (options?.templateType === "topic_research") {
+      const backboneModules = [
+        BackboneModule.RESEARCH_BACKGROUND,
+        BackboneModule.LITERATURE_REVIEW,
+        BackboneModule.RESEARCH_METHODS,
+        BackboneModule.CORE_CONCEPTS,
+        BackboneModule.APPLICATION_DOMAINS,
+        BackboneModule.FUTURE_DIRECTIONS,
+      ];
+
+      const modulesToInsert = backboneModules.map((module, index) => ({
+        graph_id: data.id,
+        module_type: module,
+        title: BACKBONE_MODULE_TITLES[module],
+        icon: BACKBONE_MODULE_ICONS[module],
+        color: BACKBONE_MODULE_COLORS[module],
+        display_order: index,
+      }));
+
+      const { error: modulesError } = await supabase
+        .from("graph_backbone_modules")
+        .insert(modulesToInsert);
+
+      if (modulesError) {
+        logger.warn(
+          "[GraphService] Failed to create backbone modules:",
+          modulesError,
+        );
+      } else {
+        logger.info(
+          "[GraphService] Created backbone modules for topic_research graph:",
+          { graphId: data.id },
+        );
+      }
+    }
 
     try {
       const taskInfo = await smartTaskLinker.getOrCreateTaskForGraph(

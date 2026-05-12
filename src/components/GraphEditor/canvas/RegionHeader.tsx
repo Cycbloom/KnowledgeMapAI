@@ -9,6 +9,7 @@ interface RegionHeaderProps {
   originX: number;
   originY: number;
   radius: number;
+  isDark: boolean;
 }
 
 export const RegionHeader: React.FC<RegionHeaderProps> = ({
@@ -18,10 +19,11 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
   originX,
   originY,
   radius,
+  isDark,
 }) => {
   const midAngle = (region.angleStart + region.angleEnd) / 2;
 
-  const labelOffset = 15;
+  const labelOffset = 25;
   const labelX = originX + (radius + labelOffset) * Math.cos(midAngle);
   const labelY = originY + (radius + labelOffset) * Math.sin(midAngle);
 
@@ -40,6 +42,16 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
 
   const nodeCount = region.nodes.length;
 
+  const textColor = isDark ? "#f1f5f9" : "#0f172a";
+  const textShadow = isDark
+    ? "0 1px 3px rgba(0,0,0,0.5)"
+    : "0 1px 3px rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2)";
+
+  const countColor = isDark ? "#94a3b8" : "#64748b";
+
+  const collapsedCircleFill = isDark ? "#1e293b" : "#ffffff";
+  const collapsedCircleStroke = region.color;
+
   return (
     <g
       onClick={onToggle}
@@ -56,12 +68,13 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
           y={labelY}
           textAnchor="middle"
           dominantBaseline={needsFlip ? "text-before-edge" : "text-after-edge"}
-          fontSize={14}
+          fontSize={16}
           fontWeight={600}
-          fill="white"
+          fill={textColor}
+          letterSpacing="0.15em"
           style={{
             pointerEvents: "none",
-            textShadow: "0 1px 3px rgba(0,0,0,0.5)",
+            textShadow,
           }}
           transform={`rotate(${textRotation}, ${labelX}, ${labelY})`}
         >
@@ -77,8 +90,7 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
               needsFlip ? "text-after-edge" : "text-before-edge"
             }
             fontSize={10}
-            fill="white"
-            fillOpacity={0.7}
+            fill={countColor}
             style={{ pointerEvents: "none" }}
             transform={`rotate(${textRotation}, ${labelX}, ${labelY})`}
           >
@@ -93,16 +105,16 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
             transition={{ duration: 0.2 }}
           >
             <motion.circle
-              cx={originX + (radius + 35) * Math.cos(midAngle)}
-              cy={originY + (radius + 35) * Math.sin(midAngle)}
+              cx={originX + (radius + 50) * Math.cos(midAngle)}
+              cy={originY + (radius + 50) * Math.sin(midAngle)}
               r={10}
-              fill="white"
-              stroke={region.color}
+              fill={collapsedCircleFill}
+              stroke={collapsedCircleStroke}
               strokeWidth={2}
             />
             <motion.text
-              x={originX + (radius + 35) * Math.cos(midAngle)}
-              y={originY + (radius + 35) * Math.sin(midAngle)}
+              x={originX + (radius + 50) * Math.cos(midAngle)}
+              y={originY + (radius + 50) * Math.sin(midAngle)}
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize={10}

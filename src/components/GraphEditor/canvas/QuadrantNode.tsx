@@ -1,6 +1,14 @@
-import React, { useState, useCallback, useMemo } from "react";
-import type { Node, Edge, GraphColorMode } from "@shared/types/graph";
+import React, { useMemo, useCallback, useState } from "react";
+import type { Node, Edge, GraphColorMode, NodeLevel } from "@shared/types/graph";
 import type { ColorScheme } from "@shared/types/styles";
+import { NodeRing } from "./NodeRing";
+import {
+  NODE_STYLE_CONFIG,
+  getRingRadius,
+  getRingOpacity,
+  getCenterDotRadius,
+  getShadowStyle,
+} from "../../../config/nodeStyleConfig";
 import {
   getLearningStatus,
   getStatusColors,
@@ -22,7 +30,32 @@ interface QuadrantNodeProps {
   originY: number;
   regionRadius: number;
   angle: number;
+  focused?: boolean;
+  hasFocusMode?: boolean;
 }
+
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
+
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+const QUADRANT_NODE_STYLE_OVERRIDES: Partial<
+  Record<NodeLevel, { baseRadius: number; rings: number }>
+> = {
+  sub: { baseRadius: 24, rings: 2 },
+  normal: { baseRadius: 20, rings: 1 },
+  leaf: { baseRadius: 16, rings: 1 },
+};
 
 export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   node,
@@ -39,20 +72,48 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   originY,
   regionRadius,
   angle,
+  focused = false,
+  hasFocusMode = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
 
+  const level = (node.level || "leaf") as NodeLevel;
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark, colorScheme);
+
+  const nodeOpacity = !hasFocusMode ? 1 : focused ? 1 : 0.3;
 
   const titleInfo = useMemo(
     () => truncateText(node.title || "未命名"),
     [node.title],
   );
 
-  const nodeRadius = 20;
-  const distanceRatio = 0.6;
+  const styleConfig = useMemo(() => {
+    const baseConfig = NODE_STYLE_CONFIG[level] || NODE_STYLE_CONFIG.leaf;
+    const overrides = QUADRANT_NODE_STYLE_OVERRIDES[level];
+
+    if (overrides) {
+      return {
+        ...baseConfig,
+        baseRadius: overrides.baseRadius,
+        rings: overrides.rings,
+      };
+    }
+    return baseConfig;
+  }, [level]);
+
+  const distanceRatio = useMemo(() => {
+    const seed = hashCode(node.id);
+    const random = seededRandom(seed);
+    const baseRatio = 0.5;
+    const randomOffset = (random - 0.5) * 0.4;
+    const levelFactor = node.level === "sub" ? 0.05 : 0;
+    const ratio = baseRatio + randomOffset + levelFactor;
+    return Math.max(0.3, Math.min(0.8, ratio));
+  }, [node.id, node.level]);
+
   const distance = regionRadius * distanceRatio;
 
   const baseX = originX + distance * Math.cos(angle);
@@ -100,11 +161,73 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
     [onClick],
   );
 
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    if (isDragging) {
+      handleMouseUp();
+    }
+  }, [isDragging, handleMouseUp]);
+
   const scaledFontSize = useMemo(() => {
     const baseFontSize = 12;
     const calculatedSize = baseFontSize / zoomLevel;
     return Math.max(8, Math.min(16, calculatedSize));
   }, [zoomLevel]);
+
+  const rings = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < styleConfig.rings; i++) {
+      const radius = getRingRadius(
+        styleConfig.baseRadius,
+        i,
+        styleConfig.rings,
+        styleConfig.ringSpacing,
+      );
+      const opacity = getRingOpacity(i, styleConfig.rings);
+      const color = i === 0 ? colors.primary : colors.secondary;
+
+      result.push(
+        <NodeRing
+          key={`ring-${i}`}
+          radius={radius}
+          strokeWidth={styleConfig.strokeWidth}
+          color={color}
+          opacity={opacity}
+          dashArray={styleConfig.dashArray}
+          showGlow={i === 0 && (selected || isHovered)}
+          glowColor={colors.glow}
+          shadowBlur={styleConfig.shadow.enabled ? styleConfig.shadow.blur : 0}
+          shadowColor={styleConfig.shadow.color}
+        />,
+      );
+    }
+    return result;
+  }, [styleConfig, colors, selected, isHovered]);
+
+  const centerDotRadius = styleConfig.showCenterDot
+    ? getCenterDotRadius(styleConfig.baseRadius)
+    : 0;
+
+  const maxRadius = useMemo(
+    () =>
+      getRingRadius(
+        styleConfig.baseRadius,
+        0,
+        styleConfig.rings,
+        styleConfig.ringSpacing,
+      ) +
+      styleConfig.strokeWidth / 2,
+    [styleConfig],
+  );
+
+  const textOffset = useMemo(() => maxRadius + 12, [maxRadius]);
+
+  const shadowStyle = getShadowStyle(styleConfig.shadow);
+  const hoverScale = isHovered ? styleConfig.animation.hoverScale : 1;
 
   return (
     <g
@@ -114,27 +237,56 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       style={{
         cursor: isDragging ? "grabbing" : "pointer",
-        opacity: selected ? 1 : 0.9,
+        opacity: selected ? 1 : nodeOpacity,
       }}
     >
-      <circle
-        r={nodeRadius}
-        fill={colors.primary}
-        stroke={selected ? colors.glow : "white"}
-        strokeWidth={selected ? 3 : 2}
+      <g
         style={{
-          filter: selected
-            ? `drop-shadow(0 0 8px ${colors.glow})`
-            : "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
-          transition: isDragging ? "none" : "all 0.2s ease",
+          transition: "transform 200ms ease",
+          transform: `scale(${hoverScale})`,
+          filter: shadowStyle,
         }}
+      >
+        {rings}
+
+        {styleConfig.showCenterDot && centerDotRadius > 0 && (
+          <circle
+            r={centerDotRadius}
+            fill={colors.primary}
+            style={{
+              filter:
+                selected || isHovered
+                  ? `drop-shadow(0 0 ${6 / zoomLevel}px ${colors.glow})`
+                  : "none",
+            }}
+          />
+        )}
+
+        {selected && (
+          <circle
+            r={styleConfig.baseRadius + 6}
+            fill="none"
+            stroke={colors.primary}
+            strokeWidth={2}
+            opacity={0.5}
+            strokeDasharray="4 4"
+          />
+        )}
+      </g>
+
+      <circle
+        r={maxRadius}
+        fill="transparent"
+        onClick={handleClick}
+        style={{ cursor: "pointer" }}
       />
 
       <text
-        y={nodeRadius + 14}
+        y={textOffset}
         textAnchor="middle"
         dominantBaseline="middle"
         fontSize={scaledFontSize}
@@ -143,8 +295,8 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
         style={{
           pointerEvents: "none",
           textShadow: isDark
-            ? "0 1px 2px rgba(0,0,0,0.8)"
-            : "0 1px 2px rgba(0,0,0,0.1)",
+            ? `0 ${1 / zoomLevel}px ${2 / zoomLevel}px rgba(0,0,0,0.8), 0 0 ${4 / zoomLevel}px rgba(0,0,0,0.4)`
+            : `0 ${1 / zoomLevel}px ${2 / zoomLevel}px rgba(0,0,0,0.15)`,
         }}
       >
         {titleInfo.truncated}
@@ -154,8 +306,8 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
       {node.properties?.needsRefinement && (
         <circle
           r={4}
-          cx={nodeRadius - 4}
-          cy={-nodeRadius + 4}
+          cx={styleConfig.baseRadius - 4}
+          cy={-styleConfig.baseRadius + 4}
           fill="#f59e0b"
           style={{
             filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",

@@ -1421,6 +1421,8 @@ export const GraphEditor = () => {
               nodeStatus={nodeStatus}
               colorScheme={colorScheme}
               coloringMode={coloringMode}
+              focusedNodeIds={focusedNodeIds}
+              focusedNodeId={focusedNodeId}
             />
           )}
         </div>

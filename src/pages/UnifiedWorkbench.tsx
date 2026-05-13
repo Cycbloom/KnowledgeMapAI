@@ -648,7 +648,7 @@ export const UnifiedWorkbench: React.FC = () => {
               </div>
               <div className="flex items-center gap-1">
                 <TrendingUp size={10} />
-                <span>EF: {review.ease_factor.toFixed(1)}</span>
+                <span>EF: {(review.ease_factor ?? 2.5).toFixed(1)}</span>
               </div>
             </div>
           </div>

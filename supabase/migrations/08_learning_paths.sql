@@ -52,7 +52,21 @@ COMMENT ON TABLE learning_path_nodes IS 'Nodes in a learning path';
 COMMENT ON COLUMN learning_path_nodes.order_index IS 'Order of this node in the path';
 COMMENT ON COLUMN learning_path_nodes.estimated_time IS 'Estimated time in minutes';
 COMMENT ON COLUMN learning_path_nodes.is_milestone IS 'Whether this node is a milestone';
-COMMENT ON COLUMN learning_path_nodes.prerequisites IS 'Array of prerequisite node IDs';
+COMMENT ON COLUMN learning_path_nodes.prerequisites IS '[DEPRECATED] 使用 learning_path_prerequisites 关联表替代此 UUID[] 列';
+
+-- Learning path prerequisites table
+CREATE TABLE IF NOT EXISTS learning_path_prerequisites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  path_node_id UUID NOT NULL REFERENCES learning_path_nodes(id) ON DELETE CASCADE,
+  prerequisite_node_id UUID NOT NULL REFERENCES learning_path_nodes(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(path_node_id, prerequisite_node_id),
+  CHECK(path_node_id != prerequisite_node_id)
+);
+
+COMMENT ON TABLE learning_path_prerequisites IS '学习路径节点前置依赖关联表，替代 learning_path_nodes.prerequisites UUID[] 列';
+COMMENT ON COLUMN learning_path_prerequisites.path_node_id IS '依赖方节点ID';
+COMMENT ON COLUMN learning_path_prerequisites.prerequisite_node_id IS '被依赖的前置节点ID';
 
 -- Learning path progress table
 CREATE TABLE IF NOT EXISTS learning_path_progress (

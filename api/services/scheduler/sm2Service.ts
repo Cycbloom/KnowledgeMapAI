@@ -1,5 +1,10 @@
+/**
+ * @deprecated 推荐使用 api/services/study/studyService.ts (FSRS, ts-fsrs 库)
+ * SM2 算法保留向后兼容，新功能请使用 FSRS
+ */
 import { logger } from '../../utils/logger';
 
+/** @deprecated 使用 FSRS 的 Card 类型替代 */
 export interface SM2Result {
   interval: number;
   easeFactor: number;
@@ -7,6 +12,7 @@ export interface SM2Result {
   nextReviewDate: Date;
 }
 
+/** @deprecated 使用 FSRS Rating 替代 */
 export interface SM2Input {
   quality: number;
   interval: number;
@@ -14,6 +20,7 @@ export interface SM2Input {
   repetitions: number;
 }
 
+/** @deprecated 使用 FSRS Card 替代 */
 export interface ReviewTaskData {
   id: string;
   knowledge_point_id: string;
@@ -28,6 +35,7 @@ export interface ReviewTaskData {
 const MIN_EASE_FACTOR = 1.3;
 const DEFAULT_EASE_FACTOR = 2.5;
 
+/** @deprecated 推荐使用 api/services/study/studyService.ts (FSRS) */
 export class SM2Service {
   static calculateNextReview(input: SM2Input): SM2Result {
     const { quality, interval, easeFactor, repetitions } = input;
@@ -162,4 +170,5 @@ export class SM2Service {
   }
 }
 
+/** @deprecated 使用 studyService (FSRS) 替代 */
 export const sm2Service = SM2Service;

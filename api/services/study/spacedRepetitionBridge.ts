@@ -3,6 +3,14 @@ import { logger } from "../../utils/logger";
 import { schedulerEventBus } from "../scheduler/core/eventBus";
 import type { ReviewCompletedPayload } from "../../../shared/types/scheduler";
 
+/**
+ * 间隔重复桥接服务 - 统一 SM2 和 FSRS 的对外接口
+ *
+ * **迁移通知**: 默认算法已从 SM2 切换为 FSRS。
+ * - 遗留 SM2 任务 (knowledge_review_tasks) 继续通过 SM2 路径处理
+ * - 新任务 (study_cards) 默认走 FSRS 路径
+ */
+
 interface UnifiedReviewItem {
   id: string;
   knowledgePointId: string;
@@ -187,7 +195,7 @@ class SpacedRepetitionBridge {
 
     return {
       nextReviewDate: result.next_review_date,
-      intervalDays: result.interval_days,
+      intervalDays: result.interval_days ?? 1,
       algorithm: "sm2",
     };
   }

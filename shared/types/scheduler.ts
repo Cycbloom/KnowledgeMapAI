@@ -520,30 +520,56 @@ export interface AchievementCheckResult {
   }>;
 }
 
+/** @deprecated 使用 FSRSReviewTask 替代。SM2 算法已废弃，新任务走 FSRS (study_cards) */
 export interface ReviewTask {
   id: string;
   user_id: string;
   knowledge_point_id: string;
   task_id: string;
-  interval_days: number;
-  ease_factor: number;
-  repetitions: number;
+  algorithm?: "sm2" | "fsrs";
+  interval_days?: number;
+  ease_factor?: number;
+  repetitions?: number;
   next_review_date: string;
-  last_review_date: string | null;
-  last_quality_score: number | null;
+  last_review_date?: string | null;
+  last_quality_score?: number | null;
+  fsrs_stability?: number;
+  fsrs_difficulty?: number;
+  fsrs_state?: string;
+  fsrs_retrievability?: number;
   created_at: string;
   updated_at: string;
 }
 
+export interface FSRSReviewTask {
+  id: string;
+  user_id: string;
+  knowledge_point_id: string;
+  task_id: string;
+  algorithm: "fsrs";
+  next_review_date: string;
+  last_review_date?: string | null;
+  last_quality_score?: number | null;
+  fsrs_stability: number;
+  fsrs_difficulty: number;
+  fsrs_state: string;
+  fsrs_retrievability: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** @deprecated 使用 studyService.createCard() (FSRS) 替代 */
 export interface CreateReviewTaskData {
   knowledge_point_id: string;
   task_id: string;
 }
 
+/** @deprecated 使用 studyService.updateProgress() (FSRS) 替代 */
 export interface UpdateReviewTaskData {
   quality: number;
 }
 
+/** @deprecated 使用 FSRS 统计替代 */
 export interface ReviewTaskStats {
   total: number;
   overdue: number;
@@ -555,6 +581,7 @@ export interface ReviewTaskStats {
   averageRepetitions: number;
 }
 
+/** @deprecated 使用 FSRSReviewTask 替代 */
 export interface PendingReviewTask extends ReviewTask {
   urgency: "overdue" | "today" | "upcoming" | "future";
   masteryLevel: number;

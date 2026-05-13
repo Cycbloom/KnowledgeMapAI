@@ -582,8 +582,7 @@ For each node in the template:
 
 ## Output Format
 
-Generate content for each node while maintaining the template structure.', NOW(), NOW())
-ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
+Generate content for each node while maintaining the template structure.', NOW(), NOW());
 
 INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, created_at, updated_at) VALUES
   ('template_type_knowledge_tree', 'system', null, null, 'Create a hierarchical knowledge tree structure. Organize from root concept to core topics to sub-topics to leaf details. Use tree-like parent-child relationships. Each level should progressively detail the topic. The root node represents the main domain, core nodes are major topic areas, sub-nodes are specific concepts, and leaf nodes are detailed facts or examples. Ensure clear hierarchical progression from general to specific.', NOW(), NOW()),
@@ -653,8 +652,7 @@ DO NOT add prefixes, suffixes, or modify these standard titles in any way.
   ('template_type_org_structure', 'system', null, null, 'Create an organizational structure. Show reporting lines and functional relationships. Use hierarchical tree structure. Include roles, departments, and their relationships. Show both formal reporting lines and cross-functional collaborations. Include key responsibilities for each unit. Consider the organizational culture and communication patterns.', NOW(), NOW()),
   ('template_type_system_architecture', 'system', null, null, 'Create a system architecture diagram. Show modules, components, and their dependencies. Use layered network structure. Include interfaces and data flow between components. Show both logical and physical architecture where relevant. Include technology choices and their rationale. Consider scalability, reliability, and security aspects in the architecture.', NOW(), NOW()),
   ('template_type_knowledge_system', 'system', null, null, 'Create a cross-domain knowledge system. Show how knowledge areas connect across different domains. Use network structure with cross-domain relationships. Highlight interdisciplinary connections and shared concepts. Include both domain-specific and universal knowledge elements. Show how insights from one domain can apply to another. Consider the evolution and convergence of knowledge areas.', NOW(), NOW()),
-  ('template_type_blank', 'system', null, null, 'Create a knowledge graph freely based on the topic. No specific structural constraints. Use whatever structure best represents the topic. Follow the natural organization of the subject matter. Be creative and adaptive in your approach.', NOW(), NOW())
-ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
+  ('template_type_blank', 'system', null, null, 'Create a knowledge graph freely based on the topic. No specific structural constraints. Use whatever structure best represents the topic. Follow the natural organization of the subject matter. Be creative and adaptive in your approach.', NOW(), NOW());
 
 INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, created_at, updated_at) VALUES
 ('learning_material', 'system', null, null, 'You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
@@ -858,5 +856,4 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 3. 考虑与已有节点的连接可能性
 4. 提供文献中的证据支持
 
-请以有效的 json 格式返回结果。', NOW(), NOW())
-ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
+请以有效的 json 格式返回结果。', NOW(), NOW());

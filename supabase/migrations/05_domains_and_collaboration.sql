@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS domains (
   sort_order INTEGER DEFAULT 0,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   is_system BOOLEAN DEFAULT FALSE,
-  deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  deleted_at TIMESTAMPTZ DEFAULT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE domains IS '知识领域表，支持树形层级结构';
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS graph_domains (
   graph_id UUID NOT NULL REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   domain_id UUID NOT NULL REFERENCES domains(id) ON DELETE CASCADE,
   is_primary BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE graph_domains IS '图谱与领域的多对多关联表';
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS graph_relations (
   confidence DECIMAL(3,2) DEFAULT 1.0,
   source VARCHAR(20) DEFAULT 'manual' CHECK (source IN ('manual', 'ai_discovered', 'ai_suggested')),
   shared_concepts TEXT[] DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
 
   UNIQUE(source_graph_id, target_graph_id, relation_type)
 );
@@ -90,7 +90,8 @@ CREATE TABLE IF NOT EXISTS backup_snapshots (
   file_size BIGINT DEFAULT 0,
   graphs_count INTEGER DEFAULT 0,
   nodes_count INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE backup_snapshots IS '用户数据备份快照表';

@@ -17,7 +17,8 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_public ON knowledge_graphs(id) W
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_favorite ON knowledge_graphs(user_id, is_favorite DESC) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_domain ON knowledge_graphs(domain) WHERE domain IS NOT NULL AND deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_task_id ON knowledge_graphs(task_id) WHERE task_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS knowledge_graphs_embedding_idx ON knowledge_graphs USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_parent_graph_id ON knowledge_graphs(parent_graph_id) WHERE parent_graph_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS knowledge_graphs_embedding_idx ON knowledge_graphs USING hnsw (embedding vector_cosine_ops);
 
 -- Knowledge points
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_id ON knowledge_points(owner_id);
@@ -59,7 +60,6 @@ CREATE INDEX IF NOT EXISTS idx_study_cards_knowledge_point_id ON study_cards(kno
 CREATE INDEX IF NOT EXISTS idx_study_cards_next_review ON study_cards(next_review);
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_graph ON study_cards(user_id, graph_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_quiz_set_id ON study_cards(quiz_set_id) WHERE quiz_set_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_study_cards_user_id ON study_cards(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_graph_id ON study_cards(graph_id);
 
 -- Quiz sets
@@ -241,6 +241,10 @@ CREATE INDEX IF NOT EXISTS idx_learning_path_nodes_order ON learning_path_nodes(
 CREATE INDEX IF NOT EXISTS idx_learning_path_nodes_kp ON learning_path_nodes(knowledge_point_id);
 CREATE INDEX IF NOT EXISTS idx_learning_path_nodes_status ON learning_path_nodes(path_id, status);
 
+-- Learning path prerequisites
+CREATE INDEX IF NOT EXISTS idx_lpp_path_node_id ON learning_path_prerequisites(path_node_id);
+CREATE INDEX IF NOT EXISTS idx_lpp_prerequisite_node_id ON learning_path_prerequisites(prerequisite_node_id);
+
 -- Learning path progress
 CREATE INDEX IF NOT EXISTS idx_learning_path_progress_user_path ON learning_path_progress(user_id, path_id);
 CREATE INDEX IF NOT EXISTS idx_learning_path_progress_node ON learning_path_progress(node_id);
@@ -268,7 +272,7 @@ CREATE INDEX IF NOT EXISTS idx_learning_loops_user_stage ON learning_loops(user_
 CREATE INDEX IF NOT EXISTS idx_learning_loops_knowledge_point ON learning_loops(knowledge_point_id);
 
 -- Domains
-CREATE UNIQUE INDEX IF NOT EXISTS idx_domains_name_user_deleted ON domains(name, user_id, deleted_at) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_domains_name_user_deleted ON domains(name, user_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_domains_parent_id ON domains(parent_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_domains_user_id ON domains(user_id) WHERE deleted_at IS NULL;
 

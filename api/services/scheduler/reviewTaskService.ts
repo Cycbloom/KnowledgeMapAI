@@ -1,3 +1,11 @@
+/**
+ * 复习任务服务
+ * 
+ * **算法迁移通知**: 默认算法已从 SM2 切换为 FSRS (ts-fsrs)。
+ * 新复习任务默认写入 study_cards 表 (FSRS)，不再写入 knowledge_review_tasks (SM2)。
+ * 遗留的 SM2 方法保留向后兼容。
+ */
+
 import { SupabaseClient } from "@supabase/supabase-js";
 import { sm2Service, SM2Result } from "./sm2Service";
 import { AppError } from "../../middleware/errorHandler";
@@ -9,9 +17,14 @@ export interface ReviewTask {
   user_id: string;
   knowledge_point_id: string;
   task_id: string;
-  interval_days: number;
-  ease_factor: number;
-  repetitions: number;
+  interval_days?: number;
+  ease_factor?: number;
+  repetitions?: number;
+  algorithm?: string;
+  fsrs_stability?: number;
+  fsrs_difficulty?: number;
+  fsrs_state?: string;
+  fsrs_retrievability?: number;
   next_review_date: string;
   last_review_date: string | null;
   last_quality_score: number | null;
@@ -50,39 +63,58 @@ export class ReviewTaskService {
     userId: string,
     data: CreateReviewTaskData,
   ): Promise<ReviewTask> {
-    const { data: existingTask, error: checkError } = await client
-      .from("knowledge_review_tasks")
+    const { data: existingCard, error: checkError } = await client
+      .from("study_cards")
       .select("id")
       .eq("user_id", userId)
       .eq("knowledge_point_id", data.knowledge_point_id)
-      .single();
+      .eq("card_type", "review")
+      .maybeSingle();
 
-    if (checkError && checkError.code !== "PGRST116") {
+    if (checkError) {
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
         details: { originalError: checkError.message },
       });
     }
 
-    if (existingTask) {
+    if (existingCard) {
       throw new AppError(ErrorCodes.DATABASE_DUPLICATE_ENTRY, {
-        details: { message: "该知识点已存在复习任务" },
+        details: { message: "该知识点已存在复习卡片 (FSRS)" },
       });
     }
 
-    const initialParams = sm2Service.getInitialReviewParams();
-    const nextReviewDate = new Date();
-    nextReviewDate.setDate(nextReviewDate.getDate() + initialParams.interval);
+    const { data: existingSM2, error: sm2CheckError } = await client
+      .from("knowledge_review_tasks")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("knowledge_point_id", data.knowledge_point_id)
+      .maybeSingle();
+
+    if (!sm2CheckError && existingSM2) {
+      throw new AppError(ErrorCodes.DATABASE_DUPLICATE_ENTRY, {
+        details: { message: "该知识点已存在复习任务 (SM2)。请联系管理员迁移到 FSRS。" },
+      });
+    }
 
     const { data: reviewTask, error } = await client
-      .from("knowledge_review_tasks")
+      .from("study_cards")
       .insert({
         user_id: userId,
         knowledge_point_id: data.knowledge_point_id,
-        task_id: data.task_id,
-        interval_days: initialParams.interval,
-        ease_factor: initialParams.easeFactor,
-        repetitions: initialParams.repetitions,
-        next_review_date: nextReviewDate.toISOString(),
+        graph_id: null,
+        card_type: "review",
+        front_text: "",
+        back_text: "",
+        next_review: new Date().toISOString(),
+        last_review: null,
+        fsrs_state: "New",
+        fsrs_stability: 0,
+        fsrs_difficulty: 0,
+        fsrs_elapsed_days: 0,
+        fsrs_scheduled_days: 0,
+        fsrs_reps: 0,
+        fsrs_lapses: 0,
+        fsrs_last_review: null,
       })
       .select()
       .single();
@@ -93,13 +125,29 @@ export class ReviewTaskService {
       });
     }
 
-    logger.info("First review task created", {
+    logger.info("FSRS review card created", {
       userId,
       knowledgePointId: data.knowledge_point_id,
       taskId: data.task_id,
+      algorithm: "fsrs",
     });
 
-    return reviewTask as ReviewTask;
+    return {
+      id: reviewTask.id,
+      user_id: reviewTask.user_id,
+      knowledge_point_id: reviewTask.knowledge_point_id,
+      task_id: data.task_id,
+      algorithm: "fsrs",
+      fsrs_stability: reviewTask.fsrs_stability,
+      fsrs_difficulty: reviewTask.fsrs_difficulty,
+      fsrs_state: reviewTask.fsrs_state,
+      fsrs_retrievability: 1,
+      next_review_date: reviewTask.next_review,
+      last_review_date: reviewTask.last_review,
+      last_quality_score: null,
+      created_at: reviewTask.created_at,
+      updated_at: reviewTask.updated_at,
+    } as ReviewTask;
   }
 
   async updateReviewTask(
@@ -194,18 +242,18 @@ export class ReviewTaskService {
         const urgency = sm2Service.calculateUrgency({
           id: task.id,
           knowledge_point_id: task.knowledge_point_id,
-          interval_days: task.interval_days,
-          ease_factor: task.ease_factor,
-          repetitions: task.repetitions,
+          interval_days: task.interval_days ?? 0,
+          ease_factor: task.ease_factor ?? 2.5,
+          repetitions: task.repetitions ?? 0,
           next_review_date: task.next_review_date,
           last_review_date: task.last_review_date ?? undefined,
           last_quality_score: task.last_quality_score ?? undefined,
         });
 
         const masteryLevel = sm2Service.estimateMasteryLevel(
-          task.ease_factor,
-          task.repetitions,
-          task.interval_days,
+          task.ease_factor ?? 2.5,
+          task.repetitions ?? 0,
+          task.interval_days ?? 0,
         );
 
         return {
@@ -261,9 +309,9 @@ export class ReviewTaskService {
       const urgency = sm2Service.calculateUrgency({
         id: task.id,
         knowledge_point_id: task.knowledge_point_id,
-        interval_days: task.interval_days,
-        ease_factor: task.ease_factor,
-        repetitions: task.repetitions,
+        interval_days: task.interval_days ?? 0,
+        ease_factor: task.ease_factor ?? 2.5,
+        repetitions: task.repetitions ?? 0,
         next_review_date: task.next_review_date,
         last_review_date: task.last_review_date ?? undefined,
         last_quality_score: task.last_quality_score ?? undefined,
@@ -284,9 +332,9 @@ export class ReviewTaskService {
           break;
       }
 
-      totalEaseFactor += task.ease_factor;
-      totalInterval += task.interval_days;
-      totalRepetitions += task.repetitions;
+      totalEaseFactor += task.ease_factor ?? 2.5;
+      totalInterval += task.interval_days ?? 0;
+      totalRepetitions += task.repetitions ?? 0;
     }
 
     const count = reviewTasks.length;

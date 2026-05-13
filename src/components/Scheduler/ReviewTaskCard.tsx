@@ -9,6 +9,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Calendar,
+  Zap,
+  Gauge,
+  Activity,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import type { PendingReviewTask } from "@shared/types";
@@ -20,6 +23,25 @@ interface ReviewTaskCardProps {
   onSkip: () => void;
 }
 
+const FSRS_STATE_CONFIG = {
+  New: { label: "scheduler.review.fsrsState.new", color: "text-blue-500", bg: "bg-blue-100 dark:bg-blue-500/20" },
+  Learning: { label: "scheduler.review.fsrsState.learning", color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-500/20" },
+  Review: { label: "scheduler.review.fsrsState.review", color: "text-green-500", bg: "bg-green-100 dark:bg-green-500/20" },
+  Relearning: { label: "scheduler.review.fsrsState.relearning", color: "text-red-500", bg: "bg-red-100 dark:bg-red-500/20" },
+};
+
+const getFSRSStateConfig = (state?: string) => {
+  return FSRS_STATE_CONFIG[state as keyof typeof FSRS_STATE_CONFIG] || FSRS_STATE_CONFIG.Review;
+};
+
+const getDifficultyLabel = (difficulty: number): { label: string; stars: number } => {
+  if (difficulty <= 0.1) return { label: "scheduler.review.difficulty.veryEasy", stars: 1 };
+  if (difficulty <= 0.3) return { label: "scheduler.review.difficulty.easy", stars: 2 };
+  if (difficulty <= 0.5) return { label: "scheduler.review.difficulty.medium", stars: 3 };
+  if (difficulty <= 0.7) return { label: "scheduler.review.difficulty.hard", stars: 4 };
+  return { label: "scheduler.review.difficulty.veryHard", stars: 5 };
+};
+
 export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
   task,
   knowledgePointTitle,
@@ -29,6 +51,8 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
   const { t } = useTranslation();
   const [selectedQuality, setSelectedQuality] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isFSRS = task.algorithm === "fsrs";
 
   const URGENCY_CONFIG = {
     overdue: {
@@ -121,7 +145,9 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
 
   const estimatedNextInterval =
     selectedQuality !== null
-      ? estimateNextInterval(selectedQuality, task.interval_days, task.ease_factor)
+      ? isFSRS
+        ? null
+        : estimateNextInterval(selectedQuality, task.interval_days ?? 0, task.ease_factor ?? 2.5)
       : null;
 
   const handleComplete = async () => {
@@ -133,6 +159,9 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  const fsrsStateConfig = getFSRSStateConfig(task.fsrs_state);
+  const difficultyInfo = getDifficultyLabel(task.fsrs_difficulty ?? 0);
 
   return (
     <motion.div
@@ -157,6 +186,12 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             <UrgencyIcon size={12} className="inline mr-1" />
             {urgencyConfig.label}
           </span>
+          {isFSRS && (
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${fsrsStateConfig.bg} ${fsrsStateConfig.color}`}>
+              <Activity size={12} className="inline mr-1" />
+              {t(fsrsStateConfig.label)}
+            </span>
+          )}
           <span className="text-xs text-slate-400">
             {t('scheduler.review.nextReview')}: {nextReviewText}
           </span>
@@ -166,7 +201,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
           {knowledgePointTitle || t('scheduler.review.knowledgePoint', { id: task.knowledge_point_id.slice(0, 8) })}
         </h4>
 
-        <div className="flex items-center gap-4 mb-4 text-sm">
+        <div className="flex items-center gap-4 mb-4 text-sm flex-wrap">
           <div className="flex items-center gap-1.5">
             <Brain size={14} className="text-primary-500" />
             <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.masteryLevel')}:</span>
@@ -174,20 +209,50 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
               {masteryInfo.label}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <TrendingUp size={14} className="text-primary-500" />
-            <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.interval')}:</span>
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              {t('scheduler.review.days', { count: task.interval_days })}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Star size={14} className="text-amber-500" />
-            <span className="text-slate-600 dark:text-slate-400">EF:</span>
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              {task.ease_factor.toFixed(2)}
-            </span>
-          </div>
+          {isFSRS ? (
+            <>
+              <div className="flex items-center gap-1.5">
+                <Zap size={14} className="text-amber-500" />
+                <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.stability')}:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {task.fsrs_stability?.toFixed(1) ?? "0.0"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Gauge size={14} className="text-primary-500" />
+                <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.difficulty')}:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {t(difficultyInfo.label)}
+                </span>
+              </div>
+              {task.fsrs_retrievability !== undefined && (
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp size={14} className="text-primary-500" />
+                  <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.retrievability')}:</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {Math.round((task.fsrs_retrievability ?? 0) * 100)}%
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <TrendingUp size={14} className="text-primary-500" />
+                <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.interval')}:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {t('scheduler.review.days', { count: task.interval_days ?? 0 })}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Star size={14} className="text-amber-500" />
+                <span className="text-slate-600 dark:text-slate-400">EF:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {(task.ease_factor ?? 2.5).toFixed(2)}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="mb-4">
@@ -293,7 +358,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
               <span>{t('scheduler.review.lastScore')}:</span>
               <div className="flex items-center gap-0.5">
                 {[0, 1, 2, 3, 4, 5].map((i) => {
-                  const lastScore = task.last_quality_score;
+                  const lastScore = task.last_quality_score ?? 0;
                   return (
                     <Star
                       key={i}

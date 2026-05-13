@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS achievements (
   condition_type VARCHAR(50) NOT NULL,
   condition_value INTEGER NOT NULL,
   is_hidden BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE achievements IS '成就定义表，存储所有可获得的成就';
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS user_achievements (
   achievement_id UUID REFERENCES achievements(id) ON DELETE CASCADE,
   progress INTEGER DEFAULT 0,
   metadata JSONB DEFAULT '{}',
-  unlocked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  unlocked_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, achievement_id)
 );
 

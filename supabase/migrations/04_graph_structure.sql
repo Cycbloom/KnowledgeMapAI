@@ -26,7 +26,7 @@ COMMENT ON COLUMN graph_nodes.deleted_at IS '软删除时间，非null表示已�
 
 CREATE TABLE IF NOT EXISTS edges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  graph_id UUID NOT NULL REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
   target_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
   relationship_type VARCHAR(50) DEFAULT 'related',
@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS edges (
   custom_color TEXT,
   custom_line_style TEXT DEFAULT 'solid',
   show_arrow BOOLEAN,
-  deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(source_knowledge_point_id, target_knowledge_point_id, relationship_type),
+  deleted_at TIMESTAMPTZ DEFAULT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type),
   CONSTRAINT chk_line_style CHECK (custom_line_style IS NULL OR custom_line_style IN ('solid', 'dashed', 'dotted', 'double'))
 );
 

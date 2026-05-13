@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   xp INTEGER DEFAULT 0,
   level INTEGER DEFAULT 1,
   role user_role DEFAULT 'user',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE users IS '用户资料表，作为 auth.users 的扩展';

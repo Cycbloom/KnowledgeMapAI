@@ -463,6 +463,30 @@ CREATE POLICY "Users can delete nodes of own paths" ON learning_path_nodes FOR D
   EXISTS (SELECT 1 FROM learning_paths WHERE learning_paths.id = learning_path_nodes.path_id AND learning_paths.user_id = auth.uid())
 );
 
+-- Learning path prerequisites
+ALTER TABLE learning_path_prerequisites ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view prerequisites of own paths" ON learning_path_prerequisites FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM learning_path_nodes ln
+    JOIN learning_paths lp ON ln.path_id = lp.id
+    WHERE ln.id = learning_path_prerequisites.path_node_id AND lp.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can insert prerequisites to own paths" ON learning_path_prerequisites FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM learning_path_nodes ln
+    JOIN learning_paths lp ON ln.path_id = lp.id
+    WHERE ln.id = learning_path_prerequisites.path_node_id AND lp.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete prerequisites from own paths" ON learning_path_prerequisites FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM learning_path_nodes ln
+    JOIN learning_paths lp ON ln.path_id = lp.id
+    WHERE ln.id = learning_path_prerequisites.path_node_id AND lp.user_id = auth.uid()
+  )
+);
+
 -- Learning path progress
 ALTER TABLE learning_path_progress ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own progress" ON learning_path_progress FOR SELECT USING (auth.uid() = user_id);

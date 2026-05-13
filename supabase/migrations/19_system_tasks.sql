@@ -61,3 +61,8 @@ WHERE source IS NULL OR source = 'user';
 
 -- Index for source filtering
 CREATE INDEX IF NOT EXISTS idx_user_tasks_source ON user_tasks(source);
+
+-- Trigger: auto-update updated_at
+CREATE TRIGGER system_tasks_updated_at
+  BEFORE UPDATE ON system_tasks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

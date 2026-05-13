@@ -545,7 +545,7 @@ DECLARE
   prev_focus_date DATE;
   new_streak INTEGER;
 BEGIN
-  focus_date := NEW.start_time::date;
+  focus_date := NEW.started_at::date;
 
   INSERT INTO user_focus_stats (user_id, total_focus_seconds, total_sessions, total_pomodoros, current_streak, longest_streak, last_focus_date)
   VALUES (

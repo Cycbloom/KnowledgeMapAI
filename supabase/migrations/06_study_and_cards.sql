@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS study_cards (
   card_type VARCHAR(20) DEFAULT 'qa' CHECK (card_type IN ('qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay')),
   options JSONB DEFAULT NULL,
   difficulty INTEGER DEFAULT 1 CHECK (difficulty BETWEEN 1 AND 5),
-  last_reviewed TIMESTAMP WITH TIME ZONE,
-  next_review TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_reviewed TIMESTAMPTZ,
+  next_review TIMESTAMPTZ DEFAULT NOW(),
   review_count INTEGER DEFAULT 0,
   fsrs_state INTEGER DEFAULT 0,
   fsrs_stability DOUBLE PRECISION DEFAULT 0,
@@ -42,9 +42,9 @@ CREATE TABLE IF NOT EXISTS study_cards (
   fsrs_elapsed_days DOUBLE PRECISION DEFAULT 0,
   fsrs_scheduled_days DOUBLE PRECISION DEFAULT 0,
   fsrs_retrievability DOUBLE PRECISION DEFAULT 0,
-  fsrs_last_review TIMESTAMP WITH TIME ZONE,
+  fsrs_last_review TIMESTAMPTZ,
   quiz_set_id UUID REFERENCES quiz_sets(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE study_cards IS '学习卡片表，支持 FSRS 间隔重复算法';
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS study_progress (
   mastered_nodes INTEGER DEFAULT 0,
   progress_percentage FLOAT DEFAULT 0,
   study_streak INTEGER DEFAULT 0,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, graph_id)
 );
 

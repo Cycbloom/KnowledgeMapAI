@@ -65,12 +65,15 @@ COMMENT ON COLUMN user_tasks.progress_percentage IS 'Current progress percentage
 COMMENT ON COLUMN user_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
 COMMENT ON COLUMN user_tasks.context IS 'Task context and metadata (JSONB for flexible task-type-specific data)';
 
+-- Legacy column migration: 兼容旧 schema 版本的列类型变更
+-- 这些列在旧版本中以不同类型存在，DROP + ADD 确保类型正确
+-- 在新数据库初始化 (db reset) 时这些列从未创建，DROP IF EXISTS 是安全的空操作
 ALTER TABLE user_tasks DROP COLUMN IF EXISTS graph_id;
 ALTER TABLE user_tasks DROP COLUMN IF EXISTS knowledge_point_count;
 ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_duration;
 ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_deadline;
-ALTER TABLE user_tasks DROP COLUMN IF EXISTS context;
-ALTER TABLE user_tasks ADD COLUMN IF NOT EXISTS context JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE user_tasks ALTER COLUMN context TYPE JSONB USING COALESCE(context, '{}')::jsonb;
+ALTER TABLE user_tasks ALTER COLUMN context SET DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_user_tasks_context_graph_id ON user_tasks ((context->>'graph_id')) WHERE task_type = 'graph_learning';
 
@@ -311,10 +314,10 @@ CREATE TABLE IF NOT EXISTS knowledge_review_tasks (
   UNIQUE(knowledge_point_id, user_id)
 );
 
-COMMENT ON TABLE knowledge_review_tasks IS 'SM-2 间隔重复算法的复习任务记录';
-COMMENT ON COLUMN knowledge_review_tasks.interval_days IS '当前复习间隔（天）';
-COMMENT ON COLUMN knowledge_review_tasks.ease_factor IS '易遗忘因子 (EF)，默认 2.5，最小 1.3';
-COMMENT ON COLUMN knowledge_review_tasks.repetitions IS '连续成功复习次数';
+COMMENT ON TABLE knowledge_review_tasks IS 'SM-2 间隔重复算法的复习任务记录 [DEPRECATED: 推荐使用 study_cards (FSRS) 替代]';
+COMMENT ON COLUMN knowledge_review_tasks.interval_days IS '[DEPRECATED] 当前复习间隔（天），推荐使用 study_cards (FSRS) 替代 SM2 算法';
+COMMENT ON COLUMN knowledge_review_tasks.ease_factor IS '[DEPRECATED] 易遗忘因子 (EF)，默认 2.5，最小 1.3，推荐使用 study_cards (FSRS) 替代 SM2 算法';
+COMMENT ON COLUMN knowledge_review_tasks.repetitions IS '[DEPRECATED] 连续成功复习次数，推荐使用 study_cards (FSRS) 替代 SM2 算法';
 COMMENT ON COLUMN knowledge_review_tasks.next_review_date IS '下次复习日期';
 COMMENT ON COLUMN knowledge_review_tasks.last_quality_score IS '上次复习评分 (0-5)';
 

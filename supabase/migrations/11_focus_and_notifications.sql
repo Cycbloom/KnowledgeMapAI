@@ -33,9 +33,9 @@ CREATE TABLE IF NOT EXISTS notifications (
   title VARCHAR(255) NOT NULL,
   message TEXT,
   data JSONB DEFAULT '{}',
-  read_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  expires_at TIMESTAMP WITH TIME ZONE
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ
 );
 
 COMMENT ON TABLE notifications IS 'User notifications for task reminders and alerts';
@@ -60,8 +60,8 @@ CREATE TABLE IF NOT EXISTS notification_settings (
   do_not_disturb_enabled BOOLEAN DEFAULT FALSE,
   do_not_disturb_start TIME DEFAULT '22:00',
   do_not_disturb_end TIME DEFAULT '08:00',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE notification_settings IS 'User preferences for notifications';

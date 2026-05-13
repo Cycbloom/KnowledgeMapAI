@@ -114,15 +114,7 @@ CREATE INDEX IF NOT EXISTS idx_quiz_sessions_status ON quiz_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_quiz_results_session_id ON quiz_results(quiz_session_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_results_card_id ON quiz_results(card_id);
 
--- Update trigger for updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
+-- Update triggers for updated_at
 CREATE TRIGGER update_practice_sessions_updated_at
   BEFORE UPDATE ON practice_sessions
   FOR EACH ROW

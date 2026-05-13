@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   template_content TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT prompt_templates_user_id_check CHECK (
     (scope = 'system' AND user_id IS NULL) OR
     (scope IN ('user', 'graph') AND user_id IS NOT NULL)
@@ -19,8 +19,7 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
   CONSTRAINT prompt_templates_graph_id_check CHECK (
     (scope IN ('system', 'user') AND graph_id IS NULL) OR
     (scope = 'graph' AND graph_id IS NOT NULL)
-  ),
-  UNIQUE (code, scope, user_id, graph_id)
+  )
 );
 
 COMMENT ON TABLE prompt_templates IS 'Prompt templates with priority: graph > user > system';
@@ -40,8 +39,8 @@ CREATE TABLE IF NOT EXISTS ai_actions (
   graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   prompt_template TEXT NOT NULL,
   variables JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE ai_actions IS 'AI 动作配置表，定义可执行的 AI 操作';
@@ -71,11 +70,11 @@ CREATE TABLE IF NOT EXISTS ai_performance_logs (
   error_message TEXT,
   cost_breakdown JSONB,
   metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE ai_performance_logs IS 'AI服务性能监控日志，记录所有AI API调用的详细指标';
-COMMENT ON COLUMN ai_performance_logs.timestamp IS '请求时间戳（毫秒）';
+COMMENT ON COLUMN ai_performance_logs.timestamp IS '[DEPRECATED] 使用 created_at (TIMESTAMPTZ) 替代此字段。此列仅保留向后兼容，新代码应使用 created_at。';
 COMMENT ON COLUMN ai_performance_logs.operation IS '操作类型标识';
 COMMENT ON COLUMN ai_performance_logs.session_id IS '会话ID，用于关联同一场对话中的多个AI调用';
 COMMENT ON COLUMN ai_performance_logs.cached_input_tokens IS '缓存命中的输入Token数';
@@ -88,7 +87,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
   key VARCHAR(255) PRIMARY KEY,
   value JSONB NOT NULL,
   description TEXT,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   updated_by UUID REFERENCES auth.users(id)
 );
 
@@ -112,8 +111,8 @@ CREATE TABLE IF NOT EXISTS templates (
   tags TEXT[] DEFAULT '{}',
   difficulty VARCHAR(20) DEFAULT 'medium',
   estimated_nodes INTEGER DEFAULT 10,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE templates IS '知识图谱模板表，存储预设和用户自定义模板';
@@ -122,3 +121,14 @@ COMMENT ON COLUMN templates.template_type IS '模板类型标识：knowledge_tre
 COMMENT ON COLUMN templates.generation_config IS 'AI生成配置：风格、深度、语言等';
 COMMENT ON COLUMN templates.tags IS '模板标签数组，用于分类和搜索';
 COMMENT ON COLUMN templates.difficulty IS '模板难度：easy, medium, hard';
+
+-- 部分唯一索引：修复 NULL 值问题
+-- System 级别：同一 code 只能有一条记录
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_templates_system_unique 
+  ON prompt_templates(code) 
+  WHERE scope = 'system' AND user_id IS NULL AND graph_id IS NULL;
+
+-- User/Graph 级别：同一 (code, scope, user_id, graph_id) 组合唯一
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_templates_user_graph_unique 
+  ON prompt_templates(code, scope, user_id, graph_id) 
+  WHERE scope != 'system';

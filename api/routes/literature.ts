@@ -37,9 +37,6 @@ const router = Router();
 const MERGE_THRESHOLD = parseFloat(
   process.env.CONCEPT_MERGE_THRESHOLD || "0.85",
 );
-const BATCH_MERGE_THRESHOLD = parseFloat(
-  process.env.CONCEPT_BATCH_MERGE_THRESHOLD || "0.92",
-);
 const FUZZY_TITLE_CONFIRM_THRESHOLD = 0.75;
 
 async function withLiteratureTracking<T>(
@@ -707,41 +704,6 @@ router.post(
         failedCount: remainingConcepts.length - successCount,
       });
 
-      const batchMergedIndices = new Set<number>();
-      for (let i = 0; i < conceptsWithEmbedding.length; i++) {
-        if (batchMergedIndices.has(i)) continue;
-        const ci = conceptsWithEmbedding[i];
-        if (!ci.embedding) continue;
-
-        for (let j = i + 1; j < conceptsWithEmbedding.length; j++) {
-          if (batchMergedIndices.has(j)) continue;
-          const cj = conceptsWithEmbedding[j];
-          if (!cj.embedding) continue;
-
-          const similarity =
-            await conceptAggregationService.calculateSimilarity(
-              ci.embedding,
-              cj.embedding,
-            );
-
-          if (similarity >= BATCH_MERGE_THRESHOLD) {
-            batchMergedIndices.add(j);
-            if (cj.concept.description.length > ci.concept.description.length) {
-              ci.concept.description = cj.concept.description;
-            }
-            logger.info(
-              `Batch embedding dedup: "${cj.concept.title}" merged into "${ci.concept.title}" (similarity: ${similarity.toFixed(3)})`,
-            );
-          }
-        }
-      }
-
-      logger.info("Batch embedding dedup completed", {
-        batchMergedCount: batchMergedIndices.size,
-        remainingForMerge:
-          conceptsWithEmbedding.length - batchMergedIndices.size,
-      });
-
       const nodesToCreate: Array<{
         tempId: string;
         title: string;
@@ -754,7 +716,6 @@ router.post(
       }> = [];
 
       for (let i = 0; i < conceptsWithEmbedding.length; i++) {
-        if (batchMergedIndices.has(i)) continue;
         const { concept, embedding } = conceptsWithEmbedding[i];
         let merged = false;
 

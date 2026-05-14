@@ -23,23 +23,40 @@ interface PositionUpdate {
 
 export class GraphNodeService {
   async addToGraph(supabase: SupabaseClient, data: AddToGraphData): Promise<GraphNodeWithKnowledgePoint> {
+    const { data: existingNode } = await supabase
+      .from("graph_nodes")
+      .select(GRAPH_NODES_SELECT)
+      .eq("graph_id", data.graph_id)
+      .eq("knowledge_point_id", data.knowledge_point_id)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (existingNode) {
+      logger.warn("Duplicate graph node insertion prevented", {
+        graphId: data.graph_id,
+        knowledgePointId: data.knowledge_point_id,
+        existingNodeId: existingNode.id,
+      });
+      return buildNodeFromGraphNode(existingNode) as GraphNodeWithKnowledgePoint;
+    }
+
     const graphNodeData = {
       graph_id: data.graph_id,
       knowledge_point_id: data.knowledge_point_id,
       x_position: data.x_position ?? Math.round((Math.random() - 0.5) * 20),
       y_position: data.y_position ?? Math.round((Math.random() - 0.5) * 20),
-      level: data.level || 'normal',
+      level: data.level || "normal",
       is_accepted: data.is_accepted ?? true,
     };
 
     const { data: graphNode, error } = await supabase
-      .from('graph_nodes')
+      .from("graph_nodes")
       .insert([graphNodeData])
       .select(GRAPH_NODES_SELECT)
       .single();
 
     if (error) {
-      if (error.code === '23505') {
+      if (error.code === "23505") {
         throw new AppError(ErrorCodes.DUPLICATE_TOPIC);
       }
       throw error;

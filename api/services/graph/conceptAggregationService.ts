@@ -7,13 +7,126 @@ import type {
   KnowledgePoint,
 } from "../../../shared/types/graph";
 
-const SIMILARITY_THRESHOLD = 0.85;
+const SIMILARITY_THRESHOLD = parseFloat(
+  process.env.CONCEPT_MERGE_THRESHOLD || "0.85",
+);
 const CORE_LEVEL_THRESHOLD = 2;
 const ROOT_LEVEL_THRESHOLD = 5;
 const BATCH_SIZE = 50;
 
+const HALF_WIDTH_MAP: Record<string, string> = {
+  "！": "!",
+  "＂": '"',
+  "＃": "#",
+  "＄": "$",
+  "％": "%",
+  "＆": "&",
+  "＇": "'",
+  "（": "(",
+  "）": ")",
+  "＊": "*",
+  "＋": "+",
+  "，": ",",
+  "－": "-",
+  "．": ".",
+  "／": "/",
+  "０": "0",
+  "１": "1",
+  "２": "2",
+  "３": "3",
+  "４": "4",
+  "５": "5",
+  "６": "6",
+  "７": "7",
+  "８": "8",
+  "９": "9",
+  "：": ":",
+  "；": ";",
+  "＜": "<",
+  "＝": "=",
+  "＞": ">",
+  "？": "?",
+  "＠": "@",
+  "Ａ": "A",
+  "Ｂ": "B",
+  "Ｃ": "C",
+  "Ｄ": "D",
+  "Ｅ": "E",
+  "Ｆ": "F",
+  "Ｇ": "G",
+  "Ｈ": "H",
+  "Ｉ": "I",
+  "Ｊ": "J",
+  "Ｋ": "K",
+  "Ｌ": "L",
+  "Ｍ": "M",
+  "Ｎ": "N",
+  "Ｏ": "O",
+  "Ｐ": "P",
+  "Ｑ": "Q",
+  "Ｒ": "R",
+  "Ｓ": "S",
+  "Ｔ": "T",
+  "Ｕ": "U",
+  "Ｖ": "V",
+  "Ｗ": "W",
+  "Ｘ": "X",
+  "Ｙ": "Y",
+  "Ｚ": "Z",
+  "ａ": "a",
+  "ｂ": "b",
+  "ｃ": "c",
+  "ｄ": "d",
+  "ｅ": "e",
+  "ｆ": "f",
+  "ｇ": "g",
+  "ｈ": "h",
+  "ｉ": "i",
+  "ｊ": "j",
+  "ｋ": "k",
+  "ｌ": "l",
+  "ｍ": "m",
+  "ｎ": "n",
+  "ｏ": "o",
+  "ｐ": "p",
+  "ｑ": "q",
+  "ｒ": "r",
+  "ｓ": "s",
+  "ｔ": "t",
+  "ｕ": "u",
+  "ｖ": "v",
+  "ｗ": "w",
+  "ｘ": "x",
+  "ｙ": "y",
+  "ｚ": "z",
+  "［": "[",
+  "］": "]",
+  "｛": "{",
+  "｝": "}",
+  "＾": "^",
+  "＿": "_",
+  "｀": "`",
+  "～": "~",
+};
+
+function fullWidthToHalfWidth(str: string): string {
+  let result = "";
+  for (const ch of str) {
+    result += HALF_WIDTH_MAP[ch] || ch;
+  }
+  return result;
+}
+
+const PUNCTUATION_RE = /[\s.,;:!?。，、；：！？…—\-–·""''「」『』【】《》（）()\-_]+$/g;
+
 export function normalizeTitle(title: string): string {
-  return title.trim().toLowerCase().replace(/\s+/g, " ");
+  let normalized = title.trim();
+  normalized = normalized.normalize("NFC");
+  normalized = fullWidthToHalfWidth(normalized);
+  normalized = normalized.toLowerCase();
+  normalized = normalized.replace(/\s+/g, " ");
+  normalized = normalized.replace(PUNCTUATION_RE, "").trim();
+  return normalized;
 }
 
 export interface SimilarityResult {

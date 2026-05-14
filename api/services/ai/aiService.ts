@@ -276,12 +276,18 @@ export class AIService {
   async generateEmbeddingsBatch(texts: string[]): Promise<(number[] | null)[]> {
     const embeddingProvider = await getProviderForTask("embedding");
     if (!embeddingProvider) {
+      logger.warn(
+        "No embedding provider configured. Set embedding_ai.provider in system_config or EMBEDDING_PROVIDER env var.",
+      );
       return texts.map(() => null);
     }
 
     const provider = await getAIProviderForTask("embedding");
 
     if (!provider.hasKey) {
+      logger.warn(
+        `Embedding provider "${embeddingProvider}" has no API key configured.`,
+      );
       return texts.map(() => null);
     }
 

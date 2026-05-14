@@ -1,8 +1,9 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { graphNodeService } from './graphNodeService';
-import { edgeService } from './edgeService';
-import { taskService } from '../taskService';
-import { logger } from '../../utils/logger';
+import { SupabaseClient } from "@supabase/supabase-js";
+import { graphNodeService } from "./graphNodeService";
+import { edgeService } from "./edgeService";
+import { taskService } from "../taskService";
+import { logger } from "../../utils/logger";
+import { aiService } from "../ai/aiService";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 200;
@@ -18,6 +19,7 @@ export interface AINodeData {
   y_position: number;
   relationshipType?: string;
   properties?: Record<string, unknown>;
+  embedding?: number[];
 }
 
 export interface CreateEdgeData {
@@ -31,18 +33,21 @@ export interface ProcessAINodesResult {
   nodeCount: number;
   edgeCount: number;
   graphNodeIds: string[];
-  nodeMapping: Record<string, { graphNodeId: string; knowledgePointId: string }>;
+  nodeMapping: Record<
+    string,
+    { graphNodeId: string; knowledgePointId: string }
+  >;
 }
 
 export class AutoGraphService {
   private async sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private async retry<T>(
     fn: () => Promise<T>,
     retries: number = MAX_RETRIES,
-    delayMs: number = RETRY_DELAY_MS
+    delayMs: number = RETRY_DELAY_MS,
   ): Promise<T> {
     let lastError: Error | null = null;
     for (let i = 0; i < retries; i++) {
@@ -51,7 +56,9 @@ export class AutoGraphService {
       } catch (error) {
         lastError = error as Error;
         if (i < retries - 1) {
-          logger.warn(`Retry ${i + 1}/${retries} after error: ${lastError.message}`);
+          logger.warn(
+            `Retry ${i + 1}/${retries} after error: ${lastError.message}`,
+          );
           await this.sleep(delayMs * (i + 1));
         }
       }
@@ -63,9 +70,11 @@ export class AutoGraphService {
     supabase: SupabaseClient,
     userId: string,
     graphId: string,
-    nodes: AINodeData[]
+    nodes: AINodeData[],
   ): Promise<ProcessAINodesResult> {
-    const validNodes = nodes.filter(node => node.title && node.title.trim() !== '');
+    const validNodes = nodes.filter(
+      (node) => node.title && node.title.trim() !== "",
+    );
 
     if (validNodes.length === 0) {
       return { nodeCount: 0, edgeCount: 0, graphNodeIds: [], nodeMapping: {} };
@@ -73,18 +82,18 @@ export class AutoGraphService {
 
     logger.info(`Processing ${validNodes.length} nodes for graph ${graphId}`);
 
-    const nodeMap = new Map<string, { graphNodeId: string; knowledgePointId: string }>();
+    const nodeMap = new Map<
+      string,
+      { graphNodeId: string; knowledgePointId: string }
+    >();
     const graphNodeIds: string[] = [];
     const failedNodes: string[] = [];
 
-    logger.info('Creating knowledge points in batches (without embedding)...');
-    const knowledgePoints = await this.createKnowledgePointsBatch(
-      supabase,
-      userId,
-      validNodes
-    );
+    logger.info("Creating knowledge points in batches (without embedding)...");
+    const { knowledgePoints, embeddingsGenerated } =
+      await this.createKnowledgePointsBatch(supabase, userId, validNodes);
 
-    logger.info('Creating graph nodes...');
+    logger.info("Creating graph nodes...");
     for (let i = 0; i < validNodes.length; i++) {
       const nodeData = validNodes[i];
       const kp = knowledgePoints[i];
@@ -95,14 +104,16 @@ export class AutoGraphService {
       }
 
       try {
-        const graphNode = await this.retry(() => graphNodeService.addToGraph(supabase, {
-          graph_id: graphId,
-          knowledge_point_id: kp.id,
-          x_position: nodeData.x_position,
-          y_position: nodeData.y_position,
-          level: nodeData.level as any || 'normal',
-          is_accepted: true,
-        }));
+        const graphNode = await this.retry(() =>
+          graphNodeService.addToGraph(supabase, {
+            graph_id: graphId,
+            knowledge_point_id: kp.id,
+            x_position: nodeData.x_position,
+            y_position: nodeData.y_position,
+            level: (nodeData.level as any) || "normal",
+            is_accepted: true,
+          }),
+        );
 
         nodeMap.set(nodeData.tempId, {
           graphNodeId: graphNode.id,
@@ -110,13 +121,18 @@ export class AutoGraphService {
         });
         graphNodeIds.push(graphNode.id);
       } catch (error) {
-        logger.error(`Failed to create graph node for: ${nodeData.title}`, error);
+        logger.error(
+          `Failed to create graph node for: ${nodeData.title}`,
+          error,
+        );
         failedNodes.push(nodeData.title);
       }
     }
 
     if (failedNodes.length > 0) {
-      logger.warn(`Failed to create ${failedNodes.length} nodes: ${failedNodes.slice(0, 5).join(', ')}${failedNodes.length > 5 ? '...' : ''}`);
+      logger.warn(
+        `Failed to create ${failedNodes.length} nodes: ${failedNodes.slice(0, 5).join(", ")}${failedNodes.length > 5 ? "..." : ""}`,
+      );
     }
 
     const edgesToCreate: CreateEdgeData[] = [];
@@ -130,10 +146,10 @@ export class AutoGraphService {
         if (!parentInfo && childInfo) {
           try {
             const { data: existingNode, error } = await supabase
-              .from('graph_nodes')
-              .select('knowledge_point_id')
-              .eq('id', nodeData.parentId)
-              .eq('graph_id', graphId)
+              .from("graph_nodes")
+              .select("knowledge_point_id")
+              .eq("id", nodeData.parentId)
+              .eq("graph_id", graphId)
               .single();
 
             if (!error && existingNode) {
@@ -154,10 +170,13 @@ export class AutoGraphService {
               });
             }
           } catch (e) {
-            logger.warn(`Could not find parent node ${nodeData.parentId} in database`, {
-              error: (e as Error).message,
-              childTempId: nodeData.tempId,
-            });
+            logger.warn(
+              `Could not find parent node ${nodeData.parentId} in database`,
+              {
+                error: (e as Error).message,
+                childTempId: nodeData.tempId,
+              },
+            );
           }
         } else if (parentInfo) {
           logger.info(`Parent found in nodeMap`, {
@@ -171,7 +190,7 @@ export class AutoGraphService {
             graph_id: graphId,
             source_knowledge_point_id: parentInfo.knowledgePointId,
             target_knowledge_point_id: childInfo.knowledgePointId,
-            relationship_type: nodeData.relationshipType || 'contains',
+            relationship_type: nodeData.relationshipType || "contains",
           });
         } else {
           logger.warn(`Could not create edge for node`, {
@@ -200,12 +219,20 @@ export class AutoGraphService {
     if (edgesToCreate.length > 0) {
       try {
         const { data: createdEdges, error: verifyError } = await supabase
-          .from('edges')
-          .select('id, source_knowledge_point_id, target_knowledge_point_id, relationship_type')
-          .in('source_knowledge_point_id', edgesToCreate.map(e => e.source_knowledge_point_id))
-          .in('target_knowledge_point_id', edgesToCreate.map(e => e.target_knowledge_point_id))
-          .eq('graph_id', graphId)
-          .is('deleted_at', null);
+          .from("edges")
+          .select(
+            "id, source_knowledge_point_id, target_knowledge_point_id, relationship_type",
+          )
+          .in(
+            "source_knowledge_point_id",
+            edgesToCreate.map((e) => e.source_knowledge_point_id),
+          )
+          .in(
+            "target_knowledge_point_id",
+            edgesToCreate.map((e) => e.target_knowledge_point_id),
+          )
+          .eq("graph_id", graphId)
+          .is("deleted_at", null);
 
         if (verifyError) {
           logger.error("Edge verification failed", {
@@ -217,7 +244,7 @@ export class AutoGraphService {
             expected: edgesToCreate.length,
             actual: createdEdges?.length || 0,
             success: createdEdges?.length === edgesToCreate.length,
-            createdEdges: createdEdges?.map(e => ({
+            createdEdges: createdEdges?.map((e) => ({
               source: e.source_knowledge_point_id,
               target: e.target_knowledge_point_id,
               type: e.relationship_type,
@@ -233,25 +260,32 @@ export class AutoGraphService {
 
     logger.info(`Completed: ${graphNodeIds.length} nodes, ${edgeCount} edges`);
 
-    const validKnowledgePointIds = knowledgePoints
-      .filter((kp): kp is { id: string } => kp !== null)
-      .map(kp => kp.id);
+    if (!embeddingsGenerated) {
+      const validKnowledgePointIds = knowledgePoints
+        .filter((kp): kp is { id: string } => kp !== null)
+        .map((kp) => kp.id);
 
-    if (validKnowledgePointIds.length > 0) {
-      try {
-        await taskService.createTask(
-          userId,
-          'embedding_generation',
-          { knowledgePointIds: validKnowledgePointIds },
-          `嵌入生成 - ${validKnowledgePointIds.length}个知识点`
-        );
-        logger.info(`Created embedding generation task for ${validKnowledgePointIds.length} knowledge points`);
-      } catch (error) {
-        logger.error('Failed to create embedding generation task:', error);
+      if (validKnowledgePointIds.length > 0) {
+        try {
+          await taskService.createTask(
+            userId,
+            "embedding_generation",
+            { knowledgePointIds: validKnowledgePointIds },
+            `嵌入生成 - ${validKnowledgePointIds.length}个知识点`,
+          );
+          logger.info(
+            `Created embedding generation task for ${validKnowledgePointIds.length} knowledge points`,
+          );
+        } catch (error) {
+          logger.error("Failed to create embedding generation task:", error);
+        }
       }
     }
 
-    const nodeMappingRecord: Record<string, { graphNodeId: string; knowledgePointId: string }> = {};
+    const nodeMappingRecord: Record<
+      string,
+      { graphNodeId: string; knowledgePointId: string }
+    > = {};
     for (const [tempId, info] of nodeMap) {
       nodeMappingRecord[tempId] = info;
     }
@@ -267,60 +301,73 @@ export class AutoGraphService {
   private async createKnowledgePointsBatch(
     supabase: SupabaseClient,
     userId: string,
-    nodes: AINodeData[]
-  ): Promise<Array<{ id: string } | null>> {
-    const results: Array<{ id: string } | null> = new Array(nodes.length).fill(null);
+    nodes: AINodeData[],
+  ): Promise<{
+    knowledgePoints: Array<{ id: string } | null>;
+    embeddingsGenerated: boolean;
+  }> {
+    const results: Array<{ id: string } | null> = new Array(nodes.length).fill(
+      null,
+    );
 
     for (let i = 0; i < nodes.length; i += BATCH_SIZE) {
       const batchNodes = nodes.slice(i, i + BATCH_SIZE);
 
       const records = batchNodes.map((node) => ({
         title: node.title,
-        content: node.content || '',
+        content: node.content || "",
         properties: {
-          source: 'ai-generated',
+          source: "ai-generated",
           generated_at: new Date().toISOString(),
           ...(node.properties || {}),
         },
-        embedding: null,
-        visibility: 'private' as const,
+        embedding: node.embedding || null,
+        visibility: "private" as const,
         owner_id: userId,
       }));
 
       try {
         const { data, error } = await supabase
-          .from('knowledge_points')
+          .from("knowledge_points")
           .insert(records)
-          .select('id');
+          .select("id");
 
         if (error) {
-          logger.error('Batch knowledge point insertion error:', error);
+          logger.error("Batch knowledge point insertion error:", error);
           for (let j = 0; j < batchNodes.length; j++) {
             try {
               const { data: singleData, error: singleError } = await supabase
-                .from('knowledge_points')
-                .insert([{
-                  title: batchNodes[j].title,
-                  content: batchNodes[j].content || '',
-                  properties: { 
-                    source: 'ai-generated',
-                    ...(batchNodes[j].properties || {}),
+                .from("knowledge_points")
+                .insert([
+                  {
+                    title: batchNodes[j].title,
+                    content: batchNodes[j].content || "",
+                    properties: {
+                      source: "ai-generated",
+                      ...(batchNodes[j].properties || {}),
+                    },
+                    embedding: batchNodes[j].embedding || null,
+                    visibility: "private",
+                    owner_id: userId,
                   },
-                  embedding: null,
-                  visibility: 'private',
-                  owner_id: userId,
-                }])
-                .select('id')
+                ])
+                .select("id")
                 .single();
 
               if (singleError) {
-                logger.error(`Individual KP creation failed for: ${batchNodes[j].title}`, singleError);
+                logger.error(
+                  `Individual KP creation failed for: ${batchNodes[j].title}`,
+                  singleError,
+                );
                 results[i + j] = null;
               } else {
                 results[i + j] = singleData;
               }
             } catch (e) {
-              logger.error(`Individual KP creation exception for: ${batchNodes[j].title}`, e);
+              logger.error(
+                `Individual KP creation exception for: ${batchNodes[j].title}`,
+                e,
+              );
               results[i + j] = null;
             }
           }
@@ -330,52 +377,109 @@ export class AutoGraphService {
           }
         }
       } catch (error) {
-        logger.error('Knowledge point batch creation failed:', error);
+        logger.error("Knowledge point batch creation failed:", error);
       }
     }
 
-    return results;
+    const kpsNeedingEmbeddings: Array<{ id: string; text: string }> = [];
+    for (let i = 0; i < results.length; i++) {
+      if (results[i] && !nodes[i].embedding) {
+        const node = nodes[i];
+        const text = node.content
+          ? `${node.title}: ${node.content.slice(0, 500)}`
+          : node.title;
+        kpsNeedingEmbeddings.push({ id: results[i]!.id, text });
+      }
+    }
+
+    let embeddingsGenerated = true;
+    const preGeneratedCount = results.filter(
+      (r, i) => r && nodes[i].embedding,
+    ).length;
+
+    if (preGeneratedCount > 0) {
+      logger.info(
+        `${preGeneratedCount} knowledge points have pre-generated embeddings`,
+      );
+    }
+
+    if (kpsNeedingEmbeddings.length > 0) {
+      try {
+        const texts = kpsNeedingEmbeddings.map((kp) => kp.text);
+        const embeddings = await aiService.generateEmbeddingsBatch(texts);
+
+        let updatedCount = 0;
+        for (let i = 0; i < kpsNeedingEmbeddings.length; i++) {
+          if (embeddings[i]) {
+            const { error: updateError } = await supabase
+              .from("knowledge_points")
+              .update({ embedding: embeddings[i] })
+              .eq("id", kpsNeedingEmbeddings[i].id);
+
+            if (!updateError) {
+              updatedCount++;
+            }
+          }
+        }
+
+        logger.info(
+          `Generated embeddings: ${updatedCount}/${kpsNeedingEmbeddings.length}`,
+        );
+
+        if (updatedCount !== kpsNeedingEmbeddings.length) {
+          embeddingsGenerated = false;
+          logger.warn(
+            `Only ${updatedCount}/${kpsNeedingEmbeddings.length} embeddings generated`,
+          );
+        }
+      } catch (embedError) {
+        embeddingsGenerated = false;
+        logger.warn("Synchronous embedding generation failed:", embedError);
+      }
+    }
+
+    return { knowledgePoints: results, embeddingsGenerated };
   }
 
   async createEdgesBatch(
     supabase: SupabaseClient,
-    edges: CreateEdgeData[]
+    edges: CreateEdgeData[],
   ): Promise<number> {
     if (edges.length === 0) return 0;
 
-    const edgeRecords = edges.map(e => ({
+    const edgeRecords = edges.map((e) => ({
       graph_id: e.graph_id,
       source_knowledge_point_id: e.source_knowledge_point_id,
       target_knowledge_point_id: e.target_knowledge_point_id,
-      relationship_type: e.relationship_type || 'contains',
+      relationship_type: e.relationship_type || "contains",
     }));
 
     try {
-      const { error } = await supabase
-        .from('edges')
-        .insert(edgeRecords);
+      const { error } = await supabase.from("edges").insert(edgeRecords);
 
       if (error) {
-        logger.error('Batch edge insertion error:', error);
+        logger.error("Batch edge insertion error:", error);
         let successCount = 0;
         for (const edge of edges) {
           try {
-            await this.retry(() => edgeService.create(supabase, {
-              graph_id: edge.graph_id,
-              source_knowledge_point_id: edge.source_knowledge_point_id,
-              target_knowledge_point_id: edge.target_knowledge_point_id,
-              relationship_type: edge.relationship_type || 'contains',
-            }));
+            await this.retry(() =>
+              edgeService.create(supabase, {
+                graph_id: edge.graph_id,
+                source_knowledge_point_id: edge.source_knowledge_point_id,
+                target_knowledge_point_id: edge.target_knowledge_point_id,
+                relationship_type: edge.relationship_type || "contains",
+              }),
+            );
             successCount++;
           } catch (e) {
-            logger.error('Individual edge insertion error:', e);
+            logger.error("Individual edge insertion error:", e);
           }
         }
         return successCount;
       }
       return edges.length;
     } catch (error) {
-      logger.error('Batch edge insertion failed:', error);
+      logger.error("Batch edge insertion failed:", error);
       return 0;
     }
   }

@@ -688,7 +688,7 @@ export class TemplateGeneratorService {
           level: n.level,
           parentId: n.parentId,
           suggestedContent: n.suggestedContent,
-          backboneModule: n.module,
+          backboneModule: n.module as BackboneModule,
           needsRefinement: n.level === "core",
           color: n.color,
         }),

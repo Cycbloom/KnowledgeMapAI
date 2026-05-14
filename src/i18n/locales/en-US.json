@@ -2566,13 +2566,15 @@
       "knowledge": "Knowledge Learning",
       "project": "Project Planning",
       "analysis": "Problem Analysis",
-      "architecture": "System Architecture"
+      "architecture": "System Architecture",
+      "topicResearch": "Topic Research"
     },
     "categoryDescription": {
       "knowledge": "Systematically learn knowledge, build complete systems",
       "project": "Plan project workflows, break down task objectives",
       "analysis": "Deeply analyze problems, find root causes and solutions",
-      "architecture": "Understand system composition, organize dependencies"
+      "architecture": "Understand system composition, organize dependencies",
+      "topicResearch": "Research specific topics with structured deep exploration"
     },
     "templateType": {
       "knowledge_tree": "Knowledge Tree",
@@ -2614,6 +2616,17 @@
       "knowledge_system": "Cross-domain knowledge connections",
       "blank": "Create freely without specific structure"
     },
+    "topicResearchPreset": {
+      "academic_research": "General Academic Research",
+      "experimental_science": "Experimental Science",
+      "engineering_research": "Engineering Research",
+      "policy_research": "Policy Research",
+      "custom": "Custom"
+    },
+    "topicResearchPresetDescription": {
+      "custom": "Custom module structure"
+    },
+    "topicResearchCustomEditorHint": "Customize the module structure for topic research. Each module will expand as a research branch.",
     "form": {
       "name": "Template Name",
       "namePlaceholder": "e.g., My Learning Template",

@@ -3,9 +3,7 @@ import { getAIProviderForTask } from "./factory";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse } from "./utils";
-import { performanceMonitor } from "./performanceMonitor";
-import { pricingService } from "./pricingService";
+import { parseAIResponse, withAIPerformanceTracking } from "./utils";
 import {
   withTimeoutAndRetry,
   TimeoutError,
@@ -58,99 +56,6 @@ const LITERATURE_TYPE_DESCRIPTIONS: Record<LiteratureType, string> = {
   webpage: "网页 (webpage): 来自网站的页面内容，可能包含广告、导航等非正文内容",
   document: "文档 (document): 其他类型的文档，无法明确分类的文献",
 };
-
-function extractTokenUsage(
-  usage:
-    | {
-        prompt_tokens?: number;
-        completion_tokens?: number;
-        prompt_tokens_details?: {
-          cached_tokens?: number;
-          audio_tokens?: number;
-        };
-        completion_tokens_details?: {
-          reasoning_tokens?: number;
-          audio_tokens?: number;
-        };
-      }
-    | undefined,
-): {
-  inputTokens: number;
-  outputTokens: number;
-  cachedInputTokens: number;
-  uncachedInputTokens: number;
-  reasoningTokens: number;
-} {
-  const inputTokens = usage?.prompt_tokens || 0;
-  const outputTokens = usage?.completion_tokens || 0;
-  const cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
-
-  return {
-    inputTokens,
-    outputTokens,
-    cachedInputTokens,
-    uncachedInputTokens: Math.max(0, inputTokens - cachedInputTokens),
-    reasoningTokens: usage?.completion_tokens_details?.reasoning_tokens || 0,
-  };
-}
-
-async function withPerformanceTracking<T>(
-  options: {
-    operation: string;
-    provider: AIProviderType;
-    model: string;
-    metadata?: Record<string, unknown>;
-  },
-  fn: () => Promise<{
-    result: T;
-    usage?: {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-    };
-  }>,
-): Promise<T> {
-  const startTime = Date.now();
-  let success = true;
-  let errorMessage: string | undefined;
-  let inputTokens = 0;
-  let outputTokens = 0;
-
-  try {
-    const { result, usage } = await fn();
-    const tokenUsage = extractTokenUsage(usage);
-    inputTokens = tokenUsage.inputTokens;
-    outputTokens = tokenUsage.outputTokens;
-    return result;
-  } catch (error: unknown) {
-    success = false;
-    const err = error as Error;
-    errorMessage = err.message;
-    throw error;
-  } finally {
-    const duration = Date.now() - startTime;
-    const totalTokens = inputTokens + outputTokens;
-    const estimatedCost = pricingService.calculateCost(
-      options.provider,
-      options.model,
-      inputTokens,
-      outputTokens,
-    );
-
-    performanceMonitor.recordLog({
-      operation: options.operation,
-      provider: options.provider,
-      model: options.model,
-      inputTokens,
-      outputTokens,
-      totalTokens,
-      estimatedCost,
-      duration,
-      success,
-      errorMessage,
-      metadata: options.metadata,
-    });
-  }
-}
 
 function buildMetadataExtractionPrompt(content: string): string {
   const typeDescriptions = Object.entries(LITERATURE_TYPE_DESCRIPTIONS)
@@ -246,7 +151,7 @@ export class LiteratureMetadataService {
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "extractMetadata",
           provider: provider.providerType,
@@ -351,7 +256,7 @@ export class LiteratureMetadataService {
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "detectLiteratureType",
           provider: provider.providerType,

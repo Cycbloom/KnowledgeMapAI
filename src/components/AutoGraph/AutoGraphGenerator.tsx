@@ -23,9 +23,18 @@ import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useErrorHandler, useIsMobile } from "../../hooks";
 import { useTopicCheck } from "../../hooks";
-import type { TemplateType, TemplateCategory } from "@shared/types/graph";
+import type {
+  TemplateType,
+  TemplateCategory,
+  BackboneModuleCustomConfig,
+} from "@shared/types/graph";
 import { TEMPLATE_CATEGORY_TYPES } from "@shared/types/graph";
 import { TemplatePromptConfigPanel } from "./TemplatePromptConfigPanel";
+import { CustomModuleEditor } from "./CustomModuleEditor";
+import {
+  ALL_PRESETS,
+  PRESET_MAP,
+} from "@shared/constants/backboneModulePresets";
 
 interface AutoGraphGeneratorProps {
   graphId?: string;
@@ -279,6 +288,16 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
   const [showTemplatePromptConfig, setShowTemplatePromptConfig] =
     useState(false);
+  const [showTopicResearchCustomEditor, setShowTopicResearchCustomEditor] =
+    useState(false);
+  const [topicResearchCustomModules, setTopicResearchCustomModules] = useState<
+    BackboneModuleCustomConfig[]
+  >([]);
+  const [moduleConfig, setModuleConfig] = useState<{
+    presetId: string | null;
+    customModules?: BackboneModuleCustomConfig[];
+  } | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
 
   const [topic, setTopic] = useState("");
   const [backgroundInfo, setBackgroundInfo] = useState("");
@@ -368,6 +387,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         graph_id: graphId,
         template_type:
           selectedTemplateType !== "blank" ? selectedTemplateType : undefined,
+        customModules:
+          selectedTemplateType === "topic_research" &&
+          moduleConfig?.customModules
+            ? moduleConfig.customModules
+            : undefined,
       });
 
       setSessionId(result.sessionId);
@@ -402,7 +426,17 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     } finally {
       setIsInitializing(false);
     }
-  }, [topic, style, sources, graphId, handleError, isDuplicate, t]);
+  }, [
+    topic,
+    style,
+    sources,
+    graphId,
+    handleError,
+    isDuplicate,
+    t,
+    selectedTemplateType,
+    moduleConfig,
+  ]);
 
   const handleExpandNode = useCallback(
     async (nodeId: string, node: TreeNode): Promise<TreeNode[] | null> => {
@@ -607,9 +641,53 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   };
 
   const handleSelectTemplateType = (type: TemplateType) => {
-    setSelectedTemplateType(type);
-    setIsTemplateSelectorOpen(false);
-    setExpandedCategory(null);
+    if (type === "topic_research") {
+      setSelectedTemplateType(type);
+      setIsTemplateSelectorOpen(false);
+      setExpandedCategory(null);
+      setShowTopicResearchCustomEditor(false);
+    } else {
+      setSelectedTemplateType(type);
+      setIsTemplateSelectorOpen(false);
+      setExpandedCategory(null);
+      setShowTopicResearchCustomEditor(false);
+      setModuleConfig(null);
+      setSelectedPresetId(null);
+    }
+  };
+
+  const handleSelectTopicResearchPreset = (presetId: string) => {
+    setSelectedPresetId(presetId);
+    setSelectedTemplateType("topic_research");
+    setModuleConfig({ presetId });
+    setShowTopicResearchCustomEditor(false);
+  };
+
+  const handleSelectTopicResearchCustom = () => {
+    setSelectedPresetId("custom");
+    setSelectedTemplateType("topic_research");
+    setShowTopicResearchCustomEditor(true);
+    if (topicResearchCustomModules.length === 0) {
+      const defaultModules =
+        PRESET_MAP["academic_research"]?.modules.map((m) => ({
+          module_type: m.module_type,
+          title: m.title,
+          icon: m.icon,
+          color: m.color,
+          description: m.description,
+          suggestedNodes: m.suggestedNodes,
+          relationshipToCore: m.relationshipToCore,
+        })) || [];
+      setTopicResearchCustomModules(defaultModules);
+    }
+  };
+
+  const handleCustomModulesConfirm = () => {
+    setModuleConfig({
+      presetId: null,
+      customModules: topicResearchCustomModules,
+    });
+    setShowTopicResearchCustomEditor(false);
   };
 
   const renderTemplateSelector = () => (
@@ -632,6 +710,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               className={`${isMobile ? "text-[10px]" : "text-xs"} px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300`}
             >
               {t(`templates.templateType.${selectedTemplateType}`)}
+              {selectedTemplateType === "topic_research" &&
+                selectedPresetId &&
+                selectedPresetId !== "custom" && (
+                  <span className="ml-1 opacity-70">
+                    · {t(`templates.topicResearchPreset.${selectedPresetId}`)}
+                  </span>
+                )}
             </span>
           ) : (
             <span
@@ -745,6 +830,163 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mb-3">
+                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-2">
+                  {t("templates.category.topicResearch")}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {ALL_PRESETS.map((preset) => {
+                    const presetId = preset.id;
+                    const isSelected =
+                      selectedTemplateType === "topic_research" &&
+                      selectedPresetId === presetId;
+                    return (
+                      <button
+                        key={presetId}
+                        onClick={() =>
+                          handleSelectTopicResearchPreset(presetId)
+                        }
+                        className={`w-full p-2.5 rounded-lg border text-left transition-all ${
+                          isSelected
+                            ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-md"
+                            : "border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-sm"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div
+                            className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                              isSelected
+                                ? "bg-primary-100 dark:bg-primary-800/40"
+                                : "bg-gray-100 dark:bg-slate-700"
+                            }`}
+                          >
+                            <span className="text-sm">
+                              {preset.modules[0]?.icon || "📚"}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`${isMobile ? "text-[10px]" : "text-xs"} font-semibold ${
+                                isSelected
+                                  ? "text-primary-700 dark:text-primary-300"
+                                  : "text-gray-900 dark:text-white"
+                              }`}
+                            >
+                              {preset.name}
+                            </p>
+                            <div className="flex items-center gap-0.5 mt-1 flex-wrap">
+                              {preset.modules.map((mod, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[8px] leading-none"
+                                  style={{
+                                    backgroundColor: mod.color + "20",
+                                    color: mod.color,
+                                    border: `1px solid ${mod.color}40`,
+                                  }}
+                                  title={mod.title}
+                                >
+                                  {mod.icon}
+                                </span>
+                              ))}
+                              <span className="text-[9px] text-gray-400 dark:text-gray-500 ml-0.5">
+                                ×{preset.modules.length}
+                              </span>
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <Check
+                              size={14}
+                              className="text-primary-600 dark:text-primary-400 flex-shrink-0 mt-1"
+                            />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={handleSelectTopicResearchCustom}
+                    className={`w-full p-2.5 rounded-lg border text-left transition-all ${
+                      selectedPresetId === "custom" &&
+                      selectedTemplateType === "topic_research"
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-md"
+                        : "border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-700"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <div
+                        className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                          selectedPresetId === "custom" &&
+                          selectedTemplateType === "topic_research"
+                            ? "bg-primary-100 dark:bg-primary-800/40"
+                            : "bg-gray-100 dark:bg-slate-700"
+                        }`}
+                      >
+                        <span className="text-sm">✏️</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`${isMobile ? "text-[10px]" : "text-xs"} font-semibold ${
+                            selectedPresetId === "custom" &&
+                            selectedTemplateType === "topic_research"
+                              ? "text-primary-700 dark:text-primary-300"
+                              : "text-gray-900 dark:text-white"
+                          }`}
+                        >
+                          {t("templates.topicResearchPreset.custom")}
+                        </p>
+                        <p
+                          className={`${isMobile ? "text-[9px]" : "text-[10px]"} text-gray-400 dark:text-gray-500 mt-0.5`}
+                        >
+                          {t("templates.topicResearchPresetDescription.custom")}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {showTopicResearchCustomEditor && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800/50">
+                        <p
+                          className={`${isMobile ? "text-[10px]" : "text-xs"} text-gray-500 dark:text-gray-400 mb-3`}
+                        >
+                          {t("templates.topicResearchCustomEditorHint")}
+                        </p>
+                        <CustomModuleEditor
+                          modules={topicResearchCustomModules}
+                          onChange={setTopicResearchCustomModules}
+                        />
+                        <div className="flex justify-end gap-2 mt-3">
+                          <button
+                            onClick={() =>
+                              setShowTopicResearchCustomEditor(false)
+                            }
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-400`}
+                          >
+                            {t("common.cancel")}
+                          </button>
+                          <button
+                            onClick={handleCustomModulesConfirm}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+                          >
+                            {t("common.confirm")}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <button

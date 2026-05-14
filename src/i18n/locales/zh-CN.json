@@ -1309,13 +1309,15 @@
       "knowledge": "知识学习",
       "project": "项目规划",
       "analysis": "问题分析",
-      "architecture": "系统架构"
+      "architecture": "系统架构",
+      "topicResearch": "专题研究"
     },
     "categoryDescription": {
       "knowledge": "系统学习知识，构建完整体系",
       "project": "规划项目流程，分解任务目标",
       "analysis": "深度分析问题，找到根因对策",
-      "architecture": "理解系统组成，梳理依赖关系"
+      "architecture": "理解系统组成，梳理依赖关系",
+      "topicResearch": "研究专题领域，结构化深度探索"
     },
     "templateType": {
       "knowledge_tree": "知识树",
@@ -1357,6 +1359,17 @@
       "knowledge_system": "跨领域知识关联",
       "blank": "自由创建，不使用特定结构"
     },
+    "topicResearchPreset": {
+      "academic_research": "通用学术研究",
+      "experimental_science": "实验科学研究",
+      "engineering_research": "工程技术研究",
+      "policy_research": "政策研究",
+      "custom": "自定义"
+    },
+    "topicResearchPresetDescription": {
+      "custom": "自定义模块结构"
+    },
+    "topicResearchCustomEditorHint": "自定义专题研究的模块结构，每个模块将作为一个专题分支展开",
     "form": {
       "name": "模板名称",
       "namePlaceholder": "例如：我的学习模板",

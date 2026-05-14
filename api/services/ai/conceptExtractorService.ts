@@ -3,9 +3,7 @@ import type { AIProviderType } from "@shared/types";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse } from "./utils";
-import { performanceMonitor } from "./performanceMonitor";
-import { pricingService } from "./pricingService";
+import { parseAIResponse, withAIPerformanceTracking } from "./utils";
 import {
   withTimeoutAndRetry,
   TimeoutError,
@@ -20,7 +18,7 @@ import type {
   LiteratureInfo,
   ExtractedRelation,
 } from "@shared/types/graph";
-import { BackboneModule } from "@shared/types/graph";
+import { BackboneModule, CONCEPT_TO_MODULE_MAP } from "@shared/types/graph";
 
 export interface ExtractConceptsOptions {
   provider?: AIProviderType;
@@ -102,99 +100,6 @@ const BACKBONE_MODULE_DESCRIPTIONS: Record<BackboneModule, string> = {
   future_directions: "未来方向: 研究展望、发展趋势、待解决问题",
 };
 
-function extractTokenUsage(
-  usage:
-    | {
-        prompt_tokens?: number;
-        completion_tokens?: number;
-        prompt_tokens_details?: {
-          cached_tokens?: number;
-          audio_tokens?: number;
-        };
-        completion_tokens_details?: {
-          reasoning_tokens?: number;
-          audio_tokens?: number;
-        };
-      }
-    | undefined,
-): {
-  inputTokens: number;
-  outputTokens: number;
-  cachedInputTokens: number;
-  uncachedInputTokens: number;
-  reasoningTokens: number;
-} {
-  const inputTokens = usage?.prompt_tokens || 0;
-  const outputTokens = usage?.completion_tokens || 0;
-  const cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
-
-  return {
-    inputTokens,
-    outputTokens,
-    cachedInputTokens,
-    uncachedInputTokens: Math.max(0, inputTokens - cachedInputTokens),
-    reasoningTokens: usage?.completion_tokens_details?.reasoning_tokens || 0,
-  };
-}
-
-async function withPerformanceTracking<T>(
-  options: {
-    operation: string;
-    provider: AIProviderType;
-    model: string;
-    metadata?: Record<string, unknown>;
-  },
-  fn: () => Promise<{
-    result: T;
-    usage?: {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-    };
-  }>,
-): Promise<T> {
-  const startTime = Date.now();
-  let success = true;
-  let errorMessage: string | undefined;
-  let inputTokens = 0;
-  let outputTokens = 0;
-
-  try {
-    const { result, usage } = await fn();
-    const tokenUsage = extractTokenUsage(usage);
-    inputTokens = tokenUsage.inputTokens;
-    outputTokens = tokenUsage.outputTokens;
-    return result;
-  } catch (error: unknown) {
-    success = false;
-    const err = error as Error;
-    errorMessage = err.message;
-    throw error;
-  } finally {
-    const duration = Date.now() - startTime;
-    const totalTokens = inputTokens + outputTokens;
-    const estimatedCost = pricingService.calculateCost(
-      options.provider,
-      options.model,
-      inputTokens,
-      outputTokens,
-    );
-
-    performanceMonitor.recordLog({
-      operation: options.operation,
-      provider: options.provider,
-      model: options.model,
-      inputTokens,
-      outputTokens,
-      totalTokens,
-      estimatedCost,
-      duration,
-      success,
-      errorMessage,
-      metadata: options.metadata,
-    });
-  }
-}
-
 function parseTextContent(content: string): ParsedContent {
   const lines = content.split("\n").filter((line) => line.trim());
   const result: ParsedContent = {
@@ -255,22 +160,6 @@ function parseTextContent(content: string): ParsedContent {
   }
 
   return result;
-}
-
-function mapConceptToModule(conceptType: ConceptType): BackboneModule {
-  const mapping: Record<ConceptType, BackboneModule> = {
-    method: BackboneModule.RESEARCH_METHODS,
-    mechanism: BackboneModule.CORE_CONCEPTS,
-    operation: BackboneModule.RESEARCH_METHODS,
-    concept: BackboneModule.CORE_CONCEPTS,
-    technology: BackboneModule.APPLICATION_DOMAINS,
-    tool: BackboneModule.RESEARCH_METHODS,
-    theory: BackboneModule.LITERATURE_REVIEW,
-    finding: BackboneModule.RESEARCH_BACKGROUND,
-    trend: BackboneModule.FUTURE_DIRECTIONS,
-    challenge: BackboneModule.FUTURE_DIRECTIONS,
-  };
-  return mapping[conceptType];
 }
 
 function buildExtractionPrompt(
@@ -415,7 +304,7 @@ export class ConceptExtractorService {
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "extractConcepts",
           provider: provider.providerType,
@@ -494,7 +383,7 @@ export class ConceptExtractorService {
               description: c.description,
               type: c.type,
               source: literature,
-              targetModule: c.targetModule || mapConceptToModule(c.type),
+              targetModule: c.targetModule || CONCEPT_TO_MODULE_MAP[c.type],
             }),
           );
 
@@ -557,7 +446,7 @@ export class ConceptExtractorService {
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "classifyConcept",
           provider: provider.providerType,
@@ -602,7 +491,7 @@ ${typeDescriptions}
           }>(rawContent, "Classify Concept");
 
           const type = parsed.type || "concept";
-          const targetModule = mapConceptToModule(type);
+          const targetModule = CONCEPT_TO_MODULE_MAP[type];
 
           return {
             result: {
@@ -643,7 +532,7 @@ ${typeDescriptions}
     confidence: number;
     reason: string;
   }> {
-    const defaultModule = mapConceptToModule(conceptType);
+    const defaultModule = CONCEPT_TO_MODULE_MAP[conceptType];
 
     if (!graphContext) {
       return {
@@ -666,7 +555,7 @@ ${typeDescriptions}
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "locateBackboneModule",
           provider: provider.providerType,

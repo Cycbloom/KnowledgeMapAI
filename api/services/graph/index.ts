@@ -14,3 +14,7 @@ export { autoGraphService, AutoGraphService } from './autoGraphService';
 export type { AINodeData, CreateEdgeData, ProcessAINodesResult } from './autoGraphService';
 export { relationDiscoveryService, RelationDiscoveryService } from './relationDiscoveryService';
 export type { DiscoveredRelation, CrossDomainInsight, DiscoveryResult, IntelligentSuggestion, CreateRelationFromDiscoveryData } from './relationDiscoveryService';
+export { networkAnalysisService } from "./networkAnalysisService";
+export type { NetworkAnalysisResult } from "./networkAnalysisService";
+export { conceptAggregationService, ConceptAggregationService } from "./conceptAggregationService";
+export type { SimilarityResult, AggregationResult, ConceptWithEmbedding } from "./conceptAggregationService";

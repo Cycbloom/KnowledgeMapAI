@@ -10,6 +10,7 @@ INSERT INTO app_settings (key, value, description) VALUES
     }'::jsonb, 'Configuration for AI Providers'),
     ('system_config', '{
         "default_provider": "deepseek",
-        "task_mapping": { "text": "deepseek", "embedding": "volcengine", "reasoning": "aliyun" }
+        "main_ai": { "provider": "deepseek" },
+        "embedding_ai": { "provider": "volcengine" }
     }'::jsonb, 'Global system settings and defaults')
 ON CONFLICT (key) DO NOTHING;

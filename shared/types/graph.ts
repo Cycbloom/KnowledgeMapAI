@@ -72,6 +72,7 @@ export interface TemplateTypeInfo {
   primaryRelationType: string;
   structureHint: string;
   backboneModules?: BackboneModule[];
+  backbonePresetId?: string;
   initLevelOnly?: boolean;
 }
 
@@ -220,7 +221,6 @@ export const TEMPLATE_CATEGORY_TYPES: Record<TemplateCategory, TemplateType[]> =
       "skill_map",
       "concept_network",
       "learning_path",
-      "topic_research",
     ],
     project: [
       "project_lifecycle",
@@ -236,6 +236,15 @@ export const TEMPLATE_CATEGORY_TYPES: Record<TemplateCategory, TemplateType[]> =
       "knowledge_system",
     ],
   };
+
+export const TOPIC_RESEARCH_PRESET_IDS = [
+  "academic_research",
+  "experimental_science",
+  "engineering_research",
+  "policy_research",
+] as const;
+
+export type TopicResearchPresetId = (typeof TOPIC_RESEARCH_PRESET_IDS)[number];
 
 export type TemplateLayoutType =
   | "default"
@@ -1076,6 +1085,50 @@ export const CONCEPT_TO_MODULE_MAP: Record<ConceptType, BackboneModule> = {
   trend: BackboneModule.FUTURE_DIRECTIONS,
   challenge: BackboneModule.FUTURE_DIRECTIONS,
 };
+
+export interface BackboneModulePreset {
+  id: string;
+  name: string;
+  description: string;
+  moduleTypes: string[];
+  modules: BackboneModuleCustomConfig[];
+}
+
+export interface BackboneModuleCustomConfig {
+  module_type: string;
+  title: string;
+  icon: string;
+  color: string;
+  description: string;
+  suggestedNodes: string[];
+  relationshipToCore: string;
+}
+
+export interface NetworkAnalysisResult {
+  nodeCount: number;
+  edgeCount: number;
+  density: number;
+  isolatedNodes: string[];
+  averageClusteringCoefficient: number;
+  centrality: {
+    degree: Record<string, number>;
+    betweenness: Record<string, number>;
+    closeness: Record<string, number>;
+  };
+  modules: Array<{
+    module: string;
+    nodeCount: number;
+    edgeCount: number;
+    density: number;
+  }>;
+  bridges: Array<{
+    nodeId: string;
+    title: string;
+    connectsModules: string[];
+    bridgeScore: number;
+  }>;
+  healthScore: number;
+}
 
 export interface CustomRegion {
   id: string;

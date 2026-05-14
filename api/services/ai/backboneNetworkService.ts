@@ -1,5 +1,9 @@
 import type { AIProviderType } from "@shared/types";
-import type { NodeLevel, LayoutSuggestion } from "@shared/types/graph";
+import type {
+  NodeLevel,
+  LayoutSuggestion,
+  BackboneModuleCustomConfig,
+} from "@shared/types/graph";
 import {
   BackboneModule,
   BACKBONE_MODULE_LABELS,
@@ -27,12 +31,12 @@ export interface BackboneNode {
   title: string;
   description?: string;
   level: NodeLevel;
-  module: BackboneModule;
+  module: string;
   parentId?: string;
   suggestedContent?: string;
   color?: string;
   properties?: {
-    backboneModule?: BackboneModule;
+    backboneModule?: string;
     [key: string]: unknown;
   };
 }
@@ -45,7 +49,7 @@ export interface BackboneEdge {
 }
 
 export interface BackboneModuleConfig {
-  module: BackboneModule;
+  module: string;
   label: string;
   description: string;
   color: string;
@@ -74,6 +78,7 @@ export interface GenerateBackboneOptions {
   graphId?: string;
   includeModules?: BackboneModule[];
   maxNodesPerModule?: number;
+  customModules?: BackboneModuleCustomConfig[];
 }
 
 export interface GenerateBackboneResult {
@@ -256,7 +261,7 @@ const BACKBONE_VALIDATION_RULES = {
 function validateBackboneNode(
   node: unknown,
   index: number,
-  validModuleSet: Set<BackboneModule>,
+  validModuleSet: Set<string>,
 ): BackboneNode | null {
   if (typeof node !== "object" || node === null) {
     logger.warn(
@@ -289,7 +294,7 @@ function validateBackboneNode(
     return null;
   }
 
-  const module = n.module as BackboneModule;
+  const module = n.module as string;
   if (!validModuleSet.has(module)) {
     logger.warn(
       `[Backbone Network] Invalid node at index ${index}: invalid module "${module}"`,
@@ -299,11 +304,11 @@ function validateBackboneNode(
 
   let description = n.description as string | undefined;
   if (!description || !description.trim()) {
-    const moduleConfig = BACKBONE_MODULE_CONFIGS[module];
+    const moduleConfig = BACKBONE_MODULE_CONFIGS[module as BackboneModule];
     if (level === "root") {
-      description = `${n.title}：${moduleConfig.description}`;
+      description = `${n.title}：${moduleConfig?.description || `关于${n.title}的核心内容`}`;
     } else {
-      description = `${n.title}：${moduleConfig.label}中的核心概念`;
+      description = `${n.title}：${moduleConfig?.label || module}中的核心概念`;
     }
     logger.info(
       `[Backbone Network] Generated default description for node "${n.title}": ${description}`,
@@ -362,6 +367,7 @@ function validateBackbone(
   backbone: unknown,
   topic: string,
   includeModules: BackboneModule[],
+  customModules?: BackboneModuleCustomConfig[],
 ): BackboneNetwork | null {
   if (typeof backbone !== "object" || backbone === null) {
     logger.warn("[Backbone Network] Invalid backbone: not an object");
@@ -370,7 +376,11 @@ function validateBackbone(
 
   const b = backbone as Record<string, unknown>;
 
-  const validModuleSet = new Set(includeModules);
+  const validModuleSet = new Set<string>(
+    customModules && customModules.length > 0
+      ? customModules.map((m) => m.module_type)
+      : includeModules,
+  );
 
   if (!Array.isArray(b.nodes) || b.nodes.length === 0) {
     logger.warn("[Backbone Network] Invalid backbone: no nodes");
@@ -409,10 +419,20 @@ function validateBackbone(
     ? layoutSuggestion
     : "radial";
 
-  const modules: BackboneModuleConfig[] = includeModules.map((module) => ({
-    module,
-    ...BACKBONE_MODULE_CONFIGS[module],
-  }));
+  const modules: BackboneModuleConfig[] =
+    customModules && customModules.length > 0
+      ? customModules.map((cm) => ({
+          module: cm.module_type,
+          label: cm.title,
+          description: cm.description,
+          color: cm.color,
+          suggestedNodes: cm.suggestedNodes,
+          relationshipToCore: cm.relationshipToCore,
+        }))
+      : includeModules.map((module) => ({
+          module,
+          ...BACKBONE_MODULE_CONFIGS[module],
+        }));
 
   return {
     id: (b.id as string) || `backbone-${Date.now()}`,
@@ -430,7 +450,10 @@ function validateBackbone(
   };
 }
 
-function validateAndCorrectBackboneNodeTitle(node: BackboneNode): {
+function validateAndCorrectBackboneNodeTitle(
+  node: BackboneNode,
+  customModuleTitles?: Map<string, string>,
+): {
   correctedNode: BackboneNode;
   wasCorrected: boolean;
   originalTitle?: string;
@@ -439,7 +462,26 @@ function validateAndCorrectBackboneNodeTitle(node: BackboneNode): {
     return { correctedNode: node, wasCorrected: false };
   }
 
-  const expectedTitle = BACKBONE_MODULE_TITLES[node.module];
+  if (customModuleTitles) {
+    const expectedTitle = customModuleTitles.get(node.module);
+    if (expectedTitle && node.title !== expectedTitle) {
+      const originalTitle = node.title;
+      logger.info(
+        `[Backbone Network] Correcting core node title: "${originalTitle}" -> "${expectedTitle}" for module ${node.module}`,
+      );
+      return {
+        correctedNode: {
+          ...node,
+          title: expectedTitle,
+        },
+        wasCorrected: true,
+        originalTitle,
+      };
+    }
+    return { correctedNode: node, wasCorrected: false };
+  }
+
+  const expectedTitle = BACKBONE_MODULE_TITLES[node.module as BackboneModule];
 
   if (node.title !== expectedTitle) {
     const originalTitle = node.title;
@@ -463,35 +505,64 @@ function validateAndCorrectBackboneNodeTitle(node: BackboneNode): {
 function getMockBackbone(
   topic: string,
   includeModules: BackboneModule[],
+  customModules?: BackboneModuleCustomConfig[],
 ): GenerateBackboneResult {
   const nodes: BackboneNode[] = [];
   const edges: BackboneEdge[] = [];
 
   const mainRootId = "root-main";
+  const defaultModule =
+    customModules?.[0]?.module_type ||
+    includeModules[0] ||
+    BackboneModule.CORE_CONCEPTS;
+  const defaultColor =
+    customModules?.[0]?.color ||
+    BACKBONE_MODULE_COLORS[defaultModule as BackboneModule] ||
+    "#10B981";
+
   nodes.push({
     id: mainRootId,
     title: topic,
     description: `${topic}研究的核心主题`,
     level: "root",
-    module: BackboneModule.CORE_CONCEPTS,
+    module: defaultModule,
     suggestedContent: `关于${topic}的核心概念和定义`,
-    color: BACKBONE_MODULE_COLORS[BackboneModule.CORE_CONCEPTS],
+    color: defaultColor,
   });
 
-  for (const module of includeModules) {
-    const config = BACKBONE_MODULE_CONFIGS[module];
-    const coreNodeId = `core-${module}`;
+  const useCustomModules = customModules && customModules.length > 0;
+
+  const moduleItems = useCustomModules ? customModules! : includeModules;
+
+  for (const item of moduleItems) {
+    const moduleType = useCustomModules
+      ? (item as BackboneModuleCustomConfig).module_type
+      : (item as BackboneModule);
+    const title = useCustomModules
+      ? (item as BackboneModuleCustomConfig).title
+      : BACKBONE_MODULE_CONFIGS[item as BackboneModule].label;
+    const description = useCustomModules
+      ? (item as BackboneModuleCustomConfig).description
+      : BACKBONE_MODULE_CONFIGS[item as BackboneModule].description;
+    const color = useCustomModules
+      ? (item as BackboneModuleCustomConfig).color
+      : BACKBONE_MODULE_CONFIGS[item as BackboneModule].color;
+    const suggestedNodes = useCustomModules
+      ? (item as BackboneModuleCustomConfig).suggestedNodes
+      : BACKBONE_MODULE_CONFIGS[item as BackboneModule].suggestedNodes;
+
+    const coreNodeId = `core-${moduleType}`;
 
     nodes.push({
       id: coreNodeId,
-      title: config.label,
-      description: config.description,
+      title,
+      description,
       level: "core",
-      module,
-      suggestedContent: config.description,
-      color: config.color,
+      module: moduleType,
+      suggestedContent: description,
+      color,
       properties: {
-        backboneModule: module,
+        backboneModule: moduleType,
       },
     });
 
@@ -499,31 +570,45 @@ function getMockBackbone(
       source: mainRootId,
       target: coreNodeId,
       relationship_type: "contains",
-      description: `${topic}包含${config.label}模块`,
+      description: `${topic}包含${title}模块`,
     });
 
-    const suggestedNodes = config.suggestedNodes.slice(0, 3);
-    suggestedNodes.forEach((suggestedTitle, idx) => {
-      const subNodeId = `sub-${module}-${idx}`;
+    const suggested = suggestedNodes.slice(0, 3);
+    suggested.forEach((suggestedTitle, idx) => {
+      const subNodeId = `sub-${moduleType}-${idx}`;
       nodes.push({
         id: subNodeId,
         title: suggestedTitle,
-        description: `${config.label}中的核心概念`,
+        description: `${title}中的核心概念`,
         level: "sub",
-        module,
+        module: moduleType,
         parentId: coreNodeId,
         suggestedContent: `关于${suggestedTitle}的详细内容`,
-        color: config.color,
+        color,
       });
 
       edges.push({
         source: coreNodeId,
         target: subNodeId,
         relationship_type: "contains",
-        description: `${config.label}包含${suggestedTitle}`,
+        description: `${title}包含${suggestedTitle}`,
       });
     });
   }
+
+  const backboneModules: BackboneModuleConfig[] = useCustomModules
+    ? customModules!.map((cm) => ({
+        module: cm.module_type,
+        label: cm.title,
+        description: cm.description,
+        color: cm.color,
+        suggestedNodes: cm.suggestedNodes,
+        relationshipToCore: cm.relationshipToCore,
+      }))
+    : includeModules.map((module) => ({
+        module,
+        ...BACKBONE_MODULE_CONFIGS[module],
+      }));
 
   return {
     backbone: {
@@ -532,10 +617,7 @@ function getMockBackbone(
       description: `${topic}的骨干网络结构（模拟数据）`,
       nodes,
       edges,
-      modules: includeModules.map((module) => ({
-        module,
-        ...BACKBONE_MODULE_CONFIGS[module],
-      })),
+      modules: backboneModules,
       layoutSuggestion: "radial",
       estimatedNodes: nodes.length * 3,
       reasoning: "模拟骨干网络结构，用于无 API Key 时的展示",
@@ -564,7 +646,13 @@ export class BackboneNetworkService {
         BackboneModule.APPLICATION_DOMAINS,
         BackboneModule.FUTURE_DIRECTIONS,
       ],
+      customModules,
     } = options;
+
+    const effectiveIncludeModules =
+      customModules && customModules.length > 0
+        ? (customModules.map((m) => m.module_type) as BackboneModule[])
+        : includeModules;
 
     const provider = providerType
       ? await getAIProvider(providerType)
@@ -574,7 +662,7 @@ export class BackboneNetworkService {
       logger.info(
         "[Backbone Network] No API key configured, returning mock backbone",
       );
-      return getMockBackbone(topic, includeModules);
+      return getMockBackbone(topic, effectiveIncludeModules, customModules);
     }
 
     const startTime = Date.now();
@@ -582,7 +670,8 @@ export class BackboneNetworkService {
     try {
       const { result, usage } = await this.callAI(provider, {
         ...options,
-        includeModules,
+        includeModules: effectiveIncludeModules,
+        customModules,
       });
 
       const inputTokens = usage?.prompt_tokens || 0;
@@ -618,7 +707,7 @@ export class BackboneNetworkService {
           userId: options.userId,
           graphId: options.graphId,
           topic: options.topic,
-          templateType: includeModules.join(","),
+          templateType: effectiveIncludeModules.join(","),
         },
         cachedInputTokens,
         uncachedInputTokens,
@@ -647,7 +736,7 @@ export class BackboneNetworkService {
           userId: options.userId,
           graphId: options.graphId,
           topic: options.topic,
-          templateType: includeModules.join(","),
+          templateType: effectiveIncludeModules.join(","),
         },
       });
 
@@ -666,7 +755,7 @@ export class BackboneNetworkService {
   }
 
   private deduplicateBackboneNodes(nodes: BackboneNode[]): BackboneNode[] {
-    const moduleMap = new Map<BackboneModule, BackboneNode>();
+    const moduleMap = new Map<string, BackboneNode>();
     const rootNodes: BackboneNode[] = [];
     const otherNodes: BackboneNode[] = [];
 
@@ -679,15 +768,11 @@ export class BackboneNetworkService {
       if (
         node.level === "core" &&
         node.properties?.backboneModule &&
-        BACKBONE_MODULE_TITLES[
-          node.properties.backboneModule as BackboneModule
-        ] === node.title
+        node.title
       ) {
-        const existing = moduleMap.get(
-          node.properties.backboneModule as BackboneModule,
-        );
+        const existing = moduleMap.get(node.properties.backboneModule);
         if (!existing) {
-          moduleMap.set(node.properties.backboneModule as BackboneModule, node);
+          moduleMap.set(node.properties.backboneModule, node);
         } else {
           logger.info(
             `[Backbone Network] Duplicating backbone node for module ${node.properties.backboneModule}, keeping first one`,
@@ -708,7 +793,10 @@ export class BackboneNetworkService {
       hasKey: boolean;
       client: unknown;
     },
-    options: GenerateBackboneOptions & { includeModules: BackboneModule[] },
+    options: GenerateBackboneOptions & {
+      includeModules: BackboneModule[];
+      customModules?: BackboneModuleCustomConfig[];
+    },
   ): Promise<{
     result: GenerateBackboneResult;
     usage?: {
@@ -721,7 +809,13 @@ export class BackboneNetworkService {
       };
     };
   }> {
-    const { topic, context, includeModules, maxNodesPerModule = 5 } = options;
+    const {
+      topic,
+      context,
+      includeModules,
+      maxNodesPerModule = 5,
+      customModules,
+    } = options;
     const model = options.model || provider.model;
 
     const systemPrompt = await this.buildSystemPrompt(
@@ -729,9 +823,15 @@ export class BackboneNetworkService {
       maxNodesPerModule,
       options.userId,
       options.graphId,
+      customModules,
     );
 
-    const userPrompt = this.buildUserPrompt(topic, context, includeModules);
+    const userPrompt = this.buildUserPrompt(
+      topic,
+      context,
+      includeModules,
+      customModules,
+    );
 
     const client = provider.client as {
       chat: {
@@ -800,12 +900,13 @@ export class BackboneNetworkService {
       parsed.backbone,
       topic,
       includeModules,
+      customModules,
     );
 
     if (!validatedBackbone) {
       logger.warn("[Backbone Network] No valid backbone generated, using mock");
       return {
-        result: getMockBackbone(topic, includeModules),
+        result: getMockBackbone(topic, includeModules, customModules),
         usage: completion.usage,
       };
     }
@@ -815,12 +916,17 @@ export class BackboneNetworkService {
       nodeId: string;
       originalTitle: string;
       correctedTitle: string;
-      module: BackboneModule;
+      module: string;
     }> = [];
+
+    const customModuleTitles =
+      customModules && customModules.length > 0
+        ? new Map(customModules.map((cm) => [cm.module_type, cm.title]))
+        : undefined;
 
     for (const node of validatedBackbone.nodes) {
       const { correctedNode, wasCorrected, originalTitle } =
-        validateAndCorrectBackboneNodeTitle(node);
+        validateAndCorrectBackboneNodeTitle(node, customModuleTitles);
 
       if (wasCorrected && originalTitle) {
         titleCorrections.push({
@@ -885,13 +991,22 @@ export class BackboneNetworkService {
     maxNodesPerModule: number,
     userId?: string,
     graphId?: string,
+    customModules?: BackboneModuleCustomConfig[],
   ): Promise<string> {
-    const moduleDescriptions = includeModules
-      .map((module) => {
-        const config = BACKBONE_MODULE_CONFIGS[module];
-        return `- **${config.label}** (${module}): ${config.description}`;
-      })
-      .join("\n");
+    const useCustomModules = customModules && customModules.length > 0;
+
+    const moduleDescriptions = useCustomModules
+      ? customModules
+          .map(
+            (cm) => `- **${cm.title}** (${cm.module_type}): ${cm.description}`,
+          )
+          .join("\n")
+      : includeModules
+          .map((module) => {
+            const config = BACKBONE_MODULE_CONFIGS[module];
+            return `- **${config.label}** (${module}): ${config.description}`;
+          })
+          .join("\n");
 
     const customPrompt = await promptService.getRenderedPrompt(
       getSupabaseAdmin(),
@@ -926,6 +1041,7 @@ ${moduleDescriptions}
     topic: string,
     context?: string,
     includeModules?: BackboneModule[],
+    customModules?: BackboneModuleCustomConfig[],
   ): string {
     let prompt = `研究主题：${topic}`;
 
@@ -933,7 +1049,10 @@ ${moduleDescriptions}
       prompt += `\n\n背景信息：\n${context}`;
     }
 
-    if (includeModules && includeModules.length > 0) {
+    if (customModules && customModules.length > 0) {
+      const moduleLabels = customModules.map((cm) => cm.title).join("、");
+      prompt += `\n\n请为这个研究主题生成包含以下模块的骨干网络：${moduleLabels}`;
+    } else if (includeModules && includeModules.length > 0) {
       const moduleLabels = includeModules
         .map((m) => BACKBONE_MODULE_LABELS[m])
         .join("、");

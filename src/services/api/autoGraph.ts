@@ -3,6 +3,7 @@ import type {
   TemplateCategory,
   LayoutSuggestion,
   NodeLevel,
+  BackboneModuleCustomConfig,
 } from "@shared/types/graph";
 import { getAILanguage } from "../../hooks/useAILanguage";
 
@@ -111,6 +112,7 @@ export const autoGraphApi = {
     language?: string;
     session_id?: string;
     template_type?: string;
+    customModules?: BackboneModuleCustomConfig[];
   }): Promise<{
     sessionId: string;
     root: { title: string; content: string };

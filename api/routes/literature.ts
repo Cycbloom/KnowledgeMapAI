@@ -13,7 +13,10 @@ import { pricingService } from "../services/ai/pricingService";
 import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
 import { conceptExtractorService } from "../services/ai/conceptExtractorService";
-import { conceptAggregationService } from "../services/graph/conceptAggregationService";
+import {
+  conceptAggregationService,
+  normalizeTitle,
+} from "../services/graph/conceptAggregationService";
 import { autoGraphService } from "../services/graph/index";
 import { literatureMetadataService } from "../services/ai/literatureMetadataService";
 import { cacheService, CacheKeys } from "../services/common/cacheService";
@@ -30,6 +33,14 @@ import { BackboneModule, TITLE_TO_BACKBONE_MODULE } from "@shared/types/graph";
 import { z } from "zod";
 
 const router = Router();
+
+const MERGE_THRESHOLD = parseFloat(
+  process.env.CONCEPT_MERGE_THRESHOLD || "0.85",
+);
+const BATCH_MERGE_THRESHOLD = parseFloat(
+  process.env.CONCEPT_BATCH_MERGE_THRESHOLD || "0.92",
+);
+const FUZZY_TITLE_CONFIRM_THRESHOLD = 0.75;
 
 async function withLiteratureTracking<T>(
   operation: string,
@@ -155,18 +166,42 @@ const literatureApplySchema = z.object({
     z.object({
       title: z.string().min(1).max(200),
       description: z.string().max(2000),
-      type: z.enum([
-        "method",
-        "mechanism",
-        "operation",
-        "concept",
-        "technology",
-        "tool",
-        "theory",
-        "finding",
-        "trend",
-        "challenge",
-      ]),
+      type: z.preprocess(
+        (val) => {
+          const VALID_TYPES = [
+            "method",
+            "mechanism",
+            "operation",
+            "concept",
+            "technology",
+            "tool",
+            "theory",
+            "finding",
+            "trend",
+            "challenge",
+          ] as const;
+          if (
+            typeof val === "string" &&
+            (VALID_TYPES as readonly string[]).includes(val)
+          ) {
+            return val;
+          }
+          logger.warn("Normalizing invalid concept type", { received: val });
+          return "concept";
+        },
+        z.enum([
+          "method",
+          "mechanism",
+          "operation",
+          "concept",
+          "technology",
+          "tool",
+          "theory",
+          "finding",
+          "trend",
+          "challenge",
+        ]),
+      ),
       source: z.object({
         title: z.string(),
         authors: z.array(z.string()).optional(),
@@ -505,38 +540,6 @@ router.post(
       }> = [];
 
       const conceptsToProcess: ExtractedConcept[] = concepts;
-      const conceptsWithEmbedding: Array<{
-        concept: ExtractedConcept;
-        embedding: number[] | null;
-      }> = [];
-
-      logger.info("Processing concepts for embedding", {
-        totalConcepts: conceptsToProcess.length,
-        conceptTitles: conceptsToProcess.map((c) => c.title),
-      });
-
-      for (const concept of conceptsToProcess) {
-        try {
-          const embedding = await aiService.generateEmbedding(
-            `${concept.title}: ${concept.description}`,
-          );
-          conceptsWithEmbedding.push({ concept, embedding });
-        } catch (error) {
-          logger.warn(
-            `Failed to generate embedding for concept: ${concept.title}`,
-            error,
-          );
-          conceptsWithEmbedding.push({ concept, embedding: null });
-        }
-      }
-
-      const successCount = conceptsWithEmbedding.filter(
-        (c) => c.embedding !== null,
-      ).length;
-      logger.info("Embeddings generated", {
-        successCount,
-        failedCount: conceptsToProcess.length - successCount,
-      });
 
       const { data: existingGraphNodes } = await supabase
         .from("graph_nodes")
@@ -558,7 +561,12 @@ router.post(
 
       const existingNodesMap = new Map<
         string,
-        { id: string; title: string; embedding: number[] }
+        { id: string; title: string; embedding?: number[] | undefined }
+      >();
+
+      const normalizedTitleMap = new Map<
+        string,
+        { id: string; title: string; embedding?: number[] | undefined }
       >();
 
       if (existingGraphNodes) {
@@ -568,8 +576,13 @@ router.post(
             title: string;
             embedding?: number[];
           };
-          if (kp && kp.embedding) {
+          if (kp) {
             existingNodesMap.set(kp.id, {
+              id: kp.id,
+              title: kp.title,
+              embedding: kp.embedding,
+            });
+            normalizedTitleMap.set(normalizeTitle(kp.title), {
               id: kp.id,
               title: kp.title,
               embedding: kp.embedding,
@@ -580,6 +593,153 @@ router.post(
 
       logger.info("Existing nodes loaded", {
         existingNodeCount: existingNodesMap.size,
+        normalizedTitleCount: normalizedTitleMap.size,
+      });
+
+      const conceptSource: ConceptSource = {
+        title: literature.title,
+        authors: literature.authors,
+        year: literature.year,
+        url: literature.url,
+        fileName: literature.fileName,
+        addedAt: new Date().toISOString(),
+      };
+
+      let titleDedupCount = 0;
+      const remainingConcepts: (ExtractedConcept & {
+        originalIndex: number;
+      })[] = [];
+
+      for (let i = 0; i < conceptsToProcess.length; i++) {
+        const concept = conceptsToProcess[i];
+        const normTitle = normalizeTitle(concept.title);
+
+        const existingMatch = normalizedTitleMap.get(normTitle);
+        if (existingMatch) {
+          const upgradeResult =
+            await conceptAggregationService.upgradeNodeLevel(
+              supabase,
+              existingMatch.id,
+              [conceptSource],
+            );
+
+          if (upgradeResult.success) {
+            const { data: existingGN } = await supabase
+              .from("graph_nodes")
+              .select("id")
+              .eq("knowledge_point_id", existingMatch.id)
+              .eq("graph_id", graph_id)
+              .is("deleted_at", null)
+              .single();
+
+            if (existingGN) {
+              nodeMapping[concept.title] = existingMatch.id;
+              mergedCount++;
+              titleDedupCount++;
+              logger.info(
+                `Title dedup: "${concept.title}" merged with existing "${existingMatch.title}"`,
+              );
+              continue;
+            }
+          }
+        }
+
+        const batchDuplicate = remainingConcepts.find(
+          (rc) => normalizeTitle(rc.title) === normTitle,
+        );
+        if (batchDuplicate) {
+          if (concept.description.length > batchDuplicate.description.length) {
+            batchDuplicate.description = concept.description;
+          }
+          logger.info(
+            `Batch title dedup: "${concept.title}" merged with "${batchDuplicate.title}"`,
+          );
+          continue;
+        }
+
+        remainingConcepts.push({ ...concept, originalIndex: i });
+      }
+
+      logger.info("Title dedup completed", {
+        titleDedupCount,
+        remainingCount: remainingConcepts.length,
+      });
+
+      const conceptsWithEmbedding: Array<{
+        concept: ExtractedConcept;
+        embedding: number[] | null;
+        originalIndex?: number;
+      }> = [];
+
+      logger.info("Processing concepts for embedding", {
+        totalConcepts: remainingConcepts.length,
+        conceptTitles: remainingConcepts.map((c) => c.title),
+      });
+
+      for (const concept of remainingConcepts) {
+        try {
+          const embedding = await aiService.generateEmbedding(
+            `${concept.title}: ${concept.description}`,
+          );
+          conceptsWithEmbedding.push({
+            concept,
+            embedding,
+            originalIndex: concept.originalIndex,
+          });
+        } catch (error) {
+          logger.warn(
+            `Failed to generate embedding for concept: ${concept.title}`,
+            error,
+          );
+          conceptsWithEmbedding.push({
+            concept,
+            embedding: null,
+            originalIndex: concept.originalIndex,
+          });
+        }
+      }
+
+      const successCount = conceptsWithEmbedding.filter(
+        (c) => c.embedding !== null,
+      ).length;
+      logger.info("Embeddings generated", {
+        successCount,
+        failedCount: remainingConcepts.length - successCount,
+      });
+
+      const batchMergedIndices = new Set<number>();
+      for (let i = 0; i < conceptsWithEmbedding.length; i++) {
+        if (batchMergedIndices.has(i)) continue;
+        const ci = conceptsWithEmbedding[i];
+        if (!ci.embedding) continue;
+
+        for (let j = i + 1; j < conceptsWithEmbedding.length; j++) {
+          if (batchMergedIndices.has(j)) continue;
+          const cj = conceptsWithEmbedding[j];
+          if (!cj.embedding) continue;
+
+          const similarity =
+            await conceptAggregationService.calculateSimilarity(
+              ci.embedding,
+              cj.embedding,
+            );
+
+          if (similarity >= BATCH_MERGE_THRESHOLD) {
+            batchMergedIndices.add(j);
+            if (cj.concept.description.length > ci.concept.description.length) {
+              ci.concept.description = cj.concept.description;
+            }
+            logger.info(
+              `Batch embedding dedup: "${cj.concept.title}" merged into "${ci.concept.title}" (similarity: ${similarity.toFixed(3)})`,
+            );
+          }
+        }
+      }
+
+      logger.info("Batch embedding dedup completed", {
+        batchMergedCount: batchMergedIndices.size,
+        remainingForMerge:
+          conceptsWithEmbedding.length - batchMergedIndices.size,
       });
 
       const nodesToCreate: Array<{
@@ -593,53 +753,176 @@ router.post(
         source: ConceptSource;
       }> = [];
 
-      const conceptSource: ConceptSource = {
-        title: literature.title,
-        authors: literature.authors,
-        year: literature.year,
-        url: literature.url,
-        fileName: literature.fileName,
-        addedAt: new Date().toISOString(),
-      };
-
       for (let i = 0; i < conceptsWithEmbedding.length; i++) {
+        if (batchMergedIndices.has(i)) continue;
         const { concept, embedding } = conceptsWithEmbedding[i];
-
         let merged = false;
 
         if (embedding) {
-          for (const [existingId, existingNode] of existingNodesMap) {
-            const similarity =
-              await conceptAggregationService.calculateSimilarity(
-                embedding,
-                existingNode.embedding,
-              );
+          let fuzzyTitleMatched = false;
+          const normConceptTitle = normalizeTitle(concept.title);
+          for (const [, existingNode] of normalizedTitleMap) {
+            const normExisting = normalizeTitle(existingNode.title);
+            if (
+              normConceptTitle.includes(normExisting) ||
+              normExisting.includes(normConceptTitle)
+            ) {
+              if (!existingNode.embedding) continue;
+              const titleSimilarity =
+                await conceptAggregationService.calculateSimilarity(
+                  embedding,
+                  existingNode.embedding,
+                );
+              if (titleSimilarity >= FUZZY_TITLE_CONFIRM_THRESHOLD) {
+                const upgradeResult =
+                  await conceptAggregationService.upgradeNodeLevel(
+                    supabase,
+                    existingNode.id,
+                    [conceptSource],
+                  );
+                if (upgradeResult.success) {
+                  const { data: existingGN } = await supabase
+                    .from("graph_nodes")
+                    .select("id")
+                    .eq("knowledge_point_id", existingNode.id)
+                    .eq("graph_id", graph_id)
+                    .is("deleted_at", null)
+                    .single();
+                  if (existingGN) {
+                    nodeMapping[concept.title] = existingNode.id;
+                    merged = true;
+                    mergedCount++;
+                    fuzzyTitleMatched = true;
+                    logger.info(
+                      `Fuzzy title merge: "${concept.title}" matched existing "${existingNode.title}" (sim: ${titleSimilarity.toFixed(3)})`,
+                    );
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          if (fuzzyTitleMatched) continue;
 
-            if (similarity >= 0.85) {
-              const upgradeResult =
-                await conceptAggregationService.upgradeNodeLevel(
-                  supabase,
-                  existingId,
-                  [conceptSource],
+          try {
+            const { data: similarResults, error: rpcError } =
+              await supabase.rpc("match_knowledge_points", {
+                query_embedding: embedding,
+                match_threshold: MERGE_THRESHOLD,
+                match_count: 5,
+              });
+
+            if (!rpcError && similarResults && Array.isArray(similarResults)) {
+              for (const similar of similarResults) {
+                const existingNode = existingNodesMap.get(similar.id);
+                if (!existingNode) continue;
+
+                if (similar.similarity >= MERGE_THRESHOLD) {
+                  const upgradeResult =
+                    await conceptAggregationService.upgradeNodeLevel(
+                      supabase,
+                      similar.id,
+                      [conceptSource],
+                    );
+
+                  if (upgradeResult.success) {
+                    const { data: existingGN } = await supabase
+                      .from("graph_nodes")
+                      .select("id")
+                      .eq("knowledge_point_id", similar.id)
+                      .eq("graph_id", graph_id)
+                      .is("deleted_at", null)
+                      .single();
+
+                    if (existingGN) {
+                      nodeMapping[concept.title] = similar.id;
+                      merged = true;
+                      mergedCount++;
+                      logger.info(
+                        `Merged concept "${concept.title}" with existing "${existingNode.title}" (pgvector)`,
+                      );
+                      break;
+                    }
+                  }
+                }
+              }
+            } else {
+              logger.warn(
+                "pgvector RPC failed, falling back to in-memory similarity",
+              );
+              for (const [existingId, existingNode] of existingNodesMap) {
+                if (!existingNode.embedding) continue;
+                const similarity =
+                  await conceptAggregationService.calculateSimilarity(
+                    embedding,
+                    existingNode.embedding,
+                  );
+
+                if (similarity >= MERGE_THRESHOLD) {
+                  const upgradeResult =
+                    await conceptAggregationService.upgradeNodeLevel(
+                      supabase,
+                      existingId,
+                      [conceptSource],
+                    );
+
+                  if (upgradeResult.success) {
+                    const { data: existingGN } = await supabase
+                      .from("graph_nodes")
+                      .select("id")
+                      .eq("knowledge_point_id", existingId)
+                      .eq("graph_id", graph_id)
+                      .is("deleted_at", null)
+                      .single();
+
+                    if (existingGN) {
+                      nodeMapping[concept.title] = existingId;
+                      merged = true;
+                      mergedCount++;
+                      logger.info(
+                        `Merged concept "${concept.title}" with existing "${existingNode.title}"`,
+                      );
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (rpcException) {
+            logger.warn(
+              "pgvector RPC exception, falling back to in-memory similarity",
+            );
+            for (const [existingId, existingNode] of existingNodesMap) {
+              if (!existingNode.embedding) continue;
+              const similarity =
+                await conceptAggregationService.calculateSimilarity(
+                  embedding,
+                  existingNode.embedding,
                 );
 
-              if (upgradeResult.success) {
-                const { data: existingGN } = await supabase
-                  .from("graph_nodes")
-                  .select("id")
-                  .eq("knowledge_point_id", existingId)
-                  .eq("graph_id", graph_id)
-                  .is("deleted_at", null)
-                  .single();
-
-                if (existingGN) {
-                  nodeMapping[concept.title] = existingId;
-                  merged = true;
-                  mergedCount++;
-                  logger.info(
-                    `Merged concept "${concept.title}" with existing "${existingNode.title}"`,
+              if (similarity >= MERGE_THRESHOLD) {
+                const upgradeResult =
+                  await conceptAggregationService.upgradeNodeLevel(
+                    supabase,
+                    existingId,
+                    [conceptSource],
                   );
-                  break;
+
+                if (upgradeResult.success) {
+                  const { data: existingGN } = await supabase
+                    .from("graph_nodes")
+                    .select("id")
+                    .eq("knowledge_point_id", existingId)
+                    .eq("graph_id", graph_id)
+                    .is("deleted_at", null)
+                    .single();
+
+                  if (existingGN) {
+                    nodeMapping[concept.title] = existingId;
+                    merged = true;
+                    mergedCount++;
+                    break;
+                  }
                 }
               }
             }
@@ -649,7 +932,6 @@ router.post(
         if (!merged) {
           const angle = (i / conceptsWithEmbedding.length) * Math.PI * 2;
           const radius = 15 + i * 2;
-
           nodesToCreate.push({
             tempId: concept.title,
             title: concept.title,
@@ -738,6 +1020,13 @@ router.post(
       });
 
       if (nodesToCreate.length > 0) {
+        const embeddingByTitle = new Map<string, number[]>();
+        for (const cwe of conceptsWithEmbedding) {
+          if (cwe.embedding) {
+            embeddingByTitle.set(cwe.concept.title, cwe.embedding);
+          }
+        }
+
         const aiNodesData = nodesToCreate.map((node) => {
           const backboneNodeId = node.targetModule
             ? backboneModuleMap.get(node.targetModule)
@@ -757,6 +1046,7 @@ router.post(
             level: node.level,
             x_position: node.x_position,
             y_position: node.y_position,
+            embedding: embeddingByTitle.get(node.title),
           };
         });
 

@@ -2360,4 +2360,80 @@ router.post(
   },
 );
 
+router.get(
+  "/:id/analysis",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const supabase = req.supabase;
+
+    if (!supabase) {
+      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+        message: "Unauthorized: No Supabase client",
+      });
+    }
+
+    try {
+      const { networkAnalysisService } =
+        await import("../services/graph/index");
+
+      const analysis = await networkAnalysisService.analyzeGraph(supabase, id);
+
+      res.json({
+        graphId: id,
+        analysis,
+      });
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("Network Analysis Error:", error);
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        err.message || "网络分析失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  },
+);
+
+router.get(
+  "/:id/backbone-suggestions",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const supabase = req.supabase;
+
+    if (!supabase) {
+      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+        message: "Unauthorized: No Supabase client",
+      });
+    }
+
+    try {
+      const { conceptAggregationService } =
+        await import("../services/graph/index");
+
+      const [newModuleNeeds, moduleOverlaps] = await Promise.all([
+        conceptAggregationService.detectNewModuleNeeds(supabase, id),
+        conceptAggregationService.detectModuleOverlap(supabase, id),
+      ]);
+
+      res.json({
+        graphId: id,
+        newModuleNeeds,
+        moduleOverlaps: moduleOverlaps.overlaps,
+      });
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("Backbone Suggestions Error:", error);
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        err.message || "骨干模块建议分析失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  },
+);
+
 export default router;

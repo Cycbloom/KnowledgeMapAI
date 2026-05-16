@@ -20,7 +20,10 @@ import { AppError } from "../middleware/errorHandler";
 import { achievementService } from "../services/achievementService";
 import { cacheService } from "../services/common/cacheService";
 import { logger } from "../utils/logger";
-import { relationDiscoveryService } from "../services/graph/index";
+import {
+  relationDiscoveryService,
+  conceptAggregationService,
+} from "../services/graph/index";
 import { checkDuplicateGraphTopic } from "../utils/similaritySearch";
 import { backboneValidatorService } from "../services/ai/backboneValidatorService";
 import { z } from "zod";
@@ -545,13 +548,13 @@ router.post(
   requireAuth,
   validate({ body: createGraphSchema }),
   async (req: AuthRequest, res: Response) => {
-    const { title, description, domains, template_type } = req.body;
+    const { title, description, domains, template_type, preset_id } = req.body;
     const data = await graphService.createGraph(
       req.supabase!,
       req.user.id,
       title,
       description,
-      { templateType: template_type },
+      { templateType: template_type, presetId: preset_id },
     );
 
     if (domains && Array.isArray(domains) && domains.length > 0) {
@@ -587,6 +590,210 @@ router.get(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "获取智能建议失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+// GET /api/graphs/:id/analysis/module-gaps - Detect new module needs
+router.get(
+  "/:id/analysis/module-gaps",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    try {
+      const result = await conceptAggregationService.detectNewModuleNeeds(
+        req.supabase!,
+        id,
+      );
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "模块缺口分析失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+// GET /api/graphs/:id/analysis/module-overlap - Detect module overlaps
+router.get(
+  "/:id/analysis/module-overlap",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    try {
+      const result = await conceptAggregationService.detectModuleOverlap(
+        req.supabase!,
+        id,
+      );
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "模块重叠分析失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
+  "/:id/research-progress",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    try {
+      const { data: modules, error: modError } = await req
+        .supabase!.from("graph_backbone_modules")
+        .select("*")
+        .eq("graph_id", id)
+        .order("display_order", { ascending: true });
+
+      if (modError) throw modError;
+
+      if (!modules || modules.length === 0) {
+        return res.json({ modules: [], totalNodes: 0, totalLiterature: 0 });
+      }
+
+      const { data: graphNodes, error: gnError } = await req
+        .supabase!.from("graph_nodes")
+        .select(
+          `
+          id,
+          knowledge_points (
+            id,
+            properties
+          )
+        `,
+        )
+        .eq("graph_id", id)
+        .is("deleted_at", null);
+
+      if (gnError) throw gnError;
+
+      const moduleStats = modules.map((mod: any) => {
+        const moduleNodes = (graphNodes || []).filter((gn: any) => {
+          const kp = gn.knowledge_points as any;
+          const props = kp?.properties || {};
+          return props.backboneModule === mod.module_type;
+        });
+
+        const sources = new Set<string>();
+        moduleNodes.forEach((gn: any) => {
+          const props = (gn.knowledge_points as any)?.properties || {};
+          const nodeSources = props.sources || [];
+          nodeSources.forEach((s: any) => {
+            if (s.title) sources.add(s.title);
+          });
+        });
+
+        return {
+          module_type: mod.module_type,
+          title: mod.title,
+          icon: mod.icon,
+          color: mod.color,
+          nodeCount: moduleNodes.length,
+          literatureCount: sources.size,
+        };
+      });
+
+      const totalNodes = moduleStats.reduce((sum, m) => sum + m.nodeCount, 0);
+      const totalLiterature = moduleStats.reduce(
+        (sum, m) => sum + m.literatureCount,
+        0,
+      );
+
+      res.json({ modules: moduleStats, totalNodes, totalLiterature });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "研究进度获取失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
+  "/:id/literature",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const moduleFilter = req.query.module as string | undefined;
+
+    try {
+      const { data: graphNodes, error: gnError } = await req
+        .supabase!.from("graph_nodes")
+        .select(
+          `
+          knowledge_points (
+            id,
+            title,
+            properties
+          )
+        `,
+        )
+        .eq("graph_id", id)
+        .is("deleted_at", null);
+
+      if (gnError) throw gnError;
+
+      const literatureMap = new Map<
+        string,
+        {
+          title: string;
+          authors: string[];
+          year: number;
+          type: string;
+          url: string;
+          conceptCount: number;
+          modules: string[];
+        }
+      >();
+
+      for (const gn of graphNodes || []) {
+        const kp = gn.knowledge_points as any;
+        if (!kp) continue;
+        const props = kp.properties || {};
+        const sources = props.sources || [];
+        const backboneModule = props.backboneModule as string | undefined;
+
+        for (const source of sources) {
+          if (!source.title) continue;
+          const key = source.title + (source.url || "");
+          const existing = literatureMap.get(key);
+          if (existing) {
+            existing.conceptCount++;
+            if (backboneModule && !existing.modules.includes(backboneModule)) {
+              existing.modules.push(backboneModule);
+            }
+          } else {
+            literatureMap.set(key, {
+              title: source.title,
+              authors: source.authors || [],
+              year: source.year || 0,
+              type: source.type || "document",
+              url: source.url || "",
+              conceptCount: 1,
+              modules: backboneModule ? [backboneModule] : [],
+            });
+          }
+        }
+      }
+
+      let literature = Array.from(literatureMap.values());
+
+      if (moduleFilter) {
+        literature = literature.filter((l) => l.modules.includes(moduleFilter));
+      }
+
+      literature.sort(
+        (a, b) => b.year - a.year || b.conceptCount - a.conceptCount,
+      );
+
+      res.json({ literature, totalCount: literature.length });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "文献库获取失败";
       throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },

@@ -18,6 +18,7 @@ import {
   BookOpen,
   Layers,
   Tag,
+  Network,
 } from "lucide-react";
 import { useErrorHandler, useIsMobile } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
@@ -945,6 +946,21 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
                               }}
                             >
                               {moduleLabel}
+                            </span>
+                          )}
+                          {concept.crossGraphMatch && (
+                            <span
+                              className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full font-medium inline-flex items-center gap-1`}
+                              style={{
+                                backgroundColor: "rgba(249, 115, 22, 0.15)",
+                                color: "#EA580C",
+                              }}
+                            >
+                              <Network
+                                size={isMobile ? 10 : 12}
+                              />
+                              已在图谱「{concept.crossGraphMatch.graphTitle}」中存在 (
+                              {(concept.crossGraphMatch.similarity * 100).toFixed(0)}%)
                             </span>
                           )}
                         </div>

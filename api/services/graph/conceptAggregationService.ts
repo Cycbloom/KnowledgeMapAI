@@ -464,6 +464,142 @@ export class ConceptAggregationService {
     }
   }
 
+  async findCrossGraphSimilar(
+    supabase: SupabaseClient,
+    userId: string,
+    graphId: string,
+    conceptEmbeddings: Array<{ title: string; embedding: number[] }>,
+    options: {
+      threshold?: number;
+      limit?: number;
+    } = {},
+  ): Promise<
+    Record<
+      string,
+      Array<{
+        kpId: string;
+        kpTitle: string;
+        graphTitle: string;
+        graphId: string;
+        similarity: number;
+      }>
+    >
+  > {
+    const threshold = options.threshold ?? SIMILARITY_THRESHOLD;
+    const limit = options.limit ?? 5;
+
+    const { data: userGraphs, error: graphsError } = await supabase
+      .from("graphs")
+      .select("id, title")
+      .eq("user_id", userId)
+      .neq("id", graphId);
+
+    if (graphsError || !userGraphs || userGraphs.length === 0) {
+      return {};
+    }
+
+    const otherGraphIds = userGraphs.map((g) => g.id);
+    const graphTitleMap = new Map(
+      userGraphs.map((g) => [g.id, g.title || g.id]),
+    );
+
+    const { data: graphNodes, error: gnError } = await supabase
+      .from("graph_nodes")
+      .select(
+        `
+        graph_id,
+        knowledge_point_id,
+        knowledge_points (
+          id,
+          title,
+          embedding
+        )
+      `,
+      )
+      .in("graph_id", otherGraphIds)
+      .is("deleted_at", null);
+
+    if (gnError || !graphNodes) {
+      logger.error("Failed to fetch cross-graph nodes:", gnError);
+      return {};
+    }
+
+    const candidates: Array<{
+      kpId: string;
+      kpTitle: string;
+      graphId: string;
+      graphTitle: string;
+      embedding: number[];
+    }> = [];
+
+    for (const gn of graphNodes) {
+      const kp = gn.knowledge_points as unknown as {
+        id: string;
+        title: string;
+        embedding?: number[];
+      };
+      if (kp && kp.embedding) {
+        candidates.push({
+          kpId: kp.id,
+          kpTitle: kp.title,
+          graphId: gn.graph_id,
+          graphTitle: graphTitleMap.get(gn.graph_id) || gn.graph_id,
+          embedding: kp.embedding,
+        });
+      }
+    }
+
+    if (candidates.length === 0) {
+      return {};
+    }
+
+    const result: Record<
+      string,
+      Array<{
+        kpId: string;
+        kpTitle: string;
+        graphTitle: string;
+        graphId: string;
+        similarity: number;
+      }>
+    > = {};
+
+    for (const concept of conceptEmbeddings) {
+      const matchList: Array<{
+        kpId: string;
+        kpTitle: string;
+        graphTitle: string;
+        graphId: string;
+        similarity: number;
+      }> = [];
+
+      for (const candidate of candidates) {
+        const similarity = cosineSimilarity(
+          concept.embedding,
+          candidate.embedding,
+        );
+
+        if (similarity >= threshold) {
+          matchList.push({
+            kpId: candidate.kpId,
+            kpTitle: candidate.kpTitle,
+            graphTitle: candidate.graphTitle,
+            graphId: candidate.graphId,
+            similarity: Math.round(similarity * 10000) / 10000,
+          });
+        }
+      }
+
+      matchList.sort((a, b) => b.similarity - a.similarity);
+
+      if (matchList.length > 0) {
+        result[concept.title] = matchList.slice(0, limit);
+      }
+    }
+
+    return result;
+  }
+
   async aggregateConcepts(
     supabase: SupabaseClient,
     graphId: string,

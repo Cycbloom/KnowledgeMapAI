@@ -45,7 +45,26 @@ export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
   const strokeDasharray =
     lineStyle === "dashed" ? "8,4" : lineStyle === "dotted" ? "2,4" : "none";
 
-  const opacity = highlighted ? 0.9 : isDark ? 0.4 : 0.5;
+  if (highlighted) {
+    return (
+      <line
+        x1={sourceX}
+        y1={sourceY}
+        x2={targetX}
+        y2={targetY}
+        stroke={color}
+        strokeWidth={2.5}
+        strokeOpacity={1}
+        strokeDasharray={strokeDasharray}
+        style={{
+          transition: "all 0.2s ease",
+          filter: isDark ? `drop-shadow(0 0 3px ${color}80)` : `drop-shadow(0 0 2px ${color}60)`,
+        }}
+        data-edge-id={edge.id}
+        data-relation-type={relationType}
+      />
+    );
+  }
 
   return (
     <line
@@ -53,12 +72,12 @@ export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
       y1={sourceY}
       x2={targetX}
       y2={targetY}
-      stroke={color}
-      strokeWidth={highlighted ? 2 : 1.5}
-      strokeOpacity={opacity}
-      strokeDasharray={strokeDasharray}
+      stroke={isDark ? "#334155" : "#CBD5E1"}
+      strokeWidth={1}
+      strokeOpacity={0.25}
+      strokeDasharray="none"
       style={{
-        transition: "stroke-opacity 0.2s ease",
+        transition: "all 0.2s ease",
       }}
       data-edge-id={edge.id}
       data-relation-type={relationType}

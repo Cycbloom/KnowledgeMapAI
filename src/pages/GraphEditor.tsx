@@ -50,6 +50,8 @@ import {
   getFocusedNodes,
   getFocusedLinks,
   getDirectChildren,
+  getDirectNeighbors,
+  getDirectNeighborEdges,
 } from "../lib/graphUtils";
 import type {
   Node as GraphNode,
@@ -130,6 +132,22 @@ const LiteratureExtractPanel = lazy(() =>
   ),
 );
 
+const ResearchProgressPanel = lazy(() =>
+  import("../components/GraphEditor/ResearchProgressPanel").then(
+    (module) => ({
+      default: module.ResearchProgressPanel,
+    }),
+  ),
+);
+
+const LiteratureLibraryPanel = lazy(() =>
+  import("../components/GraphEditor/LiteratureLibraryPanel").then(
+    (module) => ({
+      default: module.LiteratureLibraryPanel,
+    }),
+  ),
+);
+
 const ConceptPreviewList = lazy(() =>
   import("../components/LiteratureExtract/ConceptPreviewList").then(
     (module) => ({
@@ -188,6 +206,8 @@ export const GraphEditor = () => {
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
   const [ragChatWidth, setRagChatWidth] = useState(420);
   const [isLiteratureExtractOpen, setIsLiteratureExtractOpen] = useState(false);
+  const [isResearchProgressOpen, setIsResearchProgressOpen] = useState(false);
+  const [isLiteratureLibraryOpen, setIsLiteratureLibraryOpen] = useState(false);
   const [extractedConcepts, setExtractedConcepts] = useState<any[]>([]);
   const [isConceptPreviewOpen, setIsConceptPreviewOpen] = useState(false);
 
@@ -900,8 +920,9 @@ export const GraphEditor = () => {
 
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
-      const focusedNodes = getFocusedNodes(node.id, nodes, edges);
-      const focusedLinks = getFocusedLinks(focusedNodes, edges);
+      const neighbors = getDirectNeighbors(node.id, edges);
+      const focusedNodes = new Set([node.id, ...neighbors]);
+      const focusedLinks = getDirectNeighborEdges(node.id, focusedNodes, edges);
       const directChildren = getDirectChildren(node.id, nodes, edges);
 
       setSelectedNode(node);
@@ -1423,6 +1444,8 @@ export const GraphEditor = () => {
               coloringMode={coloringMode}
               focusedNodeIds={focusedNodeIds}
               focusedNodeId={focusedNodeId}
+              focusedLinkIds={focusedLinkIds}
+              onCanvasClick={handleCanvasClick}
             />
           )}
         </div>
@@ -1521,6 +1544,10 @@ export const GraphEditor = () => {
         isReadOnly={isReadOnly}
         isLiteratureExtractOpen={isLiteratureExtractOpen}
         setIsLiteratureExtractOpen={setIsLiteratureExtractOpen}
+        isResearchProgressOpen={isResearchProgressOpen}
+        setIsResearchProgressOpen={setIsResearchProgressOpen}
+        isLiteratureLibraryOpen={isLiteratureLibraryOpen}
+        setIsLiteratureLibraryOpen={setIsLiteratureLibraryOpen}
         regions={regions}
         collapsedRegions={collapsedRegions}
         onRegionToggle={handleRegionToggle}
@@ -1921,6 +1948,24 @@ export const GraphEditor = () => {
               onClose={() => setIsLiteratureExtractOpen(false)}
             />
           </div>
+        </Suspense>
+      )}
+
+      {isResearchProgressOpen && id && (
+        <Suspense fallback={<ViewLoader />}>
+          <ResearchProgressPanel
+            graphId={id}
+            onClose={() => setIsResearchProgressOpen(false)}
+          />
+        </Suspense>
+      )}
+
+      {isLiteratureLibraryOpen && id && (
+        <Suspense fallback={<ViewLoader />}>
+          <LiteratureLibraryPanel
+            graphId={id}
+            onClose={() => setIsLiteratureLibraryOpen(false)}
+          />
         </Suspense>
       )}
 

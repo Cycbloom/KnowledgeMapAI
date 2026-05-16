@@ -548,6 +548,22 @@ export const mobileGraphsApi = {
     return { nodes: 0, edges: 0, topics: [] };
   },
 
+  getLiterature: async (_id: string, _module?: string) => {
+    return { literature: [], totalCount: 0 };
+  },
+
+  getResearchProgress: async (_id: string) => {
+    return { modules: [], totalNodes: 0, totalLiterature: 0 };
+  },
+
+  getModuleGaps: async (_id: string) => {
+    return { needsNewModule: false, suggestedModules: [], unclassifiedCount: 0 };
+  },
+
+  getModuleOverlap: async (_id: string) => {
+    return { overlaps: [] };
+  },
+
   getMissingConnections: async (_id: string, _max?: number) => {
     return [];
   },

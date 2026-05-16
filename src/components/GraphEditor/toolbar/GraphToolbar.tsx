@@ -161,6 +161,14 @@ interface GraphToolbarProps {
   isLiteratureExtractOpen?: boolean;
   setIsLiteratureExtractOpen?: (open: boolean) => void;
 
+  // Research Progress
+  isResearchProgressOpen?: boolean;
+  setIsResearchProgressOpen?: (open: boolean) => void;
+
+  // Literature Library
+  isLiteratureLibraryOpen?: boolean;
+  setIsLiteratureLibraryOpen?: (open: boolean) => void;
+
   // Region Control (Quadrant View)
   regions?: Array<{
     id: string;
@@ -239,6 +247,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isReadOnly = false,
   isLiteratureExtractOpen,
   setIsLiteratureExtractOpen,
+  isResearchProgressOpen,
+  setIsResearchProgressOpen,
+  isLiteratureLibraryOpen,
+  setIsLiteratureLibraryOpen,
   regions,
   collapsedRegions,
   onRegionToggle,
@@ -396,6 +408,26 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             onClose();
           },
           active: isLiteratureExtractOpen,
+          color: "text-amber-500",
+        },
+        {
+          icon: BarChart3,
+          label: isResearchProgressOpen ? "关闭研究进度" : "研究进度",
+          onClick: () => {
+            setIsResearchProgressOpen?.(!isResearchProgressOpen);
+            onClose();
+          },
+          active: isResearchProgressOpen,
+          color: "text-emerald-500",
+        },
+        {
+          icon: BookOpen,
+          label: isLiteratureLibraryOpen ? "关闭文献库" : "文献库",
+          onClick: () => {
+            setIsLiteratureLibraryOpen?.(!isLiteratureLibraryOpen);
+            onClose();
+          },
+          active: isLiteratureLibraryOpen,
           color: "text-amber-500",
         },
         {
@@ -1172,7 +1204,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           id="ai"
           icon={Sparkles}
           label={t("graphEditor.toolbar.aiAssistant")}
-          active={isChatOpen || isPathfindingMode || isLiteratureExtractOpen}
+          active={isChatOpen || isPathfindingMode || isLiteratureExtractOpen || isResearchProgressOpen || isLiteratureLibraryOpen}
         >
           <MenuItem
             onClick={onTextToGraph}
@@ -1187,6 +1219,24 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             icon={FileText}
             label={t("graphEditor.toolbar.literatureExtract")}
             active={isLiteratureExtractOpen}
+            colorClass="text-amber-500"
+          />
+          <MenuItem
+            onClick={() =>
+              setIsResearchProgressOpen?.(!isResearchProgressOpen)
+            }
+            icon={BarChart3}
+            label={t("graphEditor.toolbar.researchProgress")}
+            active={isResearchProgressOpen}
+            colorClass="text-emerald-500"
+          />
+          <MenuItem
+            onClick={() =>
+              setIsLiteratureLibraryOpen?.(!isLiteratureLibraryOpen)
+            }
+            icon={BookOpen}
+            label={t("graphEditor.toolbar.literatureLibrary")}
+            active={isLiteratureLibraryOpen}
             colorClass="text-amber-500"
           />
           <MenuItem

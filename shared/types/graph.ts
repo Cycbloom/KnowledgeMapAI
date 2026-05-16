@@ -943,6 +943,13 @@ export interface ExtractedConcept {
   targetModule?: BackboneModule;
   similarTo?: string;
   similarity?: number;
+  crossGraphMatch?: {
+    kpId: string;
+    kpTitle: string;
+    graphTitle: string;
+    graphId: string;
+    similarity: number;
+  } | null;
 }
 
 export interface ExtractedRelation {

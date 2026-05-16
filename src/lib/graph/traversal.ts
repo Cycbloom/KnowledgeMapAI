@@ -119,6 +119,45 @@ export const getFocusedLinks = (focusedNodeIds: Set<string>, edges: Edge[]): Set
   return focusedLinks;
 };
 
+export const getDirectNeighbors = (nodeId: string, edges: Edge[]): Set<string> => {
+  const startId = normalizeId(nodeId);
+  const neighbors = new Set<string>();
+
+  for (const edge of edges) {
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
+
+    if (src === startId && tgt !== startId) {
+      neighbors.add(tgt);
+    } else if (tgt === startId && src !== startId) {
+      neighbors.add(src);
+    }
+  }
+
+  return neighbors;
+};
+
+export const getDirectNeighborEdges = (
+  nodeId: string,
+  neighborIds: Set<string>,
+  edges: Edge[],
+): Set<string> => {
+  const startId = normalizeId(nodeId);
+  const relevantIds = new Set([startId, ...neighborIds]);
+  const focusedLinks = new Set<string>();
+
+  for (const edge of edges) {
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
+
+    if (relevantIds.has(src) && relevantIds.has(tgt)) {
+      focusedLinks.add(String(edge.id));
+    }
+  }
+
+  return focusedLinks;
+};
+
 export const findShortestPath = (nodes: Node[], edges: Edge[], startId: string, endId: string) => {
   const sId = normalizeId(startId);
   const eId = normalizeId(endId);

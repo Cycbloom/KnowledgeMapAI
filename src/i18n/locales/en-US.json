@@ -2344,6 +2344,8 @@
       "aiAssistant": "AI Assistant",
       "textToGraph": "Text/Document Generation",
       "literatureExtract": "Literature Extract",
+      "researchProgress": "Research Progress",
+      "literatureLibrary": "Literature Library",
       "intelligentExpand": "Intelligent Expansion (Infinite Mode)",
       "backgroundExpand": "Background Auto Expansion",
       "intelligentQnA": "Intelligent Q&A",
@@ -2390,6 +2392,29 @@
       "exportJSON": "JSON Backup",
       "exportImage": "Image (PNG)",
       "deleteGraph": "Delete This Graph Permanently"
+    },
+    "researchProgress": {
+      "title": "Research Progress",
+      "subtitle": "Module node and literature count overview",
+      "noModules": "No module data",
+      "researchGap": "Research Gap",
+      "nodes": "Knowledge Points",
+      "literature": "Literature",
+      "totalNodes": "Total Nodes",
+      "totalLiterature": "Total Literature"
+    },
+    "literatureLibrary": {
+      "title": "Literature Library",
+      "subtitle": "All literature referenced in the graph",
+      "noLiterature": "No literature data",
+      "totalCount": "{{count}} total",
+      "colTitle": "Title",
+      "colAuthors": "Authors",
+      "colYear": "Year",
+      "colType": "Type",
+      "colConcepts": "Concepts",
+      "colModules": "Modules",
+      "footer": "{{count}} literature items total"
     },
     "mindMap": {
       "unnamed": "Unnamed",
@@ -3172,6 +3197,7 @@
   "literatureExtract": {
     "title": "Literature Extract",
     "subtitle": "Extract knowledge concepts and relations from literature",
+    "allModules": "All Modules",
     "backboneModule": {
       "refined": "Refined",
       "pending": "Pending",

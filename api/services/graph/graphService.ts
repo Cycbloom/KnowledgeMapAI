@@ -18,11 +18,9 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
 import {
-  BackboneModule,
-  BACKBONE_MODULE_TITLES,
-  BACKBONE_MODULE_ICONS,
-  BACKBONE_MODULE_COLORS,
-} from "@shared/types/graph";
+  PRESET_MAP,
+  ACADEMIC_RESEARCH,
+} from "@shared/constants/backboneModulePresets";
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import type {
@@ -298,6 +296,7 @@ export class GraphService {
    * @param options - 可选配置
    * @param options.skipDuplicateCheck - 跳过主题重复检测
    * @param options.templateType - 模板类型
+   * @param options.presetId - 骨干模块预设 ID
    * @returns 创建的图谱数据
    * @throws {AppError} 如果主题重复（DUPLICATE_TOPIC）
    *
@@ -316,7 +315,11 @@ export class GraphService {
     userId: string,
     title: string,
     description?: string,
-    options?: { skipDuplicateCheck?: boolean; templateType?: string },
+    options?: {
+      skipDuplicateCheck?: boolean;
+      templateType?: string;
+      presetId?: string;
+    },
   ) {
     if (!options?.skipDuplicateCheck) {
       const duplicateCheck = await checkDuplicateGraphTopic(
@@ -360,38 +363,35 @@ export class GraphService {
     if (error) throw error;
 
     if (options?.templateType === "topic_research") {
-      const backboneModules = [
-        BackboneModule.RESEARCH_BACKGROUND,
-        BackboneModule.LITERATURE_REVIEW,
-        BackboneModule.RESEARCH_METHODS,
-        BackboneModule.CORE_CONCEPTS,
-        BackboneModule.APPLICATION_DOMAINS,
-        BackboneModule.FUTURE_DIRECTIONS,
-      ];
+      const preset = options?.presetId
+        ? PRESET_MAP[options.presetId]
+        : ACADEMIC_RESEARCH;
 
-      const modulesToInsert = backboneModules.map((module, index) => ({
-        graph_id: data.id,
-        module_type: module,
-        title: BACKBONE_MODULE_TITLES[module],
-        icon: BACKBONE_MODULE_ICONS[module],
-        color: BACKBONE_MODULE_COLORS[module],
-        display_order: index,
-      }));
+      if (preset) {
+        const modulesToInsert = preset.modules.map((mod, index) => ({
+          graph_id: data.id,
+          module_type: mod.module_type,
+          title: mod.title,
+          icon: mod.icon,
+          color: mod.color,
+          display_order: index,
+        }));
 
-      const { error: modulesError } = await supabase
-        .from("graph_backbone_modules")
-        .insert(modulesToInsert);
+        const { error: modulesError } = await supabase
+          .from("graph_backbone_modules")
+          .insert(modulesToInsert);
 
-      if (modulesError) {
-        logger.warn(
-          "[GraphService] Failed to create backbone modules:",
-          modulesError,
-        );
-      } else {
-        logger.info(
-          "[GraphService] Created backbone modules for topic_research graph:",
-          { graphId: data.id },
-        );
+        if (modulesError) {
+          logger.warn(
+            "[GraphService] Failed to create backbone modules:",
+            modulesError,
+          );
+        } else {
+          logger.info(
+            "[GraphService] Created backbone modules for topic_research graph:",
+            { graphId: data.id, presetId: preset.id },
+          );
+        }
       }
     }
 

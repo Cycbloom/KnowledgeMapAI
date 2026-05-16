@@ -21,6 +21,7 @@ import { QuadrantNode } from "./QuadrantNode";
 import { QuadrantEdge } from "./QuadrantEdge";
 import { useTheme } from "../../../hooks";
 import { THEME_COLORS } from "../../../config/learningStatusColors";
+import { avoidCollisions } from "../../../utils/quadrantLayout";
 
 interface Transform {
   x: number;
@@ -45,6 +46,8 @@ interface QuadrantCanvasProps {
   height?: number;
   focusedNodeIds?: Set<string>;
   focusedNodeId?: string | null;
+  focusedLinkIds?: Set<string>;
+  onCanvasClick?: () => void;
 }
 
 function hashCode(str: string): number {
@@ -70,6 +73,7 @@ function getNodePosition(
   originX: number,
   originY: number,
   regionRadius: number,
+  regionNodeCount?: number,
 ): { x: number; y: number; angle: number } {
   const angleRange = region.angleEnd - region.angleStart;
   const angleStep = angleRange / (total + 1);
@@ -81,7 +85,11 @@ function getNodePosition(
   const randomOffset = (random - 0.5) * 0.5;
   const levelFactor = node.level === "sub" ? 0.05 : 0;
   const ratio = baseRatio + randomOffset + levelFactor;
-  const distanceRatio = Math.max(0.25, Math.min(0.85, ratio));
+
+  const count = regionNodeCount ?? total;
+  const minBound = count <= 5 ? 0.30 : count <= 12 ? 0.24 : 0.18;
+  const maxBound = count <= 5 ? 0.82 : count <= 12 ? 0.87 : 0.92;
+  const distanceRatio = Math.max(minBound, Math.min(maxBound, ratio));
 
   const distance = regionRadius * distanceRatio;
 
@@ -111,6 +119,8 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
       height = 600,
       focusedNodeIds = new Set(),
       focusedNodeId = null,
+      focusedLinkIds = new Set(),
+      onCanvasClick,
     },
     ref,
   ) => {
@@ -169,9 +179,19 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
 
     const regionRadius = useMemo(() => {
       const minDimension = Math.min(containerSize.width, containerSize.height);
-      const baseRadius = minDimension * 0.35;
-      const nodeDensityFactor = Math.min(1.5, 1 + totalNodeCount / 50);
-      return baseRadius * nodeDensityFactor;
+      const baseRatio = 0.35 + Math.min(0.08, totalNodeCount / 500);
+      const baseRadius = minDimension * baseRatio;
+      const densityFactor =
+        totalNodeCount <= 10
+          ? 1.0 + (totalNodeCount / 10) * 0.2
+          : totalNodeCount <= 25
+            ? 1.2 + ((totalNodeCount - 10) / 15) * 0.3
+            : totalNodeCount <= 50
+              ? 1.5 + ((totalNodeCount - 25) / 25) * 0.3
+              : totalNodeCount <= 100
+                ? 1.8 + ((totalNodeCount - 50) / 50) * 0.5
+                : Math.min(2.5, 2.3 + ((totalNodeCount - 100) / 100) * 0.2);
+      return baseRadius * densityFactor;
     }, [containerSize, totalNodeCount]);
 
     const nodePositions = useMemo(() => {
@@ -189,12 +209,37 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             originPosition.x,
             originPosition.y,
             regionRadius,
+            regionNodes.length,
           );
         });
       });
 
       return positions;
     }, [visibleRegions, originPosition, regionRadius]);
+
+    const adjustedNodePositions = useMemo(() => {
+      if (totalNodeCount <= 5) return nodePositions;
+
+      const positionMap = new Map<string, { x: number; y: number }>();
+      for (const [id, pos] of Object.entries(nodePositions)) {
+        positionMap.set(id, { x: pos.x, y: pos.y });
+      }
+
+      const minDistance = 58;
+
+      const result = avoidCollisions(positionMap, minDistance);
+
+      const adjusted: Record<string, { x: number; y: number; angle: number }> = {};
+      for (const [id, pos] of result.entries()) {
+        const original = nodePositions[id];
+        adjusted[id] = {
+          x: pos.x,
+          y: pos.y,
+          angle: original?.angle ?? 0,
+        };
+      }
+      return adjusted;
+    }, [nodePositions, totalNodeCount]);
 
     const regionEdges = useMemo(() => {
       const nodeIds = new Set(Object.keys(nodePositions));
@@ -352,11 +397,14 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
 
     const handleMouseDown = useCallback(
       (e: React.MouseEvent<SVGSVGElement>) => {
+        if (e.button !== 0) return;
+
         const target = e.target as SVGElement;
         const originElement = target.closest("[data-origin]");
         const regionHeaderElement = target.closest("[data-region-id]");
+        const nodeElement = target.closest("[data-node-id]");
 
-        if (regionHeaderElement) {
+        if (regionHeaderElement || nodeElement) {
           return;
         }
 
@@ -366,7 +414,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             x: e.clientX - originPosition.x * transformRef.current.k,
             y: e.clientY - originPosition.y * transformRef.current.k,
           });
-        } else if (e.target === svgRef.current) {
+        } else {
           setIsDragging(true);
           setDragStart({
             x: e.clientX - transformRef.current.x,
@@ -445,6 +493,10 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            onCanvasClick?.();
+          }}
         >
           <g ref={contentRef}>
             {visibleRegions.map((region) => {
@@ -476,8 +528,8 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             })}
 
             {regionEdges.map((edge) => {
-              const sourcePos = nodePositions[edge.source_knowledge_point_id];
-              const targetPos = nodePositions[edge.target_knowledge_point_id];
+              const sourcePos = adjustedNodePositions[edge.source_knowledge_point_id];
+              const targetPos = adjustedNodePositions[edge.target_knowledge_point_id];
 
               if (!sourcePos || !targetPos) return null;
 
@@ -490,6 +542,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                   targetX={targetPos.x}
                   targetY={targetPos.y}
                   isDark={isDark}
+                  highlighted={focusedLinkIds?.has(String(edge.id))}
                 />
               );
             })}
@@ -532,6 +585,9 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                               node.id === focusedNodeId
                             }
                             hasFocusMode={hasFocusMode}
+                            regionNodeCount={region.nodes.filter((n) => n.level !== "core").length}
+                            positionX={adjustedNodePositions[node.id]?.x}
+                            positionY={adjustedNodePositions[node.id]?.y}
                           />
                         </motion.g>
                       ))}

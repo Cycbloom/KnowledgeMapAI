@@ -485,9 +485,60 @@ router.post(
         sessionId,
       );
 
+      const conceptsWithMatches = extractionResult.concepts.map((c) => ({
+        ...c,
+        crossGraphMatch: null as {
+          kpId: string;
+          kpTitle: string;
+          graphTitle: string;
+          graphId: string;
+          similarity: number;
+        } | null,
+      }));
+
+      if (graph_id && conceptsWithMatches.length > 0) {
+        const conceptTexts = conceptsWithMatches.map(
+          (c) => `${c.title}: ${c.description}`,
+        );
+        const embeddings =
+          await aiService.generateEmbeddingsBatch(conceptTexts);
+
+        const conceptEmbeddings: Array<{
+          title: string;
+          embedding: number[];
+        }> = [];
+
+        for (let i = 0; i < conceptsWithMatches.length; i++) {
+          const emb = embeddings[i];
+          if (emb) {
+            conceptEmbeddings.push({
+              title: conceptsWithMatches[i].title,
+              embedding: emb,
+            });
+          }
+        }
+
+        if (conceptEmbeddings.length > 0) {
+          const crossGraphMatches =
+            await conceptAggregationService.findCrossGraphSimilar(
+              supabase,
+              req.user.id,
+              graph_id,
+              conceptEmbeddings,
+            );
+
+          for (const concept of conceptsWithMatches) {
+            const matches = crossGraphMatches[concept.title];
+            if (matches && matches.length > 0) {
+              concept.crossGraphMatch = matches[0];
+            }
+          }
+        }
+      }
+
       res.json({
         sessionId,
-        concepts: extractionResult.concepts,
+        concepts: conceptsWithMatches,
         relations: extractionResult.relations,
         literature,
       });
@@ -673,27 +724,25 @@ router.post(
         conceptTitles: remainingConcepts.map((c) => c.title),
       });
 
-      for (const concept of remainingConcepts) {
-        try {
-          const embedding = await aiService.generateEmbedding(
-            `${concept.title}: ${concept.description}`,
-          );
-          conceptsWithEmbedding.push({
-            concept,
-            embedding,
-            originalIndex: concept.originalIndex,
-          });
-        } catch (error) {
+      const conceptTexts = remainingConcepts.map(
+        (c) => `${c.title}: ${c.description}`,
+      );
+      const batchEmbeddings =
+        await aiService.generateEmbeddingsBatch(conceptTexts);
+
+      for (let i = 0; i < remainingConcepts.length; i++) {
+        const concept = remainingConcepts[i];
+        const embedding = batchEmbeddings[i] ?? null;
+        if (embedding === null) {
           logger.warn(
             `Failed to generate embedding for concept: ${concept.title}`,
-            error,
           );
-          conceptsWithEmbedding.push({
-            concept,
-            embedding: null,
-            originalIndex: concept.originalIndex,
-          });
         }
+        conceptsWithEmbedding.push({
+          concept,
+          embedding,
+          originalIndex: concept.originalIndex,
+        });
       }
 
       const successCount = conceptsWithEmbedding.filter(

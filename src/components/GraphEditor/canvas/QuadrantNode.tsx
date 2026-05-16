@@ -32,6 +32,9 @@ interface QuadrantNodeProps {
   angle: number;
   focused?: boolean;
   hasFocusMode?: boolean;
+  positionX?: number;
+  positionY?: number;
+  regionNodeCount?: number;
 }
 
 function hashCode(str: string): number {
@@ -74,6 +77,9 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   angle,
   focused = false,
   hasFocusMode = false,
+  positionX,
+  positionY,
+  regionNodeCount,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -111,13 +117,24 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
     const randomOffset = (random - 0.5) * 0.5;
     const levelFactor = node.level === "sub" ? 0.05 : 0;
     const ratio = baseRatio + randomOffset + levelFactor;
-    return Math.max(0.25, Math.min(0.85, ratio));
-  }, [node.id, node.level]);
+
+    const count = regionNodeCount ?? 10;
+    const minBound = count <= 5 ? 0.30 : count <= 12 ? 0.24 : 0.18;
+    const maxBound = count <= 5 ? 0.82 : count <= 12 ? 0.87 : 0.92;
+    return Math.max(minBound, Math.min(maxBound, ratio));
+  }, [node.id, node.level, regionNodeCount]);
 
   const distance = regionRadius * distanceRatio;
 
-  const baseX = originX + distance * Math.cos(angle);
-  const baseY = originY + distance * Math.sin(angle);
+  let baseX: number;
+  let baseY: number;
+  if (positionX !== undefined && positionY !== undefined) {
+    baseX = positionX;
+    baseY = positionY;
+  } else {
+    baseX = originX + distance * Math.cos(angle);
+    baseY = originY + distance * Math.sin(angle);
+  }
 
   const x = baseX + dragOffset.x;
   const y = baseY + dragOffset.y;

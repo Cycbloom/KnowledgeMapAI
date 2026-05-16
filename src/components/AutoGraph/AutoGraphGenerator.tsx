@@ -566,6 +566,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           description: rootNode.content,
           template_type:
             selectedTemplateType !== "blank" ? selectedTemplateType : undefined,
+          preset_id:
+            selectedTemplateType === "topic_research"
+              ? (selectedPresetId ?? undefined)
+              : undefined,
         });
         targetGraphId = createResult.id;
         if (targetGraphId) {

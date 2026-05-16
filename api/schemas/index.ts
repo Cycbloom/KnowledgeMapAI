@@ -32,6 +32,7 @@ export const createGraphSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   description: z.string().optional(),
   template_type: z.string().optional(),
+  preset_id: z.string().optional(),
   domains: z.array(z.string()).optional(),
 });
 

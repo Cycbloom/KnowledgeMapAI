@@ -117,6 +117,7 @@ export const graphsApi = {
     description?: string;
     domain?: string;
     template_type?: string;
+    preset_id?: string;
   }) => request("/graphs", { method: "POST", body: JSON.stringify(data) }),
 
   createFromTemplate: (data: {
@@ -194,6 +195,52 @@ export const graphsApi = {
   getLearningPath: (id: string) => request(`/graphs/${id}/learning-path`),
 
   analyze: (id: string) => request(`/graphs/${id}/analyze`),
+
+  getLiterature: (id: string, module?: string) => {
+    const params = module ? `?module=${encodeURIComponent(module)}` : "";
+    return request<{
+      literature: Array<{
+        title: string;
+        authors: string[];
+        year: number;
+        type: string;
+        url: string;
+        conceptCount: number;
+        modules: string[];
+      }>;
+      totalCount: number;
+    }>(`/graphs/${id}/literature${params}`);
+  },
+
+  getResearchProgress: (id: string) =>
+    request<{
+      modules: Array<{
+        module_type: string;
+        title: string;
+        icon: string;
+        color: string;
+        nodeCount: number;
+        literatureCount: number;
+      }>;
+      totalNodes: number;
+      totalLiterature: number;
+    }>(`/graphs/${id}/research-progress`),
+
+  getModuleGaps: (id: string) =>
+    request<{
+      needsNewModule: boolean;
+      suggestedModules: Array<{ name: string; reason: string }>;
+      unclassifiedCount: number;
+    }>(`/graphs/${id}/analysis/module-gaps`),
+
+  getModuleOverlap: (id: string) =>
+    request<{
+      overlaps: Array<{
+        module1: string;
+        module2: string;
+        similarity: number;
+      }>;
+    }>(`/graphs/${id}/analysis/module-overlap`),
 
   getMissingConnections: (id: string, max?: number) => {
     const url = max

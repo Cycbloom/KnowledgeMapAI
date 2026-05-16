@@ -517,10 +517,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t("scheduler.taskForm.titlePlaceholder")}
                 className={`
-                  flex-1 px-4 py-2.5 rounded-xl
+                  flex-1 input-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border transition-all
                   text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
                   ${errors.title ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500"}
                 `}
               />
@@ -565,11 +565,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               placeholder={t("scheduler.taskForm.descriptionPlaceholder")}
               rows={3}
               className="
-                w-full px-4 py-2.5 rounded-xl
+                w-full textarea-mobile rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-primary-500/50
-                resize-none
+                focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                resize-none transition-all
               "
             />
           </div>
@@ -583,10 +583,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               value={taskType}
               onChange={(e) => setTaskType(e.target.value as TaskType)}
               className="
-                w-full px-4 py-2.5 rounded-xl
+                w-full select-mobile rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                 text-slate-900 dark:text-white
-                focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                transition-all
               "
             >
               <option value="one_time">
@@ -629,10 +630,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 placeholder={t("scheduler.taskForm.totalDurationPlaceholder")}
                 min={0}
                 className="
-                  w-full px-4 py-2.5 rounded-xl
+                  w-full input-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                  transition-all
                 "
               />
               {totalDuration > 0 && timeSliceSettings && (
@@ -658,10 +660,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   setProgressMode(e.target.value as ProgressMode)
                 }
                 className="
-                  w-full px-4 py-2.5 rounded-xl
+                  w-full select-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                  transition-all
                 "
               >
                 <option value="average">
@@ -712,11 +715,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   setShowDependencySelector(!showDependencySelector)
                 }
                 className="
-                  w-full px-4 py-2.5 rounded-xl
+                  w-full select-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white text-left
                   flex items-center justify-between
-                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                  transition-all
                 "
               >
                 <span
@@ -828,11 +832,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                     rows={3}
                     maxLength={2000}
                     className="
-                      w-full px-4 py-2.5 rounded-xl
+                      w-full textarea-mobile rounded-xl
                       bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                       text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                      focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                      focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
                       resize-none font-mono text-xs
+                      transition-all
                     "
                   />
                 );
@@ -1012,11 +1017,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   rows={3}
                   maxLength={2000}
                   className="
-                    w-full px-4 py-2.5 rounded-xl
+                    w-full textarea-mobile rounded-xl
                     bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                     text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                    focus:outline-none focus:ring-2 focus:ring-primary-500/50
-                    resize-none
+                    focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                    resize-none transition-all
                   "
                 />
               );
@@ -1036,10 +1041,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 value={estimatedDuration}
                 onChange={(e) => setEstimatedDuration(Number(e.target.value))}
                 className="
-                  w-full px-4 py-2.5 rounded-xl
+                  w-full select-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                  transition-all
                 "
               >
                 {DURATION_OPTIONS.map((opt) => (
@@ -1060,10 +1066,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
                 className="
-                  w-full px-4 py-2.5 rounded-xl
+                  w-full input-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                  transition-all
                 "
               />
             </div>
@@ -1216,10 +1223,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               onKeyDown={handleKeyDown}
               placeholder={t("scheduler.taskForm.customTagPlaceholder")}
               className="
-                w-full px-4 py-2 rounded-xl
+                w-full input-mobile rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm
-                focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                transition-all
               "
             />
           </div>
@@ -1234,10 +1242,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 value={knowledgePointId}
                 onChange={(e) => setKnowledgePointId(e.target.value)}
                 className="
-                  w-full px-4 py-2.5 rounded-xl
+                  w-full select-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
                   text-slate-900 dark:text-white
-                  focus:outline-none focus:ring-2 focus:ring-primary-500/50
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                  transition-all
                 "
               >
                 <option value="">

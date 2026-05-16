@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../hooks/mutations';
@@ -62,7 +62,7 @@ export const Register = () => {
               autoComplete="name"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               required
             />
           </div>
@@ -74,7 +74,7 @@ export const Register = () => {
               autoComplete="username"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               required
             />
           </div>
@@ -86,7 +86,7 @@ export const Register = () => {
               autoComplete="new-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 border p-2"
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               required
             />
           </div>

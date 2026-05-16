@@ -40,14 +40,14 @@ export const RegionHeader: React.FC<RegionHeaderProps> = ({
 
   const nodeCount = region.nodes.length;
 
-  const textColor = isDark ? "#f1f5f9" : "#0f172a";
+  const textColor = isDark ? "var(--slate-100)" : "var(--slate-900)";
   const textShadow = isDark
     ? "0 1px 3px rgba(0,0,0,0.5)"
     : "0 1px 3px rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2)";
 
-  const countColor = isDark ? "#94a3b8" : "#64748b";
+  const countColor = isDark ? "var(--slate-400)" : "var(--slate-500)";
 
-  const collapsedCircleFill = isDark ? "#1e293b" : "#ffffff";
+  const collapsedCircleFill = isDark ? "var(--slate-800)" : "var(--white)";
   const collapsedCircleStroke = region.color;
 
   return (

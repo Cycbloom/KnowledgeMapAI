@@ -361,7 +361,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
               title={item.label}
               aria-label={item.label}
             >
-              <item.icon size={22} />
+              <item.icon size={20} />
               <span className="text-[10px] mt-0.5 font-medium">
                 {item.label}
               </span>
@@ -708,7 +708,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                 aria-label="关闭菜单"
               >
                 <X
-                  size={24}
+                  size={18}
                   className={isDark ? "text-gray-400" : "text-gray-500"}
                 />
               </button>
@@ -794,13 +794,13 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
               </div>
               <div className="flex flex-wrap gap-2.5">
                 {[
-                  "#3B82F6",
+                  "var(--primary-500)",
                   "#10B981",
                   "#F59E0B",
                   "#EF4444",
-                  "#8B5CF6",
+                  "var(--tertiary-500)",
                   "#EC4899",
-                  "#64748B",
+                  "var(--slate-500)",
                 ].map((color) => (
                   <button
                     key={color}
@@ -895,7 +895,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           }`}
           title="退出专注模式 (Esc)"
         >
-          <Minimize size={20} />
+          <Minimize size={18} />
         </button>
       </div>
     );
@@ -1051,7 +1051,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           className={`p-2 rounded-lg transition-colors ${themeClasses.button.default}`}
           title="返回"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
         <Divider />
         <div className="flex items-center space-x-1 px-1">

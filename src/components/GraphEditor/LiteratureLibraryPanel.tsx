@@ -63,14 +63,14 @@ const getTypeLabel = (type: string): string => {
 
 const getTypeColor = (type: string): string => {
   const colors: Record<string, string> = {
-    paper: "#3B82F6",
-    book: "#8B5CF6",
+    paper: "var(--primary-500)",
+    book: "var(--tertiary-500)",
     article: "#10B981",
     report: "#F59E0B",
     webpage: "#EC4899",
-    document: "#6366F1",
+    document: "var(--secondary-500)",
   };
-  return colors[type] || "#6B7280";
+  return colors[type] || "var(--gray-500)";
 };
 
 export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
@@ -325,11 +325,11 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
                                 className="inline-flex px-1.5 py-0.5 text-xs rounded-full font-medium"
                                 style={{
                                   backgroundColor: `${
-                                    BACKBONE_MODULE_COLORS[module as BackboneModule] || "#6B7280"
+                                    BACKBONE_MODULE_COLORS[module as BackboneModule] || "var(--gray-500)"
                                   }20`,
                                   color:
                                     BACKBONE_MODULE_COLORS[module as BackboneModule] ||
-                                    "#6B7280",
+                                    "var(--gray-500)",
                                 }}
                               >
                                 {BACKBONE_MODULE_LABELS[module as BackboneModule] ||

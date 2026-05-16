@@ -1,126 +1,200 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, MousePointer2, Keyboard, Command, Sparkles } from 'lucide-react';
+import { X, MousePointer2, Keyboard, Command, Sparkles, Layout } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/common';
 
 interface HelpModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const KeyboardShortcut: React.FC<{ keys: string[] }> = ({ keys }) => (
+  <div className="flex gap-1 items-center flex-wrap">
+    {keys.map((key, index) => (
+      <React.Fragment key={index}>
+        <kbd className="bg-white dark:bg-slate-700 px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-xs font-mono text-gray-600 dark:text-gray-300 shadow-sm min-w-[24px] text-center">
+          {key}
+        </kbd>
+        {index < keys.length - 1 && <span className="text-gray-400 text-xs">+</span>}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
+  const modalRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
+
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200 backdrop-blur-sm" 
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="help-modal-title"
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden" 
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{t('helpGuide.title')}</h2>
-            <p className="text-gray-500 text-sm mt-1">{t('helpGuide.subtitle')}</p>
+            <h2 id="help-modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('helpGuide.title')}</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('helpGuide.subtitle')}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
-            <X size={20} />
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            aria-label={t('common.close')}
+          >
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[70vh] grid grid-cols-1 md:grid-cols-2 gap-8">
           
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-primary-600 mb-2">
-              <MousePointer2 size={20} />
-              <h3 className="font-bold text-lg">{t('helpGuide.mouseControls.title')}</h3>
+            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-2">
+              <MousePointer2 size={20} aria-hidden="true" />
+              <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{t('helpGuide.mouseControls.title')}</h3>
             </div>
-            <div className="bg-primary-50/50 rounded-xl p-4 space-y-3 border border-primary-100">
+            <div className="bg-primary-50/50 dark:bg-primary-900/20 rounded-xl p-4 space-y-3 border border-primary-100 dark:border-primary-800">
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.rotateView')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.rotateViewShortcut')}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.mouseControls.rotateView')}</span>
+                <span className="text-sm bg-white dark:bg-slate-700 px-2 py-1 rounded border border-primary-200 dark:border-primary-700 text-gray-600 dark:text-gray-300 shadow-sm">{t('helpGuide.mouseControls.rotateViewShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.panCanvas')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.panCanvasShortcut')}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.mouseControls.panCanvas')}</span>
+                <span className="text-sm bg-white dark:bg-slate-700 px-2 py-1 rounded border border-primary-200 dark:border-primary-700 text-gray-600 dark:text-gray-300 shadow-sm">{t('helpGuide.mouseControls.panCanvasShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.zoomView')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.zoomViewShortcut')}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.mouseControls.zoomView')}</span>
+                <span className="text-sm bg-white dark:bg-slate-700 px-2 py-1 rounded border border-primary-200 dark:border-primary-700 text-gray-600 dark:text-gray-300 shadow-sm">{t('helpGuide.mouseControls.zoomViewShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.selectNode')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.selectNodeShortcut')}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.mouseControls.selectNode')}</span>
+                <span className="text-sm bg-white dark:bg-slate-700 px-2 py-1 rounded border border-primary-200 dark:border-primary-700 text-gray-600 dark:text-gray-300 shadow-sm">{t('helpGuide.mouseControls.selectNodeShortcut')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.mouseControls.boxSelect')}</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border border-primary-200 text-gray-600 shadow-sm">{t('helpGuide.mouseControls.boxSelectShortcut')}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.mouseControls.boxSelect')}</span>
+                <span className="text-sm bg-white dark:bg-slate-700 px-2 py-1 rounded border border-primary-200 dark:border-primary-700 text-gray-600 dark:text-gray-300 shadow-sm">{t('helpGuide.mouseControls.boxSelectShortcut')}</span>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-primary-600 mb-2">
-              <Keyboard size={20} />
-              <h3 className="font-bold text-lg">{t('helpGuide.keyboardShortcuts.title')}</h3>
+            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-2">
+              <Keyboard size={20} aria-hidden="true" />
+              <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{t('helpGuide.keyboardShortcuts.title')}</h3>
             </div>
-            <div className="bg-primary-50/50 rounded-xl p-4 space-y-3 border border-primary-100">
+            <div className="bg-primary-50/50 dark:bg-primary-900/20 rounded-xl p-4 space-y-3 border border-primary-100 dark:border-primary-800">
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.keyboardShortcuts.undo')}</span>
-                <div className="flex gap-1">
-                   <kbd className="bg-white px-2 py-1 rounded border border-gray-300 text-xs font-mono text-gray-600 shadow-sm">Ctrl</kbd>
-                   <span className="text-gray-400">+</span>
-                   <kbd className="bg-white px-2 py-1 rounded border border-gray-300 text-xs font-mono text-gray-600 shadow-sm">Z</kbd>
-                </div>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.undo')}</span>
+                <KeyboardShortcut keys={['Ctrl', 'Z']} />
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.keyboardShortcuts.redo')}</span>
-                <div className="flex gap-1">
-                   <kbd className="bg-white px-2 py-1 rounded border border-gray-300 text-xs font-mono text-gray-600 shadow-sm">Ctrl</kbd>
-                   <span className="text-gray-400">+</span>
-                   <kbd className="bg-white px-2 py-1 rounded border border-gray-300 text-xs font-mono text-gray-600 shadow-sm">Shift</kbd>
-                   <span className="text-gray-400">+</span>
-                   <kbd className="bg-white px-2 py-1 rounded border border-gray-300 text-xs font-mono text-gray-600 shadow-sm">Z</kbd>
-                </div>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.redo')}</span>
+                <KeyboardShortcut keys={['Ctrl', 'Shift', 'Z']} />
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.keyboardShortcuts.focusModeToggle')}</span>
-                <kbd className="bg-white px-2 py-1 rounded border border-gray-300 text-xs font-mono text-gray-600 shadow-sm">F</kbd>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.focusModeToggle')}</span>
+                <KeyboardShortcut keys={['F']} />
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">{t('helpGuide.keyboardShortcuts.exitMode')}</span>
-                <kbd className="bg-white px-2 py-1 rounded border border-gray-300 text-xs font-mono text-gray-600 shadow-sm">Esc</kbd>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.exitMode')}</span>
+                <KeyboardShortcut keys={['Esc']} />
               </div>
             </div>
           </div>
 
-          <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-2 text-primary-600 mb-2">
-              <Sparkles size={20} />
-              <h3 className="font-bold text-lg">{t('helpGuide.aiFeatures.title')}</h3>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-2">
+              <Layout size={20} aria-hidden="true" />
+              <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{t('helpGuide.globalShortcuts.title', '全局快捷键')}</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="bg-primary-50/50 p-4 rounded-xl border border-primary-100">
-                  <h4 className="font-bold text-primary-800 mb-2 flex items-center gap-2">
-                    <Command size={16} /> {t('helpGuide.aiFeatures.smartExpand.title')}
-                  </h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {t('helpGuide.aiFeatures.smartExpand.description')}
-                  </p>
-               </div>
-               <div className="bg-primary-50/50 p-4 rounded-xl border border-primary-100">
-                  <h4 className="font-bold text-primary-800 mb-2 flex items-center gap-2">
-                    <Command size={16} /> {t('helpGuide.aiFeatures.autoQuestion.title')}
-                  </h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {t('helpGuide.aiFeatures.autoQuestion.description')}
-                  </p>
-               </div>
+            <div className="bg-primary-50/50 dark:bg-primary-900/20 rounded-xl p-4 space-y-3 border border-primary-100 dark:border-primary-800">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.search', '搜索')}</span>
+                <KeyboardShortcut keys={['Ctrl', 'K']} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.toggleSidebar', '切换侧边栏')}</span>
+                <KeyboardShortcut keys={['B']} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.toggleTheme', '切换主题')}</span>
+                <KeyboardShortcut keys={['Ctrl', 'D']} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.openHelp', '打开帮助')}</span>
+                <KeyboardShortcut keys={['?']} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.openConsole', '打开控制台')}</span>
+                <KeyboardShortcut keys={['Ctrl', '`']} />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-2">
+              <Sparkles size={20} aria-hidden="true" />
+              <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{t('helpGuide.aiFeatures.title')}</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-primary-50/50 dark:bg-primary-900/20 p-4 rounded-xl border border-primary-100 dark:border-primary-800">
+                <h4 className="font-bold text-primary-800 dark:text-primary-300 mb-2 flex items-center gap-2">
+                  <Command size={16} aria-hidden="true" /> {t('helpGuide.aiFeatures.smartExpand.title')}
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {t('helpGuide.aiFeatures.smartExpand.description')}
+                </p>
+              </div>
+              <div className="bg-primary-50/50 dark:bg-primary-900/20 p-4 rounded-xl border border-primary-100 dark:border-primary-800">
+                <h4 className="font-bold text-primary-800 dark:text-primary-300 mb-2 flex items-center gap-2">
+                  <Command size={16} aria-hidden="true" /> {t('helpGuide.aiFeatures.autoQuestion.title')}
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {t('helpGuide.aiFeatures.autoQuestion.description')}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+        <div className="p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 flex justify-end">
           <button 
             onClick={onClose}
-            className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-medium transition-colors"
+            className="px-6 py-2 bg-slate-900 dark:bg-primary-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-primary-700 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-primary-500"
           >
             {t('helpGuide.gotIt')}
           </button>

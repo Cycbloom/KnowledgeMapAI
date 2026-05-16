@@ -603,14 +603,13 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             >
               <circle
                 r={12}
-                fill={isDark ? "#475569" : "#e2e8f0"}
-                stroke={isDark ? "#64748b" : "#94a3b8"}
+                className="fill-slate-200 dark:fill-slate-600 stroke-slate-400 dark:stroke-slate-500"
                 strokeWidth={2}
                 style={{
                   filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
                 }}
               />
-              <circle r={4} fill={isDark ? "#94a3b8" : "#64748b"} />
+              <circle r={4} className="fill-slate-500 dark:fill-slate-400" />
             </g>
           </g>
         </svg>

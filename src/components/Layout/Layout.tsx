@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { useUser } from "../../hooks/queries";
@@ -41,6 +41,7 @@ import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { AnimatedOutlet } from "./AnimatedOutlet";
 import { useTheme } from "../../hooks";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
@@ -56,18 +57,21 @@ interface SidebarLinkProps {
   isDark: boolean;
 }
 
-const SidebarLink: React.FC<SidebarLinkProps> = ({
+const SidebarLink: React.FC<SidebarLinkProps & { isActive?: boolean }> = ({
   to,
   icon: Icon,
   label,
   isCollapsed,
+  isActive,
 }) => (
   <Link
     to={to}
-    className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} p-2 hover:bg-slate-800 rounded transition-colors`}
+    className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} p-2 hover:bg-slate-800 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset ${isActive ? "bg-slate-700" : ""}`}
     title={label}
+    aria-label={label}
+    aria-current={isActive ? "page" : undefined}
   >
-    <Icon size={20} />
+    <Icon size={20} aria-hidden="true" />
     {!isCollapsed && <span>{label}</span>}
   </Link>
 );
@@ -107,6 +111,12 @@ export const Layout = () => {
         } else {
           openConsole();
         }
+      },
+      showHelp: () => {
+        setIsHelpOpen(true);
+      },
+      toggleTheme: () => {
+        toggleTheme();
       },
     },
     enabled: true,
@@ -227,22 +237,25 @@ export const Layout = () => {
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className={`p-2 hover:bg-slate-800 rounded transition-colors`}
+                aria-label={isCollapsed ? t('layout.expandSidebar') : t('layout.collapseSidebar')}
+                aria-expanded={!isCollapsed}
               >
                 {isCollapsed ? (
-                  <ChevronRight size={20} />
+                  <ChevronRight size={20} aria-hidden="true" />
                 ) : (
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={20} aria-hidden="true" />
                 )}
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar" aria-label={t('layout.mainNavigation')}>
               <SidebarLink
                 to="/"
                 icon={BookOpen}
                 label={t('layout.myGraphs')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname === "/"}
               />
               <SidebarLink
                 to="/graph-map"
@@ -250,6 +263,7 @@ export const Layout = () => {
                 label={t('layout.graphMap')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/graph-map")}
               />
               <SidebarLink
                 to="/study"
@@ -257,6 +271,7 @@ export const Layout = () => {
                 label={t('layout.studyCenter')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/study")}
               />
               <SidebarLink
                 to="/learning-paths"
@@ -264,6 +279,7 @@ export const Layout = () => {
                 label={t('layout.learningPaths')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/learning-paths")}
               />
               <SidebarLink
                 to="/statistics"
@@ -271,6 +287,7 @@ export const Layout = () => {
                 label={t('layout.statistics')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/statistics")}
               />
               <SidebarLink
                 to="/calendar"
@@ -278,6 +295,7 @@ export const Layout = () => {
                 label={t('layout.calendar')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/calendar")}
               />
               <SidebarLink
                 to="/achievements"
@@ -285,6 +303,7 @@ export const Layout = () => {
                 label={t('layout.achievements')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/achievements")}
               />
               <SidebarLink
                 to="/templates"
@@ -292,6 +311,7 @@ export const Layout = () => {
                 label={t('layout.templates')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/templates")}
               />
               <SidebarLink
                 to="/tasks"
@@ -299,6 +319,7 @@ export const Layout = () => {
                 label={t('layout.tasks')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/tasks")}
               />
               <SidebarLink
                 to="/scheduler"
@@ -306,6 +327,7 @@ export const Layout = () => {
                 label={t('layout.scheduler')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/scheduler")}
               />
               <SidebarLink
                 to="/profile"
@@ -313,6 +335,7 @@ export const Layout = () => {
                 label={t('layout.profile')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/profile")}
               />
               <SidebarLink
                 to="/trash"
@@ -320,6 +343,7 @@ export const Layout = () => {
                 label={t('layout.trash')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
+                isActive={location.pathname.startsWith("/trash")}
               />
             </nav>
 
@@ -328,8 +352,9 @@ export const Layout = () => {
                 onClick={handleLogout}
                 className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} text-gray-400 hover:text-white w-full p-2 hover:bg-slate-800 rounded transition-colors`}
                 title={t('layout.logout')}
+                aria-label={t('layout.logout')}
               >
-                <LogOut size={20} />
+                <LogOut size={20} aria-hidden="true" />
                 {!isCollapsed && <span>{t('layout.logout')}</span>}
               </button>
             </div>
@@ -364,8 +389,9 @@ export const Layout = () => {
                       : "text-gray-500 hover:text-yellow-600 hover:bg-yellow-50"
                   }`}
                   title={isDark ? t('layout.switchToLightMode') : t('layout.switchToDarkMode')}
+                  aria-label={isDark ? t('layout.switchToLightMode') : t('layout.switchToDarkMode')}
                 >
-                  {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                  {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
                 </button>
                 <button
                   onClick={() => setIsHelpOpen(true)}
@@ -375,8 +401,9 @@ export const Layout = () => {
                       : "text-gray-500 hover:text-primary-600 hover:bg-primary-50"
                   }`}
                   title={t('layout.helpGuide')}
+                  aria-label={t('layout.helpGuide')}
                 >
-                  <HelpCircle size={18} />
+                  <HelpCircle size={18} aria-hidden="true" />
                 </button>
                 {user && (
                   <div
@@ -432,7 +459,7 @@ export const Layout = () => {
               </div>
             )}
             <ErrorBoundary>
-              <Outlet />
+              <AnimatedOutlet />
             </ErrorBoundary>
           </div>
           {isMobile && !isFullScreenPage && (

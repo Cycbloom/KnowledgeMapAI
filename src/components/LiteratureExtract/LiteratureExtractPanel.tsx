@@ -950,11 +950,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
                           )}
                           {concept.crossGraphMatch && (
                             <span
-                              className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full font-medium inline-flex items-center gap-1`}
-                              style={{
-                                backgroundColor: "rgba(249, 115, 22, 0.15)",
-                                color: "#EA580C",
-                              }}
+                              className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full font-medium inline-flex items-center gap-1 bg-orange-500/15 text-orange-600 dark:text-orange-500`}
                             >
                               <Network
                                 size={isMobile ? 10 : 12}

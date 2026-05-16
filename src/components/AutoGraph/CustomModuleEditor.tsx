@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Plus, AlertCircle } from "lucide-react";
 import type { BackboneModuleCustomConfig } from "@shared/types/graph";
 import { ModuleItem } from "./ModuleItem";
@@ -12,21 +12,30 @@ interface CustomModuleEditorProps {
 const MIN_MODULES = 3;
 const MAX_MODULES = 10;
 
-const createEmptyModule = (): BackboneModuleCustomConfig => ({
+const createEmptyModule = (defaultColor: string): BackboneModuleCustomConfig => ({
   module_type: "",
   title: "",
   icon: "📚",
-  color: "#3B82F6",
+  color: defaultColor,
   description: "",
   suggestedNodes: [],
   relationshipToCore: "",
 });
+
+const getThemePrimaryColor = (): string => {
+  if (typeof window === "undefined") return "#3B82F6";
+  const computedStyle = getComputedStyle(document.documentElement);
+  const primaryColor = computedStyle.getPropertyValue("--primary-500").trim();
+  return primaryColor || "#3B82F6";
+};
 
 export const CustomModuleEditor: React.FC<CustomModuleEditorProps> = ({
   modules,
   onChange,
   disabled = false,
 }) => {
+  const defaultModuleColor = useMemo(() => getThemePrimaryColor(), []);
+
   const handleModuleChange = (
     index: number,
     updatedModule: BackboneModuleCustomConfig,
@@ -45,7 +54,7 @@ export const CustomModuleEditor: React.FC<CustomModuleEditorProps> = ({
 
   const handleAddModule = () => {
     if (modules.length < MAX_MODULES) {
-      const newModules = [...modules, createEmptyModule()];
+      const newModules = [...modules, createEmptyModule(defaultModuleColor)];
       onChange(newModules);
     }
   };

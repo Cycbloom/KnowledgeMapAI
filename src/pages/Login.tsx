@@ -708,7 +708,7 @@ export const Login = () => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full p-2.5 pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+        className="w-full input-mobile pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
       />
       <button
         type="button"
@@ -893,7 +893,7 @@ export const Login = () => {
           type="text"
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
-          className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
         />
       </div>
 
@@ -908,7 +908,7 @@ export const Login = () => {
               value={dbPassword}
               onChange={(e) => setDbPassword(e.target.value)}
               placeholder={t("quickSetup.dbPasswordPlaceholder")}
-              className="w-full p-2.5 pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+              className="w-full input-mobile pr-10 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
             />
             <button
               type="button"
@@ -941,7 +941,7 @@ export const Login = () => {
           <select
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
-            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+            className="w-full select-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none transition-all"
           >
             <option value="">{t("quickSetup.selectRegion")}</option>
             {regions.map((r) => (
@@ -1107,7 +1107,7 @@ export const Login = () => {
                 setAuthForm((prev) => ({ ...prev, email: e.target.value }))
               }
               placeholder={t("configPage.email")}
-              className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
             <input
               type="password"
@@ -1116,7 +1116,7 @@ export const Login = () => {
                 setAuthForm((prev) => ({ ...prev, password: e.target.value }))
               }
               placeholder={t("configPage.password")}
-              className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
             {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button
@@ -1200,7 +1200,7 @@ export const Login = () => {
               setDbForm((prev) => ({ ...prev, url: e.target.value }))
             }
             placeholder="https://xxx.supabase.co"
-            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
         </div>
 
@@ -1241,7 +1241,7 @@ export const Login = () => {
               setDbForm((prev) => ({ ...prev, databaseUrl: e.target.value }))
             }
             placeholder="postgresql://postgres:...@db.xxx.supabase.co:5432/postgres"
-            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
             {t("configPage.databaseUrlHelp")}
@@ -1363,7 +1363,7 @@ export const Login = () => {
                 setAuthForm((prev) => ({ ...prev, email: e.target.value }))
               }
               placeholder={t("configPage.email")}
-              className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
             <input
               type="password"
@@ -1372,7 +1372,7 @@ export const Login = () => {
                 setAuthForm((prev) => ({ ...prev, password: e.target.value }))
               }
               placeholder={t("configPage.password")}
-              className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
             {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button
@@ -1422,7 +1422,7 @@ export const Login = () => {
             <select
               value={aiProvider}
               onChange={(e) => setAiProvider(e.target.value as AIProviderType)}
-              className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+              className="w-full select-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none transition-all"
             >
               {AI_PROVIDERS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -1456,7 +1456,7 @@ export const Login = () => {
             value={aiBaseURL}
             onChange={(e) => setAiBaseURL(e.target.value)}
             placeholder="https://api.example.com/v1"
-            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
         </div>
 
@@ -1469,7 +1469,7 @@ export const Login = () => {
             value={aiModel}
             onChange={(e) => setAiModel(e.target.value)}
             placeholder="model-name"
-            className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+            className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono transition-all"
           />
         </div>
       </div>

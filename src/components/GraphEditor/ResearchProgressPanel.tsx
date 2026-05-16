@@ -164,13 +164,13 @@ export const ResearchProgressPanel: React.FC<ResearchProgressPanelProps> = ({
                               ? "transparent"
                               : `${module.color}20`,
                             border: isEmpty
-                              ? "2px dashed #f59e0b"
+                              ? "2px dashed var(--amber-500)"
                               : "none",
                           }}
                         >
                           <IconComp
                             size={18}
-                            color={isEmpty ? "#f59e0b" : module.color}
+                            color={isEmpty ? "var(--amber-500)" : module.color}
                           />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -209,7 +209,7 @@ export const ResearchProgressPanel: React.FC<ResearchProgressPanelProps> = ({
                             style={{
                               width: `${barWidth}%`,
                               backgroundColor: isEmpty
-                                ? "#f59e0b"
+                                ? "var(--amber-500)"
                                 : module.color,
                             }}
                           />

@@ -525,7 +525,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onStart();
               }}
-              className={`p-2 rounded-md transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+              className={`p-2.5 rounded-md transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
               title="开始"
             >
               <Play size={14} />
@@ -538,7 +538,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onPause();
               }}
-              className="p-2 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
+              className="p-2.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="暂停"
             >
               <Pause size={14} />
@@ -554,7 +554,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   e.stopPropagation();
                   onComplete();
                 }}
-                className="p-2 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
+                className="p-2.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title="完成"
               >
                 <Check size={14} />
@@ -567,7 +567,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onViewDetail();
               }}
-              className="p-2 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
+              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="详情"
             >
               <Info size={14} />
@@ -580,7 +580,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onEdit();
               }}
-              className="p-2 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
+              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="编辑"
             >
               <Edit2 size={14} />
@@ -593,7 +593,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onDelete();
               }}
-              className="p-2 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
+              className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="删除"
             >
               <Trash2 size={14} />

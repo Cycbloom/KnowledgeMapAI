@@ -1261,7 +1261,7 @@ export const Settings = () => {
                                   : t("settings.enterApiKey")
                               }
                               disabled={isEnvSource}
-                              className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             />
                             <button
                               type="button"
@@ -1297,7 +1297,7 @@ export const Settings = () => {
                               }))
                             }
                             placeholder={defaults.baseURL}
-                            className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                            className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                           />
                         </div>
 
@@ -1318,7 +1318,7 @@ export const Settings = () => {
                               }))
                             }
                             placeholder={defaults.model}
-                            className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                            className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                           />
                         </div>
 
@@ -1395,7 +1395,7 @@ export const Settings = () => {
               <select
                 value={selectedProviderForAdd}
                 onChange={(e) => setSelectedProviderForAdd(e.target.value)}
-                className="p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                className="select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
               >
                 {Object.entries(PROVIDER_DEFAULTS).map(([key, defaults]) => (
                   <option key={key} value={key}>
@@ -1409,7 +1409,7 @@ export const Settings = () => {
                   value={newModelName}
                   onChange={(e) => setNewModelName(e.target.value)}
                   placeholder={t("settings.inputModelName")}
-                  className="flex-1 p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                  className="flex-1 input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                 />
                 <button
                   onClick={handleAddModel}
@@ -1441,7 +1441,7 @@ export const Settings = () => {
                         </span>
                         <button
                           onClick={() => handleDeleteModel(provider, model)}
-                          className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 opacity-100 transition-opacity p-1 min-h-[32px] min-w-[32px]"
+                          className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 opacity-100 transition-opacity p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1504,7 +1504,7 @@ export const Settings = () => {
                   <select
                     value={mainAiConfig.provider}
                     onChange={(e) => handleMainAiProviderChange(e.target.value)}
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                    className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                   >
                     {Object.entries(PROVIDER_DEFAULTS).map(
                       ([key, defaults]) => (
@@ -1532,7 +1532,7 @@ export const Settings = () => {
                     placeholder={
                       PROVIDER_DEFAULTS[mainAiConfig.provider]?.model || ""
                     }
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                    className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                   />
                 </div>
 
@@ -1646,7 +1646,7 @@ export const Settings = () => {
                       onChange={(e) =>
                         handleEmbeddingProviderChange(e.target.value)
                       }
-                      className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                      className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                     >
                       {Object.entries(PROVIDER_DEFAULTS)
                         .filter(([, defaults]) => defaults.supportsEmbedding)
@@ -1675,7 +1675,7 @@ export const Settings = () => {
                         PROVIDER_DEFAULTS[embeddingAiConfig.provider]
                           ?.embeddingModel || ""
                       }
-                      className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                      className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                     />
                   </div>
 
@@ -1845,7 +1845,7 @@ export const Settings = () => {
                       setDbForm((prev) => ({ ...prev, url: e.target.value }))
                     }
                     placeholder="https://xxx.supabase.co"
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                    className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                   />
                 </div>
 
@@ -1864,7 +1864,7 @@ export const Settings = () => {
                         }))
                       }
                       placeholder="eyJhbGciOi..."
-                      className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                      className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
                     <button
                       type="button"
@@ -1891,7 +1891,7 @@ export const Settings = () => {
                         }))
                       }
                       placeholder="eyJhbGciOi..."
-                      className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                      className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
                     <button
                       type="button"
@@ -1930,7 +1930,7 @@ export const Settings = () => {
                       }))
                     }
                     placeholder={t("settings.databaseUrlPlaceholder")}
-                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+                    className="w-full input-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                   />
                 </div>
 
@@ -2064,7 +2064,7 @@ export const Settings = () => {
                     setMobileProvider(provider);
                     setMobileModel(availableModels[provider]?.[0] || "");
                   }}
-                  className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                  className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                 >
                   <option value="deepseek">Deepseek</option>
                   <option value="volcengine">火山引擎 (Volcengine)</option>
@@ -2079,7 +2079,7 @@ export const Settings = () => {
                 <select
                   value={mobileModel}
                   onChange={(e) => setMobileModel(e.target.value)}
-                  className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                  className="w-full select-mobile rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                 >
                   {availableModels[mobileProvider]?.map((m) => (
                     <option key={m} value={m}>
@@ -2099,7 +2099,7 @@ export const Settings = () => {
                     value={mobileApiKey}
                     onChange={(e) => setMobileApiKey(e.target.value)}
                     placeholder={t("settings.enterApiKey")}
-                    className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                    className="w-full input-mobile pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                   />
                   <button
                     type="button"
@@ -2169,7 +2169,7 @@ export const Settings = () => {
                     if (!isNaN(val) && val >= 0.7 && val <= 0.99)
                       setRetention(val);
                   }}
-                  className="w-20 p-2 text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 min-h-[44px]"
+                  className="w-20 input-mobile text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 transition-all"
                 />
               </div>
               <input
@@ -2201,7 +2201,7 @@ export const Settings = () => {
                     if (!isNaN(val) && val >= 1 && val <= 36500)
                       setMaxInterval(val);
                   }}
-                  className="w-24 p-2 text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 min-h-[44px]"
+                  className="w-24 input-mobile text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 transition-all"
                 />
               </div>
               <input

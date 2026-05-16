@@ -514,7 +514,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         key: "__root__",
         label: "研究主题",
         icon: "📌",
-        color: "#6366F1",
+        color: "var(--secondary-500)",
         nodes: rootNodes,
       });
     }
@@ -761,8 +761,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             }`}
             style={{
               borderLeft: isUncategorized
-                ? "3px solid #94a3b8"
-                : "3px solid #8b5cf6",
+                ? "3px solid var(--slate-400)"
+                : "3px solid var(--tertiary-500)",
             }}
             onClick={() => toggleLiteratureExpand(group.key)}
           >
@@ -1078,7 +1078,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                       : getLevelColors(node.level).background,
                   color:
                     selectedNodeId === node.id
-                      ? "#ffffff"
+                      ? "var(--white)"
                       : getLevelColors(node.level).text,
                 }}
               >

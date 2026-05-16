@@ -972,3 +972,160 @@ body {
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out;
 }
+
+@layer utilities {
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  .will-change-transform-opacity {
+    will-change: transform, opacity;
+  }
+
+  .smooth-transform {
+    transition: transform 0.2s ease-out;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .smooth-opacity {
+    transition: opacity 0.2s ease-out;
+    will-change: opacity;
+  }
+
+  .smooth-all {
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  .animate-optimized {
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+
+  .animate-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .no-animation-jank {
+    contain: layout style paint;
+  }
+
+  .scroll-performance {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============================================
+   Focus States - 焦点状态（WCAG 2.1 AA级）
+   ============================================ */
+
+:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+.dark :focus-visible {
+  outline-color: var(--primary-400);
+}
+
+.dark button:focus-visible,
+.dark a:focus-visible {
+  outline-color: var(--primary-400);
+}
+
+.dark input:focus-visible,
+.dark textarea:focus-visible,
+.dark select:focus-visible {
+  outline-color: var(--primary-400);
+}
+
+/* Focus ring for custom focusable elements */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+.dark .focus-ring:focus-visible {
+  outline-color: var(--primary-400);
+}
+
+/* ============================================
+   Color Contrast Fixes - 颜色对比度修复
+   WCAG 2.1 AA级要求：
+   - 普通文本（<18px）：对比度 ≥ 4.5:1
+   - 大文本（≥18px 或 14px 粗体）：对比度 ≥ 3:1
+   ============================================ */
+
+/* Secondary text - 次要文本（提高对比度） */
+.text-secondary {
+  color: #64748b;
+}
+
+.dark .text-secondary {
+  color: #94a3b8;
+}
+
+/* Muted text - 静音文本（用于非关键信息） */
+.text-muted {
+  color: #6b7280;
+}
+
+.dark .text-muted {
+  color: #9ca3af;
+}
+
+/* Placeholder text - 占位符文本 */
+.text-placeholder {
+  color: #6b7280;
+}
+
+.dark .text-placeholder {
+  color: #9ca3af;
+}
+
+/* Helper text - 辅助说明文本 */
+.text-helper {
+  color: #64748b;
+}
+
+.dark .text-helper {
+  color: #94a3b8;
+}
+
+/* Disabled text - 禁用状态文本 */
+.text-disabled {
+  color: #9ca3af;
+}
+
+.dark .text-disabled {
+  color: #6b7280;
+}

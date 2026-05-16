@@ -20,3 +20,4 @@ export * from './useWorker';
 export * from './useCombinedView';
 export * from './useCollaborators';
 export * from './useGestures';
+export * from './useFocusTrap';

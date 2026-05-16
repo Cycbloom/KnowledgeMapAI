@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/common';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -22,22 +23,57 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   cancelText = '取消',
   isDangerous = false,
 }) => {
+  const modalRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
 
+  const titleId = 'confirmation-modal-title';
+  const descriptionId = 'confirmation-modal-description';
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 sm:max-h-[90dvh]">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 sm:max-h-[90dvh]"
+      >
         <div className="p-4 sm:p-6">
           <div className="flex items-start gap-4">
             <div className={`p-3 rounded-full flex-shrink-0 ${isDangerous ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'}`}>
-              <AlertTriangle size={24} />
+              <AlertTriangle size={24} aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed break-words">{message}</p>
+              <h3 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
+              <p id={descriptionId} className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed break-words">{message}</p>
             </div>
-            <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target">
-              <X size={20} />
+            <button 
+              onClick={onClose} 
+              className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target"
+              aria-label="关闭对话框"
+            >
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, memo } from 'react';
+import React, { useRef, useState, useEffect, useCallback, memo, useMemo } from 'react';
 
 interface VirtualListProps<T> {
   items: T[];
@@ -23,51 +23,69 @@ function VirtualListComponent<T>({
 }: VirtualListProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const lastScrollTopRef = useRef(0);
 
   const totalHeight = items.length * itemHeight;
   const visibleCount = Math.ceil(containerHeight / itemHeight);
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const endIndex = Math.min(items.length, startIndex + visibleCount + overscan * 2);
 
-  const visibleItems = items.slice(startIndex, endIndex);
+  const visibleItems = useMemo(() => items.slice(startIndex, endIndex), [items, startIndex, endIndex]);
   const offsetY = startIndex * itemHeight;
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
-    setScrollTop(newScrollTop);
 
-    if (onEndReached) {
-      const scrollBottom = newScrollTop + containerHeight;
-      const threshold = endReachedThreshold * itemHeight;
-      
-      if (totalHeight - scrollBottom < threshold) {
-        onEndReached();
-      }
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
     }
+
+    rafRef.current = requestAnimationFrame(() => {
+      setScrollTop(newScrollTop);
+
+      if (onEndReached) {
+        const scrollBottom = newScrollTop + containerHeight;
+        const threshold = endReachedThreshold * itemHeight;
+
+        if (totalHeight - scrollBottom < threshold) {
+          const lastScrollBottom = lastScrollTopRef.current + containerHeight;
+          if (totalHeight - lastScrollBottom >= threshold) {
+            onEndReached();
+          }
+        }
+      }
+      lastScrollTopRef.current = newScrollTop;
+    });
   }, [onEndReached, containerHeight, itemHeight, totalHeight, endReachedThreshold]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      container.scrollTop += e.deltaY;
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
   return (
     <div
       ref={containerRef}
       className={`overflow-auto ${className}`}
-      style={{ height: containerHeight }}
+      style={{
+        height: containerHeight,
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+      }}
       onScroll={handleScroll}
     >
       <div style={{ height: totalHeight, position: 'relative' }}>
-        <div style={{ transform: `translateY(${offsetY}px)` }}>
+        <div
+          style={{
+            transform: `translateY(${offsetY}px)`,
+            willChange: 'transform',
+            backfaceVisibility: 'hidden',
+          }}
+        >
           {visibleItems.map((item, index) => (
             <div
               key={startIndex + index}
@@ -110,6 +128,7 @@ function VirtualGridComponent<T>({
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const rafRef = useRef<number | null>(null);
 
   const columns = Math.floor((containerWidth + gap) / (itemWidth + gap));
   const rows = Math.ceil(items.length / columns);
@@ -121,32 +140,57 @@ function VirtualGridComponent<T>({
   const startCol = Math.max(0, Math.floor(scrollLeft / (itemWidth + gap)) - overscan);
   const endCol = Math.min(columns, startCol + Math.ceil(containerWidth / (itemWidth + gap)) + overscan * 2);
 
-  const visibleItems: { item: T; index: number; x: number; y: number }[] = [];
+  const visibleItems = useMemo(() => {
+    const result: { item: T; index: number; x: number; y: number }[] = [];
 
-  for (let row = startRow; row < endRow; row++) {
-    for (let col = startCol; col < endCol; col++) {
-      const index = row * columns + col;
-      if (index < items.length) {
-        visibleItems.push({
-          item: items[index],
-          index,
-          x: col * (itemWidth + gap),
-          y: row * (itemHeight + gap),
-        });
+    for (let row = startRow; row < endRow; row++) {
+      for (let col = startCol; col < endCol; col++) {
+        const index = row * columns + col;
+        if (index < items.length) {
+          result.push({
+            item: items[index],
+            index,
+            x: col * (itemWidth + gap),
+            y: row * (itemHeight + gap),
+          });
+        }
       }
     }
-  }
+    return result;
+  }, [items, startRow, endRow, startCol, endCol, columns, gap, itemWidth, itemHeight]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
-    setScrollLeft(e.currentTarget.scrollLeft);
+    const newScrollTop = e.currentTarget.scrollTop;
+    const newScrollLeft = e.currentTarget.scrollLeft;
+
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+    }
+
+    rafRef.current = requestAnimationFrame(() => {
+      setScrollTop(newScrollTop);
+      setScrollLeft(newScrollLeft);
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
   }, []);
 
   return (
     <div
       ref={containerRef}
       className={`overflow-auto ${className}`}
-      style={{ height: containerHeight, width: containerWidth }}
+      style={{
+        height: containerHeight,
+        width: containerWidth,
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+      }}
       onScroll={handleScroll}
     >
       <div style={{ height: totalHeight, position: 'relative' }}>
@@ -159,6 +203,8 @@ function VirtualGridComponent<T>({
               top: y,
               width: itemWidth,
               height: itemHeight,
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
             }}
           >
             {renderItem(item, index)}

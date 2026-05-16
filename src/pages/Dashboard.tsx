@@ -498,42 +498,48 @@ export const Dashboard = () => {
               <Search
                 className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
                 size={18}
+                aria-hidden="true"
               />
               <input
                 ref={searchInputRef}
-                type="text"
+                type="search"
                 placeholder={t("dashboard.search.placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() =>
                   searchQuery.length >= 2 && setShowSearchResults(true)
                 }
+                aria-label={t("dashboard.search.placeholder")}
                 className={`w-full pl-10 pr-20 sm:pr-24 py-2.5 sm:py-2.5 rounded-xl border outline-none transition-all text-sm ${
                   isDark
                     ? "bg-slate-800 border-slate-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-white placeholder:text-slate-500"
                     : "bg-white border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 shadow-sm placeholder:text-gray-400"
                 }`}
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 sm:gap-1">
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 sm:gap-1" role="group" aria-label={t("dashboard.search.searchMode")}>
                 <button
                   onClick={() => setSearchMode("keyword")}
-                  className={`px-2 py-1.5 sm:py-1 text-xs rounded-md transition-colors min-h-[32px] min-w-[44px] sm:min-w-0 ${
+                  className={`px-2 py-2.5 sm:py-1 text-xs rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 ${
                     searchMode === "keyword"
                       ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
                       : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   }`}
+                  aria-label={t("dashboard.search.keyword")}
+                  aria-pressed={searchMode === "keyword"}
                 >
                   {t("dashboard.search.keyword")}
                 </button>
                 <button
                   onClick={() => setSearchMode("semantic")}
-                  className={`px-2 py-1.5 sm:py-1 text-xs rounded-md transition-colors flex items-center gap-1 min-h-[32px] min-w-[44px] sm:min-w-0 justify-center ${
+                  className={`px-2 py-2.5 sm:py-1 text-xs rounded-md transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 justify-center ${
                     searchMode === "semantic"
                       ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
                       : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   }`}
+                  aria-label={t("dashboard.search.semantic")}
+                  aria-pressed={searchMode === "semantic"}
                 >
-                  <Sparkles size={12} />
+                  <Sparkles size={12} aria-hidden="true" />
                   <span className="hidden sm:inline">
                     {t("dashboard.search.semantic")}
                   </span>
@@ -580,6 +586,8 @@ export const Dashboard = () => {
                       ? "bg-slate-800 border-slate-700"
                       : "bg-white border-gray-200 shadow-sm"
                   }`}
+                  role="group"
+                  aria-label={t("dashboard.view.viewToggle")}
                 >
                   <button
                     onClick={() => setViewMode("card")}
@@ -593,8 +601,10 @@ export const Dashboard = () => {
                           : "text-gray-400 hover:text-gray-600"
                     }`}
                     title={t("dashboard.view.cardView")}
+                    aria-label={t("dashboard.view.cardView")}
+                    aria-pressed={viewMode === "card"}
                   >
-                    <LayoutGrid size={18} />
+                    <LayoutGrid size={18} aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
@@ -608,8 +618,10 @@ export const Dashboard = () => {
                           : "text-gray-400 hover:text-gray-600"
                     }`}
                     title={t("dashboard.view.listView")}
+                    aria-label={t("dashboard.view.listView")}
+                    aria-pressed={viewMode === "list"}
                   >
-                    <List size={18} />
+                    <List size={18} aria-hidden="true" />
                   </button>
                 </div>
 
@@ -622,8 +634,9 @@ export const Dashboard = () => {
                         : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                     }`}
                     title={t("dashboard.actions.select")}
+                    aria-label={t("dashboard.actions.select")}
                   >
-                    <CheckSquare size={16} />
+                    <CheckSquare size={16} aria-hidden="true" />
                     <span className="hidden lg:inline">
                       {t("dashboard.actions.select")}
                     </span>
@@ -639,8 +652,9 @@ export const Dashboard = () => {
                         : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
                     }`}
                     title={t("dashboard.actions.cancelSelect")}
+                    aria-label={t("dashboard.actions.cancelSelect")}
                   >
-                    <X size={16} />
+                    <X size={16} aria-hidden="true" />
                     <span className="hidden lg:inline">
                       {t("dashboard.actions.cancel")}
                     </span>
@@ -656,8 +670,9 @@ export const Dashboard = () => {
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   } disabled:opacity-50`}
                   title={t("dashboard.actions.import")}
+                  aria-label={t("dashboard.actions.import")}
                 >
-                  <Upload size={16} />
+                  <Upload size={16} aria-hidden="true" />
                   <span className="hidden lg:inline">
                     {importGraphMutation.isPending
                       ? t("dashboard.actions.importing")
@@ -673,8 +688,9 @@ export const Dashboard = () => {
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   }`}
                   title={t("dashboard.actions.graphMap")}
+                  aria-label={t("dashboard.actions.graphMap")}
                 >
-                  <Network size={16} />
+                  <Network size={16} aria-hidden="true" />
                   <span className="hidden lg:inline">
                     {t("dashboard.actions.graphMap")}
                   </span>
@@ -684,8 +700,9 @@ export const Dashboard = () => {
                   onClick={handleOpenAIGenerator}
                   className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
                   title={t("dashboard.actions.aiGenerate")}
+                  aria-label={t("dashboard.actions.aiGenerate")}
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} aria-hidden="true" />
                   <span className="hidden lg:inline">
                     {t("dashboard.actions.aiGenerate")}
                   </span>
@@ -702,26 +719,27 @@ export const Dashboard = () => {
                   onChange={handleFileChange}
                   className="hidden"
                   accept=".json,.md,.opml"
+                  aria-label={t("dashboard.actions.import")}
                 />
 
                 <button
                   onClick={handleOpenAIGenerator}
                   className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-white shadow-md transition-all text-sm font-medium"
+                  aria-label={t("dashboard.actions.aiGenerate")}
                 >
-                  <Sparkles size={18} />
+                  <Sparkles size={18} aria-hidden="true" />
                   <span>{t("dashboard.actions.aiGenerate")}</span>
                 </button>
 
                 <div className="relative" ref={moreMenuRef}>
                   <button
                     onClick={() => setShowMoreMenu(!showMoreMenu)}
-                    className={`min-h-[44px] min-w-[44px] px-3 py-2.5 rounded-xl flex items-center justify-center border transition-all ${
-                      isDark
-                        ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
-                    }`}
+                    className={`min-h-[44px] min-w-[44px] px-3 py-2.5 rounded-xl flex items-center justify-center border transition-all`}
+                    aria-label={t("common.more")}
+                    aria-expanded={showMoreMenu}
+                    aria-haspopup="menu"
                   >
-                    <MoreHorizontal size={20} />
+                    <MoreHorizontal size={20} aria-hidden="true" />
                   </button>
 
                   {showMoreMenu && (
@@ -731,6 +749,7 @@ export const Dashboard = () => {
                           ? "bg-slate-800 border-slate-700"
                           : "bg-white border-gray-200"
                       }`}
+                      role="menu"
                     >
                       {!isSelectMode && (
                         <button
@@ -743,8 +762,9 @@ export const Dashboard = () => {
                               ? "text-slate-300 hover:bg-slate-700"
                               : "text-gray-700 hover:bg-gray-50"
                           }`}
+                          role="menuitem"
                         >
-                          <CheckSquare size={18} />
+                          <CheckSquare size={18} aria-hidden="true" />
                           <span>{t("dashboard.actions.select")}</span>
                         </button>
                       )}
@@ -760,8 +780,9 @@ export const Dashboard = () => {
                               ? "text-red-400 hover:bg-red-900/30"
                               : "text-red-600 hover:bg-red-50"
                           }`}
+                          role="menuitem"
                         >
-                          <X size={18} />
+                          <X size={18} aria-hidden="true" />
                           <span>{t("dashboard.actions.cancelSelect")}</span>
                         </button>
                       )}
@@ -774,8 +795,9 @@ export const Dashboard = () => {
                             ? "text-slate-300 hover:bg-slate-700"
                             : "text-gray-700 hover:bg-gray-50"
                         } disabled:opacity-50`}
+                        role="menuitem"
                       >
-                        <Upload size={18} />
+                        <Upload size={18} aria-hidden="true" />
                         <span>
                           {importGraphMutation.isPending
                             ? t("dashboard.actions.importing")
@@ -791,8 +813,9 @@ export const Dashboard = () => {
                             ? "text-slate-300 hover:bg-slate-700"
                             : "text-gray-700 hover:bg-gray-50"
                         }`}
+                        role="menuitem"
                       >
-                        <Network size={18} />
+                        <Network size={18} aria-hidden="true" />
                         <span>{t("dashboard.actions.graphMap")}</span>
                       </Link>
                     </div>
@@ -847,6 +870,8 @@ export const Dashboard = () => {
             className={`flex items-center gap-4 p-3 rounded-xl ${
               isDark ? "bg-slate-800" : "bg-white border border-gray-200"
             }`}
+            role="toolbar"
+            aria-label={t("dashboard.batch.toolbar")}
           >
             <button
               onClick={toggleSelectAll}
@@ -855,15 +880,16 @@ export const Dashboard = () => {
                   ? "hover:bg-slate-700 text-slate-300"
                   : "hover:bg-gray-100 text-gray-600"
               }`}
+              aria-label={isAllSelected ? t("dashboard.batch.deselectAll") : t("dashboard.batch.selectAll")}
             >
               {isAllSelected ? (
-                <CheckSquare className="w-5 h-5 text-primary-500" />
+                <CheckSquare className="w-5 h-5 text-primary-500" aria-hidden="true" />
               ) : isPartialSelected ? (
-                <div className="w-5 h-5 rounded border-2 border-primary-500 bg-primary-500/30 flex items-center justify-center">
+                <div className="w-5 h-5 rounded border-2 border-primary-500 bg-primary-500/30 flex items-center justify-center" aria-hidden="true">
                   <div className="w-2.5 h-0.5 bg-primary-500 rounded" />
                 </div>
               ) : (
-                <Square className="w-5 h-5" />
+                <Square className="w-5 h-5" aria-hidden="true" />
               )}
               <span className="text-sm">
                 {isAllSelected
@@ -876,6 +902,7 @@ export const Dashboard = () => {
               <>
                 <span
                   className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                  aria-live="polite"
                 >
                   {t("dashboard.batch.selected", { count: selectedCount })}
                 </span>
@@ -888,8 +915,9 @@ export const Dashboard = () => {
                       ? "bg-red-900/30 text-red-400 hover:bg-red-900/50"
                       : "bg-red-50 text-red-600 hover:bg-red-100"
                   } disabled:opacity-50`}
+                  aria-label={t("dashboard.batch.batchDelete")}
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={16} aria-hidden="true" />
                   {batchDeleteGraphsMutation.isPending
                     ? t("dashboard.batch.deleting")
                     : t("dashboard.batch.batchDelete")}
@@ -901,8 +929,9 @@ export const Dashboard = () => {
                       ? "hover:bg-slate-700 text-slate-400"
                       : "hover:bg-gray-100 text-gray-500"
                   }`}
+                  aria-label={t("dashboard.batch.clearSelection")}
                 >
-                  <X size={16} />
+                  <X size={16} aria-hidden="true" />
                 </button>
               </>
             )}
@@ -1167,61 +1196,69 @@ export const Dashboard = () => {
                         >
                           <div className="flex items-center justify-end gap-1">
                             <Link
-                              to={`/graph/${graph.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                isDark
-                                  ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
-                                  : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
-                              }`}
-                              title={t("dashboard.card.openMindMap")}
-                            >
-                              <Network size={16} />
-                            </Link>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleToggleFavorite(
-                                  graph.id,
-                                  graph.is_favorite || false,
-                                );
-                              }}
-                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                graph.is_favorite
-                                  ? "text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-                                  : isDark
-                                    ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
-                                    : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
-                              }`}
-                              title={
-                                graph.is_favorite
-                                  ? t("dashboard.card.unfavorite")
-                                  : t("dashboard.card.favorite")
+                            to={`/graph/${graph.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                              isDark
+                                ? "text-slate-400 hover:bg-primary-900/30 hover:text-primary-400"
+                                : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
+                            }`}
+                            title={t("dashboard.card.openMindMap")}
+                            aria-label={t("dashboard.card.openMindMap")}
+                          >
+                            <Network size={18} aria-hidden="true" />
+                          </Link>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleFavorite(
+                                graph.id,
+                                graph.is_favorite || false,
+                              );
+                            }}
+                            className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                              graph.is_favorite
+                                ? "text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                                : isDark
+                                  ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
+                                  : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
+                            }`}
+                            title={
+                              graph.is_favorite
+                                ? t("dashboard.card.unfavorite")
+                                : t("dashboard.card.favorite")
+                            }
+                            aria-label={
+                              graph.is_favorite
+                                ? t("dashboard.card.unfavorite")
+                                : t("dashboard.card.favorite")
+                            }
+                          >
+                            <Star
+                              size={16}
+                              fill={
+                                graph.is_favorite ? "currentColor" : "none"
                               }
-                            >
-                              <Star
-                                size={16}
-                                fill={
-                                  graph.is_favorite ? "currentColor" : "none"
-                                }
-                              />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDeleteGraph(graph.id, graph.title);
-                              }}
-                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                isDark
-                                  ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
-                                  : "text-gray-400 hover:bg-red-50 hover:text-red-500"
-                              }`}
-                              title={t("dashboard.card.delete")}
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                              aria-hidden="true"
+                            />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteGraph(graph.id, graph.title);
+                            }}
+                            className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                              isDark
+                                ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
+                                : "text-gray-400 hover:bg-red-50 hover:text-red-500"
+                            }`}
+                            title={t("dashboard.card.delete")}
+                            aria-label={t("dashboard.card.delete")}
+                          >
+                            <Trash2 size={16} aria-hidden="true" />
+                          </button>
                           </div>
                         </td>
                       </tr>
@@ -1337,8 +1374,9 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-primary-900/30"
                                 : "text-gray-400 hover:bg-primary-50"
                             }`}
+                            aria-label={t("dashboard.card.openMindMap")}
                           >
-                            <Network size={18} />
+                            <Network size={18} aria-hidden="true" />
                           </Link>
                           <button
                             onClick={(e) => {
@@ -1350,8 +1388,9 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-red-900/30"
                                 : "text-gray-400 hover:bg-red-50"
                             }`}
+                            aria-label={t("dashboard.card.delete")}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={18} aria-hidden="true" />
                           </button>
                         </div>
                       </div>
@@ -1457,7 +1496,6 @@ export const Dashboard = () => {
                     </div>
 
                     <div className="flex items-center gap-1 sm:gap-2">
-                      {/* Hover Actions - Desktop (not in select mode) */}
                       {!isMobile && !isSelectMode && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
                           <Link
@@ -1469,8 +1507,9 @@ export const Dashboard = () => {
                                 : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
                             }`}
                             title={t("dashboard.card.openMindMap")}
+                            aria-label={t("dashboard.card.openMindMap")}
                           >
-                            <Network size={18} />
+                            <Network size={18} aria-hidden="true" />
                           </Link>
                           <button
                             onClick={(e) => {
@@ -1484,8 +1523,9 @@ export const Dashboard = () => {
                                 : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                             }`}
                             title={t("dashboard.card.delete")}
+                            aria-label={t("dashboard.card.delete")}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={18} aria-hidden="true" />
                           </button>
                           {!graph.is_favorite && (
                             <button
@@ -1500,14 +1540,14 @@ export const Dashboard = () => {
                                   : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
                               }`}
                               title={t("dashboard.card.favorite")}
+                              aria-label={t("dashboard.card.favorite")}
                             >
-                              <Star size={18} />
+                              <Star size={18} aria-hidden="true" />
                             </button>
                           )}
                         </div>
                       )}
 
-                      {/* Actions - Mobile (always visible) */}
                       {isMobile && (
                         <>
                           <Link
@@ -1519,8 +1559,9 @@ export const Dashboard = () => {
                                 : "text-gray-400 hover:bg-primary-50 hover:text-primary-600"
                             }`}
                             title={t("dashboard.card.openMindMap")}
+                            aria-label={t("dashboard.card.openMindMap")}
                           >
-                            <Network size={18} />
+                            <Network size={18} aria-hidden="true" />
                           </Link>
                           <button
                             onClick={(e) => {
@@ -1534,13 +1575,13 @@ export const Dashboard = () => {
                                 : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                             }`}
                             title={t("dashboard.card.delete")}
+                            aria-label={t("dashboard.card.delete")}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={18} aria-hidden="true" />
                           </button>
                         </>
                       )}
 
-                      {/* Favorite Star - Always visible when favorited */}
                       {graph.is_favorite && (
                         <button
                           onClick={(e) => {
@@ -1550,8 +1591,9 @@ export const Dashboard = () => {
                           }}
                           className={`p-2 rounded-lg text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors ${isMobile ? "min-h-[44px] min-w-[44px] flex items-center justify-center" : ""}`}
                           title={t("dashboard.card.unfavorite")}
+                          aria-label={t("dashboard.card.unfavorite")}
                         >
-                          <Star size={18} fill="currentColor" />
+                          <Star size={18} fill="currentColor" aria-hidden="true" />
                         </button>
                       )}
                     </div>
@@ -1726,16 +1768,17 @@ export const Dashboard = () => {
       {/* Mobile FAB */}
       {isMobile && (
         <div className="fixed bottom-20 right-6 z-40" ref={fabMenuRef}>
-          {/* FAB Menu */}
           {showFABMenu && (
-            <div className="absolute bottom-20 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="absolute bottom-20 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200" role="menu">
               <button
                 onClick={handleOpenAIGenerator}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${
                   isDark ? "bg-slate-700 text-white" : "bg-white text-gray-900"
                 }`}
+                role="menuitem"
+                aria-label={t("dashboard.actions.aiGenerate")}
               >
-                <div className="p-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white">
+                <div className="p-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white" aria-hidden="true">
                   <Sparkles size={16} />
                 </div>
                 <span className="text-sm font-medium">AI 生成</span>
@@ -1747,8 +1790,10 @@ export const Dashboard = () => {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${
                   isDark ? "bg-slate-700 text-white" : "bg-white text-gray-900"
                 } disabled:opacity-50`}
+                role="menuitem"
+                aria-label={t("dashboard.actions.import")}
               >
-                <div className="p-1.5 rounded-lg bg-green-500 text-white">
+                <div className="p-1.5 rounded-lg bg-green-500 text-white" aria-hidden="true">
                   <Upload size={16} />
                 </div>
                 <span className="text-sm font-medium">
@@ -1758,7 +1803,6 @@ export const Dashboard = () => {
             </div>
           )}
 
-          {/* FAB Button */}
           <button
             onClick={() => setShowFABMenu(!showFABMenu)}
             className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
@@ -1766,8 +1810,11 @@ export const Dashboard = () => {
                 ? "rotate-45 bg-red-500 text-white"
                 : "bg-gradient-to-r from-primary-500 to-primary-500 text-white"
             }`}
+            aria-label={showFABMenu ? t("common.close") : t("dashboard.actions.createGraph")}
+            aria-expanded={showFABMenu}
+            aria-haspopup="menu"
           >
-            <Plus size={24} />
+            <Plus size={24} aria-hidden="true" />
           </button>
         </div>
       )}
@@ -1880,7 +1927,7 @@ const TagCloudSection = ({
         {selectedTags.length > 0 && (
           <button
             onClick={clearSelection}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors min-h-[36px] sm:min-h-0 ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors min-h-[44px] sm:min-h-0 ${
               isDark
                 ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -1904,8 +1951,8 @@ const TagCloudSection = ({
               key={tag.name}
               onClick={() => handleTagClick(tag.name)}
               className={`
-                inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full
-                transition-all hover:scale-105 min-h-[36px] sm:min-h-0
+                inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-full
+                transition-all hover:scale-105 min-h-[44px] sm:min-h-0
                 ${
                   isSelected
                     ? `${getTagColor(tag.name)} text-white shadow-lg ring-2 ring-white ring-opacity-50`

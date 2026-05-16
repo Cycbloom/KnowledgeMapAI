@@ -12,12 +12,12 @@ interface QuadrantEdgeProps {
 }
 
 const RELATION_COLORS: Record<string, string> = {
-  depends_on: "#3B82F6",
+  depends_on: "var(--primary-500)",
   part_of: "#10B981",
-  related_to: "#8B5CF6",
+  related_to: "var(--tertiary-500)",
   derived_from: "#F59E0B",
   prerequisite: "#EF4444",
-  default: "#64748B",
+  default: "var(--slate-500)",
 };
 
 const LINE_STYLES: Record<string, string> = {
@@ -72,7 +72,7 @@ export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
       y1={sourceY}
       x2={targetX}
       y2={targetY}
-      stroke={isDark ? "#334155" : "#CBD5E1"}
+      stroke={isDark ? "var(--slate-700)" : "var(--slate-300)"}
       strokeWidth={1}
       strokeOpacity={0.25}
       strokeDasharray="none"

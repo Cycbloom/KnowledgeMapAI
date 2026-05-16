@@ -308,7 +308,7 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
         dominantBaseline="middle"
         fontSize={scaledFontSize}
         fontWeight={500}
-        fill={isDark ? "#f1f5f9" : "#0f172a"}
+        className="fill-slate-900 dark:fill-slate-100"
         style={{
           pointerEvents: "none",
           textShadow: isDark
@@ -325,7 +325,7 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
           r={4}
           cx={styleConfig.baseRadius - 4}
           cy={-styleConfig.baseRadius + 4}
-          fill="#f59e0b"
+          className="fill-amber-500"
           style={{
             filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
           }}

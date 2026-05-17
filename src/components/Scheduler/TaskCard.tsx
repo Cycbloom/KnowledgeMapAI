@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { UserTask, TaskSubtask } from "@shared/types";
 import { api } from "../../services/api";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 
 interface TaskCardProps {
   task: UserTask;
@@ -257,16 +257,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           subtasks.map((st) => (st.id === subtask.id ? response.data : st))
         );
         onSubtaskUpdate?.();
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: newStatus === "completed" ? "子任务已完成" : "子任务已重新开启",
-        });
+        message.success(newStatus === "completed" ? "子任务已完成" : "子任务已重新开启");
       }
     } catch (error: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: error.message || "更新子任务失败",
-      });
+      message.error(error.message || "更新子任务失败");
     }
   };
 

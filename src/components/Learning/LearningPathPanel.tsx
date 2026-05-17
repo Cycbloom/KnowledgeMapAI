@@ -18,7 +18,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { useErrorHandler } from "../../hooks";
+import { useError } from "../../hooks";
 import { useActivityTracker } from "../../hooks/useActivityTracker";
 import { LearningPathWizard } from "./LearningPathWizard";
 import {
@@ -113,7 +113,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
   const { recordActivity } = useActivityTracker();
 
   const { data: savedPaths = [], isLoading: isLoadingPaths } =

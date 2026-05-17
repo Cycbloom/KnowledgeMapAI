@@ -37,7 +37,7 @@ import {
 } from "../hooks";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message } from "../utils/messageHelper";
 import {
   UserTask,
   CreateUserTaskData,
@@ -279,16 +279,10 @@ export const Scheduler: React.FC = () => {
   const handleCreateTask = async (data: CreateUserTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("scheduler.taskCreated"),
-      });
+      message.success(t("scheduler.taskCreated"));
       setShowTaskForm(false);
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.createTaskFailed"),
-      });
+      message.error(err.message || t("scheduler.createTaskFailed"));
     }
   };
 
@@ -296,47 +290,29 @@ export const Scheduler: React.FC = () => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("scheduler.taskUpdated"),
-      });
+      message.success(t("scheduler.taskUpdated"));
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.updateTaskFailed"),
-      });
+      message.error(err.message || t("scheduler.updateTaskFailed"));
     }
   };
 
   const handleDeleteTask = async (task: UserTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("scheduler.taskDeleted"),
-      });
+      message.success(t("scheduler.taskDeleted"));
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.deleteTaskFailed"),
-      });
+      message.error(err.message || t("scheduler.deleteTaskFailed"));
     }
   };
 
   const handleMoveTask = async (taskId: string, targetQueue: number) => {
     try {
       await moveTaskMutation.mutateAsync({ id: taskId, targetQueue });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("scheduler.taskMoved", { queue: targetQueue }),
-      });
+      message.success(t("scheduler.taskMoved", { queue: targetQueue }));
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.moveTaskFailed"),
-      });
+      message.error(err.message || t("scheduler.moveTaskFailed"));
     }
   };
 
@@ -344,55 +320,34 @@ export const Scheduler: React.FC = () => {
     try {
       await reorderMutation.mutateAsync({ queueLevel, taskIds });
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.reorderFailed"),
-      });
+      message.error(err.message || t("scheduler.reorderFailed"));
     }
   };
 
   const handleStartTask = async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("scheduler.taskStarted"),
-      });
+      message.success(t("scheduler.taskStarted"));
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.startTaskFailed"),
-      });
+      message.error(err.message || t("scheduler.startTaskFailed"));
     }
   };
 
   const handlePauseTask = async (task: UserTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("scheduler.taskPaused"),
-      });
+      message.success(t("scheduler.taskPaused"));
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.pauseTaskFailed"),
-      });
+      message.error(err.message || t("scheduler.pauseTaskFailed"));
     }
   };
 
   const handleCompleteTask = async (task: UserTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("scheduler.taskCompleted"),
-      });
+      message.success(t("scheduler.taskCompleted"));
     } catch (err: any) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: err.message || t("scheduler.completeTaskFailed"),
-      });
+      message.error(err.message || t("scheduler.completeTaskFailed"));
     }
   };
 

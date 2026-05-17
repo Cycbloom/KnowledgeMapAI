@@ -11,7 +11,7 @@ import {
   Layers,
   type LucideIcon,
 } from "lucide-react";
-import { useErrorHandler, useIsMobile } from "../../hooks";
+import { useError, useIsMobile } from "../../hooks";
 import { graphsApi } from "../../services/api/graphs";
 
 interface ModuleStat {
@@ -56,7 +56,7 @@ export const ResearchProgressPanel: React.FC<ResearchProgressPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isMobile } = useIsMobile();
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
   const [data, setData] = useState<ResearchProgressData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

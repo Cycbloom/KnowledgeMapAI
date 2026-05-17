@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { useErrorHandler } from "../../hooks";
+import { useError } from "../../hooks";
 
 interface GraphRelation {
   id: string;
@@ -45,7 +45,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [_showAddModal, _setShowAddModal] = useState(false);
   
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
 
   const fetchRelations = async () => {
     setIsLoading(true);

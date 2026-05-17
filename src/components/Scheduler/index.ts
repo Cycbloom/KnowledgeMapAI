@@ -15,7 +15,6 @@ export { FocusMode } from "./FocusMode";
 export { BreakTimer } from "./BreakTimer";
 export { FocusStreak, MiniStreak } from "./FocusStreak";
 
-export { TaskTemplateSelector } from "./TaskTemplateSelector";
 export { TemplateForm } from "./TemplateForm";
 export {
   TemplateCategory,

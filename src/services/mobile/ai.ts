@@ -7,6 +7,10 @@ import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
 import { getAILanguage } from "../../hooks/useAILanguage";
 import { getMobileSupabaseClient } from "./client";
+import {
+  createStreamHandler,
+  handleUnauthorized,
+} from "../shared/streamHandler";
 
 const getCloudApiBaseUrl = (): string => {
   return import.meta.env.VITE_API_URL || "";
@@ -51,60 +55,18 @@ const createMobileAiApiClient = (): AxiosInstance => {
 
 const mobileAiClient = createMobileAiApiClient();
 
-const createStreamHandler = async (
+const createMobileStreamHandler = async (
   url: string,
   payload: unknown,
   onChunk: (content: string) => void,
 ) => {
   const token = useStore.getState().token;
   const baseURL = getCloudApiBaseUrl() || "";
-  const fullUrl = baseURL ? `${baseURL}${url}` : url;
-
-  const response = await fetch(fullUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-    body: JSON.stringify(payload),
+  await createStreamHandler(url, payload, onChunk, {
+    baseUrl: baseURL,
+    token,
+    onUnauthorized: handleUnauthorized,
   });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      useStore.getState().setUser(null, null);
-    }
-    const errorText = await response.text();
-    throw new Error(errorText || "Stream failed");
-  }
-
-  const reader = response.body?.getReader();
-  const decoder = new TextDecoder();
-  if (!reader) return;
-
-  let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n\n");
-    buffer = lines.pop() || "";
-
-    for (const line of lines) {
-      if (line.startsWith("data: ")) {
-        const dataStr = line.replace("data: ", "");
-        if (dataStr === "[DONE]") return;
-        try {
-          const parsed = JSON.parse(dataStr);
-          if (parsed.content) onChunk(parsed.content);
-          if (parsed.error) throw new Error(parsed.error);
-        } catch (e) {
-          console.error("Stream parse error:", e);
-        }
-      }
-    }
-  }
 };
 
 export const mobileAiApi = {
@@ -447,7 +409,7 @@ export const mobileAiApi = {
     onChunk: (content: string) => void,
   ) => {
     const payload = injectAIConfig(data, "text");
-    await createStreamHandler("/ai/chat", payload, onChunk);
+    await createMobileStreamHandler("/ai/chat", payload, onChunk);
   },
 
   tutorChatStream: async (

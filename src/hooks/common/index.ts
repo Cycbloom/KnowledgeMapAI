@@ -1,7 +1,5 @@
 export * from './useError';
-export * from './useErrorHandler';
 export * from './useNetworkStatus';
-export * from './useNetworkStatusEnhanced';
 export * from './usePerformance';
 export * from './useSearch';
 export * from './useIntersectionObserver';

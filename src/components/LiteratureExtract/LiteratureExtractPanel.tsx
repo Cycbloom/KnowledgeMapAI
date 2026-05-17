@@ -20,7 +20,7 @@ import {
   Tag,
   Network,
 } from "lucide-react";
-import { useErrorHandler, useIsMobile } from "../../hooks";
+import { useError, useIsMobile } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { literatureApi } from "../../services/api/literature";
 import type {
@@ -97,7 +97,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isMobile } = useIsMobile();
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [inputMode, setInputMode] = useState<InputMode>("text");

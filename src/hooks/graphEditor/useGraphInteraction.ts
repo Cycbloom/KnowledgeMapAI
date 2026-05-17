@@ -1,6 +1,6 @@
 import { Node, Edge } from '../../types';
 import { GraphEditorState } from './index';
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { message } from "../../utils/messageHelper";
 import { findShortestPath } from '../../lib/graphUtils';
 
 interface UseGraphInteractionProps {
@@ -38,22 +38,22 @@ export const useGraphInteraction = ({
     }
 
     if (nodeStatus && nodeStatus[node.id]?.locked) {
-      frontendEventBus.publish("message_show", { content: '此节点尚未解锁！请先学习前置知识点。', type: 'warning' });
+      message.warning('此节点尚未解锁！请先学习前置知识点。');
       return;
     }
 
     if (isPathfindingMode) {
       if (!pathStartNode) {
         setPathStartNode(node);
-        frontendEventBus.publish("message_show", { content: '请选择终点节点', type: 'info' });
+        message.info('请选择终点节点');
       } else if (!pathEndNode) {
         setPathEndNode(node);
         const path = findShortestPath(nodes, edges, pathStartNode.id, node.id);
         if (path.nodes.size > 0) {
           setHighlightedPath(path);
-          frontendEventBus.publish("message_show", { content: `找到路径，长度: ${path.nodes.size - 1} 步`, type: 'success' });
+          message.success(`找到路径，长度: ${path.nodes.size - 1} 步`);
         } else {
-          frontendEventBus.publish("message_show", { content: '未找到路径', type: 'error' });
+          message.error('未找到路径');
         }
       } else {
         setPathStartNode(node);

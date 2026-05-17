@@ -13,7 +13,7 @@ export { Skeleton } from "./Skeleton";
 export type { SkeletonProps, SkeletonVariant } from "./Skeleton";
 export { SkeletonCard } from "./SkeletonCard";
 export type { SkeletonCardProps } from "./SkeletonCard";
-export { default as Empty } from "./Empty";
+export { EmptyState } from "./EmptyState";
 export { CodeBlock, createCodeComponent } from "./CodeBlock";
 export { LazyImage, LazyBackground } from "./LazyImage";
 export { VirtualList, VirtualGrid } from "./VirtualList";

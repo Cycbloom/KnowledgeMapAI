@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { Node, Edge, NodeLevel } from '../../types';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from './index';
-import { frontendEventBus } from '../../services/timer/FrontendEventBus';
+import { message } from '../../utils/messageHelper';
 import { levelLabels } from '../../config/graphConfig';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 
@@ -195,14 +195,14 @@ export const useGraphNodeOperations = ({
       e.source_knowledge_point_id === nodeToDelete.id || e.target_knowledge_point_id === nodeToDelete.id
     );
     
-    const message = hardDelete 
+    const confirmMessage = hardDelete 
       ? `确定要彻底删除知识点 "${nodeToDelete.title}" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！`
       : `确定要从当前图谱移除节点 "${nodeToDelete.title}" 吗？`;
     
     setConfirmModal({
       isOpen: true,
       title: hardDelete ? '彻底删除知识点' : '移除节点',
-      message,
+      message: confirmMessage,
       onConfirm: () => {
         deleteNodeMutation.mutate({ id: nodeToDelete.id, graphId: id, hardDelete }, {
           onSuccess: (data: { affected_graphs?: string[] }) => {
@@ -214,18 +214,15 @@ export const useGraphNodeOperations = ({
               handleCloseSidebar();
             }
             if (hardDelete && data?.affected_graphs?.length) {
-              frontendEventBus.publish("message_show", { 
-                type: 'success', 
-                content: `知识点已从 ${data.affected_graphs.length} 个图谱中彻底删除` 
-              });
+              message.success(`知识点已从 ${data.affected_graphs.length} 个图谱中彻底删除`);
             } else {
-              frontendEventBus.publish("message_show", { type: 'success', content: '节点已删除' });
+              message.success('节点已删除');
             }
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           },
           onError: (err: any) => {
             console.error(err);
-            frontendEventBus.publish("message_show", { type: 'error', content: '删除失败' });
+            message.error('删除失败');
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           }
         });

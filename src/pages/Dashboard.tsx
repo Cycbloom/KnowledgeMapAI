@@ -40,7 +40,7 @@ import {
   Target,
   Layers,
 } from "lucide-react";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { ConfirmationModal, SearchResults } from "../components/common";
@@ -255,21 +255,15 @@ export const Dashboard = () => {
     const ids = Array.from(selectedIds);
     batchDeleteGraphsMutation.mutate(ids, {
       onSuccess: () => {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: `已将 ${ids.length} 个图谱移至回收站`,
-        });
+        message.success(`已将 ${ids.length} 个图谱移至回收站`);
         setSelectedIds(new Set());
         setIsSelectMode(false);
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
       },
       onError: (err: unknown) => {
         console.error(err);
-        const message = err instanceof Error ? err.message : "批量删除失败";
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: message,
-        });
+        const errorMessage = err instanceof Error ? err.message : "批量删除失败";
+        message.error(errorMessage);
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
       },
     });
@@ -283,19 +277,13 @@ export const Dashboard = () => {
     if (deleteConfirm.id) {
       deleteGraphMutation.mutate(deleteConfirm.id, {
         onSuccess: () => {
-          frontendEventBus.publish("message_show", {
-            type: "success",
-            content: "图谱删除成功",
-          });
+          message.success("图谱删除成功");
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: unknown) => {
           console.error(err);
-          const message = err instanceof Error ? err.message : "删除失败";
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: message,
-          });
+          const errorMessage = err instanceof Error ? err.message : "删除失败";
+          message.error(errorMessage);
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });
@@ -309,18 +297,12 @@ export const Dashboard = () => {
       { id, is_favorite: !currentFavorite },
       {
         onSuccess: () => {
-          frontendEventBus.publish("message_show", {
-            type: "success",
-            content: currentFavorite ? "已取消收藏" : "收藏成功",
-          });
+          message.success(currentFavorite ? "已取消收藏" : "收藏成功");
         },
         onError: (err: unknown) => {
           console.error(err);
-          const message = err instanceof Error ? err.message : "操作失败";
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: message,
-          });
+          const errorMessage = err instanceof Error ? err.message : "操作失败";
+          message.error(errorMessage);
         },
       },
     );
@@ -369,17 +351,11 @@ export const Dashboard = () => {
         }
 
         await importGraphMutation.mutateAsync(importData);
-        frontendEventBus.publish("message_show", {
-          content: "导入成功!",
-          type: "success",
-        });
+        message.success("导入成功!");
       } catch (err: unknown) {
         console.error(err);
-        const message = err instanceof Error ? err.message : "格式错误";
-        frontendEventBus.publish("message_show", {
-          content: `导入失败: ${message}`,
-          type: "error",
-        });
+        const errorMessage = err instanceof Error ? err.message : "格式错误";
+        message.error(`导入失败: ${errorMessage}`);
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
@@ -853,10 +829,7 @@ export const Dashboard = () => {
                   queryClient.invalidateQueries({
                     queryKey: ["dashboardStats"],
                   });
-                  frontendEventBus.publish("message_show", {
-                    type: "success",
-                    content: `成功生成 ${nodes.length} 个节点！`,
-                  });
+                  message.success(`成功生成 ${nodes.length} 个节点！`);
                 }}
               />
             </div>

@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message } from "../utils/messageHelper";
 import { ArrowLeft, Loader2, Lock, LogIn } from "lucide-react";
 
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
@@ -275,10 +275,7 @@ export const GraphEditor = () => {
         }
       } catch (error) {
         console.error("Failed to fetch learning path:", error);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: "获取学习路径失败",
-        });
+        message.error("获取学习路径失败");
       }
     },
     [],
@@ -293,10 +290,7 @@ export const GraphEditor = () => {
         updatedAt: new Date().toISOString(),
       };
       setCustomRegions((prev) => [...prev, newRegion]);
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: `区域「${region.name}」创建成功`,
-      });
+      message.success(`区域「${region.name}」创建成功`);
     },
     [],
   );
@@ -321,10 +315,7 @@ export const GraphEditor = () => {
       setIsConceptPreviewOpen(true);
       setIsLiteratureExtractOpen(false);
     } else {
-      frontendEventBus.publish("message_show", {
-        type: "info",
-        content: "未从文献中提取到概念",
-      });
+      message.info("未从文献中提取到概念");
     }
   }, []);
 
@@ -346,18 +337,12 @@ export const GraphEditor = () => {
         });
 
         if (result.success) {
-          frontendEventBus.publish("message_show", {
-            type: "success",
-            content: `已添加 ${result.addedCount} 个概念，合并 ${result.mergedCount} 个相似概念`,
-          });
+          message.success(`已添加 ${result.addedCount} 个概念，合并 ${result.mergedCount} 个相似概念`);
           await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
         }
       } catch (error) {
         console.error("Failed to apply concepts:", error);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: "添加概念失败",
-        });
+        message.error("添加概念失败");
       } finally {
         setIsConceptPreviewOpen(false);
         setExtractedConcepts([]);
@@ -903,16 +888,10 @@ export const GraphEditor = () => {
           graphId: id || "",
           relationship_type: "related",
         });
-        frontendEventBus.publish("message_show", {
-          content: "连接已创建",
-          type: "success",
-        });
+        message.success("连接已创建");
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "未知错误";
-        frontendEventBus.publish("message_show", {
-          content: `创建连接失败: ${message}`,
-          type: "error",
-        });
+        const errorMessage = error instanceof Error ? error.message : "未知错误";
+        message.error(`创建连接失败: ${errorMessage}`);
       }
     },
     [mutations.createEdgeMutation, id],
@@ -996,10 +975,7 @@ export const GraphEditor = () => {
 
   const handleExecuteAction = async (action: AIAction, nodeId: string) => {
     try {
-      frontendEventBus.publish("message_show", {
-        type: "info",
-        content: `正在执行动作: ${action.name}...`,
-      });
+      message.info(`正在执行动作: ${action.name}...`);
       const res = await api.aiActions.execute({
         action_id: action.id,
         node_id: nodeId,
@@ -1018,14 +994,9 @@ export const GraphEditor = () => {
               ? res.data
               : JSON.stringify(res.data, null, 2),
         });
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: `动作执行成功`,
-        });
+        message.success(`动作执行成功`);
       } else {
-        // Invalidate graphData to trigger refetch of nodes/edges
         await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
-        // Also invalidate graph stats
         await queryClient.invalidateQueries({
           queryKey: ["graphNodeStatus", id],
         });
@@ -1042,17 +1013,11 @@ export const GraphEditor = () => {
           feedback += `。已生成 ${res.data.createdCount} 个子节点`;
         }
 
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: feedback,
-        });
+        message.success(feedback);
       }
     } catch (err: any) {
       console.error(err);
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: `执行失败: ${err.message}`,
-      });
+      message.error(`执行失败: ${err.message}`);
     }
   };
 
@@ -1070,7 +1035,15 @@ export const GraphEditor = () => {
       type: "success" | "error" | "warning" | "info" | "loading";
       content: string;
     }) => {
-      frontendEventBus.publish("message_show", msg);
+      if (msg.type === "success") {
+        message.success(msg.content);
+      } else if (msg.type === "error") {
+        message.error(msg.content);
+      } else if (msg.type === "info") {
+        message.info(msg.content);
+      } else if (msg.type === "warning") {
+        message.warning(msg.content);
+      }
     },
   });
 
@@ -1228,10 +1201,7 @@ export const GraphEditor = () => {
                   await queryClient.invalidateQueries({
                     queryKey: ["graphNodeStatus", id],
                   });
-                  frontendEventBus.publish("message_show", {
-                    type: "success",
-                    content: "节点状态已更新",
-                  });
+                  message.success("节点状态已更新");
                 } catch (err) {
                   console.error("Failed to update node status:", err);
                 }
@@ -1796,17 +1766,11 @@ export const GraphEditor = () => {
                 graphId: id || "",
                 relationship_type: "related",
               });
-              frontendEventBus.publish("message_show", {
-                content: "连接已创建",
-                type: "success",
-              });
+              message.success("连接已创建");
             } catch (error: unknown) {
-              const message =
+              const errorMessage =
                 error instanceof Error ? error.message : "未知错误";
-              frontendEventBus.publish("message_show", {
-                content: `创建连接失败: ${message}`,
-                type: "error",
-              });
+              message.error(`创建连接失败: ${errorMessage}`);
             }
           }}
         />

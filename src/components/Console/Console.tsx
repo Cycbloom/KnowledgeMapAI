@@ -8,7 +8,7 @@ import { useConsoleStore } from '@/store/useConsoleStore';
 import { ConsoleInput, type ConsoleInputRef } from './ConsoleInput';
 import { ConsoleOutput, type ConsoleOutputRef } from './ConsoleOutput';
 import { ConsoleHistory } from './ConsoleHistory';
-import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { PerformanceTab } from './PerformanceTab';
 
 type TabType = 'console' | 'performance';
@@ -330,15 +330,16 @@ export const Console: React.FC<ConsoleProps> = ({
         )}
       </AnimatePresence>
 
-      <ConfirmDialog
+      <ConfirmationModal
         isOpen={confirmState.isOpen}
-        type={confirmState.type}
+        onClose={cancelConfirm}
+        onConfirm={confirmState.onConfirm}
         title={confirmState.title}
         message={confirmState.message}
         confirmText={confirmState.confirmText}
-        onConfirm={confirmState.onConfirm}
-        onCancel={cancelConfirm}
-        isDark={isDark}
+        isDangerous={confirmState.type === 'danger'}
+        requireConfirmText={confirmState.type === 'danger' && !!confirmState.confirmText}
+        confirmTextToMatch={confirmState.confirmText}
       />
     </>
   );

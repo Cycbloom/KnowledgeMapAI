@@ -2,6 +2,7 @@ import { Node, Edge, BranchSuggestion } from '../../types';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from '../graphEditor';
+import { message } from '../../utils/messageHelper';
 import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
@@ -128,7 +129,7 @@ export const useGraphAIOperations = ({
     if (!selectedNode || !id) return;
     
     if (!selectedNode.title) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '节点标题不能为空' });
+      message.error('节点标题不能为空');
       return;
     }
     
@@ -174,9 +175,9 @@ export const useGraphAIOperations = ({
         loadingSetter: setLoading,
         onSuccess: (result) => {
           if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
-            frontendEventBus.publish("message_show", { type: 'success', content: `拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线` });
+            message.success(`拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线`);
           } else {
-            frontendEventBus.publish("message_show", { type: 'info', content: '未发现新的关联' });
+            message.info('未发现新的关联');
           }
         },
         errorMessage: '拓展失败'
@@ -203,7 +204,7 @@ export const useGraphAIOperations = ({
         }));
 
         if (cards.length === 0) {
-          frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未能生成有效的卡片' });
+          message.error('AI 未能生成有效的卡片');
           return null;
         }
 
@@ -217,7 +218,7 @@ export const useGraphAIOperations = ({
         errorMessage: '生成卡片失败',
         onSuccess: (result) => {
           if (result && typeof result === 'number') {
-            frontendEventBus.publish("message_show", { type: 'success', content: `成功生成并保存了 ${result} 张复习卡片！` });
+            message.success(`成功生成并保存了 ${result} 张复习卡片！`);
           }
         }
       }
@@ -242,11 +243,7 @@ export const useGraphAIOperations = ({
         const model = aiConfig?.model;
 
         if (type === 'batch_generate_questions') {
-          frontendEventBus.publish("message_show", {
-              type: 'info',
-              content: `正在提交 ${nodesToProcess.length} 个节点的题目生成任务...`,
-              duration: 2000
-          });
+          message.info(`正在提交 ${nodesToProcess.length} 个节点的题目生成任务...`, { duration: 2000 });
 
           const nodeIds = nodesToProcess.map(n => n.id);
           
@@ -256,12 +253,7 @@ export const useGraphAIOperations = ({
             model
           });
 
-          frontendEventBus.publish("message_show", {
-            type: 'success',
-            content: `成功提交 ${nodesToProcess.length} 个生成任务，请在任务列表中查看进度`,
-            duration: 3000,
-            action: { label: '查看任务', onClick: () => navigate('/tasks') }
-          });
+          message.success(`成功提交 ${nodesToProcess.length} 个生成任务，请在任务列表中查看进度`, { duration: 3000 });
           return true;
         }
 
@@ -304,12 +296,7 @@ export const useGraphAIOperations = ({
         successMessage: '任务提交成功',
         errorMessage: '任务提交失败',
         onSuccess: () => {
-          frontendEventBus.publish("message_show", {
-            type: 'success',
-            content: '任务提交成功',
-            duration: 3000,
-            action: { label: '查看任务', onClick: () => navigate('/tasks') }
-          });
+          message.success('任务提交成功', { duration: 3000 });
         }
       }
     );
@@ -511,7 +498,7 @@ export const useGraphAIOperations = ({
         errorMessage: '切换分支失败',
         onSuccess: (result) => {
           if (result) {
-            frontendEventBus.publish("message_show", { type: 'success', content: `已切换分支：${suggestion.title}` });
+            message.success(`已切换分支：${suggestion.title}`);
           }
         }
       }

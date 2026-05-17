@@ -24,7 +24,7 @@ import {
 import { api } from "../../services/api";
 import type { GeneratedTemplate } from "../../services/api/autoGraph";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { useErrorHandler, useIsMobile, useTheme } from "../../hooks";
+import { useError, useIsMobile, useTheme } from "../../hooks";
 import type {
   TemplateCategory,
   LayoutSuggestion,
@@ -372,7 +372,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     useState<GeneratedTemplate | null>(null);
   const [step, setStep] = useState<"input" | "templates" | "style">("input");
 
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
 
   const categoryOptions: Array<{
     value: TemplateCategory;

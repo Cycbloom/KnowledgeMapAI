@@ -1,4 +1,4 @@
-import { frontendEventBus } from '../services/timer/FrontendEventBus';
+import { message } from './messageHelper';
 import { isNetworkError } from './errors';
 
 export interface AsyncOperationOptions<T = unknown> {
@@ -21,7 +21,7 @@ export function createAsyncHandler() {
       if (loadingSetter) loadingSetter(true);
       const result = await operation();
       if (successMessage) {
-        frontendEventBus.publish("message_show", { type: 'success', content: successMessage });
+        message.success(successMessage);
       }
       if (onSuccess) onSuccess(result);
       return result;
@@ -30,7 +30,7 @@ export function createAsyncHandler() {
       const msg = isNetworkError(error) 
         ? '网络连接失败，请检查网络' 
         : (errorMessage || error.message || '操作失败');
-      frontendEventBus.publish("message_show", { type: 'error', content: msg });
+      message.error(msg);
       console.error(err);
       if (onError) onError(error);
       return null;

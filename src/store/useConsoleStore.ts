@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CommandResult, CommandHistoryItem } from '@/services/console';
-import type { ConfirmDialogType } from '@/components/Console/ConfirmDialog';
+
+export type ConfirmDialogType = 'warning' | 'danger';
 
 const MAX_HISTORY_ITEMS = 100;
 const MAX_OUTPUT_ITEMS = 200;

@@ -11,7 +11,7 @@ import {
   Calendar,
   Layers,
 } from "lucide-react";
-import { useErrorHandler, useIsMobile } from "../../hooks";
+import { useError, useIsMobile } from "../../hooks";
 import {
   BackboneModule,
   BACKBONE_MODULE_LABELS,
@@ -80,7 +80,7 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isMobile } = useIsMobile();
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
   const [data, setData] = useState<LiteratureResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeModule, setActiveModule] = useState<string | null>(null);

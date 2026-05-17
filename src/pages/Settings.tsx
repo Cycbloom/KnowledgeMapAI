@@ -11,7 +11,7 @@ import { useAIStatus, useUser } from "../hooks/queries";
 import { useUpdateProfileMutation } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message } from "../utils/messageHelper";
 import { useTheme } from "../hooks";
 import {
   Cpu,
@@ -350,12 +350,10 @@ export const Settings = () => {
             });
             setEmbeddingAiStatus({ configured: true, source: "auto" });
 
-            frontendEventBus.publish("message_show", {
-              type: "info",
-              content:
-                t("settings.embeddingAutoConfigured") ||
+            message.info(
+              t("settings.embeddingAutoConfigured") ||
                 "Embedding service auto-configured with default settings",
-            });
+            );
           } catch (saveError) {
             console.error(
               "[Settings] Failed to save default embedding config:",
@@ -369,12 +367,10 @@ export const Settings = () => {
             }));
             setEmbeddingAiStatus({ configured: false, source: "none" });
 
-            frontendEventBus.publish("message_show", {
-              type: "warning",
-              content:
-                t("settings.embeddingAutoConfigFailed") ||
+            message.warning(
+              t("settings.embeddingAutoConfigFailed") ||
                 "Failed to auto-configure embedding service. Please configure manually.",
-            });
+            );
           }
         }
       } catch (error) {
@@ -385,11 +381,9 @@ export const Settings = () => {
           enabled: false,
           loaded: true,
         }));
-        frontendEventBus.publish("message_show", {
-          type: "warning",
-          content:
-            t("settings.loadConfigFailed") || "Failed to load AI configuration",
-        });
+        message.warning(
+          t("settings.loadConfigFailed") || "Failed to load AI configuration",
+        );
       }
     };
     if (token) {
@@ -489,18 +483,12 @@ export const Settings = () => {
         model: form.model,
       };
       await apiClient.put("/ai/config/providers", { providers: updateData });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("settings.providerConfigSaved", {
-          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
-        }),
-      });
+      message.success(t("settings.providerConfigSaved", {
+        provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+      }));
       await fetchProviderConfigs();
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.providerConfigSaveFailed"),
-      });
+      message.error(t("settings.providerConfigSaveFailed"));
     }
   };
 
@@ -517,29 +505,21 @@ export const Settings = () => {
         model: form.model,
       })) as { success: boolean; message: string };
       if (response.success) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("settings.providerTestSuccess", {
-            provider: PROVIDER_DEFAULTS[provider]?.name || provider,
-          }),
-        });
+        message.success(t("settings.providerTestSuccess", {
+          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+        }));
       } else {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content:
-            response.message ||
+        message.error(
+          response.message ||
             t("settings.providerTestFailed", {
               provider: PROVIDER_DEFAULTS[provider]?.name || provider,
             }),
-        });
+        );
       }
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.providerTestFailed", {
-          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
-        }),
-      });
+      message.error(t("settings.providerTestFailed", {
+        provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+      }));
     } finally {
       setTestingProvider(null);
     }
@@ -561,27 +541,18 @@ export const Settings = () => {
           model: PROVIDER_DEFAULTS[provider]?.model || "",
         },
       }));
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("settings.providerConfigCleared", {
-          provider: PROVIDER_DEFAULTS[provider]?.name || provider,
-        }),
-      });
+      message.success(t("settings.providerConfigCleared", {
+        provider: PROVIDER_DEFAULTS[provider]?.name || provider,
+      }));
       await fetchProviderConfigs();
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.providerConfigSaveFailed"),
-      });
+      message.error(t("settings.providerConfigSaveFailed"));
     }
   };
 
   const handleSaveDatabaseConfig = async () => {
     if (!dbForm.url.trim() || !dbForm.anonKey.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("settings.dbUrlAndAnonKeyRequired"),
-      });
+      message.warning(t("settings.dbUrlAndAnonKeyRequired"));
       return;
     }
 
@@ -608,16 +579,10 @@ export const Settings = () => {
       updateSupabaseConfig(dbForm.url, dbForm.anonKey);
       resetSupabaseClient();
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("settings.dbConfigSaved"),
-      });
+      message.success(t("settings.dbConfigSaved"));
       await fetchDatabaseConfig();
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.dbConfigSaveFailed"),
-      });
+      message.error(t("settings.dbConfigSaveFailed"));
     } finally {
       setDbSaving(false);
     }
@@ -628,21 +593,12 @@ export const Settings = () => {
     try {
       await fetchDatabaseConfig();
       if (databaseConfig.connected) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("settings.dbConnected"),
-        });
+        message.success(t("settings.dbConnected"));
       } else {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("settings.dbNotConnected"),
-        });
+        message.error(t("settings.dbNotConnected"));
       }
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.dbTestFailed"),
-      });
+      message.error(t("settings.dbTestFailed"));
     } finally {
       setDbTesting(false);
     }
@@ -658,16 +614,10 @@ export const Settings = () => {
           available_models: availableModels,
         },
       });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("settings.saveSuccess"),
-      });
+      message.success(t("settings.saveSuccess"));
     } catch (e) {
       console.error(e);
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.saveFailed"),
-      });
+      message.error(t("settings.saveFailed"));
     }
   };
 
@@ -677,10 +627,7 @@ export const Settings = () => {
     const currentModels = availableModels[provider] || [];
 
     if (currentModels.includes(newModelName.trim())) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("settings.modelExists"),
-      });
+      message.warning(t("settings.modelExists"));
       return;
     }
 
@@ -689,10 +636,7 @@ export const Settings = () => {
       [provider]: [...(prev[provider] || []), newModelName.trim()],
     }));
     setNewModelName("");
-    frontendEventBus.publish("message_show", {
-      type: "success",
-      content: `${t("settings.modelAdded")}: ${newModelName}`,
-    });
+    message.success(`${t("settings.modelAdded")}: ${newModelName}`);
   };
 
   const handleDeleteModel = (provider: string, model: string) => {
@@ -704,10 +648,7 @@ export const Settings = () => {
 
   const handleSaveMobileAIConfig = () => {
     if (!mobileApiKey.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("settings.enterApiKey"),
-      });
+      message.warning(t("settings.enterApiKey"));
       return;
     }
 
@@ -719,20 +660,14 @@ export const Settings = () => {
 
     mobileAIService.setConfig(config);
     setMobileAIConfig(config);
-    frontendEventBus.publish("message_show", {
-      type: "success",
-      content: t("settings.mobileConfigSaved"),
-    });
+    message.success(t("settings.mobileConfigSaved"));
   };
 
   const handleClearMobileAIConfig = () => {
     mobileAIService.clearConfig();
     setMobileAIConfig(null);
     setMobileApiKey("");
-    frontendEventBus.publish("message_show", {
-      type: "success",
-      content: t("settings.mobileConfigCleared"),
-    });
+    message.success(t("settings.mobileConfigCleared"));
   };
 
   const handleMainAiProviderChange = (provider: string) => {
@@ -760,16 +695,10 @@ export const Settings = () => {
         provider: mainAiConfig.provider,
         model: mainAiConfig.model,
       });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("settings.mainAiSaved"),
-      });
+      message.success(t("settings.mainAiSaved"));
       setMainAiStatus({ configured: true, source: "user" });
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.mainAiSaveFailed"),
-      });
+      message.error(t("settings.mainAiSaveFailed"));
     }
   };
 
@@ -778,19 +707,12 @@ export const Settings = () => {
       if (!embeddingAiConfig.enabled) {
         await apiClient.put("/ai/config/embedding", { enabled: false });
         setEmbeddingAiStatus({ configured: false, source: "none" });
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("settings.embeddingDisabled"),
-        });
+        message.success(t("settings.embeddingDisabled"));
         return;
       }
 
-      // 验证必填字段
       if (!embeddingAiConfig.provider) {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("settings.providerRequired") || "Please select a provider",
-        });
+        message.error(t("settings.providerRequired") || "Please select a provider");
         return;
       }
 
@@ -801,16 +723,10 @@ export const Settings = () => {
 
       setEmbeddingAiConfig((prev) => ({ ...prev, loaded: true }));
       setEmbeddingAiStatus({ configured: true, source: "user" });
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("settings.embeddingSaved"),
-      });
+      message.success(t("settings.embeddingSaved"));
     } catch (error) {
       console.error("Failed to save embedding config:", error);
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.embeddingSaveFailed"),
-      });
+      message.error(t("settings.embeddingSaveFailed"));
     }
   };
 
@@ -822,35 +738,27 @@ export const Settings = () => {
         model: mainAiConfig.model,
       })) as { success: boolean; message: string };
       if (response.success) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("settings.providerTestSuccess", {
-            provider:
-              PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
-              mainAiConfig.provider,
-          }),
-        });
+        message.success(t("settings.providerTestSuccess", {
+          provider:
+            PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
+            mainAiConfig.provider,
+        }));
       } else {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content:
-            response.message ||
+        message.error(
+          response.message ||
             t("settings.providerTestFailed", {
               provider:
                 PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
                 mainAiConfig.provider,
             }),
-        });
+        );
       }
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.providerTestFailed", {
-          provider:
-            PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
-            mainAiConfig.provider,
-        }),
-      });
+      message.error(t("settings.providerTestFailed", {
+        provider:
+          PROVIDER_DEFAULTS[mainAiConfig.provider]?.name ||
+          mainAiConfig.provider,
+      }));
     } finally {
       setTestingMainAi(false);
     }
@@ -864,35 +772,27 @@ export const Settings = () => {
         model: embeddingAiConfig.model,
       })) as { success: boolean; message: string };
       if (response.success) {
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("settings.providerTestSuccess", {
-            provider:
-              PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
-              embeddingAiConfig.provider,
-          }),
-        });
+        message.success(t("settings.providerTestSuccess", {
+          provider:
+            PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
+            embeddingAiConfig.provider,
+        }));
       } else {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content:
-            response.message ||
+        message.error(
+          response.message ||
             t("settings.providerTestFailed", {
               provider:
                 PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
                 embeddingAiConfig.provider,
             }),
-        });
+        );
       }
     } catch {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("settings.providerTestFailed", {
-          provider:
-            PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
-            embeddingAiConfig.provider,
-        }),
-      });
+      message.error(t("settings.providerTestFailed", {
+        provider:
+          PROVIDER_DEFAULTS[embeddingAiConfig.provider]?.name ||
+          embeddingAiConfig.provider,
+      }));
     } finally {
       setTestingEmbedding(false);
     }
@@ -1965,16 +1865,10 @@ export const Settings = () => {
                         setMigrating(true);
                         try {
                           await apiClient.post("/database/migrate");
-                          frontendEventBus.publish("message_show", {
-                            type: "success",
-                            content: t("settings.migrationsSuccess"),
-                          });
+                          message.success(t("settings.migrationsSuccess"));
                           await fetchSchemaStatus();
                         } catch {
-                          frontendEventBus.publish("message_show", {
-                            type: "error",
-                            content: t("settings.migrationsFailed"),
-                          });
+                          message.error(t("settings.migrationsFailed"));
                         } finally {
                           setMigrating(false);
                         }
@@ -2003,16 +1897,10 @@ export const Settings = () => {
                         await apiClient.post("/database/reinitialize", {
                           confirm: true,
                         });
-                        frontendEventBus.publish("message_show", {
-                          type: "success",
-                          content: t("settings.reinitializeSuccess"),
-                        });
+                        message.success(t("settings.reinitializeSuccess"));
                         await fetchSchemaStatus();
                       } catch {
-                        frontendEventBus.publish("message_show", {
-                          type: "error",
-                          content: t("settings.reinitializeFailed"),
-                        });
+                        message.error(t("settings.reinitializeFailed"));
                       } finally {
                         setReinitializing(false);
                       }

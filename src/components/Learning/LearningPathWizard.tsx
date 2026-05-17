@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { useErrorHandler } from "../../hooks";
+import { useError } from "../../hooks";
 
 interface ExistingGraph {
   id: string;
@@ -81,7 +81,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     matchedTitle?: string;
   }>>([]);
   
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
 
   useEffect(() => {
     fetchQuestions();

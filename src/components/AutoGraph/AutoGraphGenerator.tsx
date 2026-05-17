@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { useErrorHandler, useIsMobile } from "../../hooks";
+import { useError, useIsMobile } from "../../hooks";
 import { useTopicCheck } from "../../hooks";
 import type {
   TemplateType,
@@ -317,7 +317,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [createdGraphId, setCreatedGraphId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
 
   const {
     isChecking,

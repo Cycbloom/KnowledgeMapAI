@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,7 +35,7 @@ import {
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { useErrorHandler } from "../hooks";
+import { useError } from "../hooks";
 
 interface LearningPathNode {
   id: string;
@@ -175,7 +175,7 @@ const LearningPathDetailPage: React.FC = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [isBatchConverting, setIsBatchConverting] = useState(false);
 
-  const { handleError } = useErrorHandler();
+  const { handleError } = useError();
 
   const fetchPathDetail = async () => {
     if (!pathId) return;

@@ -65,6 +65,11 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x);
 }
 
+function normalizeId(id: string | number | null | undefined): string {
+  if (id == null) return "";
+  return String(id).trim();
+}
+
 function getNodePosition(
   node: Node,
   region: RegionInfo,
@@ -87,7 +92,7 @@ function getNodePosition(
   const ratio = baseRatio + randomOffset + levelFactor;
 
   const count = regionNodeCount ?? total;
-  const minBound = count <= 5 ? 0.30 : count <= 12 ? 0.24 : 0.18;
+  const minBound = count <= 5 ? 0.3 : count <= 12 ? 0.24 : 0.18;
   const maxBound = count <= 5 ? 0.82 : count <= 12 ? 0.87 : 0.92;
   const distanceRatio = Math.max(minBound, Math.min(maxBound, ratio));
 
@@ -129,7 +134,9 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
     const contentRef = useRef<SVGGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const hasFocusMode = focusedNodeId !== null || focusedNodeIds.size > 0;
+    const hasFocusMode =
+      (focusedNodeId !== null && focusedNodeId !== "") ||
+      focusedNodeIds.size > 0;
 
     const [internalCollapsedRegions, setInternalCollapsedRegions] = useState<
       Set<string>
@@ -201,16 +208,19 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
       visibleRegions.forEach((region) => {
         const regionNodes = region.nodes.filter((n) => n.level !== "core");
         regionNodes.forEach((node, index) => {
-          positions[node.id] = getNodePosition(
-            node,
-            region,
-            index,
-            regionNodes.length,
-            originPosition.x,
-            originPosition.y,
-            regionRadius,
-            regionNodes.length,
-          );
+          const normalizedId = normalizeId(node.id);
+          if (normalizedId) {
+            positions[normalizedId] = getNodePosition(
+              node,
+              region,
+              index,
+              regionNodes.length,
+              originPosition.x,
+              originPosition.y,
+              regionRadius,
+              regionNodes.length,
+            );
+          }
         });
       });
 
@@ -229,7 +239,8 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
 
       const result = avoidCollisions(positionMap, minDistance);
 
-      const adjusted: Record<string, { x: number; y: number; angle: number }> = {};
+      const adjusted: Record<string, { x: number; y: number; angle: number }> =
+        {};
       for (const [id, pos] of result.entries()) {
         const original = nodePositions[id];
         adjusted[id] = {
@@ -244,12 +255,74 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
     const regionEdges = useMemo(() => {
       const nodeIds = new Set(Object.keys(nodePositions));
 
-      return edges.filter(
-        (edge) =>
-          nodeIds.has(edge.source_knowledge_point_id) &&
-          nodeIds.has(edge.target_knowledge_point_id),
-      );
+      const filtered = edges.filter((edge) => {
+        const srcId = normalizeId(edge.source_knowledge_point_id);
+        const tgtId = normalizeId(edge.target_knowledge_point_id);
+        return srcId && tgtId && nodeIds.has(srcId) && nodeIds.has(tgtId);
+      });
+
+      return filtered;
     }, [edges, nodePositions]);
+
+    const visibleFocusedLinkIds = useMemo(() => {
+      if (!hasFocusMode) return new Set<string>();
+
+      const regionEdgeIds = new Set(regionEdges.map((e) => String(e.id)));
+      const result = new Set<string>();
+
+      focusedLinkIds.forEach((id) => {
+        if (regionEdgeIds.has(id)) {
+          result.add(id);
+        }
+      });
+
+      return result;
+    }, [hasFocusMode, regionEdges, focusedLinkIds]);
+
+    const visibleFocusedNodeIds = useMemo(() => {
+      if (!hasFocusMode) return new Set<string>();
+
+      const normalizedFocusedId = normalizeId(focusedNodeId);
+
+      if (normalizedFocusedId) {
+        const result = new Set<string>([normalizedFocusedId]);
+
+        regionEdges.forEach((edge) => {
+          const src = normalizeId(edge.source_knowledge_point_id);
+          const tgt = normalizeId(edge.target_knowledge_point_id);
+
+          if (src === normalizedFocusedId && tgt) {
+            result.add(tgt);
+          } else if (tgt === normalizedFocusedId && src) {
+            result.add(src);
+          }
+        });
+
+        return result;
+      }
+
+      if (focusedNodeIds.size > 0) {
+        const visibleNodeIds = new Set(Object.keys(nodePositions));
+        const result = new Set<string>();
+
+        focusedNodeIds.forEach((id) => {
+          const normalizedId = normalizeId(id);
+          if (normalizedId && visibleNodeIds.has(normalizedId)) {
+            result.add(normalizedId);
+          }
+        });
+
+        return result;
+      }
+
+      return new Set<string>();
+    }, [
+      hasFocusMode,
+      focusedNodeId,
+      focusedNodeIds,
+      regionEdges,
+      nodePositions,
+    ]);
 
     const updateTransformDOM = useCallback((t: Transform) => {
       if (contentRef.current) {
@@ -528,8 +601,14 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             })}
 
             {regionEdges.map((edge) => {
-              const sourcePos = adjustedNodePositions[edge.source_knowledge_point_id];
-              const targetPos = adjustedNodePositions[edge.target_knowledge_point_id];
+              const sourcePos =
+                adjustedNodePositions[
+                  normalizeId(edge.source_knowledge_point_id)
+                ];
+              const targetPos =
+                adjustedNodePositions[
+                  normalizeId(edge.target_knowledge_point_id)
+                ];
 
               if (!sourcePos || !targetPos) return null;
 
@@ -542,7 +621,8 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                   targetX={targetPos.x}
                   targetY={targetPos.y}
                   isDark={isDark}
-                  highlighted={focusedLinkIds?.has(String(edge.id))}
+                  highlighted={visibleFocusedLinkIds.has(String(edge.id))}
+                  hasFocusMode={hasFocusMode}
                 />
               );
             })}
@@ -581,13 +661,21 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                                 .length,
                             )}
                             focused={
-                              focusedNodeIds.has(node.id) ||
-                              node.id === focusedNodeId
+                              visibleFocusedNodeIds.has(normalizeId(node.id)) ||
+                              normalizeId(node.id) ===
+                                normalizeId(focusedNodeId)
                             }
                             hasFocusMode={hasFocusMode}
-                            regionNodeCount={region.nodes.filter((n) => n.level !== "core").length}
-                            positionX={adjustedNodePositions[node.id]?.x}
-                            positionY={adjustedNodePositions[node.id]?.y}
+                            regionNodeCount={
+                              region.nodes.filter((n) => n.level !== "core")
+                                .length
+                            }
+                            positionX={
+                              adjustedNodePositions[normalizeId(node.id)]?.x
+                            }
+                            positionY={
+                              adjustedNodePositions[normalizeId(node.id)]?.y
+                            }
                           />
                         </motion.g>
                       ))}

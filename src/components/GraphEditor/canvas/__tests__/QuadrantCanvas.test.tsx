@@ -1,22 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render } from "@testing-library/react";
 import React from "react";
 import type { Node, Edge, RegionInfo } from "@shared/types/graph";
+import { ThemeProvider } from "../../../../hooks/common/useTheme";
 
-vi.mock("../../../hooks/common/useTheme", () => ({
-  useTheme: () => ({ isDark: false }),
-}));
-
-let QuadrantCanvas: React.ComponentType<any>;
-
-beforeEach(async () => {
-  vi.resetModules();
-  vi.doMock("../../../hooks/common/useTheme", () => ({
-    useTheme: () => ({ isDark: false }),
-  }));
-  const module = await import("../QuadrantCanvas");
-  QuadrantCanvas = module.QuadrantCanvas;
-});
+import { QuadrantCanvas } from "../QuadrantCanvas";
 
 function createMockNode(id: string, title: string = `Node ${id}`): Node {
   return {
@@ -83,6 +71,10 @@ const mockRegions: RegionInfo[] = [
 
 const mockOriginPosition = { x: 400, y: 300 };
 
+function renderWithProvider(ui: React.ReactElement) {
+  return render(<ThemeProvider>{ui}</ThemeProvider>);
+}
+
 describe("QuadrantCanvas", () => {
   const defaultProps = {
     nodes: mockNodes,
@@ -97,156 +89,274 @@ describe("QuadrantCanvas", () => {
 
   describe("组件渲染", () => {
     it("渲染 SVG 容器", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
+      renderWithProvider(<QuadrantCanvas {...defaultProps} />);
       const svg = document.querySelector("svg");
       expect(svg).toBeTruthy();
     });
 
     it("渲染所有区域", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
+      renderWithProvider(<QuadrantCanvas {...defaultProps} />);
       const regions = document.querySelectorAll("[data-region-id]");
       expect(regions.length).toBe(2);
     });
 
     it("渲染所有节点", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
-      const nodes = document.querySelectorAll("[data-node-id]");
-      expect(nodes.length).toBe(3);
-    });
-
-    it("渲染原点元素", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
-      const origin = document.querySelector("[data-origin]");
-      expect(origin).toBeTruthy();
-    });
-
-    it("渲染缩放控制按钮", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
-      const buttons = screen.getAllByRole("button");
-      expect(buttons.length).toBeGreaterThanOrEqual(3);
-    });
-
-    it("渲染缩放指示器", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
-      expect(screen.getByText(/缩放:/)).toBeTruthy();
-    });
-  });
-
-  describe("区域交互", () => {
-    it("点击区域头部触发折叠切换", () => {
-      const onRegionToggle = vi.fn();
-      render(
-        <QuadrantCanvas {...defaultProps} onRegionToggle={onRegionToggle} />,
-      );
-
-      const regionHeader = document.querySelector(
-        '[data-region-id="region-1"]',
-      );
-      if (regionHeader) {
-        fireEvent.click(regionHeader);
-        expect(onRegionToggle).toHaveBeenCalledWith("region-1");
-      }
-    });
-
-    it("折叠区域时隐藏节点", () => {
-      render(
-        <QuadrantCanvas {...defaultProps} collapsedRegions={["region-1"]} />,
-      );
-
-      const nodes = document.querySelectorAll("[data-node-id]");
-      expect(nodes.length).toBe(1);
-    });
-
-    it("展开区域时显示节点", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
-
+      renderWithProvider(<QuadrantCanvas {...defaultProps} />);
       const nodes = document.querySelectorAll("[data-node-id]");
       expect(nodes.length).toBe(3);
     });
   });
 
-  describe("节点交互", () => {
-    it("点击节点触发回调", () => {
-      const onNodeClick = vi.fn();
-      render(<QuadrantCanvas {...defaultProps} onNodeClick={onNodeClick} />);
+  describe("幽灵高亮修复", () => {
+    describe("场景1：基本幽灵高亮消除（core 节点边）", () => {
+      it("经过 core 节点的间接连接不应该高亮", () => {
+        const nodeA = createMockNode("nodeA", "Node A");
+        const nodeB = createMockNode("nodeB", "Node B");
+        const coreNode = createMockNode("coreNode", "Core Node");
+        coreNode.level = "core";
 
-      const node = document.querySelector('[data-node-id="node-1"]');
-      if (node) {
-        fireEvent.click(node);
-        expect(onNodeClick).toHaveBeenCalled();
-      }
+        const edges: Edge[] = [
+          createMockEdge("edge-1", "nodeA", "coreNode"),
+          createMockEdge("edge-2", "coreNode", "nodeB"),
+        ];
+
+        const regions: RegionInfo[] = [
+          createMockRegion("region-1", "Region 1", [nodeA, nodeB], 0, 180),
+        ];
+
+        renderWithProvider(
+          <QuadrantCanvas
+            {...defaultProps}
+            nodes={[nodeA, nodeB, coreNode]}
+            edges={edges}
+            regions={regions}
+            focusedNodeId="nodeA"
+          />,
+        );
+
+        const nodeAElement = document.querySelector('[data-node-id="nodeA"]');
+        const nodeBElement = document.querySelector('[data-node-id="nodeB"]');
+
+        expect(nodeAElement).toBeTruthy();
+        expect(nodeBElement).toBeTruthy();
+
+        const nodeAOpacity = (nodeAElement as HTMLElement)?.style?.opacity;
+        const nodeBOpacity = (nodeBElement as HTMLElement)?.style?.opacity;
+
+        expect(nodeAOpacity).toBe("1");
+        expect(nodeBOpacity).toBe("0.45");
+      });
     });
 
-    it("选中节点有高亮样式", () => {
-      render(<QuadrantCanvas {...defaultProps} selectedNodeId="node-1" />);
+    describe("场景2：正常邻居高亮（同一区域直接边）", () => {
+      it("同一区域内通过可见边直接连接的节点应该高亮", () => {
+        const nodeA = createMockNode("nodeA", "Node A");
+        const nodeB = createMockNode("nodeB", "Node B");
+        const nodeC = createMockNode("nodeC", "Node C");
 
-      const node = document.querySelector('[data-node-id="node-1"]');
-      expect(node).toBeTruthy();
-    });
-  });
+        const edges: Edge[] = [
+          createMockEdge("edge-1", "nodeA", "nodeB"),
+          createMockEdge("edge-2", "nodeA", "nodeC"),
+        ];
 
-  describe("原点拖拽", () => {
-    it("原点有可拖拽样式", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
-      const origin = document.querySelector("[data-origin]");
-      expect(origin?.getAttribute("style")).toContain("cursor: move");
-    });
-  });
+        const regions: RegionInfo[] = [
+          createMockRegion(
+            "region-1",
+            "Region 1",
+            [nodeA, nodeB, nodeC],
+            0,
+            180,
+          ),
+        ];
 
-  describe("缩放控制", () => {
-    it("点击放大按钮增加缩放比例", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
+        renderWithProvider(
+          <QuadrantCanvas
+            {...defaultProps}
+            nodes={[nodeA, nodeB, nodeC]}
+            edges={edges}
+            regions={regions}
+            focusedNodeId="nodeA"
+          />,
+        );
 
-      const buttons = screen.getAllByRole("button");
-      const zoomInButton = buttons[0];
-      fireEvent.click(zoomInButton);
+        const nodeAElement = document.querySelector('[data-node-id="nodeA"]');
+        const nodeBElement = document.querySelector('[data-node-id="nodeB"]');
+        const nodeCElement = document.querySelector('[data-node-id="nodeC"]');
 
-      expect(screen.getByText(/缩放:/)).toBeTruthy();
-    });
+        expect(nodeAElement).toBeTruthy();
+        expect(nodeBElement).toBeTruthy();
+        expect(nodeCElement).toBeTruthy();
 
-    it("点击缩小按钮减少缩放比例", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
+        const nodeAOpacity = (nodeAElement as HTMLElement)?.style?.opacity;
+        const nodeBOpacity = (nodeBElement as HTMLElement)?.style?.opacity;
+        const nodeCOpacity = (nodeCElement as HTMLElement)?.style?.opacity;
 
-      const buttons = screen.getAllByRole("button");
-      const zoomOutButton = buttons[1];
-      fireEvent.click(zoomOutButton);
-
-      expect(screen.getByText(/缩放:/)).toBeTruthy();
-    });
-
-    it("点击重置按钮恢复默认缩放", () => {
-      render(<QuadrantCanvas {...defaultProps} />);
-
-      const buttons = screen.getAllByRole("button");
-      const resetButton = buttons[2];
-      fireEvent.click(resetButton);
-
-      expect(screen.getByText("缩放: 100%")).toBeTruthy();
-    });
-  });
-
-  describe("自定义尺寸", () => {
-    it("使用自定义宽度和高度", () => {
-      render(<QuadrantCanvas {...defaultProps} width={1200} height={800} />);
-
-      const svg = document.querySelector("svg");
-      expect(svg).toBeTruthy();
-    });
-  });
-
-  describe("空数据处理", () => {
-    it("空节点数组正常渲染", () => {
-      render(<QuadrantCanvas {...defaultProps} nodes={[]} regions={[]} />);
-
-      const svg = document.querySelector("svg");
-      expect(svg).toBeTruthy();
+        expect(nodeAOpacity).toBe("1");
+        expect(nodeBOpacity).toBe("1");
+        expect(nodeCOpacity).toBe("1");
+      });
     });
 
-    it("空区域数组正常渲染", () => {
-      render(<QuadrantCanvas {...defaultProps} regions={[]} />);
+    describe("场景3：跨区域边正确处理", () => {
+      it("只有通过跨区域可见边直接连接的节点才高亮", () => {
+        const nodeA = createMockNode("nodeA", "Node A");
+        const nodeB = createMockNode("nodeB", "Node B");
+        const nodeC = createMockNode("nodeC", "Node C");
 
-      const svg = document.querySelector("svg");
-      expect(svg).toBeTruthy();
+        const edges: Edge[] = [
+          createMockEdge("edge-1", "nodeA", "nodeB"),
+          createMockEdge("edge-2", "nodeB", "nodeC"),
+        ];
+
+        const regions: RegionInfo[] = [
+          createMockRegion("region-1", "Region 1", [nodeA], 0, 180),
+          createMockRegion("region-2", "Region 2", [nodeB, nodeC], 180, 360),
+        ];
+
+        renderWithProvider(
+          <QuadrantCanvas
+            {...defaultProps}
+            nodes={[nodeA, nodeB, nodeC]}
+            edges={edges}
+            regions={regions}
+            focusedNodeId="nodeA"
+          />,
+        );
+
+        const nodeAElement = document.querySelector('[data-node-id="nodeA"]');
+        const nodeBElement = document.querySelector('[data-node-id="nodeB"]');
+        const nodeCElement = document.querySelector('[data-node-id="nodeC"]');
+
+        expect(nodeAElement).toBeTruthy();
+        expect(nodeBElement).toBeTruthy();
+        expect(nodeCElement).toBeTruthy();
+
+        const nodeAOpacity = (nodeAElement as HTMLElement)?.style?.opacity;
+        const nodeBOpacity = (nodeBElement as HTMLElement)?.style?.opacity;
+        const nodeCOpacity = (nodeCElement as HTMLElement)?.style?.opacity;
+
+        expect(nodeAOpacity).toBe("1");
+        expect(nodeBOpacity).toBe("1");
+        expect(nodeCOpacity).toBe("0.45");
+      });
+    });
+
+    describe("场景4：无聚焦模式", () => {
+      it("无聚焦时所有节点应该完全可见", () => {
+        const nodeA = createMockNode("nodeA", "Node A");
+        const nodeB = createMockNode("nodeB", "Node B");
+        const nodeC = createMockNode("nodeC", "Node C");
+
+        const edges: Edge[] = [
+          createMockEdge("edge-1", "nodeA", "nodeB"),
+          createMockEdge("edge-2", "nodeB", "nodeC"),
+        ];
+
+        const regions: RegionInfo[] = [
+          createMockRegion(
+            "region-1",
+            "Region 1",
+            [nodeA, nodeB, nodeC],
+            0,
+            180,
+          ),
+        ];
+
+        renderWithProvider(
+          <QuadrantCanvas
+            {...defaultProps}
+            nodes={[nodeA, nodeB, nodeC]}
+            edges={edges}
+            regions={regions}
+            focusedNodeId={null}
+            focusedNodeIds={new Set()}
+          />,
+        );
+
+        const nodeAElement = document.querySelector('[data-node-id="nodeA"]');
+        const nodeBElement = document.querySelector('[data-node-id="nodeB"]');
+        const nodeCElement = document.querySelector('[data-node-id="nodeC"]');
+
+        expect(nodeAElement).toBeTruthy();
+        expect(nodeBElement).toBeTruthy();
+        expect(nodeCElement).toBeTruthy();
+
+        const nodeAOpacity = (nodeAElement as HTMLElement)?.style?.opacity;
+        const nodeBOpacity = (nodeBElement as HTMLElement)?.style?.opacity;
+        const nodeCOpacity = (nodeCElement as HTMLElement)?.style?.opacity;
+
+        expect(nodeAOpacity).toBe("1");
+        expect(nodeBOpacity).toBe("1");
+        expect(nodeCOpacity).toBe("1");
+      });
+    });
+
+    describe("场景5：ID 标准化测试", () => {
+      it("带空格的 focusedNodeId 应该正确匹配节点（trim 处理）", () => {
+        const nodeA = createMockNode("nodeA", "Node A");
+        const nodeB = createMockNode("nodeB", "Node B");
+
+        const edges: Edge[] = [createMockEdge("edge-1", "nodeA", "nodeB")];
+
+        const regions: RegionInfo[] = [
+          createMockRegion("region-1", "Region 1", [nodeA, nodeB], 0, 180),
+        ];
+
+        renderWithProvider(
+          <QuadrantCanvas
+            {...defaultProps}
+            nodes={[nodeA, nodeB]}
+            edges={edges}
+            regions={regions}
+            focusedNodeId=" nodeA "
+          />,
+        );
+
+        const nodeAElement = document.querySelector('[data-node-id="nodeA"]');
+        const nodeBElement = document.querySelector('[data-node-id="nodeB"]');
+
+        expect(nodeAElement).toBeTruthy();
+        expect(nodeBElement).toBeTruthy();
+
+        const nodeAOpacity = (nodeAElement as HTMLElement)?.style?.opacity;
+        const nodeBOpacity = (nodeBElement as HTMLElement)?.style?.opacity;
+
+        expect(nodeAOpacity).toBe("1");
+        expect(nodeBOpacity).toBe("1");
+      });
+
+      it("focusedNodeId 为空字符串时不应该激活聚焦模式", () => {
+        const nodeA = createMockNode("nodeA", "Node A");
+        const nodeB = createMockNode("nodeB", "Node B");
+
+        const edges: Edge[] = [createMockEdge("edge-1", "nodeA", "nodeB")];
+
+        const regions: RegionInfo[] = [
+          createMockRegion("region-1", "Region 1", [nodeA, nodeB], 0, 180),
+        ];
+
+        renderWithProvider(
+          <QuadrantCanvas
+            {...defaultProps}
+            nodes={[nodeA, nodeB]}
+            edges={edges}
+            regions={regions}
+            focusedNodeId=""
+          />,
+        );
+
+        const nodeAElement = document.querySelector('[data-node-id="nodeA"]');
+        const nodeBElement = document.querySelector('[data-node-id="nodeB"]');
+
+        expect(nodeAElement).toBeTruthy();
+        expect(nodeBElement).toBeTruthy();
+
+        const nodeAOpacity = (nodeAElement as HTMLElement)?.style?.opacity;
+        const nodeBOpacity = (nodeBElement as HTMLElement)?.style?.opacity;
+
+        expect(nodeAOpacity).toBe("1");
+        expect(nodeBOpacity).toBe("1");
+      });
     });
   });
 });

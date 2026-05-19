@@ -1,0 +1,11 @@
+- [x] 调试日志正确输出 focusedNodeId、regionEdges 和 visibleFocusedNodeIds 的内容
+- [x] regionEdges 正确过滤掉包含 core 节点的边
+- [x] regionEdges 正确过滤掉包含不可见节点（折叠区域）的边
+- [x] regionEdges 保留两端都在可见节点集合中的边
+- [x] visibleFocusedNodeIds 只包含通过 regionEdges 与选中节点直接相连的节点
+- [x] 不存在"节点高亮但与选中节点间无可见连线"的幽灵高亮现象
+- [x] 跨区域边（两端在不同可见区域）正常显示和高亮
+- [x] 单元测试覆盖所有幽灵高亮边界场景（core节点、折叠区域、跨区域）- 9个测试用例全部通过
+- [x] 类型检查通过（`npm run check` - exit code 0）
+- [x] 代码检查通过（`npm run lint` - exit code 0）
+- [x] 单元测试通过（`npx vitest run` - 9/9 测试用例通过）

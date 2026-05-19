@@ -89,7 +89,7 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark, colorScheme);
 
-  const nodeOpacity = !hasFocusMode ? 1 : focused ? 1 : 0.3;
+  const nodeOpacity = !hasFocusMode ? 1 : focused ? 1 : 0.45;
 
   const titleInfo = useMemo(
     () => truncateText(node.title || "未命名"),

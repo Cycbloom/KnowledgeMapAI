@@ -24,7 +24,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const [reviewCountRange, setReviewCountRange] = useState<{min: string, max: string}>({ min: '', max: '' });
-  const [selectedFsrsStates, setSelectedFsrsStates] = useState<Set<number>>(new Set([0, 1, 2, 3]));
+  const [selectedFsrsStates, setSelectedFsrsStates] = useState<Set<string>>(new Set(["New", "Learning", "Review", "Relearning"]));
   const [nextReviewRange, setNextReviewRange] = useState<{start: string, end: string}>({ start: '', end: '' });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -40,11 +40,11 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const updateCardMutation = useUpdateCardMutation();
   const createCardsMutation = useCreateCardsBatchMutation();
 
-  const fsrsStateLabels: Record<number, string> = {
-    0: t('study.questionBank.fsrsStates.new'),
-    1: t('study.questionBank.fsrsStates.learning'),
-    2: t('study.questionBank.fsrsStates.review'),
-    3: t('study.questionBank.fsrsStates.relearning')
+  const fsrsStateLabels: Record<string, string> = {
+    "New": t('study.questionBank.fsrsStates.new'),
+    "Learning": t('study.questionBank.fsrsStates.learning'),
+    "Review": t('study.questionBank.fsrsStates.review'),
+    "Relearning": t('study.questionBank.fsrsStates.relearning')
   };
 
   // Filter Logic
@@ -65,7 +65,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
         if (reviewCountRange.max !== '' && count > parseInt(reviewCountRange.max)) return false;
 
         // FSRS State
-        const state = card.fsrs_state || 0;
+        const state = card.fsrs_state || "New";
         if (!selectedFsrsStates.has(state)) return false;
 
         // Next Review Date
@@ -97,7 +97,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   }, [searchTerm, selectedType, showAdvancedFilters, reviewCountRange, selectedFsrsStates, nextReviewRange]);
 
   // Handlers
-  const toggleFsrsState = (state: number) => {
+  const toggleFsrsState = (state: string) => {
     const newSet = new Set(selectedFsrsStates);
     if (newSet.has(state)) newSet.delete(state);
     else newSet.add(state);
@@ -300,7 +300,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-500">{t('study.questionBank.learningStatus')}</label>
               <div className="flex flex-wrap gap-2">
-                {[0, 1, 2, 3].map(state => (
+                {(["New", "Learning", "Review", "Relearning"] as const).map(state => (
                   <button
                     key={state}
                     onClick={() => toggleFsrsState(state)}

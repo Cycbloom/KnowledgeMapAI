@@ -45,7 +45,7 @@ export interface StudyCardRow {
   correct_indices?: number[] | null;
   next_review: string;
   difficulty: number;
-  fsrs_state: number;
+  fsrs_state: string;
   fsrs_stability: number;
   fsrs_difficulty: number;
   fsrs_elapsed_days: number;

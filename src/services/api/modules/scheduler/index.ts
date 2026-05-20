@@ -1,4 +1,4 @@
-export { reviewTasksApi } from "./reviewTasks";
+export { studyReviewApi } from "./reviewTasks";
 export type {
   ReviewTask,
   CreateReviewTaskData,
@@ -78,7 +78,7 @@ import { linksApi } from "./links";
 import { knowledgePointsApi } from "./knowledgePoints";
 import { analyticsApi } from "./analytics";
 import { achievementsApi } from "./achievements";
-import { reviewTasksApi } from "./reviewTasks";
+import { studyReviewApi } from "./reviewTasks";
 import { progressSyncApi } from "./progressSync";
 import { pathTasksApi } from "./pathTasks";
 import { activitiesApi } from "./activities";
@@ -98,7 +98,7 @@ export const schedulerApi = {
   ...knowledgePointsApi,
   ...analyticsApi,
   ...achievementsApi,
-  ...reviewTasksApi,
+  ...studyReviewApi,
   ...progressSyncApi,
   ...pathTasksApi,
   ...activitiesApi,

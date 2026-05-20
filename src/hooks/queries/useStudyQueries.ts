@@ -5,8 +5,6 @@ import { queryKeys, realtimeQueryConfig } from "./config";
 export const useStudyCards = (
   params?: {
     graph_id?: string;
-    node_id?: string;
-    node_ids?: string;
     knowledge_point_id?: string;
     knowledge_point_ids?: string[];
     due?: boolean;
@@ -24,5 +22,12 @@ export const useStudyCards = (
     },
     enabled,
     ...realtimeQueryConfig,
+  });
+};
+
+export const useStudyStats = (graphId?: string) => {
+  return useQuery({
+    queryKey: ["studyStats", graphId],
+    queryFn: () => api.study.getStats(graphId),
   });
 };

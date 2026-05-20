@@ -166,7 +166,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
               question: card.question,
               answer: card.answer,
               explanation: card.explanation,
-              card_type: card.type || 'qa',
+              card_type: card.type ?? 'qa',
               difficulty: difficulty === 'mixed' ? this.getRandomDifficulty() : difficulty,
               options: card.options ? JSON.stringify(card.options) : null,
               next_review: new Date().toISOString()

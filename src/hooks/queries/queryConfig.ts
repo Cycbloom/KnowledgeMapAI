@@ -29,15 +29,17 @@ export const queryKeys = {
   graphNodeStatus: (id: string) => ["graphNodeStatus", id] as const,
   studyCards: (params?: {
     graph_id?: string;
-    node_id?: string;
-    node_ids?: string;
+    knowledge_point_id?: string;
+    knowledge_point_ids?: string[];
     due?: boolean;
   }) =>
     [
       "studyCards",
       params?.graph_id || "all",
-      params?.node_id || "all",
-      params?.node_ids || "none",
+      params?.knowledge_point_id || "all",
+      params?.knowledge_point_ids
+        ? params.knowledge_point_ids.join(",")
+        : "none",
       params?.due ? "due" : "all",
     ] as const,
   user: ["user"] as const,

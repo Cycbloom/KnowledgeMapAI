@@ -11,7 +11,7 @@ import {
   Tag,
   Brain,
 } from "lucide-react";
-import { reviewApi, TaskReview } from "../../services/api/review";
+import { taskReviewApi, TaskReview } from "../../services/api/review";
 import { UserTask } from "@shared/types";
 
 interface TaskRetrospectProps {
@@ -45,7 +45,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
   const loadExistingReview = async () => {
     if (!task) return;
     try {
-      const review = await reviewApi.getTaskReview(task.id);
+      const review = await taskReviewApi.getTaskReview(task.id);
       if (review) {
         setExistingReview(review);
         setContent(review.content || "");
@@ -79,9 +79,9 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
 
       let review: TaskReview;
       if (existingReview) {
-        review = await reviewApi.updateReview(existingReview.id, reviewData);
+        review = await taskReviewApi.updateReview(existingReview.id, reviewData);
       } else {
-        review = await reviewApi.createReview(reviewData);
+        review = await taskReviewApi.createReview(reviewData);
       }
 
       setExistingReview(review);

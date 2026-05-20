@@ -22,18 +22,18 @@ const VALID_TRANSITIONS: Record<LearningState, StateTransitionConfig[]> = {
   learning: [
     {
       to: "review",
-      maxMastery: 30,
+      maxMastery: 0.3,
       description: "掌握度低于30%，进入复习阶段",
     },
     {
       to: "practice",
-      minMastery: 30,
-      maxMastery: 70,
+      minMastery: 0.3,
+      maxMastery: 0.7,
       description: "掌握度30%-70%，进入练习阶段",
     },
     {
       to: "quiz",
-      minMastery: 70,
+      minMastery: 0.7,
       description: "掌握度高于70%，进入测验阶段",
     },
   ],
@@ -46,39 +46,39 @@ const VALID_TRANSITIONS: Record<LearningState, StateTransitionConfig[]> = {
   practice: [
     {
       to: "quiz",
-      minMastery: 50,
+      minMastery: 0.5,
       description: "练习达标，进入测验阶段",
     },
     {
       to: "review",
-      maxMastery: 50,
+      maxMastery: 0.5,
       description: "练习未达标，返回复习阶段",
     },
   ],
   quiz: [
     {
       to: "review",
-      maxMastery: 60,
+      maxMastery: 0.6,
       description: "测验未达标，返回复习阶段",
     },
     {
       to: "practice",
-      minMastery: 60,
-      maxMastery: 80,
+      minMastery: 0.6,
+      maxMastery: 0.8,
       description: "测验部分达标，进入练习阶段",
     },
     {
       to: "quiz",
-      minMastery: 80,
+      minMastery: 0.8,
       description: "测验达标，继续测验阶段深化",
     },
   ],
 };
 
 const MASTERY_THRESHOLDS = {
-  LOW: 30,
-  MEDIUM: 70,
-  HIGH: 80,
+  LOW: 0.3,
+  MEDIUM: 0.7,
+  HIGH: 0.8,
 } as const;
 
 const CYCLE_ORDER: LearningState[] = ["review", "practice", "quiz"];
@@ -126,7 +126,7 @@ class SubtaskStateMachine {
       if (masteryLevel >= MASTERY_THRESHOLDS.HIGH) {
         return "quiz";
       }
-      if (masteryLevel >= 60) {
+      if (masteryLevel >= 0.6) {
         return "practice";
       }
       return "review";
@@ -243,7 +243,7 @@ class SubtaskStateMachine {
     }
 
     logger.info(
-      `[SubtaskStateMachine] Subtask ${subtaskId}: ${fromState} → ${toState} (mastery: ${masteryBefore}% → ${masteryLevel}%)`,
+      `[SubtaskStateMachine] Subtask ${subtaskId}: ${fromState} → ${toState} (mastery: ${(masteryBefore * 100).toFixed(0)}% → ${(masteryLevel * 100).toFixed(0)}%)`,
     );
 
     return {
@@ -373,7 +373,7 @@ class SubtaskStateMachine {
     if (to !== expectedState && to !== from) {
       return {
         valid: true,
-        warning: `Expected transition to ${expectedState} based on mastery level ${masteryLevel}%, but transitioning to ${to}`,
+        warning: `Expected transition to ${expectedState} based on mastery level ${(masteryLevel * 100).toFixed(0)}%, but transitioning to ${to}`,
       };
     }
 

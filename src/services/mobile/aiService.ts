@@ -580,7 +580,7 @@ Important:
       options: card.options || null,
       next_review: new Date().toISOString(),
       difficulty: 1,
-      fsrs_state: 0,
+      fsrs_state: "New",
       fsrs_stability: 0,
       fsrs_difficulty: 0,
       fsrs_elapsed_days: 0,

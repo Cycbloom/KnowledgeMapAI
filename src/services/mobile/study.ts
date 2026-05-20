@@ -6,8 +6,6 @@ export const mobileStudyApi = {
     graph_id?: string;
     knowledge_point_id?: string;
     knowledge_point_ids?: string[];
-    node_id?: string;
-    node_ids?: string;
     source_graph_id?: string;
     due?: boolean;
   }) => {
@@ -28,21 +26,10 @@ export const mobileStudyApi = {
 
     if (params?.graph_id) {
       query = query.eq("graph_id", params.graph_id);
-    } else if (params?.knowledge_point_id || params?.node_id) {
-      const kpId = params.knowledge_point_id || params.node_id;
-      if (kpId) {
-        query = query.eq("knowledge_point_id", kpId);
-      }
-    } else if (
-      (params?.knowledge_point_ids && params.knowledge_point_ids.length > 0) ||
-      params?.node_ids
-    ) {
-      const kpIds =
-        params.knowledge_point_ids ||
-        (params.node_ids ? params.node_ids.split(",") : []);
-      if (kpIds.length > 0) {
-        query = query.in("knowledge_point_id", kpIds);
-      }
+    } else if (params?.knowledge_point_id) {
+      query = query.eq("knowledge_point_id", params.knowledge_point_id);
+    } else if (params?.knowledge_point_ids && params.knowledge_point_ids.length > 0) {
+      query = query.in("knowledge_point_id", params.knowledge_point_ids);
     }
 
     if (params?.due) {
@@ -125,7 +112,7 @@ export const mobileStudyApi = {
       options: card.options || null,
       next_review: new Date().toISOString(),
       difficulty: 1,
-      fsrs_state: 0,
+      fsrs_state: "New",
       fsrs_stability: 0,
       fsrs_difficulty: 0,
       fsrs_elapsed_days: 0,
@@ -300,6 +287,102 @@ export const mobileStudyApi = {
 
     return groups;
   },
+
+  getStats: async (graphId?: string) => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new Error("Supabase client not initialized");
+    }
+
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    if (!user) {
+      return {
+        totalCards: 0,
+        dueCards: 0,
+        newCards: 0,
+        learningCards: 0,
+        reviewCards: 0,
+        relearningCards: 0,
+        averageRetrievability: 0,
+        averageStability: 0,
+        averageDifficulty: 0,
+      };
+    }
+
+    let query = client
+      .from("study_cards")
+      .select("fsrs_state, fsrs_retrievability, fsrs_stability, fsrs_difficulty, next_review")
+      .eq("user_id", user.id);
+
+    if (graphId) {
+      query = query.eq("graph_id", graphId);
+    }
+
+    const { data: cards, error } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const allCards = (cards ?? []) as Array<{
+      next_review: string | null;
+      fsrs_state: string | null;
+      fsrs_retrievability: number | null;
+      fsrs_stability: number | null;
+      fsrs_difficulty: number | null;
+    }>;
+    const now = new Date();
+
+    let dueCards = 0;
+    let newCards = 0;
+    let learningCards = 0;
+    let reviewCards = 0;
+    let relearningCards = 0;
+    let totalRetrievability = 0;
+    let totalStability = 0;
+    let totalDifficulty = 0;
+
+    for (const card of allCards) {
+      if (card.next_review && new Date(card.next_review) <= now) {
+        dueCards++;
+      }
+
+      switch (card.fsrs_state) {
+        case "New":
+          newCards++;
+          break;
+        case "Learning":
+          learningCards++;
+          break;
+        case "Review":
+          reviewCards++;
+          break;
+        case "Relearning":
+          relearningCards++;
+          break;
+      }
+
+      totalRetrievability += card.fsrs_retrievability ?? 0;
+      totalStability += card.fsrs_stability ?? 0;
+      totalDifficulty += card.fsrs_difficulty ?? 0;
+    }
+
+    const count = allCards.length;
+    return {
+      totalCards: count,
+      dueCards,
+      newCards,
+      learningCards,
+      reviewCards,
+      relearningCards,
+      averageRetrievability: count > 0 ? Math.round((totalRetrievability / count) * 1000) / 1000 : 0,
+      averageStability: count > 0 ? Math.round((totalStability / count) * 100) / 100 : 0,
+      averageDifficulty: count > 0 ? Math.round((totalDifficulty / count) * 100) / 100 : 0,
+    };
+  },
 };
 
 export const mobileDashboardApi = {
@@ -435,18 +518,11 @@ export const mobileStatisticsApi = {
       )
       .eq("user_id", user.id);
 
-    const State = {
-      New: 0,
-      Learning: 1,
-      Review: 2,
-      Relearning: 3,
-    };
-
-    const stateCounts: Record<number, number> = {
-      [State.New]: 0,
-      [State.Learning]: 0,
-      [State.Review]: 0,
-      [State.Relearning]: 0,
+    const stateCounts: Record<string, number> = {
+      "New": 0,
+      "Learning": 0,
+      "Review": 0,
+      "Relearning": 0,
     };
 
     let dueTodayCount = 0;
@@ -470,7 +546,7 @@ export const mobileStatisticsApi = {
     }
 
     (cards || []).forEach((card: any) => {
-      const state = card.fsrs_state || State.New;
+      const state = card.fsrs_state || "New";
       const stability = card.fsrs_stability || 0;
       const nextReview = card.next_review ? new Date(card.next_review) : null;
       const lastReviewed = card.last_reviewed
@@ -526,23 +602,23 @@ export const mobileStatisticsApi = {
         totalCards: (cards || []).length,
         dueToday: dueTodayCount,
         learning:
-          stateCounts[State.Learning] +
-          stateCounts[State.Review] +
-          stateCounts[State.Relearning],
+          stateCounts["Learning"] +
+          stateCounts["Review"] +
+          stateCounts["Relearning"],
         avgStability: stabilityCount > 0 ? totalStability / stabilityCount : 7,
       },
       heatmap,
       distribution: [
-        { name: "new", value: stateCounts[State.New], color: "#94a3b8" },
+        { name: "new", value: stateCounts["New"], color: "#94a3b8" },
         {
           name: "learning",
-          value: stateCounts[State.Learning],
+          value: stateCounts["Learning"],
           color: "#fbbf24",
         },
-        { name: "review", value: stateCounts[State.Review], color: "#4ade80" },
+        { name: "review", value: stateCounts["Review"], color: "#4ade80" },
         {
           name: "relearning",
-          value: stateCounts[State.Relearning],
+          value: stateCounts["Relearning"],
           color: "#f87171",
         },
       ],

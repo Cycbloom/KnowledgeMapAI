@@ -132,7 +132,7 @@ export interface StudyCard {
   last_reviewed?: string;
   next_review: string;
   review_count?: number;
-  fsrs_state?: number;
+  fsrs_state?: string;
   fsrs_stability?: number;
   fsrs_difficulty?: number;
   fsrs_elapsed_days?: number;

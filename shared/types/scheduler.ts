@@ -520,7 +520,7 @@ export interface AchievementCheckResult {
   }>;
 }
 
-/** @deprecated 使用 FSRSReviewTask 替代。SM2 算法已废弃，新任务走 FSRS (study_cards) */
+/** @deprecated SM2-based review task type. Use study_cards (FSRS) based types instead. See FSRSReviewTask. */
 export interface ReviewTask {
   id: string;
   user_id: string;
@@ -558,18 +558,18 @@ export interface FSRSReviewTask {
   updated_at: string;
 }
 
-/** @deprecated 使用 studyService.createCard() (FSRS) 替代 */
+/** @deprecated SM2-based create data. Use studyService.createCard() (FSRS) instead. */
 export interface CreateReviewTaskData {
   knowledge_point_id: string;
   task_id: string;
 }
 
-/** @deprecated 使用 studyService.updateProgress() (FSRS) 替代 */
+/** @deprecated SM2-based update data. Use studyService.updateProgress() (FSRS) instead. */
 export interface UpdateReviewTaskData {
   quality: number;
 }
 
-/** @deprecated 使用 FSRS 统计替代 */
+/** @deprecated SM2-based review stats. Use FSRS-based statistics from studyService instead. */
 export interface ReviewTaskStats {
   total: number;
   overdue: number;
@@ -581,7 +581,7 @@ export interface ReviewTaskStats {
   averageRepetitions: number;
 }
 
-/** @deprecated 使用 FSRSReviewTask 替代 */
+/** @deprecated SM2-based pending review type. Use study_cards (FSRS) based types instead. */
 export interface PendingReviewTask extends ReviewTask {
   urgency: "overdue" | "today" | "upcoming" | "future";
   masteryLevel: number;

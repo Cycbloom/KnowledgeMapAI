@@ -50,7 +50,7 @@ const dbCardToFSRS = (dbCard: StudyCard): Card => {
     elapsed_days: dbCard.fsrs_elapsed_days || 0,
     scheduled_days: dbCard.fsrs_scheduled_days || 0,
     reps: dbCard.review_count || 0,
-    state: dbCard.fsrs_state || State.New,
+    state: dbCard.fsrs_state ? (State[dbCard.fsrs_state as keyof typeof State] ?? State.New) : State.New,
     last_review: dbCard.fsrs_last_review
       ? new Date(dbCard.fsrs_last_review)
       : undefined,
@@ -174,7 +174,7 @@ export class StudyService {
           options: options || null,
           next_review: new Date().toISOString(),
           difficulty: 1,
-          fsrs_state: 0,
+          fsrs_state: "New",
           fsrs_stability: 0,
           fsrs_difficulty: 0,
           fsrs_elapsed_days: 0,
@@ -214,7 +214,7 @@ export class StudyService {
       options: card.options || null,
       next_review: new Date().toISOString(),
       difficulty: 1,
-      fsrs_state: 0,
+      fsrs_state: "New",
       fsrs_stability: 0,
       fsrs_difficulty: 0,
       fsrs_elapsed_days: 0,
@@ -285,7 +285,7 @@ export class StudyService {
         last_reviewed: now.toISOString(),
         next_review: scheduledCard.due.toISOString(),
         review_count: scheduledCard.reps,
-        fsrs_state: scheduledCard.state,
+        fsrs_state: State[scheduledCard.state] as keyof typeof State,
         fsrs_stability: scheduledCard.stability,
         fsrs_difficulty: scheduledCard.difficulty,
         fsrs_elapsed_days: scheduledCard.elapsed_days,
@@ -372,6 +372,88 @@ export class StudyService {
         cacheService.del(CacheKeys.STUDY_CARDS(gid as string)),
       );
     }
+  }
+
+  async getStudyStats(
+    supabase: SupabaseClient,
+    userId: string,
+    graphId?: string,
+  ): Promise<{
+    totalCards: number;
+    dueCards: number;
+    newCards: number;
+    learningCards: number;
+    reviewCards: number;
+    relearningCards: number;
+    averageRetrievability: number;
+    averageStability: number;
+    averageDifficulty: number;
+  }> {
+    let query = supabase
+      .from("study_cards")
+      .select("fsrs_state, fsrs_retrievability, fsrs_stability, fsrs_difficulty, next_review")
+      .eq("user_id", userId);
+
+    if (graphId) {
+      query = query.eq("graph_id", graphId);
+    }
+
+    const { data: cards, error } = await query;
+
+    if (error) {
+      logger.error("Error fetching study stats:", error);
+      throw error;
+    }
+
+    const allCards = cards ?? [];
+    const now = new Date();
+
+    let dueCards = 0;
+    let newCards = 0;
+    let learningCards = 0;
+    let reviewCards = 0;
+    let relearningCards = 0;
+    let totalRetrievability = 0;
+    let totalStability = 0;
+    let totalDifficulty = 0;
+
+    for (const card of allCards) {
+      if (card.next_review && new Date(card.next_review) <= now) {
+        dueCards++;
+      }
+
+      switch (card.fsrs_state) {
+        case "New":
+          newCards++;
+          break;
+        case "Learning":
+          learningCards++;
+          break;
+        case "Review":
+          reviewCards++;
+          break;
+        case "Relearning":
+          relearningCards++;
+          break;
+      }
+
+      totalRetrievability += card.fsrs_retrievability ?? 0;
+      totalStability += card.fsrs_stability ?? 0;
+      totalDifficulty += card.fsrs_difficulty ?? 0;
+    }
+
+    const count = allCards.length;
+    return {
+      totalCards: count,
+      dueCards,
+      newCards,
+      learningCards,
+      reviewCards,
+      relearningCards,
+      averageRetrievability: count > 0 ? Math.round((totalRetrievability / count) * 1000) / 1000 : 0,
+      averageStability: count > 0 ? Math.round((totalStability / count) * 100) / 100 : 0,
+      averageDifficulty: count > 0 ? Math.round((totalDifficulty / count) * 100) / 100 : 0,
+    };
   }
 }
 

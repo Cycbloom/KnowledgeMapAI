@@ -14,7 +14,7 @@ import {
   X,
   Save,
 } from "lucide-react";
-import { reviewApi, TaskReview, Mood } from "../../services/api/review";
+import { taskReviewApi, TaskReview, Mood } from "../../services/api/review";
 import { api } from "../../services/api";
 import type { UserTask } from "@shared/types";
 
@@ -89,7 +89,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
     setLoading(true);
     try {
       const [review, tasks] = await Promise.all([
-        reviewApi.getDailyReview(targetDate),
+        taskReviewApi.getDailyReview(targetDate),
         api.scheduler.getTasks({ status: "completed" }),
       ]);
 
@@ -131,9 +131,9 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
 
       let review: TaskReview;
       if (existingReview) {
-        review = await reviewApi.updateReview(existingReview.id, reviewData);
+        review = await taskReviewApi.updateReview(existingReview.id, reviewData);
       } else {
-        review = await reviewApi.createReview(reviewData);
+        review = await taskReviewApi.createReview(reviewData);
       }
 
       setExistingReview(review);

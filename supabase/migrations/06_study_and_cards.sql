@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS study_cards (
   last_reviewed TIMESTAMPTZ,
   next_review TIMESTAMPTZ DEFAULT NOW(),
   review_count INTEGER DEFAULT 0,
-  fsrs_state INTEGER DEFAULT 0,
+  fsrs_state TEXT DEFAULT 'New' CHECK (fsrs_state IN ('New', 'Learning', 'Review', 'Relearning')),
   fsrs_stability DOUBLE PRECISION DEFAULT 0,
   fsrs_difficulty DOUBLE PRECISION DEFAULT 0,
   fsrs_elapsed_days DOUBLE PRECISION DEFAULT 0,
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS study_cards (
 COMMENT ON TABLE study_cards IS '学习卡片表，支持 FSRS 间隔重复算法';
 COMMENT ON COLUMN study_cards.card_type IS '卡片类型：qa, choice, true_false, multi_choice, fill_in_the_blank, essay';
 COMMENT ON COLUMN study_cards.difficulty IS '难度等级 (1-5)';
-COMMENT ON COLUMN study_cards.fsrs_state IS 'FSRS 算法状态';
+COMMENT ON COLUMN study_cards.fsrs_state IS 'FSRS 算法状态：New, Learning, Review, Relearning';
 COMMENT ON COLUMN study_cards.fsrs_stability IS 'FSRS 记忆稳定性';
 COMMENT ON COLUMN study_cards.fsrs_difficulty IS 'FSRS 卡片难度';
 COMMENT ON COLUMN study_cards.fsrs_elapsed_days IS 'FSRS 距上次复习天数';

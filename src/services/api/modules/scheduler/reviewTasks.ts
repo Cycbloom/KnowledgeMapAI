@@ -12,7 +12,7 @@ export type {
   PendingReviewTask,
 } from "@shared/types";
 
-export const reviewTasksApi = {
+export const studyReviewApi = {
   createFirstReviewTask: (data: CreateReviewTaskData) =>
     request("/scheduler/review-tasks", { method: "POST", body: JSON.stringify(data) }),
 

@@ -1,5 +1,4 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { State } from 'ts-fsrs';
 import { logger } from '../../utils/logger';
 
 export interface HeatmapItem {
@@ -76,7 +75,7 @@ export class DashboardService {
       .from('study_cards')
       .select('*, knowledge_points(title)')
       .eq('user_id', userId)
-      .neq('fsrs_state', State.New)
+      .neq('fsrs_state', 'New')
       .order('fsrs_stability', { ascending: true })
       .limit(10);
 
@@ -99,25 +98,25 @@ export class DashboardService {
       throw error;
     }
 
-    const distribution = {
-      [State.New]: 0,
-      [State.Learning]: 0,
-      [State.Review]: 0,
-      [State.Relearning]: 0
+    const distribution: Record<string, number> = {
+      "New": 0,
+      "Learning": 0,
+      "Review": 0,
+      "Relearning": 0
     };
 
     data?.forEach(card => {
-      const state = card.fsrs_state as State;
-      if (distribution[state] !== undefined) {
+      const state = card.fsrs_state;
+      if (state && distribution[state] !== undefined) {
         distribution[state]++;
       }
     });
 
     return [
-      { name: 'new', value: distribution[State.New], color: '#94a3b8' },
-      { name: 'learning', value: distribution[State.Learning], color: '#fbbf24' },
-      { name: 'review', value: distribution[State.Review], color: '#4ade80' },
-      { name: 'relearning', value: distribution[State.Relearning], color: '#f87171' }
+      { name: 'new', value: distribution["New"], color: '#94a3b8' },
+      { name: 'learning', value: distribution["Learning"], color: '#fbbf24' },
+      { name: 'review', value: distribution["Review"], color: '#4ade80' },
+      { name: 'relearning', value: distribution["Relearning"], color: '#f87171' }
     ];
   }
 }

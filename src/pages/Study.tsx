@@ -187,10 +187,10 @@ export const Study = () => {
 
     // FSRS Distribution
     const distribution = {
-      new: allCards.filter((c) => (c.fsrs_state || 0) === 0).length,
-      learning: allCards.filter((c) => (c.fsrs_state || 0) === 1).length,
-      review: allCards.filter((c) => (c.fsrs_state || 0) === 2).length,
-      relearning: allCards.filter((c) => (c.fsrs_state || 0) === 3).length,
+      new: allCards.filter((c) => (c.fsrs_state || "New") === "New").length,
+      learning: allCards.filter((c) => (c.fsrs_state || "New") === "Learning").length,
+      review: allCards.filter((c) => (c.fsrs_state || "New") === "Review").length,
+      relearning: allCards.filter((c) => (c.fsrs_state || "New") === "Relearning").length,
     };
 
     return { total, mastered, due, distribution };

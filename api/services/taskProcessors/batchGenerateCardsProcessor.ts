@@ -142,7 +142,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
               question: card.question,
               answer: card.answer,
               explanation: card.explanation,
-              card_type: card.type || 'qa',
+              card_type: card.type ?? 'qa',
               options: card.options ? JSON.stringify(card.options) : null,
               next_review: new Date().toISOString()
             }));

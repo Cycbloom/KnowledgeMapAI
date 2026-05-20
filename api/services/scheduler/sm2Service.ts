@@ -1,10 +1,9 @@
 /**
- * @deprecated 推荐使用 api/services/study/studyService.ts (FSRS, ts-fsrs 库)
- * SM2 算法保留向后兼容，新功能请使用 FSRS
+ * @deprecated Use StudyService (FSRS) instead. See api/services/study/studyService.ts for the FSRS-based replacement.
  */
 import { logger } from '../../utils/logger';
 
-/** @deprecated 使用 FSRS 的 Card 类型替代 */
+/** @deprecated Use FSRS Card type from ts-fsrs instead. See api/services/study/studyService.ts. */
 export interface SM2Result {
   interval: number;
   easeFactor: number;
@@ -12,7 +11,7 @@ export interface SM2Result {
   nextReviewDate: Date;
 }
 
-/** @deprecated 使用 FSRS Rating 替代 */
+/** @deprecated Use FSRS Rating from ts-fsrs instead. See api/services/study/studyService.ts. */
 export interface SM2Input {
   quality: number;
   interval: number;
@@ -20,7 +19,7 @@ export interface SM2Input {
   repetitions: number;
 }
 
-/** @deprecated 使用 FSRS Card 替代 */
+/** @deprecated Use StudyCard type instead. See shared/types/common.ts. */
 export interface ReviewTaskData {
   id: string;
   knowledge_point_id: string;
@@ -35,8 +34,9 @@ export interface ReviewTaskData {
 const MIN_EASE_FACTOR = 1.3;
 const DEFAULT_EASE_FACTOR = 2.5;
 
-/** @deprecated 推荐使用 api/services/study/studyService.ts (FSRS) */
+/** @deprecated Use StudyService (FSRS) instead. See api/services/study/studyService.ts for the FSRS-based replacement. */
 export class SM2Service {
+  /** @deprecated Use studyService.updateProgress() with FSRS algorithm instead. */
   static calculateNextReview(input: SM2Input): SM2Result {
     const { quality, interval, easeFactor, repetitions } = input;
 
@@ -83,6 +83,7 @@ export class SM2Service {
     };
   }
 
+  /** @deprecated FSRS uses createEmptyCard() from ts-fsrs instead. */
   static getInitialReviewParams(): { interval: number; easeFactor: number; repetitions: number } {
     return {
       interval: 1,
@@ -91,6 +92,7 @@ export class SM2Service {
     };
   }
 
+  /** @deprecated Use reviewTaskService.calculateUrgency() or studyService.getCards({ dueOnly: true }) instead. */
   static calculateUrgency(reviewTask: ReviewTaskData): 'overdue' | 'today' | 'upcoming' | 'future' {
     const now = new Date();
     const nextReview = new Date(reviewTask.next_review_date);
@@ -115,6 +117,7 @@ export class SM2Service {
     }
   }
 
+  /** @deprecated Use taskRecommendationService for priority scoring instead. */
   static calculatePriorityScore(
     reviewTask: ReviewTaskData,
     masteryLevel: number
@@ -135,6 +138,7 @@ export class SM2Service {
     return urgencyScore + masteryScore + intervalScore;
   }
 
+  /** @deprecated Use taskRecommendationService for task ordering instead. */
   static sortReviewTasksByPriority(
     reviewTasks: ReviewTaskData[],
     masteryLevels: Record<string, number>
@@ -146,6 +150,7 @@ export class SM2Service {
     });
   }
 
+  /** @deprecated Use study_cards.fsrs_stability for memory strength estimation instead. */
   static estimateMasteryLevel(
     easeFactor: number,
     repetitions: number,
@@ -159,6 +164,7 @@ export class SM2Service {
     return Math.round(mastery * 100) / 100;
   }
 
+  /** @deprecated FSRS algorithm handles review scheduling automatically. */
   static suggestReviewTime(quality: number): string {
     if (quality < 2) {
       return '建议立即重新学习该知识点';
@@ -170,5 +176,5 @@ export class SM2Service {
   }
 }
 
-/** @deprecated 使用 studyService (FSRS) 替代 */
+/** @deprecated Use studyService (FSRS) instead. See api/services/study/studyService.ts. */
 export const sm2Service = SM2Service;

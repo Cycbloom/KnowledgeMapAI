@@ -50,7 +50,7 @@ export interface ReviewStats {
   averageMoodScore: number;
 }
 
-export const reviewApi = {
+export const taskReviewApi = {
   async createReview(data: CreateReviewData): Promise<TaskReview> {
     return request('/scheduler/reviews', {
       method: 'POST',

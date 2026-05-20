@@ -15,6 +15,27 @@ import { logger } from "../utils/logger";
 
 const router = Router();
 
+router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
+  const { graph_id } = req.query;
+
+  try {
+    const stats = await studyService.getStudyStats(
+      req.supabase!,
+      req.user.id,
+      graph_id as string | undefined,
+    );
+
+    res.json(stats);
+  } catch (error: any) {
+    logger.error("Error fetching study stats:", error);
+    throw new AppError(
+      error.message || "获取学习统计失败",
+      500,
+      ErrorCodes.INTERNAL_ERROR,
+    );
+  }
+});
+
 /**
  * @openapi
  * /study/cards:
@@ -57,8 +78,6 @@ router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
     graph_id,
     knowledge_point_id,
     knowledge_point_ids,
-    node_id,
-    node_ids,
     due,
     refresh,
   } = req.query;
@@ -71,11 +90,9 @@ router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
   let knowledgePointIdList: string[] | undefined;
   if (knowledge_point_ids) {
     knowledgePointIdList = (knowledge_point_ids as string).split(",");
-  } else if (node_ids) {
-    knowledgePointIdList = (node_ids as string).split(",");
   }
 
-  const kpId = (knowledge_point_id || node_id) as string | undefined;
+  const kpId = knowledge_point_id as string | undefined;
 
   try {
     const cards = await studyService.getCards(req.supabase!, {

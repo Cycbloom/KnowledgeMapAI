@@ -8,6 +8,7 @@ import type { QuizSet, QuizSetConfig } from "../../../shared/types/quiz";
 import { subtaskStateMachine } from "./subtaskStateMachine";
 import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
 import { aiService, type CardDifficulty } from "../ai/index";
+import { studyService } from "../study/studyService";
 
 export interface PracticeSession {
   id: string;
@@ -346,7 +347,7 @@ export class SubtaskQuizIntegrationService {
       newMastery,
     );
 
-    await this.updateCardReviewStats(supabase, results);
+    await this.updateCardReviewStats(supabase, results, subtask.user_id);
 
     logger.info("Practice completed", {
       subtaskId,
@@ -574,6 +575,7 @@ export class SubtaskQuizIntegrationService {
         correct: r.correct,
         time_spent: r.time_spent,
       })),
+      subtask.user_id,
     );
 
     logger.info("Quiz completed", {
@@ -644,7 +646,7 @@ export class SubtaskQuizIntegrationService {
           question: card.question,
           answer: card.answer,
           explanation: card.explanation,
-          card_type: card.type || "qa",
+          card_type: card.type ?? "qa",
           difficulty: 1,
           options: card.options ? JSON.stringify(card.options) : null,
           next_review: new Date().toISOString(),
@@ -1020,25 +1022,23 @@ export class SubtaskQuizIntegrationService {
   private async updateCardReviewStats(
     supabase: SupabaseClient,
     results: Array<{ card_id: string; correct: boolean; time_spent: number }>,
+    userId: string,
   ): Promise<void> {
-    const now = new Date().toISOString();
-
     for (const result of results) {
-      const { data: card } = await supabase
-        .from("study_cards")
-        .select("review_count")
-        .eq("id", result.card_id)
-        .single();
-
-      const newReviewCount = (card?.review_count ?? 0) + 1;
-
-      await supabase
-        .from("study_cards")
-        .update({
-          last_reviewed: now,
-          review_count: newReviewCount,
-        })
-        .eq("id", result.card_id);
+      try {
+        const quality = result.correct ? 3 : 1;
+        await studyService.updateProgress(
+          supabase,
+          result.card_id,
+          quality,
+          userId,
+        );
+      } catch (error) {
+        logger.error("Failed to update card FSRS progress", {
+          cardId: result.card_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
   }
 

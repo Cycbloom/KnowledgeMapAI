@@ -5,7 +5,7 @@ import {
   BarChart3, Brain, Lightbulb,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { reviewApi, TaskReview, Mood } from '../../services/api/review';
+import { taskReviewApi, TaskReview, Mood } from '../../services/api/review';
 import { api } from '../../services/api';
 import type {UserTaskStats} from '@shared/types';
 
@@ -68,12 +68,12 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
       const [stats, _tasks, reviews, existingReview] = await Promise.all([
         api.scheduler.getStats('week'),
         api.scheduler.getTasks({ status: 'completed' }),
-        reviewApi.getReviews({ 
+        taskReviewApi.getReviews({ 
           review_type: 'daily',
           from_date: weekRange.start,
           to_date: weekRange.end,
         }),
-        reviewApi.getWeeklyReview(weekRange.start),
+        taskReviewApi.getWeeklyReview(weekRange.start),
       ]);
 
       setWeekStats(stats);
@@ -110,9 +110,9 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
 
       let review: TaskReview;
       if (existingReview) {
-        review = await reviewApi.updateReview(existingReview.id, reviewData);
+        review = await taskReviewApi.updateReview(existingReview.id, reviewData);
       } else {
-        review = await reviewApi.createReview(reviewData);
+        review = await taskReviewApi.createReview(reviewData);
       }
 
       setExistingReview(review);

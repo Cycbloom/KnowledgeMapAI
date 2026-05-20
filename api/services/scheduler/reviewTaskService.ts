@@ -1,13 +1,12 @@
 /**
- * 复习任务服务
- * 
- * **算法迁移通知**: 默认算法已从 SM2 切换为 FSRS (ts-fsrs)。
- * 新复习任务默认写入 study_cards 表 (FSRS)，不再写入 knowledge_review_tasks (SM2)。
- * 遗留的 SM2 方法保留向后兼容。
+ * 复习任务服务 (FSRS)
+ *
+ * 所有复习任务统一使用 FSRS 算法，数据存储在 study_cards 表。
+ * 旧的 knowledge_review_tasks (SM2) 已废弃。
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
-import { sm2Service, SM2Result } from "./sm2Service";
+import { studyService } from "../study/studyService";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
@@ -47,9 +46,9 @@ export interface ReviewTaskStats {
   today: number;
   upcoming: number;
   future: number;
-  averageEaseFactor: number;
-  averageInterval: number;
-  averageRepetitions: number;
+  averageStability: number;
+  averageDifficulty: number;
+  averageRetrievability: number;
 }
 
 export interface PendingReviewTask extends ReviewTask {
@@ -68,7 +67,7 @@ export class ReviewTaskService {
       .select("id")
       .eq("user_id", userId)
       .eq("knowledge_point_id", data.knowledge_point_id)
-      .eq("card_type", "review")
+      .eq("card_type", "qa")
       .maybeSingle();
 
     if (checkError) {
@@ -83,38 +82,22 @@ export class ReviewTaskService {
       });
     }
 
-    const { data: existingSM2, error: sm2CheckError } = await client
-      .from("knowledge_review_tasks")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("knowledge_point_id", data.knowledge_point_id)
-      .maybeSingle();
-
-    if (!sm2CheckError && existingSM2) {
-      throw new AppError(ErrorCodes.DATABASE_DUPLICATE_ENTRY, {
-        details: { message: "该知识点已存在复习任务 (SM2)。请联系管理员迁移到 FSRS。" },
-      });
-    }
-
     const { data: reviewTask, error } = await client
       .from("study_cards")
       .insert({
         user_id: userId,
         knowledge_point_id: data.knowledge_point_id,
         graph_id: null,
-        card_type: "review",
-        front_text: "",
-        back_text: "",
+        card_type: "qa",
+        question: "",
+        answer: "",
         next_review: new Date().toISOString(),
-        last_review: null,
         fsrs_state: "New",
         fsrs_stability: 0,
         fsrs_difficulty: 0,
         fsrs_elapsed_days: 0,
         fsrs_scheduled_days: 0,
-        fsrs_reps: 0,
-        fsrs_lapses: 0,
-        fsrs_last_review: null,
+        fsrs_retrievability: 0,
       })
       .select()
       .single();
@@ -132,22 +115,7 @@ export class ReviewTaskService {
       algorithm: "fsrs",
     });
 
-    return {
-      id: reviewTask.id,
-      user_id: reviewTask.user_id,
-      knowledge_point_id: reviewTask.knowledge_point_id,
-      task_id: data.task_id,
-      algorithm: "fsrs",
-      fsrs_stability: reviewTask.fsrs_stability,
-      fsrs_difficulty: reviewTask.fsrs_difficulty,
-      fsrs_state: reviewTask.fsrs_state,
-      fsrs_retrievability: 1,
-      next_review_date: reviewTask.next_review,
-      last_review_date: reviewTask.last_review,
-      last_quality_score: null,
-      created_at: reviewTask.created_at,
-      updated_at: reviewTask.updated_at,
-    } as ReviewTask;
+    return this.cardToReviewTask(reviewTask, userId);
   }
 
   async updateReviewTask(
@@ -156,8 +124,8 @@ export class ReviewTaskService {
     knowledgePointId: string,
     data: UpdateReviewTaskData,
   ): Promise<ReviewTask> {
-    const { data: existingTask, error: fetchError } = await client
-      .from("knowledge_review_tasks")
+    const { data: card, error: fetchError } = await client
+      .from("study_cards")
       .select("*")
       .eq("user_id", userId)
       .eq("knowledge_point_id", knowledgePointId)
@@ -174,44 +142,21 @@ export class ReviewTaskService {
       });
     }
 
-    const sm2Result: SM2Result = sm2Service.calculateNextReview({
-      quality: data.quality,
-      interval: existingTask.interval_days,
-      easeFactor: existingTask.ease_factor,
-      repetitions: existingTask.repetitions,
-    });
+    const result = await studyService.updateProgress(
+      client,
+      card.id,
+      data.quality,
+      userId,
+    );
 
-    const { data: updatedTask, error: updateError } = await client
-      .from("knowledge_review_tasks")
-      .update({
-        interval_days: sm2Result.interval,
-        ease_factor: sm2Result.easeFactor,
-        repetitions: sm2Result.repetitions,
-        next_review_date: sm2Result.nextReviewDate.toISOString(),
-        last_review_date: new Date().toISOString(),
-        last_quality_score: data.quality,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existingTask.id)
-      .eq("user_id", userId)
-      .select()
-      .single();
-
-    if (updateError) {
-      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
-        details: { originalError: updateError.message },
-      });
-    }
-
-    logger.info("Review task updated", {
+    logger.info("Review task updated via FSRS", {
       userId,
       knowledgePointId,
       quality: data.quality,
-      newInterval: sm2Result.interval,
-      newEaseFactor: sm2Result.easeFactor,
+      newState: result.card.fsrs_state,
     });
 
-    return updatedTask as ReviewTask;
+    return this.cardToReviewTask(result.card, userId);
   }
 
   async getPendingReviewTasks(
@@ -219,17 +164,19 @@ export class ReviewTaskService {
     userId: string,
     limit?: number,
   ): Promise<PendingReviewTask[]> {
+    const now = new Date().toISOString();
     let query = client
-      .from("knowledge_review_tasks")
+      .from("study_cards")
       .select("*")
       .eq("user_id", userId)
-      .order("next_review_date", { ascending: true });
+      .lte("next_review", now)
+      .order("next_review", { ascending: true });
 
     if (limit) {
       query = query.limit(limit);
     }
 
-    const { data: tasks, error } = await query;
+    const { data: cards, error } = await query;
 
     if (error) {
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, {
@@ -237,32 +184,18 @@ export class ReviewTaskService {
       });
     }
 
-    const pendingTasks: PendingReviewTask[] = (tasks as ReviewTask[]).map(
-      (task) => {
-        const urgency = sm2Service.calculateUrgency({
-          id: task.id,
-          knowledge_point_id: task.knowledge_point_id,
-          interval_days: task.interval_days ?? 0,
-          ease_factor: task.ease_factor ?? 2.5,
-          repetitions: task.repetitions ?? 0,
-          next_review_date: task.next_review_date,
-          last_review_date: task.last_review_date ?? undefined,
-          last_quality_score: task.last_quality_score ?? undefined,
-        });
+    const pendingTasks: PendingReviewTask[] = (cards ?? []).map((card: any) => {
+      const urgency = this.calculateUrgency(card.next_review);
+      const masteryLevel = card.fsrs_stability
+        ? Math.min(1, card.fsrs_stability / 30)
+        : 0;
 
-        const masteryLevel = sm2Service.estimateMasteryLevel(
-          task.ease_factor ?? 2.5,
-          task.repetitions ?? 0,
-          task.interval_days ?? 0,
-        );
-
-        return {
-          ...task,
-          urgency,
-          masteryLevel,
-        };
-      },
-    );
+      return {
+        ...this.cardToReviewTask(card, userId),
+        urgency,
+        masteryLevel,
+      };
+    });
 
     return pendingTasks;
   }
@@ -271,8 +204,8 @@ export class ReviewTaskService {
     client: SupabaseClient,
     userId: string,
   ): Promise<ReviewTaskStats> {
-    const { data: tasks, error } = await client
-      .from("knowledge_review_tasks")
+    const { data: cards, error } = await client
+      .from("study_cards")
       .select("*")
       .eq("user_id", userId);
 
@@ -282,18 +215,16 @@ export class ReviewTaskService {
       });
     }
 
-    const reviewTasks = tasks as ReviewTask[];
-
-    if (reviewTasks.length === 0) {
+    if (!cards || cards.length === 0) {
       return {
         total: 0,
         overdue: 0,
         today: 0,
         upcoming: 0,
         future: 0,
-        averageEaseFactor: 0,
-        averageInterval: 0,
-        averageRepetitions: 0,
+        averageStability: 0,
+        averageDifficulty: 0,
+        averageRetrievability: 0,
       };
     }
 
@@ -301,53 +232,33 @@ export class ReviewTaskService {
     let today = 0;
     let upcoming = 0;
     let future = 0;
-    let totalEaseFactor = 0;
-    let totalInterval = 0;
-    let totalRepetitions = 0;
+    let totalStability = 0;
+    let totalDifficulty = 0;
+    let totalRetrievability = 0;
 
-    for (const task of reviewTasks) {
-      const urgency = sm2Service.calculateUrgency({
-        id: task.id,
-        knowledge_point_id: task.knowledge_point_id,
-        interval_days: task.interval_days ?? 0,
-        ease_factor: task.ease_factor ?? 2.5,
-        repetitions: task.repetitions ?? 0,
-        next_review_date: task.next_review_date,
-        last_review_date: task.last_review_date ?? undefined,
-        last_quality_score: task.last_quality_score ?? undefined,
-      });
-
+    for (const card of cards) {
+      const urgency = this.calculateUrgency(card.next_review);
       switch (urgency) {
-        case "overdue":
-          overdue++;
-          break;
-        case "today":
-          today++;
-          break;
-        case "upcoming":
-          upcoming++;
-          break;
-        case "future":
-          future++;
-          break;
+        case "overdue": overdue++; break;
+        case "today": today++; break;
+        case "upcoming": upcoming++; break;
+        case "future": future++; break;
       }
-
-      totalEaseFactor += task.ease_factor ?? 2.5;
-      totalInterval += task.interval_days ?? 0;
-      totalRepetitions += task.repetitions ?? 0;
+      totalStability += card.fsrs_stability ?? 0;
+      totalDifficulty += card.fsrs_difficulty ?? 0;
+      totalRetrievability += card.fsrs_retrievability ?? 0;
     }
 
-    const count = reviewTasks.length;
-
+    const count = cards.length;
     return {
       total: count,
       overdue,
       today,
       upcoming,
       future,
-      averageEaseFactor: Math.round((totalEaseFactor / count) * 100) / 100,
-      averageInterval: Math.round((totalInterval / count) * 100) / 100,
-      averageRepetitions: Math.round((totalRepetitions / count) * 100) / 100,
+      averageStability: Math.round((totalStability / count) * 100) / 100,
+      averageDifficulty: Math.round((totalDifficulty / count) * 100) / 100,
+      averageRetrievability: Math.round((totalRetrievability / count) * 100) / 100,
     };
   }
 
@@ -357,7 +268,7 @@ export class ReviewTaskService {
     knowledgePointId: string,
   ): Promise<ReviewTask | null> {
     const { data, error } = await client
-      .from("knowledge_review_tasks")
+      .from("study_cards")
       .select("*")
       .eq("user_id", userId)
       .eq("knowledge_point_id", knowledgePointId)
@@ -372,7 +283,7 @@ export class ReviewTaskService {
       });
     }
 
-    return data as ReviewTask;
+    return this.cardToReviewTask(data, userId);
   }
 
   async deleteReviewTask(
@@ -381,7 +292,7 @@ export class ReviewTaskService {
     knowledgePointId: string,
   ): Promise<void> {
     const { error } = await client
-      .from("knowledge_review_tasks")
+      .from("study_cards")
       .delete()
       .eq("user_id", userId)
       .eq("knowledge_point_id", knowledgePointId);
@@ -392,10 +303,44 @@ export class ReviewTaskService {
       });
     }
 
-    logger.info("Review task deleted", {
+    logger.info("Review card deleted", {
       userId,
       knowledgePointId,
     });
+  }
+
+  private calculateUrgency(nextReview: string): "overdue" | "today" | "upcoming" | "future" {
+    const now = new Date();
+    const nextDate = new Date(nextReview);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    if (nextDate <= now) return "overdue";
+    if (nextDate <= todayEnd) return "today";
+
+    const nextWeek = new Date(now);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    if (nextDate <= nextWeek) return "upcoming";
+    return "future";
+  }
+
+  private cardToReviewTask(card: any, userId: string): ReviewTask {
+    return {
+      id: card.id,
+      user_id: userId,
+      knowledge_point_id: card.knowledge_point_id,
+      task_id: "",
+      algorithm: "fsrs",
+      fsrs_stability: card.fsrs_stability,
+      fsrs_difficulty: card.fsrs_difficulty,
+      fsrs_state: card.fsrs_state,
+      fsrs_retrievability: card.fsrs_retrievability,
+      next_review_date: card.next_review,
+      last_review_date: card.last_reviewed ?? null,
+      last_quality_score: null,
+      created_at: card.created_at,
+      updated_at: card.created_at,
+    };
   }
 }
 

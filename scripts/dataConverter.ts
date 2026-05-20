@@ -347,7 +347,7 @@ export function convertStudyCardToExport(card: any): ExportedStudyCard {
     last_reviewed: card.last_reviewed || null,
     next_review: card.next_review || new Date().toISOString(),
     review_count: card.review_count || 0,
-    fsrs_state: card.fsrs_state || 0,
+    fsrs_state: card.fsrs_state || "New",
     fsrs_stability: card.fsrs_stability || 0,
     fsrs_difficulty: card.fsrs_difficulty || 0,
     fsrs_elapsed_days: card.fsrs_elapsed_days || 0,

@@ -121,7 +121,7 @@ export class StudyProgressService {
 
     const masteredKnowledgePoints = new Set(
       cards
-        ?.filter(c => c.fsrs_state === 2)
+        ?.filter(c => c.fsrs_state === "Review")
         .map(c => c.knowledge_point_id) || []
     );
 

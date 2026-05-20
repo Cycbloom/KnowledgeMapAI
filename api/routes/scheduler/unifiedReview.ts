@@ -32,7 +32,7 @@ router.post(
     }
 
     const { id } = req.params;
-    const { knowledge_point_id, quality_score, algorithm } = req.body;
+    const { knowledge_point_id, quality_score } = req.body;
 
     const result = await spacedRepetitionBridge.processReviewCompletion(
       supabase,
@@ -40,7 +40,6 @@ router.post(
       id,
       knowledge_point_id,
       quality_score,
-      algorithm,
     );
 
     if (!result) {

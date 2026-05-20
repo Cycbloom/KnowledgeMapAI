@@ -15,7 +15,6 @@ export {
   knowledgePointsApi,
   graphNodesApi,
   combinedViewApi,
-  publicKnowledgePointsApi,
 } from "./knowledgePoints";
 export { aiApi, aiActionsApi } from "./ai";
 export { ttsApi } from "./tts";

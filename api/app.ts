@@ -227,13 +227,6 @@ app.use("/api/graphs/:graphId/regions", regionRoutes);
 
 applyKernelRoutes(app, kernel);
 
-app.get("/api/health", (_req: Request, res: Response): void => {
-  res.status(200).json({
-    success: true,
-    message: "ok",
-  });
-});
-
 startAutoBackupScheduler();
 syncExistingBackups();
 graphTaskEventHandler.initialize();

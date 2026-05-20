@@ -88,14 +88,6 @@ function getChunkStrategy(id: string): string | undefined {
 }
 
 const isElectronBuild = process.env.ELECTRON_BUILD === "true";
-const isMobileBuild = process.env.MOBILE_BUILD === "true";
-
-function getBasePath(): string {
-  if (isElectronBuild || isMobileBuild) {
-    return "./";
-  }
-  return "/";
-}
 
 export default defineConfig({
   base: "./",

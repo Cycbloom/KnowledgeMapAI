@@ -1,5 +1,5 @@
 import { logger } from "../../../utils/logger";
-import { schedulerEventBus } from "./eventBus";
+import { appEventBus } from "../../core/eventBus";
 import type {
   UserTaskStatus,
   TaskStartedPayload,
@@ -304,7 +304,7 @@ class TaskStateMachine {
           task,
           sideEffectResult,
         );
-        await schedulerEventBus.publish(
+        await appEventBus.publish(
           transitionConfig.eventType as any,
           payload,
           userId,

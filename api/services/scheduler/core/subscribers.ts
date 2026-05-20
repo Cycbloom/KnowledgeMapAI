@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../../utils/logger";
-import { schedulerEventBus } from "./eventBus";
+import { appEventBus } from "../../core/eventBus";
 import type {
   SchedulerEvent,
   TaskCompletedPayload,
@@ -16,7 +16,7 @@ class SchedulerSubscribers {
   initialize(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient;
     this.boundOnTaskCompleted = this.onTaskCompleted.bind(this);
-    schedulerEventBus.subscribe("task_completed", this.boundOnTaskCompleted);
+    appEventBus.subscribe("task_completed", this.boundOnTaskCompleted);
 
     achievementSubscriber.initialize();
     learningProgressSubscriber.initialize();
@@ -27,7 +27,7 @@ class SchedulerSubscribers {
 
   destroy() {
     if (this.boundOnTaskCompleted) {
-      schedulerEventBus.unsubscribe("task_completed", this.boundOnTaskCompleted);
+      appEventBus.unsubscribe("task_completed", this.boundOnTaskCompleted);
     }
     this.boundOnTaskCompleted = null;
 

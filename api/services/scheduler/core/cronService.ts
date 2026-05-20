@@ -1,7 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "../../../supabase";
 import { logger } from "../../../utils/logger";
-import { schedulerEventBus } from "./eventBus";
 import { appEventBus } from "../../core/eventBus";
 import type { ScheduleExecutedPayload } from "../../../../shared/types/scheduler";
 import type { NotificationNeededPayload } from "../../../../shared/types/events";
@@ -107,7 +106,7 @@ class SchedulerCronService {
       try {
         const taskCreated = await this.executeSchedule(getSupabaseAdmin(), schedule);
 
-        await schedulerEventBus.publish<ScheduleExecutedPayload>(
+        await appEventBus.publish<ScheduleExecutedPayload>(
           "schedule_executed",
           {
             scheduleId: schedule.id,

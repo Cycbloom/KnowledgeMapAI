@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
-import { schedulerEventBus } from "../scheduler/core/eventBus";
+import { appEventBus } from "../core/eventBus";
 import type { ReviewCompletedPayload } from "../../../shared/types/scheduler";
 
 /**
@@ -97,7 +97,7 @@ class SpacedRepetitionBridge {
       const result = await this.processFSRSReview(supabase, userId, reviewId, qualityScore);
 
       if (result) {
-        await schedulerEventBus.publish<ReviewCompletedPayload>(
+        await appEventBus.publish<ReviewCompletedPayload>(
           "review_completed",
           {
             reviewTaskId: reviewId,

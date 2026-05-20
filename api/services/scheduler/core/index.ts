@@ -1,4 +1,4 @@
-export { schedulerEventBus, SchedulerEventBus } from "./eventBus";
+export { appEventBus as schedulerEventBus, AppEventBus as SchedulerEventBus } from "../../core/eventBus";
 export { taskStateMachine, TaskStateMachine } from "./stateMachine";
 export { schedulerSubscribers, SchedulerSubscribers } from "./subscribers";
 export { schedulerCronService, SchedulerCronService } from "./cronService";

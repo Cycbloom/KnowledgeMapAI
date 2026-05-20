@@ -24,4 +24,4 @@ export type {
   DistributionItem,
   DashboardStats,
 } from "./dashboardService";
-export { searchService } from "../ai/searchService";
+

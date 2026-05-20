@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useStore } from "../store/useStore";
-import { queryKeys } from "../hooks/queries/queryConfig";
+import { queryKeys } from "../hooks/queries/config";
 import { useIsMobile } from "../hooks/common/useIsMobile";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { domainsApi, graphDomainsApi } from "../services/api/domains";

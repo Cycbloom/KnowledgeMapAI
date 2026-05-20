@@ -3,7 +3,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { LearningState } from "../../../shared/types/scheduler";
-import { schedulerEventBus } from "./core/eventBus";
+import { appEventBus } from "../core/eventBus";
 
 export interface SyncResult {
   success: boolean;
@@ -379,7 +379,7 @@ export class SubtaskKnowledgeSyncService {
 
     const taskData = task as { id: string; user_id: string; title: string };
 
-    await schedulerEventBus.publish(
+    await appEventBus.publish(
       "notification_needed",
       {
         userId: taskData.user_id,
@@ -616,7 +616,7 @@ export class SubtaskKnowledgeSyncService {
         .single();
 
       if (task?.user_id) {
-        await schedulerEventBus.publish(
+        await appEventBus.publish(
           "learning_progress_updated",
           {
             knowledgePointId,

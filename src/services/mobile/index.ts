@@ -18,7 +18,6 @@ export { mobileAuthApi } from "./auth";
 export { mobileGraphsApi } from "./graphs";
 export { mobileNodesApi } from "./nodes";
 export { mobileEdgesApi } from "./edges";
-export { mobileRealtimeApi } from "./realtime";
 export { mobileAiApi } from "./ai";
 export {
   mobileStudyApi,

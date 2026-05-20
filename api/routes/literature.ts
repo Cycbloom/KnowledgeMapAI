@@ -653,6 +653,69 @@ router.post(
         addedAt: new Date().toISOString(),
       };
 
+      // Save complete literature metadata to literature_sources table
+      try {
+        const { data: existingLiterature, error: litError } = await supabase
+          .from("literature_sources")
+          .select("id")
+          .eq("graph_id", graph_id)
+          .eq("title", literature.title)
+          .maybeSingle();
+
+        if (litError) {
+          logger.warn("Failed to check existing literature source:", litError.message);
+        }
+
+        if (!existingLiterature) {
+          const { error: insertLitError } = await supabase
+            .from("literature_sources")
+            .insert({
+              graph_id: graph_id,
+              title: literature.title,
+              authors: literature.authors,
+              year: literature.year,
+              type: literature.type || "document",
+              journal: (literature as any).journal,
+              doi: (literature as any).doi,
+              url: literature.url,
+              file_name: literature.fileName,
+              keywords: (literature as any).keywords,
+              abstract: (literature as any).abstract,
+              volume: (literature as any).volume,
+              issue: (literature as any).issue,
+              pages: (literature as any).pages,
+              publisher: (literature as any).publisher,
+              notes: (literature as any).notes,
+            });
+
+          if (insertLitError) {
+            logger.warn("Failed to save literature source:", insertLitError.message);
+          } else {
+            logger.info("Literature source saved successfully", {
+              title: literature.title,
+              type: literature.type,
+            });
+          }
+        } else {
+          // Update existing record with additional metadata if missing
+          const existingData = existingLiterature as Record<string, any>;
+          const updateData: Record<string, any> = {};
+          if (!existingData.journal && (literature as any).journal) updateData.journal = (literature as any).journal;
+          if (!existingData.doi && (literature as any).doi) updateData.doi = (literature as any).doi;
+          if (!existingData.keywords?.length && (literature as any).keywords?.length) updateData.keywords = (literature as any).keywords;
+          if (!existingData.abstract && (literature as any).abstract) updateData.abstract = (literature as any).abstract;
+
+          if (Object.keys(updateData).length > 0) {
+            await supabase
+              .from("literature_sources")
+              .update(updateData)
+              .eq("id", existingLiterature.id);
+          }
+        }
+      } catch (litSaveError) {
+        logger.warn("Exception while saving literature source:", litSaveError);
+      }
+
       let titleDedupCount = 0;
       const remainingConcepts: (ExtractedConcept & {
         originalIndex: number;

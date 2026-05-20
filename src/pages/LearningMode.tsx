@@ -1579,6 +1579,7 @@ export const LearningMode = () => {
                 onBatchAction={handleBatchAction}
                 onAddNode={() => setIsCreateNodeModalOpen(true)}
                 templateType={graphMeta?.template_type}
+                graphId={graphId ?? undefined}
                 className="h-full border-none"
               />
             ) : (

@@ -27,11 +27,14 @@ import {
   Palette,
 } from "lucide-react";
 import { Node, Edge } from "../../../types";
+import { createClient } from "@supabase/supabase-js";
+import { LiteratureSourceDB } from "@shared/types/graph";
 import { BatchGenerateDialog } from "../modals/BatchGenerateDialog";
 import { GraphStatsSummary } from "../shared/GraphStatsSummary";
 import { getLevelColors } from "../../../config/learningStatusColors";
 import { useTranslation } from "react-i18next";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
+import { LiteratureHoverCard } from "../LiteratureHoverCard";
 import {
   BackboneModule,
   BACKBONE_MODULE_LABELS,
@@ -41,10 +44,10 @@ import {
 } from "@shared/types/graph";
 
 const HIERARCHICAL_EDGE_TYPES = new Set([
-  'contains',
-  'parent_child',
-  'part_of',
-  'derived_from',
+  "contains",
+  "parent_child",
+  "part_of",
+  "derived_from",
 ]);
 
 interface GraphOutlineProps {
@@ -72,6 +75,7 @@ interface GraphOutlineProps {
   };
   isReadOnly?: boolean;
   templateType?: string;
+  graphId?: string;
 }
 
 export const GraphOutline: React.FC<GraphOutlineProps> = ({
@@ -88,6 +92,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   stats,
   isReadOnly = false,
   templateType,
+  graphId,
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,6 +102,46 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [isBatchGenerateOpen, setIsBatchGenerateOpen] = useState(false);
   const [showConnectionDiscovery, setShowConnectionDiscovery] = useState(false);
+  const [literatureSourcesMap, setLiteratureSourcesMap] = useState<
+    Map<string, LiteratureSourceDB>
+  >(new Map());
+
+  useEffect(() => {
+    if (!graphId || templateType !== "topic_research") return;
+
+    const fetchLiteratureSources = async () => {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseAnonKey) return;
+
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+        const { data, error } = await supabase
+          .from("literature_sources")
+          .select("*")
+          .eq("graph_id", graphId);
+
+        if (error) {
+          console.error("Failed to fetch literature sources:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const map = new Map<string, LiteratureSourceDB>();
+          data.forEach((source) => {
+            map.set(source.title, source as LiteratureSourceDB);
+          });
+          setLiteratureSourcesMap(map);
+        }
+      } catch (err) {
+        console.error("Error fetching literature sources:", err);
+      }
+    };
+
+    fetchLiteratureSources();
+  }, [graphId, templateType]);
 
   const [viewMode, setViewMode] = useState<
     "tree" | "list" | "module" | "literature"
@@ -508,6 +553,25 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     new Set(),
   );
 
+  const [hoveredLiterature, setHoveredLiterature] = useState<{
+    key: string;
+    title: string;
+    authors?: string[];
+    year?: number;
+    url?: string;
+    fileName?: string;
+    type?: string;
+    journal?: string;
+    doi?: string;
+    keywords?: string[];
+    abstract?: string;
+    nodes: Node[];
+  } | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   const moduleGroups = useMemo(() => {
     if (templateType !== "topic_research") return [];
 
@@ -547,7 +611,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     }
 
     return groups;
-  }, [nodes, templateType]);
+  }, [nodes, templateType, literatureSourcesMap]);
 
   const literatureGroups = useMemo(() => {
     if (templateType !== "topic_research") return [];
@@ -559,6 +623,13 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         title: string;
         authors?: string[];
         year?: number;
+        url?: string;
+        fileName?: string;
+        type?: string;
+        journal?: string;
+        doi?: string;
+        keywords?: string[];
+        abstract?: string;
         nodes: Node[];
       }
     >();
@@ -571,11 +642,21 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       for (const source of sources) {
         const key = source.title;
         if (!literatureMap.has(key)) {
+          // Get full metadata from literature_sources table if available
+          const fullSource = literatureSourcesMap.get(key);
+
           literatureMap.set(key, {
             key,
             title: source.title,
-            authors: source.authors,
-            year: source.year,
+            authors: fullSource?.authors || source.authors,
+            year: fullSource?.year || source.year,
+            url: fullSource?.url || source.url,
+            fileName: fullSource?.fileName || source.fileName,
+            type: fullSource?.type,
+            journal: fullSource?.journal,
+            doi: fullSource?.doi,
+            keywords: fullSource?.keywords,
+            abstract: fullSource?.abstract,
             nodes: [],
           });
         }
@@ -760,113 +841,156 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       );
     }
 
-    return literatureGroups.map((group) => {
-      const isExpanded = expandedLiteratures.has(group.key);
-      const isUncategorized = group.key === "__uncategorized__";
+    return (
+      <div className="relative">
+        {literatureGroups.map((group) => {
+          const isExpanded = expandedLiteratures.has(group.key);
+          const isUncategorized = group.key === "__uncategorized__";
 
-      return (
-        <div key={group.key} className="mb-1">
-          <div
-            className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors ${
-              isUncategorized
-                ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600"
-                : "hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-            style={{
-              borderLeft: isUncategorized
-                ? "3px solid var(--slate-400)"
-                : "3px solid var(--tertiary-500)",
-            }}
-            onClick={() => toggleLiteratureExpand(group.key)}
-          >
-            {isUncategorized ? (
-              <FolderOpen size={14} className="text-slate-400" />
-            ) : (
-              <FileText size={14} className="text-purple-500" />
-            )}
-            <div className="flex-1 min-w-0">
-              <span
-                className={`text-sm truncate block ${
+          return (
+            <div key={group.key} className="mb-1">
+              <div
+                className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors relative group/literature ${
                   isUncategorized
-                    ? "font-normal text-slate-500 dark:text-slate-400"
-                    : "font-medium text-slate-700 dark:text-slate-300"
+                    ? "hover:bg-slate-50 dark:hover:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600"
+                    : "hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
+                style={{
+                  borderLeft: isUncategorized
+                    ? "3px solid var(--slate-400)"
+                    : "3px solid var(--tertiary-500)",
+                }}
+                onClick={() => toggleLiteratureExpand(group.key)}
+                onMouseEnter={(e) => {
+                  if (!isUncategorized) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setHoveredLiterature({
+                      key: group.key,
+                      title: group.title,
+                      authors: group.authors,
+                      year: group.year,
+                      url: group.url,
+                      fileName: group.fileName,
+                      type: group.type,
+                      journal: group.journal,
+                      doi: group.doi,
+                      keywords: group.keywords,
+                      abstract: group.abstract,
+                      nodes: group.nodes,
+                    });
+                    setHoverPosition({ x: rect.right, y: rect.top });
+                  }
+                }}
+                onMouseLeave={() => {
+                  setHoveredLiterature(null);
+                  setHoverPosition(null);
+                }}
               >
-                {group.title}
-              </span>
-              {isUncategorized ? (
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 italic block">
-                  无来源信息的概念节点
-                </span>
-              ) : (
-                group.authors &&
-                group.authors.length > 0 && (
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate block">
-                    {group.authors.join(", ")}
-                    {group.year ? ` (${group.year})` : ""}
+                {isUncategorized ? (
+                  <FolderOpen size={14} className="text-slate-400" />
+                ) : (
+                  <FileText size={14} className="text-purple-500" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <span
+                    className={`text-sm truncate block ${
+                      isUncategorized
+                        ? "font-normal text-slate-500 dark:text-slate-400"
+                        : "font-medium text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {group.title}
                   </span>
-                )
+                  {isUncategorized ? (
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 italic block">
+                      无来源信息的概念节点
+                    </span>
+                  ) : (
+                    group.authors &&
+                    group.authors.length > 0 && (
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate block">
+                        {group.authors.join(", ")}
+                        {group.year ? ` (${group.year})` : ""}
+                      </span>
+                    )
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                    isUncategorized
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {group.nodes.length}
+                </span>
+                {isExpanded ? (
+                  <ChevronDown
+                    size={14}
+                    className="text-slate-400 flex-shrink-0"
+                  />
+                ) : (
+                  <ChevronRight
+                    size={14}
+                    className="text-slate-400 flex-shrink-0"
+                  />
+                )}
+              </div>
+              {isExpanded && (
+                <div className="ml-2 mt-0.5 space-y-0.5">
+                  {group.nodes.map((node) => {
+                    const backboneModule = node.properties?.backboneModule as
+                      | BackboneModule
+                      | undefined;
+
+                    return (
+                      <div
+                        key={node.id}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
+                          selectedNodeId === node.id
+                            ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNodeClick(node);
+                        }}
+                      >
+                        <div
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{
+                            backgroundColor: getLevelColors(
+                              node.level || "leaf",
+                            ).primary,
+                          }}
+                        />
+                        {backboneModule && (
+                          <BackboneNodeIcon
+                            module={backboneModule}
+                            size="small"
+                          />
+                        )}
+                        <span className="text-sm truncate flex-1">
+                          {node.title}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-            <span
-              className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                isUncategorized
-                  ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              {group.nodes.length}
-            </span>
-            {isExpanded ? (
-              <ChevronDown size={14} className="text-slate-400 flex-shrink-0" />
-            ) : (
-              <ChevronRight
-                size={14}
-                className="text-slate-400 flex-shrink-0"
-              />
-            )}
-          </div>
-          {isExpanded && (
-            <div className="ml-2 mt-0.5 space-y-0.5">
-              {group.nodes.map((node) => {
-                const backboneModule = node.properties?.backboneModule as
-                  | BackboneModule
-                  | undefined;
+          );
+        })}
 
-                return (
-                  <div
-                    key={node.id}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
-                      selectedNodeId === node.id
-                        ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
-                        : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNodeClick(node);
-                    }}
-                  >
-                    <div
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{
-                        backgroundColor: getLevelColors(node.level || "leaf")
-                          .primary,
-                      }}
-                    />
-                    {backboneModule && (
-                      <BackboneNodeIcon module={backboneModule} size="small" />
-                    )}
-                    <span className="text-sm truncate flex-1">
-                      {node.title}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    });
+        {hoveredLiterature && hoverPosition && (
+          <LiteratureHoverCard
+            literature={hoveredLiterature}
+            position={hoverPosition}
+            onNodeClick={onNodeClick}
+          />
+        )}
+      </div>
+    );
   };
 
   const renderList = () => {

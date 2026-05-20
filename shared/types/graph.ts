@@ -905,6 +905,29 @@ export interface ConceptSource {
   addedAt: string;
 }
 
+export interface LiteratureSourceDB {
+  id: string;
+  graphId: string;
+  title: string;
+  authors?: string[];
+  year?: number;
+  type: "paper" | "book" | "article" | "report" | "webpage" | "document";
+  journal?: string;
+  doi?: string;
+  url?: string;
+  fileName?: string;
+  keywords?: string[];
+  abstract?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  publisher?: string;
+  notes?: string;
+  processedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface LiteratureMetadata {
   title?: string;
   authors?: string[];

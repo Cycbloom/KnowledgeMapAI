@@ -665,12 +665,14 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     setSelectedTemplateType("topic_research");
     setModuleConfig({ presetId });
     setShowTopicResearchCustomEditor(false);
+    setIsTemplateSelectorOpen(false);
   };
 
   const handleSelectTopicResearchCustom = () => {
     setSelectedPresetId("custom");
     setSelectedTemplateType("topic_research");
     setShowTopicResearchCustomEditor(true);
+    setIsTemplateSelectorOpen(false);
     if (topicResearchCustomModules.length === 0) {
       const defaultModules =
         PRESET_MAP["academic_research"]?.modules.map((m) => ({

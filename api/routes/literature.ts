@@ -413,6 +413,15 @@ router.post(
             parsedLiterature.type ||
             (file ? "document" : url ? "article" : "document"),
           processedAt: new Date().toISOString(),
+          journal: parsedLiterature.journal,
+          doi: parsedLiterature.doi,
+          keywords: parsedLiterature.keywords,
+          abstract: parsedLiterature.abstract,
+          volume: parsedLiterature.volume,
+          issue: parsedLiterature.issue,
+          pages: parsedLiterature.pages,
+          publisher: parsedLiterature.publisher,
+          notes: parsedLiterature.notes,
         };
       } else if (parsedOptions?.autoDetectMetadata) {
         logger.info("Auto-detecting literature metadata");
@@ -436,6 +445,10 @@ router.post(
               ? "document"
               : detectedMetadata.type,
           processedAt: new Date().toISOString(),
+          journal: detectedMetadata.journal,
+          doi: detectedMetadata.doi,
+          keywords: detectedMetadata.keywords,
+          abstract: detectedMetadata.abstract,
         };
 
         logger.info("Literature metadata auto-detected", {
@@ -663,7 +676,10 @@ router.post(
           .maybeSingle();
 
         if (litError) {
-          logger.warn("Failed to check existing literature source:", litError.message);
+          logger.warn(
+            "Failed to check existing literature source:",
+            litError.message,
+          );
         }
 
         if (!existingLiterature) {
@@ -675,12 +691,12 @@ router.post(
               authors: literature.authors,
               year: literature.year,
               type: literature.type || "document",
-              journal: (literature as any).journal,
-              doi: (literature as any).doi,
+              journal: literature.journal,
+              doi: literature.doi,
               url: literature.url,
               file_name: literature.fileName,
-              keywords: (literature as any).keywords,
-              abstract: (literature as any).abstract,
+              keywords: literature.keywords,
+              abstract: literature.abstract,
               volume: (literature as any).volume,
               issue: (literature as any).issue,
               pages: (literature as any).pages,
@@ -689,7 +705,10 @@ router.post(
             });
 
           if (insertLitError) {
-            logger.warn("Failed to save literature source:", insertLitError.message);
+            logger.warn(
+              "Failed to save literature source:",
+              insertLitError.message,
+            );
           } else {
             logger.info("Literature source saved successfully", {
               title: literature.title,
@@ -700,10 +719,14 @@ router.post(
           // Update existing record with additional metadata if missing
           const existingData = existingLiterature as Record<string, any>;
           const updateData: Record<string, any> = {};
-          if (!existingData.journal && (literature as any).journal) updateData.journal = (literature as any).journal;
-          if (!existingData.doi && (literature as any).doi) updateData.doi = (literature as any).doi;
-          if (!existingData.keywords?.length && (literature as any).keywords?.length) updateData.keywords = (literature as any).keywords;
-          if (!existingData.abstract && (literature as any).abstract) updateData.abstract = (literature as any).abstract;
+          if (!existingData.journal && literature.journal)
+            updateData.journal = literature.journal;
+          if (!existingData.doi && literature.doi)
+            updateData.doi = literature.doi;
+          if (!existingData.keywords?.length && literature.keywords?.length)
+            updateData.keywords = literature.keywords;
+          if (!existingData.abstract && literature.abstract)
+            updateData.abstract = literature.abstract;
 
           if (Object.keys(updateData).length > 0) {
             await supabase

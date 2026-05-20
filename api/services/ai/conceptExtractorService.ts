@@ -264,7 +264,7 @@ function buildExtractionSchema(): string {
     {
       "source": "源概念标题",
       "target": "目标概念标题",
-      "type": "depends_on|related_to|prerequisite|contrasts_with|similar_to",
+      "type": "depends_on|related|prerequisite|opposite|similar_to",
       "confidence": 0.0-1.0的置信度,
       "description": "关系描述"
     }
@@ -273,9 +273,9 @@ function buildExtractionSchema(): string {
 
 关系类型说明：
 - depends_on: A 依赖于 B
-- related_to: A 与 B 相关
+- related: A 与 B 相关
 - prerequisite: B 是 A 的前置知识
-- contrasts_with: A 与 B 对比
+- opposite: A 与 B 对比
 - similar_to: A 与 B 相似
 
 重要：
@@ -747,7 +747,7 @@ ${contextInfo}
         {
           source: "研究方法",
           target: "核心概念",
-          type: "related_to",
+          type: "related",
           confidence: 0.8,
         },
         {

@@ -1,6 +1,13 @@
 import { hierarchy, tree } from 'd3-hierarchy';
 import { Node, Edge, LayoutNode, LayoutLink } from '../../types';
 
+const HIERARCHICAL_EDGE_TYPES = new Set([
+  'contains',
+  'parent_child',
+  'part_of',
+  'derived_from',
+]);
+
 interface TreeLayoutOptions {
   width: number;
   height: number;
@@ -16,9 +23,14 @@ export const createTreeLayout = (
   
   const normalizeId = (id: any) => String(id).trim();
   
+  const hierarchicalEdges = edges.filter((edge) => {
+    if (!edge.relationship_type) return true;
+    return HIERARCHICAL_EDGE_TYPES.has(edge.relationship_type);
+  });
+  
   // Find root nodes (nodes with no incoming edges)
   const incomingEdges = new Set<string>();
-  edges.forEach(edge => {
+  hierarchicalEdges.forEach(edge => {
     incomingEdges.add(normalizeId(edge.target_knowledge_point_id));
   });
   
@@ -41,7 +53,7 @@ export const createTreeLayout = (
     childrenMap.set(normalizeId(node.id), []);
   });
   
-  edges.forEach(edge => {
+  hierarchicalEdges.forEach(edge => {
     const src = normalizeId(edge.source_knowledge_point_id);
     const tgt = normalizeId(edge.target_knowledge_point_id);
     if (childrenMap.has(src)) {

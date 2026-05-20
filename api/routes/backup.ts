@@ -309,7 +309,7 @@ async function restoreBackupData(
             graph_id: graphId,
             source_knowledge_point_id: sourceKPId,
             target_knowledge_point_id: targetKPId,
-            relationship_type: e.relationship_type || "related",
+            relationship_type: e.relationship_type || "contains",
           });
           stats.edges++;
         } catch (err) {

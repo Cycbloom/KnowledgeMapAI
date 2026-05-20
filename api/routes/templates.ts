@@ -205,7 +205,7 @@ router.post(
                     graph_id: graph.id,
                     source_node_id: sourceNodeId,
                     target_node_id: targetNodeId,
-                    relationship_type: edge.relationship_type || "related",
+                    relationship_type: edge.relationship_type || "contains",
                   });
                 }
               }

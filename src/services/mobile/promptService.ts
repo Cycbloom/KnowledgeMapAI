@@ -180,46 +180,56 @@ Return a JSON object with 'nodes' and 'edges' arrays.
 
 Relationship Types (choose the most appropriate one based on the semantic relationship between nodes):
 
-**Hierarchical (层级关系)**:
-- contains: A 包含 B（如：章节包含知识点）
-- has_subcategory: A 有子类别 B（如：编程语言有子类别 Python）
+**层级结构 (hierarchical)**:
+- contains: A 包含 B（如：章节包含知识点，文献综述包含对比分析）
+- parent_child: A 是 B 的父节点（如：研究背景是论文的父级主题）
 - part_of: A 是 B 的一部分（如：车轮是汽车的一部分）
-- instance_of: A 是 B 的实例（如：Python 是编程语言的实例）
+- derived_from: A 从 B 派生而来（如：改进方法由基础方法派生）
 
-**Dependency (依赖关系)**:
+**依赖约束 (dependency)**:
 - depends_on: A 依赖于 B（如：高级功能依赖于基础功能）
 - prerequisite: B 是 A 的前置知识（如：学习微积分前需要先学代数）
-- requires: A 需要 B（如：运行程序需要安装依赖）
-- blocks: A 阻碍 B（如：缺少基础知识阻碍学习高级内容）
+- constrains: A 制约 B（如：资源限制制约系统设计）
+- supports: A 支撑 B（如：理论框架支撑实验设计）
+- mutex: A 与 B 互斥（如：两种方案不能同时采用）
+- exclusive: A 与 B 排他（如：选择A则排除B）
 
-**Semantic (语义关系)**:
-- related_to: A 与 B 相关（一般性关联）
+**语义关系 (semantic)**:
+- related: A 与 B 相关（一般性关联）
 - similar_to: A 与 B 相似（如：Java 与 C# 语法相似）
-- contrasts_with: A 与 B 对比（如：面向对象与面向过程对比）
-- synonym_of: A 是 B 的同义词（如：函数与方法）
-- antonym_of: A 是 B 的反义词（如：优点与缺点）
+- opposite: A 与 B 对立/对比（如：面向对象与面向过程对比）
+- synonym: A 是 B 的同义词（如：函数与方法）
+- equivalent: A 与 B 等价（如：两种表示方式等价）
+- generalization: A 是 B 的泛化（如：动物是猫的泛化）
+- specialization: A 是 B 的特化（如：猫是动物的特化）
 
-**Temporal (时序关系)**:
-- precedes: A 在 B 之前（如：设计先于开发）
-- follows: A 跟随 B（如：测试跟随开发）
-- concurrent_with: A 与 B 并发/同时进行
+**时序流程 (temporal)**:
+- follows: A 跟随/在 B 之后（如：测试跟随开发）
+- parallel: A 与 B 并行进行（如：前端与后端并行开发）
+- branch: A 从 B 分支出来（如：分支方案从主路径分出）
+- merge: A 与 B 汇合（如：多个分支汇合到主线）
+- trigger: A 触发 B（如：事件触发处理流程）
+- loop: A 形成循环（如：迭代优化形成循环）
 
-**Interaction (交互关系)**:
-- interacts_with: A 与 B 交互（如：前端与后端交互）
-- communicates_with: A 与 B 通信（如：客户端与服务器通信）
-- collaborates_with: A 与 B 协作（如：多个模块协作完成任务）
+**交互行为 (interaction)**:
+- points_to: A 指向 B（如：引用指向被引用内容）
+- acts_on: A 作用于 B（如：算法作用于数据集）
+- influences: A 影响 B（如：参数影响结果）
+- feedback: A 对 B 有反馈（如：输出反馈回输入）
+- calls: A 调用 B（如：模块调用服务）
 
-**Causal (因果关系)**:
+**因果推导 (causal)**:
 - causes: A 导致 B（如：错误配置导致系统崩溃）
-- caused_by: A 由 B 导致（如：系统崩溃由错误配置导致）
-- enables: A 使能 B（如：基础设施使能应用开发）
-- prevents: A 阻止 B（如：防火墙阻止未授权访问）
+- derives: A 推导出 B（如：公式推导出结论）
+- proportional: A 与 B 成正比（如：输入量与输出量成正比）
+- inverse: A 与 B 成反比（如：速度与时间成反比）
 
 Important:
-- For parent-child hierarchical relationships, use "contains" or "has_subcategory"
+- For parent-child hierarchical relationships, use "contains", "parent_child" or "part_of"
 - For knowledge prerequisites, use "prerequisite" or "depends_on"
-- For similar concepts, use "similar_to"
-- For cause-effect relationships, use "causes" or "caused_by"
+- For similar concepts, use "similar_to" or "synonym"
+- For contrasting/comparing concepts, use "opposite"
+- For cause-effect relationships, use "causes" or "derives"
 - Choose the most specific relationship type that accurately describes the connection
 Please respond in Chinese.`,
 
@@ -230,46 +240,56 @@ Return a JSON object with 'nodes' and 'edges' arrays.
 
 Relationship Types (choose the most appropriate one based on the semantic relationship between nodes):
 
-**Hierarchical (层级关系)**:
-- contains: A 包含 B（如：章节包含知识点）
-- has_subcategory: A 有子类别 B（如：编程语言有子类别 Python）
+**层级结构 (hierarchical)**:
+- contains: A 包含 B（如：章节包含知识点，文献综述包含对比分析）
+- parent_child: A 是 B 的父节点（如：研究背景是论文的父级主题）
 - part_of: A 是 B 的一部分（如：车轮是汽车的一部分）
-- instance_of: A 是 B 的实例（如：Python 是编程语言的实例）
+- derived_from: A 从 B 派生而来（如：改进方法由基础方法派生）
 
-**Dependency (依赖关系)**:
+**依赖约束 (dependency)**:
 - depends_on: A 依赖于 B（如：高级功能依赖于基础功能）
 - prerequisite: B 是 A 的前置知识（如：学习微积分前需要先学代数）
-- requires: A 需要 B（如：运行程序需要安装依赖）
-- blocks: A 阻碍 B（如：缺少基础知识阻碍学习高级内容）
+- constrains: A 制约 B（如：资源限制制约系统设计）
+- supports: A 支撑 B（如：理论框架支撑实验设计）
+- mutex: A 与 B 互斥（如：两种方案不能同时采用）
+- exclusive: A 与 B 排他（如：选择A则排除B）
 
-**Semantic (语义关系)**:
-- related_to: A 与 B 相关（一般性关联）
+**语义关系 (semantic)**:
+- related: A 与 B 相关（一般性关联）
 - similar_to: A 与 B 相似（如：Java 与 C# 语法相似）
-- contrasts_with: A 与 B 对比（如：面向对象与面向过程对比）
-- synonym_of: A 是 B 的同义词（如：函数与方法）
-- antonym_of: A 是 B 的反义词（如：优点与缺点）
+- opposite: A 与 B 对立/对比（如：面向对象与面向过程对比）
+- synonym: A 是 B 的同义词（如：函数与方法）
+- equivalent: A 与 B 等价（如：两种表示方式等价）
+- generalization: A 是 B 的泛化（如：动物是猫的泛化）
+- specialization: A 是 B 的特化（如：猫是动物的特化）
 
-**Temporal (时序关系)**:
-- precedes: A 在 B 之前（如：设计先于开发）
-- follows: A 跟随 B（如：测试跟随开发）
-- concurrent_with: A 与 B 并发/同时进行
+**时序流程 (temporal)**:
+- follows: A 跟随/在 B 之后（如：测试跟随开发）
+- parallel: A 与 B 并行进行（如：前端与后端并行开发）
+- branch: A 从 B 分支出来（如：分支方案从主路径分出）
+- merge: A 与 B 汇合（如：多个分支汇合到主线）
+- trigger: A 触发 B（如：事件触发处理流程）
+- loop: A 形成循环（如：迭代优化形成循环）
 
-**Interaction (交互关系)**:
-- interacts_with: A 与 B 交互（如：前端与后端交互）
-- communicates_with: A 与 B 通信（如：客户端与服务器通信）
-- collaborates_with: A 与 B 协作（如：多个模块协作完成任务）
+**交互行为 (interaction)**:
+- points_to: A 指向 B（如：引用指向被引用内容）
+- acts_on: A 作用于 B（如：算法作用于数据集）
+- influences: A 影响 B（如：参数影响结果）
+- feedback: A 对 B 有反馈（如：输出反馈回输入）
+- calls: A 调用 B（如：模块调用服务）
 
-**Causal (因果关系)**:
+**因果推导 (causal)**:
 - causes: A 导致 B（如：错误配置导致系统崩溃）
-- caused_by: A 由 B 导致（如：系统崩溃由错误配置导致）
-- enables: A 使能 B（如：基础设施使能应用开发）
-- prevents: A 阻止 B（如：防火墙阻止未授权访问）
+- derives: A 推导出 B（如：公式推导出结论）
+- proportional: A 与 B 成正比（如：输入量与输出量成正比）
+- inverse: A 与 B 成反比（如：速度与时间成反比）
 
 Important:
-- For parent-child hierarchical relationships, use "contains" or "has_subcategory"
+- For parent-child hierarchical relationships, use "contains", "parent_child" or "part_of"
 - For knowledge prerequisites, use "prerequisite" or "depends_on"
-- For similar concepts, use "similar_to"
-- For cause-effect relationships, use "causes" or "caused_by"
+- For similar concepts, use "similar_to" or "synonym"
+- For contrasting/comparing concepts, use "opposite"
+- For cause-effect relationships, use "causes" or "derives"
 - Choose the most specific relationship type that accurately describes the connection
 Please respond in Chinese.`,
 

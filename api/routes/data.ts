@@ -261,7 +261,7 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
             edgesToInsert.push({
               source_knowledge_point_id: sourceId,
               target_knowledge_point_id: targetId,
-              relationship_type: e.relationship || 'related',
+              relationship_type: e.relationship || 'contains',
               graph_id: graph.id
             });
           }
@@ -341,7 +341,7 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
             edgesToInsert.push({
               source_knowledge_point_id: sourceId,
               target_knowledge_point_id: targetId,
-              relationship_type: e.relationship || 'related',
+              relationship_type: e.relationship || 'contains',
               graph_id: graph.id
             });
           }

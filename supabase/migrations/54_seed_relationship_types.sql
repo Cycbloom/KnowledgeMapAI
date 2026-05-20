@@ -6,7 +6,8 @@
 INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
   ('contains', '包含', 'hierarchical', '#3B82F6', 'solid', 'auto', true),
   ('part_of', '属于', 'hierarchical', '#3B82F6', 'solid', 'auto', true),
-  ('parent_child', '父子', 'hierarchical', '#3B82F6', 'solid', 'auto', true)
+  ('parent_child', '父子', 'hierarchical', '#3B82F6', 'solid', 'auto', true),
+  ('derived_from', '派生自', 'hierarchical', '#F59E0B', 'dashed', 'true', true)
 ON CONFLICT (name) DO NOTHING;
 
 -- 依赖约束 (dependency)

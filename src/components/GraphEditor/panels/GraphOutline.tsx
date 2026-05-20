@@ -40,6 +40,13 @@ import {
   ConceptSource,
 } from "@shared/types/graph";
 
+const HIERARCHICAL_EDGE_TYPES = new Set([
+  'contains',
+  'parent_child',
+  'part_of',
+  'derived_from',
+]);
+
 interface GraphOutlineProps {
   nodes: Node[];
   edges?: Edge[];
@@ -185,9 +192,15 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     };
     const getLevelVal = (n?: Node) => levelOrder[n?.level || "leaf"] ?? 4;
 
+    // Filter to only hierarchical edge types for tree building
+    const hierarchicalEdges = edges.filter((edge) => {
+      if (!edge.relationship_type) return true; // No type: keep existing behavior
+      return HIERARCHICAL_EDGE_TYPES.has(edge.relationship_type);
+    });
+
     // Sort edges to prioritize better parent-child relationships for the tree view
     // We want to avoid "upward" links becoming the primary parent-child relationship in the outline
-    const sortedEdges = [...edges].sort((a, b) => {
+    const sortedEdges = [...hierarchicalEdges].sort((a, b) => {
       const sA = nodeMap.get(a.source_knowledge_point_id);
       const tA = nodeMap.get(a.target_knowledge_point_id);
       const sB = nodeMap.get(b.source_knowledge_point_id);

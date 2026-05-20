@@ -44,7 +44,6 @@ const RELATION_COLORS: Record<string, string> = {
   derives: "#DC2626",
   proportional: "#DC2626",
   inverse: "#DC2626",
-  related_to: "var(--tertiary-500)",
   derived_from: "#F59E0B",
   default: "var(--slate-500)",
 };

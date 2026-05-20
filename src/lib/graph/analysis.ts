@@ -379,7 +379,7 @@ export const calculateEdgeStrength = (
     'similar_to': 0.6,
     'part_of': 0.9
   };
-  const relationshipType = edge.relationship_type || 'related';
+  const relationshipType = edge.relationship_type || 'contains';
   const relationshipTypeWeight = relationshipWeights[relationshipType] || 0.5;
   
   const sourceConnections = new Set<string>();

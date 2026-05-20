@@ -783,7 +783,7 @@ router.post(
         graph_id,
         source_knowledge_point_id,
         target_knowledge_point_id,
-        relationship_type: relationship_type || "related",
+        relationship_type: relationship_type || "contains",
       });
 
       await cacheService.invalidateGraphCache(req.user.id, graph_id);

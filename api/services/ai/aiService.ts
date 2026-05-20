@@ -649,9 +649,17 @@ export class AIService {
             },
           },
           async () => {
+            const typeToPromptCode: Record<string, string> = {
+              qa: "generate_cards_qa",
+              choice: "generate_cards_choice",
+              true_false: "generate_cards_true_false",
+              multi_choice: "generate_cards_multi_choice",
+              fill_in_the_blank: "generate_cards_fill_blank",
+              essay: "generate_cards_essay",
+            };
             const promptParts = await Promise.all(
               types.map(async (type) => {
-                const code = `generate_cards_${type}`;
+                const code = typeToPromptCode[type] ?? `generate_cards_${type}`;
                 const rendered = await promptService.getRenderedPrompt(
                   getSupabaseAdmin(),
                   code,

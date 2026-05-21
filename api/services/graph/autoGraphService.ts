@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { graphNodeService } from "./graphNodeService";
 import { edgeService } from "./edgeService";
-import { taskService } from "../taskService";
+import { asyncTaskService } from "../asyncTaskService";
 import { logger } from "../../utils/logger";
 import { aiService } from "../ai/aiService";
 import {
@@ -306,7 +306,7 @@ export class AutoGraphService {
 
       if (validKnowledgePointIds.length > 0) {
         try {
-          await taskService.createTask(
+          await asyncTaskService.createTask(
             userId,
             "embedding_generation",
             { knowledgePointIds: validKnowledgePointIds },

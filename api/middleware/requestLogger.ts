@@ -92,15 +92,40 @@ export const getRequestStats = async (_minutes: number = 60): Promise<{
   avgDuration: number;
   errorRate: number;
 }> => {
-  const stats = {
-    total: 0,
-    byEndpoint: {} as Record<string, number>,
-    byStatus: {} as Record<number, number>,
-    avgDuration: 0,
-    errorRate: 0,
-  };
+  const logs = [...LOG_BUFFER];
 
-  return stats;
+  if (logs.length === 0) {
+    return {
+      total: 0,
+      byEndpoint: {},
+      byStatus: {},
+      avgDuration: 0,
+      errorRate: 0,
+    };
+  }
+
+  const byEndpoint: Record<string, number> = {};
+  const byStatus: Record<number, number> = {};
+  let totalDuration = 0;
+  let errorCount = 0;
+
+  for (const log of logs) {
+    const endpoint = `${log.method} ${log.path}`;
+    byEndpoint[endpoint] = (byEndpoint[endpoint] ?? 0) + 1;
+    byStatus[log.status] = (byStatus[log.status] ?? 0) + 1;
+    totalDuration += log.duration;
+    if (log.status >= 400) {
+      errorCount++;
+    }
+  }
+
+  return {
+    total: logs.length,
+    byEndpoint,
+    byStatus,
+    avgDuration: Math.round(totalDuration / logs.length),
+    errorRate: Number((errorCount / logs.length).toFixed(4)),
+  };
 };
 
 export const slowRequestLogger = (thresholdMs: number = 1000) => {

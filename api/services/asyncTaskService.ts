@@ -56,11 +56,11 @@ try {
   defaultClient = createClient(validUrl, validKey);
   logger.info('TaskService Supabase client initialized successfully');
 } catch (error) {
-  logger.error('Failed to initialize TaskService Supabase client:', error);
+  logger.error('Failed to initialize AsyncTaskService Supabase client:', error);
   defaultClient = createClient('https://placeholder.supabase.co', 'placeholder-key');
 }
 
-export class TaskService {
+export class AsyncTaskService {
   private mapTaskTypeToSystemTaskType(type: string): SystemTaskType {
     const typeMap: Record<string, SystemTaskType> = {
       "generate_questions": "ai_generation",
@@ -324,4 +324,4 @@ export class TaskService {
   }
 }
 
-export const taskService = new TaskService();
+export const asyncTaskService = new AsyncTaskService();

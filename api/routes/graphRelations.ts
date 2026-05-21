@@ -4,7 +4,7 @@ import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { graphRelationService } from "../services/graph/index";
-import { taskService } from "../services/taskService";
+import { asyncTaskService } from "../services/asyncTaskService";
 import { logger } from "../utils/logger";
 import { checkDuplicateGraphTopic } from "../utils/similaritySearch";
 import { z } from "zod";
@@ -217,7 +217,7 @@ router.post(
         isNew = true;
 
         if (auto_generate) {
-          await taskService.createTask(
+          await asyncTaskService.createTask(
             req.user.id,
             "recursive_graph_generation",
             {
@@ -359,7 +359,7 @@ router.post(
               context: `学习「${sourceGraph.title}」前建议先掌握「${item.topic}」`,
             });
 
-            const task = await taskService.createTask(
+            const task = await asyncTaskService.createTask(
               req.user.id,
               "recursive_graph_generation",
               {
@@ -568,7 +568,7 @@ router.post(
         throw new AppError("无权操作此图谱", 403, ErrorCodes.FORBIDDEN);
       }
 
-      const task = await taskService.createTask(
+      const task = await asyncTaskService.createTask(
         req.user.id,
         "infinite_graph_expansion",
         {

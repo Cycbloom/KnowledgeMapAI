@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Draggable } from "@hello-pangea/dnd";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Clock,
   Play,
@@ -14,7 +15,6 @@ import { UserTask } from "@shared/types";
 
 interface DraggableTaskCardProps {
   task: UserTask;
-  index: number;
   onEdit?: () => void;
   onDelete?: () => void;
   onStart?: () => void;
@@ -83,7 +83,6 @@ const STATUS_CONFIG = {
 
 export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   task,
-  index,
   onEdit,
   onDelete,
   onStart,
@@ -97,6 +96,29 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
   const [showDragTip, setShowDragTip] = useState(false);
   const isInProgress = task.status === "in_progress";
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    data: {
+      taskId: task.id,
+      queueLevel: task.queue_level,
+      type: "task",
+    },
+    disabled: isInProgress,
+  });
+
+  const style: React.CSSProperties = {
+    transform: isDragging ? undefined : CSS.Transform.toString(transform),
+    transition,
+    width: "180px",
+  };
 
   const formatDuration = (minutes?: number) => {
     if (!minutes) return "--";
@@ -118,207 +140,192 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
     onDelete;
 
   return (
-    <Draggable
-      draggableId={task.id}
-      index={index}
-      isDragDisabled={isInProgress}
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...(isInProgress ? {} : listeners)}
+      onMouseEnter={() => isInProgress && setShowDragTip(true)}
+      onMouseLeave={() => setShowDragTip(false)}
+      className={`
+        group relative rounded-xl border transition-all duration-200
+        ${isInProgress ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"}
+        ${isDragging ? "opacity-30" : "hover:shadow-lg"}
+        ${queueStyle.border}
+        ${isInProgress ? "ring-2 ring-primary-400/50 dark:ring-primary-500/50" : ""}
+        bg-white dark:bg-slate-900/80 backdrop-blur-sm
+        overflow-hidden flex-shrink-0
+      `}
     >
-      {(provided, snapshot) => (
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-1 ${queueStyle.accent}`}
+      />
+
+      <div className="p-3 pl-4">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <span
+            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${queueStyle.badge}`}
+          >
+            Q{task.queue_level}
+          </span>
+          <span
+            className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}
+          >
+            {statusConfig.label}
+          </span>
+          {task.priority >= 3 && (
+            <span className="text-red-500 dark:text-red-400 text-xs">
+              ★
+            </span>
+          )}
+        </div>
+
+        <h4 className="font-medium text-slate-900 dark:text-white text-sm mb-1 truncate pr-2">
+          {task.title}
+        </h4>
+
+        {task.description && (
+          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-2">
+            {task.description}
+          </p>
+        )}
+
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
+          {task.estimated_duration && (
+            <div className="flex items-center gap-1">
+              <Clock size={12} className={queueStyle.text} />
+              <span>{formatDuration(task.estimated_duration)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {hasActions && (
         <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...(isInProgress ? {} : provided.dragHandleProps)}
-          onMouseEnter={() => isInProgress && setShowDragTip(true)}
-          onMouseLeave={() => setShowDragTip(false)}
           className={`
-            group relative rounded-xl border transition-all duration-200
-            ${isInProgress ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"}
-            ${
-              snapshot.isDragging
-                ? "shadow-2xl z-[9999] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 opacity-95"
-                : "hover:shadow-lg"
-            }
-            ${queueStyle.border} ${snapshot.isDragging ? queueStyle.glow : ""}
-            ${isInProgress ? "ring-2 ring-primary-400/50 dark:ring-primary-500/50" : ""}
-            bg-white dark:bg-slate-900/80 backdrop-blur-sm
-            overflow-hidden flex-shrink-0
-          `}
-          style={{
-            ...provided.draggableProps.style,
-            width: "180px",
-          }}
-        >
-          <div
-            className={`absolute left-0 top-0 bottom-0 w-1 ${queueStyle.accent}`}
-          />
-
-          <div className="p-3 pl-4">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${queueStyle.badge}`}
-              >
-                Q{task.queue_level}
-              </span>
-              <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}
-              >
-                {statusConfig.label}
-              </span>
-              {task.priority >= 3 && (
-                <span className="text-red-500 dark:text-red-400 text-xs">
-                  ★
-                </span>
-              )}
-            </div>
-
-            <h4 className="font-medium text-slate-900 dark:text-white text-sm mb-1 truncate pr-2">
-              {task.title}
-            </h4>
-
-            {task.description && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-2">
-                {task.description}
-              </p>
-            )}
-
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
-              {task.estimated_duration && (
-                <div className="flex items-center gap-1">
-                  <Clock size={12} className={queueStyle.text} />
-                  <span>{formatDuration(task.estimated_duration)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {hasActions && (
-            <div
-              className={`
                 flex items-center justify-center gap-1 px-2 py-1.5
                 bg-slate-50/80 dark:bg-slate-800/50
                 border-t border-slate-100 dark:border-slate-700/50
                 opacity-0 group-hover:opacity-100
                 transition-opacity duration-200
               `}
-              onPointerDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {task.status === "pending" && onStart && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStart();
+              }}
+              className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+              title="开始"
             >
-              {task.status === "pending" && onStart && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStart();
-                  }}
-                  className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
-                  title="开始"
-                >
-                  <Play size={12} />
-                </button>
-              )}
-
-              {task.status === "paused" && onStart && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStart();
-                  }}
-                  className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
-                  title="继续"
-                >
-                  <Play size={12} />
-                </button>
-              )}
-
-              {task.status === "in_progress" && onPause && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPause();
-                  }}
-                  className="p-1 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
-                  title="暂停"
-                >
-                  <Pause size={12} />
-                </button>
-              )}
-
-              {(task.status === "pending" ||
-                task.status === "in_progress" ||
-                task.status === "paused") &&
-                onComplete && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onComplete();
-                    }}
-                    className="p-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
-                    title="完成"
-                  >
-                    <Check size={12} />
-                  </button>
-                )}
-
-              {onViewDetail && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewDetail();
-                  }}
-                  className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
-                  title="详情"
-                >
-                  <Info size={12} />
-                </button>
-              )}
-
-              {onEdit && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit();
-                  }}
-                  className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
-                  title="编辑"
-                >
-                  <Edit2 size={12} />
-                </button>
-              )}
-
-              {onDelete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
-                  className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
-                  title="删除"
-                >
-                  <Trash2 size={12} />
-                </button>
-              )}
-            </div>
+              <Play size={12} />
+            </button>
           )}
 
-          {task.status === "in_progress" && (
-            <div
-              className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}
+          {task.status === "paused" && onStart && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStart();
+              }}
+              className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+              title="继续"
             >
-              <div
-                className={`h-full ${queueStyle.accent} animate-pulse`}
-                style={{ width: "60%" }}
-              />
-            </div>
+              <Play size={12} />
+            </button>
           )}
 
-          {showDragTip && isInProgress && (
-            <div className="absolute top-0 left-0 right-0 bottom-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-t-xl z-10 pointer-events-none">
-              <div className="flex items-center gap-2 text-white text-xs px-3 py-2 bg-slate-800/90 rounded-lg shadow-lg pointer-events-auto">
-                <Lock size={14} />
-                <span>请先暂停任务再移动</span>
-              </div>
-            </div>
+          {task.status === "in_progress" && onPause && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPause();
+              }}
+              className="p-1 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
+              title="暂停"
+            >
+              <Pause size={12} />
+            </button>
+          )}
+
+          {(task.status === "pending" ||
+            task.status === "in_progress" ||
+            task.status === "paused") &&
+            onComplete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplete();
+                }}
+                className="p-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
+                title="完成"
+              >
+                <Check size={12} />
+              </button>
+            )}
+
+          {onViewDetail && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetail();
+              }}
+              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
+              title="详情"
+            >
+              <Info size={12} />
+            </button>
+          )}
+
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
+              title="编辑"
+            >
+              <Edit2 size={12} />
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
+              title="删除"
+            >
+              <Trash2 size={12} />
+            </button>
           )}
         </div>
       )}
-    </Draggable>
+
+      {task.status === "in_progress" && (
+        <div
+          className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}
+        >
+          <div
+            className={`h-full ${queueStyle.accent} animate-pulse`}
+            style={{ width: "60%" }}
+          />
+        </div>
+      )}
+
+      {showDragTip && isInProgress && (
+        <div className="absolute top-0 left-0 right-0 bottom-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-t-xl z-10 pointer-events-none">
+          <div className="flex items-center gap-2 text-white text-xs px-3 py-2 bg-slate-800/90 rounded-lg shadow-lg pointer-events-auto">
+            <Lock size={14} />
+            <span>请先暂停任务再移动</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

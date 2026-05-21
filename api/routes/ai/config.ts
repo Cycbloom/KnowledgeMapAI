@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import OpenAI from "openai";
 import type { AIProviderType } from "@shared/types";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
-import { settingsService } from "../../services/core/settingsService";
+import { appSettingsService } from "../../services/core/appSettingsService";
 import { getEnvConfig } from "../../services/ai/config";
 import { logger } from "../../utils/logger";
 import {
@@ -88,7 +88,7 @@ router.get(
   async (_req: AuthRequest, res: Response) => {
     try {
       const allConfigs =
-        await settingsService.getSetting<
+        await appSettingsService.getSetting<
           Record<string, Record<string, string>>
         >("ai_provider_config");
 
@@ -184,7 +184,7 @@ router.put(
       }
 
       const existingConfigs =
-        (await settingsService.getSetting<
+        (await appSettingsService.getSetting<
           Record<string, Record<string, string>>
         >("ai_provider_config")) || {};
 
@@ -199,7 +199,7 @@ router.put(
         };
       }
 
-      await settingsService.updateSetting("ai_provider_config", merged);
+      await appSettingsService.updateSetting("ai_provider_config", merged);
 
       res.json({ success: true });
     } catch (error) {
@@ -232,7 +232,7 @@ router.post(
 
       if (!testApiKey || !testBaseURL) {
         const allConfigs =
-          await settingsService.getSetting<
+          await appSettingsService.getSetting<
             Record<string, Record<string, string>>
           >("ai_provider_config");
         const dbConfig = allConfigs?.[provider];
@@ -409,7 +409,7 @@ router.put(
         return;
       }
 
-      await settingsService.updateSetting("database_config", {
+      await appSettingsService.updateSetting("database_config", {
         url,
         anonKey,
         serviceRoleKey,
@@ -452,7 +452,7 @@ router.put(
         return;
       }
 
-      settingsService.clearCache();
+      appSettingsService.clearCache();
 
       let schemaStatus = null;
       try {
@@ -483,7 +483,7 @@ router.get(
   requireAuth,
   async (_req: AuthRequest, res: Response) => {
     try {
-      const sysConfig = await settingsService.getSetting<{
+      const sysConfig = await appSettingsService.getSetting<{
         main_ai?: { provider?: string; model?: string; baseURL?: string };
       }>("system_config");
 
@@ -495,7 +495,7 @@ router.get(
 
       if (provider) {
         const allConfigs =
-          await settingsService.getSetting<
+          await appSettingsService.getSetting<
             Record<string, Record<string, string>>
           >("ai_provider_config");
         const dbConfig = allConfigs?.[provider];
@@ -537,7 +537,7 @@ router.put("/main-ai", requireAuth, async (req: AuthRequest, res: Response) => {
     }
 
     const sysConfig =
-      (await settingsService.getSetting<Record<string, unknown>>(
+      (await appSettingsService.getSetting<Record<string, unknown>>(
         "system_config",
       )) || {};
 
@@ -546,9 +546,9 @@ router.put("/main-ai", requireAuth, async (req: AuthRequest, res: Response) => {
       ...(model ? { model } : {}),
     };
 
-    await settingsService.updateSetting("system_config", sysConfig);
+    await appSettingsService.updateSetting("system_config", sysConfig);
 
-    settingsService.clearCache();
+    appSettingsService.clearCache();
 
     res.json({ success: true });
   } catch (error) {
@@ -562,7 +562,7 @@ router.get(
   requireAuth,
   async (_req: AuthRequest, res: Response) => {
     try {
-      const sysConfig = await settingsService.getSetting<{
+      const sysConfig = await appSettingsService.getSetting<{
         embedding_ai?: { provider?: string; model?: string; baseURL?: string };
       }>("system_config");
 
@@ -574,7 +574,7 @@ router.get(
 
       if (provider) {
         const allConfigs =
-          await settingsService.getSetting<
+          await appSettingsService.getSetting<
             Record<string, Record<string, string>>
           >("ai_provider_config");
         const dbConfig = allConfigs?.[provider];
@@ -620,14 +620,14 @@ router.put(
 
       if (enabled === false || (!provider && enabled === undefined)) {
         const sysConfig =
-          (await settingsService.getSetting<Record<string, unknown>>(
+          (await appSettingsService.getSetting<Record<string, unknown>>(
             "system_config",
           )) || {};
 
         if (sysConfig.embedding_ai) {
           delete sysConfig.embedding_ai;
-          await settingsService.updateSetting("system_config", sysConfig);
-          settingsService.clearCache();
+          await appSettingsService.updateSetting("system_config", sysConfig);
+          appSettingsService.clearCache();
         }
 
         res.json({ success: true });
@@ -640,7 +640,7 @@ router.put(
       }
 
       const sysConfig =
-        (await settingsService.getSetting<Record<string, unknown>>(
+        (await appSettingsService.getSetting<Record<string, unknown>>(
           "system_config",
         )) || {};
 
@@ -649,9 +649,9 @@ router.put(
         ...(model ? { model } : {}),
       };
 
-      await settingsService.updateSetting("system_config", sysConfig);
+      await appSettingsService.updateSetting("system_config", sysConfig);
 
-      settingsService.clearCache();
+      appSettingsService.clearCache();
 
       res.json({ success: true });
     } catch (error) {

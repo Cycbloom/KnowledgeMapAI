@@ -1,9 +1,8 @@
 export { taskService, TaskService } from "./taskService";
 export { executionService, ExecutionService } from "./executionService";
 export { focusService, FocusService } from "./focusService";
-export { achievementService, AchievementService } from "./achievementService";
 export { statsService, StatsService } from "./statsService";
-export { settingsService, SettingsService } from "./settingsService";
+export { taskSettingsService, TaskSettingsService } from "./taskSettingsService";
 export {
   periodicTaskService,
   PeriodicTaskService,
@@ -40,13 +39,7 @@ export type {
   WeeklyFocusStats,
   MonthlyFocusStats,
   HeatmapData,
-} from "./focusService";
-
-export type {
-  Achievement,
-  UserAchievement,
-  AchievementCheckResult,
-} from "./achievementService";
+} from "@shared/types/scheduler";
 
 export type { UserTaskSchedulerStats } from "./statsService";
 

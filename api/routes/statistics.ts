@@ -2,7 +2,6 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
-import { State } from 'ts-fsrs';
 
 const router = Router();
 
@@ -19,11 +18,11 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   if (error) throw new AppError(error.message || '获取统计数据失败', 500, ErrorCodes.INTERNAL_ERROR);
 
   // --- Process Distribution ---
-  const stateCounts: Record<number, number> = {
-    [State.New]: 0,
-    [State.Learning]: 0,
-    [State.Review]: 0,
-    [State.Relearning]: 0
+  const stateCounts: Record<string, number> = {
+    New: 0,
+    Learning: 0,
+    Review: 0,
+    Relearning: 0
   };
 
   if (stats.distribution && Array.isArray(stats.distribution)) {
@@ -81,10 +80,10 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     },
     heatmap,
     distribution: [
-      { name: 'new', value: stateCounts[State.New], color: '#94a3b8' },
-      { name: 'learning', value: stateCounts[State.Learning], color: '#fbbf24' },
-      { name: 'review', value: stateCounts[State.Review], color: '#4ade80' },
-      { name: 'relearning', value: stateCounts[State.Relearning], color: '#f87171' }
+      { name: 'new', value: stateCounts.New, color: '#94a3b8' },
+      { name: 'learning', value: stateCounts.Learning, color: '#fbbf24' },
+      { name: 'review', value: stateCounts.Review, color: '#4ade80' },
+      { name: 'relearning', value: stateCounts.Relearning, color: '#f87171' }
     ],
     forecast,
     growth

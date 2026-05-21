@@ -3,9 +3,8 @@ import {
   taskService,
   executionService,
   focusService,
-  achievementService,
   statsService,
-  settingsService as schedulerSettingsService,
+  taskSettingsService as schedulerSettingsService,
   periodicTaskService,
   taskAnalyticsService,
   taskRecommendationService,
@@ -15,11 +14,11 @@ import {
   pathTaskService,
   smartSchedulerService,
 } from "../scheduler/";
+import { achievementService } from "../achievementService";
 import { schedulerCronService } from "../scheduler/core/cronService";
 import { schedulerSubscribers } from "../scheduler/core/subscribers";
 import schedulerRouter from "../../routes/scheduler/index";
 import tasksRouter from "../../routes/tasks";
-import focusRouter from "../../routes/focus";
 import achievementsRouter from "../../routes/achievements";
 import periodicTasksRouter from "../../routes/periodicTasks";
 import calendarRouter from "../../routes/calendar";
@@ -53,7 +52,6 @@ export const SchedulerPlugin: Plugin = {
 
     kernel.registerRoutes("/api/scheduler", schedulerRouter);
     kernel.registerRoutes("/api/tasks", tasksRouter);
-    kernel.registerRoutes("/api/focus", focusRouter);
     kernel.registerRoutes("/api/achievements", achievementsRouter);
     kernel.registerRoutes("/api/periodic-tasks", periodicTasksRouter);
     kernel.registerRoutes("/api/calendar", calendarRouter);

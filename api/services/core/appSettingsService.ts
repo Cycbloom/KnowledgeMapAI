@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from '../../supabase';
 import { logger } from '../../utils/logger';
 
-export class SettingsService {
+export class AppSettingsService {
   private cache: Map<string, { value: any; timestamp: number }> = new Map();
   private CACHE_TTL = 60 * 1000; // 1 minute cache
 
@@ -58,4 +58,4 @@ export class SettingsService {
   }
 }
 
-export const settingsService = new SettingsService();
+export const appSettingsService = new AppSettingsService();

@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { DragDropContext, DropResult } from "@hello-pangea/dnd";
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import { motion } from "framer-motion";
 import { LayoutGrid, Calendar, Columns, List, ChevronDown } from "lucide-react";
 import { useTranslation } from 'react-i18next';
@@ -52,6 +59,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
   const [collapsedQueues, setCollapsedQueues] = useState<Set<number>>(
     new Set(),
   );
+  const [activeTask, setActiveTask] = useState<UserTask | null>(null);
 
   const VIEW_CONFIG = {
     queue: {
@@ -98,39 +106,102 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
     return { total: allTasks.length, pending, inProgress, completed };
   }, [displayQueues]);
 
-  const handleDragEnd = (result: DropResult) => {
-    const { source, destination, draggableId } = result;
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeId = String(event.active.id);
+    const allTasks = [
+      ...displayQueues.q0,
+      ...displayQueues.q1,
+      ...displayQueues.q2,
+    ];
+    const task = allTasks.find((t) => t.id === activeId);
+    setActiveTask(task ?? null);
+  };
 
-    if (!destination) {
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveTask(null);
+
+    if (!over) {
       setLocalQueues(null);
       return;
     }
 
-    const sourceQueueKey = source.droppableId.replace(
-      "queue-",
-      "q",
-    ) as keyof QueueData;
-    const destQueueKey = destination.droppableId.replace(
-      "queue-",
-      "q",
-    ) as keyof QueueData;
+    const activeId = String(active.id);
+    const overId = String(over.id);
 
-    if (sourceQueueKey === destQueueKey && source.index === destination.index) {
+    if (activeId === overId) {
       setLocalQueues(null);
       return;
     }
 
-    const newQueues = { ...displayQueues };
-    const sourceTasks = [...newQueues[sourceQueueKey]];
-    const [movedTask] = sourceTasks.splice(source.index, 1);
+    const activeQueueLevel =
+      (active.data.current?.queueLevel as number) ?? 0;
+    const sourceQueueKey = `q${activeQueueLevel}` as keyof QueueData;
 
-    if (sourceQueueKey !== destQueueKey) {
+    let destQueueLevel: number;
+
+    if (overId.startsWith("queue-")) {
+      destQueueLevel = parseInt(overId.replace("queue-", ""));
+      if (destQueueLevel === activeQueueLevel) {
+        setLocalQueues(null);
+        return;
+      }
+    } else {
+      const overData = over.data.current;
+      destQueueLevel = (overData?.queueLevel as number) ?? 0;
+    }
+
+    const destQueueKey = `q${destQueueLevel}` as keyof QueueData;
+
+    if (sourceQueueKey === destQueueKey) {
+      const sourceIndex = displayQueues[sourceQueueKey].findIndex(
+        (t) => t.id === activeId,
+      );
+      const overIndex = displayQueues[sourceQueueKey].findIndex(
+        (t) => t.id === overId,
+      );
+
+      if (sourceIndex === overIndex || sourceIndex === -1 || overIndex === -1) {
+        setLocalQueues(null);
+        return;
+      }
+
+      const newQueues = { ...displayQueues };
+      newQueues[sourceQueueKey] = arrayMove(
+        [...displayQueues[sourceQueueKey]],
+        sourceIndex,
+        overIndex,
+      );
+
+      setLocalQueues(newQueues);
+
+      if (onReorder) {
+        onReorder(activeQueueLevel, newQueues[sourceQueueKey].map((t) => t.id));
+      }
+    } else {
+      const newQueues = { ...displayQueues };
+      const sourceTasks = [...newQueues[sourceQueueKey]];
+      const sourceIndex = sourceTasks.findIndex((t) => t.id === activeId);
+
+      if (sourceIndex === -1) {
+        setLocalQueues(null);
+        return;
+      }
+
+      const [movedTask] = sourceTasks.splice(sourceIndex, 1);
+      const updatedTask = { ...movedTask, queue_level: destQueueLevel };
+
       const destTasks = [...newQueues[destQueueKey]];
-      const updatedTask = {
-        ...movedTask,
-        queue_level: parseInt(destQueueKey.replace("q", "")),
-      };
-      destTasks.splice(destination.index, 0, updatedTask);
+      let destIndex: number;
+
+      if (overId.startsWith("queue-")) {
+        destIndex = destTasks.length;
+      } else {
+        const overIndex = destTasks.findIndex((t) => t.id === overId);
+        destIndex = overIndex >= 0 ? overIndex : destTasks.length;
+      }
+
+      destTasks.splice(destIndex, 0, updatedTask);
 
       newQueues[sourceQueueKey] = sourceTasks;
       newQueues[destQueueKey] = destTasks;
@@ -138,21 +209,14 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
       setLocalQueues(newQueues);
 
       if (onTaskMove) {
-        const targetQueueLevel = parseInt(destQueueKey.replace("q", ""));
-        onTaskMove(draggableId, targetQueueLevel);
-      }
-    } else {
-      sourceTasks.splice(destination.index, 0, movedTask);
-      newQueues[sourceQueueKey] = sourceTasks;
-
-      setLocalQueues(newQueues);
-
-      if (onReorder) {
-        const queueLevel = parseInt(sourceQueueKey.replace("q", ""));
-        const taskIds = sourceTasks.map((t) => t.id);
-        onReorder(queueLevel, taskIds);
+        onTaskMove(activeId, destQueueLevel);
       }
     }
+  };
+
+  const handleDragCancel = () => {
+    setActiveTask(null);
+    setLocalQueues(null);
   };
 
   const toggleCollapse = (level: number) => {
@@ -168,7 +232,12 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
   };
 
   const renderQueueView = () => (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
       <div className="flex flex-col gap-4 p-1">
         {[0, 1, 2].map((level) => {
           const queueKey = `q${level}` as keyof QueueData;
@@ -241,7 +310,44 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
           );
         })}
       </div>
-    </DragDropContext>
+      <DragOverlay dropAnimation={null}>
+        {activeTask ? (
+          <div
+            className={`
+              rounded-xl border shadow-2xl ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 opacity-95
+              border-primary-300 dark:border-primary-400 shadow-primary-500/30
+              bg-white dark:bg-slate-900/80 backdrop-blur-sm
+              overflow-hidden flex-shrink-0
+            `}
+            style={{ width: "180px" }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-500" />
+            <div className="p-3 pl-4">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300">
+                  Q{activeTask.queue_level}
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400">
+                  {activeTask.status === "pending"
+                    ? t("scheduler.kanban.todo")
+                    : activeTask.status === "in_progress"
+                      ? t("scheduler.inProgress")
+                      : activeTask.status}
+                </span>
+              </div>
+              <h4 className="font-medium text-slate-900 dark:text-white text-sm mb-1 truncate pr-2">
+                {activeTask.title}
+              </h4>
+              {activeTask.description && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-2">
+                  {activeTask.description}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 
   return (

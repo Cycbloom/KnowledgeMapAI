@@ -1,32 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
-import type { NodeLevel } from "../../../shared/types/graph";
-
-export interface NetworkAnalysisResult {
-  nodeCount: number;
-  edgeCount: number;
-  density: number;
-  isolatedNodes: string[];
-  averageClusteringCoefficient: number;
-  centrality: {
-    degree: Record<string, number>;
-    betweenness: Record<string, number>;
-    closeness: Record<string, number>;
-  };
-  modules: Array<{
-    module: string;
-    nodeCount: number;
-    edgeCount: number;
-    density: number;
-  }>;
-  bridges: Array<{
-    nodeId: string;
-    title: string;
-    connectsModules: string[];
-    bridgeScore: number;
-  }>;
-  healthScore: number;
-}
+import type { NodeLevel, NetworkAnalysisResult } from "../../../shared/types/graph";
 
 interface GraphNodeData {
   graphNodeId: string;

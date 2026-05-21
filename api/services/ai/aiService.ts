@@ -1,5 +1,6 @@
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import type { AIProviderType } from "@shared/types";
+import type { Keyword } from "@shared/types/graph";
 import { getProviderForTask } from "./config";
 import { promptService } from "./promptService";
 import { cacheService, CacheKeys } from "../common/cacheService";
@@ -192,13 +193,6 @@ function generateRequestKey(
 }
 
 export type CardDifficulty = "easy" | "medium" | "hard" | "mixed";
-
-export interface Keyword {
-  term: string;
-  importance: number;
-  category: string;
-  explanation: string;
-}
 
 export interface GenerateLearningMaterialResult {
   content: string;

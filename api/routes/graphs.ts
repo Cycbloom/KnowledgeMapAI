@@ -12,7 +12,7 @@ import {
   shareGraphSchema,
 } from "../schemas/index";
 import { graphService } from "../services/graph/index";
-import { taskService } from "../services/taskService";
+import { asyncTaskService } from "../services/asyncTaskService";
 import { aiService } from "../services/ai/aiService";
 import { domainContextService } from "../services/ai/domainContextService";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -2016,7 +2016,7 @@ router.post(
           continue;
         }
 
-        const task = await taskService.createTask(
+        const task = await asyncTaskService.createTask(
           userId,
           "recursive_graph_generation",
           {
@@ -2091,7 +2091,7 @@ router.post(
         );
       }
 
-      const task = await taskService.createTask(
+      const task = await asyncTaskService.createTask(
         userId,
         "recursive_graph_generation",
         {

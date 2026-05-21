@@ -10,7 +10,7 @@ import {
 } from "../schemas/index";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { AppError } from "../middleware/errorHandler";
-import { taskService } from "../services/taskService";
+import { asyncTaskService } from "../services/asyncTaskService";
 import { studyService } from "../services/study/studyService";
 import { aiService } from "../services/ai/aiService";
 import { logger } from "../utils/logger";
@@ -315,7 +315,7 @@ router.post(
         .update({ status: "generating", updated_at: new Date().toISOString() })
         .eq("id", quiz_set_id);
 
-      const task = await taskService.createTask(req.user.id, "generate_quiz", {
+      const task = await asyncTaskService.createTask(req.user.id, "generate_quiz", {
         quiz_set_id,
         node_ids,
         config,

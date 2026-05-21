@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "../supabase";
-import { taskService } from "../services/taskService";
+import { asyncTaskService } from "../services/asyncTaskService";
 import type { Task } from "@shared/types/common";
 import { aiService } from "../services/ai/aiService";
 import { getNextLevel } from "../utils/graphUtils";
@@ -20,7 +20,7 @@ class TaskProcessor {
     );
 
     try {
-      await taskService.updateTaskStatus(getSupabaseAdmin(), task.id, "in_progress");
+      await asyncTaskService.updateTaskStatus(getSupabaseAdmin(), task.id, "in_progress");
 
       let result;
       switch (task.task_type) {
@@ -31,7 +31,7 @@ class TaskProcessor {
         case "recursive_graph_generation":
         case "infinite_graph_expansion":
         case "embedding_generation":
-          await taskService.processTask(
+          await asyncTaskService.processTask(
             task.id,
             task.user_id,
             task.task_type,
@@ -45,7 +45,7 @@ class TaskProcessor {
           throw new Error(`Unknown task type: ${task.task_type}`);
       }
 
-      await taskService.updateTaskStatus(
+      await asyncTaskService.updateTaskStatus(
         getSupabaseAdmin(),
         task.id,
         "completed",
@@ -67,7 +67,7 @@ class TaskProcessor {
       );
     } catch (error: any) {
       logger.error(`Task ${task.id} failed:`, error);
-      await taskService.updateTaskStatus(
+      await asyncTaskService.updateTaskStatus(
         getSupabaseAdmin(),
         task.id,
         "failed",
@@ -151,7 +151,7 @@ class TaskProcessor {
         return;
       }
       lastProgressUpdateAt = now;
-      await taskService.updateTaskStatus(
+      await asyncTaskService.updateTaskStatus(
         getSupabaseAdmin(),
         task.id,
         "in_progress",
@@ -237,7 +237,7 @@ class TaskProcessor {
     }
 
     // Ensure we end at 100% even if throttled
-    await taskService.updateTaskStatus(getSupabaseAdmin(), task.id, "in_progress", {
+    await asyncTaskService.updateTaskStatus(getSupabaseAdmin(), task.id, "in_progress", {
       progress: 100,
       current_node: "生成完成，正在收尾...",
     });

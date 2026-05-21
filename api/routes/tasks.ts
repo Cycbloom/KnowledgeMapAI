@@ -1,6 +1,6 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
-import { taskService } from '../services/taskService';
+import { asyncTaskService } from '../services/asyncTaskService';
 import { getSupabaseAdmin } from '../supabase';
 import { sseService } from '../services/core/sseService';
 import { logger } from '../utils/logger';
@@ -44,7 +44,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const { type, payload, name } = req.body;
   
   try {
-    const task = await taskService.createTask(req.user.id, type, payload, name);
+    const task = await asyncTaskService.createTask(req.user.id, type, payload, name);
     res.json(task);
   } catch (error: any) {
     logger.error('Create Task Error:', error);
@@ -58,7 +58,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = parseInt(req.query.offset as string) || 0;
     
-    const { tasks, total } = await taskService.getTasks(getSupabaseAdmin(), req.user.id, status, { limit, offset });
+    const { tasks, total } = await asyncTaskService.getTasks(getSupabaseAdmin(), req.user.id, status, { limit, offset });
     res.json({ tasks, total });
   } catch (error: any) {
     logger.error('Get Tasks Error:', error);
@@ -68,7 +68,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
 router.post('/:id/retry', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const task = await taskService.retryTask(getSupabaseAdmin(), req.params.id, req.user.id);
+    const task = await asyncTaskService.retryTask(getSupabaseAdmin(), req.params.id, req.user.id);
     res.json(task);
   } catch (error: any) {
     logger.error('Retry Task Error:', error);
@@ -78,7 +78,7 @@ router.post('/:id/retry', requireAuth, async (req: AuthRequest, res: Response) =
 
 router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    await taskService.deleteTask(getSupabaseAdmin(), req.params.id, req.user.id);
+    await asyncTaskService.deleteTask(getSupabaseAdmin(), req.params.id, req.user.id);
     res.json({ success: true });
   } catch (error: any) {
     logger.error('Delete Task Error:', error);

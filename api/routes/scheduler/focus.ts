@@ -178,4 +178,28 @@ router.get(
   },
 );
 
+router.get(
+  "/focus-sessions/today",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    try {
+      const todayStats = await focusService.getDailyFocusStats(
+        supabase,
+        req.user.id,
+      );
+      res.json({ success: true, data: todayStats });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取今日专注统计失败" });
+    }
+  },
+);
+
 export default router;

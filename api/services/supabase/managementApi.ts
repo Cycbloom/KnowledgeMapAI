@@ -1,4 +1,4 @@
-import { settingsService } from "../core/settingsService";
+import { appSettingsService } from "../core/appSettingsService";
 import { reinitializeSupabaseClients } from "../../supabase";
 import { migrationService } from "../migration/migrationService";
 import { logger } from "../../utils/logger";
@@ -277,7 +277,7 @@ async function quickSetup(
   );
   logger.info("Project credentials retrieved");
 
-  await settingsService.updateSetting("database_config", {
+  await appSettingsService.updateSetting("database_config", {
     url: credentials.supabaseUrl,
     anonKey: credentials.anonKey,
     serviceRoleKey: credentials.serviceRoleKey,

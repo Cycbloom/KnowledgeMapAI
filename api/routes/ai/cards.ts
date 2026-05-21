@@ -12,7 +12,7 @@ import {
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { AppError } from '../../middleware/errorHandler';
 import { aiService } from '../../services/ai/aiService';
-import { taskService } from '../../services/taskService';
+import { asyncTaskService } from '../../services/asyncTaskService';
 import { graphNodeService } from '../../services/graph/index';
 import { logger } from '../../utils/logger';
 import { getSupabaseAdmin } from '../../supabase';
@@ -171,7 +171,7 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
 
     if (graphNodes && graphNodes.length > 0) {
       for (const gn of graphNodes) {
-        const task = await taskService.createTask(
+        const task = await asyncTaskService.createTask(
           req.user.id, 
           'generate_questions', 
           { 
@@ -206,7 +206,7 @@ router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema)
 
     if (graphNodes && graphNodes.length > 0) {
       for (const gn of graphNodes) {
-        const task = await taskService.createTask(
+        const task = await asyncTaskService.createTask(
           req.user.id,
           'expand_graph',
           {
@@ -273,7 +273,7 @@ router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) =>
   const { id } = req.params;
   
   try {
-    const task = await taskService.getTask(req.supabase!, id, req.user.id);
+    const task = await asyncTaskService.getTask(req.supabase!, id, req.user.id);
     
     if (!task) {
       throw new AppError(ErrorCodes.TASK_NOT_FOUND);

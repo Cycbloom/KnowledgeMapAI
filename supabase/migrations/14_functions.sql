@@ -142,8 +142,8 @@ BEGIN
             SELECT jsonb_build_object(
                 'totalCards', COUNT(*),
                 'dueToday', COUNT(*) FILTER (WHERE next_review <= (CURRENT_DATE + TIME '23:59:59')),
-                'learning', COUNT(*) FILTER (WHERE fsrs_state IN (1, 3)),
-                'avgStability', COALESCE(ROUND(AVG(fsrs_stability) FILTER (WHERE fsrs_state != 0)::numeric, 1), 0.0)
+                'learning', COUNT(*) FILTER (WHERE fsrs_state IN ('Learning', 'Relearning')),
+                'avgStability', COALESCE(ROUND(AVG(fsrs_stability) FILTER (WHERE fsrs_state != 'New')::numeric, 1), 0.0)
             )
             FROM study_cards
             WHERE user_id = p_user_id

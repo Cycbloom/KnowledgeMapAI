@@ -168,6 +168,93 @@ function isValidModule(module: unknown): module is BackboneModule {
 }
 
 export class BackboneValidatorService {
+  validateBackboneNodeTitle(title: string): {
+    isValid: boolean;
+    module?: BackboneModule;
+  } {
+    const normalizedTitle = title.trim().toLowerCase();
+
+    for (const [module, standardTitle] of Object.entries(
+      BACKBONE_MODULE_TITLES,
+    )) {
+      if (normalizedTitle === standardTitle.toLowerCase()) {
+        return {
+          isValid: true,
+          module: module as BackboneModule,
+        };
+      }
+    }
+
+    return { isValid: false };
+  }
+
+  correctBackboneNodeTitle(title: string): {
+    correctedTitle: string;
+    module: BackboneModule;
+  } {
+    const normalizedTitle = title.trim().toLowerCase();
+
+    for (const [module, standardTitle] of Object.entries(
+      BACKBONE_MODULE_TITLES,
+    )) {
+      if (normalizedTitle === standardTitle.toLowerCase()) {
+        return {
+          correctedTitle: standardTitle,
+          module: module as BackboneModule,
+        };
+      }
+    }
+
+    for (const [module, standardTitle] of Object.entries(
+      BACKBONE_MODULE_TITLES,
+    )) {
+      if (normalizedTitle.includes(standardTitle.toLowerCase())) {
+        return {
+          correctedTitle: standardTitle,
+          module: module as BackboneModule,
+        };
+      }
+    }
+
+    for (const [module, standardTitle] of Object.entries(
+      BACKBONE_MODULE_TITLES,
+    )) {
+      if (standardTitle.toLowerCase().includes(normalizedTitle)) {
+        return {
+          correctedTitle: standardTitle,
+          module: module as BackboneModule,
+        };
+      }
+    }
+
+    for (const [module, moduleKeywords] of Object.entries(MODULE_KEYWORDS)) {
+      for (const keyword of moduleKeywords) {
+        if (normalizedTitle.includes(keyword.toLowerCase())) {
+          return {
+            correctedTitle: BACKBONE_MODULE_TITLES[module as BackboneModule],
+            module: module as BackboneModule,
+          };
+        }
+      }
+    }
+
+    throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+      context: { title, message: "无法自动修正骨干节点标题" },
+    });
+  }
+
+  validateBackboneModule(module: string): boolean {
+    return isValidModule(module);
+  }
+
+  isBackboneNode(node: { properties?: { backboneModule?: string } }): boolean {
+    if (!node?.properties?.backboneModule) {
+      return false;
+    }
+
+    return this.validateBackboneModule(node.properties.backboneModule);
+  }
+
   async validateNodes(
     nodes: NodeToValidate[],
     options?: {

@@ -1,37 +1,26 @@
 import { getSupabaseAdmin } from '../supabase';
 import { periodicTaskService } from './scheduler/periodicTaskService';
-
-export interface Achievement {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  category: string;
-  icon: string;
-  xp_reward: number;
-  condition_type: string;
-  condition_value: number;
-  unlocked_at?: string;
-}
+import { focusService } from './scheduler/focusService';
+import type {
+  Achievement,
+  UserAchievement,
+  AchievementCheckResult,
+  FocusSession,
+} from '@shared/types/scheduler';
 
 export class AchievementService {
-  /**
-   * Initialize daily tasks for a user
-   */
   async initDailyTasks(userId: string): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    
-    // Check if tasks exist for today
+
     const { count, error } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('period_type', 'daily')
       .eq('period_start', today);
-      
+
     if (error || (count && count > 0)) return;
 
-    // Create default daily tasks
     const tasks = [
       { user_id: userId, period_type: 'daily' as const, period_start: today, period_end: today, task_type: 'login', target: 1, xp_reward: 20 },
       { user_id: userId, period_type: 'daily' as const, period_start: today, period_end: today, task_type: 'study_cards', target: 10, xp_reward: 50 },
@@ -42,12 +31,9 @@ export class AchievementService {
     await getSupabaseAdmin().from('periodic_tasks').insert(tasks);
   }
 
-  /**
-   * Get daily tasks
-   */
   async getDailyTasks(userId: string): Promise<any[]> {
     await this.initDailyTasks(userId);
-    
+
     const today = new Date().toISOString().split('T')[0];
     const { data } = await getSupabaseAdmin()
       .from('periodic_tasks')
@@ -56,17 +42,13 @@ export class AchievementService {
       .eq('period_type', 'daily')
       .eq('period_start', today)
       .order('created_at');
-      
+
     return data || [];
   }
 
-  /**
-   * Update daily task progress
-   */
   async updateDailyTask(userId: string, type: string, amount: number = 1): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    
-    // Get task
+
     const { data: task } = await getSupabaseAdmin()
       .from('periodic_tasks')
       .select('*')
@@ -75,34 +57,28 @@ export class AchievementService {
       .eq('period_start', today)
       .eq('task_type', type)
       .single();
-      
+
     if (!task || task.status !== 'pending') return;
 
     const newProgress = Math.min(task.progress + amount, task.target);
     const updates: any = { progress: newProgress };
-    
+
     if (newProgress >= task.target) {
       updates.status = 'completed';
       updates.completed_at = new Date().toISOString();
-      // Auto claim for now or let user claim? Let's auto claim XP for simplicity or separate claim step.
-      // For now, let's just mark completed.
     }
 
     await getSupabaseAdmin()
       .from('periodic_tasks')
       .update(updates)
       .eq('id', task.id);
-      
+
     if (updates.status === 'completed') {
       await this.addXp(userId, task.xp_reward);
     }
   }
 
-  /**
-   * Get all achievements with user unlock status
-   */
   async getAchievements(userId: string): Promise<Achievement[]> {
-    // 1. Get all achievements
     const { data: allAchievements, error: fetchError } = await getSupabaseAdmin()
       .from('achievements')
       .select('*')
@@ -110,7 +86,6 @@ export class AchievementService {
 
     if (fetchError) throw fetchError;
 
-    // 2. Get user's unlocked achievements
     const { data: userAchievements, error: userError } = await getSupabaseAdmin()
       .from('user_achievements')
       .select('achievement_id, unlocked_at')
@@ -118,7 +93,6 @@ export class AchievementService {
 
     if (userError) throw userError;
 
-    // 3. Merge
     const unlockedMap = new Map(userAchievements.map((ua: any) => [ua.achievement_id, ua.unlocked_at]));
 
     return allAchievements.map((ach: any) => ({
@@ -127,21 +101,16 @@ export class AchievementService {
     }));
   }
 
-  /**
-   * Check if any achievements should be unlocked based on current stats
-   */
   async checkAndUnlock(userId: string, type: string, currentValue: number): Promise<Achievement[]> {
-    // 1. Find potential achievements of this type that are NOT yet unlocked
     const { data: candidates, error: candidateError } = await getSupabaseAdmin()
       .from('achievements')
       .select('*')
       .eq('condition_type', type)
-      .lte('condition_value', currentValue); // condition_value <= currentValue
+      .lte('condition_value', currentValue);
 
     if (candidateError) throw candidateError;
     if (!candidates || candidates.length === 0) return [];
 
-    // 2. Filter out already unlocked ones
     const { data: unlocked, error: unlockedError } = await getSupabaseAdmin()
       .from('user_achievements')
       .select('achievement_id')
@@ -149,13 +118,12 @@ export class AchievementService {
       .in('achievement_id', candidates.map((c: any) => c.id));
 
     if (unlockedError) throw unlockedError;
-    
+
     const unlockedIds = new Set(unlocked.map((u: any) => u.achievement_id));
     const newUnlocks = candidates.filter((c: any) => !unlockedIds.has(c.id));
 
     if (newUnlocks.length === 0) return [];
 
-    // 3. Unlock them
     const unlocksToInsert = newUnlocks.map((ach: any) => ({
       user_id: userId,
       achievement_id: ach.id,
@@ -168,7 +136,6 @@ export class AchievementService {
 
     if (insertError) throw insertError;
 
-    // 4. Award XP
     let totalXp = 0;
     for (const ach of newUnlocks) {
       totalXp += ach.xp_reward;
@@ -181,11 +148,7 @@ export class AchievementService {
     return newUnlocks;
   }
 
-  /**
-   * Add XP to user and handle leveling
-   */
   async addXp(userId: string, amount: number): Promise<{ newLevel: number, newXp: number, levelUp: boolean }> {
-    // 1. Get current user stats
     const { data: user, error: userError } = await getSupabaseAdmin()
       .from('users')
       .select('xp, level')
@@ -196,10 +159,7 @@ export class AchievementService {
 
     let { xp, level } = user;
     xp = (xp || 0) + amount;
-    
-    // Simple leveling formula: Level * 1000 XP needed for next level
-    // Or constant: 1000 * (Level)
-    // Let's use: Threshold = Level * 500
+
     let levelUp = false;
     let nextLevelThreshold = level * 500;
 
@@ -210,7 +170,6 @@ export class AchievementService {
       nextLevelThreshold = level * 500;
     }
 
-    // 2. Update user
     const { error: updateError } = await getSupabaseAdmin()
       .from('users')
       .update({ xp, level })
@@ -221,11 +180,7 @@ export class AchievementService {
     return { newLevel: level, newXp: xp, levelUp };
   }
 
-  /**
-   * Calculate and update study streak based on focus sessions
-   */
   async updateStudyStreak(userId: string): Promise<void> {
-    // Get unique dates from focus_sessions
     const { data: sessions, error } = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('start_time')
@@ -235,43 +190,30 @@ export class AchievementService {
 
     if (error || !sessions) return;
 
-    // Calculate streak
     const dates = new Set(sessions.map((s: any) => s.start_time.split('T')[0]));
     const sortedDates = Array.from(dates).sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
-    
+
     if (sortedDates.length === 0) return;
 
     const today = new Date().toISOString().split('T')[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    
-    // Check if user studied today or yesterday (to keep streak alive)
+
     if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
-      // Streak broken (or 0 if they haven't studied today/yesterday)
-      // But we only care about *current* streak for achievements usually.
-      // If they missed a day, streak is 0? Or just doesn't increase?
-      // "Streak" usually means consecutive days ending Today or Yesterday.
+      return;
     }
 
     let streak = 0;
     const currentDate = new Date();
-    // Normalize to YYYY-MM-DD
     const dateString = (d: Date) => d.toISOString().split('T')[0];
-    
-    // If the latest session is not today or yesterday, streak is 0
+
     if (!dates.has(dateString(currentDate)) && !dates.has(dateString(new Date(Date.now() - 86400000)))) {
       streak = 0;
     } else {
-      // Count backwards
-      // We start checking from Today.
-      // If Today has data, streak = 1. Then check Yesterday.
-      // If Today no data, check Yesterday. If Yesterday has data, streak = 1.
-      
       const checkDate = new Date();
-      // If today has no data, start from yesterday
       if (!dates.has(dateString(checkDate))) {
         checkDate.setDate(checkDate.getDate() - 1);
       }
-      
+
       while (dates.has(dateString(checkDate))) {
         streak++;
         checkDate.setDate(checkDate.getDate() - 1);
@@ -281,29 +223,14 @@ export class AchievementService {
     await this.checkAndUnlock(userId, 'streak_days', streak);
   }
 
-  /**
-   * Update focus achievements (total minutes)
-   */
   async updateFocusStats(userId: string): Promise<void> {
     const { error: _error } = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)
       .eq('completed', true)
-      .gte('start_time', new Date().toISOString().split('T')[0]); // Only today's sessions
+      .gte('start_time', new Date().toISOString().split('T')[0]);
 
-    // Note: The original logic summed ALL focus sessions for achievements.
-    // We should keep that for "Total Focus Time" achievements.
-    // But for Daily Task "focus_time", we only care about today.
-    // Let's separate the logic.
-    
-    // 1. Update Daily Task (Focus 25 min)
-    // We need to know the duration of the *latest* session or accumulate today's.
-    // The trigger usually comes after ONE session completes.
-    // Let's assume this method is called after a session.
-    // Ideally we pass the duration of the just-completed session.
-    // But since we query DB, let's query today's total.
-    
     const today = new Date().toISOString().split('T')[0];
     const { data: todaySessions } = await getSupabaseAdmin()
       .from('focus_sessions')
@@ -311,42 +238,25 @@ export class AchievementService {
       .eq('user_id', userId)
       .eq('completed', true)
       .gte('start_time', today);
-      
+
     const todayMinutes = todaySessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0;
-    
-    // Update daily task progress to match today's total
-    // But updateDailyTask adds incremental progress usually? 
-    // No, our implementation `newProgress = task.progress + amount`.
-    // So we should pass the *delta*.
-    // However, recreating state from DB is safer.
-    // Let's modify updateDailyTask to set absolute progress if needed, or we just pass the delta from the caller.
-    // For now, let's just pass 25 if the session was 25 min? 
-    // It's better if the caller (route) passes the duration.
-    // But let's stick to the current pattern: "Check and Update".
-    
-    // Let's refactor updateDailyTask to take absolute value or delta.
-    // Actually, let's just use a specific method for daily focus.
-    
+
     await this.updateDailyTaskProgress(userId, 'focus_time', todayMinutes);
 
-    // 2. Update Lifetime Achievements (Total Focus Time)
     const { data: allSessions } = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)
       .eq('completed', true);
-      
+
     const totalMinutes = allSessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0;
     await this.checkAndUnlock(userId, 'focus_minutes', totalMinutes);
-    
+
     await periodicTaskService.updatePeriodicTaskProgress(userId, 'focus', totalMinutes);
-    
+
     await this.updateStudyStreak(userId);
   }
 
-  /**
-   * Helper to set absolute progress for daily task
-   */
   async updateDailyTaskProgress(userId: string, type: string, currentTotal: number): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     const { data: task } = await getSupabaseAdmin()
@@ -357,9 +267,9 @@ export class AchievementService {
       .eq('period_start', today)
       .eq('task_type', type)
       .single();
-      
+
     if (!task || task.status !== 'pending') return;
-    
+
     if (currentTotal >= task.target) {
       await getSupabaseAdmin()
         .from('periodic_tasks')
@@ -374,10 +284,6 @@ export class AchievementService {
     }
   }
 
-  /**
-   * Update study achievements (mastered cards)
-   * We define "mastered" as having a stability > 21 days (approx 3 weeks)
-   */
   async updateMasteredStats(userId: string): Promise<void> {
     const { count, error } = await getSupabaseAdmin()
       .from('study_cards')
@@ -389,13 +295,10 @@ export class AchievementService {
       await this.checkAndUnlock(userId, 'cards_mastered', count || 0);
       await periodicTaskService.updatePeriodicTaskProgress(userId, 'study', count || 0);
     }
-    
+
     await this.updateDailyTask(userId, 'study_cards', 1);
   }
 
-  /**
-   * Update creation achievements (graphs/nodes created)
-   */
   async updateCreationStats(userId: string): Promise<void> {
     const { count: graphCount, error: graphError } = await getSupabaseAdmin()
       .from('graphs')
@@ -418,6 +321,145 @@ export class AchievementService {
       await this.checkAndUnlock(userId, 'nodes_created', nodeCount || 0);
       await periodicTaskService.updatePeriodicTaskProgress(userId, 'create', nodeCount || 0);
     }
+  }
+
+  async getAllAchievements(): Promise<Achievement[]> {
+    const { data, error } = await getSupabaseAdmin()
+      .from('achievements')
+      .select('*')
+      .order('category')
+      .order('condition_value');
+
+    if (error) throw new Error(`Failed to fetch achievements: ${error.message}`);
+    return data as Achievement[];
+  }
+
+  async getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]> {
+    const { data, error } = await getSupabaseAdmin()
+      .from('user_achievements')
+      .select('*, achievement:achievements(*)')
+      .eq('user_id', userId)
+      .order('unlocked_at', { ascending: false });
+
+    if (error) throw new Error(`Failed to fetch user achievements: ${error.message}`);
+    return data as (UserAchievement & { achievement: Achievement })[];
+  }
+
+  async checkAndUnlockAchievements(userId: string): Promise<AchievementCheckResult> {
+    const stats = await focusService.getUserFocusStats(getSupabaseAdmin(), userId);
+    const allAchievements = await this.getAllAchievements();
+    const userAchievements = await this.getUserAchievements(userId);
+    const unlockedCodes = new Set(userAchievements.map(ua => ua.achievement.code));
+
+    const unlocked: Achievement[] = [];
+    const progress: AchievementCheckResult['progress'] = [];
+
+    for (const achievement of allAchievements) {
+      if (unlockedCodes.has(achievement.code)) continue;
+
+      let current = 0;
+      switch (achievement.condition_type) {
+        case 'focus_sessions':
+          current = stats.total_sessions;
+          break;
+        case 'total_focus_hours':
+          current = Math.floor(stats.total_focus_seconds / 3600);
+          break;
+        case 'consecutive_days':
+          current = stats.current_streak;
+          break;
+        case 'tasks_completed':
+          current = stats.total_tasks_completed;
+          break;
+        case 'pomodoros_completed':
+          current = stats.total_pomodoros;
+          break;
+        case 'daily_focus_hours': {
+          const todayStats = await focusService.getDailyFocusStats(getSupabaseAdmin(), userId);
+          current = Math.floor(todayStats.total_duration / 3600);
+          break;
+        }
+        default:
+          continue;
+      }
+
+      const percentage = Math.min(100, Math.round((current / achievement.condition_value) * 100));
+
+      if (current >= achievement.condition_value) {
+        const { error: insertError } = await getSupabaseAdmin()
+          .from('user_achievements')
+          .insert({
+            user_id: userId,
+            achievement_id: achievement.id,
+            progress: 100,
+            metadata: { unlocked_value: current },
+          });
+
+        if (!insertError) {
+          unlocked.push(achievement);
+        }
+      } else {
+        progress.push({
+          achievement,
+          current,
+          target: achievement.condition_value,
+          percentage,
+        });
+      }
+    }
+
+    return { unlocked, progress };
+  }
+
+  async checkSpecialAchievements(userId: string, session: FocusSession): Promise<Achievement[]> {
+    const unlocked: Achievement[] = [];
+    const userAchievements = await this.getUserAchievements(userId);
+    const unlockedCodes = new Set(userAchievements.map(ua => ua.achievement.code));
+
+    const sessionHour = new Date(session.started_at).getHours();
+
+    if (!unlockedCodes.has('night_owl') && sessionHour >= 0 && sessionHour < 5) {
+      const achievement = await this.unlockSpecialAchievement(userId, 'night_owl');
+      if (achievement) unlocked.push(achievement);
+    }
+
+    if (!unlockedCodes.has('early_bird') && sessionHour >= 5 && sessionHour < 7) {
+      const achievement = await this.unlockSpecialAchievement(userId, 'early_bird');
+      if (achievement) unlocked.push(achievement);
+    }
+
+    const dayOfWeek = new Date(session.started_at).getDay();
+    if (!unlockedCodes.has('weekend_warrior') && (dayOfWeek === 0 || dayOfWeek === 6)) {
+      const dailyStats = await focusService.getDailyFocusStats(getSupabaseAdmin(), userId);
+      if (dailyStats.total_duration >= 4 * 3600) {
+        const achievement = await this.unlockSpecialAchievement(userId, 'weekend_warrior');
+        if (achievement) unlocked.push(achievement);
+      }
+    }
+
+    return unlocked;
+  }
+
+  private async unlockSpecialAchievement(userId: string, code: string): Promise<Achievement | null> {
+    const { data: achievement, error: achievementError } = await getSupabaseAdmin()
+      .from('achievements')
+      .select('*')
+      .eq('code', code)
+      .single();
+
+    if (achievementError || !achievement) return null;
+
+    const { error: insertError } = await getSupabaseAdmin()
+      .from('user_achievements')
+      .insert({
+        user_id: userId,
+        achievement_id: achievement.id,
+        progress: 100,
+        metadata: { unlocked_at: new Date().toISOString() },
+      });
+
+    if (insertError) return null;
+    return achievement as Achievement;
   }
 }
 

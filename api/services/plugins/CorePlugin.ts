@@ -1,6 +1,6 @@
 import type { Plugin, KernelAPI } from "../kernel/types";
 import { authService } from "../core/authService";
-import { settingsService } from "../core/settingsService";
+import { appSettingsService } from "../core/appSettingsService";
 import { healthService } from "../core/healthService";
 import { sseService } from "../core/sseService";
 import { appEventBus } from "../core/eventBus";
@@ -16,7 +16,7 @@ export const corePlugin: Plugin = {
 
   onInstall(kernel: KernelAPI): void {
     kernel.registerService("authService", authService);
-    kernel.registerService("settingsService", settingsService);
+    kernel.registerService("settingsService", appSettingsService);
     kernel.registerService("healthService", healthService);
     kernel.registerService("sseService", sseService);
     kernel.registerService("eventBus", appEventBus);

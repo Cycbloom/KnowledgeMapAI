@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import type { AIProviderType, AIProviderConfig } from "@shared/types";
-import { settingsService } from "../core/settingsService";
+import { appSettingsService } from "../core/appSettingsService";
 import { logger } from "../../utils/logger";
 
 dotenv.config();
@@ -67,7 +67,7 @@ export const getProviderConfig = async (
 
   try {
     const allConfigs =
-      await settingsService.getSetting<Record<string, any>>(
+      await appSettingsService.getSetting<Record<string, any>>(
         "ai_provider_config",
       );
 
@@ -89,7 +89,7 @@ export const getProviderConfig = async (
 
 export const getDefaultProvider = async (): Promise<AIProviderType> => {
   try {
-    const sysConfig = await settingsService.getSetting<{
+    const sysConfig = await appSettingsService.getSetting<{
       default_provider: string;
     }>("system_config");
     if (sysConfig?.default_provider) {
@@ -105,7 +105,7 @@ export const getProviderForTask = async (
   task: "text" | "embedding" | "reasoning" | "tts" = "text",
 ): Promise<AIProviderType | null> => {
   try {
-    const sysConfig = await settingsService.getSetting<{
+    const sysConfig = await appSettingsService.getSetting<{
       main_ai?: { provider: string };
       embedding_ai?: { provider: string };
     }>("system_config");

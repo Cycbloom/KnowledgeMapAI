@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AutoGraphService, AINodeData, CreateEdgeData } from "../../../services/graph/autoGraphService";
 import { graphNodeService } from "../../../services/graph/graphNodeService";
 import { edgeService } from "../../../services/graph/edgeService";
-import { taskService } from "../../../services/taskService";
+import { asyncTaskService } from "../../../services/asyncTaskService";
 
 vi.mock("../../../services/graph/graphNodeService");
 vi.mock("../../../services/graph/edgeService");
-vi.mock("../../../services/taskService");
+vi.mock("../../../services/asyncTaskService");
 vi.mock("../../../utils/logger", () => ({
   logger: {
     info: vi.fn(),
@@ -883,7 +883,7 @@ describe("AutoGraphService", () => {
         error: null,
       });
 
-      vi.mocked(taskService.createTask).mockResolvedValue({} as any);
+      vi.mocked(asyncTaskService.createTask).mockResolvedValue({} as any);
 
       await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -892,7 +892,7 @@ describe("AutoGraphService", () => {
         nodes
       );
 
-      expect(taskService.createTask).toHaveBeenCalledWith(
+      expect(asyncTaskService.createTask).toHaveBeenCalledWith(
         userId,
         "embedding_generation",
         { knowledgePointIds: [kpId] },
@@ -932,7 +932,7 @@ describe("AutoGraphService", () => {
         error: null,
       });
 
-      vi.mocked(taskService.createTask).mockRejectedValue(new Error("Task creation failed"));
+      vi.mocked(asyncTaskService.createTask).mockRejectedValue(new Error("Task creation failed"));
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,

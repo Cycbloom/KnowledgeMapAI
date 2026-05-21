@@ -1,15 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-
-export interface TaskSettings {
-  id: string;
-  user_id: string;
-  q0_time_slice: number;
-  q1_time_slice: number;
-  q2_time_slice: number;
-  break_duration: number;
-  sound_enabled: boolean;
-  notification_enabled: boolean;
-}
+import type { TaskSettings } from "@shared/types/scheduler";
 
 const DEFAULT_SETTINGS: Omit<TaskSettings, "id" | "user_id"> = {
   q0_time_slice: 25,
@@ -20,7 +10,7 @@ const DEFAULT_SETTINGS: Omit<TaskSettings, "id" | "user_id"> = {
   notification_enabled: true,
 };
 
-export class SettingsService {
+export class TaskSettingsService {
   async getSettings(
     client: SupabaseClient,
     userId: string,
@@ -70,4 +60,4 @@ export class SettingsService {
   }
 }
 
-export const settingsService = new SettingsService();
+export const taskSettingsService = new TaskSettingsService();

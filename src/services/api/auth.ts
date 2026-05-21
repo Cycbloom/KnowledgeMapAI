@@ -1,35 +1,12 @@
 import { request } from './client';
-import { authConfig } from '../../config/authConfig';
-import { getSupabaseClient } from '../../lib/supabase';
-
-export interface AuthResponse {
-  user: any;
-  session?: {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-    token_type: string;
-  } | null;
-  error?: string;
-  message?: string;
-}
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  name?: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-export interface UpdateProfileData {
-  name?: string;
-  avatar_url?: string;
-  settings?: Record<string, unknown>;
-}
+import { authConfig } from '@/config/authConfig';
+import { getSupabaseClient } from '@/lib/supabase';
+import type {
+  AuthResponse,
+  RegisterData,
+  LoginData,
+  UpdateProfileData,
+} from '@shared/types/api';
 
 const localAuthApi = {
   register: (data: RegisterData): Promise<AuthResponse> =>

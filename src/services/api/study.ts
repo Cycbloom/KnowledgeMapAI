@@ -1,13 +1,8 @@
 import { request } from "./client";
+import type { GetCardsParams, CardGroup } from "@shared/types/api";
 
 export const studyApi = {
-  getCards: (params?: {
-    graph_id?: string;
-    knowledge_point_id?: string;
-    knowledge_point_ids?: string[];
-    source_graph_id?: string;
-    due?: boolean;
-  }) => {
+  getCards: (params?: GetCardsParams) => {
     const search = new URLSearchParams();
     if (params?.graph_id) search.set("graph_id", params.graph_id);
     if (params?.knowledge_point_id)
@@ -63,13 +58,7 @@ export const studyApi = {
     }),
 
   getCardGroups: (knowledgePointId: string) =>
-    request<
-      Array<{
-        source_graph_id: string;
-        graph_title: string;
-        card_count: number;
-      }>
-    >(`/study/cards/groups/${knowledgePointId}`),
+    request<CardGroup[]>(`/study/cards/groups/${knowledgePointId}`),
 
   getStats: (graphId?: string) => {
     const params = new URLSearchParams();

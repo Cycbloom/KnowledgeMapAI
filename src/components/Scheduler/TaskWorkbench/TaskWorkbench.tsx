@@ -51,7 +51,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const loadTaskDetail = async () => {
     setLoading(true);
     try {
-      const response = await api.scheduler.getTaskDetail(taskId);
+      const response = await api.scheduler.getDetail(taskId);
       if (response.success) {
         setTask(response.data);
       }
@@ -66,7 +66,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const handleStartTask = async () => {
     if (!task) return;
     try {
-      await api.scheduler.startTask(task.id);
+      await api.scheduler.start(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已开始" });
       loadTaskDetail();
     } catch (error: any) {
@@ -77,7 +77,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const handlePauseTask = async () => {
     if (!task) return;
     try {
-      await api.scheduler.pauseTask(task.id);
+      await api.scheduler.pause(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已暂停" });
       loadTaskDetail();
     } catch (error: any) {
@@ -88,7 +88,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const handleCompleteTask = async () => {
     if (!task) return;
     try {
-      await api.scheduler.completeTask(task.id);
+      await api.scheduler.complete(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已完成" });
       loadTaskDetail();
     } catch (error: any) {
@@ -100,7 +100,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     if (!window.confirm("确定要删除这个任务吗？此操作不可撤销。")) return;
     try {
-      await api.scheduler.deleteTask(task.id);
+      await api.scheduler.delete(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已删除" });
       onBack();
     } catch (error: any) {

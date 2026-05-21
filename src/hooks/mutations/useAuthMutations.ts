@@ -1,5 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { authApi, type LoginData, type RegisterData, type UpdateProfileData } from "../../services/api/auth";
+import { authApi } from "../../services/api/auth";
+import type {
+  LoginData,
+  RegisterData,
+  UpdateProfileData,
+} from "@shared/types/api";
 import { useStore } from "../../store/useStore";
 import { queryKeys } from "../queries/config";
 

@@ -5,7 +5,7 @@ import type {
   NodeLevel,
   BackboneModuleCustomConfig,
 } from "@shared/types/graph";
-import { getAILanguage } from "../../hooks/useAILanguage";
+import { getAILanguage } from "@/hooks/useAILanguage";
 
 export interface GenerateTemplatesData {
   topic: string;

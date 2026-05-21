@@ -59,7 +59,7 @@ import {
 } from "../utils/errors";
 import { isCapacitorMobile } from "../config/mobileApiConfig";
 import { mobileAIService, AICardGenError } from "../services/mobile/aiService";
-import { getMobileSupabaseClient } from "../services/mobile/client";
+import { getMobileSupabaseClient } from "../lib/supabase";
 import { GraphOutline } from "../components/GraphEditor/panels/GraphOutline";
 import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
@@ -614,12 +614,12 @@ export const LearningMode = () => {
     try {
       let taskId: string;
 
-      const existingTask = await schedulerApi.getTask(nodeId).catch(() => null);
+      const existingTask = await schedulerApi.get(nodeId).catch(() => null);
 
       if (existingTask?.id) {
         taskId = existingTask.id;
       } else {
-        const newTask = await schedulerApi.createTask({
+        const newTask = await schedulerApi.create({
           title: nodeTitle || `学习: ${nodeId}`,
           knowledge_point_id: nodeId,
           task_type: "learning",
@@ -794,7 +794,7 @@ export const LearningMode = () => {
           return;
         }
 
-        const graphNode = graphNodes[0] as {
+        const graphNode = graphNodes[0] as unknown as {
           knowledge_point_id: string;
           graph_id: string;
           knowledge_points?: {

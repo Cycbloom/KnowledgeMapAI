@@ -6,7 +6,12 @@ import type {
   CrossDomainInsight,
   LearningPathSuggestion,
   KnowledgeGap,
+  CreateGraphFromTemplateData,
 } from "@shared/types/graph";
+import type {
+  CreateGraphData,
+  UpdateGraphData,
+} from "@shared/types/api";
 
 export interface TopicCheckResult {
   is_duplicate: boolean;
@@ -112,19 +117,9 @@ export const graphsApi = {
       body: JSON.stringify({ topic, exclude_graph_id: excludeGraphId }),
     }),
 
-  create: (data: {
-    title: string;
-    description?: string;
-    domain?: string;
-    template_type?: string;
-    preset_id?: string;
-  }) => request("/graphs", { method: "POST", body: JSON.stringify(data) }),
+  create: (data: CreateGraphData) => request("/graphs", { method: "POST", body: JSON.stringify(data) }),
 
-  createFromTemplate: (data: {
-    template_id: string;
-    title?: string;
-    description?: string;
-  }) =>
+  createFromTemplate: (data: CreateGraphFromTemplateData) =>
     request("/templates/from-template", {
       method: "POST",
       body: JSON.stringify(data),
@@ -138,15 +133,7 @@ export const graphsApi = {
 
   update: (
     id: string,
-    data: {
-      title?: string;
-      description?: string;
-      domain?: string;
-      settings?: Record<string, unknown>;
-      reference_books?: unknown;
-      external_links?: unknown;
-      learning_guide?: string;
-    },
+    data: UpdateGraphData,
   ) => request(`/graphs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 
   togglePublic: (id: string, is_public: boolean) =>

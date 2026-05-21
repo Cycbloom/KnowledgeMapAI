@@ -7,6 +7,7 @@ import { useTheme } from '../hooks';
 import { Sun, Moon, Cloud } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
 import { getAuthModeDisplay } from '../config/authConfig';
+import type { User } from '@shared/types/user';
 
 export const Register = () => {
   const { t } = useTranslation();
@@ -26,7 +27,7 @@ export const Register = () => {
       const data = await registerMutation.mutateAsync({ email, password, name });
       if (data.error) throw new Error(data.error);
       
-      setUser(data.user, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
+      setUser(data.user as User | null, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
       navigate('/');
     } catch (err: any) {
       if (isValidationError(err)) {

@@ -100,7 +100,7 @@ export const CalendarPage: React.FC = () => {
         if (dailyRes?.data) setDailyActivities(dailyRes.data);
       } else {
         const [tasksRes, executionsRes] = await Promise.all([
-          api.scheduler.getTasks({}),
+          api.scheduler.list({}),
           api.scheduler.getExecutions({}),
         ]);
 
@@ -195,7 +195,7 @@ export const CalendarPage: React.FC = () => {
 
     setSaving(true);
     try {
-      await api.scheduler.createTask({
+      await api.scheduler.create({
         title: taskForm.title,
         description: taskForm.description,
         deadline: taskForm.deadline.toISOString(),
@@ -243,7 +243,7 @@ export const CalendarPage: React.FC = () => {
         updateData.scheduled_end = dropInfo.newEnd.toISOString();
       }
 
-      await api.scheduler.updateTask(dropInfo.eventId, updateData);
+      await api.scheduler.update(dropInfo.eventId, updateData);
       frontendEventBus.publish("message_show", {
         type: "success",
         content: "任务时间已更新!",

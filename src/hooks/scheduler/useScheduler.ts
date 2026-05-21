@@ -46,7 +46,7 @@ export const schedulerKeys = {
 export function useSchedulerTasks(filters?: UserTaskFilters) {
   return useQuery({
     queryKey: schedulerKeys.tasks(filters),
-    queryFn: () => api.scheduler.getTasks(filters),
+    queryFn: () => api.scheduler.list(filters),
     ...realtimeQueryConfig,
   });
 }
@@ -54,7 +54,7 @@ export function useSchedulerTasks(filters?: UserTaskFilters) {
 export function useSchedulerTask(id: string) {
   return useQuery({
     queryKey: schedulerKeys.task(id),
-    queryFn: () => api.scheduler.getTask(id),
+    queryFn: () => api.scheduler.get(id),
     enabled: !!id,
     ...defaultQueryConfig,
   });
@@ -109,7 +109,7 @@ export function useHeatmap(year?: number, month?: number) {
 export function useCreateUserTaskMutation() {
   return useMutation({
     mutationFn: (data: CreateUserTaskData) =>
-      api.scheduler.createTask(data) as Promise<UserTask>,
+      api.scheduler.create(data) as Promise<UserTask>,
     onSuccess: (data) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: data.id,
@@ -122,7 +122,7 @@ export function useCreateUserTaskMutation() {
 export function useUpdateUserTaskMutation() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserTaskData }) =>
-      api.scheduler.updateTask(id, data) as Promise<UserTask>,
+      api.scheduler.update(id, data) as Promise<UserTask>,
     onSuccess: (_data, variables) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: variables.id,
@@ -134,7 +134,7 @@ export function useUpdateUserTaskMutation() {
 
 export function useDeleteUserTaskMutation() {
   return useMutation({
-    mutationFn: (id: string) => api.scheduler.deleteTask(id),
+    mutationFn: (id: string) => api.scheduler.delete(id),
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: id,
@@ -147,7 +147,7 @@ export function useDeleteUserTaskMutation() {
 export function useStartUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.startTask(id) as Promise<UserTask>,
+      api.scheduler.start(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: id,
@@ -160,7 +160,7 @@ export function useStartUserTaskMutation() {
 export function usePauseUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.pauseTask(id) as Promise<UserTask>,
+      api.scheduler.pause(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: id,
@@ -173,7 +173,7 @@ export function usePauseUserTaskMutation() {
 export function useCompleteUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.completeTask(id) as Promise<UserTask>,
+      api.scheduler.complete(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_completed", { taskId: id });
     },
@@ -183,7 +183,7 @@ export function useCompleteUserTaskMutation() {
 export function useDemoteUserTaskMutation() {
   return useMutation({
     mutationFn: (id: string) =>
-      api.scheduler.demoteTask(id) as Promise<UserTask>,
+      api.scheduler.demote(id) as Promise<UserTask>,
     onSuccess: (_data, id) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: id,
@@ -196,7 +196,7 @@ export function useDemoteUserTaskMutation() {
 export function useMoveUserTaskMutation() {
   return useMutation({
     mutationFn: ({ id, targetQueue }: { id: string; targetQueue: number }) =>
-      api.scheduler.moveTask(id, targetQueue) as Promise<UserTask>,
+      api.scheduler.move(id, targetQueue) as Promise<UserTask>,
     onSuccess: (_data, variables) => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: variables.id,
@@ -214,7 +214,7 @@ export function useReorderUserTasksMutation() {
     }: {
       queueLevel: number;
       taskIds: string[];
-    }) => api.scheduler.reorderTasks(queueLevel, taskIds),
+    }) => api.scheduler.reorder(queueLevel, taskIds),
     onSuccess: () => {
       frontendEventBus.publish("scheduler_task_changed", {
         taskId: "",

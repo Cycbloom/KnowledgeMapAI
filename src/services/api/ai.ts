@@ -6,9 +6,9 @@ import {
   injectAIConfig,
   getCookie,
 } from "./client";
-import { useStore } from "../../store/useStore";
+import { useStore } from "@/store/useStore";
 import type { AIAction } from "@shared/types";
-import { getAILanguage } from "../../hooks/useAILanguage";
+import { getAILanguage } from "@/hooks/useAILanguage";
 import {
   createStreamHandler,
   handleUnauthorized,

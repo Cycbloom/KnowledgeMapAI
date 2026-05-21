@@ -13,7 +13,7 @@ import { mobileSchedulerApi } from "./scheduler";
 import { mobileAchievementsApi } from "./achievements";
 import { mobilePeriodicTasksApi } from "./periodicTasks";
 
-export { getMobileSupabaseClient, resetMobileSupabaseClient } from "./client";
+export { getMobileSupabaseClient, resetMobileSupabaseClient, getSupabaseClient, resetSupabaseClient } from "@/lib/supabase";
 export { mobileAuthApi } from "./auth";
 export { mobileGraphsApi } from "./graphs";
 export { mobileNodesApi } from "./nodes";
@@ -34,7 +34,7 @@ export type {
   RegisterData,
   LoginData,
   UpdateProfileData,
-} from "./auth";
+} from "@shared/types/api";
 
 export const mobileApi = {
   auth: mobileAuthApi,

@@ -1,5 +1,11 @@
-import { getMobileSupabaseClient } from "./client";
+import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { Node, Keyword } from "@shared/types/graph";
+import type {
+  CreateNodeData,
+  UpdateNodeData,
+  NodePositionUpdate,
+  DeleteNodeResult,
+} from "@shared/types/api";
 
 type GraphNodeRaw = {
   knowledge_point_id: string;
@@ -81,19 +87,7 @@ const GRAPH_NODES_SELECT = `
 `;
 
 export const mobileNodesApi = {
-  create: async (data: {
-    graph_id: string;
-    title: string;
-    content?: string;
-    level?: string;
-    x_position?: number;
-    y_position?: number;
-    parent_node_ids?: string[];
-    learning_material?: string;
-    properties?: Record<string, unknown>;
-    knowledge_point_id?: string;
-    reuse_existing?: boolean;
-  }): Promise<Node> => {
+  create: async (data: CreateNodeData): Promise<Node> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -145,16 +139,7 @@ export const mobileNodesApi = {
 
   update: async (
     id: string,
-    data: {
-      title?: string;
-      content?: string;
-      level?: string;
-      x_position?: number;
-      y_position?: number;
-      learning_material?: string;
-      properties?: Record<string, unknown>;
-      keywords?: Keyword[];
-    },
+    data: UpdateNodeData & { keywords?: Keyword[] },
   ): Promise<Node> => {
     const client = getMobileSupabaseClient();
     if (!client) {
@@ -223,13 +208,7 @@ export const mobileNodesApi = {
   delete: async (
     id: string,
     hardDelete?: boolean,
-  ): Promise<{
-    message: string;
-    affected_graphs?: string[];
-    deleted_graph_nodes?: number;
-    deleted_edges?: number;
-    deleted_cards?: number;
-  }> => {
+  ): Promise<DeleteNodeResult> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -309,7 +288,7 @@ export const mobileNodesApi = {
   },
 
   batchUpdatePositions: async (
-    positions: Array<{ id: string; x_position: number; y_position: number }>,
+    positions: NodePositionUpdate[],
   ): Promise<void> => {
     const client = getMobileSupabaseClient();
     if (!client) {

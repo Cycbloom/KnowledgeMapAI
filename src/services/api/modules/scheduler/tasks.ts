@@ -22,10 +22,10 @@ export type {
 } from "@shared/types";
 
 export const tasksApi = {
-  createTask: (data: CreateUserTaskData) =>
+  create: (data: CreateUserTaskData) =>
     request("/scheduler/tasks", { method: "POST", body: JSON.stringify(data) }),
 
-  getTasks: (filters?: UserTaskFilters) => {
+  list: (filters?: UserTaskFilters) => {
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
     if (filters?.queue_level !== undefined)
@@ -37,32 +37,32 @@ export const tasksApi = {
     return request(`/scheduler/tasks${queryString ? `?${queryString}` : ""}`);
   },
 
-  getTask: (id: string) => request(`/scheduler/tasks/${id}`),
+  get: (id: string) => request(`/scheduler/tasks/${id}`),
 
-  getTaskDetail: (id: string) => request(`/scheduler/tasks/${id}/detail`),
+  getDetail: (id: string) => request(`/scheduler/tasks/${id}/detail`),
 
-  updateTask: (id: string, data: UpdateUserTaskData) =>
+  update: (id: string, data: UpdateUserTaskData) =>
     request(`/scheduler/tasks/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  deleteTask: (id: string) =>
+  delete: (id: string) =>
     request(`/scheduler/tasks/${id}`, { method: "DELETE" }),
 
-  startTask: (id: string) =>
+  start: (id: string) =>
     request(`/scheduler/tasks/${id}/start`, { method: "POST" }),
 
-  pauseTask: (id: string) =>
+  pause: (id: string) =>
     request(`/scheduler/tasks/${id}/pause`, { method: "POST" }),
 
-  completeTask: (id: string) =>
+  complete: (id: string) =>
     request(`/scheduler/tasks/${id}/complete`, { method: "POST" }),
 
-  demoteTask: (id: string) =>
+  demote: (id: string) =>
     request(`/scheduler/tasks/${id}/demote`, { method: "POST" }),
 
-  moveTask: (id: string, targetQueue: number | string) => {
+  move: (id: string, targetQueue: number | string) => {
     const body =
       typeof targetQueue === "number"
         ? { target_queue: targetQueue }
@@ -73,20 +73,20 @@ export const tasksApi = {
     });
   },
 
-  reorderTasks: (queueLevel: number, taskIds: string[]) =>
+  reorder: (queueLevel: number, taskIds: string[]) =>
     request(`/scheduler/tasks/reorder`, {
       method: "PUT",
       body: JSON.stringify({ queue_level: queueLevel, task_ids: taskIds }),
     }),
 
-  generateTaskDetails: (title: string, context?: string) =>
+  generateDetails: (title: string, context?: string) =>
     request("/scheduler/generate-details", {
       method: "POST",
       body: JSON.stringify({ title, context }),
     }),
 
-  updateNotes: (taskId: string, notes: string) =>
-    request(`/scheduler/tasks/${taskId}/notes`, {
+  updateNotes: (id: string, notes: string) =>
+    request(`/scheduler/tasks/${id}/notes`, {
       method: "PUT",
       body: JSON.stringify({ notes }),
     }),
@@ -96,9 +96,9 @@ export const tasksApi = {
   getEfficiencyProfile: (days: number = 30) =>
     request(`/scheduler/efficiency-data?days=${days}`),
 
-  getDynamicPriority: (taskId: string) =>
-    request(`/scheduler/tasks/${taskId}/dynamic-priority`),
+  getDynamicPriority: (id: string) =>
+    request(`/scheduler/tasks/${id}/dynamic-priority`),
 
-  checkTaskDependencies: (taskId: string) =>
-    request(`/scheduler/tasks/${taskId}/dependency-check`),
+  checkDependencies: (id: string) =>
+    request(`/scheduler/tasks/${id}/dependency-check`),
 };

@@ -1,6 +1,7 @@
-import { useStore } from '../../store/useStore';
-import { TokenExpiredError, AppError, SharedErrorCodes } from '../../utils/errors';
+import { useStore } from '@/store/useStore';
+import { TokenExpiredError, AppError, SharedErrorCodes } from '@/utils/errors';
 import { authApi } from './auth';
+import type { User } from '@shared/types/user';
 
 interface QueueItem {
   resolve: (token: string) => void;
@@ -56,7 +57,7 @@ export class TokenRefreshManager {
 
       const { session, user } = data;
       
-      useStore.getState().setUser(user, session.access_token, session.refresh_token);
+      useStore.getState().setUser(user as User | null, session.access_token, session.refresh_token);
       this.processQueue(null, session.access_token);
       
       return session.access_token;

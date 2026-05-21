@@ -1,4 +1,4 @@
-import { isCapacitorMobile, shouldUseSupabaseDirect } from "../../config/mobileApiConfig";
+import { isCapacitorMobile, shouldUseSupabaseDirect } from "@/config/mobileApiConfig";
 import { api as webApi } from "./index";
 import {
   mobileAuthApi,
@@ -52,7 +52,7 @@ function getResolvedApi(): ApiType {
       resolvedApi = {
         ...webApi,
         auth: mobileAuthApi || webApi.auth,
-        graphs: mobileGraphsApi || webApi.graphs,
+        graphs: createNoopApi(mobileGraphsApi || webApi.graphs),
         nodes: mobileNodesApi || webApi.nodes,
         edges: mobileEdgesApi || webApi.edges,
         ai: mobileAiApi || webApi.ai,
@@ -77,7 +77,7 @@ function getResolvedApi(): ApiType {
         learningPath: createNoopApi(webApi.learningPath),
         health: createNoopApi(webApi.health),
         backup: createNoopApi(webApi.backup),
-        scheduler: mobileSchedulerApi || webApi.scheduler,
+        scheduler: (mobileSchedulerApi || webApi.scheduler) as unknown as typeof webApi.scheduler,
         quiz: mobileQuizApi || webApi.quiz,
         aiActions: mobileAiApi?.aiActions || webApi.aiActions,
       };

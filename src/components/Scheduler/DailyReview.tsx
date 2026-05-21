@@ -90,7 +90,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
     try {
       const [review, tasks] = await Promise.all([
         taskReviewApi.getDailyReview(targetDate),
-        api.scheduler.getTasks({ status: "completed" }),
+        api.scheduler.list({ status: "completed" }),
       ]);
 
       if (review) {

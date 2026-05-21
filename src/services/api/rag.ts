@@ -1,6 +1,6 @@
 import { request, getAIConfig, getApiUrl } from './client';
-import { useStore } from '../../store/useStore';
-import { getAILanguage } from '../../hooks/useAILanguage';
+import { useStore } from '@/store/useStore';
+import { getAILanguage } from '@/hooks/useAILanguage';
 
 interface Source {
   id: string;

@@ -3,15 +3,15 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
-import { useStore } from "../../store/useStore";
-import { createErrorFromResponse } from "../../utils/errors";
+import { useStore } from "@/store/useStore";
+import { createErrorFromResponse } from "@/utils/errors";
 import { TokenRefreshManager } from "./TokenRefreshManager";
-import { isCapacitorMobile } from "../../config/mobileApiConfig";
+import { isCapacitorMobile } from "@/config/mobileApiConfig";
 import {
   isElectronProduction,
   getElectronApiUrl,
-} from "../../config/electronConfig";
-import { getMobileApiBaseUrl } from "../../config/mobileApiConfig";
+} from "@/config/electronConfig";
+import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 
 const isMobileClient = (): boolean => {
   return isCapacitorMobile();

@@ -67,7 +67,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
     try {
       const [stats, _tasks, reviews, existingReview] = await Promise.all([
         api.scheduler.getStats('week'),
-        api.scheduler.getTasks({ status: 'completed' }),
+        api.scheduler.list({ status: 'completed' }),
         taskReviewApi.getReviews({ 
           review_type: 'daily',
           from_date: weekRange.start,

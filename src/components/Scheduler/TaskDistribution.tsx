@@ -43,7 +43,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
   const loadData = async () => {
     setLoading(true);
     try {
-      const { tasks: allTasks } = await api.scheduler.getTasks({
+      const { tasks: allTasks } = await api.scheduler.list({
         status: "all",
       });
       setTasks(allTasks);

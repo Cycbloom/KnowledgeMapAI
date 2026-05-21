@@ -1,43 +1,23 @@
 import { request } from './client';
-import type { Node, Edge, Keyword } from '../../types';
+import type { Node, Edge, Keyword } from '@/types';
+import type {
+  CreateNodeData,
+  UpdateNodeData,
+  CreateEdgeData,
+  NodePositionUpdate,
+  DeleteNodeResult,
+} from '@shared/types/api';
 
 export const nodesApi = {
-  create: (data: { 
-    graph_id: string; 
-    title: string; 
-    content?: string; 
-    level?: string;
-    x_position?: number;
-    y_position?: number;
-    parent_node_ids?: string[];
-    learning_material?: string;
-    properties?: Record<string, unknown>;
-    knowledge_point_id?: string;
-    reuse_existing?: boolean;
-  }) => request<Node>('/nodes', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: CreateNodeData) => request<Node>('/nodes', { method: 'POST', body: JSON.stringify(data) }),
   
   get: (id: string) => request<Node>(`/nodes/${id}`),
   
-  update: (id: string, data: { 
-    title?: string; 
-    content?: string; 
-    level?: string;
-    x_position?: number;
-    y_position?: number;
-    learning_material?: string;
-    properties?: Record<string, unknown>;
-    keywords?: Keyword[];
-  }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  update: (id: string, data: UpdateNodeData & { keywords?: Keyword[] }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
   delete: (id: string, hardDelete?: boolean) => {
     const url = hardDelete ? `/nodes/${id}?hard_delete=true` : `/nodes/${id}`;
-    return request<{ 
-      message: string;
-      affected_graphs?: string[];
-      deleted_graph_nodes?: number;
-      deleted_edges?: number;
-      deleted_cards?: number;
-    }>(url, { method: 'DELETE' });
+    return request<DeleteNodeResult>(url, { method: 'DELETE' });
   },
   
   batchDelete: (node_ids: string[], options?: { hard_delete?: boolean }) => 
@@ -46,7 +26,7 @@ export const nodesApi = {
       body: JSON.stringify({ node_ids, ...options }) 
     }),
   
-  batchUpdatePositions: (positions: Array<{ id: string; x_position: number; y_position: number }>) => 
+  batchUpdatePositions: (positions: NodePositionUpdate[]) => 
     request('/nodes/batch-update-positions', { method: 'POST', body: JSON.stringify({ positions }) }),
   
   getRelated: (id: string) => request(`/nodes/${id}/related`),
@@ -78,12 +58,7 @@ export const nodesApi = {
 };
 
 export const edgesApi = {
-  create: (data: { 
-    source_knowledge_point_id: string; 
-    target_knowledge_point_id: string; 
-    graph_id: string; 
-    relationship_type?: string;
-  }) => request<Edge>('/edges', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: CreateEdgeData) => request<Edge>('/edges', { method: 'POST', body: JSON.stringify(data) }),
   
   delete: (id: string) => request(`/edges/${id}`, { method: 'DELETE' }),
 };

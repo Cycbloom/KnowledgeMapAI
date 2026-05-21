@@ -1,7 +1,7 @@
-import { useStore } from '../../store/useStore';
-import { createErrorFromResponse } from '../../utils/errors';
+import { useStore } from '@/store/useStore';
+import { createErrorFromResponse } from '@/utils/errors';
 import { apiClient, getCookie } from './createApiClient';
-import { isElectronProduction, getElectronApiUrl } from '../../config/electronConfig';
+import { isElectronProduction, getElectronApiUrl } from '@/config/electronConfig';
 
 const API_URL = '/api';
 

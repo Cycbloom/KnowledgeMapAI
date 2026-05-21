@@ -8,4 +8,4 @@ export {
   type PromptListOptions,
   type PromptCreateData,
   type PromptUpdateData,
-} from './promptService';
+} from './prompt/index';

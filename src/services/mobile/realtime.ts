@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from './client';
+import { getMobileSupabaseClient } from '@/lib/supabase';
 
 type RealtimeCallback<T> = (payload: {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';

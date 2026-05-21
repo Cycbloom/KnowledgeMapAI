@@ -1,5 +1,5 @@
 import { request } from "../../client";
-import type { ActivityEventType } from "../../../../types/calendar";
+import type { ActivityEventType } from "@/types/calendar";
 
 export interface RecordActivityData {
   activity_type: ActivityEventType;

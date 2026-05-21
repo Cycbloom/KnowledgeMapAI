@@ -1,13 +1,9 @@
-import { getMobileSupabaseClient } from './client';
+import { getMobileSupabaseClient } from '@/lib/supabase';
 import type { Edge } from '@shared/types/graph';
+import type { CreateEdgeData } from '@shared/types/api';
 
 export const mobileEdgesApi = {
-  create: async (data: { 
-    source_knowledge_point_id: string; 
-    target_knowledge_point_id: string; 
-    graph_id: string; 
-    relationship_type?: string;
-  }): Promise<Edge> => {
+  create: async (data: CreateEdgeData): Promise<Edge> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error('Supabase client not initialized');

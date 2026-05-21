@@ -10,7 +10,7 @@ import type {
   KnowledgePointVisibility,
   KnowledgePointVersion,
   KnowledgePointVersionWithDiff
-} from '../../types';
+} from '@/types';
 
 export const knowledgePointsApi = {
   list: (params?: { visibility?: KnowledgePointVisibility }) => {

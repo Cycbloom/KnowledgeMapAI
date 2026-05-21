@@ -333,7 +333,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     setIsGenerating(true);
     try {
-      const response = await api.scheduler.generateTaskDetails(
+      const response = await api.scheduler.generateDetails(
         title.trim(),
         description || undefined,
       );

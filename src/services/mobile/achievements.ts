@@ -1,4 +1,4 @@
-import { getMobileSupabaseClient } from "./client";
+import { getMobileSupabaseClient } from "@/lib/supabase";
 
 export interface Achievement {
   id: string;

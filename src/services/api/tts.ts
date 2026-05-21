@@ -1,5 +1,5 @@
 import { request, getApiUrl } from './client';
-import { useStore } from '../../store/useStore';
+import { useStore } from '@/store/useStore';
 
 export const ttsApi = {
   health: () => request('/ai/tts/health'),

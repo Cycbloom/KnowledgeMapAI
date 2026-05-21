@@ -4,9 +4,14 @@ import type {
   KnowledgeGraphRow,
   GraphNodeRow,
   StudyCardRow,
+  CreateGraphFromTemplateData,
 } from "@shared/types";
 import { toGraph } from "@shared/types/database";
 import type { NodeStatus } from "@shared/types/graph";
+import type {
+  CreateGraphData,
+  UpdateGraphData,
+} from "@shared/types/api";
 import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
 
@@ -135,11 +140,7 @@ export const mobileGraphsApi = {
     });
   },
 
-  create: async (data: {
-    title: string;
-    description?: string;
-    domain?: string;
-  }): Promise<Graph> => {
+  create: async (data: CreateGraphData): Promise<Graph> => {
     return withClient(async (client) => {
       const { data: result, error } = await (
         client.from("knowledge_graphs") as any
@@ -156,11 +157,7 @@ export const mobileGraphsApi = {
     });
   },
 
-  createFromTemplate: async (data: {
-    template_id: string;
-    title?: string;
-    description?: string;
-  }) => {
+  createFromTemplate: async (data: CreateGraphFromTemplateData) => {
     return withClient(async (client) => {
       const { data: result, error } = await (
         client.from("knowledge_graphs") as any
@@ -182,12 +179,7 @@ export const mobileGraphsApi = {
 
   update: async (
     id: string,
-    data: {
-      title?: string;
-      description?: string;
-      domain?: string;
-      settings?: Record<string, unknown>;
-    },
+    data: UpdateGraphData,
   ): Promise<Graph> => {
     return withClient(async (client) => {
       const { data: result, error } = await (
@@ -377,13 +369,6 @@ export const mobileGraphsApi = {
     });
   },
 
-  checkTopic: async (_topic: string, _excludeGraphId?: string) => {
-    return {
-      is_duplicate: false,
-      similar_graphs: [],
-    };
-  },
-
   togglePublic: async (id: string, is_public: boolean): Promise<Graph> => {
     return withClient(async (client) => {
       const { data, error } = await (client.from("knowledge_graphs") as any)
@@ -469,143 +454,6 @@ export const mobileGraphsApi = {
         relations: [],
       };
     });
-  },
-
-  analyze: async (_id: string) => {
-    return { nodes: 0, edges: 0, topics: [] };
-  },
-
-  getLiterature: async (_id: string, _module?: string) => {
-    return { literature: [], totalCount: 0 };
-  },
-
-  getResearchProgress: async (_id: string) => {
-    return { modules: [], totalNodes: 0, totalLiterature: 0 };
-  },
-
-  getModuleGaps: async (_id: string) => {
-    return { needsNewModule: false, suggestedModules: [], unclassifiedCount: 0 };
-  },
-
-  getModuleOverlap: async (_id: string) => {
-    return { overlaps: [] };
-  },
-
-  getMissingConnections: async (_id: string, _max?: number) => {
-    return [];
-  },
-
-  getRelations: async (_id: string) => {
-    return [];
-  },
-
-  createPrerequisiteGraph: async (_id: string, _data: unknown) => {
-    return { success: true };
-  },
-
-  createPrerequisiteGraphs: async (_id: string, _data: unknown) => {
-    return { created: [] };
-  },
-
-  deleteRelation: async (_graphId: string, _relationId: string) => {
-    return { success: true };
-  },
-
-  createRelation: async (_data: unknown) => {
-    return { success: true, relation_id: "" };
-  },
-
-  deleteRelationById: async (_relationId: string) => {
-    return { success: true };
-  },
-
-  infiniteExpand: async (_graphId: string, _data: unknown) => {
-    return { success: true };
-  },
-
-  analyzeDomain: async (_domain: string, _count: number = 10) => {
-    return { recommendations: [], relations: [] };
-  },
-
-  batchCreateDomainGraphs: async (_data: unknown) => {
-    return { created: [] };
-  },
-
-  initializeGraph: async (graphId: string, _style: string = "academic") => {
-    return { success: true, taskId: "", graphId, message: "" };
-  },
-
-  batchInitializeGraphs: async (_data: unknown) => {
-    return {
-      success: true,
-      results: [],
-      summary: { total: 0, pending: 0, skipped: 0 },
-    };
-  },
-
-  discoverRelations: async (_data?: unknown) => {
-    return {
-      discovered_relations: [],
-      cross_domain_insights: [],
-      analysis_summary: {
-        total_graphs_analyzed: 0,
-        relations_discovered: 0,
-        cross_domain_clusters: 0,
-        isolated_graphs: [],
-      },
-    };
-  },
-
-  createDiscoveredRelation: async (_data: unknown) => {
-    return { success: true, relation_id: "", message: "" };
-  },
-
-  getIntelligentSuggestions: async (_graphIds?: string[]) => {
-    return {
-      suggestions: [],
-      learning_path_suggestions: [],
-      knowledge_gaps: [],
-      cross_domain_opportunities: [],
-    };
-  },
-
-  expandDomain: async (_graphIds: string[], _count: number = 10) => {
-    return {
-      recommendations: [],
-      relations: [],
-      source_graphs: [],
-    };
-  },
-
-  getCrossDomainInsights: async (_options?: {
-    graph_ids?: string[];
-    min_intersection?: number;
-  }) => {
-    return {
-      cross_domain_insights: [],
-      domain_distribution: {},
-      analysis_summary: { total_domains: 0, cross_domain_clusters: 0 },
-    };
-  },
-
-  getLearningPathSuggestions: async (_options?: {
-    graph_ids?: string[];
-    difficulty?: "beginner" | "intermediate" | "advanced";
-  }) => {
-    return {
-      learning_path_suggestions: [],
-      analysis_summary: { total_paths: 0, avg_path_length: 0 },
-    };
-  },
-
-  getKnowledgeGaps: async (_options?: {
-    graph_ids?: string[];
-    min_importance?: "high" | "medium" | "low";
-  }) => {
-    return {
-      knowledge_gaps: [],
-      analysis_summary: { total_gaps: 0, high_priority_count: 0 },
-    };
   },
 
   updateViewMode: async (id: string, viewMode: string): Promise<Graph> => {

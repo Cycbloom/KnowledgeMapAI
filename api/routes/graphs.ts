@@ -17,7 +17,6 @@ import { aiService } from "../services/ai/aiService";
 import { domainContextService } from "../services/ai/domainContextService";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { AppError } from "../middleware/errorHandler";
-import { achievementService } from "../services/achievementService";
 import { cacheService } from "../services/common/cacheService";
 import { logger } from "../utils/logger";
 import {
@@ -560,11 +559,6 @@ router.post(
     if (domains && Array.isArray(domains) && domains.length > 0) {
       await updateGraphDomains(req.supabase, data.id, domains);
     }
-
-    // Update achievements
-    achievementService
-      .updateCreationStats(req.user.id)
-      .catch((err) => logger.error("Achievement update failed:", err));
 
     res.status(201).json(data);
   },

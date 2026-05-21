@@ -42,6 +42,12 @@ class SchedulerCronService {
       handler: this.aggregatePeriodicTaskProgress.bind(this),
     });
 
+    this.registerJob({
+      name: "check_periodic_streaks",
+      intervalMs: 24 * 60 * 60 * 1000,
+      handler: this.checkPeriodicStreaks.bind(this),
+    });
+
     for (const job of this.jobs) {
       job.timer = setInterval(async () => {
         try {
@@ -297,6 +303,33 @@ class SchedulerCronService {
       await periodicTaskService.aggregateAllProgress(getSupabaseAdmin());
     } catch (error) {
       logger.error("[CronService] Failed to aggregate periodic task progress:", error);
+    }
+  }
+
+  private async checkPeriodicStreaks() {
+    try {
+      const { data: users, error } = await getSupabaseAdmin()
+        .from("user_focus_stats")
+        .select("user_id");
+
+      if (error) {
+        logger.error("[CronService] Failed to fetch active users:", error);
+        return;
+      }
+
+      if (!users || users.length === 0) return;
+
+      const { periodicTaskService } = await import("../periodicTaskService");
+
+      for (const user of users) {
+        try {
+          await periodicTaskService.checkPeriodicStreak(user.user_id);
+        } catch (error) {
+          logger.error(`[CronService] Failed to check streak for user ${user.user_id}:`, error);
+        }
+      }
+    } catch (error) {
+      logger.error("[CronService] Failed to check periodic streaks:", error);
     }
   }
 }

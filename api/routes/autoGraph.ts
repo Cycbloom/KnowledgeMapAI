@@ -15,6 +15,7 @@ import { pricingService } from "../services/ai/pricingService";
 import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
 import { autoGraphService, graphNodeService } from "../services/graph/index";
+import { achievementService } from "../services/achievementService";
 import { embeddingService } from "../services/ai/embeddingService";
 import { templateGeneratorService } from "../services/ai/templateGeneratorService";
 import type {
@@ -723,6 +724,10 @@ router.post(
 
       await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
       await cacheService.del(CacheKeys.GRAPH_NODES("public", graph_id));
+
+      achievementService
+        .updateCreationStats(req.user.id)
+        .catch((err) => logger.error("Achievement update failed:", err));
 
       const nodeMapping: Record<
         string,

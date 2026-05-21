@@ -12,7 +12,6 @@ import {
 import { graphTemplateService, graphService } from "../services/graph/index";
 import { cacheService } from "../services/common/cacheService";
 import { AppError } from "../middleware/errorHandler";
-import { achievementService } from "../services/achievementService";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { z } from "zod";
 import { logger } from "../utils/logger";
@@ -227,10 +226,6 @@ router.post(
         }
       }
     }
-
-    achievementService.updateCreationStats(req.user.id).catch((err) =>
-      logger.error("Achievement update failed:", err)
-    );
 
     await cacheService.invalidateUserGraphsCache(req.user.id);
 

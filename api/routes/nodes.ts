@@ -15,7 +15,6 @@ import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { BackboneModule } from "../../shared/types/graph";
 import { aiService } from "../services/ai/aiService";
-import { achievementService } from "../services/achievementService";
 import { logger } from "../utils/logger";
 import {
   knowledgePointService,
@@ -23,6 +22,8 @@ import {
   edgeService,
 } from "../services/graph/index";
 import { buildNodeFromGraphNode } from "../utils/nodeHelpers";
+import { appEventBus } from "../services/core/eventBus";
+import type { NodeCreatedPayload, EdgeCreatedPayload } from "../../shared/types/events";
 
 const router = Router();
 
@@ -120,9 +121,19 @@ router.post(
       await cacheService.invalidateGraphCache(req.user.id, graph_id);
       await cacheService.invalidateUserGraphsCache(req.user.id);
 
-      achievementService
-        .updateCreationStats(req.user.id)
-        .catch((err) => logger.error("Achievement update failed:", err));
+      appEventBus
+        .publish<NodeCreatedPayload>(
+          "node_created",
+          {
+            nodeId: result.id,
+            graphId: graph_id,
+            userId: req.user.id,
+            title: result.title,
+          },
+          req.user.id,
+          "graph_node_service",
+        )
+        .catch((err) => logger.error("node_created event publish failed:", err));
 
       res.status(201).json(result);
     } catch (error: unknown) {
@@ -787,6 +798,21 @@ router.post(
       });
 
       await cacheService.invalidateGraphCache(req.user.id, graph_id);
+
+      appEventBus
+        .publish<EdgeCreatedPayload>(
+          "edge_created",
+          {
+            edgeId: edge.id,
+            graphId: graph_id,
+            userId: req.user.id,
+            sourceNodeId: edge.source_knowledge_point_id,
+            targetNodeId: edge.target_knowledge_point_id,
+          },
+          req.user.id,
+          "edge_route",
+        )
+        .catch((err) => logger.error("edge_created event publish failed:", err));
 
       res.status(201).json({
         id: edge.id,

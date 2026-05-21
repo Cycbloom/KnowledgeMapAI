@@ -10,7 +10,8 @@ import { cacheService, CacheKeys } from "../services/common/cacheService";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { AppError } from "../middleware/errorHandler";
 import { studyService } from "../services/study/studyService";
-import { achievementService } from "../services/achievementService";
+import { appEventBus } from "../services/core/eventBus";
+import type { ReviewCompletedPayload } from "../../shared/types/events";
 import { logger } from "../utils/logger";
 
 const router = Router();
@@ -339,10 +340,20 @@ router.put(
         req.user.id,
       );
 
-      Promise.all([
-        achievementService.addXp(req.user.id, 10),
-        achievementService.updateMasteredStats(req.user.id),
-      ]).catch((err) => logger.error("Achievement update failed:", err));
+      appEventBus
+        .publish<ReviewCompletedPayload>(
+          "review_completed",
+          {
+            reviewTaskId: id,
+            knowledgePointId: result.card?.knowledge_point_id ?? "",
+            qualityScore: quality,
+            nextReviewDate: result.scheduledCard?.due?.toISOString() ?? new Date().toISOString(),
+            algorithm: "fsrs",
+          },
+          req.user.id,
+          "study_route",
+        )
+        .catch((err) => logger.error("review_completed event publish failed:", err));
 
       res.json(result.card);
     } catch (error: any) {

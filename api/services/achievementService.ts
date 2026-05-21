@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../supabase';
+import { logger } from '../utils/logger';
 import { periodicTaskService } from './scheduler/periodicTaskService';
 import { focusService } from './scheduler/focusService';
 import type {
@@ -75,6 +76,8 @@ export class AchievementService {
 
     if (updates.status === 'completed') {
       await this.addXp(userId, task.xp_reward);
+      this.checkPerfectionist(userId).catch(() => {});
+      this.checkMultitasker(userId).catch(() => {});
     }
   }
 
@@ -379,7 +382,94 @@ export class AchievementService {
           current = Math.floor(todayStats.total_duration / 3600);
           break;
         }
+        case 'streak_days': {
+          const { data: streakSessions } = await getSupabaseAdmin()
+            .from('focus_sessions')
+            .select('start_time')
+            .eq('user_id', userId)
+            .eq('completed', true)
+            .order('start_time', { ascending: false });
+          if (streakSessions && streakSessions.length > 0) {
+            const streakDates = new Set(streakSessions.map((s: any) => s.start_time.split('T')[0]));
+            const sortedStreakDates = Array.from(streakDates).sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
+            const todayStr = new Date().toISOString().split('T')[0];
+            const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            if (sortedStreakDates[0] === todayStr || sortedStreakDates[0] === yesterdayStr) {
+              const checkDate = new Date();
+              if (!streakDates.has(checkDate.toISOString().split('T')[0])) {
+                checkDate.setDate(checkDate.getDate() - 1);
+              }
+              let streakCount = 0;
+              while (streakDates.has(checkDate.toISOString().split('T')[0])) {
+                streakCount++;
+                checkDate.setDate(checkDate.getDate() - 1);
+              }
+              current = streakCount;
+            }
+          }
+          break;
+        }
+        case 'focus_minutes':
+          current = Math.floor(stats.total_focus_seconds / 60);
+          break;
+        case 'cards_mastered': {
+          const { count: masteredCount } = await getSupabaseAdmin()
+            .from('study_cards')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .gt('fsrs_stability', 21);
+          current = masteredCount || 0;
+          break;
+        }
+        case 'graphs_created': {
+          const { count: graphCount } = await getSupabaseAdmin()
+            .from('knowledge_graphs')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null);
+          current = graphCount || 0;
+          break;
+        }
+        case 'nodes_created': {
+          const { count: nodeCount } = await getSupabaseAdmin()
+            .from('graph_nodes')
+            .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
+            .eq('knowledge_graphs.user_id', userId)
+            .is('deleted_at', null);
+          current = nodeCount || 0;
+          break;
+        }
+        case 'weekly_streak':
+        case 'monthly_streak':
+        case 'quarterly_streak':
+        case 'daily_task_streak': {
+          const { data: focusStatsRow } = await getSupabaseAdmin()
+            .from('user_focus_stats')
+            .select('weekly_streak, monthly_streak, quarterly_streak, daily_task_streak')
+            .eq('user_id', userId)
+            .single();
+          if (focusStatsRow) {
+            switch (achievement.condition_type) {
+              case 'weekly_streak':
+                current = focusStatsRow.weekly_streak || 0;
+                break;
+              case 'monthly_streak':
+                current = focusStatsRow.monthly_streak || 0;
+                break;
+              case 'quarterly_streak':
+                current = focusStatsRow.quarterly_streak || 0;
+                break;
+              case 'daily_task_streak':
+                current = focusStatsRow.daily_task_streak || 0;
+                break;
+            }
+          }
+          break;
+        }
+        case 'special_condition':
+          continue;
         default:
+          logger.warn('Unrecognized achievement condition_type', { condition_type: achievement.condition_type, achievement_code: achievement.code });
           continue;
       }
 
@@ -409,6 +499,44 @@ export class AchievementService {
     }
 
     return { unlocked, progress };
+  }
+
+  async checkPerfectionist(userId: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    const { data: tasks } = await getSupabaseAdmin()
+      .from('periodic_tasks')
+      .select('status')
+      .eq('user_id', userId)
+      .eq('period_type', 'daily')
+      .eq('period_start', today);
+
+    if (!tasks || tasks.length === 0) return;
+
+    const allCompleted = tasks.every((t: any) => t.status === 'completed');
+    if (!allCompleted) return;
+
+    const achievement = await this.unlockSpecialAchievement(userId, 'perfectionist');
+    if (achievement && achievement.xp_reward) {
+      await this.addXp(userId, achievement.xp_reward);
+    }
+  }
+
+  async checkMultitasker(userId: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const { data: tasks } = await getSupabaseAdmin()
+      .from('user_tasks')
+      .select('task_type')
+      .eq('user_id', userId)
+      .gte('completed_at', today)
+      .lt('completed_at', tomorrow);
+
+    if (!tasks) return;
+
+    const distinctTypes = new Set(tasks.map((t: any) => t.task_type));
+    if (distinctTypes.size >= 5) {
+      await this.unlockSpecialAchievement(userId, 'multitasker');
+    }
   }
 
   async checkSpecialAchievements(userId: string, session: FocusSession): Promise<Achievement[]> {

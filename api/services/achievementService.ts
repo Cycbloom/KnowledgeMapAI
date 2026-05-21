@@ -104,6 +104,7 @@ export class AchievementService {
     }));
   }
 
+  /** @deprecated Use achievementEngine.evaluateAchievements() instead */
   async checkAndUnlock(userId: string, type: string, currentValue: number): Promise<Achievement[]> {
     const { data: candidates, error: candidateError } = await getSupabaseAdmin()
       .from('achievements')
@@ -183,6 +184,7 @@ export class AchievementService {
     return { newLevel: level, newXp: xp, levelUp };
   }
 
+  /** @deprecated Use event-driven approach via achievementEngine */
   async updateStudyStreak(userId: string): Promise<void> {
     const { data: sessions, error } = await getSupabaseAdmin()
       .from('focus_sessions')
@@ -226,6 +228,7 @@ export class AchievementService {
     await this.checkAndUnlock(userId, 'streak_days', streak);
   }
 
+  /** @deprecated Use event-driven approach via achievementEngine */
   async updateFocusStats(userId: string): Promise<void> {
     const { error: _error } = await getSupabaseAdmin()
       .from('focus_sessions')
@@ -287,6 +290,7 @@ export class AchievementService {
     }
   }
 
+  /** @deprecated Use event-driven approach via achievementEngine */
   async updateMasteredStats(userId: string): Promise<void> {
     const { count, error } = await getSupabaseAdmin()
       .from('study_cards')
@@ -302,6 +306,7 @@ export class AchievementService {
     await this.updateDailyTask(userId, 'study_cards', 1);
   }
 
+  /** @deprecated Use event-driven approach via achievementEngine */
   async updateCreationStats(userId: string): Promise<void> {
     const { count: graphCount, error: graphError } = await getSupabaseAdmin()
       .from('graphs')
@@ -348,6 +353,7 @@ export class AchievementService {
     return data as (UserAchievement & { achievement: Achievement })[];
   }
 
+  /** @deprecated Use achievementEngine.evaluateAchievements() instead */
   async checkAndUnlockAchievements(userId: string): Promise<AchievementCheckResult> {
     const stats = await focusService.getUserFocusStats(getSupabaseAdmin(), userId);
     const allAchievements = await this.getAllAchievements();

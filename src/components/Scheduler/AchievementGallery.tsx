@@ -353,6 +353,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                   size="sm"
                   showProgress={!isUnlocked && !achievement.is_hidden}
                   progress={userAchievement?.progress || 0}
+                  conditionValue={achievement.condition_value}
                 />
                 <p className="mt-2 text-xs text-center text-slate-500 dark:text-slate-400 line-clamp-2">
                   {isUnlocked
@@ -430,6 +431,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                     userAchievementMap.get(selectedAchievement.id)?.progress ||
                     0
                   }
+                  conditionValue={selectedAchievement.condition_value}
                   animate={false}
                 />
 

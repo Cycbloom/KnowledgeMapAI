@@ -12,6 +12,7 @@ export interface Achievement {
   condition_type: string;
   condition_value: number;
   is_hidden?: boolean;
+  trigger_events: string[];
   created_at: string;
   unlocked_at?: string;
 }

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS achievements (
   condition_type VARCHAR(50) NOT NULL,
   condition_value INTEGER NOT NULL,
   is_hidden BOOLEAN DEFAULT FALSE,
+  trigger_events TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -24,6 +25,7 @@ COMMENT ON COLUMN achievements.category IS '成就分类';
 COMMENT ON COLUMN achievements.condition_type IS '解锁条件类型';
 COMMENT ON COLUMN achievements.condition_value IS '解锁条件阈值';
 COMMENT ON COLUMN achievements.is_hidden IS '是否为隐藏成就';
+COMMENT ON COLUMN achievements.trigger_events IS '触发该成就检查的事件类型列表，为空则通过定时任务检查';
 
 -- User achievements table
 CREATE TABLE IF NOT EXISTS user_achievements (

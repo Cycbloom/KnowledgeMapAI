@@ -7,6 +7,7 @@ interface AchievementBadgeProps {
   achievement: Achievement;
   unlocked?: boolean;
   progress?: number;
+  conditionValue?: number;
   unlockedAt?: string;
   size?: "sm" | "md" | "lg";
   showProgress?: boolean;
@@ -57,6 +58,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   achievement,
   unlocked = false,
   progress = 0,
+  conditionValue,
   unlockedAt,
   size = "md",
   showProgress = false,
@@ -66,6 +68,10 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   const sizeConfig = SIZE_CONFIG[size];
   const categoryGradient = CATEGORY_COLORS[achievement.category];
   const categoryGlow = CATEGORY_GLOW[achievement.category];
+
+  const progressPercentage = conditionValue
+    ? Math.min(100, (progress / conditionValue) * 100)
+    : progress;
 
   const formatUnlockedDate = (date: string) => {
     return new Date(date).toLocaleDateString("zh-CN", {
@@ -179,12 +185,12 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
               stroke={achievement.color}
               strokeWidth="2"
               strokeLinecap="round"
-              strokeDasharray={`${progress * 3.01} 301.59`}
+              strokeDasharray={`${progressPercentage * 3.01} 301.59`}
               transform="rotate(-90 50 50)"
               initial={animate ? { strokeDasharray: "0 301.59" } : undefined}
               animate={
                 animate
-                  ? { strokeDasharray: `${progress * 3.01} 301.59` }
+                  ? { strokeDasharray: `${progressPercentage * 3.01} 301.59` }
                   : undefined
               }
               transition={{ duration: 1, ease: "easeOut" }}
@@ -209,7 +215,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         )}
         {showProgress && !unlocked && progress > 0 && (
           <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-            {progress}%
+            {Math.round(progressPercentage)}%
           </p>
         )}
       </div>

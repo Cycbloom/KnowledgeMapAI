@@ -48,6 +48,12 @@ class SchedulerCronService {
       handler: this.checkPeriodicStreaks.bind(this),
     });
 
+    this.registerJob({
+      name: "calibrate_achievement_progress",
+      intervalMs: 24 * 60 * 60 * 1000,
+      handler: this.calibrateAchievementProgress.bind(this),
+    });
+
     for (const job of this.jobs) {
       job.timer = setInterval(async () => {
         try {
@@ -330,6 +336,25 @@ class SchedulerCronService {
       }
     } catch (error) {
       logger.error("[CronService] Failed to check periodic streaks:", error);
+    }
+  }
+
+  private async calibrateAchievementProgress(): Promise<void> {
+    try {
+      const { achievementEngine } = await import("../../achievements/achievementEngine");
+      const { data: users } = await getSupabaseAdmin()
+        .from("user_focus_stats")
+        .select("user_id");
+      if (!users || users.length === 0) return;
+      for (const user of users) {
+        try {
+          await achievementEngine.calibrateAllProgress(user.user_id);
+        } catch (error) {
+          logger.error(`[CronService] Achievement calibration failed for user ${user.user_id}:`, error);
+        }
+      }
+    } catch (error) {
+      logger.error("[CronService] Achievement calibration job failed:", error);
     }
   }
 }

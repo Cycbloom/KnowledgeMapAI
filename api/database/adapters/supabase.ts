@@ -1762,6 +1762,7 @@ export class SupabaseAdapter implements DatabaseInterface {
       condition_type: row.condition_type,
       condition_value: row.condition_value,
       is_hidden: row.is_hidden,
+      trigger_events: row.trigger_events || [],
       created_at: row.created_at,
     }));
   }

@@ -1,121 +1,47 @@
 import { appEventBus } from "../eventBus";
-import type {
-  AppEvent,
-  GraphCreatedPayload,
-  NodeCreatedPayload,
-  FocusSessionEndedPayload,
-} from "@shared/types/events";
-import type { FocusSession } from "@shared/types/scheduler";
+import type { AppEvent, AppEventType } from "@shared/types/events";
 import { logger } from "../../../utils/logger";
 
 class AchievementSubscriber {
-  private boundOnTaskCompleted: ((event: AppEvent) => Promise<void>) | null = null;
-  private boundOnFocusSessionEnded: ((event: AppEvent) => Promise<void>) | null = null;
-  private boundOnGraphCreated: ((event: AppEvent) => Promise<void>) | null = null;
-  private boundOnNodeCreated: ((event: AppEvent) => Promise<void>) | null = null;
-  private boundOnReviewCompleted: ((event: AppEvent) => Promise<void>) | null = null;
+  private handlers: Map<AppEventType, ((event: AppEvent) => Promise<void>) | null> = new Map();
 
   initialize() {
-    this.boundOnTaskCompleted = this.onTaskCompleted.bind(this);
-    this.boundOnFocusSessionEnded = this.onFocusSessionEnded.bind(this);
-    this.boundOnGraphCreated = this.onGraphCreated.bind(this);
-    this.boundOnNodeCreated = this.onNodeCreated.bind(this);
-    this.boundOnReviewCompleted = this.onReviewCompleted.bind(this);
+    const eventTypes: AppEventType[] = [
+      "task_completed",
+      "focus_session_ended",
+      "graph_created",
+      "node_created",
+      "review_completed",
+    ];
 
-    appEventBus.subscribe("task_completed", this.boundOnTaskCompleted);
-    appEventBus.subscribe("focus_session_ended", this.boundOnFocusSessionEnded);
-    appEventBus.subscribe("graph_created", this.boundOnGraphCreated);
-    appEventBus.subscribe("node_created", this.boundOnNodeCreated);
-    appEventBus.subscribe("review_completed", this.boundOnReviewCompleted);
+    for (const eventType of eventTypes) {
+      const handler = this.createHandler(eventType);
+      this.handlers.set(eventType, handler);
+      appEventBus.subscribe(eventType, handler);
+    }
+
     logger.info("[AchievementSubscriber] Subscribers registered");
   }
 
   destroy() {
-    if (this.boundOnTaskCompleted) {
-      appEventBus.unsubscribe("task_completed", this.boundOnTaskCompleted);
+    for (const [eventType, handler] of this.handlers) {
+      if (handler) {
+        appEventBus.unsubscribe(eventType, handler);
+      }
     }
-    if (this.boundOnFocusSessionEnded) {
-      appEventBus.unsubscribe("focus_session_ended", this.boundOnFocusSessionEnded);
-    }
-    if (this.boundOnGraphCreated) {
-      appEventBus.unsubscribe("graph_created", this.boundOnGraphCreated);
-    }
-    if (this.boundOnNodeCreated) {
-      appEventBus.unsubscribe("node_created", this.boundOnNodeCreated);
-    }
-    if (this.boundOnReviewCompleted) {
-      appEventBus.unsubscribe("review_completed", this.boundOnReviewCompleted);
-    }
-    this.boundOnTaskCompleted = null;
-    this.boundOnFocusSessionEnded = null;
-    this.boundOnGraphCreated = null;
-    this.boundOnNodeCreated = null;
-    this.boundOnReviewCompleted = null;
+    this.handlers.clear();
     logger.info("[AchievementSubscriber] Subscribers destroyed");
   }
 
-  private async onTaskCompleted(event: AppEvent) {
-    await this.checkAchievements(event.userId);
-  }
-
-  private async onFocusSessionEnded(event: AppEvent) {
-    await this.checkAchievements(event.userId);
-
-    try {
-      const { achievementService } = await import("../../achievementService");
-      const payload = event.payload as FocusSessionEndedPayload;
-      const { getSupabaseAdmin } = await import("../../../supabase");
-      const { data: session } = await getSupabaseAdmin()
-        .from("focus_sessions")
-        .select("*")
-        .eq("id", payload.sessionId)
-        .single();
-
-      if (session) {
-        await achievementService.checkSpecialAchievements(event.userId, session as FocusSession);
+  private createHandler(eventType: AppEventType): (event: AppEvent) => Promise<void> {
+    return async (event: AppEvent) => {
+      try {
+        const { achievementEngine } = await import("../../achievements/achievementEngine");
+        await achievementEngine.evaluateAchievements(event.userId, eventType, event);
+      } catch (error) {
+        logger.error(`[AchievementSubscriber] Failed to handle ${eventType}:`, error);
       }
-    } catch (error) {
-      logger.error("[AchievementSubscriber] Failed to check special achievements:", error);
-    }
-  }
-
-  private async onGraphCreated(event: AppEvent) {
-    const payload = event.payload as GraphCreatedPayload;
-    try {
-      const { achievementService } = await import("../../achievementService");
-      await achievementService.updateCreationStats(payload.userId);
-    } catch (error) {
-      logger.error("[AchievementSubscriber] Failed to update creation stats:", error);
-    }
-  }
-
-  private async onNodeCreated(event: AppEvent) {
-    const payload = event.payload as NodeCreatedPayload;
-    try {
-      const { achievementService } = await import("../../achievementService");
-      await achievementService.updateCreationStats(payload.userId);
-    } catch (error) {
-      logger.error("[AchievementSubscriber] Failed to update creation stats:", error);
-    }
-  }
-
-  private async onReviewCompleted(event: AppEvent) {
-    try {
-      const { achievementService } = await import("../../achievementService");
-      await achievementService.updateMasteredStats(event.userId);
-      await achievementService.addXp(event.userId, 10);
-    } catch (error) {
-      logger.error("[AchievementSubscriber] Failed to update mastered stats:", error);
-    }
-  }
-
-  private async checkAchievements(userId: string) {
-    try {
-      const { achievementService } = await import("../../achievementService");
-      await achievementService.checkAndUnlockAchievements(userId);
-    } catch (error) {
-      logger.error("[AchievementSubscriber] Failed to check achievements:", error);
-    }
+    };
   }
 }
 

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { achievementService } from '../services/achievementService';
+import { achievementEngine } from '../services/achievements/achievementEngine';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
@@ -27,8 +28,8 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
       throw new AppError(ErrorCodes.MISSING_TYPE_OR_VALUE);
     }
 
-    const newUnlocks = await achievementService.checkAndUnlock(userId, type, value);
-    res.json({ newUnlocks });
+    await achievementEngine.calibrateAllProgress(userId);
+    res.json({ success: true });
   } catch (error: any) {
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }

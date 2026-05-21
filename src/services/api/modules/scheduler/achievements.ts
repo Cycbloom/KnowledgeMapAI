@@ -5,13 +5,14 @@ export interface Achievement {
   code: string;
   name: string;
   description: string;
-  category: "focus" | "tasks" | "streak" | "special";
+  category: "focus" | "tasks" | "streak" | "special" | "study" | "creation";
   icon: string;
   color: string;
   xp_reward: number;
   condition_type: string;
   condition_value: number;
   is_hidden: boolean;
+  trigger_events: string[];
   created_at: string;
 }
 

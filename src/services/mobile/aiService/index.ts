@@ -1,6 +1,7 @@
+export type { MobileAIUserConfig } from "./config";
+
 export {
   MOBILE_AI_CONFIG_KEY,
-  MobileAIUserConfig,
   ENV_API_KEYS,
   getStoredAIConfig,
   storeAIConfig,
@@ -9,17 +10,18 @@ export {
   createAIClient,
 } from "./config";
 
-export {
+export type {
   GeneratedCard,
   GenerateCardsResult,
   AICardGenErrorType,
   AICardGenError,
-  classifyError,
 } from "./errors";
 
+export { classifyError } from "./errors";
+
+export type { Keyword, GenerateLearningMaterialResult } from "./prompts";
+
 export {
-  Keyword,
-  GenerateLearningMaterialResult,
   TYPE_PROMPTS,
   DIFFICULTY_PROMPTS,
   getLearningMaterialSystemPrompt,

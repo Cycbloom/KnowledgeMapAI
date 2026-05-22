@@ -1,11 +1,11 @@
 export class TemplateEngine {
-  static render(template: string, context: Record<string, any>): string {
+  static render(template: string, context: Record<string, unknown>): string {
     if (!template) return '';
 
     return this.parseBlock(template, context);
   }
 
-  private static parseBlock(text: string, context: Record<string, any>): string {
+  private static parseBlock(text: string, context: Record<string, unknown>): string {
     let output = '';
     let cursor = 0;
 

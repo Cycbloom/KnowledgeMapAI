@@ -24,7 +24,7 @@ interface MindMapLinkProps {
   onContextMenu?: (event: React.MouseEvent, link: LayoutLink) => void;
 }
 
-const normalizeId = (id: any) => String(id).trim();
+const normalizeId = (id: string | number) => String(id).trim();
 
 const CATEGORIES_WITH_ARROW: RelationshipCategory[] = ['dependency', 'causal', 'interaction'];
 

@@ -16,8 +16,6 @@ import {
 } from "./errors";
 import {
   GenerateLearningMaterialResult,
-  TYPE_PROMPTS,
-  DIFFICULTY_PROMPTS,
   getLearningMaterialSystemPrompt,
 } from "./prompts";
 import { isValidProvider } from "../aiClient";
@@ -85,18 +83,9 @@ export const mobileAIService = {
         ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
         : `Allowed card types: ${types.join(", ")}. Only generate these types.`;
 
-    const typeInstructions = types
-      .map((t) => TYPE_PROMPTS[t] || "")
-      .filter((p) => p.length > 0)
-      .join("\n\n");
-
     const defaultSystemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
 ${typeRestriction}
-
-${DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS.medium}
-
-${typeInstructions}
 
 Output format (JSON):
 {
@@ -134,9 +123,6 @@ Important:
           count,
           difficulty,
           typeRestriction,
-          typeInstructions,
-          difficultyPrompt:
-            DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS.medium,
         };
 
         const renderedPrompt = await mobilePromptService.getRenderedPrompt(
@@ -233,7 +219,8 @@ Important:
       fsrs_retrievability: 0,
     }));
 
-    const { data, error } = await (client.from("study_cards") as any)
+    const { data, error } = await client
+      .from("study_cards")
       .insert(cardsToInsert)
       .select();
 

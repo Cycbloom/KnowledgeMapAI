@@ -67,8 +67,10 @@ export function useWhiteNoise(): UseWhiteNoiseReturn {
     }
 
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      audioContextRef.current = new AudioContextClass();
+      const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass) {
+        audioContextRef.current = new AudioContextClass();
+      }
       return audioContextRef.current;
     } catch (e) {
       console.error('Failed to create AudioContext:', e);

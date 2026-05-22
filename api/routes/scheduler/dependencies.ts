@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   createTaskDependencySchema,
   taskDependencyParamsSchema,
@@ -15,7 +16,7 @@ const uuidParamsSchema = z.object({
 });
 
 async function checkCircularDependency(
-  supabase: any,
+  supabase: SupabaseClient,
   taskId: string,
   dependsOnTaskId: string,
   userId: string,

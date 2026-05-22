@@ -43,6 +43,7 @@ export interface StudyCardRow {
   card_type: string;
   options?: string[] | null;
   correct_indices?: number[] | null;
+  last_reviewed?: string | null;
   next_review: string;
   difficulty: number;
   fsrs_state: string;
@@ -51,6 +52,7 @@ export interface StudyCardRow {
   fsrs_elapsed_days: number;
   fsrs_scheduled_days: number;
   fsrs_retrievability: number;
+  fsrs_last_review?: string | null;
   review_count?: number;
   created_at: string;
   updated_at: string;
@@ -90,6 +92,77 @@ export interface GraphDomainRow {
   domain_id: string;
   is_primary: boolean;
   created_at: string;
+}
+
+export interface UserTaskRow {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  queue_id?: string | null;
+  queue_level: number;
+  position: number;
+  estimated_duration?: number | null;
+  actual_duration?: number | null;
+  deadline?: string | null;
+  status: string;
+  tags: string[];
+  knowledge_point_id?: string | null;
+  priority: number;
+  task_type: string;
+  total_duration?: number | null;
+  progress_mode?: string | null;
+  progress_percentage: number;
+  parent_task_id?: string | null;
+  context?: Record<string, unknown> | null;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+  completed_at?: string | null;
+}
+
+export interface TaskDependencyRow {
+  id: string;
+  task_id: string;
+  depends_on_task_id: string;
+  dependency_type: string;
+  created_at: string;
+}
+
+export interface TaskExecutionRow {
+  id: string;
+  task_id: string;
+  user_id: string;
+  started_at: string;
+  ended_at?: string | null;
+  duration?: number | null;
+  queue_level?: number | null;
+  status: string;
+}
+
+export interface TaskSubtaskRow {
+  id: string;
+  task_id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  priority: number;
+  position: number;
+  estimated_duration?: number | null;
+  actual_duration?: number | null;
+  due_date?: string | null;
+  completed_at?: string | null;
+  learning_path_node_id?: string | null;
+  knowledge_point_id: string;
+  learning_state: string;
+  mastery_level: number;
+  last_state_change_at: string;
+  state_history: Record<string, unknown>[];
+  created_at: string;
+  updated_at: string;
 }
 
 export function toGraph(row: KnowledgeGraphRow): Graph {
@@ -146,4 +219,159 @@ export function toGraphDomain(row: GraphDomainRow): GraphDomain {
     is_primary: row.is_primary,
     created_at: row.created_at,
   };
+}
+
+export interface AchievementRow {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  category: 'focus' | 'tasks' | 'streak' | 'special' | 'study' | 'creation';
+  icon: string;
+  color: string;
+  xp_reward: number;
+  condition_type: string;
+  condition_value: number;
+  is_hidden: boolean;
+  trigger_events: string[];
+  created_at: string;
+}
+
+export interface UserAchievementRow {
+  id: string;
+  user_id: string;
+  achievement_id: string;
+  unlocked_at: string;
+  progress: number;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface FocusSessionRow {
+  id: string;
+  user_id: string;
+  task_id?: string | null;
+  started_at: string;
+  ended_at?: string | null;
+  duration?: number | null;
+  mode?: string | null;
+  completed?: boolean | null;
+  pomodoro_count: number;
+  white_noise_type?: string | null;
+  is_break: boolean;
+  created_at: string;
+}
+
+export interface PeriodicTaskRow {
+  id: string;
+  user_id: string;
+  period_type: 'daily' | 'weekly' | 'monthly' | 'quarterly';
+  period_start: string;
+  period_end: string;
+  task_type: string;
+  target: number;
+  progress: number;
+  status: 'pending' | 'completed';
+  xp_reward: number;
+  pass_points: number;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null;
+}
+
+export interface UserFocusStatsRow {
+  id: string;
+  user_id: string;
+  total_focus_seconds: number;
+  total_sessions: number;
+  total_pomodoros: number;
+  total_tasks_completed: number;
+  current_streak: number;
+  longest_streak: number;
+  last_focus_date?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskKnowledgePointRow {
+  id: string;
+  task_id: string;
+  knowledge_point_id: string;
+  relevance_score: number;
+  is_primary: boolean;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface TaskLinkRow {
+  id: string;
+  task_id: string;
+  link_type: string;
+  title?: string | null;
+  url: string;
+  description?: string | null;
+  icon?: string | null;
+  metadata?: Record<string, unknown> | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QueueRow {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  time_slice: number;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskSettingsRow {
+  id: string;
+  user_id: string;
+  q0_time_slice: number;
+  q1_time_slice: number;
+  q2_time_slice: number;
+  break_duration: number;
+  sound_enabled: boolean;
+  notification_enabled: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface UserTimeSlotRow {
+  id: string;
+  user_id: string;
+  day_of_week: number | null;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  label?: string | null;
+  created_at: string;
+}
+
+export interface TaskScheduleRow {
+  id: string;
+  user_id: string;
+  task_template_id: string;
+  schedule_type: string;
+  schedule_config: Record<string, unknown>;
+  next_run_at?: string | null;
+  last_run_at?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskProgressPlanRow {
+  id: string;
+  task_id: string;
+  plan_date: string;
+  planned_percentage: number;
+  actual_percentage: number;
+  status: string;
+  notes?: string | null;
+  created_at: string;
 }

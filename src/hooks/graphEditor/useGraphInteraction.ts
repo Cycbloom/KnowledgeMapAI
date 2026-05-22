@@ -1,4 +1,4 @@
-import { Node, Edge } from '../../types';
+import { Node, Edge, NodeStatus } from '../../types';
 import { GraphEditorState } from './index';
 import { message } from "../../utils/messageHelper";
 import { findShortestPath } from '../../lib/graphUtils';
@@ -6,7 +6,7 @@ import { findShortestPath } from '../../lib/graphUtils';
 interface UseGraphInteractionProps {
   nodes: Node[];
   edges: Edge[];
-  nodeStatus: Record<string, any> | undefined;
+  nodeStatus: Record<string, NodeStatus> | undefined;
   state: GraphEditorState;
   handleDeleteNode: (node: Node) => void;
 }

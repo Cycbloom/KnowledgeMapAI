@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { Node, Edge } from '../../types';
+import { Node, Edge, NodeStatus } from '../../types';
 
 interface UseGraphComputedProps {
   nodes: Node[];
   edges: Edge[];
-  nodeStatus: Record<string, any> | null | undefined;
+  nodeStatus: Record<string, NodeStatus> | null | undefined;
 }
 
 export const useGraphComputed = ({ nodes, edges, nodeStatus }: UseGraphComputedProps) => {
@@ -12,7 +12,7 @@ export const useGraphComputed = ({ nodes, edges, nodeStatus }: UseGraphComputedP
     if (!nodeStatus) return new Set<string>();
     return new Set(
       Object.entries(nodeStatus)
-        .filter(([_, status]: [string, any]) => status.locked)
+        .filter(([, status]: [string, NodeStatus]) => status.locked)
         .map(([id]) => id)
     );
   }, [nodeStatus]);
@@ -21,7 +21,7 @@ export const useGraphComputed = ({ nodes, edges, nodeStatus }: UseGraphComputedP
     if (!nodeStatus) return new Set<string>();
     return new Set(
       Object.entries(nodeStatus)
-        .filter(([_, status]: [string, any]) => status.mastered)
+        .filter(([, status]: [string, NodeStatus]) => status.mastered)
         .map(([id]) => id)
     );
   }, [nodeStatus]);

@@ -1,5 +1,5 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
-import type { Node, Keyword } from "@shared/types/graph";
+import type { Node, Keyword, KnowledgePoint } from "@shared/types/graph";
 import type {
   CreateNodeData,
   UpdateNodeData,
@@ -7,10 +7,24 @@ import type {
   DeleteNodeResult,
 } from "@shared/types/api";
 
+interface KnowledgePointRow {
+  id: string;
+  title: string;
+  content?: string | null;
+  learning_material?: string | null;
+  properties?: Record<string, unknown> | null;
+  visibility?: string;
+  owner_id?: string;
+  embedding?: number[] | null;
+  keywords?: Keyword[] | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 type GraphNodeRaw = {
   knowledge_point_id: string;
-  knowledge_points?: any | any[] | null;
-  knowledge_point?: any | null;
+  knowledge_points?: KnowledgePointRow | KnowledgePointRow[] | null;
+  knowledge_point?: KnowledgePointRow | null;
   id?: string;
   graph_id?: string;
   x_position?: number;
@@ -22,7 +36,7 @@ type GraphNodeRaw = {
   updated_at?: string;
 };
 
-function getKnowledgePoint(kp: any | any[] | null): any | null {
+function getKnowledgePoint(kp: KnowledgePointRow | KnowledgePointRow[] | null): KnowledgePointRow | null {
   if (!kp) return null;
   if (Array.isArray(kp)) {
     return kp[0] || null;
@@ -53,7 +67,7 @@ function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     content: kp.content || "",
     learning_material: kp.learning_material || "",
     properties: kp.properties || {},
-    visibility: kp.visibility || "private",
+    visibility: (kp.visibility || "private") as KnowledgePoint["visibility"],
     owner_id: kp.owner_id || "",
     embedding: kp.embedding,
     keywords: kp.keywords || [],
@@ -93,7 +107,8 @@ export const mobileNodesApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("graph_nodes") as any)
+    const { data: result, error } = await client
+      .from("graph_nodes")
       .insert(data)
       .select(GRAPH_NODES_SELECT)
       .single();
@@ -102,7 +117,7 @@ export const mobileNodesApi = {
       throw new Error(error.message);
     }
 
-    const node = buildNodeFromGraphNode(result);
+    const node = buildNodeFromGraphNode(result as GraphNodeRaw);
     if (!node) {
       throw new Error("Failed to build node from graph node");
     }
@@ -115,7 +130,8 @@ export const mobileNodesApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("graph_nodes") as any)
+    const { data, error } = await client
+      .from("graph_nodes")
       .select(GRAPH_NODES_SELECT)
       .eq("knowledge_point_id", id)
       .is("deleted_at", null)
@@ -129,7 +145,7 @@ export const mobileNodesApi = {
       throw new Error("Node not found");
     }
 
-    const node = buildNodeFromGraphNode(data);
+    const node = buildNodeFromGraphNode(data as GraphNodeRaw);
 
     if (!node) {
       throw new Error("Failed to build node from graph node");
@@ -146,9 +162,8 @@ export const mobileNodesApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: graphNode, error: fetchError } = await (
-      client.from("graph_nodes") as any
-    )
+    const { data: graphNode, error: fetchError } = await client
+      .from("graph_nodes")
       .select("*, knowledge_points (*)")
       .eq("knowledge_point_id", id)
       .is("deleted_at", null)
@@ -158,12 +173,14 @@ export const mobileNodesApi = {
       throw new Error(fetchError.message);
     }
 
+    const rawNode = graphNode as GraphNodeRaw;
     const kp =
-      graphNode.knowledge_point ||
-      getKnowledgePoint(graphNode.knowledge_points || null);
+      rawNode.knowledge_point ||
+      getKnowledgePoint(rawNode.knowledge_points || null);
 
     if (kp) {
-      const { error: kpError } = await (client.from("knowledge_points") as any)
+      const { error: kpError } = await client
+        .from("knowledge_points")
         .update({
           title: data.title !== undefined ? data.title : kp.title,
           content: data.content !== undefined ? data.content : kp.content,
@@ -182,9 +199,8 @@ export const mobileNodesApi = {
       }
     }
 
-    const { data: result, error: updateError } = await (
-      client.from("graph_nodes") as any
-    )
+    const { data: result, error: updateError } = await client
+      .from("graph_nodes")
       .update({
         level: data.level,
         x_position: data.x_position,
@@ -198,7 +214,7 @@ export const mobileNodesApi = {
       throw new Error(updateError.message);
     }
 
-    const node = buildNodeFromGraphNode(result);
+    const node = buildNodeFromGraphNode(result as GraphNodeRaw);
     if (!node) {
       throw new Error("Failed to build node from graph node");
     }
@@ -215,7 +231,8 @@ export const mobileNodesApi = {
     }
 
     if (hardDelete) {
-      const { error } = await (client.from("graph_nodes") as any)
+      const { error } = await client
+        .from("graph_nodes")
         .delete()
         .eq("knowledge_point_id", id);
 
@@ -225,7 +242,8 @@ export const mobileNodesApi = {
 
       return { message: "节点已永久删除" };
     } else {
-      const { error } = await (client.from("graph_nodes") as any)
+      const { error } = await client
+        .from("graph_nodes")
         .update({ deleted_at: new Date().toISOString() })
         .eq("knowledge_point_id", id);
 
@@ -247,7 +265,8 @@ export const mobileNodesApi = {
     }
 
     if (options?.hard_delete) {
-      const { error } = await (client.from("graph_nodes") as any)
+      const { error } = await client
+        .from("graph_nodes")
         .delete()
         .in("knowledge_point_id", nodeIds);
 
@@ -255,7 +274,8 @@ export const mobileNodesApi = {
         throw new Error(error.message);
       }
     } else {
-      const { error } = await (client.from("graph_nodes") as any)
+      const { error } = await client
+        .from("graph_nodes")
         .update({ deleted_at: new Date().toISOString() })
         .in("knowledge_point_id", nodeIds);
 
@@ -273,7 +293,8 @@ export const mobileNodesApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("graph_nodes") as any)
+    const { data, error } = await client
+      .from("graph_nodes")
       .select(GRAPH_NODES_SELECT)
       .eq("graph_id", graphId)
       .is("deleted_at", null);
@@ -295,7 +316,7 @@ export const mobileNodesApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("graph_nodes") as any).upsert(
+    const { error } = await client.from("graph_nodes").upsert(
       positions,
     );
 

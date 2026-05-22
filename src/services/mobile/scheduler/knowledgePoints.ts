@@ -3,7 +3,8 @@ import type { TaskKnowledgePoint } from "@shared/types";
 
 export const getTaskKnowledgePoints = async (taskId: string): Promise<TaskKnowledgePoint[]> => {
   return withClient(async (client) => {
-    const { data, error } = await (client.from("task_knowledge_points") as any)
+    const { data, error } = await client
+      .from("task_knowledge_points")
       .select("*")
       .eq("task_id", taskId);
 
@@ -11,7 +12,7 @@ export const getTaskKnowledgePoints = async (taskId: string): Promise<TaskKnowle
       throw new Error(error.message);
     }
 
-    return (data || []) as TaskKnowledgePoint[];
+    return (data as TaskKnowledgePoint[] | null) ?? [];
   });
 };
 
@@ -25,7 +26,8 @@ export const addTaskKnowledgePoint = async (
   }
 ): Promise<TaskKnowledgePoint> => {
   return withClient(async (client) => {
-    const { data: result, error } = await (client.from("task_knowledge_points") as any)
+    const { data: result, error } = await client
+      .from("task_knowledge_points")
       .insert({
         task_id: _taskId,
         knowledge_point_id: data.knowledge_point_id,
@@ -54,7 +56,8 @@ export const updateTaskKnowledgePoint = async (
   }
 ): Promise<TaskKnowledgePoint> => {
   return withClient(async (client) => {
-    const { data: result, error } = await (client.from("task_knowledge_points") as any)
+    const { data: result, error } = await client
+      .from("task_knowledge_points")
       .update(data)
       .eq("id", kpId)
       .select()
@@ -70,9 +73,7 @@ export const updateTaskKnowledgePoint = async (
 
 export const removeTaskKnowledgePoint = async (_taskId: string, kpId: string): Promise<void> => {
   return withClient(async (client) => {
-    const { error } = await (client.from("task_knowledge_points") as any)
-      .delete()
-      .eq("id", kpId);
+    const { error } = await client.from("task_knowledge_points").delete().eq("id", kpId);
 
     if (error) {
       throw new Error(error.message);

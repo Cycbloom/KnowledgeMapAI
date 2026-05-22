@@ -1,24 +1,28 @@
 import { useCallback } from 'react';
 import type { Node, Edge, NodeLevel } from '../../types';
+import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from './index';
 import { message } from '../../utils/messageHelper';
 import { levelLabels } from '../../config/graphConfig';
 import { createAsyncHandler } from '../../utils/asyncHandler';
+import { UseMutationResult } from '@tanstack/react-query';
+
+interface GraphNodeMutations {
+  createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
+  updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId?: string }, unknown>;
+  deleteNodeMutation: UseMutationResult<{ affected_graphs?: string[] }, Error, { id: string; graphId: string; hardDelete?: boolean }, unknown>;
+  createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
+  deleteEdgeMutation: UseMutationResult<unknown, Error, { id: string }, unknown>;
+  batchDeleteNodesMutation: UseMutationResult<unknown, Error, { nodeIds: string[]; graphId: string }, unknown>;
+}
 
 interface UseGraphNodeOperationsProps {
   id: string;
   nodes: Node[];
   edges: Edge[];
   state: GraphEditorState;
-  mutations: {
-    createNodeMutation: any;
-    updateNodeMutation: any;
-    deleteNodeMutation: any;
-    createEdgeMutation: any;
-    deleteEdgeMutation: any;
-    batchDeleteNodesMutation: any;
-  };
+  mutations: GraphNodeMutations;
   record: (action: HistoryAction) => void;
 }
 
@@ -220,7 +224,7 @@ export const useGraphNodeOperations = ({
             }
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           },
-          onError: (err: any) => {
+          onError: (err: unknown) => {
             console.error(err);
             message.error('删除失败');
             setConfirmModal(prev => ({ ...prev, isOpen: false }));

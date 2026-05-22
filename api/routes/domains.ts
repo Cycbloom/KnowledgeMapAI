@@ -419,8 +419,8 @@ router.get(
     try {
       const domainId = await ensureUncategorizedDomain(supabase, userId);
       res.json({ id: domainId, name: "未分类" });
-    } catch (error: any) {
-      logger.error("确保未分类领域失败", { error: error.message, userId });
+    } catch (error) {
+      logger.error("确保未分类领域失败", { error: (error as Error).message, userId });
       throw new AppError("操作失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   }

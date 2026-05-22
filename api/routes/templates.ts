@@ -22,13 +22,13 @@ const createTemplateSchema = z.object({
   category: z
     .enum(["learning", "story", "project", "analysis", "custom"])
     .optional(),
-  nodes: z.array(z.any()).min(1, "至少需要一个节点"),
-  edges: z.array(z.any()).optional(),
-  layout: z.any().optional(),
+  nodes: z.array(z.record(z.unknown())).min(1, "至少需要一个节点"),
+  edges: z.array(z.record(z.unknown())).optional(),
+  layout: z.record(z.unknown()).optional(),
 });
 
 const updateTemplateSchema = createTemplateSchema.partial().extend({
-  nodes: z.array(z.any()).optional(),
+  nodes: z.array(z.record(z.unknown())).optional(),
 });
 
 const router = Router();
@@ -123,10 +123,31 @@ router.post(
     );
 
     if (template.nodes && template.nodes.length > 0) {
+      interface TemplateNode {
+        title: string;
+        level?: string;
+        x_position?: number;
+        y_position?: number;
+        aiPrompt?: string;
+        color?: string;
+        backboneModule?: string;
+        needsRefinement?: boolean;
+        suggestedContent?: string;
+      }
+
+      interface TemplateEdge {
+        source: string;
+        target: string;
+        relationship_type?: string;
+      }
+
+      const templateNodes = template.nodes as TemplateNode[];
+      const templateEdges = template.edges as TemplateEdge[] | undefined;
+
       const { data: knowledgePoints, error: kpError } = await req
         .supabase!.from("knowledge_points")
         .insert(
-          template.nodes.map((node: any) => ({
+          templateNodes.map((node) => ({
             user_id: req.user.id,
             title: node.title,
             level: node.level || "core",
@@ -148,11 +169,11 @@ router.post(
         );
       } else if (knowledgePoints && knowledgePoints.length > 0) {
         const nodeTitleToId = new Map(
-          knowledgePoints.map((kp: any) => [kp.title, kp.id]),
+          knowledgePoints.map((kp) => [kp.title, kp.id]),
         );
 
-        const graphNodesData = template.nodes
-          .map((node: any) => {
+        const graphNodesData = templateNodes
+          .map((node) => {
             const kpId = nodeTitleToId.get(node.title);
             return {
               graph_id: graph.id,
@@ -161,7 +182,7 @@ router.post(
               y: node.y_position || Math.random() * 400 - 200,
             };
           })
-          .filter((gn: any) => gn.knowledge_point_id);
+          .filter((gn) => gn.knowledge_point_id);
 
         if (graphNodesData.length > 0) {
           const { data: insertedNodes, error: gnError } = await req
@@ -177,20 +198,25 @@ router.post(
           } else if (
             insertedNodes &&
             insertedNodes.length > 0 &&
-            template.edges &&
-            template.edges.length > 0
+            templateEdges &&
+            templateEdges.length > 0
           ) {
             const kpIdToNodeId = new Map(
-              insertedNodes.map((gn: any) => [gn.knowledge_point_id, gn.id]),
+              insertedNodes.map((gn) => [gn.knowledge_point_id, gn.id]),
             );
 
-            const edgesData: any[] = [];
-            for (const edge of template.edges) {
-              const sourceNode = template.nodes.find(
-                (n: any) => n.id === edge.source,
+            const edgesData: Array<{
+              graph_id: string;
+              source_node_id: string;
+              target_node_id: string;
+              relationship_type: string;
+            }> = [];
+            for (const edge of templateEdges) {
+              const sourceNode = templateNodes.find(
+                (n) => n.title === edge.source,
               );
-              const targetNode = template.nodes.find(
-                (n: any) => n.id === edge.target,
+              const targetNode = templateNodes.find(
+                (n) => n.title === edge.target,
               );
 
               if (sourceNode && targetNode) {

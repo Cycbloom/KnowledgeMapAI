@@ -49,8 +49,8 @@ export function useTopicCheck(options: UseTopicCheckOptions = {}): UseTopicCheck
         
         setIsDuplicate(result.is_duplicate);
         setSimilarGraphs(result.similar_graphs);
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name !== 'AbortError') {
           console.error('Failed to check topic:', error);
         }
       } finally {

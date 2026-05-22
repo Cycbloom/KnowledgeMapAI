@@ -1,25 +1,37 @@
 import { useCallback } from 'react';
-import { Node, Edge, BranchSuggestion } from '../../types';
+import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
+import type { CreateNodeData } from '@shared/types/api';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
+import { UseMutationResult } from '@tanstack/react-query';
+
+interface HistoricalAlternativeBranch {
+  nodeId: string;
+  branches: BranchSuggestion[];
+  selectedBranchId: string;
+}
+
+interface BranchOperationsState {
+  setLoading: (loading: boolean) => void;
+  setExplorationPath: (updater: (prev: ExplorationPathItem[]) => ExplorationPathItem[]) => void;
+  setCurrentPathIndex: (index: number) => void;
+  setHistoricalAlternativeBranches: (updater: (prev: HistoricalAlternativeBranch[]) => HistoricalAlternativeBranch[]) => void;
+}
+
+interface BranchOperationsMutations {
+  createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
+  createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
+}
 
 interface UseBranchOperationsOptions {
   id: string;
   nodes: Node[];
   edges: Edge[];
   selectedNode: Node | null;
-  state: {
-    setLoading: (loading: boolean) => void;
-    setExplorationPath: (updater: (prev: any[]) => any[]) => void;
-    setCurrentPathIndex: (index: number) => void;
-    setHistoricalAlternativeBranches: (updater: (prev: any[]) => any[]) => void;
-  };
-  mutations: {
-    createNodeMutation: any;
-    createEdgeMutation: any;
-  };
-  record: (action: { type: string; payload: any }) => void;
+  state: BranchOperationsState;
+  mutations: BranchOperationsMutations;
+  record: (action: { type: string; payload: unknown }) => void;
 }
 
 export const useBranchOperations = (options: UseBranchOperationsOptions) => {
@@ -106,7 +118,7 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
     }
   }, [selectedNode, id, state, mutations, record, edges]);
 
-  const handleSwitchBranch = useCallback(async (pathItem: any, suggestion: BranchSuggestion) => {
+  const handleSwitchBranch = useCallback(async (pathItem: ExplorationPathItem, suggestion: BranchSuggestion) => {
     if (!id) return;
     state.setLoading(true);
     try {
@@ -114,7 +126,7 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
       if (!parentNode) return;
 
       const branches = pathItem.alternativeBranches || [];
-      const createdNodes: any[] = [];
+      const createdNodes: Array<{ node: Node; suggestion: BranchSuggestion; isAccepted: boolean }> = [];
 
       for (const branch of branches) {
         const isAccepted = branch.id === suggestion.id;
@@ -150,7 +162,7 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
       if (selectedNodeData) {
         state.setExplorationPath(prev => {
           const newPath = [...prev];
-          const currentIndex = newPath.findIndex((item: any) => item.nodeId === pathItem.parentNodeId);
+          const currentIndex = newPath.findIndex((item: ExplorationPathItem) => item.nodeId === pathItem.parentNodeId);
           if (currentIndex !== -1) {
             newPath[currentIndex] = {
               nodeId: selectedNodeData.node.id,
@@ -167,7 +179,7 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
         });
 
         state.setHistoricalAlternativeBranches(prev => [
-          ...prev.filter((item: any) => item.nodeId !== parentNode.id),
+          ...prev.filter((item: HistoricalAlternativeBranch) => item.nodeId !== parentNode.id),
           {
             nodeId: parentNode.id,
             branches,

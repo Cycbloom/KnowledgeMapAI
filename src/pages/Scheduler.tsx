@@ -281,8 +281,9 @@ export const Scheduler: React.FC = () => {
       await createTaskMutation.mutateAsync(data);
       message.success(t("scheduler.taskCreated"));
       setShowTaskForm(false);
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.createTaskFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.createTaskFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -293,8 +294,9 @@ export const Scheduler: React.FC = () => {
       message.success(t("scheduler.taskUpdated"));
       setEditingTask(null);
       setShowTaskForm(false);
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.updateTaskFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.updateTaskFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -302,8 +304,9 @@ export const Scheduler: React.FC = () => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskDeleted"));
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.deleteTaskFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.deleteTaskFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -311,16 +314,18 @@ export const Scheduler: React.FC = () => {
     try {
       await moveTaskMutation.mutateAsync({ id: taskId, targetQueue });
       message.success(t("scheduler.taskMoved", { queue: targetQueue }));
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.moveTaskFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.moveTaskFailed");
+      message.error(errorMessage);
     }
   };
 
   const handleReorder = (queueLevel: number) => async (taskIds: string[]) => {
     try {
       await reorderMutation.mutateAsync({ queueLevel, taskIds });
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.reorderFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.reorderFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -328,8 +333,9 @@ export const Scheduler: React.FC = () => {
     try {
       await startTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskStarted"));
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.startTaskFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.startTaskFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -337,8 +343,9 @@ export const Scheduler: React.FC = () => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskPaused"));
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.pauseTaskFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.pauseTaskFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -346,8 +353,9 @@ export const Scheduler: React.FC = () => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskCompleted"));
-    } catch (err: any) {
-      message.error(err.message || t("scheduler.completeTaskFailed"));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("scheduler.completeTaskFailed");
+      message.error(errorMessage);
     }
   };
 
@@ -531,7 +539,7 @@ export const Scheduler: React.FC = () => {
                   >
                     {t("scheduler.allTasks")}
                   </button>
-                  {learningPaths.map((path: any) => (
+                  {learningPaths.map((path: { id: string; title: string }) => (
                     <button
                       key={path.id}
                       onClick={() =>

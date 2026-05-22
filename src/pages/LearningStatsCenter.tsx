@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useStatistics, useUser, useGraphs } from '../hooks/queries';
 import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
@@ -10,13 +10,24 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
-import { BookOpen, Brain, Clock, TrendingUp, Zap, Target } from 'lucide-react';
+import { BookOpen, Brain, Clock, TrendingUp, Zap, Target, LucideIcon } from 'lucide-react';
 import { useTheme } from '../hooks';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import type { Graph } from '../types';
 
-const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: any) => (
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  subtext?: string;
+  icon: LucideIcon;
+  color: string;
+  isDark: boolean;
+}
+
+const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: MetricCardProps) => (
   <div className={`p-3 md:p-4 rounded-xl shadow-sm border flex items-start justify-between ${
     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
   }`}>
@@ -31,7 +42,12 @@ const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: any) =
   </div>
 );
 
-const ForecastChart = ({ data, isDark, t }: { data: any[], isDark: boolean, t: (key: string) => string }) => (
+interface ForecastDataItem {
+  date: string;
+  count: number;
+}
+
+const ForecastChart = ({ data, isDark, t }: { data: ForecastDataItem[], isDark: boolean, t: TFunction }) => (
   <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
   }`}>
@@ -70,7 +86,7 @@ const ForecastChart = ({ data, isDark, t }: { data: any[], isDark: boolean, t: (
   </div>
 );
 
-const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark, t }: { retentionThreshold: number, avgStability: number, isDark: boolean, t: (key: string) => string }) => {
+const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark, t }: { retentionThreshold: number, avgStability: number, isDark: boolean, t: TFunction }) => {
   const data = useMemo(() => {
     const points = [];
     const stability = avgStability > 0 ? avgStability : 7;
@@ -141,7 +157,12 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark, t }: {
   );
 };
 
-const GrowthChart = ({ data, isDark, t }: { data: any[], isDark: boolean, t: (key: string) => string }) => (
+interface GrowthDataItem {
+  date: string;
+  count: number;
+}
+
+const GrowthChart = ({ data, isDark, t }: { data: GrowthDataItem[], isDark: boolean, t: TFunction }) => (
   <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
   }`}>
@@ -193,7 +214,12 @@ const GrowthChart = ({ data, isDark, t }: { data: any[], isDark: boolean, t: (ke
   </div>
 );
 
-const FocusStatsCard = ({ stats, isDark, t }: { stats: any, isDark: boolean, t: (key: string) => string }) => {
+interface FocusStats {
+  today?: { minutes?: number; sessions?: number };
+  total?: { minutes?: number; sessions?: number };
+}
+
+const FocusStatsCard = ({ stats, isDark, t }: { stats: FocusStats | null, isDark: boolean, t: TFunction }) => {
   if (!stats) return null;
 
   return (
@@ -234,7 +260,7 @@ const FocusStatsCard = ({ stats, isDark, t }: { stats: any, isDark: boolean, t: 
             <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.avgDuration')}</span>
           </div>
           <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            {stats.total?.sessions ? Math.round(stats.total.minutes / stats.total.sessions) : 0} {t('learningStats.focus.minutes')}
+            {stats.total?.sessions && stats.total?.minutes ? Math.round(stats.total.minutes / stats.total.sessions) : 0} {t('learningStats.focus.minutes')}
           </p>
           <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('learningStats.focus.perSession')}</p>
         </div>
@@ -265,12 +291,12 @@ export const LearningStatsCenter = () => {
 
   const totalNodesCount = useMemo(() => {
     if (!graphsData) return 0;
-    return graphsData.reduce((sum: number, g: any) => sum + (g.nodes_count || 0), 0);
+    return graphsData.reduce((sum: number, g: Graph) => sum + (g.nodes_count || 0), 0);
   }, [graphsData]);
 
   const graphHeatmapData = useMemo(() => {
     if (!graphsData) return [];
-    return graphsData.map((graph: any) => ({
+    return graphsData.map((graph: Graph) => ({
       id: graph.id,
       title: graph.title,
       nodes: [],
@@ -280,7 +306,7 @@ export const LearningStatsCenter = () => {
 
   const distributionData = useMemo(() => {
     if (!stats?.distribution) return [];
-    return stats.distribution.map((item: any) => ({
+    return stats.distribution.map((item: { name: string; value: number; color: string }) => ({
       name: item.name,
       value: item.value,
       color: item.color

@@ -7,6 +7,7 @@ import type {
   WeeklyFocusStats,
   MonthlyFocusStats,
 } from "@shared/types";
+import type { FocusSessionRow } from "@shared/types/database";
 
 export const getFocusSessions = async (): Promise<FocusSession[]> => {
   return withClientOptionalUser(async (client, userId) => {
@@ -14,7 +15,8 @@ export const getFocusSessions = async (): Promise<FocusSession[]> => {
       return [];
     }
 
-    const { data, error } = await (client.from("focus_sessions") as any)
+    const { data, error } = await client
+      .from("focus_sessions")
       .select("*")
       .eq("user_id", userId)
       .order("started_at", { ascending: false });
@@ -23,13 +25,14 @@ export const getFocusSessions = async (): Promise<FocusSession[]> => {
       throw new Error(error.message);
     }
 
-    return (data || []) as FocusSession[];
+    return (data as FocusSession[] | null) ?? [];
   });
 };
 
 export const createFocusSession = async (data: CreateFocusSessionData): Promise<FocusSession> => {
   return withClientAndUser(async (client, userId) => {
-    const { data: result, error } = await (client.from("focus_sessions") as any)
+    const { data: result, error } = await client
+      .from("focus_sessions")
       .insert({
         user_id: userId,
         task_id: data.task_id,
@@ -57,7 +60,8 @@ export const getUserFocusStats = async (): Promise<UserFocusStats | null> => {
       return null;
     }
 
-    const { data, error } = await (client.from("user_focus_stats") as any)
+    const { data, error } = await client
+      .from("user_focus_stats")
       .select("*")
       .eq("user_id", userId)
       .single();
@@ -82,6 +86,9 @@ export const getMonthlyFocusStats = async (): Promise<MonthlyFocusStats[]> => {
   return [];
 };
 
-export const updateFocusSession = async (_id: string, _data: any) => {
-  return {};
+export const updateFocusSession = async (
+  _id: string,
+  _data: Partial<FocusSessionRow>
+): Promise<FocusSession> => {
+  return {} as FocusSession;
 };

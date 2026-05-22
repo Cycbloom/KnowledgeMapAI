@@ -4,17 +4,17 @@ import { Node, Edge } from '../../types';
 export type HistoryAction = 
   | { type: 'CREATE_NODE'; payload: Node }
   | { type: 'DELETE_NODE'; payload: { node: Node; edges: Edge[] } }
-  | { type: 'UPDATE_NODE'; payload: { id: string; before: Partial<Node>; after: Partial<Node> } }
-  | { type: 'CREATE_EDGE'; payload: Edge }
-  | { type: 'DELETE_EDGE'; payload: Edge }
+  | { type: 'UPDATE_NODE'; payload: { id: string; before: Partial<Node> & { graph_id?: string }; after: Partial<Node> & { graph_id?: string } } }
+  | { type: 'CREATE_EDGE'; payload: Edge & { graph_id?: string } }
+  | { type: 'DELETE_EDGE'; payload: Edge & { graph_id?: string } }
   | { type: 'BATCH'; payload: HistoryAction[] };
 
 interface UseHistoryProps {
-  createNode: (data: any) => Promise<any>;
-  updateNode: (params: { id: string; data: any; graphId: string }) => Promise<any>;
-  deleteNode: (params: { id: string; graphId: string }) => Promise<any>;
-  createEdge: (data: any) => Promise<any>;
-  deleteEdge: (params: { id: string; graphId: string }) => Promise<any>;
+  createNode: (data: Partial<Node> & { graph_id: string }) => Promise<Node>;
+  updateNode: (params: { id: string; data: Partial<Node>; graphId: string }) => Promise<Node>;
+  deleteNode: (params: { id: string; graphId: string }) => Promise<void>;
+  createEdge: (data: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type?: string; graph_id: string }) => Promise<Edge>;
+  deleteEdge: (params: { id: string; graphId: string }) => Promise<void>;
 }
 
 export const useHistory = ({ createNode, updateNode, deleteNode, createEdge, deleteEdge }: UseHistoryProps) => {
@@ -44,11 +44,11 @@ export const useHistory = ({ createNode, updateNode, deleteNode, createEdge, del
         await updateNode({ 
           id: action.payload.id, 
           data: action.payload.before, 
-          graphId: (action.payload.before as any).graph_id || (action.payload.after as any).graph_id 
+          graphId: action.payload.before.graph_id || action.payload.after.graph_id || ''
         });
         break;
       case 'CREATE_EDGE':
-        await deleteEdge({ id: action.payload.id, graphId: (action.payload as any).graph_id || '' });
+        await deleteEdge({ id: action.payload.id, graphId: action.payload.graph_id || '' });
         break;
       case 'DELETE_EDGE':
         await createEdge(action.payload);
@@ -75,14 +75,14 @@ export const useHistory = ({ createNode, updateNode, deleteNode, createEdge, del
         await updateNode({ 
           id: action.payload.id, 
           data: action.payload.after, 
-          graphId: (action.payload.after as any)?.graph_id || (action.payload.before as any)?.graph_id 
+          graphId: action.payload.after.graph_id || action.payload.before.graph_id || ''
         });
         break;
       case 'CREATE_EDGE':
         await createEdge(action.payload);
         break;
       case 'DELETE_EDGE':
-        await deleteEdge({ id: action.payload.id, graphId: (action.payload as any).graph_id || '' });
+        await deleteEdge({ id: action.payload.id, graphId: action.payload.graph_id || '' });
         break;
       case 'BATCH':
         for (const subAction of action.payload) {

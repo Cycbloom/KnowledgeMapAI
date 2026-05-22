@@ -16,16 +16,52 @@ import { X, GripHorizontal } from "lucide-react";
 import { VersionHistoryModal } from "../modals/VersionHistoryModal";
 import { CreateRegionDialog } from "../modals/CreateRegionDialog";
 import type { CustomRegion } from "@shared/types/graph";
+import type { BatchGenerateConfig } from "../modals/BatchGenerateDialog";
+
+interface NodeStatus {
+  [nodeId: string]: {
+    masteryLevel?: number;
+    lastReviewDate?: string;
+    nextReviewDate?: string;
+    reviewCount?: number;
+  };
+}
+
+interface GraphStats {
+  masteredCount: number;
+  dueTodayCount: number;
+}
+
+interface NodeOperations {
+  handleSaveNode: () => void;
+  handleDeleteNode: () => void;
+  handleBatchDelete: () => void;
+  handleUpdateNode: (nodeId: string, updates: Partial<Node>) => void;
+  handleRefreshNode?: () => void;
+}
+
+interface AIOperations {
+  handleBackgroundTask: (type: "generate_questions" | "expand_graph" | "batch_generate_questions" | "deep_analysis", data?: BatchGenerateConfig | Record<string, unknown>) => void | Promise<void>;
+  handleStartLevelTest: () => void;
+  handleStartLearningMode: () => void;
+  handleAIGenerateCards: () => void;
+  handleFetchRelatedNodes: () => void;
+  handleGenerateNodeContent: () => void;
+}
+
+interface InteractionOperations {
+  handleNodeClick: (node: Node) => void;
+}
 
 interface GraphSidebarManagerProps {
   state: GraphEditorState;
   nodes: Node[];
   edges: Edge[];
-  nodeStatus: any;
-  graphStats: any;
-  nodeOps: any;
-  aiOps: any;
-  interactionOps: any;
+  nodeStatus: NodeStatus;
+  graphStats: GraphStats;
+  nodeOps: NodeOperations;
+  aiOps: AIOperations;
+  interactionOps: InteractionOperations;
   handleCloseSidebar: () => void;
   isExplorationMode?: boolean;
   isSelectingParent?: boolean;
@@ -187,7 +223,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             selectedNodeId={selectedNode?.id ?? null}
             selectedNodeIds={selectedNodeIds}
             onSelectionChange={setSelectedNodeIds}
-            onBatchAction={(action: string, data?: any) => {
+            onBatchAction={(action: string, data?: BatchGenerateConfig) => {
               if (action === "expand_graph")
                 aiOps.handleBackgroundTask("expand_graph");
               else if (action === "delete") nodeOps.handleBatchDelete();
@@ -241,17 +277,20 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           showRelatedSection={showRelatedSection}
           isRelatedLoading={isRelatedLoading}
           relatedNodes={relatedNodes}
-          onRelatedNodeClick={(node) => {
-            const focusedNodes = getFocusedNodes(node.id, nodes, edges);
+          onRelatedNodeClick={(relatedNode) => {
+            const focusedNodes = getFocusedNodes(relatedNode.id, nodes, edges);
             const focusedLinks = getFocusedLinks(focusedNodes, edges);
-            const directChildren = getDirectChildren(node.id, nodes, edges);
+            const directChildren = getDirectChildren(relatedNode.id, nodes, edges);
 
-            setSelectedNode(node);
-            setSelectedNodeIds(new Set([node.id]));
-            setFocusedNodeId(node.id);
+            const node = nodes.find(n => n.id === relatedNode.id);
+            if (node) {
+              setSelectedNode(node);
+            }
+            setSelectedNodeIds(new Set([relatedNode.id]));
+            setFocusedNodeId(relatedNode.id);
             setFocusedNodeIds(focusedNodes);
             setFocusedLinkIds(focusedLinks);
-            setForceShowTextIds(new Set([node.id, ...directChildren]));
+            setForceShowTextIds(new Set([relatedNode.id, ...directChildren]));
           }}
           onUpdateNode={(nodeId, updates) => {
             nodeOps.handleUpdateNode(nodeId, updates);

@@ -29,12 +29,13 @@ export const Register = () => {
       
       setUser(data.user as User | null, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
       navigate('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (isValidationError(err)) {
         const detailMessages = err.details?.map(d => `${d.field}: ${d.message}`) || [err.message];
         setErrors(detailMessages);
       } else {
-        setErrors([err.message]);
+        const errorMessage = err instanceof Error ? err.message : '注册失败';
+        setErrors([errorMessage]);
       }
     }
   };

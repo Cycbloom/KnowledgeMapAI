@@ -8,6 +8,13 @@ import type {
   AchievementCheckResult,
   FocusSession,
 } from '@shared/types/scheduler';
+import type {
+  AchievementRow,
+  UserAchievementRow,
+  PeriodicTaskRow,
+  FocusSessionRow,
+  UserTaskRow,
+} from '@shared/types/database';
 
 export class AchievementService {
   async initDailyTasks(userId: string): Promise<void> {
@@ -32,7 +39,7 @@ export class AchievementService {
     await getSupabaseAdmin().from('periodic_tasks').insert(tasks);
   }
 
-  async getDailyTasks(userId: string): Promise<any[]> {
+  async getDailyTasks(userId: string): Promise<PeriodicTaskRow[]> {
     await this.initDailyTasks(userId);
 
     const today = new Date().toISOString().split('T')[0];
@@ -44,7 +51,7 @@ export class AchievementService {
       .eq('period_start', today)
       .order('created_at');
 
-    return data || [];
+    return (data as PeriodicTaskRow[]) || [];
   }
 
   async updateDailyTask(userId: string, type: string, amount: number = 1): Promise<void> {
@@ -62,7 +69,7 @@ export class AchievementService {
     if (!task || task.status !== 'pending') return;
 
     const newProgress = Math.min(task.progress + amount, task.target);
-    const updates: any = { progress: newProgress };
+    const updates: Partial<PeriodicTaskRow> & { completed_at?: string } = { progress: newProgress };
 
     if (newProgress >= task.target) {
       updates.status = 'completed';
@@ -96,9 +103,13 @@ export class AchievementService {
 
     if (userError) throw userError;
 
-    const unlockedMap = new Map(userAchievements.map((ua: any) => [ua.achievement_id, ua.unlocked_at]));
+    const unlockedMap = new Map(
+      (userAchievements as Pick<UserAchievementRow, 'achievement_id' | 'unlocked_at'>[]).map(
+        (ua) => [ua.achievement_id, ua.unlocked_at]
+      )
+    );
 
-    return allAchievements.map((ach: any) => ({
+    return (allAchievements as AchievementRow[]).map((ach) => ({
       ...ach,
       unlocked_at: unlockedMap.get(ach.id) || null
     }));
@@ -115,20 +126,24 @@ export class AchievementService {
     if (candidateError) throw candidateError;
     if (!candidates || candidates.length === 0) return [];
 
+    const candidatesTyped = candidates as AchievementRow[];
+
     const { data: unlocked, error: unlockedError } = await getSupabaseAdmin()
       .from('user_achievements')
       .select('achievement_id')
       .eq('user_id', userId)
-      .in('achievement_id', candidates.map((c: any) => c.id));
+      .in('achievement_id', candidatesTyped.map((c) => c.id));
 
     if (unlockedError) throw unlockedError;
 
-    const unlockedIds = new Set(unlocked.map((u: any) => u.achievement_id));
-    const newUnlocks = candidates.filter((c: any) => !unlockedIds.has(c.id));
+    const unlockedIds = new Set(
+      (unlocked as Pick<UserAchievementRow, 'achievement_id'>[]).map((u) => u.achievement_id)
+    );
+    const newUnlocks = candidatesTyped.filter((c) => !unlockedIds.has(c.id));
 
     if (newUnlocks.length === 0) return [];
 
-    const unlocksToInsert = newUnlocks.map((ach: any) => ({
+    const unlocksToInsert = newUnlocks.map((ach) => ({
       user_id: userId,
       achievement_id: ach.id,
       unlocked_at: new Date().toISOString()
@@ -188,15 +203,18 @@ export class AchievementService {
   async updateStudyStreak(userId: string): Promise<void> {
     const { data: sessions, error } = await getSupabaseAdmin()
       .from('focus_sessions')
-      .select('start_time')
+      .select('started_at')
       .eq('user_id', userId)
       .eq('completed', true)
-      .order('start_time', { ascending: false });
+      .order('started_at', { ascending: false });
 
     if (error || !sessions) return;
 
-    const dates = new Set(sessions.map((s: any) => s.start_time.split('T')[0]));
-    const sortedDates = Array.from(dates).sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
+    const sessionsTyped = sessions as Pick<FocusSessionRow, 'started_at'>[];
+    const dates = new Set(sessionsTyped.map((s) => s.started_at.split('T')[0]));
+    const sortedDates = Array.from(dates).sort(
+      (a, b) => new Date(b).getTime() - new Date(a).getTime()
+    );
 
     if (sortedDates.length === 0) return;
 
@@ -235,17 +253,21 @@ export class AchievementService {
       .select('duration')
       .eq('user_id', userId)
       .eq('completed', true)
-      .gte('start_time', new Date().toISOString().split('T')[0]);
+      .gte('started_at', new Date().toISOString().split('T')[0]);
 
     const today = new Date().toISOString().split('T')[0];
-    const { data: todaySessions } = await getSupabaseAdmin()
+    const todaySessions = await getSupabaseAdmin()
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)
       .eq('completed', true)
-      .gte('start_time', today);
+      .gte('started_at', today);
 
-    const todayMinutes = todaySessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0;
+    const todayMinutes =
+      (todaySessions?.data as Pick<FocusSessionRow, 'duration'>[] | null)?.reduce(
+        (acc, curr) => acc + (curr.duration || 0),
+        0
+      ) || 0;
 
     await this.updateDailyTaskProgress(userId, 'focus_time', todayMinutes);
 
@@ -391,13 +413,16 @@ export class AchievementService {
         case 'streak_days': {
           const { data: streakSessions } = await getSupabaseAdmin()
             .from('focus_sessions')
-            .select('start_time')
+            .select('started_at')
             .eq('user_id', userId)
             .eq('completed', true)
-            .order('start_time', { ascending: false });
+            .order('started_at', { ascending: false });
           if (streakSessions && streakSessions.length > 0) {
-            const streakDates = new Set(streakSessions.map((s: any) => s.start_time.split('T')[0]));
-            const sortedStreakDates = Array.from(streakDates).sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
+            const streakSessionsTyped = streakSessions as Pick<FocusSessionRow, 'started_at'>[];
+            const streakDates = new Set(streakSessionsTyped.map((s) => s.started_at.split('T')[0]));
+            const sortedStreakDates = Array.from(streakDates).sort(
+              (a, b) => new Date(b).getTime() - new Date(a).getTime()
+            );
             const todayStr = new Date().toISOString().split('T')[0];
             const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
             if (sortedStreakDates[0] === todayStr || sortedStreakDates[0] === yesterdayStr) {
@@ -539,7 +564,8 @@ export class AchievementService {
 
     if (!tasks) return;
 
-    const distinctTypes = new Set(tasks.map((t: any) => t.task_type));
+    const tasksTyped = tasks as Pick<UserTaskRow, 'task_type'>[];
+    const distinctTypes = new Set(tasksTyped.map((t) => t.task_type));
     if (distinctTypes.size >= 5) {
       await this.unlockSpecialAchievement(userId, 'multitasker');
     }

@@ -13,7 +13,7 @@ export function useMobileInit() {
 
   useEffect(() => {
     const checkMobile = () => {
-      const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
+      const isCapacitor = !!(window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.();
       setIsMobile(isCapacitor);
       return isCapacitor;
     };

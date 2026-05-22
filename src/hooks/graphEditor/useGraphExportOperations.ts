@@ -3,6 +3,7 @@ import { GraphEditorState } from './index';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../../utils/exportUtils';
+import { UseMutationResult } from '@tanstack/react-query';
 
 interface UseGraphExportOperationsProps {
   id: string;
@@ -11,7 +12,7 @@ interface UseGraphExportOperationsProps {
   edges: Edge[];
   state: GraphEditorState;
   mutations: {
-    deleteGraphMutation: any;
+    deleteGraphMutation: UseMutationResult<void, Error, string, unknown>;
   };
   navigate: (path: string) => void;
 }
@@ -113,9 +114,10 @@ export const useGraphExportOperations = ({
             frontendEventBus.publish("message_show", { content: '图谱已删除', type: 'success' });
             navigate('/dashboard');
           },
-          onError: (err: any) => {
+          onError: (err: unknown) => {
             console.error(err);
-            frontendEventBus.publish("message_show", { content: err.message || '删除失败', type: 'error' });
+            const errorMessage = err instanceof Error ? err.message : '删除失败';
+            frontendEventBus.publish("message_show", { content: errorMessage, type: 'error' });
             setLoading(false);
             setConfirmModal({ ...state.confirmModal, isOpen: false });
           },
@@ -135,7 +137,7 @@ export const useGraphExportOperations = ({
 
   const confirmExportImage = async () => {
     try {
-      if (!graphRef.current) {
+      if (!graphRef.current?.captureScreenshot) {
         frontendEventBus.publish("message_show", { content: '当前视图不支持图片导出', type: 'error' });
         setIsExportImageModalOpen(false);
         return;

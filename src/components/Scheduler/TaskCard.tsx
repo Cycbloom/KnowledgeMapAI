@@ -23,6 +23,7 @@ import {
 import { UserTask, TaskSubtask } from "@shared/types";
 import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 interface TaskCardProps {
   task: UserTask;
@@ -259,8 +260,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         onSubtaskUpdate?.();
         message.success(newStatus === "completed" ? "子任务已完成" : "子任务已重新开启");
       }
-    } catch (error: any) {
-      message.error(error.message || "更新子任务失败");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "更新子任务失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 

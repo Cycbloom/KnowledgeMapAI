@@ -66,7 +66,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
       const data = await api.knowledgePoints.list();
       if (data) {
         setKnowledgePoints(
-          data.map((kp: any) => ({
+          data.map((kp: { id: string; title?: string }) => ({
             id: kp.id,
             title: kp.title || "未命名知识点",
           })),

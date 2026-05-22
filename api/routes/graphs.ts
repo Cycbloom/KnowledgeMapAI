@@ -356,8 +356,10 @@ router.get("/tags", requireAuth, async (req: AuthRequest, res: Response) => {
 
   const tagMap = new Map<string, number>();
 
-  (graphNodes || []).forEach((gn: any) => {
-    const tags = gn.knowledge_points?.properties?.tags || [];
+  (graphNodes || []).forEach((gn) => {
+    const kp = gn.knowledge_points as { properties?: { tags?: string[] } } | { properties?: { tags?: string[] } }[] | null;
+    const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+    const tags = props?.tags || [];
     tags.forEach((tag: string) => {
       tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
     });
@@ -666,18 +668,19 @@ router.get(
 
       if (gnError) throw gnError;
 
-      const moduleStats = modules.map((mod: any) => {
-        const moduleNodes = (graphNodes || []).filter((gn: any) => {
-          const kp = gn.knowledge_points as any;
-          const props = kp?.properties || {};
-          return props.backboneModule === mod.module_type;
+      const moduleStats = modules.map((mod: { module_type: string; title: string; icon: string; color: string }) => {
+        const moduleNodes = (graphNodes || []).filter((gn) => {
+          const kp = gn.knowledge_points as Array<{ properties?: { backboneModule?: string } }> | { properties?: { backboneModule?: string } } | null;
+          const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+          return props?.backboneModule === mod.module_type;
         });
 
         const sources = new Set<string>();
-        moduleNodes.forEach((gn: any) => {
-          const props = (gn.knowledge_points as any)?.properties || {};
-          const nodeSources = props.sources || [];
-          nodeSources.forEach((s: any) => {
+        moduleNodes.forEach((gn) => {
+          const kp = gn.knowledge_points as Array<{ properties?: { sources?: Array<{ title?: string }> } }> | { properties?: { sources?: Array<{ title?: string }> } } | null;
+          const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+          const nodeSources = props?.sources || [];
+          nodeSources.forEach((s: { title?: string }) => {
             if (s.title) sources.add(s.title);
           });
         });
@@ -746,7 +749,20 @@ router.get(
       >();
 
       for (const gn of graphNodes || []) {
-        const kp = gn.knowledge_points as any;
+        const kp = gn.knowledge_points as {
+          id?: string;
+          title?: string;
+          properties?: {
+            sources?: Array<{
+              title?: string;
+              authors?: string[];
+              year?: number;
+              type?: string;
+              url?: string;
+            }>;
+            backboneModule?: string;
+          };
+        } | undefined;
         if (!kp) continue;
         const props = kp.properties || {};
         const sources = props.sources || [];
@@ -2481,7 +2497,7 @@ router.post(
 
         if (!kp) continue;
 
-        const properties = (kp.properties || {}) as Record<string, any>;
+        const properties = (kp.properties || {}) as Record<string, unknown>;
         const currentModule = properties.backboneModule as
           | BackboneModule
           | undefined;

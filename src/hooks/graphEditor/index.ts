@@ -28,12 +28,17 @@ export { useGraphNodeOperations } from './useGraphNodeOperations';
 export { useKnowledgePointOperations } from './useKnowledgePointOperations';
 export { useExplorationPath } from './useExplorationPath';
 
+interface GraphRef {
+  centerNode?: (nodeId: string, options?: { forceRightPanelOpen?: boolean }) => void;
+  captureScreenshot?: (options: { transparent: boolean; fitView: boolean; hideGrid: boolean }) => Promise<string>;
+}
+
 export type GraphEditorState = {
-  graphRef: React.RefObject<any>;
+  graphRef: React.RefObject<GraphRef | null>;
 } & SelectionState & SidebarState & ExplorationState & FocusState & ModalState & FormState & ViewState & PresentationState & MiscState;
 
 export const useGraphEditorState = (): GraphEditorState => {
-  const graphRef = useRef<any>(null);
+  const graphRef = useRef<GraphRef | null>(null);
   
   const selection = useSelectionState();
   const sidebar = useSidebarState();

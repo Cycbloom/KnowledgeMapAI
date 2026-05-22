@@ -115,7 +115,7 @@ router.post(
       // graphNode 已经是扁平化的 Node 对象，不需要再调用 buildNodeFromGraphNode
       const result = graphNode;
       if (result && reusedKnowledgePoint) {
-        (result as any)._reused = true;
+        (result as { _reused?: boolean })._reused = true;
       }
 
       await cacheService.invalidateGraphCache(req.user.id, graph_id);
@@ -253,10 +253,19 @@ router.put(
       );
     }
 
-    const kp = existingNode.knowledge_points as any;
+    interface KnowledgePointData {
+      id: string;
+      title?: string;
+      properties?: {
+        backboneModule?: string;
+      };
+    }
+
+    const kpArray = existingNode.knowledge_points as KnowledgePointData[] | null;
+    const kp = kpArray?.[0];
     const isBackboneNode =
       kp?.properties?.backboneModule &&
-      Object.values(BackboneModule).includes(kp.properties.backboneModule);
+      Object.values(BackboneModule).includes(kp.properties.backboneModule as BackboneModule);
 
     if (
       isBackboneNode &&
@@ -266,8 +275,20 @@ router.put(
       throw new AppError("骨干节点标题不可修改", 403, ErrorCodes.FORBIDDEN);
     }
 
-    const kpUpdates: any = {};
-    const gnUpdates: any = {};
+    const kpUpdates: {
+      title?: string;
+      content?: string;
+      learning_material?: string;
+      properties?: Record<string, unknown>;
+      visibility?: "private" | "public";
+      keywords?: string[];
+    } = {};
+    const gnUpdates: {
+      x_position?: number;
+      y_position?: number;
+      level?: string;
+      is_accepted?: boolean;
+    } = {};
 
     if (updates.title !== undefined) kpUpdates.title = updates.title;
     if (updates.content !== undefined) kpUpdates.content = updates.content;
@@ -397,16 +418,27 @@ router.get(
         throw new AppError("节点不存在", 404, ErrorCodes.NODE_NOT_FOUND);
       }
 
-      const kp = graphNode.knowledge_points as any;
-      let embedding = kp?.embedding;
+      interface KnowledgePointWithEmbedding {
+        id: string;
+        title?: string;
+        embedding?: number[] | null;
+      }
+
+      const kpArray = graphNode.knowledge_points as KnowledgePointWithEmbedding[] | null;
+      const kp = kpArray?.[0];
+      let embedding: number[] | undefined;
+      if (kp?.embedding) {
+        embedding = kp.embedding;
+      }
 
       if (!embedding && kp?.title) {
-        embedding = await aiService.generateEmbedding(kp.title);
+        const generatedEmbedding = await aiService.generateEmbedding(kp.title);
 
-        if (embedding) {
+        if (generatedEmbedding) {
+          embedding = generatedEmbedding;
           await req
             .supabase!.from("knowledge_points")
-            .update({ embedding })
+            .update({ embedding: generatedEmbedding })
             .eq("id", kp.id);
         }
       }
@@ -424,7 +456,7 @@ router.get(
       );
 
       const results = (relatedKps || [])
-        .filter((kp: any) => kp.id !== id)
+        .filter((kp: { id: string }) => kp.id !== id)
         .slice(0, limit);
 
       res.json(results);
@@ -680,13 +712,32 @@ router.post(
       const graphNode = kpIdToGnMap.get(nodeUpdate.id);
       if (!graphNode) continue;
 
-      const kp = graphNode.knowledge_points as any;
+      interface KnowledgePointWithProperties {
+        id: string;
+        title?: string;
+        properties?: {
+          backboneModule?: string;
+        };
+      }
+
+      const kpArray = graphNode.knowledge_points as KnowledgePointWithProperties[] | null;
+      const kp = kpArray?.[0];
       const isBackboneNode =
         kp?.properties?.backboneModule &&
-        Object.values(BackboneModule).includes(kp.properties.backboneModule);
+        Object.values(BackboneModule).includes(kp.properties.backboneModule as BackboneModule);
 
-      const kpUpdates: any = {};
-      const gnUpdates: any = {};
+      const kpUpdates: {
+        title?: string;
+        content?: string;
+        learning_material?: string;
+        properties?: Record<string, unknown>;
+      } = {};
+      const gnUpdates: {
+        x_position?: number;
+        y_position?: number;
+        level?: string;
+        is_accepted?: boolean;
+      } = {};
 
       if (nodeUpdate.title !== undefined) {
         if (isBackboneNode && nodeUpdate.title !== kp?.title) {

@@ -31,6 +31,7 @@ import {
   ActivityEvent,
   DailyActivityStats,
 } from "../types/calendar";
+import type { UserTask, TaskExecution } from "../types";
 
 type ViewType = "month" | "week" | "day" | "schedule";
 
@@ -106,7 +107,7 @@ export const CalendarPage: React.FC = () => {
 
         if (tasksRes.success) {
           const calendarEvents: CalendarEvent[] = (tasksRes.data || []).map(
-            (task: any) => ({
+            (task: UserTask) => ({
               id: task.id,
               title: task.title,
               description: task.description,
@@ -137,10 +138,10 @@ export const CalendarPage: React.FC = () => {
         if (executionsRes.success) {
           const executionEvents: ExecutionEvent[] = (
             executionsRes.data || []
-          ).map((exec: any) => ({
+          ).map((exec: TaskExecution) => ({
             id: exec.id,
             task_id: exec.task_id,
-            task_title: exec.task_title || "未知任务",
+            task_title: "未知任务",
             started_at: exec.started_at,
             ended_at: exec.ended_at,
             duration: exec.duration,
@@ -212,10 +213,11 @@ export const CalendarPage: React.FC = () => {
       });
       setShowTaskModal(false);
       loadData();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "创建任务失败";
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: error.message || "创建任务失败",
+        content: errorMessage,
       });
     } finally {
       setSaving(false);
@@ -235,7 +237,7 @@ export const CalendarPage: React.FC = () => {
 
   const handleEventDrop = useCallback(async (dropInfo: EventDropInfo) => {
     try {
-      const updateData: any = {
+      const updateData: { scheduled_start: string; scheduled_end?: string } = {
         scheduled_start: dropInfo.newStart.toISOString(),
       };
 
@@ -249,10 +251,11 @@ export const CalendarPage: React.FC = () => {
         content: "任务时间已更新!",
       });
       loadData();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "更新任务时间失败";
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: error.message || "更新任务时间失败",
+        content: errorMessage,
       });
     }
   }, []);

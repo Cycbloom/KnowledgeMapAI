@@ -161,10 +161,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         knowledgePointId: task?.knowledge_point_id || "",
         priority: task?.priority || 2,
         queueLevel: task?.queue_level ?? defaultQueueLevel,
-        taskType: (task as any)?.task_type || "one_time",
-        totalDuration: (task as any)?.total_duration || 0,
-        progressMode: (task as any)?.progress_mode || "average",
-        context: (task as any)?.context || "",
+        taskType: task?.task_type || "one_time",
+        totalDuration: task?.total_duration || 0,
+        progressMode: task?.progress_mode || "average",
+        context: task?.context || "",
       };
     }
     const draft = loadDraft();
@@ -863,13 +863,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                             自动生成
                           </span>
                         )}
-                        {(task as any)?.source === "system_recommendation" && (
+                        {task?.source === "system_recommendation" && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium">
                             <Zap size={12} />
                             系统推荐
                           </span>
                         )}
-                        {(task as any)?.source === "import" && (
+                        {task?.source === "import" && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
                             导入
                           </span>

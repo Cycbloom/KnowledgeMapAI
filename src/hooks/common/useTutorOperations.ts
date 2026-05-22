@@ -1,20 +1,29 @@
 import type { Node, Edge, TutorExtractedConcept, TutorMode } from "../../types";
+import type { CreateNodeData } from "@shared/types/api";
 import { getNextLevel, getLevelColorHex } from "../../lib/graphUtils";
 import { HistoryAction } from "./useHistory";
 import { GraphEditorState } from "../graphEditor";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from "../../services/api";
 import { useRef, useCallback } from "react";
+import { UseMutationResult } from "@tanstack/react-query";
+
+interface TutorChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface TutorOperationsMutations {
+  createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
+  createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
+}
 
 interface UseTutorOperationsProps {
   id: string;
   nodes: Node[];
   edges: Edge[];
   state: GraphEditorState;
-  mutations: {
-    createNodeMutation: any;
-    createEdgeMutation: any;
-  };
+  mutations: TutorOperationsMutations;
   record: (action: HistoryAction) => void;
 }
 
@@ -53,7 +62,7 @@ export const useTutorOperations = ({
 
   const handleTutorChat = async (
     message: string,
-    history: any[] = [],
+    history: TutorChatMessage[] = [],
     onChunk: (content: string) => void,
   ) => {
     try {
@@ -76,7 +85,7 @@ export const useTutorOperations = ({
         },
         onChunk,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Tutor chat error:", error);
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -110,7 +119,7 @@ export const useTutorOperations = ({
           content: "未提取到新的概念",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Extract concepts error:", error);
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -179,7 +188,7 @@ export const useTutorOperations = ({
       });
 
       return newNode;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Add concept to graph error:", error);
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -251,7 +260,7 @@ export const useTutorOperations = ({
         type: "success",
         content: `已将 ${addedNodes.length} 个概念添加到图谱中`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Add all concepts error:", error);
       frontendEventBus.publish("message_show", {
         type: "error",
@@ -293,7 +302,7 @@ export const useTutorOperations = ({
           content: "暂无学习建议",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Suggest next topics error:", error);
       frontendEventBus.publish("message_show", {
         type: "error",

@@ -36,9 +36,9 @@ router.get("/export", requireAuth, async (req: AuthRequest, res: Response) => {
       `attachment; filename="knowledgemap-backup-${new Date().toISOString().split("T")[0]}.json"`,
     );
     res.send(content);
-  } catch (error: any) {
+  } catch (error) {
     logger.error("Export backup error:", error);
-    res.status(500).json({ error: error.message || "导出备份失败" });
+    res.status(500).json({ error: (error as Error).message || "导出备份失败" });
   }
 });
 
@@ -51,9 +51,9 @@ router.get(
     try {
       const snapshots = await backupService.getSnapshots(req.supabase!, userId);
       res.json({ snapshots });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Get snapshots error:", error);
-      res.status(500).json({ error: error.message || "获取快照列表失败" });
+      res.status(500).json({ error: (error as Error).message || "获取快照列表失败" });
     }
   },
 );
@@ -85,9 +85,9 @@ router.post(
           nodes_count: result.nodesCount,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Create snapshot error:", error);
-      res.status(500).json({ error: error.message || "创建快照失败" });
+      res.status(500).json({ error: (error as Error).message || "创建快照失败" });
     }
   },
 );
@@ -102,12 +102,12 @@ router.delete(
     try {
       await backupService.deleteSnapshot(req.supabase!, id, userId);
       res.json({ success: true, message: "快照已删除" });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Delete snapshot error:", error);
-      if (error.message === "Snapshot not found") {
+      if ((error as Error).message === "Snapshot not found") {
         return res.status(404).json({ error: "快照不存在" });
       }
-      res.status(500).json({ error: error.message || "删除快照失败" });
+      res.status(500).json({ error: (error as Error).message || "删除快照失败" });
     }
   },
 );
@@ -138,7 +138,7 @@ router.post(
         .eq("user_id", userId);
 
       if (existingGraphs.data && existingGraphs.data.length > 0) {
-        const graphIds = existingGraphs.data.map((g: any) => g.id);
+        const graphIds = existingGraphs.data.map((g: { id: string }) => g.id);
 
         await req.supabase!.from("study_cards").delete().eq("user_id", userId);
         await req
@@ -165,9 +165,9 @@ router.post(
         message: "快照恢复成功",
         stats,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Restore snapshot error:", error);
-      res.status(500).json({ error: error.message || "恢复快照失败" });
+      res.status(500).json({ error: (error as Error).message || "恢复快照失败" });
     }
   },
 );
@@ -191,7 +191,7 @@ router.post("/import", requireAuth, async (req: AuthRequest, res: Response) => {
         .eq("user_id", userId);
 
       if (existingGraphs.data && existingGraphs.data.length > 0) {
-        const graphIds = existingGraphs.data.map((g: any) => g.id);
+        const graphIds = existingGraphs.data.map((g: { id: string }) => g.id);
 
         await req.supabase!.from("study_cards").delete().eq("user_id", userId);
         await req
@@ -220,16 +220,49 @@ router.post("/import", requireAuth, async (req: AuthRequest, res: Response) => {
       stats,
       mode,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error("Import backup error:", error);
-    res.status(500).json({ error: error.message || "导入备份失败" });
+    res.status(500).json({ error: (error as Error).message || "导入备份失败" });
   }
 });
 
 async function restoreBackupData(
-  supabase: any,
+  supabase: AuthRequest["supabase"],
   userId: string,
-  data: any,
+  data: {
+    graphs?: Array<{
+      id: string;
+      title: string;
+      description?: string | null;
+      settings?: Record<string, unknown> | null;
+      is_public?: boolean;
+    }>;
+    nodes?: Array<{
+      id: string;
+      graph_id: string;
+      title: string;
+      content?: string;
+      properties?: Record<string, unknown>;
+      x_position?: number;
+      y_position?: number;
+      level?: string;
+    }>;
+    edges?: Array<{
+      graph_id: string;
+      source_knowledge_point_id: string;
+      target_knowledge_point_id: string;
+      relationship_type?: string;
+    }>;
+    study_cards?: Array<{
+      graph_id: string;
+      knowledge_point_id: string;
+      question: string;
+      answer: string;
+      explanation?: string | null;
+      card_type?: string;
+      options?: string[] | null;
+    }>;
+  },
 ): Promise<{
   graphs: number;
   nodes: number;
@@ -247,7 +280,7 @@ async function restoreBackupData(
   const oldToNewKnowledgePointIds = new Map<string, string>();
 
   if (data.graphs && data.graphs.length > 0) {
-    const graphsToInsert = data.graphs.map((g: any) => ({
+    const graphsToInsert = data.graphs.map((g) => ({
       user_id: userId,
       title: g.title,
       description: g.description,
@@ -255,15 +288,15 @@ async function restoreBackupData(
       is_public: g.is_public || false,
     }));
 
-    const { data: insertedGraphs, error: graphsError } = await supabase
+    const { data: insertedGraphs, error: graphsError } = await supabase!
       .from("knowledge_graphs")
       .insert(graphsToInsert)
       .select();
 
     if (graphsError) throw new Error(`导入图谱失败: ${graphsError.message}`);
 
-    insertedGraphs?.forEach((g: any, i: number) => {
-      oldToNewGraphIds.set(data.graphs[i].id, g.id);
+    insertedGraphs?.forEach((g, i) => {
+      oldToNewGraphIds.set(data.graphs![i].id, g.id);
     });
     stats.graphs = insertedGraphs?.length || 0;
   }
@@ -305,7 +338,7 @@ async function restoreBackupData(
 
       if (graphId && sourceKPId && targetKPId) {
         try {
-          await edgeService.create(supabase, {
+          await edgeService.create(supabase!, {
             graph_id: graphId,
             source_knowledge_point_id: sourceKPId,
             target_knowledge_point_id: targetKPId,
@@ -326,15 +359,15 @@ async function restoreBackupData(
 
       if (graphId && kpId) {
         try {
-          await studyService.createCard(supabase, {
+          await studyService.createCard(supabase!, {
             userId,
             knowledgePointId: kpId,
             sourceGraphId: graphId,
             question: c.question,
             answer: c.answer,
-            explanation: c.explanation,
-            cardType: c.card_type || "qa",
-            options: c.options,
+            explanation: c.explanation ?? undefined,
+            cardType: (c.card_type as "qa" | "choice" | "true_false" | "multi_choice" | "fill_in_the_blank" | "essay") || "qa",
+            options: c.options ?? undefined,
           });
           stats.study_cards++;
         } catch (err) {

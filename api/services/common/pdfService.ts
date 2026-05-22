@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from '../../utils/logger';
+import type { Graph, Edge, NodeLevel } from '@shared/types/graph';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,17 @@ interface PDFOptions {
   includeDetails?: boolean;
   screenshotBase64?: string;
 }
+
+interface PDFNode {
+  id: string;
+  title: string;
+  content?: string;
+  level: NodeLevel;
+}
+
+const LEVEL_ORDER: Record<NodeLevel, number> = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
+
+type PDFDocumentInstance = InstanceType<typeof PDFDocument>;
 
 export class PDFService {
   private fontPath: string | undefined;
@@ -30,7 +42,7 @@ export class PDFService {
       let files: fs.Dirent[] = [];
       try {
         files = fs.readdirSync(dir, { withFileTypes: true });
-      } catch (e) {
+      } catch {
         return null;
       }
       
@@ -79,7 +91,13 @@ export class PDFService {
     }
   }
 
-  public generateReport(graph: any, nodes: any[], edges: any[], options: PDFOptions, outputStream: any) {
+  public generateReport(
+    graph: Graph,
+    nodes: PDFNode[],
+    edges: Edge[],
+    options: PDFOptions,
+    outputStream: NodeJS.WritableStream
+  ) {
     const doc = new PDFDocument({ size: 'A4', margin: 48 });
     
     if (this.fontPath) {
@@ -104,7 +122,7 @@ export class PDFService {
     doc.end();
   }
 
-  private renderCover(doc: any, graph: any, options: PDFOptions) {
+  private renderCover(doc: PDFDocumentInstance, graph: Graph, options: PDFOptions) {
     const title = typeof graph.title === 'string' && graph.title.trim() ? graph.title.trim() : 'Knowledge Graph Report';
     
     doc.fontSize(28).fillColor('#111827').text(title, { align: 'center' });
@@ -137,8 +155,8 @@ export class PDFService {
     doc.addPage();
   }
 
-  private renderStats(doc: any, nodes: any[], edges: any[]) {
-    doc.fontSize(16).fillColor('#111827').text('图谱统计 (Statistics)', { underline: true });
+  private renderStats(doc: PDFDocumentInstance, nodes: PDFNode[], edges: Edge[]) {
+    doc.fontSize(16).fillColor('#111827').text('图谱统计', { underline: true });
     doc.moveDown(1);
 
     const levelCounts: Record<string, number> = {
@@ -165,8 +183,8 @@ export class PDFService {
     doc.moveDown(2);
   }
 
-  private renderTOC(doc: any, nodes: any[]) {
-    doc.fontSize(16).fillColor('#111827').text('目录 (Contents)', { underline: true });
+  private renderTOC(doc: PDFDocumentInstance, nodes: PDFNode[]) {
+    doc.fontSize(16).fillColor('#111827').text('目录', { underline: true });
     doc.moveDown(1);
 
     const roots = nodes.filter(n => n.level === 'root');
@@ -185,18 +203,17 @@ export class PDFService {
     doc.addPage();
   }
 
-  private renderNodeDetails(doc: any, nodes: any[], edges: any[]) {
-    doc.fontSize(16).fillColor('#111827').text('详细内容 (Detailed Content)', { underline: true });
+  private renderNodeDetails(doc: PDFDocumentInstance, nodes: PDFNode[], edges: Edge[]) {
+    doc.fontSize(16).fillColor('#111827').text('详细内容', { underline: true });
     doc.moveDown(1.5);
 
-    const levelOrder = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
     const sortedNodes = [...nodes].sort((a, b) => {
-      const la = levelOrder[a.level as keyof typeof levelOrder] ?? 5;
-      const lb = levelOrder[b.level as keyof typeof levelOrder] ?? 5;
+      const la = LEVEL_ORDER[a.level] ?? 5;
+      const lb = LEVEL_ORDER[b.level] ?? 5;
       return la - lb;
     });
 
-    const edgesBySource = new Map<string, any[]>();
+    const edgesBySource = new Map<string, Edge[]>();
     edges.forEach(e => {
         const list = edgesBySource.get(e.source_knowledge_point_id) || [];
         list.push(e);
@@ -222,7 +239,7 @@ export class PDFService {
 
       const outgoing = edgesBySource.get(node.id);
       if (outgoing && outgoing.length > 0) {
-        doc.fontSize(10).fillColor('#4B5563').text('关联 (Related):');
+        doc.fontSize(10).fillColor('#4B5563').text('关联:');
         outgoing.forEach(e => {
           const target = nodeById.get(e.target_knowledge_point_id);
           if (target) {

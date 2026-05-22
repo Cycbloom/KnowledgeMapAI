@@ -605,11 +605,11 @@ router.post(
       }
 
       res.json(learningPath);
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Learning Path Generation Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "学习路径生成失败",
+        (error as Error).message || "学习路径生成失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -649,11 +649,11 @@ router.post(
         total_tasks: result.total_tasks,
         estimated_days: result.estimated_days,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Auto Schedule Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "自动排程失败",
+        (error as Error).message || "自动排程失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );

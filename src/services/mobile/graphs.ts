@@ -15,6 +15,18 @@ import type {
 import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
 
+interface GraphSettings {
+  viewMode?: string;
+  gamification_enabled?: boolean;
+  learning_direction?: "top_down" | "bottom_up";
+  text_display_level?: "all" | "important" | "root_only";
+  [key: string]: unknown;
+}
+
+interface GraphWithSettings extends KnowledgeGraphRow {
+  settings?: GraphSettings | null;
+}
+
 export const mobileGraphsApi = {
   list: async (): Promise<Graph[]> => {
     return withClient(async (client) => {
@@ -142,9 +154,8 @@ export const mobileGraphsApi = {
 
   create: async (data: CreateGraphData): Promise<Graph> => {
     return withClient(async (client) => {
-      const { data: result, error } = await (
-        client.from("knowledge_graphs") as any
-      )
+      const { data: result, error } = await client
+        .from("knowledge_graphs")
         .insert(data)
         .select()
         .single();
@@ -159,9 +170,8 @@ export const mobileGraphsApi = {
 
   createFromTemplate: async (data: CreateGraphFromTemplateData) => {
     return withClient(async (client) => {
-      const { data: result, error } = await (
-        client.from("knowledge_graphs") as any
-      )
+      const { data: result, error } = await client
+        .from("knowledge_graphs")
         .insert({
           title: data.title || "From Template",
           description: data.description,
@@ -182,9 +192,8 @@ export const mobileGraphsApi = {
     data: UpdateGraphData,
   ): Promise<Graph> => {
     return withClient(async (client) => {
-      const { data: result, error } = await (
-        client.from("knowledge_graphs") as any
-      )
+      const { data: result, error } = await client
+        .from("knowledge_graphs")
         .update(data)
         .eq("id", id)
         .select()
@@ -200,7 +209,8 @@ export const mobileGraphsApi = {
 
   delete: async (id: string): Promise<void> => {
     return withClient(async (client) => {
-      const { error } = await (client.from("knowledge_graphs") as any)
+      const { error } = await client
+        .from("knowledge_graphs")
         .update({ deleted_at: new Date().toISOString() })
         .eq("id", id);
 
@@ -212,7 +222,8 @@ export const mobileGraphsApi = {
 
   restore: async (id: string): Promise<Graph> => {
     return withClient(async (client) => {
-      const { data, error } = await (client.from("knowledge_graphs") as any)
+      const { data, error } = await client
+        .from("knowledge_graphs")
         .update({ deleted_at: null })
         .eq("id", id)
         .select()
@@ -228,7 +239,8 @@ export const mobileGraphsApi = {
 
   permanentDelete: async (id: string): Promise<void> => {
     return withClient(async (client) => {
-      const { error } = await (client.from("knowledge_graphs") as any)
+      const { error } = await client
+        .from("knowledge_graphs")
         .delete()
         .eq("id", id);
 
@@ -240,7 +252,8 @@ export const mobileGraphsApi = {
 
   batchRestore: async (ids: string[]) => {
     return withClient(async (client) => {
-      const { error } = await (client.from("knowledge_graphs") as any)
+      const { error } = await client
+        .from("knowledge_graphs")
         .update({ deleted_at: null })
         .in("id", ids);
 
@@ -254,7 +267,8 @@ export const mobileGraphsApi = {
 
   batchDelete: async (ids: string[]) => {
     return withClient(async (client) => {
-      const { error } = await (client.from("knowledge_graphs") as any)
+      const { error } = await client
+        .from("knowledge_graphs")
         .update({ deleted_at: new Date().toISOString() })
         .in("id", ids);
 
@@ -268,7 +282,8 @@ export const mobileGraphsApi = {
 
   batchPermanentDelete: async (ids: string[]) => {
     return withClient(async (client) => {
-      const { error } = await (client.from("knowledge_graphs") as any)
+      const { error } = await client
+        .from("knowledge_graphs")
         .delete()
         .in("id", ids);
 
@@ -298,7 +313,8 @@ export const mobileGraphsApi = {
 
   toggleFavorite: async (id: string, is_favorite: boolean): Promise<Graph> => {
     return withClient(async (client) => {
-      const { data, error } = await (client.from("knowledge_graphs") as any)
+      const { data, error } = await client
+        .from("knowledge_graphs")
         .update({ is_favorite })
         .eq("id", id)
         .select()
@@ -371,7 +387,8 @@ export const mobileGraphsApi = {
 
   togglePublic: async (id: string, is_public: boolean): Promise<Graph> => {
     return withClient(async (client) => {
-      const { data, error } = await (client.from("knowledge_graphs") as any)
+      const { data, error } = await client
+        .from("knowledge_graphs")
         .update({ is_public })
         .eq("id", id)
         .select()
@@ -408,7 +425,8 @@ export const mobileGraphsApi = {
 
       if (graphIds.length > 0) {
         const [nodeCountsResult, relationsResult] = await Promise.all([
-          (client.from("graph_nodes") as any)
+          client
+            .from("graph_nodes")
             .select("graph_id")
             .in("graph_id", graphIds)
             .is("deleted_at", null),
@@ -468,15 +486,15 @@ export const mobileGraphsApi = {
         throw new Error("图谱不存在");
       }
 
-      const currentSettings = (graph as any).settings || {};
+      const graphWithSettings = graph as GraphWithSettings;
+      const currentSettings = graphWithSettings.settings || {};
       const updatedSettings = {
         ...currentSettings,
         viewMode,
       };
 
-      const { data: result, error: updateError } = await (
-        client.from("knowledge_graphs") as any
-      )
+      const { data: result, error: updateError } = await client
+        .from("knowledge_graphs")
         .update({ settings: updatedSettings })
         .eq("id", id)
         .select()

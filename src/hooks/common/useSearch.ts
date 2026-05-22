@@ -50,8 +50,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
         : await searchApi.search(searchQuery.trim());
 
       setResults(result);
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'AbortError') {
         console.error('Search failed:', err);
         setError(err.message || '搜索失败');
       }

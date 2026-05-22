@@ -94,6 +94,14 @@ router.post(
   },
 );
 
+interface UserTaskWithSubtasks {
+  id: string;
+  subtask_count?: number;
+  subtask_completed?: number;
+  has_subtasks?: boolean;
+  [key: string]: unknown;
+}
+
 router.get(
   "/tasks",
   requireAuth,
@@ -162,9 +170,10 @@ router.get(
 
       for (const task of tasks) {
         const stats = subtaskCounts.get(task.id);
-        (task as any).subtask_count = stats?.total || 0;
-        (task as any).subtask_completed = stats?.completed || 0;
-        (task as any).has_subtasks = (stats?.total || 0) > 0;
+        const taskWithSubtasks = task as UserTaskWithSubtasks;
+        taskWithSubtasks.subtask_count = stats?.total || 0;
+        taskWithSubtasks.subtask_completed = stats?.completed || 0;
+        taskWithSubtasks.has_subtasks = (stats?.total || 0) > 0;
       }
     }
 
@@ -569,9 +578,10 @@ router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
 
     for (const task of tasks) {
       const stats = subtaskCounts.get(task.id);
-      (task as any).subtask_count = stats?.total || 0;
-      (task as any).subtask_completed = stats?.completed || 0;
-      (task as any).has_subtasks = (stats?.total || 0) > 0;
+      const taskWithSubtasks = task as UserTaskWithSubtasks;
+      taskWithSubtasks.subtask_count = stats?.total || 0;
+      taskWithSubtasks.subtask_completed = stats?.completed || 0;
+      taskWithSubtasks.has_subtasks = (stats?.total || 0) > 0;
     }
   }
 

@@ -1,4 +1,5 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
+import type { AchievementRow } from "@shared/types/database";
 
 export interface Achievement {
   id: string;
@@ -30,6 +31,11 @@ export interface DailyTask {
   created_at: string;
 }
 
+interface UserAchievementData {
+  achievement_id: string;
+  unlocked_at: string;
+}
+
 export const mobileAchievementsApi = {
   list: async (): Promise<Achievement[]> => {
     const client = getMobileSupabaseClient();
@@ -45,7 +51,8 @@ export const mobileAchievementsApi = {
       return [];
     }
 
-    const { data: allAchievements, error: fetchError } = await (client.from("achievements") as any)
+    const { data: allAchievements, error: fetchError } = await client
+      .from("achievements")
       .select("*")
       .order("condition_value", { ascending: true });
 
@@ -54,23 +61,24 @@ export const mobileAchievementsApi = {
       return [];
     }
 
-    const { data: userAchievements, error: userError } = await (client.from("user_achievements") as any)
+    const { data: userAchievements, error: userError } = await client
+      .from("user_achievements")
       .select("achievement_id, unlocked_at")
       .eq("user_id", user.id);
 
     if (userError) {
       console.error("Error fetching user achievements:", userError);
-      return allAchievements || [];
+      return (allAchievements || []) as Achievement[];
     }
 
     const unlockedMap = new Map(
-      (userAchievements || []).map((ua: any) => [ua.achievement_id, ua.unlocked_at])
+      (userAchievements || []).map((ua: UserAchievementData) => [ua.achievement_id, ua.unlocked_at])
     );
 
-    return (allAchievements || []).map((ach: any) => ({
+    return (allAchievements || []).map((ach: AchievementRow) => ({
       ...ach,
       unlocked_at: unlockedMap.get(ach.id) || null,
-    }));
+    })) as Achievement[];
   },
 
   check: async (type: string, value: number): Promise<{ newUnlocks: Achievement[] }> => {
@@ -87,7 +95,8 @@ export const mobileAchievementsApi = {
       return { newUnlocks: [] };
     }
 
-    const { data: candidates } = await (client.from("achievements") as any)
+    const { data: candidates } = await client
+      .from("achievements")
       .select("*")
       .eq("condition_type", type)
       .lte("condition_value", value);
@@ -96,27 +105,30 @@ export const mobileAchievementsApi = {
       return { newUnlocks: [] };
     }
 
-    const { data: unlocked } = await (client.from("user_achievements") as any)
+    const candidateRows = candidates as AchievementRow[];
+
+    const { data: unlocked } = await client
+      .from("user_achievements")
       .select("achievement_id")
       .eq("user_id", user.id)
-      .in("achievement_id", candidates.map((c: any) => c.id));
+      .in("achievement_id", candidateRows.map((c) => c.id));
 
-    const unlockedIds = new Set((unlocked || []).map((u: any) => u.achievement_id));
-    const newUnlocks = candidates.filter((c: any) => !unlockedIds.has(c.id));
+    const unlockedIds = new Set((unlocked || []).map((u: { achievement_id: string }) => u.achievement_id));
+    const newUnlocks = candidateRows.filter((c) => !unlockedIds.has(c.id));
 
     if (newUnlocks.length === 0) {
       return { newUnlocks: [] };
     }
 
-    const unlocksToInsert = newUnlocks.map((ach: any) => ({
+    const unlocksToInsert = newUnlocks.map((ach) => ({
       user_id: user.id,
       achievement_id: ach.id,
       unlocked_at: new Date().toISOString(),
     }));
 
-    await (client.from("user_achievements") as any).insert(unlocksToInsert);
+    await client.from("user_achievements").insert(unlocksToInsert);
 
-    return { newUnlocks };
+    return { newUnlocks: newUnlocks as Achievement[] };
   },
 
   getDailyTasks: async (): Promise<DailyTask[]> => {
@@ -135,7 +147,8 @@ export const mobileAchievementsApi = {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const { count } = await (client.from("daily_tasks") as any)
+    const { count } = await client
+      .from("daily_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("task_date", today);
@@ -148,10 +161,11 @@ export const mobileAchievementsApi = {
         { user_id: user.id, task_date: today, task_type: "create_node", target: 1, xp_reward: 30 },
       ];
 
-      await (client.from("daily_tasks") as any).insert(tasks);
+      await client.from("daily_tasks").insert(tasks);
     }
 
-    const { data, error } = await (client.from("daily_tasks") as any)
+    const { data, error } = await client
+      .from("daily_tasks")
       .select("*")
       .eq("user_id", user.id)
       .eq("task_date", today)
@@ -162,7 +176,7 @@ export const mobileAchievementsApi = {
       return [];
     }
 
-    return data || [];
+    return (data || []) as DailyTask[];
   },
 
   checkIn: async (): Promise<{ success: boolean }> => {
@@ -181,21 +195,24 @@ export const mobileAchievementsApi = {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const { data: task } = await (client.from("daily_tasks") as any)
+    const { data: task } = await client
+      .from("daily_tasks")
       .select("*")
       .eq("user_id", user.id)
       .eq("task_date", today)
       .eq("task_type", "login")
       .single();
 
-    if (task && task.status === "pending") {
-      await (client.from("daily_tasks") as any)
+    const taskRow = task as DailyTask | null;
+    if (taskRow && taskRow.status === "pending") {
+      await client
+        .from("daily_tasks")
         .update({
           status: "completed",
           progress: 1,
           completed_at: new Date().toISOString(),
         })
-        .eq("id", task.id);
+        .eq("id", taskRow.id);
     }
 
     return { success: true };

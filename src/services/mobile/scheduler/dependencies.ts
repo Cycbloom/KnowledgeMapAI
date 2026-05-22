@@ -3,7 +3,8 @@ import type { TaskDependency } from "@shared/types";
 
 export const getDependencies = async (taskId: string): Promise<TaskDependency[]> => {
   return withClient(async (client) => {
-    const { data, error } = await (client.from("task_dependencies") as any)
+    const { data, error } = await client
+      .from("task_dependencies")
       .select("*")
       .eq("task_id", taskId);
 
@@ -11,7 +12,7 @@ export const getDependencies = async (taskId: string): Promise<TaskDependency[]>
       throw new Error(error.message);
     }
 
-    return (data || []) as TaskDependency[];
+    return (data as TaskDependency[] | null) ?? [];
   });
 };
 
@@ -21,7 +22,8 @@ export const createDependency = async (data: {
   dependency_type?: string;
 }): Promise<TaskDependency> => {
   return withClient(async (client) => {
-    const { data: result, error } = await (client.from("task_dependencies") as any)
+    const { data: result, error } = await client
+      .from("task_dependencies")
       .insert({
         task_id: data.task_id,
         depends_on_task_id: data.depends_on_task_id,
@@ -40,7 +42,7 @@ export const createDependency = async (data: {
 
 export const deleteDependency = async (id: string): Promise<void> => {
   return withClient(async (client) => {
-    const { error } = await (client.from("task_dependencies") as any).delete().eq("id", id);
+    const { error } = await client.from("task_dependencies").delete().eq("id", id);
 
     if (error) {
       throw new Error(error.message);

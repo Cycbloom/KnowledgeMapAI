@@ -6,7 +6,7 @@ import { useTheme } from "../../hooks";
 export interface QuestionFormData {
   question: string;
   answer: string;
-  card_type: string;
+  card_type: StudyCard['card_type'];
   explanation: string;
   options: string[];
 }
@@ -161,7 +161,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
             <select
               value={formData.card_type}
               onChange={e => {
-                  const type = e.target.value;
+                  const type = e.target.value as StudyCard['card_type'];
                   setFormData({
                       ...formData, 
                       card_type: type, 

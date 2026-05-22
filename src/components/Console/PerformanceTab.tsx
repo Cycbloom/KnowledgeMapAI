@@ -305,7 +305,7 @@ const LogDetailModal: React.FC<{
     return false;
   };
 
-  const getOrderedMetadata = (): Array<{ key: string; label: string; value: any }> => {
+  const getOrderedMetadata = (): Array<{ key: string; label: string; value: unknown }> => {
     if (!log.metadata) return [];
 
     const entries = Object.entries(log.metadata);

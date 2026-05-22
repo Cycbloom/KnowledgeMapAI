@@ -11,8 +11,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const userId = (req as AuthRequest).user.id;
     const tasks = await periodicTaskService.getPeriodicTasks(userId);
     res.json(tasks);
-  } catch (error: any) {
-    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  } catch (error) {
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -27,8 +27,8 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
     
     const completedTasks = await periodicTaskService.updatePeriodicTaskProgress(userId, taskType, value);
     res.json({ completedTasks });
-  } catch (error: any) {
-    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  } catch (error) {
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -37,8 +37,8 @@ router.get('/pass', requireAuth, async (req: Request, res: Response) => {
     const userId = (req as AuthRequest).user.id;
     const progress = await periodicTaskService.getPassProgress(userId);
     res.json(progress);
-  } catch (error: any) {
-    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  } catch (error) {
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -53,8 +53,8 @@ router.post('/pass/claim', requireAuth, async (req: Request, res: Response) => {
     
     const result = await periodicTaskService.claimPassReward(userId, passId, level);
     res.json(result);
-  } catch (error: any) {
-    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  } catch (error) {
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -63,8 +63,8 @@ router.post('/streak/check', requireAuth, async (req: Request, res: Response) =>
     const userId = (req as AuthRequest).user.id;
     const result = await periodicTaskService.checkDailyTaskStreak(userId);
     res.json(result);
-  } catch (error: any) {
-    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  } catch (error) {
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

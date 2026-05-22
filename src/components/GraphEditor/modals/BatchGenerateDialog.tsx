@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 
+interface BatchGenerateConfig {
+  types: string[];
+  count: number;
+  pack_template: string | null;
+}
+
+export type { BatchGenerateConfig };
+
 interface BatchGenerateDialogProps {
   isOpen: boolean;
   onClose: () => void;
   selectedNodeIds: string[];
-  onSuccess?: (config?: any) => void;
+  onSuccess?: (config?: BatchGenerateConfig) => void;
 }
 
 export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
@@ -19,13 +27,13 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
   const [isLoading] = useState(false);
   const [packTemplate, setPackTemplate] = useState<string | null>(null);
 
-  const packPresets = [
+  const packPresets: Array<{ id: string; label: string; desc: string; types: string[]; count: number }> = [
     { id: 'quick', label: '快速自测', desc: '每节点3题 (问答/选择/判断)', types: ['qa', 'choice', 'true_false'], count: 3 },
     { id: 'standard', label: '标准题目包', desc: '每节点10题 (含多选/填空/解答)', types: ['choice', 'multi_choice', 'fill_in_the_blank', 'essay'], count: 10 },
     { id: 'exam', label: '考前冲刺', desc: '每节点15题 (偏重复杂题型)', types: ['choice', 'multi_choice', 'essay'], count: 15 },
   ];
 
-  const handleSelectPreset = (preset: any) => {
+  const handleSelectPreset = (preset: { id: string; types: string[]; count: number }) => {
     setPackTemplate(preset.id);
     setTypes(preset.types);
     setCount(preset.count);

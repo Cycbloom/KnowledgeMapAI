@@ -1,4 +1,6 @@
 import { getMobileSupabaseClient } from '@/lib/supabase';
+import type { GraphNodeRow } from '@shared/types/database';
+import type { Graph, Edge } from '@shared/types/graph';
 
 type RealtimeCallback<T> = (payload: {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
@@ -11,7 +13,7 @@ type Subscription = {
 };
 
 export const mobileRealtimeApi = {
-  subscribeToGraphs: (callback: RealtimeCallback<any>): Subscription => {
+  subscribeToGraphs: (callback: RealtimeCallback<Graph>): Subscription => {
     const client = getMobileSupabaseClient();
     if (!client) {
       return { unsubscribe: () => {} };
@@ -29,8 +31,8 @@ export const mobileRealtimeApi = {
         (payload) => {
           callback({
             eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-            new: payload.new,
-            old: payload.old,
+            new: payload.new as Graph | null,
+            old: payload.old as Graph | null,
           });
         },
       )
@@ -43,7 +45,7 @@ export const mobileRealtimeApi = {
     };
   },
 
-  subscribeToGraph: (graphId: string, callback: RealtimeCallback<any>): Subscription => {
+  subscribeToGraph: (graphId: string, callback: RealtimeCallback<Graph>): Subscription => {
     const client = getMobileSupabaseClient();
     if (!client) {
       return { unsubscribe: () => {} };
@@ -62,8 +64,8 @@ export const mobileRealtimeApi = {
         (payload) => {
           callback({
             eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-            new: payload.new,
-            old: payload.old,
+            new: payload.new as Graph | null,
+            old: payload.old as Graph | null,
           });
         },
       )
@@ -76,7 +78,7 @@ export const mobileRealtimeApi = {
     };
   },
 
-  subscribeToNodes: (graphId: string, callback: RealtimeCallback<any>): Subscription => {
+  subscribeToNodes: (graphId: string, callback: RealtimeCallback<GraphNodeRow>): Subscription => {
     const client = getMobileSupabaseClient();
     if (!client) {
       return { unsubscribe: () => {} };
@@ -95,8 +97,8 @@ export const mobileRealtimeApi = {
         (payload) => {
           callback({
             eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-            new: payload.new,
-            old: payload.old,
+            new: payload.new as GraphNodeRow | null,
+            old: payload.old as GraphNodeRow | null,
           });
         },
       )
@@ -109,7 +111,7 @@ export const mobileRealtimeApi = {
     };
   },
 
-  subscribeToEdges: (graphId: string, callback: RealtimeCallback<any>): Subscription => {
+  subscribeToEdges: (graphId: string, callback: RealtimeCallback<Edge>): Subscription => {
     const client = getMobileSupabaseClient();
     if (!client) {
       return { unsubscribe: () => {} };
@@ -128,8 +130,8 @@ export const mobileRealtimeApi = {
         (payload) => {
           callback({
             eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-            new: payload.new,
-            old: payload.old,
+            new: payload.new as Edge | null,
+            old: payload.old as Edge | null,
           });
         },
       )
@@ -142,7 +144,7 @@ export const mobileRealtimeApi = {
     };
   },
 
-  subscribeToGraphData: (graphId: string, callback: RealtimeCallback<any>): Subscription => {
+  subscribeToGraphData: (graphId: string, callback: RealtimeCallback<GraphNodeRow | Edge>): Subscription => {
     const client = getMobileSupabaseClient();
     if (!client) {
       return { unsubscribe: () => {} };
@@ -163,8 +165,8 @@ export const mobileRealtimeApi = {
         (payload) => {
           callback({
             eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-            new: payload.new,
-            old: payload.old,
+            new: payload.new as GraphNodeRow | null,
+            old: payload.old as GraphNodeRow | null,
           });
         },
       );
@@ -181,8 +183,8 @@ export const mobileRealtimeApi = {
         (payload) => {
           callback({
             eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-            new: payload.new,
-            old: payload.old,
+            new: payload.new as Edge | null,
+            old: payload.old as Edge | null,
           });
         },
       );

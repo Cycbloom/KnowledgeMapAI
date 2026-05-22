@@ -7,13 +7,13 @@ import type {
 
 export const getAllAchievements = async (): Promise<Achievement[]> => {
   return withClient(async (client) => {
-    const { data, error } = await (client.from("achievements") as any).select("*");
+    const { data, error } = await client.from("achievements").select("*");
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return (data || []) as Achievement[];
+    return (data as Achievement[] | null) ?? [];
   });
 };
 
@@ -23,7 +23,8 @@ export const getUserAchievements = async (): Promise<UserAchievement[]> => {
       return [];
     }
 
-    const { data, error } = await (client.from("user_achievements") as any)
+    const { data, error } = await client
+      .from("user_achievements")
       .select("*, achievement:achievements(*)")
       .eq("user_id", userId);
 
@@ -31,7 +32,7 @@ export const getUserAchievements = async (): Promise<UserAchievement[]> => {
       throw new Error(error.message);
     }
 
-    return (data || []) as UserAchievement[];
+    return (data as UserAchievement[] | null) ?? [];
   });
 };
 

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
@@ -10,14 +10,14 @@ interface Achievement extends BaseAchievement {
 }
 import { 
   Trophy, Medal, Target, Flame, Zap, Crown, Timer, Brain, 
-  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar, Ticket
+  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar, Ticket, LucideIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PeriodicTaskList } from '../components/Achievements/PeriodicTaskList';
 import { PassProgress } from '../components/Achievements/PassProgress';
 import { StreakDisplay } from '../components/Achievements/StreakDisplay';
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Flame, Zap, Crown, Timer, Brain, GraduationCap, BookOpen, Trophy, Medal, Target, Star
 };
 
@@ -29,7 +29,7 @@ export const Achievements = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = React.useState<TabKey>('daily');
   
-  const taskTypeMap: Record<string, { label: string, icon: any }> = {
+  const taskTypeMap: Record<string, { label: string; icon: LucideIcon }> = {
     login: { label: t('achievements.taskTypes.login'), icon: Calendar },
     study_cards: { label: t('achievements.taskTypes.study_cards'), icon: BookOpen },
     focus_time: { label: t('achievements.taskTypes.focus_time'), icon: Timer },
@@ -113,7 +113,7 @@ export const Achievements = () => {
     );
   }
 
-  const groupedAchievements = achievements?.reduce((acc: any, curr: Achievement) => {
+  const groupedAchievements = achievements?.reduce((acc: Record<string, Achievement[]>, curr: Achievement) => {
     if (!acc[curr.category]) acc[curr.category] = [];
     acc[curr.category].push(curr);
     return acc;
@@ -359,7 +359,7 @@ export const Achievements = () => {
                                 ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg' 
                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 grayscale'
                             }`}>
-                              <Icon size={24} />
+                              <Icon className="w-6 h-6" />
                             </div>
                             
                             <div className="flex-1 min-w-0">

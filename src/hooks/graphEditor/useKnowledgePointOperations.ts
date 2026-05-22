@@ -4,12 +4,14 @@ import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import type { 
   SimilarKnowledgePoint, 
-  KnowledgePointVisibility 
+  KnowledgePointVisibility,
+  Node,
+  GraphNode
 } from '../../types';
 
 interface UseKnowledgePointOperationsProps {
   graphId: string;
-  onNodeCreated?: (node: any) => void;
+  onNodeCreated?: (node: Node | GraphNode) => void;
   onNodeDeleted?: (nodeId: string) => void;
 }
 

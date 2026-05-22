@@ -41,6 +41,9 @@ export interface CreateNodeData {
   properties?: Record<string, unknown>;
   knowledge_point_id?: string;
   reuse_existing?: boolean;
+  color?: string;
+  tags?: string[];
+  is_accepted?: boolean;
 }
 
 export interface UpdateNodeData {

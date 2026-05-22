@@ -38,7 +38,7 @@ import {
 
 interface AutoGraphGeneratorProps {
   graphId?: string;
-  onGraphGenerated?: (nodes: any[], edges: any[]) => void;
+  onGraphGenerated?: (nodes: Array<{ id: string; title: string; content: string; level?: string }>, edges: Array<{ source: string; target: string }>) => void;
   onClose?: () => void;
 }
 
@@ -46,6 +46,11 @@ interface GeneratedNode {
   title: string;
   content: string;
   level?: string;
+}
+
+interface AIGeneratedNode {
+  title: string;
+  content?: string;
 }
 
 interface TreeNode extends GeneratedNode {
@@ -454,10 +459,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         });
 
         const childLevel = getNextLevel(node.level);
-        return result.children.map((n: any) => ({
+        return result.children.map((n: AIGeneratedNode) => ({
           id: generateNodeId(),
           title: n.title,
-          content: n.content,
+          content: n.content || "",
           level: childLevel,
           children: [],
           isExpanded: false,
@@ -532,8 +537,8 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   );
 
   const collectAllNodes = useCallback(
-    (node: TreeNode, parentId?: string): any[] => {
-      const nodes = [
+    (node: TreeNode, parentId?: string): Array<{ id: string; title: string; content: string; level: string | undefined; parentId: string | undefined }> => {
+      const nodes: Array<{ id: string; title: string; content: string; level: string | undefined; parentId: string | undefined }> = [
         {
           id: node.id,
           title: node.title,

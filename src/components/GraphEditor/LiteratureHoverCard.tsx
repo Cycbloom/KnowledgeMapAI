@@ -8,6 +8,7 @@ import {
   Hash,
   Quote,
 } from "lucide-react";
+import type { Node } from "../../types";
 
 interface LiteratureHoverCardProps {
   literature: {
@@ -22,10 +23,10 @@ interface LiteratureHoverCardProps {
     doi?: string;
     keywords?: string[];
     abstract?: string;
-    nodes: any[];
+    nodes: Node[];
   };
   position: { x: number; y: number };
-  onNodeClick?: (node: any) => void;
+  onNodeClick?: (node: Node) => void;
   isDark?: boolean;
 }
 

@@ -70,6 +70,9 @@ export interface UserTask {
   subtask_completed?: number;
   has_subtasks?: boolean;
   source?: TaskSource;
+  scheduled_start?: string;
+  scheduled_end?: string;
+  subtasks?: TaskSubtask[];
 }
 
 export interface SystemTask {

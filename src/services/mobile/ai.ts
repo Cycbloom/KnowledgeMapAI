@@ -44,7 +44,7 @@ const createMobileAiApiClient = (): AxiosInstance => {
       const appError = createErrorFromResponse({
         status: error.response?.status || 0,
         statusText: error.message,
-        data: error.response?.data as any,
+        data: error.response?.data as Record<string, unknown>,
       });
       return Promise.reject(appError);
     },
@@ -196,7 +196,7 @@ export const mobileAiApi = {
 
   generateCards: (data: {
     node_title: string;
-    node_content: string;
+    node_content?: string;
     count?: number;
     types?: string[];
     provider?: string;

@@ -106,10 +106,13 @@ router.get(
         throw new AppError("获取测验卡片失败", 500, ErrorCodes.INTERNAL_ERROR);
       }
 
-      const cards = (quizSetCards || []).map((qsc: any) => ({
-        ...qsc.card,
-        display_order: qsc.display_order,
-      }));
+      const cards = (quizSetCards || []).map((qsc) => {
+        const card = Array.isArray(qsc.card) ? qsc.card[0] : qsc.card;
+        return {
+          ...card,
+          display_order: qsc.display_order,
+        };
+      });
 
       res.json({
         ...quizSet,

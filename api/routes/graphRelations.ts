@@ -85,9 +85,25 @@ router.get(
 
       const graphMap = new Map(relatedGraphs?.map((g) => [g.id, g]) || []);
 
-      const prerequisites: any[] = [];
-      const extensions: any[] = [];
-      const related: any[] = [];
+      interface FormattedRelation {
+        id: string;
+        sourceGraphId: string;
+        targetGraphId: string;
+        relationType: string;
+        context?: string | null;
+        metadata: Record<string, unknown>;
+        createdAt: string;
+        targetGraph?: {
+          id: string;
+          title: string;
+          description?: string | null;
+          nodeCount: number;
+        };
+      }
+
+      const prerequisites: FormattedRelation[] = [];
+      const extensions: FormattedRelation[] = [];
+      const related: FormattedRelation[] = [];
 
       relations.outgoing.forEach((r) => {
         const targetGraph = graphMap.get(r.target_graph_id);
@@ -146,11 +162,11 @@ router.get(
       });
 
       res.json({ prerequisites, extensions, related });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Get Graph Relations Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "获取关联图谱失败",
+        (error as Error).message || "获取关联图谱失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -186,7 +202,7 @@ router.post(
       );
 
       let targetGraphId: string;
-      let targetGraph: any;
+      let targetGraph: { id: string; title: string; description?: string | null } | undefined;
       let isNew = false;
 
       if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs[0]) {
@@ -254,11 +270,11 @@ router.post(
         relation,
         isNew,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Create Prerequisite Graph Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "创建前置图谱失败",
+        (error as Error).message || "创建前置图谱失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -289,7 +305,7 @@ router.post(
       const results: Array<{
         topic: string;
         graphId: string;
-        graph: any;
+        graph: { id: string; title: string };
         isNew: boolean;
         taskId?: string;
         similarity?: number;
@@ -383,11 +399,11 @@ router.post(
       }
 
       res.json({ created: results });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Batch Create Prerequisite Graphs Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "批量创建前置图谱失败",
+        (error as Error).message || "批量创建前置图谱失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -405,11 +421,11 @@ router.delete(
     try {
       await graphRelationService.deleteRelation(supabase, relationId);
       res.json({ success: true });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Delete Graph Relation Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "删除关联失败",
+        (error as Error).message || "删除关联失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -473,11 +489,11 @@ router.post(
       });
 
       res.status(201).json(newRelation);
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Create Graph Relation Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "创建关系失败",
+        (error as Error).message || "创建关系失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -515,11 +531,11 @@ router.delete(
 
       await graphRelationService.deleteRelation(supabase, relationId);
       res.json({ success: true });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Delete Graph Relation Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "删除关系失败",
+        (error as Error).message || "删除关系失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -588,11 +604,11 @@ router.post(
         status: "pending",
         message: "无限扩展任务已创建",
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Infinite Expansion Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "创建无限扩展任务失败",
+        (error as Error).message || "创建无限扩展任务失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );

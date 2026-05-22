@@ -151,7 +151,7 @@ const metadataRequestSchema = z.object({
       { message: "禁止访问内网地址" },
     )
     .optional(),
-  file: z.any().optional(),
+  file: z.unknown().optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
   language: z.string().optional(),
@@ -697,11 +697,11 @@ router.post(
               file_name: literature.fileName,
               keywords: literature.keywords,
               abstract: literature.abstract,
-              volume: (literature as any).volume,
-              issue: (literature as any).issue,
-              pages: (literature as any).pages,
-              publisher: (literature as any).publisher,
-              notes: (literature as any).notes,
+              volume: (literature as { volume?: string }).volume,
+              issue: (literature as { issue?: string }).issue,
+              pages: (literature as { pages?: string }).pages,
+              publisher: (literature as { publisher?: string }).publisher,
+              notes: (literature as { notes?: string }).notes,
             });
 
           if (insertLitError) {
@@ -716,9 +716,19 @@ router.post(
             });
           }
         } else {
-          // Update existing record with additional metadata if missing
-          const existingData = existingLiterature as Record<string, any>;
-          const updateData: Record<string, any> = {};
+          const existingData = existingLiterature as {
+            id: string;
+            journal?: string;
+            doi?: string;
+            keywords?: string[];
+            abstract?: string;
+          };
+          const updateData: {
+            journal?: string;
+            doi?: string;
+            keywords?: string[];
+            abstract?: string;
+          } = {};
           if (!existingData.journal && literature.journal)
             updateData.journal = literature.journal;
           if (!existingData.doi && literature.doi)
@@ -1181,7 +1191,7 @@ router.post(
               .single();
 
             const currentProperties =
-              (currentKP?.properties as Record<string, any>) || {};
+              (currentKP?.properties as Record<string, unknown>) || {};
 
             // Merge the new properties with existing ones
             const updatedProperties = {

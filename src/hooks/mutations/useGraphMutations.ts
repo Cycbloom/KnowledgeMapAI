@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api/adapter";
-import { Node, Edge, NodeLevel } from "../../types";
+import { Node, Edge, NodeLevel, Graph } from "../../types";
+import type { CreateNodeData, UpdateNodeData, UpdateGraphData } from "@shared/types/api";
 import {
   queryKeys,
   defaultQueryConfig,
@@ -115,7 +116,7 @@ export const useBatchDeleteGraphsMutation = () => {
 
 export const useUpdateGraphMutation = () => {
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateGraphData }) =>
       api.graphs.update(id, data),
     onSuccess: (_data, variables) => {
       frontendEventBus.publish("graph_list_changed", { graphId: variables.id, changeType: "graph_updated" });
@@ -134,7 +135,7 @@ export const useToggleFavoriteMutation = () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.graphs });
       const previousGraphs = queryClient.getQueryData(queryKeys.graphs);
 
-      queryClient.setQueryData(queryKeys.graphs, (old: any[] | undefined) => {
+      queryClient.setQueryData(queryKeys.graphs, (old: Graph[] | undefined) => {
         if (!old) return old;
         return old.map((graph) =>
           graph.id === id ? { ...graph, is_favorite } : graph,
@@ -165,7 +166,7 @@ export const useCreateNodeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (variables: any) => api.nodes.create(variables),
+    mutationFn: (variables: CreateNodeData) => api.nodes.create(variables),
     onMutate: async (newNodeVariables) => {
       const graphId = newNodeVariables.graph_id;
 
@@ -190,7 +191,7 @@ export const useCreateNodeMutation = () => {
             level: newNodeVariables.level as NodeLevel | undefined,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          };
+          } as Node;
 
           return {
             ...old,
@@ -252,7 +253,7 @@ export const useUpdateNodeOptimisticMutation = () => {
       graphId: _graphId,
     }: {
       id: string;
-      data: any;
+      data: UpdateNodeData;
       graphId: string;
     }) => api.nodes.update(id, data),
     onMutate: async ({ id, data, graphId }) => {

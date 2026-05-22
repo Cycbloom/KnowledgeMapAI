@@ -1,10 +1,10 @@
 import { withClient, withClientAndUser, withClientOptionalUser } from "../utils/clientHelper";
 import type {
-  UserTask,
   Queue,
   CreateQueueData,
   UpdateQueueData,
   QueueData,
+  UserTask,
 } from "@shared/types";
 
 export const getQueues = async (): Promise<Queue[]> => {
@@ -13,7 +13,8 @@ export const getQueues = async (): Promise<Queue[]> => {
       return [];
     }
 
-    const { data, error } = await (client.from("queues") as any)
+    const { data, error } = await client
+      .from("queues")
       .select("*")
       .eq("user_id", userId)
       .order("priority", { ascending: true });
@@ -22,13 +23,14 @@ export const getQueues = async (): Promise<Queue[]> => {
       throw new Error(error.message);
     }
 
-    return (data || []) as Queue[];
+    return (data as Queue[] | null) ?? [];
   });
 };
 
 export const createQueue = async (data: CreateQueueData): Promise<Queue> => {
   return withClientAndUser(async (client, userId) => {
-    const { data: result, error } = await (client.from("queues") as any)
+    const { data: result, error } = await client
+      .from("queues")
       .insert({
         user_id: userId,
         name: data.name,
@@ -49,7 +51,8 @@ export const createQueue = async (data: CreateQueueData): Promise<Queue> => {
 
 export const updateQueue = async (id: string, data: UpdateQueueData): Promise<Queue> => {
   return withClient(async (client) => {
-    const { data: result, error } = await (client.from("queues") as any)
+    const { data: result, error } = await client
+      .from("queues")
       .update(data)
       .eq("id", id)
       .select()
@@ -65,7 +68,7 @@ export const updateQueue = async (id: string, data: UpdateQueueData): Promise<Qu
 
 export const deleteQueue = async (id: string): Promise<void> => {
   return withClient(async (client) => {
-    const { error } = await (client.from("queues") as any).delete().eq("id", id);
+    const { error } = await client.from("queues").delete().eq("id", id);
 
     if (error) {
       throw new Error(error.message);
@@ -79,7 +82,8 @@ export const getQueueData = async (): Promise<QueueData> => {
       return { q0: [], q1: [], q2: [] };
     }
 
-    const { data, error } = await (client.from("user_tasks") as any)
+    const { data, error } = await client
+      .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .is("deleted_at", null)
@@ -89,7 +93,7 @@ export const getQueueData = async (): Promise<QueueData> => {
       throw new Error(error.message);
     }
 
-    const tasks = (data || []) as UserTask[];
+    const tasks = (data as UserTask[] | null) ?? [];
     return {
       q0: tasks.filter((t) => t.queue_level === 0),
       q1: tasks.filter((t) => t.queue_level === 1),

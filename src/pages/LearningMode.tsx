@@ -209,10 +209,12 @@ export const LearningMode = () => {
   const activityFnsRef = useRef({ startActivity, endActivity });
   activityFnsRef.current = { startActivity, endActivity };
 
-  const handleSelectLearningPath = (pathId: string) => {
-    setSelectedLearningPathId(pathId);
-    setOutlineMode("learning-path");
-    setSelectedNodeIds(new Set());
+  const handleSelectLearningPath = (pathId: string | null) => {
+    if (pathId) {
+      setSelectedLearningPathId(pathId);
+      setOutlineMode("learning-path");
+      setSelectedNodeIds(new Set());
+    }
   };
 
   const handleBackToGraphOutline = () => {
@@ -1095,7 +1097,7 @@ export const LearningMode = () => {
       | "delete"
       | "batch_generate_questions"
       | "create_region",
-    data?: any,
+    data?: Record<string, unknown>,
   ) => {
     const nodeIds = Array.from(selectedNodeIds);
     if (nodeIds.length === 0) {

@@ -61,6 +61,8 @@ import type {
   LinkAnimation,
   NodeSizeMode,
   EdgeWidthMode,
+  BranchSuggestion,
+  ExtractedConcept,
 } from "../types";
 import type {
   CustomRegion,
@@ -162,6 +164,18 @@ const Console = lazy(() =>
   })),
 );
 
+interface LearningPathNode {
+  knowledge_point_id?: string;
+  id?: string;
+  order_index?: number;
+}
+
+interface CreatedBranchNode {
+  node: GraphNode;
+  suggestion: BranchSuggestion;
+  isAccepted: boolean;
+}
+
 const ViewLoader = () => (
   <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
     <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
@@ -261,13 +275,13 @@ export const GraphEditor = () => {
           const nodeIds = new Set<string>();
           const orderMap = new Map<string, number>();
 
-          result.nodes.forEach((node: any) => {
-            const knowledgePointId = node.knowledge_point_id || node.id;
-            if (knowledgePointId) {
-              nodeIds.add(knowledgePointId);
-              orderMap.set(knowledgePointId, node.order_index ?? 0);
-            }
-          });
+          result.nodes.forEach((node: LearningPathNode) => {
+          const knowledgePointId = node.knowledge_point_id || node.id;
+          if (knowledgePointId) {
+            nodeIds.add(knowledgePointId);
+            orderMap.set(knowledgePointId, node.order_index ?? 0);
+          }
+        });
 
           setSelectedLearningPathId(pathId);
           setLearningPathNodeIds(nodeIds);
@@ -309,7 +323,7 @@ export const GraphEditor = () => {
     });
   }, []);
 
-  const handleLiteratureExtractComplete = useCallback((result: any) => {
+  const handleLiteratureExtractComplete = useCallback((result: { concepts?: ExtractedConcept[] }) => {
     if (result.concepts && result.concepts.length > 0) {
       setExtractedConcepts(result.concepts);
       setIsConceptPreviewOpen(true);
@@ -320,7 +334,7 @@ export const GraphEditor = () => {
   }, []);
 
   const handleConfirmConcepts = useCallback(
-    async (selectedConcepts: any[]) => {
+    async (selectedConcepts: ExtractedConcept[]) => {
       if (!id || selectedConcepts.length === 0) return;
 
       try {
@@ -961,7 +975,7 @@ export const GraphEditor = () => {
   ]);
 
   const handleNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: any) => {
+    (event: React.MouseEvent, node: GraphNode) => {
       event.preventDefault();
       setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
     },
@@ -1015,9 +1029,10 @@ export const GraphEditor = () => {
 
         message.success(feedback);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      message.error(`执行失败: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : '未知错误';
+      message.error(`执行失败: ${errorMessage}`);
     }
   };
 
@@ -1124,7 +1139,7 @@ export const GraphEditor = () => {
                 const suggestionsToCreate = [...branchSuggestions];
                 setBranchSuggestions([]);
 
-                const createdNodes: any[] = [];
+                const createdNodes: CreatedBranchNode[] = [];
 
                 for (const suggestion of suggestionsToCreate) {
                   const isAccepted = suggestion.id === selectedSuggestion.id;
@@ -1264,7 +1279,7 @@ export const GraphEditor = () => {
                   const suggestionsToCreate = [...branchSuggestions];
                   setBranchSuggestions([]);
 
-                  const createdNodes: any[] = [];
+                  const createdNodes: CreatedBranchNode[] = [];
 
                   for (const suggestion of suggestionsToCreate) {
                     const isAccepted = suggestion.id === selectedSuggestion.id;
@@ -1322,7 +1337,7 @@ export const GraphEditor = () => {
                   if (!parentNode) return;
 
                   const branches = pathItem.alternativeBranches || [];
-                  const createdNodes: any[] = [];
+                  const createdNodes: CreatedBranchNode[] = [];
 
                   for (const suggestion of branches) {
                     const isAccepted = suggestion.id === selectedSuggestion.id;
@@ -1612,7 +1627,7 @@ export const GraphEditor = () => {
             if (!parentNode) return;
 
             const branches = pathItem.alternativeBranches || [];
-            const createdNodes: any[] = [];
+            const createdNodes: CreatedBranchNode[] = [];
 
             for (const suggestion of branches) {
               const isAccepted = suggestion.id === selectedSuggestion.id;

@@ -7,6 +7,10 @@ interface UseExplorationPathOptions {
   initialPath?: ExplorationPathItem[];
 }
 
+interface SerializedPathItem extends Omit<ExplorationPathItem, 'timestamp'> {
+  timestamp?: string;
+}
+
 export const useExplorationPath = (options: UseExplorationPathOptions = {}) => {
   const { graphId, initialPath = [] } = options;
   const [explorationPath, setExplorationPath] = useState<ExplorationPathItem[]>(initialPath);
@@ -34,7 +38,7 @@ export const useExplorationPath = (options: UseExplorationPathOptions = {}) => {
     try {
       const graph = await api.graphs.get(graphId);
       const savedPath = graph?.settings?.explorationPath || [];
-      const parsedPath = savedPath.map((item: any) => ({
+      const parsedPath = savedPath.map((item: SerializedPathItem) => ({
         ...item,
         timestamp: item.timestamp ? new Date(item.timestamp) : new Date()
       }));

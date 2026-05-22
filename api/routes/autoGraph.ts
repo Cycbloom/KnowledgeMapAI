@@ -23,9 +23,33 @@ import type {
   TemplateCategory,
   TemplateType,
   LayoutSuggestion,
+  TemplateNode,
 } from "@shared/types/graph";
 import { z } from "zod";
 import { saveNodesSchema } from "../schemas/index";
+
+interface AIGeneratedTemplateNode extends TemplateNode {
+  backboneModule?: string;
+  needsRefinement?: boolean;
+  suggestedContent?: string;
+}
+
+interface AIGeneratedNode {
+  id?: string;
+  title: string;
+  content?: string;
+  level?: string;
+  parentId?: string | null;
+  backboneModule?: string;
+  needsRefinement?: boolean;
+  suggestedContent?: string;
+  color?: string;
+}
+
+interface ExistingChild {
+  title: string;
+  content?: string;
+}
 
 const router = Router();
 
@@ -298,27 +322,31 @@ router.post(
             title: rootNode?.title || topic,
             content: rootContent,
           },
-          coreNodes: coreNodes.map((n) => ({
+          coreNodes: coreNodes.map((n) => {
+          const aiNode = n as AIGeneratedTemplateNode;
+          return {
             title: n.title,
             content:
               n.description ||
               n.suggestedContent ||
-              `${n.title}：${(n as any).backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
+              `${n.title}：${aiNode.backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
             level: n.level || "core",
-            backboneModule: (n as any).backboneModule,
-            needsRefinement: (n as any).needsRefinement,
-            color: (n as any).color,
-          })),
-        });
-        return;
-      } catch (error: any) {
-        logger.error("Topic Research Template Error:", error);
-        throw new AppError(
-          error.message || "专题研究模板生成失败",
-          500,
-          ErrorCodes.INTERNAL_ERROR,
-        );
-      }
+            backboneModule: aiNode.backboneModule,
+            needsRefinement: aiNode.needsRefinement,
+            color: aiNode.color,
+          };
+        }),
+      });
+      return;
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Topic Research Template Error:", error);
+      throw new AppError(
+        err.message || "专题研究模板生成失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
     }
 
     const provider = providerType
@@ -358,7 +386,7 @@ router.post(
           language,
         );
       } else {
-        const templateData: Record<string, any> = {
+        const templateData: Record<string, unknown> = {
           topic,
           isAcademic: style === "academic",
           isPractical: style === "practical",
@@ -429,11 +457,12 @@ router.post(
         },
         coreNodes: parsed.coreNodes || [],
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error("Auto Graph Init Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "知识图谱初始化失败",
+        err.message || "知识图谱初始化失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -491,14 +520,14 @@ router.post(
             hasExistingChildren:
               existing_children && existing_children.length > 0,
             existingChildren:
-              existing_children?.map((c: any) => c.title).join("、") || "",
+              (existing_children as ExistingChild[] | undefined)?.map((c) => c.title).join("、") || "",
           },
           req.user.id,
           graph_id,
           language,
         );
       } else {
-        const templateData: Record<string, any> = {
+        const templateData: Record<string, unknown> = {
           nodeTitle: node_title,
           nodeContent: node_content || "",
           nodeLevel: node_level || "normal",
@@ -507,7 +536,7 @@ router.post(
           hasExistingChildren:
             existing_children && existing_children.length > 0,
           existingChildren:
-            existing_children?.map((c: any) => c.title).join("、") || "",
+            (existing_children as ExistingChild[] | undefined)?.map((c) => c.title).join("、") || "",
         };
 
         systemPrompt = await promptService.getRenderedPrompt(
@@ -530,7 +559,7 @@ router.post(
               { role: "system", content: systemPrompt },
               {
                 role: "user",
-                content: `请为「${node_title}」生成子节点。${existing_children && existing_children.length > 0 ? `\n\n已有的子节点：${existing_children.map((c: any) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
+                content: `请为「${node_title}」生成子节点。${existing_children && existing_children.length > 0 ? `\n\n已有的子节点：${(existing_children as ExistingChild[]).map((c) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
               },
             ],
             model: model || provider.model,
@@ -570,11 +599,12 @@ router.post(
         parentNodeId: node_id,
         children: parsed.children || [],
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error("Auto Graph Expand Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "节点展开失败",
+        err.message || "节点展开失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -655,11 +685,12 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
       }
 
       res.json({ optimizedPrompt: parsed.optimizedPrompt || "" });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error("Optimize Prompt Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "优化失败",
+        err.message || "优化失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -682,9 +713,10 @@ router.post(
 
       const existingCount = existingGraphNodes?.length || 0;
 
-      const nodesWithTempId = nodes
-        .filter((node: any) => node.title && node.title.trim() !== "")
-        .map((node: any, index: number) => {
+      const typedNodes = nodes as AIGeneratedNode[];
+      const nodesWithTempId = typedNodes
+        .filter((node) => node.title && node.title.trim() !== "")
+        .map((node, index) => {
           const angle =
             ((existingCount + index) / (existingCount + nodes.length)) *
             Math.PI *
@@ -746,10 +778,11 @@ router.post(
         edgeCount: result.edgeCount,
         nodeMapping,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error("Save nodes error:", error);
       throw new AppError(
-        error.message || "保存节点失败",
+        err.message || "保存节点失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -770,10 +803,11 @@ router.post("/generate-embeddings", async (req: AuthRequest, res) => {
       success: true,
       ...result,
     });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     logger.error("Generate embeddings error:", error);
     throw new AppError(
-      error.message || "生成嵌入向量失败",
+      err.message || "生成嵌入向量失败",
       500,
       ErrorCodes.INTERNAL_ERROR,
     );
@@ -793,10 +827,11 @@ router.get("/embedding-status", async (req: AuthRequest, res) => {
       ...status,
       pendingCount: count || 0,
     });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     logger.error("Get embedding status error:", error);
     throw new AppError(
-      error.message || "获取嵌入状态失败",
+      err.message || "获取嵌入状态失败",
       500,
       ErrorCodes.INTERNAL_ERROR,
     );

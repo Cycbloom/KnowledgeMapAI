@@ -22,7 +22,7 @@ const createKnowledgePointSchema = z.object({
     title: z.string().min(1).max(255),
     content: z.string().optional(),
     learning_material: z.string().optional(),
-    properties: z.record(z.any()).optional(),
+    properties: z.record(z.unknown()).optional(),
     visibility: z
       .enum(["private", "public", "pending"])
       .optional()
@@ -35,7 +35,7 @@ const updateKnowledgePointSchema = z.object({
     title: z.string().min(1).max(255).optional(),
     content: z.string().optional(),
     learning_material: z.string().optional(),
-    properties: z.record(z.any()).optional(),
+    properties: z.record(z.unknown()).optional(),
     visibility: z.enum(["private", "public", "pending"]).optional(),
   }),
   params: z.object({
@@ -108,8 +108,8 @@ router.get(
         },
       );
       res.json(data);
-    } catch (error: any) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    } catch (error) {
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -136,9 +136,9 @@ router.get(
       }
 
       res.json(data);
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -156,8 +156,8 @@ router.get(
         req.user.id,
       );
       res.json(data);
-    } catch (error: any) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    } catch (error) {
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -181,8 +181,8 @@ router.post(
       });
 
       res.status(201).json(data);
-    } catch (error: any) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    } catch (error) {
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -212,9 +212,9 @@ router.put(
         updates,
       );
       res.json(data);
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -242,7 +242,7 @@ router.post(
       );
 
       res.json(data || []);
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Search similar error:", error);
       res.json([]);
     }
@@ -262,8 +262,8 @@ router.delete(
         req.user.id,
       );
       res.json(data);
-    } catch (error: any) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    } catch (error) {
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -309,15 +309,16 @@ router.post(
       cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
 
       res.status(201).json(data);
-    } catch (error: any) {
-      if (error.message?.includes("已存在")) {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message?.includes("已存在")) {
         throw new AppError(
           "Knowledge point already exists in this graph",
           400,
           ErrorCodes.VALIDATION_ERROR,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -369,15 +370,16 @@ router.post(
       cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
 
       res.status(201).json(data);
-    } catch (error: any) {
-      if (error.message?.includes("已存在")) {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message?.includes("已存在")) {
         throw new AppError(
           "Knowledge point already exists in this graph",
           400,
           ErrorCodes.VALIDATION_ERROR,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -423,15 +425,16 @@ router.post(
         graph_ids,
       );
       res.json(result);
-    } catch (error: any) {
-      if (error.message?.includes("not found or unauthorized")) {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message?.includes("not found or unauthorized")) {
         throw new AppError(
           "Some graphs not found or unauthorized",
           403,
           ErrorCodes.FORBIDDEN,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -449,8 +452,8 @@ router.get(
       });
 
       res.json(result);
-    } catch (error: any) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    } catch (error) {
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -470,18 +473,19 @@ router.post(
       );
 
       res.json(result);
-    } catch (error: any) {
-      if (error.message === "Knowledge point not found") {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message === "Knowledge point not found") {
         throw new AppError(
           "Knowledge point not found",
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      if (error.message === "Permission denied") {
+      if (err.message === "Permission denied") {
         throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -505,8 +509,8 @@ router.get(
       });
 
       res.json(result);
-    } catch (error: any) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    } catch (error) {
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -534,15 +538,16 @@ router.post(
         success: true,
         knowledge_point: data,
       });
-    } catch (error: any) {
-      if (error.message === "Knowledge point not found or not pending") {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message === "Knowledge point not found or not pending") {
         throw new AppError(
           "Knowledge point not found or not pending",
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -572,15 +577,16 @@ router.post(
       res.json({
         success: true,
       });
-    } catch (error: any) {
-      if (error.message === "Knowledge point not found or not pending") {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message === "Knowledge point not found or not pending") {
         throw new AppError(
           "Knowledge point not found or not pending",
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -654,9 +660,9 @@ router.get(
       );
 
       res.json(result);
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -694,9 +700,9 @@ router.get(
       }
 
       res.json(version);
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -728,16 +734,17 @@ router.get(
       );
 
       res.json(result);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       if (error instanceof AppError) throw error;
-      if (error.message === "One or both versions not found") {
+      if (err.message === "One or both versions not found") {
         throw new AppError(
           "One or both versions not found",
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -771,16 +778,17 @@ router.post(
         success: true,
         knowledge_point: result,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       if (error instanceof AppError) throw error;
-      if (error.message === "Version not found") {
+      if (err.message === "Version not found") {
         throw new AppError(
           "Version not found",
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -812,16 +820,17 @@ router.post(
       );
 
       res.status(201).json(version);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       if (error instanceof AppError) throw error;
-      if (error.message === "Knowledge point not found") {
+      if (err.message === "Knowledge point not found") {
         throw new AppError(
           "Knowledge point not found",
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

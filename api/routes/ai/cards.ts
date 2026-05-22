@@ -80,10 +80,16 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
           }
         );
 
-        const cards = aiResult.cards || [];
+        const cards = (aiResult.cards || []) as Array<{
+          question: string;
+          answer: string;
+          explanation?: string;
+          type?: string;
+          options?: unknown;
+        }>;
         
         if (cards.length > 0) {
-          const cardsToInsert = cards.map((card: any) => ({
+          const cardsToInsert = cards.map((card) => ({
             user_id: req.user.id,
             knowledge_point_id: gn.knowledge_point_id,
             graph_id: gn.graph_id,
@@ -128,13 +134,13 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
             count: 0,
           });
         }
-      } catch (err: any) {
+      } catch (err) {
         logger.error(`Failed to generate cards for node ${gn.knowledge_point_id}:`, err);
         results.push({
           nodeId: gn.knowledge_point_id,
           success: false,
           count: 0,
-          error: err.message || 'Unknown error',
+          error: (err as Error).message || 'Unknown error',
         });
       }
     }

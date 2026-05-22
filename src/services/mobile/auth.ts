@@ -5,6 +5,7 @@ import type {
   LoginData,
   UpdateProfileData,
 } from '@shared/types/api';
+import type { User } from '@supabase/supabase-js';
 
 export const mobileAuthApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
@@ -76,7 +77,7 @@ export const mobileAuthApi = {
     return { message: '登出成功' };
   },
 
-  getUser: async (): Promise<{ user: any }> => {
+  getUser: async (): Promise<{ user: User | null }> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error('Supabase client not initialized');
@@ -89,7 +90,7 @@ export const mobileAuthApi = {
     return { user };
   },
 
-  updateProfile: async (data: UpdateProfileData): Promise<{ user: any }> => {
+  updateProfile: async (data: UpdateProfileData): Promise<{ user: User | null }> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error('Supabase client not initialized');

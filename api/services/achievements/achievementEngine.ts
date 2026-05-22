@@ -2,8 +2,9 @@ import { getSupabaseAdmin } from "../../supabase"
 import { logger } from "../../utils/logger"
 import { evaluatorRegistry } from "./evaluatorRegistry"
 import "./evaluators"
-import type { AppEventType, AppEvent } from "@shared/types/events"
-import type { Achievement } from "@shared/types/scheduler"
+import type { AppEventType, AppEvent, FocusSessionEndedPayload } from "@shared/types/events"
+import type { Achievement, FocusSession } from "@shared/types/scheduler"
+import type { UserAchievementRow, FocusSessionRow } from "@shared/types/database"
 
 export class AchievementEngine {
   async evaluateAchievements(userId: string, eventType: AppEventType, event?: AppEvent): Promise<Achievement[]> {
@@ -26,7 +27,12 @@ export class AchievementEngine {
       .eq("user_id", userId)
 
     const existingMap = new Map(
-      (userAchievements ?? []).map((ua: any) => [ua.achievement_id, ua.progress as number])
+      (userAchievements ?? []).map(
+        (ua: Pick<UserAchievementRow, 'achievement_id' | 'progress'>) => [
+          ua.achievement_id,
+          ua.progress as number,
+        ]
+      )
     )
 
     const unlocked: Achievement[] = []
@@ -107,13 +113,17 @@ export class AchievementEngine {
     if (eventType === "focus_session_ended" && event) {
       try {
         const { achievementService } = await import("../achievementService")
+        const payload = event.payload as FocusSessionEndedPayload
         const { data: session } = await getSupabaseAdmin()
           .from("focus_sessions")
           .select("*")
-          .eq("id", (event.payload as any).sessionId)
+          .eq("id", payload.sessionId)
           .single()
         if (session) {
-          await achievementService.checkSpecialAchievements(userId, session as any)
+          await achievementService.checkSpecialAchievements(
+            userId,
+            session as unknown as FocusSession
+          )
         }
       } catch (error) {
         logger.error("[AchievementEngine] Failed to check special achievements:", error)
@@ -175,8 +185,12 @@ export class AchievementEngine {
             .select("duration")
             .eq("user_id", userId)
             .eq("completed", true)
-            .gte("start_time", today)
-          const todayMinutes = todaySessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0
+            .gte("started_at", today)
+          const todayMinutes =
+            (todaySessions as Pick<FocusSessionRow, 'duration'>[] | null)?.reduce(
+              (acc, curr) => acc + (curr.duration || 0),
+              0
+            ) || 0
           await achievementService.updateDailyTaskProgress(userId, "focus_time", todayMinutes)
 
           const { data: allSessions } = await getSupabaseAdmin()
@@ -184,7 +198,11 @@ export class AchievementEngine {
             .select("duration")
             .eq("user_id", userId)
             .eq("completed", true)
-          const totalMinutes = allSessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0
+          const totalMinutes =
+            (allSessions as Pick<FocusSessionRow, 'duration'>[] | null)?.reduce(
+              (acc, curr) => acc + (curr.duration || 0),
+              0
+            ) || 0
           await periodicTaskService.updatePeriodicTaskProgress(userId, "focus", totalMinutes)
 
           await achievementService.updateStudyStreak(userId)

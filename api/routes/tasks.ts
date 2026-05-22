@@ -46,7 +46,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const task = await asyncTaskService.createTask(req.user.id, type, payload, name);
     res.json(task);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Create Task Error:', error);
     res.status(500).json({ error: 'Failed to create task' });
   }
@@ -60,7 +60,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     
     const { tasks, total } = await asyncTaskService.getTasks(getSupabaseAdmin(), req.user.id, status, { limit, offset });
     res.json({ tasks, total });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Get Tasks Error:', error);
     res.status(500).json({ error: 'Failed to fetch tasks' });
   }
@@ -70,9 +70,9 @@ router.post('/:id/retry', requireAuth, async (req: AuthRequest, res: Response) =
   try {
     const task = await asyncTaskService.retryTask(getSupabaseAdmin(), req.params.id, req.user.id);
     res.json(task);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Retry Task Error:', error);
-    res.status(500).json({ error: error.message || 'Failed to retry task' });
+    res.status(500).json({ error: (error as Error).message || 'Failed to retry task' });
   }
 });
 
@@ -80,7 +80,7 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     await asyncTaskService.deleteTask(getSupabaseAdmin(), req.params.id, req.user.id);
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Delete Task Error:', error);
     res.status(500).json({ error: 'Failed to delete task' });
   }

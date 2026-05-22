@@ -168,7 +168,7 @@ export const aiApi = {
 
   generateCards: (data: {
     node_title: string;
-    node_content: string;
+    node_content?: string;
     count?: number;
     types?: string[];
     provider?: string;

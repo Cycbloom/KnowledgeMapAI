@@ -99,11 +99,11 @@ export const QuadrantEdge: React.FC<QuadrantEdgeProps> = ({
   let color = RELATION_COLORS[relationType] || RELATION_COLORS.default;
   let lineStyle = LINE_STYLES[relationType] || LINE_STYLES.default;
 
-  if ((edge as any).custom_color) {
-    color = (edge as any).custom_color;
+  if (edge.custom_color) {
+    color = edge.custom_color;
   }
-  if ((edge as any).custom_line_style) {
-    lineStyle = (edge as any).custom_line_style;
+  if (edge.custom_line_style) {
+    lineStyle = edge.custom_line_style;
   }
 
   const strokeDasharray =

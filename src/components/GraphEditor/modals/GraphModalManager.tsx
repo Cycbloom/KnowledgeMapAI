@@ -48,7 +48,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   const exportOps = {
     confirmExportImage: async () => {
       try {
-        if (!state.graphRef.current) return;
+        if (!state.graphRef.current?.captureScreenshot) return;
         const dataUrl =
           await state.graphRef.current.captureScreenshot(exportImageOptions);
         const link = document.createElement("a");
@@ -77,13 +77,14 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         onClose={() => setIsExportPDFOpen(false)}
         graphId={id || ""}
         graphTitle={graphMeta?.title || "未命名图谱"}
-        getScreenshot={() =>
-          state.graphRef.current?.captureScreenshot({
+        getScreenshot={async () => {
+          if (!state.graphRef.current?.captureScreenshot) return null;
+          return state.graphRef.current.captureScreenshot({
             transparent: true,
             fitView: true,
             hideGrid: true,
-          }) || null
-        }
+          });
+        }}
       />
 
       {/* Image Export Modal */}

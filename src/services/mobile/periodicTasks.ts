@@ -1,4 +1,5 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
+import type { PeriodicTaskRow } from "@shared/types/database";
 
 export interface PeriodicTask {
   id: string;
@@ -48,6 +49,43 @@ export interface UserPassProgress {
   level: number;
   claimed: boolean;
   claimed_at: string | null;
+}
+
+interface PeriodicPassRow {
+  id: string;
+  user_id: string;
+  period_type: string;
+  period_start: string;
+  period_end: string;
+  total_points: number;
+  current_level: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DailyTaskRow {
+  id: string;
+  user_id: string;
+  task_date: string;
+  task_type: string;
+  target: number;
+  progress: number;
+  status: string;
+  xp_reward: number;
+  completed_at?: string | null;
+  created_at: string;
+}
+
+interface UserFocusStatsRow {
+  user_id: string;
+  daily_task_streak?: number;
+  last_daily_completion?: string | null;
+}
+
+interface UserRow {
+  id: string;
+  xp?: number;
+  level?: number;
 }
 
 const PERIODIC_TASK_CONFIGS = {
@@ -111,7 +149,7 @@ function getPeriodDates(
 }
 
 async function initPeriodicTasks(
-  client: any,
+  client: NonNullable<ReturnType<typeof getMobileSupabaseClient>>,
   userId: string
 ): Promise<void> {
   const periodTypes: ("weekly" | "monthly" | "quarterly")[] = [
@@ -123,7 +161,8 @@ async function initPeriodicTasks(
   for (const periodType of periodTypes) {
     const { start, end } = getPeriodDates(periodType);
 
-    const { count } = await (client.from("periodic_tasks") as any)
+    const { count } = await client
+      .from("periodic_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("period_type", periodType)
@@ -175,12 +214,12 @@ async function initPeriodicTasks(
       },
     ];
 
-    await (client.from("periodic_tasks") as any).upsert(tasks, {
+    await client.from("periodic_tasks").upsert(tasks, {
       onConflict: "user_id,period_type,period_start,task_type",
       ignoreDuplicates: true,
     });
 
-    await (client.from("periodic_passes") as any).upsert(
+    await client.from("periodic_passes").upsert(
       {
         user_id: userId,
         period_type: periodType,
@@ -211,7 +250,8 @@ export const mobilePeriodicTasksApi = {
 
     await initPeriodicTasks(client, user.id);
 
-    const { data, error } = await (client.from("periodic_tasks") as any)
+    const { data, error } = await client
+      .from("periodic_tasks")
       .select("*")
       .eq("user_id", user.id)
       .order("period_type")
@@ -222,7 +262,7 @@ export const mobilePeriodicTasksApi = {
       return [];
     }
 
-    return data || [];
+    return (data || []) as PeriodicTask[];
   },
 
   check: async (
@@ -252,7 +292,8 @@ export const mobilePeriodicTasksApi = {
     for (const periodType of periodTypes) {
       const { start } = getPeriodDates(periodType);
 
-      const { data: task } = await (client.from("periodic_tasks") as any)
+      const { data: task } = await client
+        .from("periodic_tasks")
         .select("*")
         .eq("user_id", user.id)
         .eq("period_type", periodType)
@@ -262,13 +303,15 @@ export const mobilePeriodicTasksApi = {
 
       if (!task || task.status === "completed") continue;
 
-      const newProgress = Math.min(value, task.target);
-      const updates: any = { progress: newProgress };
+      const taskRow = task as PeriodicTaskRow;
+      const newProgress = Math.min(value, taskRow.target);
+      const updates: Partial<PeriodicTaskRow> & { progress: number } = { progress: newProgress };
 
-      if (newProgress >= task.target) {
+      if (newProgress >= taskRow.target) {
         updates.status = "completed";
 
-        const { data: currentPass } = await (client.from("periodic_passes") as any)
+        const { data: currentPass } = await client
+          .from("periodic_passes")
           .select("total_points")
           .eq("user_id", user.id)
           .eq("period_type", periodType)
@@ -276,17 +319,18 @@ export const mobilePeriodicTasksApi = {
           .single();
 
         if (currentPass) {
-          await (client.from("periodic_passes") as any)
-            .update({ total_points: currentPass.total_points + task.pass_points })
+          await client
+            .from("periodic_passes")
+            .update({ total_points: (currentPass as { total_points: number }).total_points + taskRow.pass_points })
             .eq("user_id", user.id)
             .eq("period_type", periodType)
             .eq("period_start", start);
         }
 
-        completedTasks.push(task);
+        completedTasks.push(taskRow as PeriodicTask);
       }
 
-      await (client.from("periodic_tasks") as any).update(updates).eq("id", task.id);
+      await client.from("periodic_tasks").update(updates).eq("id", taskRow.id);
     }
 
     return { completedTasks };
@@ -322,7 +366,13 @@ export const mobilePeriodicTasksApi = {
 
     await initPeriodicTasks(client, user.id);
 
-    const result: any = {
+    const result: {
+      weekly: PeriodicPass | null;
+      monthly: PeriodicPass | null;
+      quarterly: PeriodicPass | null;
+      rewards: PassReward[];
+      userProgress: UserPassProgress[];
+    } = {
       weekly: null,
       monthly: null,
       quarterly: null,
@@ -333,22 +383,24 @@ export const mobilePeriodicTasksApi = {
     for (const periodType of ["weekly", "monthly", "quarterly"] as const) {
       const { start } = getPeriodDates(periodType);
 
-      const { data: pass } = await (client.from("periodic_passes") as any)
+      const { data: pass } = await client
+        .from("periodic_passes")
         .select("*")
         .eq("user_id", user.id)
         .eq("period_type", periodType)
         .eq("period_start", start)
         .single();
 
-      result[periodType] = pass;
+      result[periodType] = pass as PeriodicPass | null;
     }
 
-    const { data: rewards } = await (client.from("pass_rewards") as any)
+    const { data: rewards } = await client
+      .from("pass_rewards")
       .select("*")
       .order("period_type")
       .order("level");
 
-    result.rewards = rewards || [];
+    result.rewards = (rewards || []) as PassReward[];
 
     const passIds = [
       result.weekly?.id,
@@ -357,11 +409,12 @@ export const mobilePeriodicTasksApi = {
     ].filter(Boolean);
 
     if (passIds.length > 0) {
-      const { data: progress } = await (client.from("user_pass_progress") as any)
+      const { data: progress } = await client
+        .from("user_pass_progress")
         .select("*")
         .in("pass_id", passIds);
 
-      result.userProgress = progress || [];
+      result.userProgress = (progress || []) as UserPassProgress[];
     }
 
     return result;
@@ -384,7 +437,8 @@ export const mobilePeriodicTasksApi = {
       return { success: false, reward: null, message: "用户未登录" };
     }
 
-    const { data: pass } = await (client.from("periodic_passes") as any)
+    const { data: pass } = await client
+      .from("periodic_passes")
       .select("*")
       .eq("id", passId)
       .eq("user_id", user.id)
@@ -394,9 +448,12 @@ export const mobilePeriodicTasksApi = {
       return { success: false, reward: null, message: "通行证不存在" };
     }
 
-    const { data: reward } = await (client.from("pass_rewards") as any)
+    const passRow = pass as PeriodicPassRow;
+
+    const { data: reward } = await client
+      .from("pass_rewards")
       .select("*")
-      .eq("period_type", pass.period_type)
+      .eq("period_type", passRow.period_type)
       .eq("level", level)
       .single();
 
@@ -404,21 +461,24 @@ export const mobilePeriodicTasksApi = {
       return { success: false, reward: null, message: "奖励不存在" };
     }
 
-    if (pass.total_points < reward.points_required) {
+    const rewardRow = reward as PassReward;
+
+    if (passRow.total_points < rewardRow.points_required) {
       return { success: false, reward: null, message: "积分不足" };
     }
 
-    const { data: existingProgress } = await (client.from("user_pass_progress") as any)
+    const { data: existingProgress } = await client
+      .from("user_pass_progress")
       .select("*")
       .eq("pass_id", passId)
       .eq("level", level)
       .single();
 
-    if (existingProgress?.claimed) {
+    if (existingProgress && (existingProgress as UserPassProgress).claimed) {
       return { success: false, reward: null, message: "奖励已领取" };
     }
 
-    await (client.from("user_pass_progress") as any).upsert(
+    await client.from("user_pass_progress").upsert(
       {
         user_id: user.id,
         pass_id: passId,
@@ -429,15 +489,17 @@ export const mobilePeriodicTasksApi = {
       { onConflict: "user_id,pass_id,level" }
     );
 
-    if (reward.reward_type === "xp" && reward.reward_value) {
-      const { data: userData } = await (client.from("users") as any)
+    if (rewardRow.reward_type === "xp" && rewardRow.reward_value) {
+      const { data: userData } = await client
+        .from("users")
         .select("xp, level")
         .eq("id", user.id)
         .single();
 
       if (userData) {
-        let xp = (userData.xp || 0) + reward.reward_value;
-        let userLevel = userData.level;
+        const userRow = userData as UserRow;
+        let xp = (userRow.xp || 0) + rewardRow.reward_value;
+        let userLevel = userRow.level || 1;
         let nextLevelThreshold = userLevel * 500;
 
         while (xp >= nextLevelThreshold) {
@@ -446,15 +508,15 @@ export const mobilePeriodicTasksApi = {
           nextLevelThreshold = userLevel * 500;
         }
 
-        await (client.from("users") as any).update({ xp, level: userLevel }).eq("id", user.id);
+        await client.from("users").update({ xp, level: userLevel }).eq("id", user.id);
       }
     }
 
-    if (pass.current_level < level) {
-      await (client.from("periodic_passes") as any).update({ current_level: level }).eq("id", passId);
+    if (passRow.current_level < level) {
+      await client.from("periodic_passes").update({ current_level: level }).eq("id", passId);
     }
 
-    return { success: true, reward, message: "奖励领取成功" };
+    return { success: true, reward: rewardRow, message: "奖励领取成功" };
   },
 
   checkStreak: async (): Promise<{ streak: number; bonusAwarded: number }> => {
@@ -473,7 +535,8 @@ export const mobilePeriodicTasksApi = {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const { data: dailyTasks } = await (client.from("daily_tasks") as any)
+    const { data: dailyTasks } = await client
+      .from("daily_tasks")
       .select("*")
       .eq("user_id", user.id)
       .eq("task_date", today);
@@ -482,18 +545,20 @@ export const mobilePeriodicTasksApi = {
       return { streak: 0, bonusAwarded: 0 };
     }
 
-    const allCompleted = dailyTasks.every((t: any) => t.status === "completed");
+    const taskRows = dailyTasks as DailyTaskRow[];
+    const allCompleted = taskRows.every((t) => t.status === "completed");
     if (!allCompleted) {
       return { streak: 0, bonusAwarded: 0 };
     }
 
-    const { data: stats } = await (client.from("user_focus_stats") as any)
+    const { data: stats } = await client
+      .from("user_focus_stats")
       .select("*")
       .eq("user_id", user.id)
       .single();
 
     if (!stats) {
-      await (client.from("user_focus_stats") as any).insert({
+      await client.from("user_focus_stats").insert({
         user_id: user.id,
         daily_task_streak: 1,
         last_daily_completion: today,
@@ -501,11 +566,12 @@ export const mobilePeriodicTasksApi = {
       return { streak: 1, bonusAwarded: 0 };
     }
 
+    const statsRow = stats as UserFocusStatsRow;
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
     let newStreak = 1;
 
-    if (stats.last_daily_completion === yesterday) {
-      newStreak = (stats.daily_task_streak || 0) + 1;
+    if (statsRow.last_daily_completion === yesterday) {
+      newStreak = (statsRow.daily_task_streak || 0) + 1;
     }
 
     let bonusAwarded = 0;
@@ -521,7 +587,8 @@ export const mobilePeriodicTasksApi = {
       bonusAwarded = streakMilestones[newStreak];
     }
 
-    await (client.from("user_focus_stats") as any)
+    await client
+      .from("user_focus_stats")
       .update({
         daily_task_streak: newStreak,
         last_daily_completion: today,

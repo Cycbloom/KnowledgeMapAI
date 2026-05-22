@@ -2,7 +2,19 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, GraduationCap } from 'lucide-react';
 import { useTheme } from "../../hooks";
-import { TutorMode } from '../../types';
+import { TutorMode, TutorExtractedConcept } from '../../types';
+
+interface ChatHistoryItem {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface SuggestedTopic {
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+  estimatedDifficulty: number;
+}
 
 interface SimpleRAGChatButtonProps {
   isDark: boolean;
@@ -56,15 +68,15 @@ interface RAGChatButtonProps {
   aiEnabled?: boolean;
   isTutorMode?: boolean;
   tutorMode?: TutorMode;
-  extractedConcepts?: any[];
+  extractedConcepts?: TutorExtractedConcept[];
   onToggleTutorMode?: () => void;
   onSwitchTutorMode?: (mode: TutorMode) => void;
   onExtractConcepts?: (text: string) => void;
-  onAddConceptToGraph?: (concept: any) => void;
+  onAddConceptToGraph?: (concept: TutorExtractedConcept) => void;
   onAddAllConcepts?: () => void;
   onSuggestNextTopics?: () => void;
-  suggestedNextTopics?: any[];
-  onTutorChat?: (message: string, history: any[], onChunk: (content: string) => void) => void;
+  suggestedNextTopics?: SuggestedTopic[];
+  onTutorChat?: (message: string, history: ChatHistoryItem[], onChunk: (content: string) => void) => void;
   width?: number;
   onWidthChange?: (width: number) => void;
   isMobilePreviewMode?: boolean;

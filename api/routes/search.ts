@@ -26,7 +26,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
       const result = await searchService.search(req.supabase!, query);
       res.json(result);
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Search error:', error);
     res.status(500).json({ error: 'Search failed' });
   }

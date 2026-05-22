@@ -323,7 +323,7 @@ export const Study = () => {
     setQuizCards((prev) => [...prev].sort(() => Math.random() - 0.5));
   };
 
-  const handleDragEnd = (_: any, info: any) => {
+  const handleDragEnd = (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => {
     const threshold = isMobile ? 60 : 100;
     const velocity = info.velocity.x;
     const offset = info.offset.x;

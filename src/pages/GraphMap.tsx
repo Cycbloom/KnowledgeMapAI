@@ -27,6 +27,8 @@ import type {
   InfiniteExpansionProgress,
   DiscoveredRelation,
   AnalysisMode,
+  DiscoveryResult,
+  IntelligentSuggestion,
 } from "../types";
 import type { AnalysisModuleState } from "../components/GraphMap/types";
 
@@ -101,6 +103,33 @@ const LoadingFallback = () => (
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
   </div>
 );
+
+interface CoreNode {
+  title: string;
+  content?: string;
+  level?: string;
+  backboneModule?: string;
+  needsRefinement?: boolean;
+  color?: string;
+  id?: string;
+}
+
+interface ChildNode {
+  title: string;
+  content?: string;
+  level?: string;
+}
+
+interface PromptTemplate {
+  code: string;
+  template_content?: string;
+  [key: string]: unknown;
+}
+
+interface PromptListResult {
+  system?: PromptTemplate[];
+  user?: PromptTemplate[];
+}
 
 interface SingleGraphDomainPickerProps {
   graphId: string;
@@ -692,7 +721,7 @@ export const GraphMap = () => {
       customPrompt?: string;
       sources?: string[];
       depth: number;
-    }): Promise<{ root: any; coreNodes: any[] } | null> => {
+    }): Promise<{ root: { title: string; content: string }; coreNodes: CoreNode[] } | null> => {
       if (!selectedGraphId) return null;
 
       try {
@@ -716,7 +745,7 @@ export const GraphMap = () => {
               content: result.root.content,
               level: "root",
             },
-            ...result.coreNodes.map((n: any) => ({
+            ...result.coreNodes.map((n) => ({
               title: n.title,
               content: n.content,
               level: n.level || "core",
@@ -733,11 +762,10 @@ export const GraphMap = () => {
 
           queryClient.invalidateQueries({ queryKey: ["graphMap"] });
 
-          // 将 nodeMapping 中的 ID 映射到 coreNodes
           if (saveResult.nodeMapping) {
             const coreNodesWithIds = result.coreNodes.map(
-              (n: any, index: number) => {
-                const tempId = `temp-${index + 1}`; // root 是 temp-0, coreNodes 从 temp-1 开始
+              (n, index: number) => {
+                const tempId = `temp-${index + 1}`;
                 return {
                   ...n,
                   id: saveResult.nodeMapping[tempId]?.graphNodeId,
@@ -768,7 +796,7 @@ export const GraphMap = () => {
       style: "academic" | "practical" | "beginner" | "custom";
       customPrompt?: string;
       existingChildren?: { title: string }[];
-    }): Promise<any[] | null> => {
+    }): Promise<ChildNode[] | null> => {
       if (!selectedGraphId) return null;
 
       try {
@@ -785,7 +813,7 @@ export const GraphMap = () => {
         });
 
         if (result.children && result.children.length > 0) {
-          const nodes = result.children.map((n: any) => ({
+          const nodes = result.children.map((n) => ({
             title: n.title,
             content: n.content,
             level: n.level || "sub",
@@ -814,27 +842,27 @@ export const GraphMap = () => {
   const handleOpenPromptEditor = useCallback(
     async (mode: "depth" | "width") => {
       try {
-        const templates = await api.prompts.list();
+        const templates = await api.prompts.list() as PromptListResult;
 
         if (mode === "depth") {
           setShowPromptSelector(true);
           setPromptEditMode(mode);
           setDepthPromptType("init");
           const systemTemplate = templates.system?.find(
-            (t: any) => t.code === "auto_graph_init",
+            (t) => t.code === "auto_graph_init",
           );
           const userTemplate = templates.user?.find(
-            (t: any) => t.code === "auto_graph_init",
+            (t) => t.code === "auto_graph_init",
           );
           const effectiveTemplate = userTemplate || systemTemplate;
           setPromptContent(effectiveTemplate?.template_content || "");
         } else {
           setShowPromptSelector(false);
           const systemTemplate = templates.system?.find(
-            (t: any) => t.code === "infinite_graph_expansion",
+            (t) => t.code === "infinite_graph_expansion",
           );
           const userTemplate = templates.user?.find(
-            (t: any) => t.code === "infinite_graph_expansion",
+            (t) => t.code === "infinite_graph_expansion",
           );
           const effectiveTemplate = userTemplate || systemTemplate;
           setPromptContent(effectiveTemplate?.template_content || "");
@@ -853,14 +881,14 @@ export const GraphMap = () => {
   const handleSwitchDepthPrompt = useCallback(
     async (type: "init" | "expand") => {
       try {
-        const templates = await api.prompts.list();
+        const templates = await api.prompts.list() as PromptListResult;
         const templateCode =
           type === "init" ? "auto_graph_init" : "auto_graph_expand";
         const systemTemplate = templates.system?.find(
-          (t: any) => t.code === templateCode,
+          (t) => t.code === templateCode,
         );
         const userTemplate = templates.user?.find(
-          (t: any) => t.code === templateCode,
+          (t) => t.code === templateCode,
         );
         const effectiveTemplate = userTemplate || systemTemplate;
         setPromptContent(effectiveTemplate?.template_content || "");
@@ -908,9 +936,9 @@ export const GraphMap = () => {
     setIsGenerateCardsModalOpen(true);
   }, []);
 
-  const [discoveryResult, setDiscoveryResult] = useState<any>(null);
+  const [discoveryResult, setDiscoveryResult] = useState<DiscoveryResult | null>(null);
   const [intelligentSuggestions, setIntelligentSuggestions] =
-    useState<any>(null);
+    useState<IntelligentSuggestion | null>(null);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [createdRelationIds, setCreatedRelationIds] = useState<Set<string>>(
     new Set(),

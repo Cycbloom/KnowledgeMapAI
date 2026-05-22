@@ -9,7 +9,8 @@ export const mobileEdgesApi = {
       throw new Error('Supabase client not initialized');
     }
 
-    const { data: result, error } = await (client.from('edges') as any)
+    const { data: result, error } = await client
+      .from('edges')
       .insert(data)
       .select()
       .single();
@@ -27,7 +28,8 @@ export const mobileEdgesApi = {
       throw new Error('Supabase client not initialized');
     }
 
-    const { error } = await (client.from('edges') as any)
+    const { error } = await client
+      .from('edges')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
 
@@ -42,7 +44,8 @@ export const mobileEdgesApi = {
       throw new Error('Supabase client not initialized');
     }
 
-    const { data, error } = await (client.from('edges') as any)
+    const { data, error } = await client
+      .from('edges')
       .select('*')
       .eq('graph_id', graphId)
       .is('deleted_at', null);
@@ -51,7 +54,7 @@ export const mobileEdgesApi = {
       throw new Error(error.message);
     }
 
-    return data as Edge[];
+    return (data || []) as Edge[];
   },
 
   update: async (id: string, data: Partial<Edge>): Promise<Edge> => {
@@ -60,7 +63,8 @@ export const mobileEdgesApi = {
       throw new Error('Supabase client not initialized');
     }
 
-    const { data: result, error } = await (client.from('edges') as any)
+    const { data: result, error } = await client
+      .from('edges')
       .update(data)
       .eq('id', id)
       .select()

@@ -165,11 +165,11 @@ router.post(
       };
 
       res.json(learningPath);
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Learning Path Generation Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "学习路径生成失败",
+        (error as Error).message || "学习路径生成失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -210,7 +210,7 @@ router.get(
         });
       }
 
-      const nodes = graphNodes.map((gn: any) => {
+      const nodes = graphNodes.map((gn: { knowledge_point_id: string; level: string; knowledge_points?: { id?: string; title?: string } | { id?: string; title?: string }[] }) => {
         const kp = Array.isArray(gn.knowledge_points)
           ? gn.knowledge_points[0]
           : gn.knowledge_points;
@@ -221,7 +221,7 @@ router.get(
         };
       });
 
-      const nodeIds = nodes.map((n: any) => n.id);
+      const nodeIds = nodes.map((n) => n.id);
       const { data: studyCards } = await supabase
         .from("study_cards")
         .select("id, knowledge_point_id, fsrs_stability, fsrs_difficulty")
@@ -268,10 +268,10 @@ router.get(
             ? Math.round((masteredNodes / nodes.length) * 100)
             : 0,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Progress Fetch Error:", error);
       throw new AppError(
-        error.message || "获取进度失败",
+        (error as Error).message || "获取进度失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -434,11 +434,11 @@ ${graphMeta.description ? `描述：${graphMeta.description}` : ""}
         suggestedGoals: parsed.suggestedGoals || [],
         prerequisiteQuestions: enhancedQuestions,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Learning Path Questions Error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError(
-        error.message || "生成问题失败",
+        (error as Error).message || "生成问题失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );

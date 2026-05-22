@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Node, Edge } from "../../../types";
 import { createClient } from "@supabase/supabase-js";
+import type { BatchGenerateConfig } from "../modals/BatchGenerateDialog";
 import { LiteratureSourceDB } from "@shared/types/graph";
 import { BatchGenerateDialog } from "../modals/BatchGenerateDialog";
 import { GraphStatsSummary } from "../shared/GraphStatsSummary";
@@ -177,7 +178,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
         if (sortMode === "title") return safeTitleA.localeCompare(safeTitleB);
         if (sortMode === "level") {
-          const levelOrder: any = {
+          const levelOrder: Record<string, number> = {
             root: 0,
             core: 1,
             sub: 2,
@@ -190,7 +191,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           );
         }
         // Default: Level then Creation Time (to preserve learning order)
-        const levelOrder: any = {
+        const levelOrder: Record<string, number> = {
           root: 0,
           core: 1,
           sub: 2,
@@ -417,7 +418,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   }, [selectedNodeIds.size, nodes, onSelectionChange]);
 
   const handleBatchGenerateSuccess = useCallback(
-    (config?: any) => {
+    (config?: BatchGenerateConfig) => {
       onSelectionChange?.(new Set());
       setIsMultiSelectMode(false);
       onBatchAction?.("batch_generate_questions", config);

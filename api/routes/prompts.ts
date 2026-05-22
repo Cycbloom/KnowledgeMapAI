@@ -23,9 +23,9 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
     res.json(result);
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Get Prompts Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
@@ -58,9 +58,9 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
     res.json(data);
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Save Prompt Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
@@ -73,9 +73,9 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     await promptService.deleteTemplate(supabase, id);
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Delete Prompt Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
@@ -94,7 +94,7 @@ router.post('/optimize', requireAuth, async (req: AuthRequest, res: Response) =>
       throw new AppError('AI服务未配置', 500, ErrorCodes.INTERNAL_ERROR);
     }
 
-    const messages: any[] = [
+    const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
       {
         role: "system",
         content: `You are an expert Prompt Engineer. Your task is to optimize the given prompt template for an LLM.
@@ -127,9 +127,9 @@ ${instruction ? `User Instruction: ${instruction}` : ''}`
     const optimizedContent = completion.choices[0].message.content;
     res.json({ optimized_content: optimizedContent });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Optimize Prompt Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 

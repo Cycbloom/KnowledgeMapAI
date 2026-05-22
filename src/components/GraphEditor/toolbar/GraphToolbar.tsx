@@ -47,6 +47,7 @@ import {
   FileText,
   LayoutGrid,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
 import {
@@ -373,7 +374,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   };
 
   interface MobileMenuItem {
-    icon: any;
+    icon: LucideIcon;
     label: string;
     onClick: () => void;
     active?: boolean;
@@ -901,7 +902,13 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     );
   }
 
-  const DropdownButton = ({ id, icon: Icon, label, children, active }: any) => (
+  const DropdownButton = ({ id, icon: Icon, label, children, active }: {
+    id: "edit" | "ai" | "system" | "view";
+    icon: LucideIcon;
+    label: string;
+    children: React.ReactNode;
+    active?: boolean;
+  }) => (
     <div className="relative" onClick={(e) => e.stopPropagation()}>
       <button
         onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
@@ -945,7 +952,19 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     keepOpenOnChildClick,
     subMenuOpen,
     onSubMenuToggle,
-  }: any) => {
+  }: {
+    onClick?: () => void;
+    icon: React.ComponentType<{ size?: number | string; className?: string }>;
+    label: string;
+    active?: boolean;
+    colorClass?: string;
+    activeClass?: string;
+    disabled?: boolean;
+    children?: React.ReactNode;
+    keepOpenOnChildClick?: boolean;
+    subMenuOpen?: boolean;
+    onSubMenuToggle?: () => void;
+  }) => {
     const [internalSubMenuOpen, setInternalSubMenuOpen] = useState(false);
 
     const isOpen =

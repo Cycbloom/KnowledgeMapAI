@@ -1,4 +1,5 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
+import type { StudyCardRow } from "@shared/types/database";
 
 export const mobileDashboardApi = {
   getStats: async () => {
@@ -58,7 +59,7 @@ export const mobileDashboardApi = {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     let todayReviews = 0;
-    (cards || []).forEach((card: any) => {
+    ((cards || []) as Pick<StudyCardRow, "last_reviewed">[]).forEach((card) => {
       if (card.last_reviewed) {
         const lastReviewed = new Date(card.last_reviewed);
         if (lastReviewed >= today && lastReviewed < tomorrow) {

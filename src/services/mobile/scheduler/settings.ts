@@ -1,5 +1,6 @@
 import { withClientAndUser, withClientOptionalUser } from "../utils/clientHelper";
 import type { TaskSettings, UpdateTaskSettingsData } from "@shared/types";
+import type { TaskSettingsRow } from "@shared/types/database";
 
 export const getSettings = async (): Promise<TaskSettings> => {
   return withClientOptionalUser(async (client, userId) => {
@@ -16,7 +17,8 @@ export const getSettings = async (): Promise<TaskSettings> => {
       };
     }
 
-    const { data, error } = await (client.from("task_settings") as any)
+    const { data, error } = await client
+      .from("task_settings")
       .select("*")
       .eq("user_id", userId)
       .single();
@@ -25,7 +27,7 @@ export const getSettings = async (): Promise<TaskSettings> => {
       throw new Error(error.message);
     }
 
-    return (data as TaskSettings) || {
+    return (data as TaskSettingsRow) ?? {
       id: "",
       user_id: userId,
       q0_time_slice: 25,
@@ -40,7 +42,8 @@ export const getSettings = async (): Promise<TaskSettings> => {
 
 export const updateSettings = async (data: UpdateTaskSettingsData): Promise<TaskSettings> => {
   return withClientAndUser(async (client, userId) => {
-    const { data: result, error } = await (client.from("task_settings") as any)
+    const { data: result, error } = await client
+      .from("task_settings")
       .upsert({
         user_id: userId,
         ...data,

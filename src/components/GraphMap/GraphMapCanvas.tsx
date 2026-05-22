@@ -814,7 +814,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           style={{
             backgroundColor: colors.background,
             cursor: isDragging ? "grabbing" : "grab",
-            touchAction: "none" as any,
+            touchAction: "none",
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}

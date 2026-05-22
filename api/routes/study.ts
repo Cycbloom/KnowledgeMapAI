@@ -12,9 +12,20 @@ import { AppError } from "../middleware/errorHandler";
 import { studyService } from "../services/study/studyService";
 import { appEventBus } from "../services/core/eventBus";
 import type { ReviewCompletedPayload } from "../../shared/types/events";
+import type { StudyCard } from "../../shared/types/common";
 import { logger } from "../utils/logger";
 
 const router = Router();
+
+interface CardBatchItem {
+  knowledge_point_id: string;
+  question: string;
+  answer: string;
+  explanation?: string;
+  card_type?: StudyCard["card_type"];
+  type?: StudyCard["card_type"];
+  options?: string[];
+}
 
 router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_id } = req.query;
@@ -27,10 +38,11 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
     );
 
     res.json(stats);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     logger.error("Error fetching study stats:", error);
     throw new AppError(
-      error.message || "获取学习统计失败",
+      err.message || "获取学习统计失败",
       500,
       ErrorCodes.INTERNAL_ERROR,
     );
@@ -105,10 +117,11 @@ router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
     });
 
     res.json(cards);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     logger.error("Error fetching cards:", error);
     throw new AppError(
-      error.message || "获取学习卡片失败",
+      err.message || "获取学习卡片失败",
       500,
       ErrorCodes.INTERNAL_ERROR,
     );
@@ -189,10 +202,11 @@ router.post(
       });
 
       res.status(201).json(card);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error("Error creating card:", error);
       throw new AppError(
-        error.message || "创建学习卡片失败",
+        err.message || "创建学习卡片失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -249,9 +263,10 @@ router.post(
   validate(createCardsBatchSchema),
   async (req: AuthRequest, res: Response) => {
     const { cards } = req.body;
+    const typedCards = cards as CardBatchItem[];
 
     const knowledgePointIds = [
-      ...new Set(cards.map((c: any) => c.knowledge_point_id)),
+      ...new Set(typedCards.map((c) => c.knowledge_point_id)),
     ];
 
     const { data: graphNodes } = await req
@@ -264,7 +279,7 @@ router.post(
       graphNodes?.map((gn) => [gn.knowledge_point_id, gn.graph_id]),
     );
 
-    const cardsData = cards.map((card: any) => ({
+    const cardsData = typedCards.map((card) => ({
       knowledgePointId: card.knowledge_point_id,
       sourceGraphId: nodeGraphMap.get(card.knowledge_point_id),
       question: card.question,
@@ -281,10 +296,11 @@ router.post(
         req.user.id,
       );
       res.status(201).json(createdCards);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error("Error creating cards batch:", error);
       throw new AppError(
-        error.message || "创建学习卡片失败",
+        err.message || "创建学习卡片失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );
@@ -356,13 +372,14 @@ router.put(
         .catch((err) => logger.error("review_completed event publish failed:", err));
 
       res.json(result.card);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error("Error updating card progress:", error);
-      if (error.message === "Card not found") {
+      if (err.message === "Card not found") {
         throw new AppError("未找到卡片", 404, ErrorCodes.CARD_NOT_FOUND);
       }
       throw new AppError(
-        error.message || "更新卡片进度失败",
+        err.message || "更新卡片进度失败",
         500,
         ErrorCodes.INTERNAL_ERROR,
       );

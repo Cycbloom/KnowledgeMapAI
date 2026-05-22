@@ -25,6 +25,11 @@ import { LiteratureExtractPanel } from "../LiteratureExtract/LiteratureExtractPa
 import "katex/dist/katex.min.css";
 import { useTranslation } from "react-i18next";
 
+interface ChatHistoryItem {
+  role: "user" | "assistant";
+  content: string;
+}
+
 interface RAGChatPanelProps {
   graphId?: string;
   currentNodeId?: string;
@@ -51,7 +56,7 @@ interface RAGChatPanelProps {
   }>;
   onTutorChat?: (
     message: string,
-    history: any[],
+    history: ChatHistoryItem[],
     onChunk: (content: string) => void,
   ) => void;
   width?: number;
@@ -279,11 +284,12 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               ],
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("RAG Chat Error:", error);
+      const errorMessage = error instanceof Error ? error.message : t("aiChat.errorOccurred");
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: t("aiChat.sendFailed"),
+        content: errorMessage,
       });
       chatState.updateMessage(assistantMessageId, {
         content: t("aiChat.errorOccurred"),

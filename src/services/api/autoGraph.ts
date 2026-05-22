@@ -116,7 +116,7 @@ export const autoGraphApi = {
   }): Promise<{
     sessionId: string;
     root: { title: string; content: string };
-    coreNodes: Array<{ title: string; content?: string }>;
+    coreNodes: Array<{ title: string; content?: string; level?: string; backboneModule?: string; needsRefinement?: boolean; color?: string }>;
   }> => {
     const config = getAIConfig("text");
     const payload = {
@@ -149,7 +149,7 @@ export const autoGraphApi = {
   }): Promise<{
     sessionId: string;
     parentNodeId: string;
-    children: Array<{ title: string; content?: string }>;
+    children: Array<{ title: string; content?: string; level?: string }>;
   }> => {
     const config = getAIConfig("text");
     const payload = {

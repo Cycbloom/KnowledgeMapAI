@@ -22,6 +22,7 @@ import type {
   LayoutNode,
   GraphColorMode,
   RelationshipTypeConfig,
+  EdgeLineStyle,
 } from "../../../types";
 import type { Node as GraphNode } from "../../../types";
 import { MindMapNode } from "./MindMapNode";
@@ -70,7 +71,7 @@ interface MindMapCanvasProps {
   branchSuggestions?: BranchSuggestion[];
   selectedNodeForBranch?: GraphNode | null;
   onSelectBranch?: (suggestion: BranchSuggestion) => void;
-  onSwitchBranch?: (pathItem: any, suggestion: BranchSuggestion) => void;
+  onSwitchBranch?: (pathItem: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }, suggestion: BranchSuggestion) => void;
   isExplorationMode?: boolean;
   historicalAlternativeBranches?: {
     nodeId: string;
@@ -184,7 +185,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
     }, []);
 
     const handleEdgeContextMenu = useCallback(
-      (event: React.MouseEvent, link: any) => {
+      (event: React.MouseEvent, link: { id: string }) => {
         event.preventDefault();
         event.stopPropagation();
 
@@ -235,7 +236,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           custom_label: data.custom_label,
           relationship_type: data.relationship_type,
           custom_color: data.custom_color,
-          custom_line_style: data.custom_line_style as any,
+          custom_line_style: data.custom_line_style as EdgeLineStyle,
           show_arrow: data.show_arrow,
         });
 

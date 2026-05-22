@@ -11,7 +11,8 @@ export const getExecutions = async (filters?: {
       return [];
     }
 
-    let query = (client.from("task_executions") as any)
+    let query = client
+      .from("task_executions")
       .select("*")
       .eq("user_id", userId)
       .order("started_at", { ascending: false });
@@ -32,7 +33,7 @@ export const getExecutions = async (filters?: {
       throw new Error(error.message);
     }
 
-    return (data || []) as TaskExecution[];
+    return (data as TaskExecution[] | null) ?? [];
   });
 };
 
@@ -42,7 +43,8 @@ export const createExecution = async (data: {
   queue_level: number;
 }): Promise<TaskExecution> => {
   return withClientAndUser(async (client, userId) => {
-    const { data: result, error } = await (client.from("task_executions") as any)
+    const { data: result, error } = await client
+      .from("task_executions")
       .insert({
         user_id: userId,
         task_id: data.task_id,

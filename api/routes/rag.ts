@@ -75,9 +75,9 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
     });
 
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('RAG Chat Error:', error);
-    throw new AppError(error.message || '智能问答失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '智能问答失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -133,9 +133,9 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
     res.write(`data: ${JSON.stringify({ sources })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
-  } catch (error: any) {
+  } catch (error) {
     logger.error('RAG Stream Chat Error:', error);
-    res.write(`data: ${JSON.stringify({ error: error.message || '智能问答失败', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: (error as Error).message || '智能问答失败', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
     res.end();
   }
 });
@@ -151,9 +151,9 @@ router.post('/search', requireAuth, validate(ragSearchSchema), async (req: AuthR
     });
 
     res.json({ results });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('RAG Search Error:', error);
-    throw new AppError(error.message || '语义搜索失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '语义搜索失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -163,9 +163,9 @@ router.post('/analyze-gaps', requireAuth, validate(analyzeGapsSchema), async (re
   try {
     const result = await ragService.analyzeKnowledgeGaps(graph_id, req.user.id);
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Knowledge Gap Analysis Error:', error);
-    throw new AppError(error.message || '知识盲区分析失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '知识盲区分析失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

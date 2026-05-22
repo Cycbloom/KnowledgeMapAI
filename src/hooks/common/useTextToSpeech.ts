@@ -235,10 +235,10 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
         };
 
         await audio.play();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Qwen TTS error:', err);
         setIsSpeaking(false);
-        setError(err.message || '语音合成失败');
+        setError(err instanceof Error ? err.message : '语音合成失败');
       } finally {
         setIsLoading(false);
       }
@@ -287,8 +287,8 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
         const data = await api.tts.voices();
         setVoices(data.voices || []);
         setError(null);
-      } catch (err: any) {
-        setError(err.message || '获取语音列表失败');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : '获取语音列表失败');
       }
     }
   }, [currentEngine, browserTTS]);

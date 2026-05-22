@@ -1,5 +1,6 @@
 import { request } from "./client";
 import type { GetCardsParams, CardGroup } from "@shared/types/api";
+import type { StudyCard } from "@shared/types/common";
 
 export const studyApi = {
   getCards: (params?: GetCardsParams) => {
@@ -37,7 +38,7 @@ export const studyApi = {
       body: JSON.stringify({ cards }),
     }),
 
-  update: (id: string, data: unknown) =>
+  update: (id: string, data: Partial<StudyCard>) =>
     request(`/study/cards/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),

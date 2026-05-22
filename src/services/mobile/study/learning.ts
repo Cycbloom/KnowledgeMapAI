@@ -2,6 +2,31 @@ import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { StudyCard } from "@shared/types/common";
 import type { GetCardsParams, CardGroup, StudyStats } from "@shared/types/api";
 
+interface StudyCardInsert {
+  user_id: string;
+  knowledge_point_id: string;
+  graph_id: string;
+  source_graph_id: string;
+  question: string;
+  answer: string;
+  explanation: string | null;
+  card_type: StudyCard["card_type"];
+  options: string[] | null;
+  next_review: string;
+  difficulty: number;
+  fsrs_state: string;
+  fsrs_stability: number;
+  fsrs_difficulty: number;
+  fsrs_elapsed_days: number;
+  fsrs_scheduled_days: number;
+  fsrs_retrievability: number;
+}
+
+interface CardGroupRow {
+  source_graph_id: string | null;
+  card_type: string;
+}
+
 export const mobileStudyApi = {
   getCards: async (params?: GetCardsParams) => {
     const client = getMobileSupabaseClient();
@@ -40,7 +65,7 @@ export const mobileStudyApi = {
     return { cards: (data as StudyCard[]) || [] };
   },
 
-  getCardsByKnowledgePoint: async (knowledgePointId: string, _params?: any) => {
+  getCardsByKnowledgePoint: async (knowledgePointId: string, _params?: Record<string, unknown>) => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -95,7 +120,7 @@ export const mobileStudyApi = {
         cardType?: StudyCard["card_type"];
         options?: string[];
       }>
-    ).map((card) => ({
+    ).map((card): StudyCardInsert => ({
       user_id: user.id,
       knowledge_point_id: card.knowledgePointId,
       graph_id: card.sourceGraphId,
@@ -115,7 +140,8 @@ export const mobileStudyApi = {
       fsrs_retrievability: 0,
     }));
 
-    const { data, error } = await (client.from("study_cards") as any)
+    const { data, error } = await client
+      .from("study_cards")
       .insert(cardsToInsert)
       .select();
 
@@ -126,14 +152,15 @@ export const mobileStudyApi = {
     return { success: true, cards: (data as StudyCard[]) || [] };
   },
 
-  update: async (id: string, data: unknown) => {
+  update: async (id: string, data: Partial<StudyCard>) => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("study_cards") as any)
-      .update(data as any)
+    const { data: result, error } = await client
+      .from("study_cards")
+      .update(data)
       .eq("id", id)
       .select()
       .single();
@@ -185,9 +212,8 @@ export const mobileStudyApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: card, error: fetchError } = await (
-      client.from("study_cards") as any
-    )
+    const { data: card, error: fetchError } = await client
+      .from("study_cards")
       .select("*")
       .eq("id", id)
       .single();
@@ -196,12 +222,13 @@ export const mobileStudyApi = {
       throw new Error(fetchError?.message || "Card not found");
     }
 
+    const cardRow = card as StudyCard;
     const now = new Date();
-    const reviewCount = ((card as any).review_count || 0) + 1;
+    const reviewCount = (cardRow.review_count || 0) + 1;
 
     let nextReviewDays = 1;
     if (quality >= 4) {
-      nextReviewDays = Math.min(2 ^ reviewCount, 365);
+      nextReviewDays = Math.min(2 ** reviewCount, 365);
     } else if (quality >= 3) {
       nextReviewDays = Math.min(reviewCount * 2, 30);
     } else if (quality >= 2) {
@@ -214,9 +241,8 @@ export const mobileStudyApi = {
       now.getTime() + nextReviewDays * 24 * 60 * 60 * 1000,
     );
 
-    const { data: updatedCard, error: updateError } = await (
-      client.from("study_cards") as any
-    )
+    const { data: updatedCard, error: updateError } = await client
+      .from("study_cards")
       .update({
         last_reviewed: now.toISOString(),
         next_review: nextReview.toISOString(),
@@ -260,7 +286,7 @@ export const mobileStudyApi = {
     const groups: CardGroup[] = [];
     const graphMap = new Map<string, number>();
 
-    (data || []).forEach((card: any) => {
+    ((data || []) as CardGroupRow[]).forEach((card) => {
       const graphId = card.source_graph_id || "";
       if (!graphMap.has(graphId)) {
         graphMap.set(graphId, 0);

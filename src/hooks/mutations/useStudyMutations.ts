@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import type { StudyCard } from "../../types";
 
 export const useUpdateCardProgressMutation = () => {
   const queryClient = useQueryClient();
@@ -16,7 +17,7 @@ export const useUpdateCardProgressMutation = () => {
 export const useUpdateCardMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<StudyCard> }) =>
       api.study.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["studyCards"] });

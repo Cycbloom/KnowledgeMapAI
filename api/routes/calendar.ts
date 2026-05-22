@@ -4,7 +4,34 @@ import { logger } from "../utils/logger";
 
 const router = Router();
 
-const generateICSContent = (tasks: any[], executions: any[]): string => {
+interface CalendarTask {
+  id: string;
+  title: string;
+  scheduled_start?: string;
+  scheduled_end?: string;
+  deadline?: string;
+  created_at: string;
+  estimated_duration?: number;
+  description?: string;
+  priority?: string;
+  status?: string;
+  tags?: string[];
+}
+
+interface CalendarExecution {
+  id: string;
+  task_id: string;
+  started_at: string;
+  ended_at?: string;
+  duration?: number;
+  task_title?: string;
+  status?: string;
+  user_tasks?: {
+    title: string;
+  };
+}
+
+const generateICSContent = (tasks: CalendarTask[], executions: CalendarExecution[]): string => {
   const now = new Date();
   const timestamp = now.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
@@ -34,7 +61,8 @@ X-WR-CALDESC:KnowledgeMap 任务调度系统的日历同步
     };
 
     const status = task.status === "completed" ? "COMPLETED" : "CONFIRMED";
-    const priority = task.priority && task.priority >= 4 ? "1" : task.priority >= 3 ? "5" : "9";
+    const priorityNum = task.priority ? parseInt(task.priority) : 0;
+    const priority = priorityNum >= 4 ? "1" : priorityNum >= 3 ? "5" : "9";
     
     const category = task.tags?.includes("学习") ? "学习" 
       : task.tags?.includes("复习") ? "复习"

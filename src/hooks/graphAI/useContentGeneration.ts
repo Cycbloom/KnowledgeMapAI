@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
 import { Node, Edge } from '../../types';
+import type { UpdateNodeData } from '@shared/types/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 import { isNetworkError, wrapUnknownError } from '../../utils/errors';
 import { queryKeys } from '../queries/config';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, UseMutationResult } from '@tanstack/react-query';
 
 interface UseContentGenerationOptions {
   id: string;
@@ -19,7 +20,7 @@ interface UseContentGenerationOptions {
     setLoading: (loading: boolean) => void;
   };
   mutations: {
-    updateNodeMutation: any;
+    updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId: string }, unknown>;
   };
 }
 

@@ -83,10 +83,19 @@ interface SavedLearningPath {
   progress_percentage?: number;
 }
 
+interface LearningPathNode {
+  id: string;
+  knowledge_point_id?: string;
+  title: string;
+  status: "pending" | "in_progress" | "completed" | "skipped";
+  order_index: number;
+  estimated_time?: number;
+}
+
 interface LearningPathPanelProps {
   graphId: string;
   onNodeSelect?: (nodeId: string) => void;
-  onPathSelect?: (pathId: string) => void;
+  onPathSelect?: (pathId: string | null) => void;
   selectedPathId?: string | null;
 }
 
@@ -367,7 +376,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     );
   }
 
-  const learningStyles = [
+  const learningStyles: Array<{ value: "sequential" | "exploratory" | "focused" | "custom"; label: string }> = [
     { value: "sequential", label: t("learning.learningPath.styleSequential") },
     {
       value: "exploratory",
@@ -577,7 +586,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                     {learningStyles.map((style) => (
                       <button
                         key={style.value}
-                        onClick={() => setSelectedStyle(style.value as any)}
+                        onClick={() => setSelectedStyle(style.value)}
                         className={`px-3 py-1.5 text-sm rounded-lg ${
                           selectedStyle === style.value
                             ? "bg-primary-500 text-white"
@@ -680,7 +689,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                           <button
                             onClick={() => {
                               if (isSelected) {
-                                onPathSelect?.(null as any);
+                                onPathSelect?.(null);
                               } else {
                                 onPathSelect?.(path.id);
                               }
@@ -741,7 +750,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                               </div>
                               <div className="space-y-1 max-h-48 overflow-y-auto">
                                 {selectedPathDetail.nodes.map(
-                                  (node: any, index: number) => {
+                                  (node: LearningPathNode, index: number) => {
                                     const nodeStatus = node.status || "pending";
                                     const isCompleted =
                                       nodeStatus === "completed";

@@ -1,4 +1,5 @@
 import multer from 'multer';
+import type { Response } from 'express';
 
 export const ALLOWED_MIME_TYPES = [
   'application/pdf',
@@ -30,20 +31,20 @@ export const upload = multer({
   fileFilter
 });
 
-export const sendStreamChunk = (res: any, content: string) => {
+export const sendStreamChunk = (res: Response, content: string) => {
   res.write(`data: ${JSON.stringify({ content })}\n\n`);
 };
 
-export const sendStreamError = (res: any, message: string, code: string) => {
+export const sendStreamError = (res: Response, message: string, code: string) => {
   res.write(`data: ${JSON.stringify({ error: message, code })}\n\n`);
 };
 
-export const sendStreamDone = (res: any) => {
+export const sendStreamDone = (res: Response) => {
   res.write('data: [DONE]\n\n');
   res.end();
 };
 
-export const setSSEHeaders = (res: any) => {
+export const setSSEHeaders = (res: Response) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');

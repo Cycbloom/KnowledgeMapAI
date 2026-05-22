@@ -1,5 +1,6 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useStatistics, useUser, useGraphs } from '../hooks/queries';
 import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
@@ -11,9 +12,18 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
-import { BookOpen, Brain, Clock, TrendingUp } from 'lucide-react';
+import { BookOpen, Brain, Clock, TrendingUp, LucideIcon } from 'lucide-react';
+import type { Graph } from '../types';
 
-const MetricCard = ({ title, value, subtext, icon: Icon, color }: any) => (
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  subtext?: string;
+  icon: LucideIcon;
+  color: string;
+}
+
+const MetricCard = ({ title, value, subtext, icon: Icon, color }: MetricCardProps) => (
   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-start justify-between">
     <div>
       <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
@@ -26,7 +36,12 @@ const MetricCard = ({ title, value, subtext, icon: Icon, color }: any) => (
   </div>
 );
 
-const ForecastChart = ({ data, t }: { data: any[], t: any }) => (
+interface ForecastDataItem {
+  date: string;
+  count: number;
+}
+
+const ForecastChart = ({ data, t }: { data: ForecastDataItem[], t: TFunction }) => (
   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
     <h3 className="text-lg font-bold text-gray-800 mb-6">{t('statistics.forecast.title')}</h3>
     <div className="flex-1 w-full min-h-0">
@@ -57,7 +72,12 @@ const ForecastChart = ({ data, t }: { data: any[], t: any }) => (
   </div>
 );
 
-const GrowthChart = ({ data, t }: { data: any[], t: any }) => (
+interface GrowthDataItem {
+  date: string;
+  count: number;
+}
+
+const GrowthChart = ({ data, t }: { data: GrowthDataItem[], t: TFunction }) => (
   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
     <h3 className="text-lg font-bold text-gray-800 mb-6">{t('statistics.growth.title')}</h3>
     <div className="flex-1 w-full min-h-0">
@@ -101,7 +121,7 @@ const GrowthChart = ({ data, t }: { data: any[], t: any }) => (
   </div>
 );
 
-const ForgettingCurveChart = ({ retentionThreshold, avgStability, t }: { retentionThreshold: number, avgStability: number, t: any }) => {
+const ForgettingCurveChart = ({ retentionThreshold, avgStability, t }: { retentionThreshold: number, avgStability: number, t: TFunction }) => {
   const data = useMemo(() => {
     const points = [];
     const stability = avgStability > 0 ? avgStability : 7;
@@ -174,12 +194,12 @@ export const Statistics = () => {
 
   const totalNodesCount = useMemo(() => {
     if (!graphsData) return 0;
-    return graphsData.reduce((sum: number, g: any) => sum + (g.nodes_count || 0), 0);
+    return graphsData.reduce((sum: number, g: Graph) => sum + (g.nodes_count || 0), 0);
   }, [graphsData]);
 
   const graphHeatmapData = useMemo(() => {
     if (!graphsData) return [];
-    return graphsData.map((graph: any) => ({
+    return graphsData.map((graph: Graph) => ({
       id: graph.id,
       title: graph.title,
       nodes: [],
@@ -189,7 +209,7 @@ export const Statistics = () => {
 
   const distributionData = useMemo(() => {
     if (!stats?.distribution) return [];
-    return stats.distribution.map((item: any) => ({
+    return stats.distribution.map((item: { name: string; value: number; color: string }) => ({
       name: item.name,
       value: item.value,
       color: item.color

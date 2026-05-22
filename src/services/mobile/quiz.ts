@@ -5,8 +5,11 @@ import type {
   CreateQuizSetData,
   UpdateQuizSetData,
   QuizGenerationProgress,
+  GenerateQuizData,
+  RegenerateCardData,
 } from "@shared/types/quiz";
 import type { StudyCard } from "@shared/types/common";
+
 
 export const mobileQuizApi = {
   list: async (): Promise<QuizSet[]> => {
@@ -23,7 +26,8 @@ export const mobileQuizApi = {
       return [];
     }
 
-    const { data, error } = await (client.from("quiz_sets") as any)
+    const { data, error } = await client
+      .from("quiz_sets")
       .select("*")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
@@ -41,9 +45,8 @@ export const mobileQuizApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: quizSet, error: quizError } = await (
-      client.from("quiz_sets") as any
-    )
+    const { data: quizSet, error: quizError } = await client
+      .from("quiz_sets")
       .select("*")
       .eq("id", id)
       .single();
@@ -52,9 +55,8 @@ export const mobileQuizApi = {
       throw new Error(quizError.message);
     }
 
-    const { data: quizSetCards, error: cardsError } = await (
-      client.from("quiz_set_cards") as any
-    )
+    const { data: quizSetCards, error: cardsError } = await client
+      .from("quiz_set_cards")
       .select(
         `
         card_id,
@@ -93,11 +95,8 @@ export const mobileQuizApi = {
     }
 
     const cards: StudyCard[] = (quizSetCards || [])
-      .filter((item: any) => item.study_cards)
-      .map((item: any) => ({
-        ...item.study_cards,
-        id: item.study_cards.id,
-      }));
+      .filter((item) => item.study_cards && item.study_cards.length > 0)
+      .map((item) => item.study_cards![0]) as StudyCard[];
 
     return {
       ...(quizSet as QuizSet),
@@ -119,7 +118,8 @@ export const mobileQuizApi = {
       throw new Error("User not authenticated");
     }
 
-    const { data: result, error } = await (client.from("quiz_sets") as any)
+    const { data: result, error } = await client
+      .from("quiz_sets")
       .insert({
         user_id: user.id,
         title: data.title,
@@ -144,7 +144,8 @@ export const mobileQuizApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: result, error } = await (client.from("quiz_sets") as any)
+    const { data: result, error } = await client
+      .from("quiz_sets")
       .update({
         ...data,
         updated_at: new Date().toISOString(),
@@ -174,7 +175,7 @@ export const mobileQuizApi = {
   },
 
   generate: async (
-    _data: any,
+    _data: GenerateQuizData,
   ): Promise<{ quiz_set_id: string; task_id: string }> => {
     throw new Error("Quiz generation is not supported on mobile yet");
   },
@@ -193,7 +194,7 @@ export const mobileQuizApi = {
   regenerateCard: async (
     _quizSetId: string,
     _cardId: string,
-    _data?: any,
+    _data?: RegenerateCardData,
   ): Promise<{ card_id: string; question: string; answer: string }> => {
     throw new Error("Card regeneration is not supported on mobile yet");
   },
@@ -207,7 +208,7 @@ export const mobileQuizApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("quiz_set_cards") as any).insert({
+    const { error } = await client.from("quiz_set_cards").insert({
       quiz_set_id: quizSetId,
       card_id: cardId,
       display_order: 0,
@@ -217,11 +218,13 @@ export const mobileQuizApi = {
       throw new Error(error.message);
     }
 
-    const { count } = await (client.from("quiz_set_cards") as any)
+    const { count } = await client
+      .from("quiz_set_cards")
       .select("*", { count: "exact", head: true })
       .eq("quiz_set_id", quizSetId);
 
-    await (client.from("quiz_sets") as any)
+    await client
+      .from("quiz_sets")
       .update({
         card_count: count || 0,
         updated_at: new Date().toISOString(),

@@ -59,8 +59,9 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
         frontendEventBus.publish("message_show", { content: '术语标注已完成', type: 'success' });
         if (onRefresh) onRefresh();
         onClose();
-    } catch (error: any) {
-        frontendEventBus.publish("message_show", { content: error.message || '标注失败', type: 'error' });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : '标注失败';
+        frontendEventBus.publish("message_show", { content: message, type: 'error' });
     } finally {
         setAnnotating(false);
     }

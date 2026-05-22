@@ -1,7 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger';
+import type { KnowledgeGraphRow, StudyCardRow, FocusSessionRow, UserAchievementRow } from '@shared/types/database';
+import type { Edge } from '@shared/types/graph';
+import type { PeriodicTask } from '@shared/types/common';
 
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
 const MAX_AUTO_SNAPSHOTS: Record<string, number> = {
@@ -10,20 +13,112 @@ const MAX_AUTO_SNAPSHOTS: Record<string, number> = {
   'auto_1day': 5,
 };
 
+export interface BackupGraphItem {
+  id: string;
+  title: string;
+  description?: string | null;
+  settings?: Record<string, unknown> | null;
+  is_public?: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface BackupNodeItem {
+  id: string;
+  graph_id: string;
+  title: string;
+  content?: string;
+  learning_material?: string;
+  properties?: Record<string, unknown>;
+  x_position: number;
+  y_position: number;
+  level: string;
+  is_accepted: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BackupEdgeItem {
+  id: string;
+  graph_id: string;
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+  relationship_type?: string;
+  weight?: number;
+}
+
+export interface BackupStudyCardItem {
+  id: string;
+  graph_id: string;
+  knowledge_point_id: string;
+  question: string;
+  answer: string;
+  explanation?: string | null;
+  card_type: string;
+  options?: string[] | null;
+  difficulty: number;
+  last_reviewed?: string | null;
+  next_review: string;
+  review_count?: number;
+  fsrs_state: string;
+  fsrs_stability: number;
+  fsrs_difficulty: number;
+  fsrs_elapsed_days: number;
+  fsrs_scheduled_days: number;
+  fsrs_retrievability: number;
+  fsrs_last_review?: string | null;
+  created_at: string;
+}
+
 export interface BackupData {
   version: string;
   exportedAt: string;
   user: { id: string; email?: string };
   data: {
-    graphs: any[];
-    nodes: any[];
-    edges: any[];
-    study_cards: any[];
-    study_progress: any[];
-    focus_sessions: any[];
-    user_achievements: any[];
-    periodic_tasks: any[];
+    graphs: BackupGraphItem[];
+    nodes: BackupNodeItem[];
+    edges: BackupEdgeItem[];
+    study_cards: BackupStudyCardItem[];
+    study_progress: StudyProgressRow[];
+    focus_sessions: FocusSessionRow[];
+    user_achievements: UserAchievementRow[];
+    periodic_tasks: PeriodicTask[];
   };
+}
+
+interface StudyProgressRow {
+  id: string;
+  user_id: string;
+  knowledge_point_id: string;
+  mastery_level: number;
+  review_count: number;
+  last_reviewed?: string | null;
+  next_review?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface GraphNodeWithKnowledgePoint {
+  id: string;
+  graph_id: string;
+  knowledge_point_id: string;
+  x_position: number;
+  y_position: number;
+  level: string;
+  is_accepted: boolean;
+  created_at: string;
+  updated_at: string;
+  knowledge_points?: {
+    id: string;
+    title: string;
+    content?: string | null;
+    learning_material?: string | null;
+    properties?: Record<string, unknown> | null;
+    visibility?: string;
+    owner_id?: string;
+    created_at?: string;
+    updated_at?: string;
+  } | null;
 }
 
 async function ensureBackupDir() {
@@ -35,7 +130,7 @@ async function ensureBackupDir() {
 }
 
 export async function createBackup(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   type: 'auto_30min' | 'auto_5hour' | 'auto_1day' | 'manual'
 ): Promise<{ filePath: string; fileSize: number; graphsCount: number; nodesCount: number }> {
@@ -50,11 +145,11 @@ export async function createBackup(
     supabase.from('periodic_tasks').select('*').eq('user_id', userId).eq('period_type', 'daily'),
   ]);
 
-  const graphs = graphsResult.data || [];
-  const graphIds = graphs.map((g: any) => g.id);
+  const graphs = (graphsResult.data as KnowledgeGraphRow[] | null) || [];
+  const graphIds = graphs.map((g) => g.id);
 
-  let nodes: any[] = [];
-  let edges: any[] = [];
+  let nodes: BackupNodeItem[] = [];
+  let edges: BackupEdgeItem[] = [];
 
   if (graphIds.length > 0) {
     const [graphNodesResult, edgesResult] = await Promise.all([
@@ -83,10 +178,10 @@ export async function createBackup(
       supabase.from('edges').select('*').in('graph_id', graphIds).is('deleted_at', null),
     ]);
     
-    nodes = (graphNodesResult.data || []).map((gn: any) => ({
+    const graphNodes = (graphNodesResult.data as GraphNodeWithKnowledgePoint[] | null) || [];
+    nodes = graphNodes.map((gn) => ({
       id: gn.knowledge_points?.id || gn.knowledge_point_id,
       graph_id: gn.graph_id,
-      graph_node_id: gn.id,
       title: gn.knowledge_points?.title || '',
       content: gn.knowledge_points?.content || '',
       learning_material: gn.knowledge_points?.learning_material || '',
@@ -95,19 +190,27 @@ export async function createBackup(
       y_position: gn.y_position,
       level: gn.level,
       is_accepted: gn.is_accepted,
-      knowledge_point_id: gn.knowledge_point_id,
       created_at: gn.created_at,
       updated_at: gn.updated_at,
     }));
-    edges = edgesResult.data || [];
+    edges = ((edgesResult.data as Edge[] | null) || []).map((e) => ({
+      id: e.id,
+      graph_id: e.graph_id,
+      source_knowledge_point_id: e.source_knowledge_point_id,
+      target_knowledge_point_id: e.target_knowledge_point_id,
+      relationship_type: e.relationship_type,
+      weight: e.weight,
+    }));
   }
+
+  const studyCards = (studyCardsResult.data as StudyCardRow[] | null) || [];
 
   const backupData: BackupData = {
     version: '1.0',
     exportedAt: new Date().toISOString(),
     user: { id: userId },
     data: {
-      graphs: graphs.map((g: any) => ({
+      graphs: graphs.map((g) => ({
         id: g.id,
         title: g.title,
         description: g.description,
@@ -116,29 +219,9 @@ export async function createBackup(
         created_at: g.created_at,
         updated_at: g.updated_at,
       })),
-      nodes: nodes.map((n: any) => ({
-        id: n.id,
-        graph_id: n.graph_id,
-        title: n.title,
-        content: n.content,
-        learning_material: n.learning_material,
-        properties: n.properties,
-        x_position: n.x_position,
-        y_position: n.y_position,
-        level: n.level,
-        is_accepted: n.is_accepted,
-        created_at: n.created_at,
-        updated_at: n.updated_at,
-      })),
-      edges: edges.map((e: any) => ({
-        id: e.id,
-        graph_id: e.graph_id,
-        source_knowledge_point_id: e.source_knowledge_point_id,
-        target_knowledge_point_id: e.target_knowledge_point_id,
-        relationship_type: e.relationship_type,
-        weight: e.weight,
-      })),
-      study_cards: (studyCardsResult.data || []).map((c: any) => ({
+      nodes,
+      edges,
+      study_cards: studyCards.map((c) => ({
         id: c.id,
         graph_id: c.graph_id,
         knowledge_point_id: c.knowledge_point_id,
@@ -160,10 +243,10 @@ export async function createBackup(
         fsrs_last_review: c.fsrs_last_review,
         created_at: c.created_at,
       })),
-      study_progress: studyProgressResult.data || [],
-      focus_sessions: focusSessionsResult.data || [],
-      user_achievements: userAchievementsResult.data || [],
-      periodic_tasks: periodicTasksResult.data || [],
+      study_progress: (studyProgressResult.data as StudyProgressRow[] | null) || [],
+      focus_sessions: (focusSessionsResult.data as FocusSessionRow[] | null) || [],
+      user_achievements: (userAchievementsResult.data as UserAchievementRow[] | null) || [],
+      periodic_tasks: (periodicTasksResult.data as PeriodicTask[] | null) || [],
     },
   };
 
@@ -201,7 +284,7 @@ export async function readBackupFile(filePath: string): Promise<BackupData> {
 }
 
 export async function cleanupOldSnapshots(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   type: string
 ): Promise<void> {
@@ -270,7 +353,7 @@ export interface BackupSnapshot {
 }
 
 export class BackupService {
-  async getSnapshots(supabase: any, userId: string): Promise<BackupSnapshot[]> {
+  async getSnapshots(supabase: SupabaseClient, userId: string): Promise<BackupSnapshot[]> {
     const { data, error } = await supabase
       .from('backup_snapshots')
       .select('*')
@@ -278,11 +361,11 @@ export class BackupService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data as BackupSnapshot[]) || [];
   }
 
   async createSnapshotRecord(
-    supabase: any,
+    supabase: SupabaseClient,
     userId: string,
     data: {
       type: string;
@@ -302,10 +385,10 @@ export class BackupService {
       .single();
 
     if (error) throw error;
-    return snapshot;
+    return snapshot as BackupSnapshot;
   }
 
-  async getSnapshot(supabase: any, snapshotId: string, userId: string): Promise<BackupSnapshot | null> {
+  async getSnapshot(supabase: SupabaseClient, snapshotId: string, userId: string): Promise<BackupSnapshot | null> {
     const { data, error } = await supabase
       .from('backup_snapshots')
       .select('*')
@@ -314,10 +397,10 @@ export class BackupService {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    return data as BackupSnapshot | null;
   }
 
-  async deleteSnapshot(supabase: any, snapshotId: string, userId: string): Promise<void> {
+  async deleteSnapshot(supabase: SupabaseClient, snapshotId: string, userId: string): Promise<void> {
     const snapshot = await this.getSnapshot(supabase, snapshotId, userId);
     if (!snapshot) {
       throw new Error('Snapshot not found');

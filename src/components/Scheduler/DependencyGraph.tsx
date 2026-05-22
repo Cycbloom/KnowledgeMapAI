@@ -29,9 +29,9 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
     tasks.forEach((t) => taskMap.set(t.id, t));
 
     const nodesWithPositions: TaskNode[] = tasks.map((task, index) => {
-      const dependsOn = (task as any).depends_on || [];
+      const dependsOn = task.dependencies?.map((d) => d.depends_on_task_id) || [];
       const blockingTasks = dependsOn
-        .map((id: string) => taskMap.get(id))
+        .map((id) => taskMap.get(id))
         .filter(Boolean) as UserTask[];
 
       const isBlocked = blockingTasks.some((t) => t.status !== "completed");

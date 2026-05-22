@@ -165,8 +165,8 @@ export const usePrefetchLearningPaths = () => {
   return useCallback(
     (status?: string) => {
       queryClient.prefetchQuery({
-        queryKey: learningPathKeys.list(status as any),
-        queryFn: () => api.learningPaths.list(status as any),
+        queryKey: learningPathKeys.list(status as 'active' | 'completed' | 'archived' | undefined),
+        queryFn: () => api.learningPaths.list(status as 'active' | 'completed' | 'archived' | undefined),
         staleTime: 1000 * 60 * 5,
       });
     },

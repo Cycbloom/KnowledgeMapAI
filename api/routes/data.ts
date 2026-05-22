@@ -39,6 +39,8 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
       y_position,
       level,
       is_accepted,
+      created_at,
+      updated_at,
       knowledge_points (
         id,
         title,
@@ -50,19 +52,46 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     req.supabase!.from('edges').select('*').eq('graph_id', graph_id).is('deleted_at', null)
   ]);
 
-  const nodes = (graphNodesResult.data || []).map((gn: any) => {
+  interface GraphNodeQueryResult {
+    knowledge_point_id: string;
+    graph_id: string;
+    x_position: number;
+    y_position: number;
+    level: string;
+    is_accepted: boolean;
+    created_at: string;
+    updated_at: string;
+    knowledge_points?: {
+      id?: string;
+      title?: string;
+      content?: string;
+      learning_material?: string;
+      properties?: Record<string, unknown>;
+    } | {
+      id?: string;
+      title?: string;
+      content?: string;
+      learning_material?: string;
+      properties?: Record<string, unknown>;
+    }[];
+  }
+
+  const nodes = (graphNodesResult.data as GraphNodeQueryResult[] || []).map((gn) => {
     const kp = Array.isArray(gn.knowledge_points) ? gn.knowledge_points[0] : gn.knowledge_points;
     return {
       id: kp?.id || gn.knowledge_point_id,
       graph_id: gn.graph_id,
+      knowledge_point_id: gn.knowledge_point_id,
       title: kp?.title || '',
       content: kp?.content || '',
       learning_material: kp?.learning_material || '',
       properties: kp?.properties || {},
       x_position: gn.x_position,
       y_position: gn.y_position,
-      level: gn.level,
-      is_accepted: gn.is_accepted
+      level: gn.level as import('../../shared/types/graph').NodeLevel,
+      is_accepted: gn.is_accepted,
+      created_at: gn.created_at,
+      updated_at: gn.updated_at
     };
   });
   const edges = edgesResult.data || [];
@@ -89,13 +118,24 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
 
     md += `---\n\n`;
 
-    const nodeById = new Map(nodes?.map((n: any) => [n.id, n]));
+    interface ExportNode {
+      id: string;
+      title: string;
+      content?: string;
+      level: string;
+    }
+
+    interface ExportEdge {
+      source_knowledge_point_id: string;
+      target_knowledge_point_id: string;
+    }
+
+    const nodeById = new Map(nodes?.map((n: ExportNode) => [n.id, n]));
     
-    // Build tree structure
-    const childrenMap = new Map<string, any[]>();
-    const incomingEdges = new Set<string>(); // target_knowledge_point_ids
+    const childrenMap = new Map<string, ExportNode[]>();
+    const incomingEdges = new Set<string>();
     
-    edges?.forEach((e: any) => {
+    edges?.forEach((e: ExportEdge) => {
         const list = childrenMap.get(e.source_knowledge_point_id) || [];
         const child = nodeById.get(e.target_knowledge_point_id);
         if (child) {
@@ -118,7 +158,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
       }
     };
 
-    const renderNode = (node: any, depth: number) => {
+    const renderNode = (node: ExportNode, depth: number) => {
         if (visited.has(node.id)) return;
         visited.add(node.id);
 
@@ -155,7 +195,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     };
 
     // Find roots: Nodes with 'root' level OR no incoming edges
-    const roots = nodes?.filter((n: any) => n.level === 'root' || !incomingEdges.has(n.id)) || [];
+    const roots = nodes?.filter((n: ExportNode) => n.level === 'root' || !incomingEdges.has(n.id)) || [];
 
     // Fallback
     if (roots.length === 0 && nodes && nodes.length > 0) {
@@ -165,7 +205,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     roots.forEach(root => renderNode(root, 1));
 
     // Render remaining disconnected nodes
-    const remaining = nodes?.filter((n: any) => !visited.has(n.id)) || [];
+    const remaining = nodes?.filter((n: ExportNode) => !visited.has(n.id)) || [];
     if (remaining.length > 0) {
         md += `\n---\n\n## Unconnected Nodes\n\n`;
         remaining.forEach(n => renderNode(n, 1));
@@ -186,7 +226,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
         options || {}, // Pass options from body (screenshot, etc.)
         res
       );
-    } catch (e: any) {
+    } catch (e) {
       logger.error('PDF Generation Error:', e);
       if (!res.headersSent) {
          res.status(500).json({ error: 'PDF generation failed' });
@@ -282,9 +322,9 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
     
     res.status(201).json({ graph });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Import Markdown Error:', error);
-    res.status(500).json({ error: error.message || 'Import failed' });
+    res.status(500).json({ error: (error as Error).message || 'Import failed' });
   }
 });
 
@@ -362,7 +402,7 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
     
     res.status(201).json({ graph });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Import failed, rolling back:', error);
     
     if (createdGraphId) {
@@ -429,9 +469,9 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
           result.deleted = result.count;
         }
       }
-    } catch (e: any) {
-      result.error = e.message || String(e);
-      logger.warn(`处理表 ${table} 时出错`, { error: e.message });
+    } catch (e) {
+      result.error = (e as Error).message || String(e);
+      logger.warn(`处理表 ${table} 时出错`, { error: (e as Error).message });
     }
     return result;
   };

@@ -17,7 +17,7 @@ const createLinkSchema = z.object({
     url: z.string().min(1, "链接地址不能为空"),
     description: z.string().optional(),
     icon: z.string().optional(),
-    metadata: z.record(z.any()).optional(),
+    metadata: z.record(z.unknown()).optional(),
   }),
   params: z.object({
     id: z.string().uuid("无效的任务ID"),
@@ -29,7 +29,7 @@ const updateLinkSchema = z.object({
     title: z.string().optional(),
     description: z.string().optional(),
     icon: z.string().optional(),
-    metadata: z.record(z.any()).optional(),
+    metadata: z.record(z.unknown()).optional(),
   }),
   params: z.object({
     id: z.string().uuid("无效的任务ID"),

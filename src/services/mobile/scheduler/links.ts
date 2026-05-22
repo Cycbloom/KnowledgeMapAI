@@ -3,7 +3,8 @@ import type { TaskLink } from "@shared/types";
 
 export const getLinks = async (taskId: string): Promise<TaskLink[]> => {
   return withClient(async (client) => {
-    const { data, error } = await (client.from("task_links") as any)
+    const { data, error } = await client
+      .from("task_links")
       .select("*")
       .eq("task_id", taskId)
       .order("position", { ascending: true });
@@ -12,7 +13,7 @@ export const getLinks = async (taskId: string): Promise<TaskLink[]> => {
       throw new Error(error.message);
     }
 
-    return (data || []) as TaskLink[];
+    return (data as TaskLink[] | null) ?? [];
   });
 };
 
@@ -28,7 +29,8 @@ export const createLink = async (
   }
 ): Promise<TaskLink> => {
   return withClient(async (client) => {
-    const { data: result, error } = await (client.from("task_links") as any)
+    const { data: result, error } = await client
+      .from("task_links")
       .insert({
         task_id: _taskId,
         link_type: data.link_type || "web",
@@ -60,7 +62,8 @@ export const updateLink = async (
   }
 ): Promise<TaskLink> => {
   return withClient(async (client) => {
-    const { data: result, error } = await (client.from("task_links") as any)
+    const { data: result, error } = await client
+      .from("task_links")
       .update(data)
       .eq("id", linkId)
       .select()
@@ -76,7 +79,7 @@ export const updateLink = async (
 
 export const deleteLink = async (_taskId: string, linkId: string): Promise<void> => {
   return withClient(async (client) => {
-    const { error } = await (client.from("task_links") as any).delete().eq("id", linkId);
+    const { error } = await client.from("task_links").delete().eq("id", linkId);
 
     if (error) {
       throw new Error(error.message);

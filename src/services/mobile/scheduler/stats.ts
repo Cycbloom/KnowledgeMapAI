@@ -1,5 +1,12 @@
 import { withClientOptionalUser } from "../utils/clientHelper";
 import type { UserTaskStats, HeatmapData } from "@shared/types";
+import type { TaskExecutionRow } from "@shared/types/database";
+
+interface TaskStatsRow {
+  status: string;
+  queue_level: number;
+  actual_duration: number | null;
+}
 
 export const getStats = async (): Promise<UserTaskStats> => {
   return withClientOptionalUser(async (client, userId) => {
@@ -15,20 +22,21 @@ export const getStats = async (): Promise<UserTaskStats> => {
       };
     }
 
-    const { data: tasks } = await (client.from("user_tasks") as any)
+    const { data: tasks } = await client
+      .from("user_tasks")
       .select("status, queue_level, actual_duration")
       .eq("user_id", userId)
       .is("deleted_at", null);
 
-    const totalTasks = tasks?.length || 0;
-    const completedTasks = tasks?.filter((t: any) => t.status === "completed").length || 0;
-    const totalDuration =
-      tasks?.reduce((sum: number, t: any) => sum + (t.actual_duration || 0), 0) || 0;
+    const taskRows = (tasks as TaskStatsRow[] | null) ?? [];
+    const totalTasks = taskRows.length;
+    const completedTasks = taskRows.filter((t) => t.status === "completed").length;
+    const totalDuration = taskRows.reduce((sum, t) => sum + (t.actual_duration ?? 0), 0);
 
     const tasksByQueue = { q0: 0, q1: 0, q2: 0 };
     const tasksByStatus: Record<string, number> = {};
 
-    (tasks || []).forEach((t: any) => {
+    taskRows.forEach((t) => {
       if (t.queue_level === 0) tasksByQueue.q0++;
       else if (t.queue_level === 1) tasksByQueue.q1++;
       else if (t.queue_level === 2) tasksByQueue.q2++;
@@ -54,19 +62,21 @@ export const getHeatmap = async (): Promise<HeatmapData[]> => {
       return [];
     }
 
-    const { data: executions } = await (client.from("task_executions") as any)
+    const { data: executions } = await client
+      .from("task_executions")
       .select("started_at, duration")
       .eq("user_id", userId);
 
+    const executionRows = (executions as Pick<TaskExecutionRow, "started_at" | "duration">[] | null) ?? [];
     const heatmapMap = new Map<string, { count: number; duration: number }>();
 
-    (executions || []).forEach((e: any) => {
+    executionRows.forEach((e) => {
       const date = e.started_at?.split("T")[0];
       if (date) {
         const existing = heatmapMap.get(date) || { count: 0, duration: 0 };
         heatmapMap.set(date, {
           count: existing.count + 1,
-          duration: existing.duration + (e.duration || 0),
+          duration: existing.duration + (e.duration ?? 0),
         });
       }
     });

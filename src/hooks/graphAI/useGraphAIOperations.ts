@@ -1,4 +1,6 @@
-import { Node, Edge, BranchSuggestion } from '../../types';
+import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
+import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
+import type { BatchGenerateConfig } from '../../components/GraphEditor/modals/BatchGenerateDialog';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from '../graphEditor';
@@ -7,7 +9,7 @@ import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import {
   processExpandSuggestions,
@@ -16,21 +18,67 @@ import {
   buildDefaultExpandPrompt
 } from '../utils/nodeExpansionUtils';
 
+interface AIGeneratedCard {
+  question: string;
+  answer: string;
+  type: string;
+  options?: string[];
+}
+
+interface AIExpandResult {
+  suggestions: Array<{
+    title: string;
+    description?: string;
+    level?: string;
+  }>;
+}
+
+interface AIExpandVariables {
+  node_title: string;
+  node_content?: string;
+  existing_titles?: string[];
+  current_children?: string[];
+  node_level?: string;
+  expand_prompt?: string;
+  graph_id?: string;
+  provider?: string;
+  model?: string;
+  language?: string;
+}
+
+interface AIGenerateCardsVariables {
+  node_title: string;
+  node_content?: string;
+  count?: number;
+  types?: string[];
+  provider?: string;
+  model?: string;
+  language?: string;
+}
+
+interface RecommendConnectionsVariables {
+  graph_id: string;
+  node_title: string;
+  node_content?: string;
+}
+
+interface GraphAIMutations {
+  aiExpandMutation: UseMutationResult<AIExpandResult, Error, AIExpandVariables, unknown>;
+  aiGenerateCardsMutation: UseMutationResult<{ cards: AIGeneratedCard[] }, Error, AIGenerateCardsVariables, unknown>;
+  createCardsBatchMutation: UseMutationResult<unknown, Error, unknown[], unknown>;
+  createTaskMutation: UseMutationResult<unknown, Error, { type: string; payload: unknown }, unknown>;
+  createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
+  createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
+  updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId?: string }, unknown>;
+  recommendConnectionsMutation: UseMutationResult<unknown, Error, RecommendConnectionsVariables, unknown>;
+}
+
 interface UseGraphAIOperationsProps {
   id: string;
   nodes: Node[];
   edges: Edge[];
   state: GraphEditorState;
-  mutations: {
-    aiExpandMutation: any;
-    aiGenerateCardsMutation: any;
-    createCardsBatchMutation: any;
-    createTaskMutation: any;
-    createNodeMutation: any;
-    createEdgeMutation: any;
-    updateNodeMutation: any;
-    recommendConnectionsMutation: any;
-  };
+  mutations: GraphAIMutations;
   record: (action: HistoryAction) => void;
   navigate: (path: string) => void;
   token?: string | null;
@@ -195,7 +243,7 @@ export const useGraphAIOperations = ({
           node_content: selectedNode.content
         });
         
-        const cards = res.cards.map((c: any) => ({
+        const cards = res.cards.map((c: AIGeneratedCard) => ({
           node_id: selectedNode.id,
           question: c.question,
           answer: c.answer,
@@ -225,7 +273,7 @@ export const useGraphAIOperations = ({
     );
   };
 
-  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis', params?: any) => {
+  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis', params?: BatchGenerateConfig | Record<string, unknown>) => {
     if (selectedNodeIds.size === 0 && !selectedNode) return;
     if (!id) return;
     
@@ -247,8 +295,11 @@ export const useGraphAIOperations = ({
 
           const nodeIds = nodesToProcess.map(n => n.id);
           
+          const batchParams = params as BatchGenerateConfig | undefined;
           await api.ai.batchGenerateCards(nodeIds, {
-            ...params,
+            types: batchParams?.types,
+            count: batchParams?.count,
+            pack_template: batchParams?.pack_template ?? undefined,
             provider,
             model
           });
@@ -260,7 +311,7 @@ export const useGraphAIOperations = ({
         for (const node of nodesToProcess) {
           if (!node) continue;
           
-          const payload: any = {
+          const payload: Record<string, unknown> = {
             graph_id: id,
             node_id: node.id,
             node_title: node.title,
@@ -413,7 +464,7 @@ export const useGraphAIOperations = ({
     );
   };
 
-  const handleSwitchBranch = async (pathItem: any, suggestion: BranchSuggestion) => {
+  const handleSwitchBranch = async (pathItem: ExplorationPathItem, suggestion: BranchSuggestion) => {
     if (!id) return;
     
     await asyncHandler(
@@ -422,7 +473,7 @@ export const useGraphAIOperations = ({
         if (!parentNode) return null;
 
         const branches = pathItem.alternativeBranches || [];
-        const createdNodes: any[] = [];
+        const createdNodes: Array<{ node: Node; suggestion: BranchSuggestion; isAccepted: boolean }> = [];
 
         for (const branch of branches) {
           const isAccepted = branch.id === suggestion.id;

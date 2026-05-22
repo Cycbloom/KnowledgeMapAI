@@ -1,5 +1,6 @@
 import React from "react";
 import type { Node, Edge } from "../../../types";
+import type { RelatedNode } from "../../../hooks/graphEditor/useMiscState";
 import { levelLabels } from "../../../config/graphConfig";
 import {
   getLearningStatus,
@@ -52,8 +53,8 @@ interface NodeDetailSidebarProps {
 
   showRelatedSection: boolean;
   isRelatedLoading: boolean;
-  relatedNodes: Node[];
-  onRelatedNodeClick: (node: Node) => void;
+  relatedNodes: RelatedNode[];
+  onRelatedNodeClick: (node: RelatedNode) => void;
 
   onUpdateNode?: (nodeId: string, updates: Partial<Node>) => void;
   isExplorationMode?: boolean;

@@ -1,5 +1,13 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 
+interface StudyCardStateRow {
+  fsrs_state: string | null;
+  next_review: string | null;
+  fsrs_stability: number | null;
+  last_reviewed: string | null;
+  created_at: string | null;
+}
+
 export const mobileStatisticsApi = {
   getStats: async () => {
     const client = getMobileSupabaseClient();
@@ -82,7 +90,7 @@ export const mobileStatisticsApi = {
       growthMap.set(d.toISOString().split("T")[0], 0);
     }
 
-    (cards || []).forEach((card: any) => {
+    ((cards || []) as StudyCardStateRow[]).forEach((card) => {
       const state = card.fsrs_state || "New";
       const stability = card.fsrs_stability || 0;
       const nextReview = card.next_review ? new Date(card.next_review) : null;

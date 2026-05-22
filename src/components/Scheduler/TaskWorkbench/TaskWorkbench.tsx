@@ -114,8 +114,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       try {
         await api.scheduler.updateNotes(task.id, notes);
         setTask({ ...task, notes });
-      } catch (error: any) {
-        frontendEventBus.publish("message_show", { type: "error", content: error.message || "保存笔记失败" });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "保存笔记失败";
+        frontendEventBus.publish("message_show", { type: "error", content: message });
       }
     },
     [task],

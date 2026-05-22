@@ -1,9 +1,9 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 
-type SupabaseClient = NonNullable<ReturnType<typeof getMobileSupabaseClient>>;
+type MobileSupabaseClient = NonNullable<ReturnType<typeof getMobileSupabaseClient>>;
 
 export const withClient = async <T>(
-  fn: (client: SupabaseClient) => Promise<T>
+  fn: (client: MobileSupabaseClient) => Promise<T>
 ): Promise<T> => {
   const client = getMobileSupabaseClient();
   if (!client) {
@@ -13,7 +13,7 @@ export const withClient = async <T>(
 };
 
 export const withClientAndUser = async <T>(
-  fn: (client: SupabaseClient, userId: string) => Promise<T>
+  fn: (client: MobileSupabaseClient, userId: string) => Promise<T>
 ): Promise<T> => {
   const client = getMobileSupabaseClient();
   if (!client) {
@@ -29,7 +29,7 @@ export const withClientAndUser = async <T>(
 };
 
 export const withClientOptionalUser = async <T>(
-  fn: (client: SupabaseClient, userId: string | null) => Promise<T>
+  fn: (client: MobileSupabaseClient, userId: string | null) => Promise<T>
 ): Promise<T> => {
   const client = getMobileSupabaseClient();
   if (!client) {
@@ -39,3 +39,5 @@ export const withClientOptionalUser = async <T>(
   const { data: { user } } = await client.auth.getUser();
   return fn(client, user?.id ?? null);
 };
+
+export type { MobileSupabaseClient };

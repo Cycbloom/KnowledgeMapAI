@@ -26,7 +26,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   };
 
   if (stats.distribution && Array.isArray(stats.distribution)) {
-    stats.distribution.forEach((item: any) => {
+    stats.distribution.forEach((item: { state: string; count: number }) => {
       stateCounts[item.state] = item.count;
     });
   }
@@ -43,8 +43,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   }
   
   if (stats.forecast) {
-    stats.forecast.forEach((item: any) => {
-      // Postgres date might be string
+    stats.forecast.forEach((item: { date: string | number; count: number }) => {
       const dateStr = String(item.date); 
       if (forecastMap.has(dateStr)) {
         forecastMap.set(dateStr, item.count);
@@ -62,7 +61,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   if (stats.growth) {
-    stats.growth.forEach((item: any) => {
+    stats.growth.forEach((item: { date: string | number; count: number }) => {
       const dateStr = String(item.date);
       if (growthMap.has(dateStr)) {
         growthMap.set(dateStr, item.count);

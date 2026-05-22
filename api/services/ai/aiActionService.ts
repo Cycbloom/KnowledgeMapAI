@@ -295,9 +295,10 @@ export class AIActionService {
         // 7. Handle Result
         return await this.handleActionResponse(action, responseContent, nodeId, userId, graphId);
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         logger.error('AI Action Execution Failed', e);
-        return { success: false, message: e.message };
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        return { success: false, message: errorMessage };
     }
   }
 

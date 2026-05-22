@@ -62,6 +62,19 @@ interface LearningPathNode {
   };
 }
 
+interface ApiLearningPathNode {
+  id: string;
+  knowledge_point_id?: string;
+  title: string;
+  description?: string;
+  order_index?: number;
+  estimated_time?: number;
+  status?: NodeStatus;
+  prerequisites?: string[];
+  started_at?: string;
+  completed_at?: string;
+}
+
 interface LearningPathMilestone {
   id: string;
   title: string;
@@ -184,7 +197,7 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       const result = await learningPathsApi.get(pathId);
       if (result) {
-        const mappedNodes = (result.nodes || []).map((node: any) => ({
+        const mappedNodes = (result.nodes || []).map((node: ApiLearningPathNode) => ({
           id: node.id,
           node_id: node.knowledge_point_id || node.id,
           title: node.title,

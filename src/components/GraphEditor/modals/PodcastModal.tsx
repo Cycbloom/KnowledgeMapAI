@@ -100,8 +100,9 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
         .replace(/^```\s*/, "")
         .replace(/\s*```$/, "");
       setScript(cleanedScript);
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: `脚本生成失败: ${error.message}` });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "未知错误";
+      frontendEventBus.publish("message_show", { type: "error", content: `脚本生成失败: ${message}` });
     } finally {
       setIsGenerating(false);
     }

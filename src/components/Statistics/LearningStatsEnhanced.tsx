@@ -28,6 +28,14 @@ interface WeakPoint {
   suggestion: string;
 }
 
+interface NodeStatusInfo {
+  due_today?: boolean;
+  review_count?: number;
+  mastered?: boolean;
+  stability?: number;
+  locked?: boolean;
+}
+
 export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -215,7 +223,7 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
 
 export const WeakPointsAnalysis: React.FC<{ 
   nodes: any[]; 
-  nodeStatus: Record<string, any>;
+  nodeStatus: Record<string, NodeStatusInfo>;
   graphTitle?: string;
 }> = ({ nodes, nodeStatus, graphTitle }) => {
   const { isDark } = useTheme();
@@ -229,14 +237,14 @@ export const WeakPointsAnalysis: React.FC<{
       if (!status) return;
       
       const isWeak = status.due_today || 
-                     (status.review_count > 3 && !status.mastered) ||
+                     ((status.review_count ?? 0) > 3 && !status.mastered) ||
                      (status.stability && status.stability < 7);
       
       if (isWeak && !status.mastered) {
         let suggestion = '';
         if (status.due_today) {
           suggestion = t('learningStats.weakPoints.reviewToday');
-        } else if (status.review_count > 5) {
+        } else if ((status.review_count ?? 0) > 5) {
           suggestion = t('learningStats.weakPoints.reviewManyTimes');
         } else if (status.stability && status.stability < 3) {
           suggestion = t('learningStats.weakPoints.lowStability');

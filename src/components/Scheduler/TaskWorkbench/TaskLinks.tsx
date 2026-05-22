@@ -95,8 +95,9 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
         setIsAdding(false);
         frontendEventBus.publish("message_show", { type: "success", content: "链接已添加" });
       }
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "添加链接失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "添加链接失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 
@@ -107,8 +108,9 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
         setLinks(links.filter((l) => l.id !== linkId));
         frontendEventBus.publish("message_show", { type: "success", content: "链接已删除" });
       }
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "删除链接失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "删除链接失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 

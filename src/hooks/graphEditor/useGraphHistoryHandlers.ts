@@ -1,4 +1,4 @@
-import { useHistory, HistoryAction } from '../common/useHistory';
+import { useHistory } from '../common/useHistory';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import type { Node, Edge } from '../../types';
 

@@ -17,6 +17,17 @@ import { useTranslation } from "react-i18next";
 import { useLearningPath } from "../../hooks/queries/useLearningPathQueries";
 import { NodeStatus } from "../../services/api/learningPaths";
 
+interface LearningPathNodeItem {
+  id: string;
+  knowledge_point_id?: string;
+  title: string;
+  description?: string;
+  status?: NodeStatus;
+  estimated_time?: number;
+  estimated_minutes?: number;
+  difficulty_level?: number;
+}
+
 interface LearningPathOutlineProps {
   learningPathId: string;
   currentNodeId?: string;
@@ -196,7 +207,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
               {t("learning.pathOutline.noNodes")}
             </div>
           ) : (
-            nodes.map((node: any, index: number) => {
+            nodes.map((node: LearningPathNodeItem, index: number) => {
               const status: NodeStatus = node.status || "pending";
               const statusConfig = getStatusConfig(status);
               const isCurrentNode =
@@ -332,7 +343,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-lg font-bold text-green-500">
-              {nodes.filter((n: any) => n.status === "completed").length}
+              {nodes.filter((n: LearningPathNodeItem) => n.status === "completed").length}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
               {t("learning.pathOutline.completed")}
@@ -340,7 +351,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
           </div>
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-lg font-bold text-primary-500">
-              {nodes.filter((n: any) => n.status === "in_progress").length}
+              {nodes.filter((n: LearningPathNodeItem) => n.status === "in_progress").length}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
               {t("learning.pathOutline.inProgress")}
@@ -349,7 +360,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-lg font-bold text-gray-500">
               {
-                nodes.filter((n: any) => n.status === "pending" || !n.status)
+                nodes.filter((n: LearningPathNodeItem) => n.status === "pending" || !n.status)
                   .length
               }
             </div>

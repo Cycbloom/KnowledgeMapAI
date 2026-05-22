@@ -1,7 +1,13 @@
 import { SyncDevice } from './syncTypes';
 
-const BROADCAST_INTERVAL = 5000; // 5 seconds
-const DEVICE_TIMEOUT = 30000; // 30 seconds
+const BROADCAST_INTERVAL = 5000;
+const DEVICE_TIMEOUT = 30000;
+
+interface DeviceBroadcastInfo {
+  type: string;
+  id: string;
+  name: string;
+}
 
 class DeviceDiscoveryService {
   private devices: Map<string, SyncDevice> = new Map();
@@ -87,7 +93,7 @@ class DeviceDiscoveryService {
   }
 
   // 模拟接收设备广播（实际实现中可能需要通过WebSocket或其他方式）
-  handleDeviceBroadcast(deviceInfo: any, ipAddress: string): void {
+  handleDeviceBroadcast(deviceInfo: DeviceBroadcastInfo, ipAddress: string): void {
     if (deviceInfo.type === 'KNOWLEDGE_MAP_DEVICE' && deviceInfo.id !== this.deviceId) {
       this.updateDevice({
         id: deviceInfo.id,

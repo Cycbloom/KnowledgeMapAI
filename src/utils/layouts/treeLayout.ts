@@ -1,4 +1,5 @@
 import { hierarchy, tree } from 'd3-hierarchy';
+import type { HierarchyNode } from 'd3-hierarchy';
 import { Node, Edge, LayoutNode, LayoutLink } from '../../types';
 
 const HIERARCHICAL_EDGE_TYPES = new Set([
@@ -14,6 +15,10 @@ interface TreeLayoutOptions {
   nodeSize?: [number, number];
 }
 
+interface HierarchyNodeData extends Node {
+  children?: HierarchyNodeData[];
+}
+
 export const createTreeLayout = (
   nodes: Node[],
   edges: Edge[],
@@ -21,7 +26,7 @@ export const createTreeLayout = (
 ): { nodes: LayoutNode[]; links: LayoutLink[] } => {
   const { width, height: _height, nodeSize = [200, 150] } = options;
   
-  const normalizeId = (id: any) => String(id).trim();
+  const normalizeId = (id: string | number) => String(id).trim();
   
   const hierarchicalEdges = edges.filter((edge) => {
     if (!edge.relationship_type) return true;
@@ -65,7 +70,7 @@ export const createTreeLayout = (
   });
   
   // Convert to d3-hierarchy format
-  const buildHierarchy = (node: Node): any => {
+  const buildHierarchy = (node: Node): HierarchyNodeData => {
     const children = childrenMap.get(normalizeId(node.id)) || [];
     if (children.length === 0) {
       return node;
@@ -92,13 +97,13 @@ export const createTreeLayout = (
     
     // Calculate the width of this tree
     let minX = Infinity, maxX = -Infinity;
-    root.each((d: any) => {
-      minX = Math.min(minX, d.x);
-      maxX = Math.max(maxX, d.x);
+    root.each((d: HierarchyNode<HierarchyNodeData>) => {
+      minX = Math.min(minX, d.x ?? 0);
+      maxX = Math.max(maxX, d.x ?? 0);
     });
     
     // Add nodes from this tree
-    root.each((d: any) => {
+    root.each((d: HierarchyNode<HierarchyNodeData>) => {
       const node = d.data;
       const nodeId = normalizeId(node.id);
       
@@ -108,18 +113,21 @@ export const createTreeLayout = (
       
       addedNodeIds.add(nodeId);
       
+      const dx = d.x ?? 0;
+      const dy = d.y ?? 0;
+      
       layoutNodes.push({
         ...node,
-        x: d.x + width / 2,
-        y: d.y + currentYOffset,
-        fx: d.x + width / 2,
-        fy: d.y + currentYOffset
+        x: dx + width / 2,
+        y: dy + currentYOffset,
+        fx: dx + width / 2,
+        fy: dy + currentYOffset
       });
     });
     
     // Calculate the height of this tree
     let maxDepth = 0;
-    root.each((d: any) => {
+    root.each((d: HierarchyNode<HierarchyNodeData>) => {
       maxDepth = Math.max(maxDepth, d.depth);
     });
     

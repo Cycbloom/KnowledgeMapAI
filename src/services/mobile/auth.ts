@@ -5,7 +5,18 @@ import type {
   LoginData,
   UpdateProfileData,
 } from '@shared/types/api';
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@shared/types/user';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+
+const toUser = (supabaseUser: SupabaseUser | null): User | null => {
+  if (!supabaseUser) return null;
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    name: supabaseUser.user_metadata?.name,
+    user_metadata: supabaseUser.user_metadata,
+  };
+};
 
 export const mobileAuthApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
@@ -29,7 +40,7 @@ export const mobileAuthApi = {
     }
 
     return {
-      user: authData.user,
+      user: toUser(authData.user),
       session: authData.session
         ? {
             access_token: authData.session.access_token,
@@ -57,7 +68,7 @@ export const mobileAuthApi = {
     }
 
     return {
-      user: authData.user,
+      user: toUser(authData.user),
       session: authData.session
         ? {
             access_token: authData.session.access_token,
@@ -87,7 +98,7 @@ export const mobileAuthApi = {
       data: { user },
     } = await client.auth.getUser();
 
-    return { user };
+    return { user: toUser(user) };
   },
 
   updateProfile: async (data: UpdateProfileData): Promise<{ user: User | null }> => {
@@ -104,7 +115,7 @@ export const mobileAuthApi = {
       throw new Error(error.message);
     }
 
-    return { user: authData.user };
+    return { user: toUser(authData.user) };
   },
 
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
@@ -122,7 +133,7 @@ export const mobileAuthApi = {
     }
 
     return {
-      user: data.user,
+      user: toUser(data.user),
       session: data.session
         ? {
             access_token: data.session.access_token,

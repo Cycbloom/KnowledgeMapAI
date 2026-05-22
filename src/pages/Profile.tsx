@@ -119,9 +119,10 @@ export const Profile = () => {
       });
       await refreshAllData();
       loadSnapshots();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      frontendEventBus.publish("message_show", { type: 'error', content: e.message || t('profile.messages.importFailed') });
+      const message = e instanceof Error ? e.message : t('profile.messages.importFailed');
+      frontendEventBus.publish("message_show", { type: 'error', content: message });
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) {
@@ -136,8 +137,9 @@ export const Profile = () => {
       await backupApi.createSnapshot('manual');
       frontendEventBus.publish("message_show", { type: 'success', content: t('profile.messages.snapshotCreateSuccess') });
       loadSnapshots();
-    } catch (e: any) {
-      frontendEventBus.publish("message_show", { type: 'error', content: e.message || t('profile.messages.snapshotCreateFailed') });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('profile.messages.snapshotCreateFailed');
+      frontendEventBus.publish("message_show", { type: 'error', content: message });
     } finally {
       setIsCreatingSnapshot(false);
     }
@@ -158,8 +160,9 @@ export const Profile = () => {
         })
       });
       await refreshAllData();
-    } catch (e: any) {
-      frontendEventBus.publish("message_show", { type: 'error', content: e.message || t('profile.messages.snapshotRestoreFailed') });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('profile.messages.snapshotRestoreFailed');
+      frontendEventBus.publish("message_show", { type: 'error', content: message });
     } finally {
       setRestoringId(null);
     }
@@ -173,8 +176,9 @@ export const Profile = () => {
       await backupApi.deleteSnapshot(id);
       frontendEventBus.publish("message_show", { type: 'success', content: t('profile.messages.snapshotDeleteSuccess') });
       setSnapshots(prev => prev.filter(s => s.id !== id));
-    } catch (e: any) {
-      frontendEventBus.publish("message_show", { type: 'error', content: e.message || t('profile.messages.snapshotDeleteFailed') });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('profile.messages.snapshotDeleteFailed');
+      frontendEventBus.publish("message_show", { type: 'error', content: message });
     } finally {
       setDeletingId(null);
     }

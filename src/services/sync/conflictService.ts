@@ -1,5 +1,12 @@
 import { SyncConflict, SyncOperation } from "./syncTypes";
 
+interface SyncRecord {
+  [key: string]: unknown;
+  created_at?: string;
+  updated_at?: string;
+  id?: string;
+}
+
 class ConflictService {
   // 自动解决冲突
   autoResolveConflicts(conflicts: SyncConflict[]): SyncOperation[] {
@@ -118,7 +125,7 @@ class ConflictService {
   }
 
   // 检查记录是否冲突
-  private recordsConflict(localRecord: any, remoteRecord: any): boolean {
+  private recordsConflict(localRecord: SyncRecord, remoteRecord: SyncRecord): boolean {
     // 比较两个记录的内容
     const localKeys = Object.keys(localRecord);
     const remoteKeys = Object.keys(remoteRecord);

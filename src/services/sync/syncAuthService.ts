@@ -3,7 +3,7 @@
 // 模拟存储配对设备的函数
 const STORAGE_KEY = 'paired_devices';
 
-const getPairedDevicesFromStorage = (): any[] => {
+const getPairedDevicesFromStorage = (): PairedDevice[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
@@ -13,7 +13,7 @@ const getPairedDevicesFromStorage = (): any[] => {
   }
 };
 
-const savePairedDevicesToStorage = (devices: any[]): void => {
+const savePairedDevicesToStorage = (devices: PairedDevice[]): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(devices));
   } catch (error) {
@@ -21,7 +21,7 @@ const savePairedDevicesToStorage = (devices: any[]): void => {
   }
 };
 
-interface PairedDevice {
+export interface PairedDevice {
   deviceId: string;
   deviceName: string;
   pairedAt: string;

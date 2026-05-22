@@ -69,8 +69,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       await api.scheduler.start(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已开始" });
       loadTaskDetail();
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "开始任务失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "开始任务失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 
@@ -80,8 +81,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       await api.scheduler.pause(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已暂停" });
       loadTaskDetail();
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "暂停任务失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "暂停任务失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 
@@ -91,8 +93,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       await api.scheduler.complete(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已完成" });
       loadTaskDetail();
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "完成任务失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "完成任务失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 
@@ -103,8 +106,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       await api.scheduler.delete(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: "任务已删除" });
       onBack();
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "删除任务失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "删除任务失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 

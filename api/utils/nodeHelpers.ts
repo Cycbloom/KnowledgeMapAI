@@ -1,3 +1,4 @@
+import { SupabaseClient } from "@supabase/supabase-js";
 import type { Node, KnowledgePoint, GraphNode } from "@shared/types";
 import { logger } from "./logger";
 
@@ -87,7 +88,7 @@ export const GRAPH_NODES_SELECT = `
 `;
 
 export async function getGraphNodesFromNewTable(
-  supabase: any,
+  supabase: SupabaseClient,
   graphId: string,
 ): Promise<Node[]> {
   const { data: graphNodes, error } = await supabase
@@ -198,7 +199,7 @@ export async function createKnowledgePointWithGraphNode(
 }
 
 export async function getKnowledgePointsByIds(
-  supabase: any,
+  supabase: SupabaseClient,
   knowledgePointIds: string[],
 ): Promise<Node[]> {
   if (!knowledgePointIds || knowledgePointIds.length === 0) return [];

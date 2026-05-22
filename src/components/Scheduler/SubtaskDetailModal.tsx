@@ -118,10 +118,11 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
           onStateTransition?.(subtask.id, toState, masteryLevel);
           loadRelatedData();
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "状态切换失败";
         frontendEventBus.publish("message_show", {
           type: "error",
-          content: error.message || "状态切换失败",
+          content: message,
         });
       } finally {
         setTransitioningState(null);
@@ -144,10 +145,11 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
         });
         onMasteryUpdate?.(subtask.id, masteryLevel);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "掌握度更新失败";
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: error.message || "掌握度更新失败",
+        content: message,
       });
     } finally {
       setIsSaving(false);

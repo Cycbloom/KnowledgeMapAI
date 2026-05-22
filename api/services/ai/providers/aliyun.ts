@@ -165,13 +165,14 @@ export class AliyunProvider extends BaseAIProvider {
         const arrayBuffer = await audioResponse.arrayBuffer();
         return Buffer.from(arrayBuffer);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         logger.error('Aliyun TTS Error:', error);
         if (error instanceof AppError) {
           throw error;
         }
+        const errorMessage = error instanceof Error ? error.message : String(error);
         throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
-          message: error.message || 'Aliyun TTS error',
+          message: errorMessage || 'Aliyun TTS error',
         });
     }
   }

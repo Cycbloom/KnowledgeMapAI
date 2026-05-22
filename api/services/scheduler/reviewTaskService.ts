@@ -10,6 +10,7 @@ import { studyService } from "../study/studyService";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
+import type { StudyCard } from "@shared/types/common";
 
 export interface ReviewTask {
   id: string;
@@ -184,7 +185,7 @@ export class ReviewTaskService {
       });
     }
 
-    const pendingTasks: PendingReviewTask[] = (cards ?? []).map((card: any) => {
+    const pendingTasks: PendingReviewTask[] = (cards ?? []).map((card: StudyCard) => {
       const urgency = this.calculateUrgency(card.next_review);
       const masteryLevel = card.fsrs_stability
         ? Math.min(1, card.fsrs_stability / 30)
@@ -324,7 +325,7 @@ export class ReviewTaskService {
     return "future";
   }
 
-  private cardToReviewTask(card: any, userId: string): ReviewTask {
+  private cardToReviewTask(card: StudyCard, userId: string): ReviewTask {
     return {
       id: card.id,
       user_id: userId,
@@ -338,8 +339,8 @@ export class ReviewTaskService {
       next_review_date: card.next_review,
       last_review_date: card.last_reviewed ?? null,
       last_quality_score: null,
-      created_at: card.created_at,
-      updated_at: card.created_at,
+      created_at: card.created_at ?? new Date().toISOString(),
+      updated_at: card.created_at ?? new Date().toISOString(),
     };
   }
 }

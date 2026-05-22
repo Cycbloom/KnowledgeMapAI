@@ -277,7 +277,7 @@ export class AchievementService {
       .eq('user_id', userId)
       .eq('completed', true);
 
-    const totalMinutes = allSessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0;
+    const totalMinutes = allSessions?.reduce((acc: number, curr: Pick<FocusSessionRow, 'duration'>) => acc + (curr.duration || 0), 0) || 0;
     await this.checkAndUnlock(userId, 'focus_minutes', totalMinutes);
 
     await periodicTaskService.updatePeriodicTaskProgress(userId, 'focus', totalMinutes);
@@ -543,7 +543,7 @@ export class AchievementService {
 
     if (!tasks || tasks.length === 0) return;
 
-    const allCompleted = tasks.every((t: any) => t.status === 'completed');
+    const allCompleted = tasks.every((t: Pick<PeriodicTaskRow, 'status'>) => t.status === 'completed');
     if (!allCompleted) return;
 
     const achievement = await this.unlockSpecialAchievement(userId, 'perfectionist');

@@ -1,14 +1,30 @@
 
+export interface ParsedNode {
+  id: string;
+  title: string;
+  content: string;
+  level: string;
+  color: string;
+  x_position: number;
+  y_position: number;
+}
+
+export interface ParsedEdge {
+  source: string;
+  target: string;
+  relationship: string;
+}
+
 export interface ParsedGraph {
   graph_title: string;
-  nodes: any[];
-  edges: any[];
+  nodes: ParsedNode[];
+  edges: ParsedEdge[];
 }
 
 export const parseMarkdownToGraph = (text: string): ParsedGraph => {
   const lines = text.split('\n');
-  const nodes: any[] = [];
-  const edges: any[] = [];
+  const nodes: ParsedNode[] = [];
+  const edges: ParsedEdge[] = [];
   
   // Stack to keep track of the current parent at each level
   // index 0 = H1 parent, index 1 = H2 parent, etc.
@@ -17,7 +33,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
   // Store potential links to resolve after all nodes are created
   const potentialLinks: { sourceId: string; targetTitle: string }[] = [];
   
-  let currentNode: any = null;
+  let currentNode: ParsedNode | null = null;
   let graphTitle = 'Untitled Graph';
   let firstHeaderFound = false;
 
@@ -111,7 +127,9 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
       title,
       content: text,
       level: 'root',
-      color: '#8B5CF6'
+      color: '#8B5CF6',
+      x_position: 0,
+      y_position: 0,
     });
     graphTitle = title;
   }

@@ -406,10 +406,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         title: result.root.title,
         content: result.root.content,
         level: "root",
-        children: result.coreNodes.map((n: any) => ({
+        children: result.coreNodes.map((n: AIGeneratedNode) => ({
           id: generateNodeId(),
           title: n.title,
-          content: n.content,
+          content: n.content || "",
           level: "core",
           children: [],
           isExpanded: false,

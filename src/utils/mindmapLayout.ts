@@ -1,5 +1,6 @@
 import { Node, Edge, LayoutNode, LayoutLink, NodeLevel } from '../types';
 import * as d3 from 'd3-force';
+import type { SimulationNodeDatum } from 'd3-force';
 import { getLevel } from '../lib/graphUtils';
 
 export interface LayoutResult {
@@ -94,13 +95,14 @@ export const createMindMapLayout = (
 
   const simulation = d3.forceSimulation(layoutNodes)
     .force('link', d3.forceLink(layoutLinks)
-      .id((d: any) => d.id)
+      .id((d: SimulationNodeDatum) => (d as LayoutNode).id)
       .distance(dynamicLinkDistance)
       .strength(0.3)
     )
     .force('charge', d3.forceManyBody()
-      .strength((d: any) => {
-        const level = getLevel(d, edges);
+      .strength((d: SimulationNodeDatum) => {
+        const layoutNode = d as LayoutNode;
+        const level = getLevel(layoutNode, edges);
         return dynamicChargeStrength * (1 + (LEVEL_CHARGE_STRENGTH[level] / -100));
       })
     )
@@ -108,8 +110,9 @@ export const createMindMapLayout = (
       .strength(dynamicCenterForce)
     )
     .force('collide', d3.forceCollide()
-      .radius((d: any) => {
-        const level = getLevel(d, edges);
+      .radius((d: SimulationNodeDatum) => {
+        const layoutNode = d as LayoutNode;
+        const level = getLevel(layoutNode, edges);
         const baseRadius = getLevelRadius(level);
         return nodeCount > 50 ? baseRadius * 1.2 : baseRadius;
       })
@@ -133,7 +136,7 @@ export const createMindMapLayout = (
 
     simulation.force('domain', (alpha: number) => {
       layoutNodes.forEach(node => {
-        const domain = (node as any).properties?.domain as string | undefined;
+        const domain = node.properties?.domain as string | undefined;
         if (domain && domainCenters.has(domain)) {
           const center = domainCenters.get(domain)!;
           node.vx = (node.vx || 0) + (center.x - node.x) * alpha * 0.1;

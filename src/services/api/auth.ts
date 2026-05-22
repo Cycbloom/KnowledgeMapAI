@@ -7,6 +7,7 @@ import type {
   LoginData,
   UpdateProfileData,
 } from '@shared/types/api';
+import type { User } from '@shared/types/user';
 
 const localAuthApi = {
   register: (data: RegisterData): Promise<AuthResponse> =>
@@ -18,10 +19,10 @@ const localAuthApi = {
   logout: (): Promise<{ message: string }> =>
     request('/auth/logout', { method: 'POST' }),
 
-  getUser: (): Promise<{ user: any }> =>
+  getUser: (): Promise<{ user: User | null }> =>
     request('/auth/user'),
 
-  updateProfile: (data: UpdateProfileData): Promise<{ user: any }> =>
+  updateProfile: (data: UpdateProfileData): Promise<{ user: User | null }> =>
     request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
 
   refreshToken: (refreshToken: string): Promise<AuthResponse> =>
@@ -102,7 +103,7 @@ const supabaseAuthApi = {
     return { message: '登出成功' };
   },
 
-  getUser: async (): Promise<{ user: any }> => {
+  getUser: async (): Promise<{ user: User | null }> => {
     const client = getSupabaseClient();
     if (!client) {
       throw new Error('Supabase client not initialized');
@@ -112,10 +113,10 @@ const supabaseAuthApi = {
       data: { user },
     } = await client.auth.getUser();
 
-    return { user };
+    return { user: user as User | null };
   },
 
-  updateProfile: async (data: UpdateProfileData): Promise<{ user: any }> => {
+  updateProfile: async (data: UpdateProfileData): Promise<{ user: User | null }> => {
     const client = getSupabaseClient();
     if (!client) {
       throw new Error('Supabase client not initialized');
@@ -129,7 +130,7 @@ const supabaseAuthApi = {
       throw new Error(error.message);
     }
 
-    return { user: authData.user };
+    return { user: authData.user as User | null };
   },
 
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
@@ -182,14 +183,14 @@ export const authApi = {
     return localAuthApi.logout();
   },
 
-  getUser: (): Promise<{ user: any }> => {
+  getUser: (): Promise<{ user: User | null }> => {
     if (authConfig.isSupabase()) {
       return supabaseAuthApi.getUser();
     }
     return localAuthApi.getUser();
   },
 
-  updateProfile: (data: UpdateProfileData): Promise<{ user: any }> => {
+  updateProfile: (data: UpdateProfileData): Promise<{ user: User | null }> => {
     if (authConfig.isSupabase()) {
       return supabaseAuthApi.updateProfile(data);
     }

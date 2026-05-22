@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
@@ -130,10 +130,11 @@ export const LearningPaths = () => {
       setNewPathTargetDate("");
       setIsCreating(false);
       frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.createSuccess") });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("learningPaths.messages.createFailed");
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: err.message || t("learningPaths.messages.createFailed"),
+        content: message,
       });
     }
   };
@@ -144,8 +145,9 @@ export const LearningPaths = () => {
     try {
       await deleteMutation.mutateAsync(path.id);
       frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.deleteSuccess") });
-    } catch (err: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("learningPaths.messages.deleteFailed") });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("learningPaths.messages.deleteFailed");
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 
@@ -159,8 +161,9 @@ export const LearningPaths = () => {
         data: { status: newStatus },
       });
       frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.statusUpdated") });
-    } catch (err: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("learningPaths.messages.statusUpdateFailed") });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("learningPaths.messages.statusUpdateFailed");
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 

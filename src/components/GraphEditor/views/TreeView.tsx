@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
 import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, BranchSuggestion, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
+import type { HistoricalBranchItem } from '../../../hooks/graphEditor/useExplorationState';
 import { MindMapNode } from '../canvas/MindMapNode';
 import { MindMapLink } from '../canvas/MindMapLink';
 import { AlternativeBranches } from '../shared/AlternativeBranches';
@@ -11,7 +12,7 @@ import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/gra
 interface TreeViewProps {
   nodes: Node[];
   edges: Edge[];
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, { mastered?: boolean }>;
   selectedNodeId: string | null;
   onNodeClick: (node: GraphNode) => void;
   onCanvasClick?: () => void;
@@ -29,8 +30,8 @@ interface TreeViewProps {
   branchSuggestions?: BranchSuggestion[];
   selectedNodeForBranch?: GraphNode | null;
   onSelectBranch?: (suggestion: BranchSuggestion) => void;
-  onSwitchBranch?: (pathItem: any, suggestion: BranchSuggestion) => void;
-  historicalAlternativeBranches?: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[];
+  onSwitchBranch?: (pathItem: HistoricalBranchItem, suggestion: BranchSuggestion) => void;
+  historicalAlternativeBranches?: HistoricalBranchItem[];
 }
 
 interface Transform {

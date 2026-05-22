@@ -139,8 +139,9 @@ export async function scrapeUrl(
 
     logger.info(`Scraped ${content.length} chars from ${url}`);
     return { title, text: content };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(`Failed to scrape URL ${url}`, error);
-    throw new Error(`无法访问该网页: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`无法访问该网页: ${errorMessage}`);
   }
 }

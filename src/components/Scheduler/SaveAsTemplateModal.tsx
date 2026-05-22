@@ -107,8 +107,9 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
       frontendEventBus.publish("message_show", { type: "success", content: "模板保存成功!" });
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "保存模板失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "保存模板失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     } finally {
       setLoading(false);
     }

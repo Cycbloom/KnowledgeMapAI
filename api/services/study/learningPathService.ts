@@ -4,6 +4,21 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
+import type { NodeLevel } from "@shared/types/graph";
+import type { StudyCardRow } from "@shared/types/database";
+
+interface NodeForPath {
+  id: string;
+  title: string;
+  content?: string;
+  level: NodeLevel;
+}
+
+interface EdgeForPath {
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+  relationship_type?: string;
+}
 
 export interface LearningPath {
   id: string;
@@ -171,9 +186,9 @@ export interface LearningPathStage {
 }
 
 export async function buildProgressMap(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
-  nodes: any[],
+  nodes: (NodeForPath | null)[],
 ): Promise<Map<string, LearningProgress>> {
   const { data: studyCards } = await supabase
     .from("study_cards")
@@ -194,7 +209,7 @@ export async function buildProgressMap(
   const progressMap = new Map<string, LearningProgress>();
 
   if (studyCards) {
-    studyCards.forEach((p: any) => {
+    studyCards.forEach((p: Pick<StudyCardRow, 'knowledge_point_id' | 'review_count' | 'fsrs_stability' | 'fsrs_difficulty' | 'fsrs_last_review' | 'next_review'>) => {
       const nodeId = p.knowledge_point_id;
       if (nodeId) {
         const existing = progressMap.get(nodeId) || {
@@ -231,7 +246,8 @@ export async function buildProgressMap(
     });
   }
 
-  nodes.forEach((node: any) => {
+  nodes.forEach((node: NodeForPath | null) => {
+    if (!node) return;
     if (!progressMap.has(node.id)) {
       progressMap.set(node.id, {
         nodeId: node.id,
@@ -253,8 +269,8 @@ export async function buildProgressMap(
 }
 
 export function buildDependencyMaps(
-  nodes: any[],
-  edges: any[],
+  nodes: (NodeForPath | null)[],
+  edges: EdgeForPath[],
 ): {
   parentMap: Map<string, string[]>;
   childMap: Map<string, string[]>;
@@ -262,12 +278,13 @@ export function buildDependencyMaps(
   const parentMap = new Map<string, string[]>();
   const childMap = new Map<string, string[]>();
 
-  nodes.forEach((node: any) => {
+  nodes.forEach((node: NodeForPath | null) => {
+    if (!node) return;
     parentMap.set(node.id, []);
     childMap.set(node.id, []);
   });
 
-  edges.forEach((edge: any) => {
+  edges.forEach((edge: EdgeForPath) => {
     const parents = parentMap.get(edge.target_knowledge_point_id) || [];
     parents.push(edge.source_knowledge_point_id);
     parentMap.set(edge.target_knowledge_point_id, parents);
@@ -281,7 +298,7 @@ export function buildDependencyMaps(
 }
 
 export function topologicalSort(
-  nodes: any[],
+  nodes: (NodeForPath | null)[],
   parentMap: Map<string, string[]>,
 ): string[] {
   const sortedNodes: string[] = [];
@@ -312,7 +329,8 @@ export function topologicalSort(
     return true;
   };
 
-  nodes.forEach((node: any) => {
+  nodes.forEach((node: NodeForPath | null) => {
+    if (!node) return;
     if (!visited.has(node.id)) {
       visit(node.id);
     }
@@ -427,8 +445,8 @@ export function findPath(
 }
 
 export function generateRulePath(
-  nodes: any[],
-  _edges: any[],
+  nodes: (NodeForPath | null)[],
+  _edges: EdgeForPath[],
   progressMap: Map<string, LearningProgress>,
   parentMap: Map<string, string[]>,
   childMap: Map<string, string[]>,
@@ -442,7 +460,7 @@ export function generateRulePath(
   let order = 0;
 
   for (const nodeId of sortedNodes) {
-    const node = nodes.find((n: any) => n.id === nodeId);
+    const node = nodes.find((n: NodeForPath | null) => n?.id === nodeId);
     const progress = progressMap.get(nodeId);
 
     if (!node) continue;
@@ -523,11 +541,11 @@ export function generateRulePath(
 }
 
 export async function generateAIPath(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   graphId: string,
-  nodes: any[],
-  edges: any[],
+  nodes: (NodeForPath | null)[],
+  edges: EdgeForPath[],
   progressMap: Map<string, LearningProgress>,
   parentMap: Map<string, string[]>,
   childMap: Map<string, string[]>,
@@ -553,7 +571,9 @@ export async function generateAIPath(
     );
   }
 
-  const nodesInfo = nodes.map((n) => {
+  const validNodes = nodes.filter((n): n is NodeForPath => n !== null);
+  
+  const nodesInfo = validNodes.map((n) => {
     const progress = progressMap.get(n.id);
     return {
       title: n.title,
@@ -563,9 +583,9 @@ export async function generateAIPath(
     };
   });
 
-  const nodeIdToTitle = new Map(nodes.map((n) => [n.id, n.title]));
+  const nodeIdToTitle = new Map(validNodes.map((n) => [n.id, n.title]));
   const titleToNodeId = new Map(
-    nodes.map((n) => [n.title.toLowerCase(), n.id]),
+    validNodes.map((n) => [n.title.toLowerCase(), n.id]),
   );
   const edgesInfo = edges.map((e) => ({
     source:
@@ -639,7 +659,7 @@ ${JSON.stringify(edgesInfo, null, 2)}
 
     for (let index = 0; index < (parsed.path || []).length; index++) {
       const item = parsed.path[index];
-      let node = nodes.find(
+      let node = validNodes.find(
         (n) =>
           n.title === item.nodeTitle ||
           n.title.toLowerCase() === item.nodeTitle?.toLowerCase(),
@@ -647,7 +667,7 @@ ${JSON.stringify(edgesInfo, null, 2)}
 
       if (!node && item.nodeTitle) {
         const searchTitle = item.nodeTitle.toLowerCase();
-        node = nodes.find(
+        node = validNodes.find(
           (n) =>
             n.title.toLowerCase().includes(searchTitle) ||
             searchTitle.includes(n.title.toLowerCase()),

@@ -3,9 +3,10 @@ import {
   SyncBatch,
   SyncDevice,
   SyncConflict,
+  SyncStatus,
 } from "./syncTypes";
 import { deviceDiscoveryService } from "./deviceDiscoveryService";
-import { syncAuthService } from "./syncAuthService";
+import { syncAuthService, PairedDevice } from "./syncAuthService";
 import { conflictService } from "./conflictService";
 import {
   getOfflineQueue,
@@ -236,14 +237,14 @@ export class MobileSyncService {
     this.pendingOperations.push(operation);
     await addToOfflineQueue({
       type: operation.type,
-      entityType: operation.table as any,
+      entityType: operation.table as 'node' | 'edge' | 'graph' | 'settings',
       entityId: operation.recordId,
       graphId: "default",
       data: operation.record,
     });
   }
 
-  async getStatus(): Promise<any> {
+  async getStatus(): Promise<SyncStatus> {
     return {
       isRunning: this.isRunning,
       lastSync: this.lastSync,
@@ -274,7 +275,7 @@ export class MobileSyncService {
     return syncAuthService.unpairDevice(deviceId);
   }
 
-  getPairedDevices(): any[] {
+  getPairedDevices(): PairedDevice[] {
     return syncAuthService.getPairedDevices();
   }
 

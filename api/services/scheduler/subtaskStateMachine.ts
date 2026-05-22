@@ -1,3 +1,4 @@
+import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import type {
   LearningState,
@@ -164,7 +165,7 @@ class SubtaskStateMachine {
   }
 
   async transition(
-    supabase: any,
+    supabase: SupabaseClient,
     subtaskId: string,
     toState: LearningState,
     masteryLevel: number,

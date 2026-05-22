@@ -50,8 +50,9 @@ export const NotificationSettingsPanel: React.FC = () => {
     try {
       await notificationApi.updateSettings(settings);
       frontendEventBus.publish("message_show", { type: 'success', content: '通知设置已保存!' });
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '保存设置失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "保存设置失败";
+      frontendEventBus.publish("message_show", { type: 'error', content: message });
     } finally {
       setSaving(false);
     }

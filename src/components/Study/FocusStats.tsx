@@ -4,20 +4,45 @@ import { api } from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Clock, CheckCircle2, Zap } from 'lucide-react';
 
+interface DailyFocusStat {
+  date: string;
+  minutes: number;
+}
+
+interface FocusStatsData {
+  today: {
+    minutes: number;
+    sessions: number;
+  };
+  total: {
+    minutes: number;
+    sessions: number;
+  };
+  daily: DailyFocusStat[];
+}
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  subValue: string;
+}
+
 export const FocusStats = () => {
   const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['focus-stats'],
     queryFn: async () => {
       const res = await api.focus.getStats();
-      return res.data;
+      return res.data as FocusStatsData;
     }
   });
 
   if (isLoading || !stats) return <div className="animate-pulse h-64 bg-gray-100 dark:bg-slate-800 rounded-xl" />;
 
-  const chartData = stats.daily.map((d: any) => ({
-    name: d.date.slice(5), // MM-DD
+  const chartData = stats.daily.map((d: DailyFocusStat) => ({
+    date: d.date,
+    name: d.date.slice(5),
     minutes: d.minutes
   }));
 
@@ -73,7 +98,7 @@ export const FocusStats = () => {
                 }}
               />
               <Bar dataKey="minutes" radius={[4, 4, 0, 0]}>
-                {chartData.map((entry: any, index: number) => (
+                {chartData.map((entry, index: number) => (
                   <Cell key={`cell-${index}`} fill={entry.minutes > 0 ? '#3b82f6' : '#e2e8f0'} />
                 ))}
               </Bar>
@@ -85,7 +110,7 @@ export const FocusStats = () => {
   );
 };
 
-const StatCard = ({ icon, label, value, subValue }: any) => (
+const StatCard = ({ icon, label, value, subValue }: StatCardProps) => (
   <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-slate-700 flex items-center gap-4">
     <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
       {icon}

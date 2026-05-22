@@ -12,6 +12,39 @@ import type {
   AITaskFailedPayload,
 } from "@shared/types/events";
 
+interface AIGeneratedCard {
+  question: string;
+  answer: string;
+  explanation?: string;
+  type?: string;
+  options?: string[];
+}
+
+interface NewNodeInfo {
+  id: string;
+  title: string;
+}
+
+interface EdgeInfo {
+  id: string;
+  graph_id: string;
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+  relationship_type: string;
+}
+
+interface GraphNodeWithKnowledgePoint {
+  id: string;
+  knowledge_point_id: string;
+  knowledge_points: {
+    id: string;
+    title: string;
+  } | {
+    id: string;
+    title: string;
+  }[] | null;
+}
+
 class TaskProcessor {
   public async processTask(task: Task) {
     const payload = JSON.parse(task.context || "{}");
@@ -65,14 +98,16 @@ class TaskProcessor {
         task.user_id,
         "task_processor",
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(`Task ${task.id} failed:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       await asyncTaskService.updateTaskStatus(
         getSupabaseAdmin(),
         task.id,
         "failed",
         undefined,
-        error.message,
+        undefined,
+        errorMessage,
       );
 
       await appEventBus.publish(
@@ -82,7 +117,7 @@ class TaskProcessor {
           taskType: task.task_type,
           userId: task.user_id,
           graphId: payload?.graph_id,
-          error: error.message,
+          error: errorMessage,
         } as AITaskFailedPayload,
         task.user_id,
         "task_processor",
@@ -176,17 +211,17 @@ class TaskProcessor {
           node_title || "",
           truncatedContent,
           {
-            type: type as any,
+            type: type,
             count,
             provider: provider as AIProviderType | undefined,
             model,
           },
         );
-        const cards = aiResult.cards || [];
+        const cards = (aiResult.cards || []) as AIGeneratedCard[];
 
         // Insert cards into database
         if (cards.length > 0) {
-          const cardsToInsert = cards.map((card: any) => ({
+          const cardsToInsert = cards.map((card) => ({
             user_id: task.user_id,
             knowledge_point_id: nodeId,
             graph_id,
@@ -221,9 +256,10 @@ class TaskProcessor {
         } else {
           logger.warn(`[TaskProcessor] AI returned 0 cards for type ${type}`);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         logger.error(`Error generating type ${type}:`, err);
-        errors.push(`Failed to generate ${type}: ${err.message}`);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        errors.push(`Failed to generate ${type}: ${errMsg}`);
       } finally {
         completedTasks++;
         await maybeUpdateProgress(this.getTypeName(type));
@@ -372,8 +408,8 @@ class TaskProcessor {
     );
     const suggestions = aiResult.suggestions;
 
-    const newNodes: any[] = [];
-    const newEdges: any[] = [];
+    const newNodes: NewNodeInfo[] = [];
+    const newEdges: EdgeInfo[] = [];
 
     const newLevel = getNextLevel(currentGraphNode.level);
 
@@ -389,8 +425,9 @@ class TaskProcessor {
           .single();
 
         if (existingGraphNode) {
+          const kpData = existingGraphNode as GraphNodeWithKnowledgePoint;
           const existingKpId =
-            (existingGraphNode as any).knowledge_points?.id ||
+            (Array.isArray(kpData.knowledge_points) ? kpData.knowledge_points[0]?.id : kpData.knowledge_points?.id) ||
             existingGraphNode.knowledge_point_id;
           if (existingKpId && existingKpId !== node_id) {
             const { data: existingEdge } = await getSupabaseAdmin()

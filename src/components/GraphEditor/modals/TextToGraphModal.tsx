@@ -28,6 +28,11 @@ type PreviewEdge = {
   relationship: string;
 };
 
+interface TextToGraphResult {
+  nodes: PreviewNode[];
+  edges: PreviewEdge[];
+}
+
 export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData, aiEnabled }) => {
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
   const [activeTab, setActiveTab] = useState<'text' | 'file' | 'url' | 'image'>('text');
@@ -91,9 +96,9 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         const res = await api.ai.urlToText(url);
         contentToAnalyze = res.text;
         if (!contentToAnalyze) throw new Error('无法从该 URL 提取内容');
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
-        frontendEventBus.publish("message_show", { type: 'error', content: err.message || 'URL 解析失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : 'URL 解析失败' });
         setIsUrlLoading(false);
         return;
       } finally {
@@ -124,16 +129,15 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         action: 'analyze'
       });
       
-      setPreviewData(result);
-      // Select all by default
+      setPreviewData(result as TextToGraphResult);
       if (result.nodes) {
-        setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
+        setSelectedNodeIds(new Set(result.nodes.map((n: PreviewNode) => n.id)));
       }
       setStep('preview');
       frontendEventBus.publish("message_show", { type: 'success', content: 'AI 分析完成，请确认生成内容' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '分析失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: error instanceof Error ? error.message : '分析失败，请重试' });
     }
   };
 
@@ -161,13 +165,13 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         throw new Error('AI 未能从图片中识别出有效节点。');
       }
 
-      setPreviewData(result);
-      setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
+      setPreviewData(result as TextToGraphResult);
+      setSelectedNodeIds(new Set(result.nodes.map((n: PreviewNode) => n.id)));
       setStep('preview');
       frontendEventBus.publish("message_show", { type: 'success', content: '图片分析成功' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: err.message || '分析失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : '分析失败' });
     }
   };
 
@@ -200,13 +204,13 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
             throw new Error('AI 未能从文档中解析出任何节点，请检查文档内容。');
           }
 
-          setPreviewData(result);
-          setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
+          setPreviewData(result as TextToGraphResult);
+          setSelectedNodeIds(new Set(result.nodes.map((n: PreviewNode) => n.id)));
           setStep('preview');
           frontendEventBus.publish("message_show", { type: 'success', content: '文档解析成功' });
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error(err);
-          frontendEventBus.publish("message_show", { type: 'error', content: err.message || '解析失败' });
+          frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : '解析失败' });
         }
     } else {
        // Local parsing for MD/OPML/TXT

@@ -66,7 +66,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         type: 'success', 
         content: newStatus ? '图谱已公开，任何人均可访问' : '图谱已设为私有' 
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
       frontendEventBus.publish("message_show", { type: 'error', content: '设置失败，请重试' });
     } finally {

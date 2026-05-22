@@ -68,10 +68,11 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
       ]);
       setAnalysis(analysisData);
       setMissingConnections(connectionsData?.suggestions || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "未知错误";
       frontendEventBus.publish("message_show", { 
         type: 'error',
-        content: `加载分析数据失败: ${  error.message || '未知错误'}`
+        content: `加载分析数据失败: ${message}`
       });
     } finally {
       setIsLoading(false);

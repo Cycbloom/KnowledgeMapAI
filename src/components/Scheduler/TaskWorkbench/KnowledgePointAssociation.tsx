@@ -92,8 +92,9 @@ export const KnowledgePointAssociation: React.FC<
         setSearchResults([]);
         frontendEventBus.publish("message_show", { type: "success", content: "知识点已关联" });
       }
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "关联知识点失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "关联知识点失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 
@@ -107,8 +108,9 @@ export const KnowledgePointAssociation: React.FC<
         setAssociations(associations.filter((a) => a.id !== kpId));
         frontendEventBus.publish("message_show", { type: "success", content: "已取消关联" });
       }
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "取消关联失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "取消关联失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 
@@ -128,8 +130,9 @@ export const KnowledgePointAssociation: React.FC<
         );
         frontendEventBus.publish("message_show", { type: "success", content: "已设为主要知识点" });
       }
-    } catch (error: any) {
-      frontendEventBus.publish("message_show", { type: "error", content: error.message || "设置失败" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "设置失败";
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
   };
 

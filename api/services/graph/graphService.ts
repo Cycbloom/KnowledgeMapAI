@@ -17,6 +17,8 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
+import type { NodeStatus } from "@shared/types/graph";
+import type { StudyCardRow, KnowledgeGraphRow } from "@shared/types/database";
 import {
   PRESET_MAP,
   ACADEMIC_RESEARCH,
@@ -28,6 +30,17 @@ import type {
   GraphUpdatedPayload,
   GraphDeletedPayload,
 } from "@shared/types/events";
+
+interface KnowledgePointWithProperties {
+  properties?: {
+    tags?: string[];
+  };
+}
+
+interface GraphNodeWithKnowledgePointData {
+  graph_id: string;
+  knowledge_points: KnowledgePointWithProperties | KnowledgePointWithProperties[] | null;
+}
 
 interface GraphWithCount {
   id: string;
@@ -42,6 +55,26 @@ interface GraphWithCount {
   nodes_count: number;
   template_type?: string;
   tags?: string[];
+}
+
+interface GraphNodeForCombined {
+  graph_id: string;
+  knowledge_point_id: string;
+  knowledge_points: KnowledgePointWithProperties | KnowledgePointWithProperties[] | null;
+}
+
+interface EdgeForCombined {
+  graph_id: string;
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+  relationship_type: string;
+  weight: number;
+}
+
+interface SharedKnowledgePoint {
+  knowledge_point_id: string;
+  knowledge_point: KnowledgePointWithProperties | KnowledgePointWithProperties[] | null;
+  graph_nodes: GraphNodeForCombined[];
 }
 
 /**
@@ -152,8 +185,9 @@ export class GraphService {
 
     const tagsMap = new Map<string, Set<string>>();
     graphNodesDataResult.data?.forEach(
-      (gn: { graph_id: string; knowledge_points: any }) => {
-        const tags = gn.knowledge_points?.properties?.tags || [];
+      (gn: GraphNodeWithKnowledgePointData) => {
+        const kp = Array.isArray(gn.knowledge_points) ? gn.knowledge_points[0] : gn.knowledge_points;
+        const tags = kp?.properties?.tags || [];
         if (!tagsMap.has(gn.graph_id)) {
           tagsMap.set(gn.graph_id, new Set());
         }
@@ -916,23 +950,23 @@ export class GraphService {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const statusMap: Record<string, any> = {};
+    const statusMap: Record<string, NodeStatus> = {};
 
-    (cards || []).forEach((card: any) => {
+    (cards || []).forEach((card: Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'review_count'>) => {
       const nextReview = card.next_review ? new Date(card.next_review) : null;
       const isDue = nextReview && nextReview <= now;
       const isDueToday =
         nextReview &&
         nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
-      const isMastered = card.fsrs_stability && card.fsrs_stability > 21;
+      const isMastered = !!card.fsrs_stability && card.fsrs_stability > 21;
 
       statusMap[card.knowledge_point_id] = {
         mastered: isMastered,
         locked: false,
         review_count: card.review_count || 0,
-        next_review: card.next_review,
-        due: isDue,
-        due_today: isDueToday,
+        next_review: card.next_review ?? undefined,
+        due: !!isDue,
+        due_today: !!isDueToday,
       };
     });
 
@@ -1163,14 +1197,14 @@ export class GraphService {
         graph_id: gid,
         graph_title: graphMap.get(gid)?.title || "",
         color: "",
-        nodes: (graphNodes || []).filter((gn: any) => gn.graph_id === gid),
-        edges: (edges || []).filter((e: any) => e.graph_id === gid),
+        nodes: (graphNodes || []).filter((gn: GraphNodeForCombined) => gn.graph_id === gid),
+        edges: (edges || []).filter((e: EdgeForCombined) => e.graph_id === gid),
       })),
-      shared_knowledge_points: [] as any[],
+      shared_knowledge_points: [] as SharedKnowledgePoint[],
     };
 
-    const kpGraphMap = new Map<string, any[]>();
-    (graphNodes || []).forEach((gn: any) => {
+    const kpGraphMap = new Map<string, GraphNodeForCombined[]>();
+    (graphNodes || []).forEach((gn: GraphNodeForCombined) => {
       const kpId = gn.knowledge_point_id;
       if (!kpGraphMap.has(kpId)) {
         kpGraphMap.set(kpId, []);
@@ -1224,17 +1258,17 @@ export async function getUserAccessibleGraphs(
     throw new Error(collabError.message);
   }
 
-  const ownedResults = (ownedGraphs || []).map((g: any) => ({
+  const ownedResults = (ownedGraphs || []).map((g: KnowledgeGraphRow) => ({
     ...g,
     user_role: "owner" as CollaboratorRole,
   }));
 
   const collabResults = (collaboratedGraphs || [])
-    .filter((c: any) => {
+    .filter((c: { graph: KnowledgeGraphRow | KnowledgeGraphRow[] }) => {
       const graphData = Array.isArray(c.graph) ? c.graph[0] : c.graph;
       return graphData && !graphData.deleted_at;
     })
-    .map((c: any) => {
+    .map((c: { graph: KnowledgeGraphRow | KnowledgeGraphRow[]; role: CollaboratorRole }) => {
       const graphData = Array.isArray(c.graph) ? c.graph[0] : c.graph;
       return {
         ...graphData,

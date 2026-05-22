@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { BranchSuggestion, ExplorationPathItem } from '../../types';
 
+export interface HistoricalBranchItem {
+  nodeId: string;
+  branches: BranchSuggestion[];
+  selectedBranchId: string;
+  parentNodeId?: string;
+  alternativeBranches?: BranchSuggestion[];
+}
+
 export interface ExplorationState {
   isExplorationMode: boolean;
   setIsExplorationMode: React.Dispatch<React.SetStateAction<boolean>>;
@@ -12,8 +20,8 @@ export interface ExplorationState {
   setCurrentPathIndex: React.Dispatch<React.SetStateAction<number>>;
   isTimelineVisible: boolean;
   setIsTimelineVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  historicalAlternativeBranches: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[];
-  setHistoricalAlternativeBranches: React.Dispatch<React.SetStateAction<{ nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[]>>;
+  historicalAlternativeBranches: HistoricalBranchItem[];
+  setHistoricalAlternativeBranches: React.Dispatch<React.SetStateAction<HistoricalBranchItem[]>>;
 }
 
 export const useExplorationState = (): ExplorationState => {
@@ -22,7 +30,7 @@ export const useExplorationState = (): ExplorationState => {
   const [explorationPath, setExplorationPath] = useState<ExplorationPathItem[]>([]);
   const [currentPathIndex, setCurrentPathIndex] = useState(-1);
   const [isTimelineVisible, setIsTimelineVisible] = useState(false);
-  const [historicalAlternativeBranches, setHistoricalAlternativeBranches] = useState<{ nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[]>([]);
+  const [historicalAlternativeBranches, setHistoricalAlternativeBranches] = useState<HistoricalBranchItem[]>([]);
 
   return {
     isExplorationMode,

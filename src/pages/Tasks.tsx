@@ -153,10 +153,11 @@ export const Tasks = () => {
         type: "success",
         content: t("tasks.taskRetried"),
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("tasks.retryFailed");
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: err.message || t("tasks.retryFailed"),
+        content: message,
       });
     }
   };
@@ -174,10 +175,11 @@ export const Tasks = () => {
         content: t("tasks.taskDeleted"),
       });
       setDeleteId(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("tasks.deleteFailed");
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: err.message || t("tasks.deleteFailed"),
+        content: message,
       });
     }
   };

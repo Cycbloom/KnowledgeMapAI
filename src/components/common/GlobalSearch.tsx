@@ -19,6 +19,31 @@ interface FilterState {
   tags: string[];
 }
 
+interface SearchResultGraph {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+interface SearchResultNode {
+  id: string;
+  title: string;
+  graph_id: string;
+  status?: string;
+  tags?: string[];
+  updated_at?: string;
+  created_at?: string;
+  knowledge_graphs?: {
+    title: string;
+  };
+}
+
+interface SearchResult {
+  graphs: SearchResultGraph[];
+  nodes: SearchResultNode[];
+  answer?: string;
+}
+
 function useDebounceValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -51,7 +76,7 @@ export const GlobalSearch = () => {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [searchType, setSearchType] = useState<'keyword' | 'semantic'>('keyword');
-  const [results, setResults] = useState<{ graphs: any[], nodes: any[], answer?: string } | null>(null);
+  const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -111,7 +136,7 @@ export const GlobalSearch = () => {
         let filteredNodes = data.nodes || [];
         
         if (filters.status !== 'all') {
-          filteredNodes = filteredNodes.filter((node: any) => {
+          filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
             const status = node.status || 'new';
             return status === filters.status;
           });
@@ -127,7 +152,7 @@ export const GlobalSearch = () => {
           const daysAgo = ranges[filters.timeRange];
           const cutoff = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
           
-          filteredNodes = filteredNodes.filter((node: any) => {
+          filteredNodes = filteredNodes.filter((node: SearchResultNode) => {
             const updatedAt = node.updated_at || node.created_at;
             return updatedAt && new Date(updatedAt) >= cutoff;
           });

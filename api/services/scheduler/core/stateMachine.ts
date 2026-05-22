@@ -1,3 +1,4 @@
+import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../../utils/logger";
 import { appEventBus } from "../../core/eventBus";
 import type {
@@ -16,7 +17,7 @@ interface TransitionResult {
 }
 
 type TransitionSideEffect = (
-  supabase: any,
+  supabase: SupabaseClient,
   taskId: string,
   userId: string,
   fromState: UserTaskStatus,
@@ -229,7 +230,7 @@ class TaskStateMachine {
   }
 
   async transition(
-    supabase: any,
+    supabase: SupabaseClient,
     taskId: string,
     userId: string,
     fromState: UserTaskStatus,

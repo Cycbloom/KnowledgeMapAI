@@ -27,6 +27,7 @@ export interface User {
     weekly_streak?: number;
     monthly_streak?: number;
     quarterly_streak?: number;
+    study_streak?: number;
     settings?: {
       request_retention?: number;
       maximum_interval?: number;

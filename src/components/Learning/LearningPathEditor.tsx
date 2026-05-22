@@ -50,6 +50,17 @@ interface LearningPathNode {
   completed_at?: string;
 }
 
+interface LearningPathStage {
+  id?: string;
+  nodeId?: string;
+  nodeTitle?: string;
+  estimatedTime?: number;
+  priority?: string;
+  nodes?: Array<{
+    knowledge_point_id?: string;
+  }>;
+}
+
 interface LearningPath {
   id: string;
   title: string;
@@ -320,7 +331,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       });
       
       if (result.stages && result.stages.length > 0) {
-        const nodes = result.stages.map((stage: any, index: number) => ({
+        const nodes = result.stages.map((stage: LearningPathStage, index: number) => ({
           knowledge_point_id: stage.nodeId,
           order_index: index,
           title: stage.nodeTitle,

@@ -115,10 +115,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           content: "子任务已添加",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "添加子任务失败";
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: error.message || "添加子任务失败",
+        content: message,
       });
     }
   };
@@ -134,10 +135,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           subtasks.map((st) => (st.id === subtask.id ? response.data : st)),
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "更新状态失败";
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: error.message || "更新状态失败",
+        content: message,
       });
     }
   };
@@ -152,10 +154,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           content: "子任务已删除",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "删除子任务失败";
       frontendEventBus.publish("message_show", {
         type: "error",
-        content: error.message || "删除子任务失败",
+        content: message,
       });
     }
   };

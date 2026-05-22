@@ -4,11 +4,35 @@ import { aiService } from '../ai/aiService';
 import { logger } from '../../utils/logger';
 import { cacheService, CacheKeys } from '../common/cacheService';
 
+import type { AIProviderType } from '@shared/types';
+
+interface GenerateQuestionsPayload {
+  knowledge_point_id: string;
+  node_title: string;
+  node_content?: string;
+  config?: {
+    types?: string[];
+    count?: number;
+    provider?: string;
+    model?: string;
+  };
+  provider?: string;
+  model?: string;
+}
+
+interface AIGeneratedCard {
+  question: string;
+  answer: string;
+  explanation?: string;
+  type?: string;
+  options?: string[];
+}
+
 export class GenerateQuestionsProcessor implements TaskProcessor {
   async process(
     taskId: string,
     userId: string,
-    payload: any,
+    payload: GenerateQuestionsPayload,
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
@@ -72,16 +96,16 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
             node_title,
             truncatedContent,
             {
-              type: type as any,
+              type: type,
               count,
-              provider,
+              provider: provider as AIProviderType | undefined,
               model,
             },
           );
-          const cards = aiResult.cards || [];
+          const cards = (aiResult.cards || []) as AIGeneratedCard[];
 
           if (cards.length > 0) {
-            const cardsToInsert = cards.map((card: any) => ({
+            const cardsToInsert = cards.map((card) => ({
               user_id: userId,
               knowledge_point_id: node_id,
               graph_id,
@@ -116,9 +140,10 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
           } else {
             logger.warn(`[GenerateQuestionsProcessor] AI returned 0 cards for type ${type}`);
           }
-        } catch (err: any) {
+        } catch (err: unknown) {
           logger.error(`Error generating type ${type}:`, err);
-          errors.push(`Failed to generate ${type}: ${err.message}`);
+          const errMsg = err instanceof Error ? err.message : String(err);
+          errors.push(`Failed to generate ${type}: ${errMsg}`);
         } finally {
           completedTasks++;
           const progress = Math.round((completedTasks / tasksToRun.length) * 100);
@@ -149,9 +174,10 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
         errors: errors.length > 0 ? errors : undefined,
       }, undefined, undefined, userId);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(`Generate questions task ${taskId} failed:`, error);
-      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error.message, userId);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, errorMessage, userId);
     }
   }
 

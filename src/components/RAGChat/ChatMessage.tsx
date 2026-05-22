@@ -7,6 +7,11 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { Message } from './hooks/useChatState';
 
+interface CodeBlockProps extends React.HTMLAttributes<HTMLElement> {
+  className?: string;
+  children?: React.ReactNode;
+}
+
 interface ChatMessageProps {
   message: Message;
   isDark: boolean;
@@ -22,7 +27,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onNodeClick,
   voiceControl
 }) => {
-  const renderCodeBlock = ({ className, children, ...props }: any) => {
+  const renderCodeBlock = ({ className, children, ...props }: CodeBlockProps) => {
     const isInline = !className;
     if (isInline) {
       return (

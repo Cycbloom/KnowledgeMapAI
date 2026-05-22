@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { logger } from '../../utils/logger';
+import type { AchievementRow, PeriodicTaskRow } from '@shared/types/database';
 
 export interface PeriodicTask {
   id: string;
@@ -235,7 +236,7 @@ export class PeriodicTaskService {
       if (!task || task.status === 'completed') continue;
 
       const newProgress = Math.min(currentValue, task.target);
-      const updates: any = { progress: newProgress };
+      const updates: { progress: number; status?: string } = { progress: newProgress };
 
       if (newProgress >= task.target) {
         updates.status = 'completed';
@@ -278,7 +279,13 @@ export class PeriodicTaskService {
   }> {
     await this.initPeriodicTasks(userId);
 
-    const result: any = {
+    const result: {
+      weekly: PeriodicPass | null;
+      monthly: PeriodicPass | null;
+      quarterly: PeriodicPass | null;
+      rewards: PassReward[];
+      userProgress: UserPassProgress[];
+    } = {
       weekly: null,
       monthly: null,
       quarterly: null,
@@ -423,7 +430,7 @@ export class PeriodicTaskService {
       return { streak: 0, bonusAwarded: 0 };
     }
 
-    const allCompleted = dailyTasks.every((t: any) => t.status === 'completed');
+    const allCompleted = dailyTasks.every((t: Pick<PeriodicTaskRow, 'status'>) => t.status === 'completed');
     if (!allCompleted) {
       return { streak: 0, bonusAwarded: 0 };
     }
@@ -496,7 +503,7 @@ export class PeriodicTaskService {
 
       if (!tasks || tasks.length === 0) continue;
 
-      const allCompleted = tasks.every((t: any) => t.status === 'completed');
+      const allCompleted = tasks.every((t: Pick<PeriodicTaskRow, 'status'>) => t.status === 'completed');
 
       const { data: stats } = await getSupabaseAdmin()
         .from('user_focus_stats')
@@ -514,7 +521,7 @@ export class PeriodicTaskService {
           .update({ [streakColumn]: newStreak })
           .eq('user_id', userId);
 
-        await this.checkAndUnlockAchievement(userId, `${periodType}_streak` as any, newStreak);
+        await this.checkAndUnlockAchievement(userId, `${periodType}_streak`, newStreak);
       } else {
         await getSupabaseAdmin()
           .from('user_focus_stats')
@@ -562,10 +569,10 @@ export class PeriodicTaskService {
       .from('user_achievements')
       .select('achievement_id')
       .eq('user_id', userId)
-      .in('achievement_id', achievements.map((a: any) => a.id));
+      .in('achievement_id', achievements.map((a: Pick<AchievementRow, 'id'>) => a.id));
 
-    const unlockedIds = new Set(unlocked?.map((u: any) => u.achievement_id) || []);
-    const newUnlocks = achievements.filter((a: any) => !unlockedIds.has(a.id));
+    const unlockedIds = new Set(unlocked?.map((u: { achievement_id: string }) => u.achievement_id) || []);
+    const newUnlocks = achievements.filter((a: AchievementRow) => !unlockedIds.has(a.id));
 
     for (const achievement of newUnlocks) {
       await getSupabaseAdmin()

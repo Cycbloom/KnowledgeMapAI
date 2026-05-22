@@ -26,6 +26,18 @@ import { QuizTypeConfig } from './QuizTypeConfig';
 import { DifficultySelector } from './DifficultySelector';
 import { PromptConfigContent } from '../PromptConfig';
 import type { QuizSetConfig } from '@shared/types/quiz';
+import type { User } from '@shared/types/user';
+
+interface LearningPathStageNode {
+  knowledge_point_id?: string;
+}
+
+interface LearningPathStage {
+  id?: string;
+  title?: string;
+  description?: string;
+  nodes?: LearningPathStageNode[];
+}
 
 interface QuizGenerationModalProps {
   open: boolean;
@@ -70,9 +82,9 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [showPromptConfig, setShowPromptConfig] = useState(false);
 
-  const profile = (userData as any)?.user?.profile;
+  const profile = (userData as { user?: { profile?: User['profile'] } } | null)?.user?.profile;
   const settings = profile?.settings;
-  const promptConfigs = settings?.prompt_configs || {};
+  const promptConfigs = settings?.ai_config as Record<string, string> | undefined;
 
   const createMutation = useCreateQuizSetMutation();
   const generateMutation = useGenerateQuizMutation();
@@ -129,10 +141,10 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   }, [open, resetForm]);
 
   useEffect(() => {
-    if (open && promptConfigs.quiz_generation) {
+    if (open && promptConfigs?.quiz_generation) {
       setCustomPrompt(promptConfigs.quiz_generation);
     }
-  }, [open, promptConfigs.quiz_generation]);
+  }, [open, promptConfigs?.quiz_generation]);
 
   useEffect(() => {
     if (progress?.status === 'completed' && createdQuizSetId) {
@@ -151,7 +163,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
     setSelectedKnowledgePoints([]);
   };
 
-  const handlePathSelect = (pathId: string) => {
+  const handlePathSelect = (pathId: string | null) => {
     setSelectedPathId(pathId);
   };
 
@@ -191,9 +203,10 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
 
       setTaskId(result.task_id);
       frontendEventBus.publish("message_show", { type: 'info', content: '测验生成任务已开始...' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to generate quiz:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '创建测验失败' });
+      const message = error instanceof Error ? error.message : "创建测验失败";
+      frontendEventBus.publish("message_show", { type: 'error', content: message });
     }
   };
 
@@ -296,15 +309,15 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     </label>
                   </div>
                   <div className="space-y-2">
-                    {learningPath.stages.map((stage: any, index: number) => {
+                    {learningPath.stages.map((stage: LearningPathStage, index: number) => {
                       const isSelected = selectedPathId === stage.id;
-                      const stageKnowledgePoints = stage.nodes?.map((n: any) => n.knowledge_point_id).filter(Boolean) || [];
+                      const stageKnowledgePoints = stage.nodes?.map((n: LearningPathStageNode) => n.knowledge_point_id).filter((id): id is string => Boolean(id)) || [];
                       
                       return (
                         <button
                           key={stage.id || index}
                           onClick={() => {
-                            handlePathSelect(isSelected ? null : stage.id);
+                            handlePathSelect(isSelected ? null : stage.id || null);
                             if (!isSelected) {
                               setSelectedKnowledgePoints(stageKnowledgePoints);
                             } else {

@@ -210,15 +210,16 @@ class BackgroundSyncManager {
         });
 
         return { success: true };
-      } catch (error: any) {
-        if (error.code === 'CONFLICT' || error.status === 409) {
+      } catch (error: unknown) {
+        const errorObj = error as { code?: string; status?: number; data?: unknown; message?: string };
+        if (errorObj.code === 'CONFLICT' || errorObj.status === 409) {
           return {
             success: false,
             conflict: {
               id: item.id,
               entity: item.entityType,
               localData: item.data as Record<string, unknown>,
-              remoteData: error.data || {},
+              remoteData: (errorObj.data as Record<string, unknown>) || {},
               timestamp: Date.now(),
             },
           };
@@ -226,7 +227,7 @@ class BackgroundSyncManager {
 
         return {
           success: false,
-          error: error.message || 'Network error',
+          error: errorObj.message || 'Network error',
         };
       }
     } catch (error) {

@@ -57,6 +57,26 @@ import type {
 import type { QuizSet } from '../../../shared/types/quiz';
 import { logger } from '../../utils/logger';
 
+interface GraphWithNodesCount {
+  id: string;
+  title: string;
+  description: string | null;
+  user_id: string;
+  settings: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  is_favorite: boolean;
+  nodes_count: number;
+}
+
+interface SimilaritySearchResult {
+  id: string;
+  title: string;
+  content: string | null;
+  similarity: number;
+  visibility: string;
+}
+
 function now(): string {
   return new Date().toISOString();
 }
@@ -388,7 +408,7 @@ export class SupabaseAdapter implements DatabaseInterface {
       }));
     }
 
-    return (data || []).map((row: any) => ({
+    return (data || []).map((row: GraphWithNodesCount) => ({
       id: row.id,
       title: row.title,
       description: row.description,
@@ -441,7 +461,7 @@ export class SupabaseAdapter implements DatabaseInterface {
       }));
     }
 
-    return (data || []).map((row: any) => ({
+    return (data || []).map((row: GraphWithNodesCount) => ({
       id: row.id,
       title: row.title,
       description: row.description,
@@ -638,7 +658,7 @@ export class SupabaseAdapter implements DatabaseInterface {
 
     if (error) throw error;
 
-    return (data || []).map((row: any) => ({
+    return (data || []).map((row: SimilaritySearchResult) => ({
       id: row.id,
       title: row.title,
       content: row.content,

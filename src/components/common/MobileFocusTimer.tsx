@@ -86,13 +86,13 @@ export const MobileFocusTimer: React.FC = () => {
     );
   }, [ballY, isOnRight]);
 
-  const handleDragStart = useCallback((_: any, info: PanInfo) => {
+  const handleDragStart = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setIsDragging(true);
     dragStartPos.current = { x: info.point.x, y: info.point.y };
   }, []);
 
   const handleDragEnd = useCallback(
-    (_: any, info: PanInfo) => {
+    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       setIsDragging(false);
       
       const screenWidth = window.innerWidth;

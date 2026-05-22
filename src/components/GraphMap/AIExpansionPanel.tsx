@@ -7,6 +7,17 @@ import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
 type ExpansionMode = 'depth' | 'width';
 type DepthStyle = 'academic' | 'practical' | 'beginner' | 'custom';
 
+interface ExpansionResultNode {
+  id?: string;
+  title: string;
+  content?: string;
+}
+
+interface ExpansionResult {
+  root: ExpansionResultNode;
+  coreNodes: ExpansionResultNode[];
+}
+
 interface AIExpansionPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,7 +29,7 @@ interface AIExpansionPanelProps {
     customPrompt?: string;
     sources?: string[];
     depth: number;
-  }) => Promise<{ root: any; coreNodes: any[] } | null>;
+  }) => Promise<ExpansionResult | null>;
   onDepthExpandNode?: (config: {
     nodeId: string;
     nodeTitle: string;
@@ -27,7 +38,7 @@ interface AIExpansionPanelProps {
     style: DepthStyle;
     customPrompt?: string;
     existingChildren?: { title: string }[];
-  }) => Promise<any[] | null>;
+  }) => Promise<ExpansionResultNode[] | null>;
   onWidthExpand: (config: {
     max_depth: number;
     max_graphs_per_level: number;

@@ -1826,7 +1826,17 @@
       "deselect": "取消选择",
       "resume": "继续",
       "nodeCount": "{{count}} 个节点",
-      "min": "分钟"
+      "min": "分钟",
+      "toolbar": {
+        "aiPlan": "AI 规划",
+        "settings": "设置",
+        "statistics": "统计"
+      },
+      "emptyState": {
+        "title": "暂无学习路径",
+        "description": "让 AI 为你定制个性化学习路径",
+        "startPlanning": "开始 AI 规划"
+      }
     },
     "pathOutline": {
       "backToGraph": "返回图谱",

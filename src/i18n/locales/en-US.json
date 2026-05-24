@@ -1367,7 +1367,17 @@
       "deselect": "Deselect",
       "resume": "Resume",
       "nodeCount": "{{count}} nodes",
-      "min": "min"
+      "min": "min",
+      "toolbar": {
+        "aiPlan": "AI Plan",
+        "settings": "Settings",
+        "statistics": "Statistics"
+      },
+      "emptyState": {
+        "title": "No Learning Paths Yet",
+        "description": "Let AI create a personalized learning path for you",
+        "startPlanning": "Start AI Planning"
+      }
     },
     "pathOutline": {
       "backToGraph": "Back to Graph",

@@ -14,6 +14,7 @@ import {
   Trash2,
   Play,
   Pause,
+  Settings2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
@@ -386,8 +387,109 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     { value: "custom", label: t("learning.learningPath.styleCustom") },
   ];
 
+  const renderToolbar = () => (
+    <div className="sticky top-0 z-20 rounded-lg border bg-gray-50 dark:bg-slate-900/95 backdrop-blur-md border-gray-200 dark:border-slate-700 shadow-sm mx-0 mb-4">
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg">
+            <Route className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              {t("learning.learningPath.title")}
+            </h2>
+            {graphPaths.length > 0 && (
+              <p className="text-sm text-gray-500">
+                {t("learning.learningPath.pathCount", { count: graphPaths.length })}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode("wizard")}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gradient-to-r from-primary-500 to-pink-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600"
+          >
+            <Wand2 size={14} />
+            {t("learning.learningPath.aiPlan")}
+          </button>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+          >
+            <Settings2 size={20} />
+          </button>
+          {graphPaths.length > 0 && (
+            <button
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+            >
+              <BarChart3 size={20} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="px-3 pb-3 pt-1 border-t border-gray-200 dark:border-slate-700 overflow-hidden"
+          >
+            <div className="space-y-4 pt-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t("learning.learningPath.learningStyle")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {learningStyles.map((style) => (
+                    <button
+                      key={style.value}
+                      onClick={() => setSelectedStyle(style.value)}
+                      className={`px-3 py-1.5 text-sm rounded-lg ${
+                        selectedStyle === style.value
+                          ? "bg-primary-500 text-white"
+                          : "bg-white dark:bg-slate-600 text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t("learning.learningPath.dailyTime", {
+                    minutes: dailyTime,
+                  })}
+                </label>
+                <input
+                  type="range"
+                  min={10}
+                  max={120}
+                  step={10}
+                  value={dailyTime}
+                  onChange={(e) => setDailyTime(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <button
+                onClick={() => generateTempPath()}
+                className="w-full py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+              >
+                {t("learning.learningPath.generatePreview")}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   return (
     <div className="learning-path-panel h-full flex flex-col space-y-4 relative overflow-hidden">
+      {renderToolbar()}
       {isGenerating && (
         <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
           <div className="flex flex-col items-center gap-4">
@@ -535,95 +637,6 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-500 rounded-lg">
-                <Route className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  {t("learning.learningPath.title")}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {graphPaths.length > 0
-                    ? t("learning.learningPath.pathCount", {
-                        count: graphPaths.length,
-                      })
-                    : t("learning.learningPath.noPaths")}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode("wizard")}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600"
-              >
-                <Wand2 size={14} />
-                {t("learning.learningPath.aiPlan")}
-              </button>
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                <BarChart3 size={20} />
-              </button>
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {showSettings && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 space-y-4 overflow-hidden flex-shrink-0"
-              >
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t("learning.learningPath.learningStyle")}
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {learningStyles.map((style) => (
-                      <button
-                        key={style.value}
-                        onClick={() => setSelectedStyle(style.value)}
-                        className={`px-3 py-1.5 text-sm rounded-lg ${
-                          selectedStyle === style.value
-                            ? "bg-primary-500 text-white"
-                            : "bg-white dark:bg-slate-600 text-gray-700 dark:text-gray-200"
-                        }`}
-                      >
-                        {style.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t("learning.learningPath.dailyTime", {
-                      minutes: dailyTime,
-                    })}
-                  </label>
-                  <input
-                    type="range"
-                    min={10}
-                    max={120}
-                    step={10}
-                    value={dailyTime}
-                    onChange={(e) => setDailyTime(parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-                <button
-                  onClick={() => generateTempPath()}
-                  className="w-full py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
-                >
-                  {t("learning.learningPath.generatePreview")}
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           {graphPaths.length > 0 ? (
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-1">
               <div className="space-y-2">

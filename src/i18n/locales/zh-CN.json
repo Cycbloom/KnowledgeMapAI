@@ -1079,7 +1079,22 @@
         "generateGraphFromImage": "从图像生成图谱",
         "suggestNextTopic": "建议下一个主题",
         "extractMetadata": "提取元数据",
-        "literature_extract": "文献提取"
+        "literature_extract": "文献提取",
+        "tutorChat": "导师对话",
+        "generateCards": "生成卡片",
+        "expandKnowledge": "扩展知识",
+        "classifyConcept": "概念分类",
+        "locateBackboneModule": "定位主干模块",
+        "detectLiteratureType": "检测文献类型",
+        "backbone_generation": "主干网络生成",
+        "backbone_validation": "主干网络验证",
+        "rag_suggest_questions": "RAG 建议问题",
+        "generate_embedding": "生成嵌入向量",
+        "generate_embedding_batch": "批量生成嵌入",
+        "generate_podcast_script": "生成播客脚本",
+        "text_to_graph": "文本转图谱",
+        "document_to_graph": "文档转图谱",
+        "image_to_graph": "图像转图谱"
       },
       "providers": {
         "deepseek": "DeepSeek",

@@ -752,6 +752,24 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
     ? uniqueOperations
     : uniqueOperations.filter((op) => !isEmbeddingOperation(op));
 
+  const displayStats = useMemo(() => {
+    const total = filteredLogs.length;
+    const successCount = filteredLogs.filter((l) => l.success).length;
+    const failedCount = total - successCount;
+    const totalTokens = filteredLogs.reduce((sum, l) => sum + l.totalTokens, 0);
+    const totalCost = filteredLogs.reduce((sum, l) => sum + l.estimatedCost, 0);
+    const nonEmbeddingFiltered = filteredLogs.filter(
+      (l) => !isEmbeddingOperation(l.operation),
+    );
+    const avgDuration =
+      nonEmbeddingFiltered.length > 0
+        ? nonEmbeddingFiltered.reduce((sum, l) => sum + l.duration, 0) /
+          nonEmbeddingFiltered.length
+        : 0;
+
+    return { total, successCount, failedCount, totalTokens, totalCost, avgDuration };
+  }, [filteredLogs]);
+
   const { sessionGroups, standaloneLogs } = useMemo(() => {
     const groups = new Map<string, AIPerformanceLog[]>();
     const standalone: AIPerformanceLog[] = [];
@@ -939,29 +957,29 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
           <StatCard
             icon={<Activity size={14} className="text-white" />}
             label={t('console.performance.stats.totalRequests')}
-            value={String(stats.totalRequests)}
-            subValue={`${stats.successRequests}/${stats.failedRequests}`}
+            value={String(displayStats.total)}
+            subValue={`${displayStats.successCount}/${displayStats.failedCount}`}
             isDark={isDark}
             color="bg-primary-500"
           />
           <StatCard
             icon={<Zap size={14} className="text-white" />}
             label={t('console.performance.stats.tokens')}
-            value={formatTokens(stats.totalTokens)}
+            value={formatTokens(displayStats.totalTokens)}
             isDark={isDark}
             color="bg-primary-500"
           />
           <StatCard
             icon={<Coins size={14} className="text-white" />}
             label={t('console.performance.stats.cost')}
-            value={formatCost(stats.totalCost)}
+            value={formatCost(displayStats.totalCost)}
             isDark={isDark}
             color="bg-amber-500"
           />
           <StatCard
             icon={<Clock size={14} className="text-white" />}
             label={t('console.performance.stats.duration')}
-            value={formatDuration(stats.avgDuration)}
+            value={formatDuration(displayStats.avgDuration)}
             isDark={isDark}
             color="bg-green-500"
           />

@@ -870,7 +870,22 @@
         "generateGraphFromImage": "Generate Graph From Image",
         "suggestNextTopic": "Suggest Next Topic",
         "extractMetadata": "Extract Metadata",
-        "literature_extract": "Literature Extract"
+        "literature_extract": "Literature Extract",
+        "tutorChat": "Tutor Chat",
+        "generateCards": "Generate Cards",
+        "expandKnowledge": "Expand Knowledge",
+        "classifyConcept": "Classify Concept",
+        "locateBackboneModule": "Locate Backbone Module",
+        "detectLiteratureType": "Detect Literature Type",
+        "backbone_generation": "Backbone Generation",
+        "backbone_validation": "Backbone Validation",
+        "rag_suggest_questions": "RAG Suggest Questions",
+        "generate_embedding": "Generate Embedding",
+        "generate_embedding_batch": "Batch Generate Embedding",
+        "generate_podcast_script": "Generate Podcast Script",
+        "text_to_graph": "Text to Graph",
+        "document_to_graph": "Document to Graph",
+        "image_to_graph": "Image to Graph"
       },
       "providers": {
         "deepseek": "DeepSeek",

@@ -721,29 +721,42 @@ Important:
 - Each core node must have a valid module identifier`,
 
   literature_concept_extraction: `
-Return a JSON object with the following structure:
+返回一个 JSON 对象，包含以下结构：
 {
   "concepts": [
     {
-      "name": "概念名称",
-      "type": "concept|term|theory|method|finding",
-      "description": "概念的简要描述（50-100字）",
-      "importance": "high|medium|low",
-      "context": "在文献中的上下文或出处"
+      "title": "概念标题（简洁准确，不超过20字）",
+      "description": "概念描述（50-100字，说明核心内容和作用）",
+      "type": "method|mechanism|operation|concept|technology|tool|theory|finding|trend|challenge",
+      "targetModule": "research_background|literature_review|research_methods|core_concepts|application_domains|future_directions",
+      "importance": 1-5的数字,
+      "context": "概念在原文中的上下文引用（原文片段）"
     }
   ],
-  "metadata": {
-    "totalConcepts": 数字,
-    "mainTopics": ["主要主题1", "主要主题2"],
-    "keywords": ["关键词1", "关键词2", "关键词3"]
-  }
+  "relations": [
+    {
+      "source": "源概念标题",
+      "target": "目标概念标题",
+      "type": "depends_on|related|prerequisite|opposite|similar_to",
+      "confidence": 0.0-1.0的置信度,
+      "description": "关系描述"
+    }
+  ]
 }
 
-Important:
-- Extract 5-15 concepts from the literature
-- Each concept must have a unique name
-- type should be one of: concept, term, theory, method, finding
-- importance should reflect the concept's significance in the literature`,
+**重要约束**：
+- concepts 数组推荐包含约 {{preferredCount}} 个核心概念（软上限，可根据内容丰富度适当超出）
+- concepts 数组绝对不超过 {{maxConcepts}} 个概念（硬上限）
+- 按 importance 降序排列，最重要的概念排在前面
+- 只提取文献中明确提到的概念
+- 不要编造或推测文献中不存在的内容
+
+关系类型说明：
+- depends_on: A 依赖于 B
+- related: A 与 B 相关
+- prerequisite: B 是 A 的前置知识
+- opposite: A 与 B 对比
+- similar_to: A 与 B 相似`,
 
   literature_relation_inference: `
 Return a JSON object with the following structure:

@@ -3233,7 +3233,10 @@
     "options": {
       "advanced": "Advanced Options",
       "conceptTypes": "Concept Types to Extract",
-      "maxConcepts": "Maximum Concepts",
+      "preferredCount": "Preferred Count",
+      "preferredCountHint": "Expected number of concepts (soft limit, may exceed)",
+      "maxConcepts": "Maximum",
+      "maxConceptsHint": "Hard limit, never exceeds this value",
       "similarityThreshold": "Similarity Threshold",
       "confidenceThreshold": "Confidence Threshold"
     },

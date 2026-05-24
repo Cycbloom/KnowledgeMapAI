@@ -468,9 +468,10 @@ router.post(
       const extractOptions = {
         provider: providerType as AIProviderType | undefined,
         model,
-        maxConcepts: parsedOptions?.maxConcepts || 10,
+        maxConcepts: parsedOptions?.maxConcepts ?? 50,
+        preferredCount: parsedOptions?.preferredCount ?? 10,
         extractTypes: parsedOptions?.extractTypes as ConceptType[] | undefined,
-        similarityThreshold: parsedOptions?.similarityThreshold,
+        similarityThreshold: parsedOptions?.similarityThreshold ?? 0.7,
         userId: req.user.id,
         graphId: graph_id,
         language,

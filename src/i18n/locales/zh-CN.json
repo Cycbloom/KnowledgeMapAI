@@ -3201,7 +3201,10 @@
     "options": {
       "advanced": "高级选项",
       "conceptTypes": "提取概念类型",
-      "maxConcepts": "最大概念数量",
+      "preferredCount": "推荐数量",
+      "preferredCountHint": "期望提取的概念数量（软上限，可超出）",
+      "maxConcepts": "最大数量",
+      "maxConceptsHint": "硬上限，绝对不会超过此值",
       "similarityThreshold": "相似度阈值",
       "confidenceThreshold": "置信度阈值"
     },

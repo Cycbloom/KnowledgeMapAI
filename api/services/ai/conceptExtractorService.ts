@@ -24,6 +24,7 @@ export interface ExtractConceptsOptions {
   provider?: AIProviderType;
   model?: string;
   maxConcepts?: number;
+  preferredCount?: number;
   extractTypes?: ConceptType[];
   similarityThreshold?: number;
   userId?: string;
@@ -167,7 +168,8 @@ function buildExtractionPrompt(
   parsedContent: ParsedContent,
   options: ExtractConceptsOptions,
 ): string {
-  const maxConcepts = options.maxConcepts || 10;
+  const maxConcepts = options.maxConcepts ?? 20;
+  const preferredCount = options.preferredCount ?? 10;
   const extractTypes = options.extractTypes || [
     "method",
     "mechanism",
@@ -199,7 +201,7 @@ function buildExtractionPrompt(
   return `你是一个专业的学术文献分析专家，擅长从文献中提取关键概念并分类。
 
 ## 任务说明
-请从以下文献内容中提取 ${maxConcepts} 个最重要的概念，并进行分类和定位。
+请从以下文献内容中提取约 ${preferredCount} 个最重要的概念（不超过 ${maxConcepts} 个），并进行分类和定位。
 
 ## 概念类型定义
 ${typeDescriptions}
@@ -246,7 +248,10 @@ ${content.slice(0, 8000)}
 请严格按照 JSON 格式返回结果。`;
 }
 
-function buildExtractionSchema(): string {
+function buildExtractionSchema(
+  maxConcepts: number = 20,
+  preferredCount: number = 10,
+): string {
   return `
 返回一个 JSON 对象，包含以下结构：
 {
@@ -271,6 +276,13 @@ function buildExtractionSchema(): string {
   ]
 }
 
+**重要约束**：
+- concepts 数组推荐包含约 ${preferredCount} 个核心概念（软上限，可根据内容丰富度适当超出）
+- concepts 数组绝对不超过 ${maxConcepts} 个概念（硬上限）
+- 按 importance 降序排列，最重要的概念排在前面
+- 只提取文献中明确提到的概念
+- 不要编造或推测文献中不存在的内容
+
 关系类型说明：
 - depends_on: A 依赖于 B
 - related: A 与 B 相关
@@ -279,7 +291,6 @@ function buildExtractionSchema(): string {
 - similar_to: A 与 B 相似
 
 重要：
-- concepts 数组包含 5-${10} 个概念
 - relations 数组包含概念之间的关系
 - 概念标题必须在 concepts 中存在
 - 置信度反映关系的确定性程度`;
@@ -319,7 +330,8 @@ export class ConceptExtractorService {
             getSupabaseAdmin(),
             "literature_concept_extraction",
             {
-              maxConcepts: options.maxConcepts || 10,
+              maxConcepts: options.maxConcepts ?? 20,
+              preferredCount: options.preferredCount ?? 10,
               extractTypes: (
                 options.extractTypes || [
                   "method",
@@ -341,10 +353,13 @@ export class ConceptExtractorService {
             parsedContent,
             options,
           );
-          const schema = buildExtractionSchema();
+          const schema = buildExtractionSchema(
+            options.maxConcepts ?? 20,
+            options.preferredCount ?? 10,
+          );
 
           const finalSystemPrompt = systemPrompt
-            ? `${systemPrompt}\n\n${schema}`
+            ? systemPrompt
             : `${fallbackPrompt}\n\n${schema}`;
 
           const completion = await withTimeoutAndRetry(

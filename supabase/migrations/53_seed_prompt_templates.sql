@@ -806,6 +806,12 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 - 该概念是否有助于理解文献的核心思想？
 - 该概念是否值得在知识图谱中长期保存？
 
+## 数量要求
+
+- 推荐提取约 {{preferredCount}} 个最核心的概念（软上限）
+- 最多不超过 {{maxConcepts}} 个概念（硬上限）
+- 优先保证质量，其次考虑数量
+
 请以有效的 json 格式返回结果。', NOW(), NOW()),
 ('literature_relation_inference', 'system', null, null, '你是一个知识图谱专家。你的任务是分析从文献中提取的概念，推断它们之间的关系。
 

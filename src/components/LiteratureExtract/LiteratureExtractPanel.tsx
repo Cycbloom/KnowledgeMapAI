@@ -146,6 +146,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     "challenge",
   ]);
   const [maxConcepts, setMaxConcepts] = useState(50);
+  const [preferredCount, setPreferredCount] = useState(10);
   const [similarityThreshold, setSimilarityThreshold] = useState(0.7);
   const [metadata, setMetadata] = useState<Partial<LiteratureMetadata>>({});
   const [isDetectingMetadata, setIsDetectingMetadata] = useState(false);
@@ -425,6 +426,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         options: {
           extractTypes: selectedConceptTypes,
           maxConcepts,
+          preferredCount,
           similarityThreshold,
           autoDetectMetadata: !metadata.title,
         },
@@ -577,6 +579,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       "challenge",
     ]);
     setMaxConcepts(50);
+    setPreferredCount(10);
     setSimilarityThreshold(0.7);
   }, []);
 
@@ -856,7 +859,29 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            {t("literatureExtract.options.preferredCount")}
+          </label>
+          <input
+            type="number"
+            min={5}
+            max={50}
+            value={preferredCount}
+            onChange={(e) =>
+              setPreferredCount(
+                Math.min(50, Math.max(5, Number(e.target.value))),
+              )
+            }
+            disabled={isProcessing}
+            className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white"
+          />
+          <span className="text-[10px] text-gray-400 mt-0.5">
+            {t("literatureExtract.options.preferredCountHint")}
+          </span>
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
             {t("literatureExtract.options.maxConcepts")}
@@ -874,6 +899,9 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
             disabled={isProcessing}
             className="w-full px-2 py-1.5 text-xs border rounded-md bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white"
           />
+          <span className="text-[10px] text-gray-400 mt-0.5">
+            {t("literatureExtract.options.maxConceptsHint")}
+          </span>
         </div>
 
         <div>

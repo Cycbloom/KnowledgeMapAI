@@ -998,6 +998,7 @@ export interface LiteratureExtractRequest {
   options?: {
     extractTypes?: ConceptType[];
     maxConcepts?: number;
+    preferredCount?: number;
     similarityThreshold?: number;
     autoDetectMetadata?: boolean;
   };

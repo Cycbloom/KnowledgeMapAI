@@ -1496,7 +1496,7 @@ Instructions:
 
     const requestKey = generateRequestKey("extractConcepts", {
       text: text.slice(0, 200),
-      maxConcepts: options.maxConcepts || 5,
+      maxConcepts: options.maxConcepts ?? 20,
       model: options.model || provider.model,
     });
 

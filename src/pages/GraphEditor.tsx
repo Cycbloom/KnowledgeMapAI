@@ -82,7 +82,7 @@ import {
   CommandPalette,
   CommandItem,
 } from "../components/GraphEditor/shared/CommandPalette";
-import { ShortcutHelpPanel } from "../components/common";
+import { ErrorBoundary, ShortcutHelpPanel } from "../components/common";
 import { api, AIAction } from "../services/api";
 import { learningPathsApi } from "../services/api/learningPaths";
 import { useQueryClient } from "@tanstack/react-query";
@@ -1117,17 +1117,18 @@ export const GraphEditor = () => {
 
         <div className="h-full w-full bg-white dark:bg-slate-900 relative">
           {viewMode === "mindmap" && (
-            <MindMapCanvas
-              ref={graphRef}
-              nodes={nodes}
-              edges={edges}
-              nodeStatus={nodeStatus}
-              selectedNodeId={selectedNode?.id ?? null}
-              onNodeClick={handleNodeClick}
-              sidebarMode={sidebarMode}
-              focusedNodeIds={focusedNodeIds}
-              focusedLinkIds={focusedLinkIds}
-              onCanvasClick={handleCanvasClick}
+            <ErrorBoundary>
+              <MindMapCanvas
+                ref={graphRef}
+                nodes={nodes}
+                edges={edges}
+                nodeStatus={nodeStatus}
+                selectedNodeId={selectedNode?.id ?? null}
+                onNodeClick={handleNodeClick}
+                sidebarMode={sidebarMode}
+                focusedNodeIds={focusedNodeIds}
+                focusedLinkIds={focusedLinkIds}
+                onCanvasClick={handleCanvasClick}
               forceShowTextIds={forceShowTextIds}
               focusedNodeId={focusedNodeId}
               branchSuggestions={branchSuggestions}
@@ -1230,6 +1231,7 @@ export const GraphEditor = () => {
                 selectedLearningPathId ? focusedNodeId : null
               }
             />
+              </ErrorBoundary>
           )}
           {viewMode === "timeline" && (
             <Suspense fallback={<ViewLoader />}>
@@ -1741,26 +1743,28 @@ export const GraphEditor = () => {
       />
 
       <Suspense fallback={<ViewLoader />}>
-        <GraphSidebarManager
-          state={state}
-          nodes={nodes}
-          edges={edges}
-          nodeStatus={nodeStatus}
-          graphStats={graphStats}
-          nodeOps={nodeOps}
-          aiOps={aiOps}
-          interactionOps={interactionOps}
-          handleCloseSidebar={handleCloseSidebar}
-          isExplorationMode={isExplorationMode}
-          isSelectingParent={isSelectingParentNode}
-          onStartSelectingParent={handleStartSelectingParent}
-          onCancelSelectingParent={handleCancelSelectingParent}
-          onSelectParentFromGraph={handleSelectParentFromGraph}
-          onConnectNodes={handleConnectNodes}
-          isReadOnly={isReadOnly}
-          customRegions={customRegions}
-          onCreateRegion={handleCreateRegion}
-        />
+        <ErrorBoundary>
+          <GraphSidebarManager
+            state={state}
+            nodes={nodes}
+            edges={edges}
+            nodeStatus={nodeStatus}
+            graphStats={graphStats}
+            nodeOps={nodeOps}
+            aiOps={aiOps}
+            interactionOps={interactionOps}
+            handleCloseSidebar={handleCloseSidebar}
+            isExplorationMode={isExplorationMode}
+            isSelectingParent={isSelectingParentNode}
+            onStartSelectingParent={handleStartSelectingParent}
+            onCancelSelectingParent={handleCancelSelectingParent}
+            onSelectParentFromGraph={handleSelectParentFromGraph}
+            onConnectNodes={handleConnectNodes}
+            isReadOnly={isReadOnly}
+            customRegions={customRegions}
+            onCreateRegion={handleCreateRegion}
+          />
+        </ErrorBoundary>
       </Suspense>
 
       <Suspense fallback={<ViewLoader />}>

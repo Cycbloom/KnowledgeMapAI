@@ -1,104 +1,17 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
-import type { Node, Keyword, KnowledgePoint } from "@shared/types/graph";
+import type { Node, Keyword } from "@shared/types/graph";
 import type {
   CreateNodeData,
   UpdateNodeData,
   NodePositionUpdate,
   DeleteNodeResult,
 } from "@shared/types/api";
-
-interface KnowledgePointRow {
-  id: string;
-  title: string;
-  content?: string | null;
-  learning_material?: string | null;
-  properties?: Record<string, unknown> | null;
-  visibility?: string;
-  owner_id?: string;
-  embedding?: number[] | null;
-  keywords?: Keyword[] | null;
-  created_at?: string;
-  updated_at?: string;
-}
-
-type GraphNodeRaw = {
-  knowledge_point_id: string;
-  knowledge_points?: KnowledgePointRow | KnowledgePointRow[] | null;
-  knowledge_point?: KnowledgePointRow | null;
-  id?: string;
-  graph_id?: string;
-  x_position?: number;
-  y_position?: number;
-  level?: string;
-  is_accepted?: boolean;
-  deleted_at?: string | null;
-  created_at?: string;
-  updated_at?: string;
-};
-
-function getKnowledgePoint(kp: KnowledgePointRow | KnowledgePointRow[] | null): KnowledgePointRow | null {
-  if (!kp) return null;
-  if (Array.isArray(kp)) {
-    return kp[0] || null;
-  }
-  return kp;
-}
-
-function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
-  if (!gn) return null;
-
-  const kp =
-    gn.knowledge_point || getKnowledgePoint(gn.knowledge_points || null);
-
-  if (!kp) return null;
-
-  const node = {
-    id: gn.knowledge_point_id,
-    graph_id: gn.graph_id || "",
-    knowledge_point_id: gn.knowledge_point_id,
-    x_position: gn.x_position,
-    y_position: gn.y_position,
-    level: gn.level,
-    is_accepted: gn.is_accepted,
-    deleted_at: gn.deleted_at,
-    created_at: gn.created_at,
-    updated_at: gn.updated_at,
-    title: kp.title || "",
-    content: kp.content || "",
-    learning_material: kp.learning_material || "",
-    properties: kp.properties || {},
-    visibility: (kp.visibility || "private") as KnowledgePoint["visibility"],
-    owner_id: kp.owner_id || "",
-    embedding: kp.embedding,
-    keywords: kp.keywords || [],
-  } as Node;
-
-  return node;
-}
-
-const GRAPH_NODES_SELECT = `
-  id,
-  graph_id,
-  knowledge_point_id,
-  x_position,
-  y_position,
-  level,
-  is_accepted,
-  created_at,
-  updated_at,
-  knowledge_points (
-    id,
-    title,
-    content,
-    learning_material,
-    properties,
-    visibility,
-    owner_id,
-    created_at,
-    updated_at,
-    keywords
-  )
-`;
+import {
+  GRAPH_NODES_SELECT,
+  buildNodeFromGraphNode,
+  getKnowledgePoint,
+  type GraphNodeRaw,
+} from "@shared/utils/nodeHelpers";
 
 export const mobileNodesApi = {
   create: async (data: CreateNodeData): Promise<Node> => {

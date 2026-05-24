@@ -15,35 +15,7 @@ import type {
   TaskExecutionRow,
   TaskSubtaskRow,
 } from "@shared/types/database";
-
-function toUserTask(row: UserTaskRow): UserTask {
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    title: row.title,
-    description: row.description ?? undefined,
-    queue_level: row.queue_level,
-    position: row.position,
-    estimated_duration: row.estimated_duration ?? undefined,
-    actual_duration: row.actual_duration ?? undefined,
-    deadline: row.deadline ?? undefined,
-    status: row.status as UserTask["status"],
-    tags: row.tags,
-    knowledge_point_id: row.knowledge_point_id ?? undefined,
-    priority: row.priority,
-    queue_id: row.queue_id ?? undefined,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    deleted_at: row.deleted_at ?? undefined,
-    completed_at: row.completed_at ?? undefined,
-    task_type: row.task_type as UserTask["task_type"],
-    total_duration: row.total_duration ?? undefined,
-    progress_mode: row.progress_mode as UserTask["progress_mode"],
-    progress_percentage: row.progress_percentage,
-    parent_task_id: row.parent_task_id ?? undefined,
-    context: row.context ? JSON.stringify(row.context) : undefined,
-  };
-}
+import { toUserTask } from "@shared/types/database";
 
 export const createTask = async (data: CreateUserTaskData) => {
   return withClientAndUser(async (client, userId) => {

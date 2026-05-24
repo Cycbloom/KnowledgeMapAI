@@ -1,6 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Node, KnowledgePoint, GraphNode } from "@shared/types";
 import { logger } from "./logger";
+import { GRAPH_NODES_SELECT } from "../../shared/utils/nodeHelpers";
+
+export { GRAPH_NODES_SELECT };
 
 export type GraphNodeRaw = Omit<GraphNode, "knowledge_point_id"> & {
   knowledge_point_id: string;
@@ -18,11 +21,6 @@ function getKnowledgePoint(
   return kp;
 }
 
-/**
- * 将数据库原始图节点数据转换为前端 Node 类型
- *
- * 扁平化设计：直接合并 GraphNode 和 KnowledgePoint 的所有字段
- */
 export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
   if (!gn) return null;
 
@@ -32,7 +30,6 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
   if (!kp) return null;
 
   return {
-    // GraphNode 字段
     id: gn.knowledge_point_id,
     graph_id: gn.graph_id,
     knowledge_point_id: gn.knowledge_point_id,
@@ -43,8 +40,6 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     deleted_at: gn.deleted_at,
     created_at: gn.created_at,
     updated_at: gn.updated_at,
-
-    // KnowledgePoint 字段（扁平化）
     title: kp.title || "",
     content: kp.content || "",
     learning_material: kp.learning_material || "",
@@ -62,30 +57,6 @@ export function buildNodesFromGraphNodes(graphNodes: GraphNodeRaw[]): Node[] {
     .map((gn) => buildNodeFromGraphNode(gn))
     .filter((n): n is Node => n !== null);
 }
-
-export const GRAPH_NODES_SELECT = `
-  id,
-  graph_id,
-  knowledge_point_id,
-  x_position,
-  y_position,
-  level,
-  is_accepted,
-  created_at,
-  updated_at,
-  knowledge_points (
-    id,
-    title,
-    content,
-    learning_material,
-    properties,
-    visibility,
-    owner_id,
-    created_at,
-    updated_at,
-    keywords
-  )
-`;
 
 export async function getGraphNodesFromNewTable(
   supabase: SupabaseClient,

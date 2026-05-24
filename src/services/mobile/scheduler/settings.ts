@@ -1,6 +1,7 @@
 import { withClientAndUser, withClientOptionalUser } from "../utils/clientHelper";
 import type { TaskSettings, UpdateTaskSettingsData } from "@shared/types";
 import type { TaskSettingsRow } from "@shared/types/database";
+import { DEFAULT_TASK_SETTINGS } from "@shared/constants/taskDefaults";
 
 export const getSettings = async (): Promise<TaskSettings> => {
   return withClientOptionalUser(async (client, userId) => {
@@ -8,12 +9,7 @@ export const getSettings = async (): Promise<TaskSettings> => {
       return {
         id: "",
         user_id: "",
-        q0_time_slice: 25,
-        q1_time_slice: 45,
-        q2_time_slice: 90,
-        break_duration: 5,
-        sound_enabled: true,
-        notification_enabled: true,
+        ...DEFAULT_TASK_SETTINGS,
       };
     }
 
@@ -30,12 +26,7 @@ export const getSettings = async (): Promise<TaskSettings> => {
     return (data as TaskSettingsRow) ?? {
       id: "",
       user_id: userId,
-      q0_time_slice: 25,
-      q1_time_slice: 45,
-      q2_time_slice: 90,
-      break_duration: 5,
-      sound_enabled: true,
-      notification_enabled: true,
+      ...DEFAULT_TASK_SETTINGS,
     };
   });
 };

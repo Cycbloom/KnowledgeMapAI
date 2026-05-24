@@ -18,12 +18,12 @@ import {
 import { api } from "../../../services/api";
 import { UserTaskDetail } from "../../../types";
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
-import { MarkdownEditor } from "./MarkdownEditor";
 import { SubtaskList } from "./SubtaskList";
 import { TaskLinks } from "./TaskLinks";
 import { KnowledgePointAssociation } from "./KnowledgePointAssociation";
 import { ExecutionRecords } from "./ExecutionRecords";
 import { ProgressDetail } from "./ProgressDetail";
+import { NotesTab } from "./NotesTab";
 import { SaveAsTemplateModal } from "../SaveAsTemplateModal";
 
 type WorkTab = "notes" | "subtasks" | "executions" | "progress";
@@ -465,15 +465,11 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {/* Tab content */}
           <div className="flex-1 min-h-0 overflow-hidden p-4">
             {activeTab === "notes" && (
-              <div className="h-full">
-                <MarkdownEditor
-                  value={task.notes || ""}
-                  onChange={(notes) => setTask({ ...task, notes })}
-                  onSave={handleSaveNotes}
-                  placeholder="在这里记录任务笔记...&#10;&#10;支持 Markdown 语法：&#10;- **粗体** *斜体*&#10;- # 标题&#10;- 列表项&#10;- [链接](url)"
-                  className="h-full"
-                />
-              </div>
+              <NotesTab
+                notes={task.notes || ""}
+                onChange={(notes) => setTask({ ...task, notes })}
+                onSave={handleSaveNotes}
+              />
             )}
 
             {activeTab === "subtasks" && <SubtaskList taskId={task.id} />}

@@ -9,6 +9,7 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useStore } from "../store/useStore";
 import { queryKeys } from "../hooks/queries/config";
 import { useIsMobile } from "../hooks/common/useIsMobile";
+import { ErrorBoundary } from "../components/common";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { domainsApi, graphDomainsApi } from "../services/api/domains";
 import type { DomainTreeNode, Domain } from "@shared/types/graph";
@@ -1085,22 +1086,24 @@ export const GraphMap = () => {
 
       <div className="flex-1 relative">
         <Suspense fallback={<LoadingFallback />}>
-          <GraphMapCanvas
-            graphs={graphs}
-            relations={relations}
-            selectedGraphId={selectedGraphId}
-            onGraphClick={handleGraphClick}
-            filterMode={filterMode}
-            fromGraphId={fromGraphId}
-            fromGraphTitle={fromGraph?.title}
-            onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
-            multiSelectedGraphIds={multiSelectedGraphIds}
-            onMultiSelectGraph={handleMultiSelectGraph}
-            onBoxSelection={handleBoxSelection}
-            selectedDomainIds={selectedDomainIds}
-            domainColorMap={domainColorMap}
-            graphDomainMap={graphDomainMap}
-          />
+          <ErrorBoundary>
+            <GraphMapCanvas
+              graphs={graphs}
+              relations={relations}
+              selectedGraphId={selectedGraphId}
+              onGraphClick={handleGraphClick}
+              filterMode={filterMode}
+              fromGraphId={fromGraphId}
+              fromGraphTitle={fromGraph?.title}
+              onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
+              multiSelectedGraphIds={multiSelectedGraphIds}
+              onMultiSelectGraph={handleMultiSelectGraph}
+              onBoxSelection={handleBoxSelection}
+              selectedDomainIds={selectedDomainIds}
+              domainColorMap={domainColorMap}
+              graphDomainMap={graphDomainMap}
+            />
+          </ErrorBoundary>
         </Suspense>
 
         {multiSelectedGraphIds.size === 2 && (

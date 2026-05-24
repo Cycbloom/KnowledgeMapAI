@@ -1,5 +1,6 @@
 import type { Graph, Domain, GraphDomain } from './graph';
 import type { User } from './user';
+import type { UserTask } from './scheduler';
 
 export interface KnowledgeGraphRow {
   id: string;
@@ -374,4 +375,33 @@ export interface TaskProgressPlanRow {
   status: string;
   notes?: string | null;
   created_at: string;
+}
+
+export function toUserTask(row: UserTaskRow): UserTask {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title,
+    description: row.description ?? undefined,
+    queue_level: row.queue_level,
+    position: row.position,
+    estimated_duration: row.estimated_duration ?? undefined,
+    actual_duration: row.actual_duration ?? undefined,
+    deadline: row.deadline ?? undefined,
+    status: row.status as UserTask["status"],
+    tags: row.tags,
+    knowledge_point_id: row.knowledge_point_id ?? undefined,
+    priority: row.priority,
+    queue_id: row.queue_id ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    deleted_at: row.deleted_at ?? undefined,
+    completed_at: row.completed_at ?? undefined,
+    task_type: row.task_type as UserTask["task_type"],
+    total_duration: row.total_duration ?? undefined,
+    progress_mode: row.progress_mode as UserTask["progress_mode"],
+    progress_percentage: row.progress_percentage,
+    parent_task_id: row.parent_task_id ?? undefined,
+    context: row.context ? JSON.stringify(row.context) : undefined,
+  };
 }

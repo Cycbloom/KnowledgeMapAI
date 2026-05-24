@@ -106,6 +106,7 @@ export const useCanvasTransform = (options: UseCanvasTransformOptions) => {
     transformRef,
     setTransform: setTransformImmediate,
     animateCamera,
-    updateTransformDOM
+    updateTransformDOM,
+    updateTransformState,
   };
 };

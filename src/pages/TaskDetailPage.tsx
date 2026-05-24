@@ -1,5 +1,6 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { ErrorBoundary } from "../components/common";
 import { TaskWorkbench } from "../components/Scheduler/TaskWorkbench";
 
 const TaskDetailPage: React.FC = () => {
@@ -24,7 +25,9 @@ const TaskDetailPage: React.FC = () => {
 
   return (
     <div className="h-full overflow-hidden">
-      <TaskWorkbench taskId={taskId} onBack={handleBack} onEdit={handleEdit} />
+      <ErrorBoundary>
+        <TaskWorkbench taskId={taskId} onBack={handleBack} onEdit={handleEdit} />
+      </ErrorBoundary>
     </div>
   );
 };

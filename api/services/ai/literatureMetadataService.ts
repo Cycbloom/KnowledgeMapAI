@@ -33,6 +33,7 @@ export interface ExtractMetadataOptions {
   userId?: string;
   graphId?: string;
   language?: string;
+  sessionId?: string;
 }
 
 interface MetadataExtractionResponse {
@@ -159,6 +160,7 @@ export class LiteratureMetadataService {
           metadata: {
             contentLength: content.length,
           },
+          sessionId: options.sessionId,
         },
         async () => {
           const systemPrompt = await promptService.getRenderedPrompt(

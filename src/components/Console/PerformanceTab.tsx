@@ -127,6 +127,9 @@ const getSessionName = (logs: AIPerformanceLog[], getOperationLabel: (operation:
   if (operations.has('text_to_graph') || operations.has('document_to_graph') || operations.has('image_to_graph')) {
     return '文档转图谱';
   }
+  if (operations.has('literature_extract') || operations.has('extractMetadata') || operations.has('extractConcepts')) {
+    return '文献提取';
+  }
 
   const firstLog = logs.sort((a, b) => a.timestamp - b.timestamp)[0];
   return getOperationLabel(firstLog.operation);

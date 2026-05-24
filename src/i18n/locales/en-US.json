@@ -868,7 +868,9 @@
         "generateTaskDetails": "Generate Task Details",
         "getBranchSuggestions": "Get Branch Suggestions",
         "generateGraphFromImage": "Generate Graph From Image",
-        "suggestNextTopic": "Suggest Next Topic"
+        "suggestNextTopic": "Suggest Next Topic",
+        "extractMetadata": "Extract Metadata",
+        "literature_extract": "Literature Extract"
       },
       "providers": {
         "deepseek": "DeepSeek",

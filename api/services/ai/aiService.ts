@@ -6,7 +6,7 @@ import { promptService } from "./promptService";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse, buildTutorContext } from "./utils";
+import { parseAIResponse, buildTutorContext, withAIPerformanceTracking } from "./utils";
 import { performanceMonitor } from "./performanceMonitor";
 import { pricingService } from "./pricingService";
 import { withEmbeddingMonitoring } from "./aiMonitor";
@@ -31,137 +31,6 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 function isEnglishLanguage(language?: string): boolean {
   if (!language) return false;
   return language === "en-US" || language === "en" || language.startsWith("en");
-}
-
-interface PerformanceTrackingOptions {
-  operation: string;
-  provider: AIProviderType;
-  model: string;
-  sessionId?: string;
-  metadata?: {
-    graphId?: string;
-    nodeId?: string;
-    userId?: string;
-    topic?: string;
-    text?: string;
-    graph1?: string;
-    graph2?: string;
-    title?: string;
-    nodeTitle?: string;
-  };
-}
-
-function extractTokenUsage(
-  usage:
-    | {
-        prompt_tokens?: number;
-        completion_tokens?: number;
-        prompt_tokens_details?: {
-          cached_tokens?: number;
-          audio_tokens?: number;
-        };
-        completion_tokens_details?: {
-          reasoning_tokens?: number;
-          audio_tokens?: number;
-        };
-      }
-    | undefined,
-): {
-  inputTokens: number;
-  outputTokens: number;
-  cachedInputTokens: number;
-  uncachedInputTokens: number;
-  reasoningTokens: number;
-} {
-  const inputTokens = usage?.prompt_tokens || 0;
-  const outputTokens = usage?.completion_tokens || 0;
-  const cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
-
-  return {
-    inputTokens,
-    outputTokens,
-    cachedInputTokens,
-    uncachedInputTokens: Math.max(0, inputTokens - cachedInputTokens),
-    reasoningTokens: usage?.completion_tokens_details?.reasoning_tokens || 0,
-  };
-}
-
-async function withPerformanceTracking<T>(
-  options: PerformanceTrackingOptions,
-  fn: () => Promise<{
-    result: T;
-    usage?: {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-      prompt_tokens_details?: {
-        cached_tokens?: number;
-        audio_tokens?: number;
-      };
-      completion_tokens_details?: {
-        reasoning_tokens?: number;
-        audio_tokens?: number;
-      };
-    };
-  }>,
-): Promise<T> {
-  const startTime = Date.now();
-  let success = true;
-  let errorMessage: string | undefined;
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let cachedInputTokens = 0;
-  let uncachedInputTokens = 0;
-  let reasoningTokens = 0;
-
-  try {
-    const { result, usage } = await fn();
-    const tokenUsage = extractTokenUsage(usage);
-    inputTokens = tokenUsage.inputTokens;
-    outputTokens = tokenUsage.outputTokens;
-    cachedInputTokens = tokenUsage.cachedInputTokens;
-    uncachedInputTokens = tokenUsage.uncachedInputTokens;
-    reasoningTokens = tokenUsage.reasoningTokens;
-    return result;
-  } catch (error: unknown) {
-    success = false;
-    const err = error as Error;
-    errorMessage = err.message;
-    throw error;
-  } finally {
-    const duration = Date.now() - startTime;
-    const totalTokens = inputTokens + outputTokens;
-    const cacheHitRate =
-      inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
-
-    const costBreakdown = pricingService.calculateDetailedCost(
-      options.provider,
-      options.model,
-      inputTokens,
-      outputTokens,
-      cachedInputTokens,
-    );
-
-    performanceMonitor.recordLog({
-      operation: options.operation,
-      provider: options.provider,
-      model: options.model,
-      inputTokens,
-      outputTokens,
-      totalTokens,
-      estimatedCost: costBreakdown.totalCost,
-      duration,
-      success,
-      errorMessage,
-      metadata: options.metadata,
-      sessionId: options.sessionId,
-
-      cachedInputTokens,
-      uncachedInputTokens,
-      reasoningTokens,
-      cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
-      costBreakdown,
-    });
-  }
 }
 
 const pendingRequests = new Map<string, Promise<unknown>>();
@@ -388,7 +257,7 @@ export class AIService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withPerformanceTracking(
+        return withAIPerformanceTracking(
           {
             operation: options.operation || "chat",
             provider: provider.providerType,
@@ -632,7 +501,7 @@ export class AIService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withPerformanceTracking(
+        return withAIPerformanceTracking(
           {
             operation: "generateCards",
             provider: provider.providerType,
@@ -816,7 +685,7 @@ Please respond with a valid JSON object.`;
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "expandKnowledge",
           provider: provider.providerType,
@@ -969,7 +838,7 @@ Please respond with a valid JSON object.`;
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withPerformanceTracking(
+        return withAIPerformanceTracking(
           {
             operation: "getBranchSuggestions",
             provider: provider.providerType,
@@ -1087,7 +956,7 @@ Please respond with a valid JSON object.`;
     }
 
     try {
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "generateGraphFromImage",
           provider: provider.providerType,
@@ -1194,7 +1063,7 @@ Your task:
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withPerformanceTracking(
+        return withAIPerformanceTracking(
           {
             operation: "generateLearningMaterial",
             provider: provider.providerType,
@@ -1312,7 +1181,7 @@ Your task:
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withPerformanceTracking(
+        return withAIPerformanceTracking(
           {
             operation: "suggestNextTopic",
             provider: provider.providerType,
@@ -1398,7 +1267,7 @@ Your task:
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "tutorChat",
           provider: provider.providerType,
@@ -1504,7 +1373,7 @@ Instructions:
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withPerformanceTracking(
+        return withAIPerformanceTracking(
           {
             operation: "extractConcepts",
             provider: provider.providerType,
@@ -1636,7 +1505,7 @@ Please respond in Chinese.`,
     try {
       const model = options.model || provider.model;
 
-      return withPerformanceTracking(
+      return withAIPerformanceTracking(
         {
           operation: "analyzeCrossGraphConnections",
           provider: provider.providerType,
@@ -1789,7 +1658,7 @@ Please respond in Chinese.`,
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withPerformanceTracking(
+        return withAIPerformanceTracking(
           {
             operation: "generateTaskDetails",
             provider: provider.providerType,

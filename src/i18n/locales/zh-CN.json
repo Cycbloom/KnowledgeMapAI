@@ -1077,7 +1077,9 @@
         "generateTaskDetails": "生成任务详情",
         "getBranchSuggestions": "分支建议",
         "generateGraphFromImage": "从图像生成图谱",
-        "suggestNextTopic": "建议下一个主题"
+        "suggestNextTopic": "建议下一个主题",
+        "extractMetadata": "提取元数据",
+        "literature_extract": "文献提取"
       },
       "providers": {
         "deepseek": "DeepSeek",

@@ -5,11 +5,7 @@ import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import type { AIProviderType } from "@shared/types";
 import { getAIProviderForTask } from "../services/ai/factory";
-import {
-  performanceMonitor,
-  enrichMetadata,
-} from "../services/ai/performanceMonitor";
-import { pricingService } from "../services/ai/pricingService";
+import { performanceMonitor } from "../services/ai/performanceMonitor";
 import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
 import { conceptExtractorService } from "../services/ai/conceptExtractorService";
@@ -38,95 +34,6 @@ const MERGE_THRESHOLD = parseFloat(
   process.env.CONCEPT_MERGE_THRESHOLD || "0.85",
 );
 const FUZZY_TITLE_CONFIRM_THRESHOLD = 0.75;
-
-async function withLiteratureTracking<T>(
-  operation: string,
-  providerType: AIProviderType,
-  model: string,
-  fn: () => Promise<{
-    result: T;
-    usage?: {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-      prompt_tokens_details?: {
-        cached_tokens?: number;
-        audio_tokens?: number;
-      };
-      completion_tokens_details?: {
-        reasoning_tokens?: number;
-        audio_tokens?: number;
-      };
-    };
-  }>,
-  metadata?: {
-    graphId?: string;
-    graphTitle?: string;
-    userId?: string;
-    literatureTitle?: string;
-    conceptCount?: number;
-  },
-  sessionId?: string,
-): Promise<T> {
-  const startTime = Date.now();
-  let success = true;
-  let errorMessage: string | undefined;
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let cachedInputTokens = 0;
-  let uncachedInputTokens = 0;
-  let reasoningTokens = 0;
-
-  try {
-    const { result, usage } = await fn();
-    inputTokens = usage?.prompt_tokens || 0;
-    outputTokens = usage?.completion_tokens || 0;
-
-    cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
-    uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
-    reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
-
-    return result;
-  } catch (error: unknown) {
-    success = false;
-    const err = error as Error;
-    errorMessage = err.message;
-    throw error;
-  } finally {
-    const duration = Date.now() - startTime;
-    const totalTokens = inputTokens + outputTokens;
-    const cacheHitRate =
-      inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
-
-    const costBreakdown = pricingService.calculateDetailedCost(
-      providerType,
-      model,
-      inputTokens,
-      outputTokens,
-      cachedInputTokens,
-    );
-
-    performanceMonitor.recordLog({
-      operation,
-      provider: providerType,
-      model,
-      inputTokens,
-      outputTokens,
-      totalTokens,
-      estimatedCost: costBreakdown.totalCost,
-      duration,
-      success,
-      errorMessage,
-      metadata,
-      sessionId,
-
-      cachedInputTokens,
-      uncachedInputTokens,
-      reasoningTokens,
-      cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
-      costBreakdown,
-    });
-  }
-}
 
 const metadataRequestSchema = z.object({
   content: z.string().max(100000).optional(),
@@ -432,6 +339,7 @@ router.post(
             userId: req.user.id,
             graphId: graph_id,
             language,
+            sessionId,
           });
 
         literature = {
@@ -475,28 +383,13 @@ router.post(
         userId: req.user.id,
         graphId: graph_id,
         language,
+        sessionId,
       };
 
-      const extractionResult = await withLiteratureTracking(
-        "literature_extract",
-        provider.providerType,
-        model || provider.model,
-        async () => {
-          const result = await conceptExtractorService.extractConcepts(
-            textContent,
-            literature,
-            extractOptions,
-          );
-          return {
-            result,
-            usage: undefined,
-          };
-        },
-        await enrichMetadata(supabase, {
-          graphId: graph_id,
-          userId: req.user.id,
-        }),
-        sessionId,
+      const extractionResult = await conceptExtractorService.extractConcepts(
+        textContent,
+        literature,
+        extractOptions,
       );
 
       const conceptsWithMatches = extractionResult.concepts.map((c) => ({

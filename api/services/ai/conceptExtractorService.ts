@@ -30,6 +30,7 @@ export interface ExtractConceptsOptions {
   userId?: string;
   graphId?: string;
   language?: string;
+  sessionId?: string;
 }
 
 export interface ExtractConceptsResult {
@@ -324,6 +325,7 @@ export class ConceptExtractorService {
             literatureTitle: literature.title,
             maxConcepts: options.maxConcepts || 10,
           },
+          sessionId: options.sessionId,
         },
         async () => {
           const systemPrompt = await promptService.getRenderedPrompt(
@@ -442,6 +444,7 @@ export class ConceptExtractorService {
       provider?: AIProviderType;
       model?: string;
       language?: string;
+      sessionId?: string;
     } = {},
   ): Promise<{
     type: ConceptType;
@@ -469,6 +472,7 @@ export class ConceptExtractorService {
           metadata: {
             conceptTitle,
           },
+          sessionId: options.sessionId,
         },
         async () => {
           const typeDescriptions = Object.entries(CONCEPT_TYPE_DEFINITIONS)
@@ -541,6 +545,7 @@ ${typeDescriptions}
       provider?: AIProviderType;
       model?: string;
       language?: string;
+      sessionId?: string;
     } = {},
   ): Promise<{
     module: BackboneModule;
@@ -575,6 +580,7 @@ ${typeDescriptions}
           operation: "locateBackboneModule",
           provider: provider.providerType,
           model,
+          sessionId: options.sessionId,
         },
         async () => {
           const moduleDescriptions = Object.entries(

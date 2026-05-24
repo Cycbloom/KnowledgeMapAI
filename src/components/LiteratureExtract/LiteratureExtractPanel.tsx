@@ -23,26 +23,28 @@ import {
 import { useError, useIsMobile } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { literatureApi } from "../../services/api/literature";
-import type {
-  LiteratureExtractRequest,
-  LiteratureExtractResponse,
-  ConceptType,
-} from "@shared/types/graph";
 import {
   CONCEPT_TYPE_COLORS,
   BACKBONE_MODULE_COLORS,
   CONCEPT_TO_MODULE_MAP,
+  type LiteratureExtractRequest,
+  type LiteratureExtractResponse,
+  type ConceptType,
 } from "@shared/types/graph";
-import { LiteratureMetadataForm } from "./LiteratureMetadataForm";
-import LiteratureMetadataCard from "./LiteratureMetadataCard";
-import type { LiteratureMetadata } from "./LiteratureMetadataForm";
+import {
+  LiteratureMetadataForm,
+  type LiteratureMetadata,
+} from "./LiteratureMetadataForm";
 
 type InputMode = "text" | "file" | "url";
 
 interface LiteratureExtractPanelProps {
   graphId: string;
   onExtractComplete?: (result: LiteratureExtractResponse) => void;
-  onConceptsSaved?: (result: { addedCount: number; mergedCount: number }) => void;
+  onConceptsSaved?: (result: {
+    addedCount: number;
+    mergedCount: number;
+  }) => void;
   onClose?: () => void;
   className?: string;
 }
@@ -433,6 +435,21 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       });
 
       setExtractedResult(result);
+
+      if (result.literature && !metadata.title) {
+        const detectedMetadata: Partial<LiteratureMetadata> = {};
+        if (result.literature.title) detectedMetadata.title = result.literature.title;
+        if (result.literature.authors && result.literature.authors.length > 0)
+          detectedMetadata.authors = result.literature.authors;
+        if (result.literature.year) detectedMetadata.year = result.literature.year;
+        if (result.literature.type) detectedMetadata.type = result.literature.type;
+        if (result.literature.journal) detectedMetadata.journal = result.literature.journal;
+
+        if (Object.keys(detectedMetadata).length > 0) {
+          setMetadata((prev) => ({ ...prev, ...detectedMetadata }));
+        }
+      }
+
       frontendEventBus.publish("message_show", {
         type: "success",
         content: t("literatureExtract.success.extracted", {
@@ -490,7 +507,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         }),
       });
 
-      onConceptsSaved?.({ addedCount: result.addedCount, mergedCount: result.mergedCount });
+      onConceptsSaved?.({
+        addedCount: result.addedCount,
+        mergedCount: result.mergedCount,
+      });
       onClose?.();
     } catch (error) {
       handleError(error, {
@@ -826,32 +846,12 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const renderResult = () => {
     if (!extractedResult) return null;
 
-    const hasMetadata = metadata.title || extractedResult.literature.title;
-
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-3"
       >
-        {hasMetadata && (
-          <LiteratureMetadataCard
-            metadata={{
-              title: metadata.title || extractedResult.literature.title,
-              authors:
-                metadata.authors || extractedResult.literature.authors || [],
-              year: metadata.year || extractedResult.literature.year,
-              type:
-                metadata.type || extractedResult.literature.type || "document",
-              journal: metadata.journal,
-              doi: metadata.doi,
-              keywords: metadata.keywords || [],
-            }}
-            isDark={false}
-            compact
-          />
-        )}
-
         <div
           className={`${isMobile ? "p-3" : "p-4"} bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg`}
         >
@@ -952,11 +952,13 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
                             <span
                               className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full font-medium inline-flex items-center gap-1 bg-orange-500/15 text-orange-600 dark:text-orange-500`}
                             >
-                              <Network
-                                size={isMobile ? 10 : 12}
-                              />
-                              已在图谱「{concept.crossGraphMatch.graphTitle}」中存在 (
-                              {(concept.crossGraphMatch.similarity * 100).toFixed(0)}%)
+                              <Network size={isMobile ? 10 : 12} />
+                              已在图谱「{concept.crossGraphMatch.graphTitle}
+                              」中存在 (
+                              {(
+                                concept.crossGraphMatch.similarity * 100
+                              ).toFixed(0)}
+                              %)
                             </span>
                           )}
                         </div>

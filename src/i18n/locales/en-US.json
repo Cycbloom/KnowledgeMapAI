@@ -3302,6 +3302,7 @@
     "targetModule": "Target Module",
     "metadata": {
       "noSource": "No source information",
+      "addSourceHint": "Click to add literature source",
       "sourceWith": "Source: {{source}}",
       "autoDetect": "Auto Detect",
       "citationInput": "Citation Information",

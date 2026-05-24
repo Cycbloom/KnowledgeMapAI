@@ -14,6 +14,14 @@ import {
   Tag,
   MessageSquare,
   ClipboardPaste,
+  FileText as FileIcon,
+  BookOpen as BookIcon,
+  Newspaper,
+  BarChart3,
+  Globe,
+  FileType,
+  Users,
+  Bookmark,
 } from "lucide-react";
 
 export type LiteratureType =
@@ -53,6 +61,18 @@ const LITERATURE_TYPES: { value: LiteratureType; labelKey: string }[] = [
   { value: "document", labelKey: "literatureExtract.metadata.types.document" },
 ];
 
+const LITERATURE_TYPE_CONFIG: Record<
+  LiteratureType,
+  { icon: React.ElementType; color: string }
+> = {
+  paper: { icon: FileIcon, color: "#3B82F6" },
+  book: { icon: BookIcon, color: "#EF4444" },
+  article: { icon: Newspaper, color: "#10B981" },
+  report: { icon: BarChart3, color: "#F59E0B" },
+  webpage: { icon: Globe, color: "#8B5CF6" },
+  document: { icon: FileType, color: "#6366F1" },
+};
+
 const getFieldStatus = (
   metadata: Partial<LiteratureMetadata>,
 ): { filled: boolean; summary: string } => {
@@ -90,6 +110,7 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [citationText, setCitationText] = useState("");
+  const [isHovered, setIsHovered] = useState(false);
 
   const status = getFieldStatus(metadata);
 
@@ -146,56 +167,281 @@ export const LiteratureMetadataForm: React.FC<LiteratureMetadataFormProps> = ({
     await onAutoDetect(citationText.trim());
   }, [citationText, onAutoDetect]);
 
-  const renderCollapsedHeader = () => (
-    <button
-      onClick={() => setIsExpanded(!isExpanded)}
-      disabled={disabled}
-      className={`
-        w-full flex items-center justify-between p-3 rounded-lg border transition-all
-        ${
-          isDark
-            ? "border-gray-700 bg-slate-800/50 hover:bg-slate-700/50"
-            : "border-gray-200 bg-gray-50 hover:bg-gray-100"
-        }
-        ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-      `}
-    >
-      <div className="flex items-center gap-2">
-        <BookOpen
-          size={16}
-          className={isDark ? "text-gray-400" : "text-gray-500"}
-        />
+  const formatAuthors = (authors: string[]): string => {
+    if (authors.length === 0) return "";
+    if (authors.length === 1) return authors[0];
+    if (authors.length === 2) return `${authors[0]} & ${authors[1]}`;
+    return `${authors[0]} et al.`;
+  };
+
+  const formatDoiUrl = (doi: string): string => {
+    if (!doi) return "";
+    if (doi.startsWith("http")) return doi;
+    return `https://doi.org/${doi}`;
+  };
+
+  const renderDetailPopup = () => {
+    const typeConfig = LITERATURE_TYPE_CONFIG[metadata.type || "document"];
+    const TypeIcon = typeConfig.icon;
+    const typeColor = typeConfig.color;
+
+    return (
+      <div
+        className={`
+          absolute left-0 right-0 top-full mt-1 z-50 p-3 rounded-lg border shadow-lg
+          ${
+            isDark
+              ? "border-slate-700 bg-slate-800"
+              : "border-gray-200 bg-white"
+          }
+        `}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="space-y-2">
+          <div className="flex items-start gap-2">
+            <TypeIcon
+              size={18}
+              style={{ color: typeColor }}
+              className="flex-shrink-0 mt-0.5"
+            />
+            <div className="flex-1 min-w-0">
+              <h4
+                className={`font-semibold text-sm ${
+                  isDark ? "text-slate-100" : "text-gray-900"
+                }`}
+              >
+                {metadata.title}
+              </h4>
+            </div>
+          </div>
+
+          {metadata.authors && metadata.authors.length > 0 && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <Users
+                size={12}
+                className={isDark ? "text-slate-500" : "text-gray-400"}
+              />
+              <span className={isDark ? "text-slate-400" : "text-gray-600"}>
+                {metadata.authors.join(", ")}
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 flex-wrap text-xs">
+            {metadata.year && (
+              <div className="flex items-center gap-1">
+                <Calendar
+                  size={12}
+                  className={isDark ? "text-slate-500" : "text-gray-400"}
+                />
+                <span className={isDark ? "text-slate-400" : "text-gray-600"}>
+                  {metadata.year}
+                </span>
+              </div>
+            )}
+
+            {metadata.journal && (
+              <div className="flex items-center gap-1">
+                <Bookmark
+                  size={12}
+                  className={isDark ? "text-slate-500" : "text-gray-400"}
+                />
+                <span className={isDark ? "text-slate-400" : "text-gray-600"}>
+                  {metadata.journal}
+                </span>
+              </div>
+            )}
+
+            <span
+              className="px-2 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                backgroundColor: `${typeColor}20`,
+                color: typeColor,
+              }}
+            >
+              {t(
+                `literatureExtract.metadata.types.${metadata.type || "document"}`,
+              )}
+            </span>
+          </div>
+
+          {metadata.doi && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <Link
+                size={12}
+                className={isDark ? "text-slate-500" : "text-gray-400"}
+              />
+              <a
+                href={formatDoiUrl(metadata.doi)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-500 hover:text-primary-600 hover:underline truncate"
+              >
+                {metadata.doi}
+              </a>
+            </div>
+          )}
+
+          {metadata.keywords && metadata.keywords.length > 0 && (
+            <div className="flex items-start gap-1.5">
+              <Tag
+                size={12}
+                className={`flex-shrink-0 mt-0.5 ${
+                  isDark ? "text-slate-500" : "text-gray-400"
+                }`}
+              />
+              <div className="flex flex-wrap gap-1">
+                {metadata.keywords.slice(0, 5).map((keyword, index) => (
+                  <span
+                    key={index}
+                    className={`px-2 py-0.5 text-xs rounded ${
+                      isDark
+                        ? "bg-slate-700 text-slate-300"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {keyword}
+                  </span>
+                ))}
+                {metadata.keywords.length > 5 && (
+                  <span
+                    className={`px-2 py-0.5 text-xs rounded ${
+                      isDark ? "text-slate-500" : "text-gray-400"
+                    }`}
+                  >
+                    +{metadata.keywords.length - 5}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCollapsedHeader = () => {
+    if (!status.filled) {
+      return (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          disabled={disabled}
+          className={`
+            w-full flex items-center justify-between px-3 py-2.5 rounded-lg border-2 border-dashed transition-all duration-200
+            ${
+              isDark
+                ? "border-slate-600 bg-slate-800/30 hover:bg-slate-700/40 hover:border-slate-500"
+                : "border-gray-300 bg-gray-50/50 hover:bg-gray-100 hover:border-gray-400"
+            }
+            ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer group"}
+          `}
+        >
+          <div className="flex items-center gap-2.5">
+            <div
+              className={`
+                p-1.5 rounded-md transition-colors
+                ${
+                  isDark
+                    ? "bg-slate-700 group-hover:bg-slate-600"
+                    : "bg-gray-200 group-hover:bg-gray-300"
+                }
+              `}
+            >
+              <FileIcon
+                size={16}
+                className={
+                  isDark ? "text-slate-400" : "text-gray-500"
+                }
+              />
+            </div>
+            <div className="flex flex-col items-start gap-0.5">
+              <span
+                className={`text-sm font-medium ${
+                  isDark ? "text-slate-300" : "text-gray-700"
+                }`}
+              >
+                {t("literatureExtract.metadata.noSource")}
+              </span>
+              <span
+                className={`text-xs ${
+                  isDark ? "text-slate-500" : "text-gray-400"
+                }`}
+              >
+                {t("literatureExtract.metadata.addSourceHint")}
+              </span>
+            </div>
+          </div>
+          <ChevronDown
+            size={16}
+            className={`transition-transform ${
+              isDark ? "text-slate-500" : "text-gray-400"
+            } ${isExpanded ? "rotate-180" : ""}`}
+          />
+        </button>
+      );
+    }
+
+    const typeConfig = LITERATURE_TYPE_CONFIG[metadata.type || "document"];
+    const TypeIcon = typeConfig.icon;
+    const typeColor = typeConfig.color;
+
+    return (
+      <div
+        className={`
+          group relative flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 cursor-pointer
+          ${
+            isDark
+              ? "border-slate-700 bg-slate-800/50 hover:bg-slate-700/50"
+              : "border-gray-200 bg-white hover:bg-gray-50"
+          }
+          ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+        `}
+        onClick={() => !disabled && setIsExpanded(!isExpanded)}
+        onMouseEnter={() => !disabled && setIsHovered(true)}
+        onMouseLeave={() => !disabled && setIsHovered(false)}
+      >
+        <TypeIcon size={16} style={{ color: typeColor }} />
         <span
-          className={`text-sm font-medium ${
-            status.filled
-              ? isDark
-                ? "text-gray-200"
-                : "text-gray-700"
-              : isDark
-                ? "text-gray-400"
-                : "text-gray-500"
+          className={`font-medium text-sm truncate flex-1 ${
+            isDark ? "text-slate-100" : "text-gray-900"
           }`}
         >
-          {status.filled
-            ? t("literatureExtract.metadata.sourceWith", {
-                source: status.summary,
-              })
-            : t("literatureExtract.metadata.noSource")}
+          {metadata.title}
         </span>
+        {metadata.authors && metadata.authors.length > 0 && (
+          <span
+            className={`text-xs truncate ${
+              isDark ? "text-slate-400" : "text-gray-500"
+            }`}
+          >
+            {formatAuthors(metadata.authors)}
+          </span>
+        )}
+        {metadata.year && (
+          <span
+            className={`text-xs flex-shrink-0 ${
+              isDark ? "text-slate-500" : "text-gray-400"
+            }`}
+          >
+            ({metadata.year})
+          </span>
+        )}
+        {isExpanded ? (
+          <ChevronUp
+            size={16}
+            className={isDark ? "text-gray-400" : "text-gray-500"}
+          />
+        ) : (
+          <ChevronDown
+            size={16}
+            className={isDark ? "text-gray-400" : "text-gray-500"}
+          />
+        )}
+        {isHovered && !isExpanded && renderDetailPopup()}
       </div>
-      {isExpanded ? (
-        <ChevronUp
-          size={16}
-          className={isDark ? "text-gray-400" : "text-gray-500"}
-        />
-      ) : (
-        <ChevronDown
-          size={16}
-          className={isDark ? "text-gray-400" : "text-gray-500"}
-        />
-      )}
-    </button>
-  );
+    );
+  };
 
   const renderFormField = (
     labelKey: string,

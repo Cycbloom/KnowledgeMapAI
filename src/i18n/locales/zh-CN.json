@@ -3270,6 +3270,7 @@
     "targetModule": "目标模块",
     "metadata": {
       "noSource": "未填写来源",
+      "addSourceHint": "点击添加文献来源信息",
       "sourceWith": "来源：{{source}}",
       "autoDetect": "自动识别",
       "citationInput": "引用信息",

@@ -20,7 +20,7 @@ export const getEnvConfig = (provider: AIProviderType): AIProviderConfig => {
       return {
         apiKey: process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY || "",
         baseURL: "https://api.deepseek.com",
-        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        model: process.env.DEEPSEEK_MODEL || "deepseek-v4-flash",
       };
     case "volcengine":
       return {

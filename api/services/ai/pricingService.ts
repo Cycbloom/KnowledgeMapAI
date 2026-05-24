@@ -3,17 +3,17 @@ import type { AIModelPricing, AIProviderType } from "@shared/types";
 const MODEL_PRICING: AIModelPricing[] = [
   {
     provider: "deepseek",
-    model: "deepseek-chat",
-    cachedInputPricePer1M: 0.2,
-    uncachedInputPricePer1M: 2.0,
-    outputPricePer1M: 3.0,
+    model: "deepseek-v4-flash",
+    cachedInputPricePer1M: 0.02,
+    uncachedInputPricePer1M: 1.0,
+    outputPricePer1M: 2.0,
   },
   {
     provider: "deepseek",
-    model: "deepseek-reasoner",
-    cachedInputPricePer1M: 0.2,
-    uncachedInputPricePer1M: 2.0,
-    outputPricePer1M: 3.0,
+    model: "deepseek-v4-pro",
+    cachedInputPricePer1M: 0.025,
+    uncachedInputPricePer1M: 3.0,
+    outputPricePer1M: 6.0,
   },
   {
     provider: "volcengine",

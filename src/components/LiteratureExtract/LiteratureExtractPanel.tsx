@@ -33,6 +33,7 @@ import {
   type LiteratureExtractResponse,
   type ConceptType,
 } from "@shared/types/graph";
+import { getRelationshipTypeDisplayName } from "@/config/relationshipTypes";
 import {
   LiteratureMetadataForm,
   type LiteratureMetadata,
@@ -1243,6 +1244,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     );
   };
 
+  const formatRelationType = (type: string): string => {
+    return getRelationshipTypeDisplayName(type) || type;
+  };
+
   const renderEnhancedRelationList = () => {
     if (!extractedResult || extractedResult.relations.length === 0) return null;
 
@@ -1319,7 +1324,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
                 <span
                   className={`${isMobile ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}
                 >
-                  {relation.type}
+                  {formatRelationType(relation.type)}
                 </span>
                 <span className="text-[10px] text-gray-500">
                   {(relation.confidence * 100).toFixed(0)}%

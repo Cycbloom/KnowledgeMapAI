@@ -3202,7 +3202,8 @@
       "advanced": "高级选项",
       "conceptTypes": "提取概念类型",
       "maxConcepts": "最大概念数量",
-      "similarityThreshold": "相似度阈值"
+      "similarityThreshold": "相似度阈值",
+      "confidenceThreshold": "置信度阈值"
     },
     "conceptTypes": {
       "concept": "概念",
@@ -3233,26 +3234,54 @@
       "extractFailed": "提取失败，请重试",
       "noCitationText": "请输入引用信息",
       "metadataDetectionFailed": "元数据识别失败，请重试",
-      "saveFailed": "保存失败，请重试"
+      "saveFailed": "保存失败，请重试",
+      "exportFailed": "导出失败，请重试",
+      "copyFailed": "复制失败，请重试",
+      "pasteFailed": "粘贴失败，请检查剪贴板权限"
     },
     "success": {
       "extracted": "成功提取 {{count}} 个知识概念",
-      "saved": "成功保存到图谱！新增 {{addedCount}} 个概念，合并 {{mergedCount}} 个概念"
+      "saved": "成功保存到图谱！新增 {{addedCount}} 个概念，合并 {{mergedCount}} 个概念",
+      "exported": "导出成功",
+      "pasted": "粘贴成功"
     },
     "result": {
       "title": "提取完成",
+      "conceptsCount": "个概念",
+      "relationsCount": "个关系",
       "conceptsExtracted": "提取了 {{count}} 个知识概念",
       "relationsFound": "发现 {{count}} 条概念关系",
       "source": "来源",
       "conceptList": "概念列表",
       "relationList": "关系列表",
       "similarity": "相似度 {{value}}%",
-      "confidence": "置信度 {{value}}%"
+      "confidence": "置信度 {{value}}%",
+      "collapseInput": "收起",
+      "expandInput": "展开输入",
+      "searchPlaceholder": "搜索概念名称或描述...",
+      "filterAll": "全部",
+      "noResults": "没有匹配的结果",
+      "showLess": "收起",
+      "showAll": "显示更多 {{count}} 项"
     },
+    "toolbar": {
+      "reset": "重置",
+      "resetConfirm": "确定要重置所有内容吗？这将清空提取结果和输入数据。",
+      "paste": "粘贴",
+      "options": "选项",
+      "export": "导出",
+      "copy": "复制",
+      "copied": "已复制",
+      "title": "标题",
+      "authors": "作者"
+    },
+    "viewResults": "查看",
     "processing": "处理中...",
     "startExtract": "开始提取",
-    "saving": "保存中...",
-    "saveToGraph": "保存到图谱",
+    "saving": "保存中",
+    "saveToGraph": "保存",
+    "noTitle": "未填写标题",
+    "noAuthors": "未填写作者",
     "previewTitle": "概念预览",
     "previewDescription": "以下是从文献中提取的概念，请选择要添加到图谱的概念。",
     "selectedCount": "已选择 {{selected}} / {{total}} 个概念",

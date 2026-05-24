@@ -3234,7 +3234,8 @@
       "advanced": "Advanced Options",
       "conceptTypes": "Concept Types to Extract",
       "maxConcepts": "Maximum Concepts",
-      "similarityThreshold": "Similarity Threshold"
+      "similarityThreshold": "Similarity Threshold",
+      "confidenceThreshold": "Confidence Threshold"
     },
     "conceptTypes": {
       "concept": "Concept",
@@ -3265,26 +3266,54 @@
       "extractFailed": "Extraction failed, please try again",
       "noCitationText": "Please enter citation information",
       "metadataDetectionFailed": "Metadata detection failed, please try again",
-      "saveFailed": "Save failed, please try again"
+      "saveFailed": "Save failed, please try again",
+      "exportFailed": "Export failed, please try again",
+      "copyFailed": "Copy failed, please try again",
+      "pasteFailed": "Paste failed, please check clipboard permissions"
     },
     "success": {
       "extracted": "Successfully extracted {{count}} knowledge concepts",
-      "saved": "Successfully saved to graph! Added {{addedCount}} concepts, merged {{mergedCount}} concepts"
+      "saved": "Successfully saved to graph! Added {{addedCount}} concepts, merged {{mergedCount}} concepts",
+      "exported": "Export successful",
+      "pasted": "Pasted successfully"
     },
     "result": {
       "title": "Extraction Complete",
+      "conceptsCount": "concepts",
+      "relationsCount": "relations",
       "conceptsExtracted": "Extracted {{count}} knowledge concepts",
       "relationsFound": "Found {{count}} concept relations",
       "source": "Source",
       "conceptList": "Concept List",
       "relationList": "Relation List",
       "similarity": "{{value}}% Similar",
-      "confidence": "{{value}}% Confidence"
+      "confidence": "{{value}}% Confidence",
+      "collapseInput": "Collapse",
+      "expandInput": "Expand Input",
+      "searchPlaceholder": "Search concepts or descriptions...",
+      "filterAll": "All",
+      "noResults": "No matching results",
+      "showLess": "Show Less",
+      "showAll": "Show {{count}} more"
     },
+    "toolbar": {
+      "reset": "Reset",
+      "resetConfirm": "Are you sure you want to reset? This will clear all extracted results and input data.",
+      "paste": "Paste",
+      "options": "Options",
+      "export": "Export",
+      "copy": "Copy",
+      "copied": "Copied",
+      "title": "Title",
+      "authors": "Authors"
+    },
+    "viewResults": "View Results",
     "processing": "Processing...",
     "startExtract": "Start Extraction",
-    "saving": "Saving...",
-    "saveToGraph": "Save to Graph",
+    "saving": "Saving",
+    "saveToGraph": "Save",
+    "noTitle": "No title",
+    "noAuthors": "No authors",
     "previewTitle": "Concept Preview",
     "previewDescription": "The following concepts were extracted from the literature. Please select the concepts to add to the graph.",
     "selectedCount": "{{selected}} / {{total}} concepts selected",

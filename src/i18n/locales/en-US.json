@@ -1247,6 +1247,10 @@
       "create": "Create"
     },
     "regenerate": "Regenerate",
+    "keywordHighlight": "Keyword Highlight",
+    "enableKeywordHighlight": "Enable keyword highlight",
+    "quoteAdded": "Quote added",
+    "smartCopyHint": "Select text and press Ctrl+U to quote in chat",
     "focusMode": {
       "title": "Focus Mode",
       "timer": "Timer",
@@ -3300,7 +3304,9 @@
     "play": "Read aloud",
     "pause": "Pause",
     "resume": "Resume",
-    "stop": "Stop"
+    "stop": "Stop",
+    "quoteReference": "Quoted Reference",
+    "removeQuote": "Remove quote"
   },
   "literatureExtract": {
     "title": "Literature Extract",

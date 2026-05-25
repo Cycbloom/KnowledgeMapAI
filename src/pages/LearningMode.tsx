@@ -66,6 +66,7 @@ import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
 import { LearningPathOutline } from "../components/Learning/LearningPathOutline";
 import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
+import { HighlightedReader } from "../components/Learning/HighlightedReader";
 import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
 import { LiteratureExtractPanel } from "../components/LiteratureExtract/LiteratureExtractPanel";
@@ -210,7 +211,7 @@ export const LearningMode = () => {
   } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { enterFocusMode, exitFocusMode } = useFocusStore();
+  const { enterFocusMode, exitFocusMode, highlightEnabled, setHighlightEnabled } = useFocusStore();
   const { startActivity, endActivity } = useActivityTracker();
   const activityRef = useRef(false);
   const activityFnsRef = useRef({ startActivity, endActivity });
@@ -254,8 +255,10 @@ export const LearningMode = () => {
   ]);
   const [input, setInput] = useState("");
   const [inputBeforeVoice, setInputBeforeVoice] = useState("");
+  const [quotes, setQuotes] = useState<{ id: string; text: string }[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
   const {
     isListening,
@@ -473,6 +476,23 @@ export const LearningMode = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "u") {
+        const selection = window.getSelection();
+        if (selection && selection.toString().trim()) {
+          e.preventDefault();
+          const text = selection.toString().trim();
+          setQuotes((prev) => [...prev, { id: Date.now().toString(), text }]);
+          navigator.clipboard.writeText(text).catch(() => {});
+          chatInputRef.current?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isChatLoading) return;
@@ -495,6 +515,13 @@ export const LearningMode = () => {
     setInput("");
     setIsChatLoading(true);
 
+    let aiMessage = userMessage.content;
+    if (quotes.length > 0) {
+      const quotesText = quotes.map(q => `> ${q.text}`).join('\n');
+      aiMessage = `[引用内容]\n${quotesText}\n\n[用户问题]\n${input.trim()}`;
+      setQuotes([]);
+    }
+
     const assistantMessageId = (Date.now() + 1).toString();
     const assistantMessage: Message = {
       id: assistantMessageId,
@@ -514,7 +541,7 @@ export const LearningMode = () => {
 
       await api.ai.chatStream(
         {
-          message: userMessage.content,
+          message: aiMessage,
           graph_id: graphId || "",
           history,
           context_node_ids: nodeId ? [nodeId] : undefined,
@@ -1682,6 +1709,24 @@ export const LearningMode = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => setHighlightEnabled(!highlightEnabled)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            highlightEnabled
+                              ? isDark
+                                ? "bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 border border-yellow-500/30"
+                                : "bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border border-yellow-200"
+                              : isDark
+                                ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
+                                : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
+                          }`}
+                          title={t("learning.enableKeywordHighlight")}
+                        >
+                          <Sparkles size={16} className={highlightEnabled ? "text-yellow-500" : ""} />
+                          <span className="hidden sm:inline">
+                            {t("learning.keywordHighlight")}
+                          </span>
+                        </button>
+                        <button
                           onClick={handleRegenerateMaterial}
                           disabled={isGenerating || !isOnline}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -1719,7 +1764,7 @@ export const LearningMode = () => {
                       </div>
                     )}
                     <div
-                      className={`prose dark:prose-invert prose-indigo ${
+                      className={`${
                         contentWidthMode === "full"
                           ? "max-w-none"
                           : contentWidthMode === "comfortable"
@@ -1736,49 +1781,12 @@ export const LearningMode = () => {
                       }`}
                       style={{ fontSize: `${fontSize}px` }}
                     >
-                      <div
-                        className={isMobile ? "leading-relaxed space-y-4" : ""}
-                      >
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm, remarkMath]}
-                          rehypePlugins={[[rehypeKatex, { output: "html" }]]}
-                          components={{
-                            code: ({ className, children, node: _node }) => (
-                              <CodeBlock
-                                className={className}
-                                isDark={isDark || readingMode === "dark"}
-                                node={_node}
-                              >
-                                {children}
-                              </CodeBlock>
-                            ),
-                            a: ({ node: _node, ...props }) => {
-                              const { href, children } = props;
-                              if (href && href.startsWith("term:")) {
-                                const explanation = href.replace("term:", "");
-                                return (
-                                  <TermTooltip
-                                    term={String(children)}
-                                    explanation={decodeURIComponent(
-                                      explanation,
-                                    )}
-                                  />
-                                );
-                              }
-                              return (
-                                <a
-                                  {...props}
-                                  className="text-primary-600 hover:underline"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                />
-                              );
-                            },
-                          }}
-                        >
-                          {preprocessMarkdown(articleContent)}
-                        </ReactMarkdown>
-                      </div>
+                      <HighlightedReader
+                        content={articleContent}
+                        isDark={isDark || readingMode === "dark"}
+                        isMobile={isMobile}
+                        keywords={keywords}
+                      />
                     </div>
                   </div>
                 )}
@@ -2135,7 +2143,43 @@ export const LearningMode = () => {
                 {rightPanelMode === "chat" && (
                   <div className="p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
                     <form onSubmit={handleChatSubmit} className="relative">
+                      {quotes.length > 0 && (
+                        <div className="mb-2 max-h-32 overflow-y-auto space-y-1">
+                          {quotes.map((quote) => (
+                            <div
+                              key={quote.id}
+                              className={`flex items-start gap-2 px-2 py-1.5 rounded text-xs border-l-[3px] ${
+                                isDark
+                                  ? "border-primary-500 bg-primary-900/20 text-primary-200"
+                                  : "border-primary-500 bg-primary-50 text-primary-800"
+                              }`}
+                            >
+                              <span className="flex-1 line-clamp-2 break-all">
+                                {quote.text.length > 100
+                                  ? quote.text.slice(0, 100) + "…"
+                                  : quote.text}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setQuotes((prev) =>
+                                    prev.filter((q) => q.id !== quote.id),
+                                  )
+                                }
+                                className={`flex-shrink-0 p-0.5 rounded transition-colors ${
+                                  isDark
+                                    ? "hover:bg-slate-700 text-slate-400"
+                                    : "hover:bg-gray-200 text-gray-400"
+                                }`}
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <textarea
+                        ref={chatInputRef}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -2197,6 +2241,11 @@ export const LearningMode = () => {
                     >
                       {t("learning.chat.disclaimer")}
                     </p>
+                    {quotes.length === 0 && (
+                      <p className={`text-[10px] mt-1 text-center ${isDark ? "text-slate-600" : "text-gray-300"}`}>
+                        {t("learning.smartCopyHint")}
+                      </p>
+                    )}
                   </div>
                 )}
               </motion.div>

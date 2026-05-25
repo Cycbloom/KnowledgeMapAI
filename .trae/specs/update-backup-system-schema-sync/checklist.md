@@ -1,0 +1,19 @@
+- [x] BackupGraphItem 包含 knowledge_graphs 表所有用户相关字段
+- [x] BackupEdgeItem 包含 edges 表样式字段（custom_label, custom_color, custom_line_style, show_arrow）
+- [x] BackupNodeItem 包含 knowledge_points 表扩展字段（keywords, aliases, mastery_level, last_study_at, total_study_duration）
+- [x] StudyProgressRow 接口与实际 study_progress 表结构匹配
+- [x] BackupData 包含 backbone_modules 数据和 version='2.0'
+- [x] createBackup() 查询和映射包含所有新增字段
+- [x] createBackup() 包含 graph_backbone_modules 数据
+- [x] restoreBackupData() 恢复 knowledge_graphs 包含所有新字段
+- [x] restoreBackupData() 恢复 nodes 保留 is_accepted 原始值和知识点扩展字段
+- [x] restoreBackupData() 恢复 edges 包含样式字段
+- [x] restoreBackupData() 恢复 study_cards 保留 FSRS 学习状态
+- [x] restoreBackupData() 恢复 study_progress 数据
+- [x] restoreBackupData() 恢复 focus_sessions 数据
+- [x] restoreBackupData() 恢复 user_achievements 数据
+- [x] restoreBackupData() 恢复 periodic_tasks 数据
+- [x] restoreBackupData() 恢复 graph_backbone_modules 数据
+- [x] 旧版本（1.0）备份文件可兼容恢复，缺失字段使用合理默认值
+- [x] TypeScript 类型检查通过（npm run check）
+- [x] ESLint 检查通过（npm run lint）

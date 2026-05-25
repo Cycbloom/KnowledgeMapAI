@@ -1626,6 +1626,10 @@
     "generateFailed": "生成学习内容失败，请重试",
     "backToOverview": "返回概览",
     "regenerate": "重新生成",
+    "keywordHighlight": "关键词高亮",
+    "enableKeywordHighlight": "启用关键词高亮",
+    "quoteAdded": "已添加引用",
+    "smartCopyHint": "选中文本后按 Ctrl+U 可引用到对话",
     "focusMode": {
       "title": "专注模式",
       "timer": "计时器",
@@ -3268,7 +3272,9 @@
     "play": "朗读",
     "pause": "暂停",
     "resume": "继续",
-    "stop": "停止"
+    "stop": "停止",
+    "quoteReference": "引用内容",
+    "removeQuote": "移除引用"
   },
   "literatureExtract": {
     "title": "文献提取",

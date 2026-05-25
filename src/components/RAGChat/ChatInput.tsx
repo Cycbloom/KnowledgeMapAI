@@ -1,6 +1,11 @@
 import React from 'react';
-import { Send, Loader2, Lightbulb, Sparkles } from 'lucide-react';
+import { Send, Loader2, Lightbulb, Sparkles, MessageSquareQuote, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+export interface QuoteReference {
+  id: string;
+  text: string;
+}
 
 interface ChatInputProps {
   input: string;
@@ -14,6 +19,8 @@ interface ChatInputProps {
   onExtractConcepts?: () => void;
   onSuggestNextTopics?: () => void;
   hasAssistantMessages: boolean;
+  quotes?: QuoteReference[];
+  onRemoveQuote?: (id: string) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -27,7 +34,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
   onExtractConcepts,
   onSuggestNextTopics,
-  hasAssistantMessages
+  hasAssistantMessages,
+  quotes = [],
+  onRemoveQuote,
 }) => {
   const { t } = useTranslation();
 
@@ -40,6 +49,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             : isDark ? 'bg-primary-900/30 text-primary-300' : 'bg-primary-50 text-primary-600'
         }`}>
           {t("aiChat.selectedNodesContext", { count: selectedNodeCount })}
+        </div>
+      )}
+      {quotes.length > 0 && (
+        <div className="mb-2 max-h-32 overflow-y-auto space-y-1">
+          {quotes.map((quote) => (
+            <div
+              key={quote.id}
+              className={`flex items-start gap-2 px-2 py-1.5 rounded text-xs border-l-[3px] ${
+                isTutorMode
+                  ? isDark
+                    ? 'border-amber-500 bg-amber-900/20 text-amber-200'
+                    : 'border-amber-500 bg-amber-50 text-amber-800'
+                  : isDark
+                    ? 'border-primary-500 bg-primary-900/20 text-primary-200'
+                    : 'border-primary-500 bg-primary-50 text-primary-800'
+              }`}
+            >
+              <MessageSquareQuote size={12} className="flex-shrink-0 mt-0.5 opacity-60" />
+              <span className="flex-1 line-clamp-2 break-all">
+                {quote.text.length > 100 ? quote.text.slice(0, 100) + '…' : quote.text}
+              </span>
+              {onRemoveQuote && (
+                <button
+                  onClick={() => onRemoveQuote(quote.id)}
+                  className={`flex-shrink-0 p-0.5 rounded transition-colors ${
+                    isDark
+                      ? 'hover:bg-slate-700 text-slate-400'
+                      : 'hover:bg-gray-200 text-gray-400'
+                  }`}
+                  title={t("aiChat.removeQuote")}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
       <div className={`flex items-end gap-2 p-2 rounded-2xl ${

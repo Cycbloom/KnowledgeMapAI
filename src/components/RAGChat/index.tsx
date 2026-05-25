@@ -16,7 +16,7 @@ import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { TutorExtractedConcept, TutorMode, TTSEngine } from "../../types";
 import { useChatState, Message, Source } from "./hooks/useChatState";
 import { ChatMessage, LoadingMessage } from "./ChatMessage";
-import { ChatInput } from "./ChatInput";
+import { ChatInput, QuoteReference } from "./ChatInput";
 import { VoiceSettings, VoiceControl } from "./VoiceSettings";
 import { ConceptsPanel } from "./ConceptsPanel";
 import { SuggestionsPanel } from "./SuggestionsPanel";
@@ -25,6 +25,12 @@ import { LiteratureExtractPanel } from "../LiteratureExtract/LiteratureExtractPa
 import { ConceptAggregationPanel } from "../ConceptAggregation/ConceptAggregationPanel";
 import "katex/dist/katex.min.css";
 import { useTranslation } from "react-i18next";
+
+let addQuoteFn: ((text: string) => void) | null = null;
+
+export const addQuote = (text: string) => {
+  addQuoteFn?.(text);
+};
 
 interface ChatHistoryItem {
   role: "user" | "assistant";
@@ -111,6 +117,20 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   const [showConceptsPanel, setShowConceptsPanel] = useState(false);
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [quotes, setQuotes] = useState<QuoteReference[]>([]);
+
+  const removeQuote = (id: string) => {
+    setQuotes(prev => prev.filter(q => q.id !== id));
+  };
+
+  useEffect(() => {
+    addQuoteFn = (text: string) => {
+      setQuotes(prev => [...prev, { id: Date.now().toString(), text }]);
+    };
+    return () => {
+      addQuoteFn = null;
+    };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -205,6 +225,12 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
     const text = messageText || chatState.input.trim();
     if (!text || chatState.isLoading) return;
 
+    let aiMessage = text;
+    if (quotes.length > 0) {
+      const quotesText = quotes.map(q => `> ${q.text}`).join('\n');
+      aiMessage = `[引用内容]\n${quotesText}\n\n[用户问题]\n${text}`;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -216,6 +242,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
     chatState.clearInput();
     chatState.setIsLoading(true);
     chatState.setSuggestedQuestions([]);
+    setQuotes([]);
 
     const assistantMessageId = (Date.now() + 1).toString();
 
@@ -238,7 +265,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
       chatState.addMessage(assistantMessage);
 
       if (isTutorMode && onTutorChat) {
-        await onTutorChat(text, history, (chunk) => {
+        await onTutorChat(aiMessage, history, (chunk) => {
           fullResponse += chunk;
           chatState.updateMessage(assistantMessageId, {
             content: fullResponse,
@@ -247,7 +274,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
       } else {
         await api.rag.chatStream(
           {
-            message: text,
+            message: aiMessage,
             graph_id: graphId,
             current_node_id: currentNodeId,
             history,
@@ -715,6 +742,8 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
           hasAssistantMessages={chatState.messages.some(
             (m) => m.role === "assistant",
           )}
+          quotes={quotes}
+          onRemoveQuote={removeQuote}
         />
       )}
     </motion.div>

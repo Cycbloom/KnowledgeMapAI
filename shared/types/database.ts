@@ -12,7 +12,14 @@ export interface KnowledgeGraphRow {
   tags?: string[] | null;
   is_favorite?: boolean;
   is_public?: boolean;
+  template_type?: string | null;
   podcast_script?: string | null;
+  reference_books?: Record<string, unknown>[] | null;
+  external_links?: Record<string, unknown>[] | null;
+  learning_guide?: string | null;
+  parent_graph_id?: string | null;
+  last_used_at?: string | null;
+  task_id?: string | null;
   nodes_count?: number;
   deleted_at?: string | null;
   created_at: string;

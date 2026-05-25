@@ -310,6 +310,7 @@ export interface KnowledgePoint {
   level?: NodeLevel;
   is_accepted?: boolean;
   keywords?: Keyword[];
+  aliases?: string[];
 }
 
 export interface KnowledgePointVersion {

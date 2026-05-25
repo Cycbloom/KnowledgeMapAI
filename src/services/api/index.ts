@@ -50,6 +50,17 @@ export type { RegistryPlugin, InstalledPlugin, PluginUpdate } from "./plugins";
 export { literatureApi } from "./literature";
 export { regionsApi } from "./regions";
 export { storyCreationApi } from "./storyCreation";
+export { conceptAggregationApi } from "./conceptAggregation";
+export type {
+  ConceptGroup,
+  HierarchyRelation,
+  AnalysisResult,
+  AnalyzeOptions,
+  MergeGroup,
+  MergeResult,
+  HierarchyRelationInput,
+  ApplyHierarchyResult,
+} from "./conceptAggregation";
 
 import { authApi } from "./auth";
 import { graphsApi } from "./graphs";
@@ -84,6 +95,7 @@ import { pluginsApi } from "./plugins";
 import { literatureApi } from "./literature";
 import { regionsApi } from "./regions";
 import { storyCreationApi } from "./storyCreation";
+import { conceptAggregationApi } from "./conceptAggregation";
 
 export const api = {
   auth: authApi,
@@ -123,6 +135,7 @@ export const api = {
   literature: literatureApi,
   regions: regionsApi,
   storyCreation: storyCreationApi,
+  conceptAggregation: conceptAggregationApi,
 };
 
 export type {

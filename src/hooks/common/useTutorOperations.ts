@@ -321,6 +321,7 @@ export const useTutorOperations = ({
       guided: "引导学习",
       "learning-path": "学习路径",
       "literature-extract": "文献提取",
+      "concept-aggregation": "概念聚合",
     };
     frontendEventBus.publish("message_show", {
       type: "info",

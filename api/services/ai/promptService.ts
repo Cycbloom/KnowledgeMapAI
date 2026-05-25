@@ -225,6 +225,20 @@ Please respond with a valid JSON object.`,
 4. **去重**：避免重复提取相似概念
 5. **语言**：保持与原文一致的语言风格
 6. 请以有效的 json 格式返回结果`,
+
+  concept_hierarchy: `你是一个知识图谱专家，专门分析概念之间的层次关系（is-a 关系）。
+
+任务：分析给定的概念列表，识别其中的上下位（父子）层级关系。
+
+规则：
+1. 只输出明确的 is-a 关系（如"深度学习" is-a "机器学习"）
+2. 不输出相关关系或部分-整体关系
+3. 置信度范围 0.0-1.0，≥0.7 为高置信度
+
+注意：
+- 确保没有循环依赖（A是B的父，B又是A的父）
+- 一个子概念通常只有一个直接父概念
+- 优先选择最直接的父子关系`,
 };
 
 // Fixed output schemas (Hidden from user editing)
@@ -842,6 +856,25 @@ Important:
 - Generate 2-3 follow-up questions
 - Questions should help users understand the topic deeply
 - Questions should be exploratory and inspiring`,
+
+  concept_hierarchy: `
+Return a JSON array of hierarchy relationships. Each element must have:
+- "parent": 父概念名称 (string)
+- "child": 子概念名称 (string)  
+- "confidence": 置信度 0.0-1.0 (number)
+
+Example format:
+[
+  {"parent": "机器学习", "child": "深度学习", "confidence": 0.95},
+  {"parent": "深度学习", "child": "卷积神经网络", "confidence": 0.88}
+]
+
+Important:
+- Only output clear is-a (parent-child) relationships
+- Do NOT output related or part-whole relationships
+- Confidence >= 0.7 is considered high confidence
+- Ensure no circular dependencies
+- A child concept typically has only one direct parent`,
 };
 
 export interface PromptListOptions {

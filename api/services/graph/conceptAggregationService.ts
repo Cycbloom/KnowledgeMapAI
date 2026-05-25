@@ -161,6 +161,26 @@ export interface ConceptWithEmbedding {
   level?: NodeLevel;
 }
 
+export interface HierarchySuggestion {
+  parentId: string;
+  parentTitle: string;
+  childId: string;
+  childTitle: string;
+  confidence: number;
+}
+
+export interface BatchMergeResult {
+  mergedGroups: number;
+  totalMergedCount: number;
+  aliasesAdded: number;
+  edgesUpdated: number;
+  errors: Array<{
+    targetId: string;
+    sourceIds: string[];
+    error: string;
+  }>;
+}
+
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
     return 0;
@@ -1228,6 +1248,381 @@ export class ConceptAggregationService {
     }
 
     return { overlaps };
+  }
+
+  async identifyHierarchy(
+    _supabase: SupabaseClient,
+    graphId: string,
+    concepts: Array<{ id: string; title: string }>,
+  ): Promise<HierarchySuggestion[]> {
+    if (concepts.length < 2) {
+      logger.info("Insufficient concepts for hierarchy identification");
+      return [];
+    }
+
+    logger.info(
+      `Starting hierarchy identification for graph ${graphId} with ${concepts.length} concepts`,
+    );
+
+    try {
+      const conceptList = concepts
+        .map((c) => `- ${c.id}: ${c.title}`)
+        .join("\n");
+
+      const prompt = `分析以下概念之间的 is-a（属于/包含）层级关系。
+
+概念列表：
+${conceptList}
+
+请识别哪些概念可能是其他概念的父级（更抽象的概念）或子级（更具体的概念）。
+只返回明确的层级关系，置信度低于 0.5 的不要返回。
+
+请以 JSON 数组格式返回，每个元素包含：
+- parentId: 父概念ID
+- parentTitle: 父概念标题
+- childId: 子概念ID
+- childTitle: 子概念标题
+- confidence: 置信度 (0-1)
+
+只返回 JSON 数组，不要其他内容。`;
+
+      const response = await aiService.chat(
+        [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        { operation: "identify_hierarchy" },
+      );
+
+      if (!response) {
+        logger.warn("AI service returned empty response for hierarchy identification");
+        return [];
+      }
+
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        logger.warn("Failed to parse hierarchy suggestions from AI response");
+        return [];
+      }
+
+      const suggestions: HierarchySuggestion[] = JSON.parse(jsonMatch[0]);
+
+      const validSuggestions = suggestions.filter(
+        (s) =>
+          s.parentId &&
+          s.childId &&
+          s.confidence >= 0.5 &&
+          s.parentId !== s.childId,
+      );
+
+      logger.info(
+        `Identified ${validSuggestions.length} hierarchy suggestions`,
+      );
+
+      return validSuggestions;
+    } catch (error) {
+      logger.error("Error in hierarchy identification:", error);
+      return [];
+    }
+  }
+
+  async batchMerge(
+    supabase: SupabaseClient,
+    graphId: string,
+    mergeGroups: Array<{
+      targetId: string;
+      sourceIds: string[];
+    }>,
+  ): Promise<BatchMergeResult> {
+    const result: BatchMergeResult = {
+      mergedGroups: 0,
+      totalMergedCount: 0,
+      aliasesAdded: 0,
+      edgesUpdated: 0,
+      errors: [],
+    };
+
+    if (mergeGroups.length === 0) {
+      logger.info("No merge groups provided");
+      return result;
+    }
+
+    logger.info(
+      `Starting batch merge for graph ${graphId} with ${mergeGroups.length} groups`,
+    );
+
+    for (const group of mergeGroups) {
+      try {
+        const { data: targetKp, error: targetError } = await supabase
+          .from("knowledge_points")
+          .select("id, title, properties")
+          .eq("id", group.targetId)
+          .single();
+
+        if (targetError || !targetKp) {
+          result.errors.push({
+            targetId: group.targetId,
+            sourceIds: group.sourceIds,
+            error: `Target knowledge point not found: ${group.targetId}`,
+          });
+          continue;
+        }
+
+        const targetProperties =
+          (targetKp.properties as { aliases?: string[] }) || {};
+        const existingAliases: string[] = targetProperties.aliases || [];
+
+        const newAliases: string[] = [];
+
+        const { data: sourceKps, error: sourcesError } = await supabase
+          .from("knowledge_points")
+          .select("id, title")
+          .in("id", group.sourceIds);
+
+        if (sourcesError || !sourceKps) {
+          result.errors.push({
+            targetId: group.targetId,
+            sourceIds: group.sourceIds,
+            error: `Failed to fetch source knowledge points`,
+          });
+          continue;
+        }
+
+        for (const sourceKp of sourceKps) {
+          const normalizedTitle = normalizeTitle(sourceKp.title);
+          const aliasExists = existingAliases.some(
+            (a) => normalizeTitle(a) === normalizedTitle,
+          );
+
+          if (!aliasExists && normalizedTitle !== normalizeTitle(targetKp.title)) {
+            newAliases.push(sourceKp.title);
+          }
+        }
+
+        if (newAliases.length > 0) {
+          const updatedAliases = [...existingAliases, ...newAliases];
+          const { error: aliasUpdateError } = await supabase
+            .from("knowledge_points")
+            .update({
+              properties: {
+                ...targetProperties,
+                aliases: updatedAliases,
+              },
+            })
+            .eq("id", group.targetId);
+
+          if (aliasUpdateError) {
+            logger.error(
+              `Failed to update aliases for ${group.targetId}:`,
+              aliasUpdateError,
+            );
+            result.errors.push({
+              targetId: group.targetId,
+              sourceIds: group.sourceIds,
+              error: `Failed to update aliases: ${aliasUpdateError.message}`,
+            });
+            continue;
+          }
+
+          result.aliasesAdded += newAliases.length;
+        }
+
+        let edgesUpdatedInGroup = 0;
+
+        for (const sourceId of group.sourceIds) {
+          const { error: targetEdgeError } = await supabase
+            .from("edges")
+            .update({ target_knowledge_point_id: group.targetId })
+            .eq("target_knowledge_point_id", sourceId)
+            .eq("graph_id", graphId);
+
+          if (targetEdgeError) {
+            logger.error(
+              `Failed to update target edges for ${sourceId}:`,
+              targetEdgeError,
+            );
+          } else {
+            edgesUpdatedInGroup++;
+          }
+
+          const { error: sourceEdgeError } = await supabase
+            .from("edges")
+            .update({ source_knowledge_point_id: group.targetId })
+            .eq("source_knowledge_point_id", sourceId)
+            .eq("graph_id", graphId);
+
+          if (sourceEdgeError) {
+            logger.error(
+              `Failed to update source edges for ${sourceId}:`,
+              sourceEdgeError,
+            );
+          } else {
+            edgesUpdatedInGroup++;
+          }
+
+          const { data: sourceGraphNodes } = await supabase
+            .from("graph_nodes")
+            .select("id")
+            .eq("knowledge_point_id", sourceId)
+            .eq("graph_id", graphId)
+            .is("deleted_at", null);
+
+          if (sourceGraphNodes && sourceGraphNodes.length > 0) {
+            const { error: deleteNodeError } = await supabase
+              .from("graph_nodes")
+              .update({ deleted_at: new Date().toISOString() })
+              .eq("id", sourceGraphNodes[0].id);
+
+            if (deleteNodeError) {
+              logger.error(
+                `Failed to soft delete graph node ${sourceGraphNodes[0].id}:`,
+                deleteNodeError,
+              );
+            }
+          }
+        }
+
+        result.edgesUpdated += edgesUpdatedInGroup;
+        result.totalMergedCount += group.sourceIds.length;
+        result.mergedGroups++;
+
+        logger.info(
+          `Merged group: target=${group.targetId}, sources=[${group.sourceIds.join(", ")}], aliases=${newAliases.length}, edges=${edgesUpdatedInGroup}`,
+        );
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(`Error merging group for target ${group.targetId}:`, error);
+        result.errors.push({
+          targetId: group.targetId,
+          sourceIds: group.sourceIds,
+          error: errorMessage,
+        });
+      }
+    }
+
+    logger.info(
+      `Batch merge complete: ${result.mergedGroups} groups, ${result.totalMergedCount} merged, ${result.aliasesAdded} aliases, ${result.edgesUpdated} edges, ${result.errors.length} errors`,
+    );
+
+    return result;
+  }
+
+  async addAliases(
+    supabase: SupabaseClient,
+    knowledgePointId: string,
+    aliases: string[],
+  ): Promise<void> {
+    if (aliases.length === 0) {
+      logger.info("No aliases to add");
+      return;
+    }
+
+    const { data: kp, error: fetchError } = await supabase
+      .from("knowledge_points")
+      .select("id, title, properties")
+      .eq("id", knowledgePointId)
+      .single();
+
+    if (fetchError || !kp) {
+      logger.error(`Knowledge point not found: ${knowledgePointId}`);
+      throw new Error(`Knowledge point not found: ${knowledgePointId}`);
+    }
+
+    const properties =
+      (kp.properties as { aliases?: string[] }) || {};
+    const existingAliases: string[] = properties.aliases || [];
+    const normalizedTitle = normalizeTitle(kp.title);
+
+    const uniqueNewAliases = aliases.filter((alias) => {
+      const normalizedAlias = normalizeTitle(alias);
+      const isDuplicate = existingAliases.some(
+        (a) => normalizeTitle(a) === normalizedAlias,
+      );
+      const isSameAsTitle = normalizedAlias === normalizedTitle;
+      return !isDuplicate && !isSameAsTitle && alias.trim().length > 0;
+    });
+
+    if (uniqueNewAliases.length === 0) {
+      logger.info(`No new unique aliases to add for ${knowledgePointId}`);
+      return;
+    }
+
+    const updatedAliases = [...existingAliases, ...uniqueNewAliases];
+
+    const { error: updateError } = await supabase
+      .from("knowledge_points")
+      .update({
+        properties: {
+          ...properties,
+          aliases: updatedAliases,
+        },
+      })
+      .eq("id", knowledgePointId);
+
+    if (updateError) {
+      logger.error(
+        `Failed to add aliases for ${knowledgePointId}:`,
+        updateError,
+      );
+      throw new Error(`Failed to add aliases: ${updateError.message}`);
+    }
+
+    logger.info(
+      `Added ${uniqueNewAliases.length} aliases to ${knowledgePointId}: [${uniqueNewAliases.join(", ")}]`,
+    );
+  }
+
+  async removeAlias(
+    supabase: SupabaseClient,
+    knowledgePointId: string,
+    alias: string,
+  ): Promise<void> {
+    const { data: kp, error: fetchError } = await supabase
+      .from("knowledge_points")
+      .select("id, properties")
+      .eq("id", knowledgePointId)
+      .single();
+
+    if (fetchError || !kp) {
+      logger.error(`Knowledge point not found: ${knowledgePointId}`);
+      throw new Error(`Knowledge point not found: ${knowledgePointId}`);
+    }
+
+    const properties =
+      (kp.properties as { aliases?: string[] }) || {};
+    const existingAliases: string[] = properties.aliases || [];
+
+    const normalizedTarget = normalizeTitle(alias);
+    const filteredAliases = existingAliases.filter(
+      (a) => normalizeTitle(a) !== normalizedTarget,
+    );
+
+    if (filteredAliases.length === existingAliases.length) {
+      logger.info(`Alias "${alias}" not found in ${knowledgePointId}`);
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("knowledge_points")
+      .update({
+        properties: {
+          ...properties,
+          aliases: filteredAliases,
+        },
+      })
+      .eq("id", knowledgePointId);
+
+    if (updateError) {
+      logger.error(
+        `Failed to remove alias from ${knowledgePointId}:`,
+        updateError,
+      );
+      throw new Error(`Failed to remove alias: ${updateError.message}`);
+    }
+
+    logger.info(`Removed alias "${alias}" from ${knowledgePointId}`);
   }
 }
 

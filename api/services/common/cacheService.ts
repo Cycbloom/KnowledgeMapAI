@@ -24,6 +24,7 @@ export const CacheKeys = {
   USER_FAVORITES: (userId: string) => `user_favorites_${userId}`,
   USER_RECENT_GRAPHS: (userId: string) => `user_recent_graphs_${userId}`,
   GRAPH_COLLABORATORS: (graphId: string) => `graph_collaborators_${graphId}`,
+  CONCEPT_ANALYSIS: (graphId: string, jobId: string) => `concept_analysis_${graphId}_${jobId}`,
 };
 
 export const CacheTTL = {

@@ -7,7 +7,7 @@ import {
   getCookie,
 } from "./client";
 import { useStore } from "@/store/useStore";
-import type { AIAction } from "@shared/types";
+import type { AIAction, TutorMode } from "@shared/types";
 import { getAILanguage } from "@/hooks/useAILanguage";
 import {
   createStreamHandler,
@@ -308,7 +308,7 @@ export const aiApi = {
       graph_id?: string;
       history?: unknown[];
       context_node_ids?: string[];
-      mode?: "free" | "guided" | "learning-path" | "literature-extract";
+      mode?: TutorMode;
       provider?: string;
       model?: string;
       language?: string;

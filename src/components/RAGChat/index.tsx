@@ -22,6 +22,7 @@ import { ConceptsPanel } from "./ConceptsPanel";
 import { SuggestionsPanel } from "./SuggestionsPanel";
 import { LearningPathPanel } from "../Learning/LearningPathPanel";
 import { LiteratureExtractPanel } from "../LiteratureExtract/LiteratureExtractPanel";
+import { ConceptAggregationPanel } from "../ConceptAggregation/ConceptAggregationPanel";
 import "katex/dist/katex.min.css";
 import { useTranslation } from "react-i18next";
 
@@ -470,6 +471,18 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               >
                 {t("aiChat.modeLiteratureExtract")}
               </button>
+              <button
+                onClick={() => onSwitchTutorMode?.("concept-aggregation")}
+                className={`px-3 py-1 text-xs rounded-md transition-all ${
+                  tutorMode === "concept-aggregation"
+                    ? "bg-amber-500 text-white"
+                    : isDark
+                      ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      : "bg-white text-amber-600 hover:bg-amber-100"
+                }`}
+              >
+                概念聚合
+              </button>
             </div>
           </div>
         </div>
@@ -484,7 +497,14 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
       )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {isTutorMode && tutorMode === "learning-path" && graphId ? (
+        {isTutorMode && tutorMode === "concept-aggregation" && graphId ? (
+          <ConceptAggregationPanel
+            graphId={graphId}
+            isOpen={true}
+            onClose={() => {}}
+            embedded={true}
+          />
+        ) : isTutorMode && tutorMode === "learning-path" && graphId ? (
           <LearningPathPanel
             graphId={graphId}
             onNodeSelect={onLearningPathNodeClick || onNodeClick}
@@ -672,7 +692,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
       {!(
         isTutorMode &&
-        (tutorMode === "learning-path" || tutorMode === "literature-extract")
+        (tutorMode === "learning-path" || tutorMode === "literature-extract" || tutorMode === "concept-aggregation")
       ) && (
         <ChatInput
           input={chatState.input}

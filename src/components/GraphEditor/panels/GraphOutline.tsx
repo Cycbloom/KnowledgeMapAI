@@ -687,7 +687,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     }
 
     return groups;
-  }, [nodes, templateType]);
+  }, [nodes, templateType, literatureSourcesMap]);
 
   const toggleModuleExpand = useCallback((moduleKey: string) => {
     setExpandedModules((prev) => {

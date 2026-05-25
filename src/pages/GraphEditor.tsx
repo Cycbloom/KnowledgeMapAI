@@ -158,6 +158,12 @@ const ConceptPreviewList = lazy(() =>
   ),
 );
 
+const ConceptAggregationPanel = lazy(() =>
+  import("../components/ConceptAggregation").then((module) => ({
+    default: module.ConceptAggregationPanel,
+  })),
+);
+
 const StoryEditor = lazy(() =>
   import("../components/StoryEditor/StoryEditor").then((module) => ({
     default: module.StoryEditor,
@@ -230,6 +236,7 @@ export const GraphEditor = () => {
   const [isLiteratureLibraryOpen, setIsLiteratureLibraryOpen] = useState(false);
   const [extractedConcepts, setExtractedConcepts] = useState<any[]>([]);
   const [isConceptPreviewOpen, setIsConceptPreviewOpen] = useState(false);
+  const [isConceptAggregationOpen, setIsConceptAggregationOpen] = useState(false);
 
   const {
     isOpen: isConsoleOpen,
@@ -1517,6 +1524,7 @@ export const GraphEditor = () => {
         onOpenShortcutSettings={() => setIsShortcutHelpOpen(true)}
         onShare={() => state.setIsShareModalOpen(true)}
         onOpenAnalysis={() => setIsAnalysisPanelOpen(true)}
+        onOpenConceptAggregation={() => setIsConceptAggregationOpen(true)}
         viewMode={viewMode}
         setViewMode={setViewMode}
         isExplorationMode={isExplorationMode}
@@ -1806,6 +1814,14 @@ export const GraphEditor = () => {
               message.error(`创建连接失败: ${errorMessage}`);
             }
           }}
+        />
+      </Suspense>
+
+      <Suspense fallback={<ViewLoader />}>
+        <ConceptAggregationPanel
+          graphId={id || ""}
+          isOpen={isConceptAggregationOpen}
+          onClose={() => setIsConceptAggregationOpen(false)}
         />
       </Suspense>
 

@@ -146,7 +146,8 @@ export type TutorMode =
   | "free"
   | "guided"
   | "learning-path"
-  | "literature-extract";
+  | "literature-extract"
+  | "concept-aggregation";
 
 export interface TutorExtractedConcept {
   title: string;

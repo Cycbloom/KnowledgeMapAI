@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import { useStore } from "@/store/useStore";
 import { createErrorFromResponse } from "@/utils/errors";
 import { getAIConfig, injectAIConfig } from "../api/client";
-import type { AIAction } from "@shared/types";
+import type { AIAction, TutorMode } from "@shared/types";
 import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "@/config/mobileApiConfig";
 import { getAILanguage } from "@/hooks/useAILanguage";
@@ -418,7 +418,7 @@ export const mobileAiApi = {
       graph_id?: string;
       history?: unknown[];
       context_node_ids?: string[];
-      mode?: "free" | "guided" | "learning-path" | "literature-extract";
+      mode?: TutorMode;
       provider?: string;
       model?: string;
     },

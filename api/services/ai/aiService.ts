@@ -6,7 +6,11 @@ import { promptService } from "./promptService";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse, buildTutorContext, withAIPerformanceTracking } from "./utils";
+import {
+  parseAIResponse,
+  buildTutorContext,
+  withAIPerformanceTracking,
+} from "./utils";
 import { performanceMonitor } from "./performanceMonitor";
 import { pricingService } from "./pricingService";
 import { withEmbeddingMonitoring } from "./aiMonitor";

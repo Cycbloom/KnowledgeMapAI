@@ -46,6 +46,7 @@ import {
   EyeOff,
   FileText,
   LayoutGrid,
+  GitMerge,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../../hooks";
@@ -143,6 +144,7 @@ interface GraphToolbarProps {
   onOpenShortcutSettings?: () => void;
   onShare?: () => void;
   onOpenAnalysis?: () => void;
+  onOpenConceptAggregation?: () => void;
 
   // Presentation
   onTogglePresentation?: () => void;
@@ -239,6 +241,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isTutorMode: _isTutorMode,
   onToggleTutorMode: _onToggleTutorMode,
   onOpenAnalysis,
+  onOpenConceptAggregation,
   onTogglePresentation,
   onTogglePodcast,
   isMobilePreviewMode,
@@ -1597,6 +1600,12 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           icon={BarChart3}
           label={t("graphEditor.toolbar.graphAnalysis")}
           disabled={!onOpenAnalysis}
+        />
+        <MenuItem
+          onClick={onOpenConceptAggregation}
+          icon={GitMerge}
+          label="概念聚合"
+          disabled={!onOpenConceptAggregation}
         />
 
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>

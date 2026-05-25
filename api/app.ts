@@ -51,6 +51,7 @@ import databaseRoutes from "./routes/database";
 import supabaseRoutes from "./routes/supabase";
 import literatureRoutes from "./routes/literature";
 import regionRoutes from "./routes/regions";
+import conceptAggregationRoutes from "./routes/conceptAggregation";
 import { storyRoutes } from "./routes/story";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
@@ -224,6 +225,7 @@ app.use("/api/plugins", pluginsRoutes);
 app.use("/api/database", databaseRoutes);
 app.use("/api/supabase", supabaseRoutes);
 app.use("/api/literature", rateLimiters.aiHeavy, literatureRoutes);
+app.use("/api/graphs", conceptAggregationRoutes);
 app.use("/api/graphs/:graphId/regions", regionRoutes);
 app.use("/api/story/:graphId", storyRoutes);
 

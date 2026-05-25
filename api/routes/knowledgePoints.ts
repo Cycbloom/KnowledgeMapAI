@@ -9,6 +9,9 @@ import {
   knowledgePointVersionService,
 } from "../services/graph/index";
 import { authService } from "../services/core/authService";
+import {
+  conceptAggregationService,
+} from "../services/graph/conceptAggregationService";
 import { logger } from "../utils/logger";
 import { z } from "zod";
 
@@ -440,6 +443,15 @@ const createManualVersionSchema = z.object({
   }),
 });
 
+const updateAliasesSchema = z.object({
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+  body: z.object({
+    aliases: z.array(z.string()).max(20),
+  }),
+});
+
 router.get(
   "/knowledge-points/:id/versions",
   requireAuth,
@@ -637,6 +649,75 @@ router.post(
         );
       }
       throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.put(
+  "/knowledge-points/:id/aliases",
+  requireAuth,
+  validate(updateAliasesSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { aliases } = req.body;
+
+    try {
+      const isOwner = await knowledgePointService.checkOwnership(
+        req.supabase!,
+        id,
+        req.user.id,
+      );
+
+      if (!isOwner) {
+        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
+      }
+
+      logger.info("Updating knowledge point aliases", {
+        knowledgePointId: id,
+        aliasesCount: aliases.length,
+        userId: req.user.id,
+      });
+
+      await conceptAggregationService.addAliases(
+        req.supabase!,
+        id,
+        aliases,
+      );
+
+      logger.info("Knowledge point aliases updated successfully", {
+        knowledgePointId: id,
+        aliases,
+        userId: req.user.id,
+      });
+
+      res.json({
+        success: true,
+        message: "别名更新成功",
+        aliases,
+      });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Failed to update knowledge point aliases", {
+        error: err.message,
+        stack: err.stack,
+        knowledgePointId: id,
+        userId: req.user.id,
+      });
+
+      if (error instanceof AppError) throw error;
+      if (err.message === "Knowledge point not found") {
+        throw new AppError(
+          "知识点不存在",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+
+      throw new AppError(
+        err.message || "更新别名失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
     }
   },
 );

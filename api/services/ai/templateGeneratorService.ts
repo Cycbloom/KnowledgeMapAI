@@ -1011,6 +1011,8 @@ export class TemplateGeneratorService {
         "Focus on analytical structure with factors, comparisons, and conclusions.",
       architecture:
         "Focus on system architecture with modules, components, and their relationships.",
+      creative:
+        "Focus on narrative structure with story arcs, character development, and dramatic elements.",
     };
 
     let templateTypeGuidance = "";

@@ -128,9 +128,7 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
     prevNodeCount.current = nodes.length;
   }, [nodes.length]);
 
-  const handleWheelRef = useRef<((e: WheelEvent) => void) | null>(null);
-
-  handleWheelRef.current = (e: WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     hasUserInteracted.current = true;
     e.preventDefault();
     const scaleFactor = 1.1;
@@ -161,22 +159,18 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
     updateTransformDOM(newTransform);
     scheduleViewportUpdate();
     updateTransformState(newTransform);
-  };
+  }, [svgRef, transformRef, updateTransformDOM, scheduleViewportUpdate, updateTransformState]);
 
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
 
-    const wheelHandler = (e: WheelEvent) => {
-      handleWheelRef.current?.(e);
-    };
-
-    svg.addEventListener('wheel', wheelHandler, { passive: false });
+    svg.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      svg.removeEventListener('wheel', wheelHandler);
+      svg.removeEventListener('wheel', handleWheel);
     };
-  }, [svgRef, layout]);
+  }, [svgRef, layout, handleWheel]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {

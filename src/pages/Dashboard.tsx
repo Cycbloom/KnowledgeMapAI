@@ -19,7 +19,6 @@ import {
   Search,
   Network,
   ArrowRight,
-  Sparkles,
   Tag,
   X,
   Star,
@@ -39,6 +38,7 @@ import {
   GitBranch,
   Target,
   Layers,
+  Sparkles,
 } from "lucide-react";
 import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
@@ -87,6 +87,12 @@ const TEMPLATE_TYPE_CONFIG: Record<
     color: "text-cyan-600 dark:text-cyan-400",
     bgColor: "bg-cyan-100 dark:bg-cyan-900/30",
     label: "项目生命周期",
+  },
+  story_creation: {
+    icon: Sparkles,
+    color: "text-pink-600 dark:text-pink-400",
+    bgColor: "bg-pink-100 dark:bg-pink-900/30",
+    label: "小说/故事创作",
   },
 };
 

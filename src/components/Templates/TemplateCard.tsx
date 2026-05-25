@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Template, TemplateCategory } from "../../types";
-import { GraduationCap, Briefcase, Search, Layers } from "lucide-react";
+import { GraduationCap, Briefcase, Search, Layers, Sparkles } from "lucide-react";
 import { useTheme, useIsMobile } from "../../hooks";
 
 interface TemplateCardProps {
@@ -15,6 +15,7 @@ const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   project: <Briefcase size={20} />,
   analysis: <Search size={20} />,
   architecture: <Layers size={20} />,
+  creative: <Sparkles size={20} />,
 };
 
 const getCategoryColors = (
@@ -26,6 +27,7 @@ const getCategoryColors = (
       project: "bg-green-900/50 text-green-400 border-green-800",
       analysis: "bg-amber-900/50 text-amber-400 border-amber-800",
       architecture: "bg-primary-900/50 text-primary-400 border-primary-800",
+      creative: "bg-pink-900/50 text-pink-400 border-pink-800",
     };
   }
   return {
@@ -33,6 +35,7 @@ const getCategoryColors = (
     project: "bg-green-50 text-green-600 border-green-200",
     analysis: "bg-amber-50 text-amber-600 border-amber-200",
     architecture: "bg-primary-50 text-primary-600 border-primary-200",
+    creative: "bg-pink-50 text-pink-600 border-pink-200",
   };
 };
 

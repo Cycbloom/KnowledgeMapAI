@@ -8,6 +8,7 @@ import {
   Layers,
   FileText,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { PromptEditor } from "../GraphEditor/panels/PromptEditor";
 import { useStore } from "../../store/useStore";
@@ -40,6 +41,7 @@ const CATEGORIES: TemplateCategory[] = [
   "project",
   "analysis",
   "architecture",
+  "creative",
 ];
 
 const CATEGORY_CONFIG: Record<
@@ -79,6 +81,13 @@ const CATEGORY_CONFIG: Record<
     color: "text-primary-600 dark:text-primary-400",
     iconBg: "bg-primary-100 dark:bg-primary-800/40",
     textColor: "text-primary-600 dark:text-primary-400",
+  },
+  creative: {
+    icon: <Sparkles size={16} />,
+    labelKey: "templates.category.creative",
+    color: "text-pink-600 dark:text-pink-400",
+    iconBg: "bg-pink-100 dark:bg-pink-800/40",
+    textColor: "text-pink-600 dark:text-pink-400",
   },
 };
 

@@ -1327,14 +1327,16 @@
       "project": "项目规划",
       "analysis": "问题分析",
       "architecture": "系统架构",
-      "topicResearch": "专题研究"
+      "topicResearch": "专题研究",
+      "creative": "创意类"
     },
     "categoryDescription": {
       "knowledge": "系统学习知识，构建完整体系",
       "project": "规划项目流程，分解任务目标",
       "analysis": "深度分析问题，找到根因对策",
       "architecture": "理解系统组成，梳理依赖关系",
-      "topicResearch": "研究专题领域，结构化深度探索"
+      "topicResearch": "研究专题领域，结构化深度探索",
+      "creative": "创意写作与叙事作品组织"
     },
     "templateType": {
       "knowledge_tree": "知识树",
@@ -1354,6 +1356,7 @@
       "org_structure": "组织架构",
       "system_architecture": "系统架构",
       "knowledge_system": "知识体系",
+      "story_creation": "小说/故事创作",
       "blank": "空白图谱"
     },
     "templateTypeDescription": {
@@ -1374,6 +1377,7 @@
       "org_structure": "层级与职能关系",
       "system_architecture": "模块与依赖关系",
       "knowledge_system": "跨领域知识关联",
+      "story_creation": "用于组织小说、剧本等叙事性作品的创作",
       "blank": "自由创建，不使用特定结构"
     },
     "topicResearchPreset": {
@@ -3039,6 +3043,81 @@
         "description": "AI 可根据节点内容自动生成单选、多选、问答等多种类型的复习卡片，并自动加入 FSRS 记忆算法复习队列。"
       }
     }
+  },
+  "storyEditor": {
+    "title": "故事编辑器",
+    "storyCreationMode": "故事创作模式",
+    "untitledStory": "未命名故事",
+    "backToGraph": "返回图谱",
+    "settings": "设置",
+    "save": "保存",
+    "saved": "已保存",
+    "loading": "加载中...",
+    "loadFailed": "加载故事数据失败",
+    "welcomeTitle": "开始您的创作之旅",
+    "welcomeDescription": "选择一个模板初始化故事结构，或从空白开始创作",
+    "selectToEdit": "选择要编辑的内容",
+    "selectHint": "从左侧结构树或角色列表中选择一个项目进行编辑",
+    "structure": "故事结构",
+    "characters": "角色",
+    "addCharacter": "添加角色",
+    "initializeTemplate": "初始化模板",
+    "selectTemplate": "选择模板",
+    "templateThreeAct": "三幕式结构",
+    "templateHerosJourney": "英雄之旅",
+    "templateInitialized": "模板「{{template}}」已初始化",
+    "initializeFailed": "模板初始化失败",
+    "levels": {
+      "story": "故事",
+      "act": "幕",
+      "sequence": "序列",
+      "chapter": "章节",
+      "scene": "场景"
+    },
+    "roleTypes": {
+      "protagonist": "主角",
+      "antagonist": "反派",
+      "supporting": "配角",
+      "minor": "路人"
+    },
+    "sceneSynopsis": "摘要",
+    "sceneContent": "正文",
+    "povCharacter": "POV 角色",
+    "location": "地点",
+    "timeSetting": "时间",
+    "writingStatus": "写作状态",
+    "statusDraft": "草稿",
+    "statusRevising": "修改中",
+    "statusComplete": "完成",
+    "appearingCharacters": "出场角色",
+    "wordCount": "字数",
+    "basicInfo": "基本信息",
+    "psychology": "心理画像",
+    "motivation": "核心动机",
+    "fear": "核心恐惧",
+    "desire": "核心欲望",
+    "flaw": "致命弱点",
+    "backstory": "背景故事",
+    "characterArc": "角色弧线",
+    "arcStart": "起点",
+    "arcEnd": "终点",
+    "cancel": "取消",
+    "delete": "删除",
+    "confirmDelete": "确定要删除吗？此操作不可撤销。",
+    "addChild": "添加子节点",
+    "addRelationship": "添加关系",
+    "newNodeTitle": "新节点",
+    "newCharacterName": "新角色",
+    "nodeCreated": "节点已创建",
+    "nodeDeleted": "节点已删除",
+    "createFailed": "创建失败",
+    "deleteFailed": "删除失败",
+    "characterCreated": "角色已创建",
+    "characterDeleted": "角色已删除",
+    "characterCreateFailed": "创建角色失败",
+    "characterDeleteFailed": "删除角色失败",
+    "characterSaved": "角色已保存",
+    "sceneSaved": "场景已保存"
   },
   "autoGraph": {
     "title": "AI 知识图谱生成器",

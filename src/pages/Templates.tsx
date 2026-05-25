@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTemplates } from "../hooks/queries";
@@ -19,6 +19,7 @@ import {
   Layers,
   Network,
   CheckSquare,
+  Sparkles,
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
@@ -29,6 +30,7 @@ const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   project: <Briefcase size={20} />,
   analysis: <Search size={20} />,
   architecture: <Layers size={20} />,
+  creative: <Sparkles size={20} />,
 };
 
 type TemplateTab = "knowledge" | "task";

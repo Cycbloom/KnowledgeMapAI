@@ -78,6 +78,8 @@ const getCategoryIcon = (cat: TemplateCategory, isMobile: boolean) => {
       return <Search size={size} />;
     case "architecture":
       return <Layers size={size} />;
+    case "creative":
+      return <Sparkles size={size} />;
   }
 };
 
@@ -108,6 +110,12 @@ const categoryColorMap: Record<
     bg: "bg-primary-50 dark:bg-primary-900/20",
     text: "text-primary-600 dark:text-primary-400",
     iconBg: "bg-primary-100 dark:bg-primary-800/40",
+  },
+  creative: {
+    border: "border-pink-500",
+    bg: "bg-pink-50 dark:bg-pink-900/20",
+    text: "text-pink-600 dark:text-pink-400",
+    iconBg: "bg-pink-100 dark:bg-pink-800/40",
   },
 };
 

@@ -2506,6 +2506,81 @@
       "deleteSuccess": "Region deleted"
     }
   },
+  "storyEditor": {
+    "title": "Story Editor",
+    "storyCreationMode": "Story Creation Mode",
+    "untitledStory": "Untitled Story",
+    "backToGraph": "Back to Graph",
+    "settings": "Settings",
+    "save": "Save",
+    "saved": "Saved",
+    "loading": "Loading...",
+    "loadFailed": "Failed to load story data",
+    "welcomeTitle": "Start Your Creative Journey",
+    "welcomeDescription": "Choose a template to initialize story structure, or start from scratch",
+    "selectToEdit": "Select Content to Edit",
+    "selectHint": "Select an item from the structure tree or character list on the left to edit",
+    "structure": "Story Structure",
+    "characters": "Characters",
+    "addCharacter": "Add Character",
+    "initializeTemplate": "Initialize Template",
+    "selectTemplate": "Select Template",
+    "templateThreeAct": "Three-Act Structure",
+    "templateHerosJourney": "Hero's Journey",
+    "templateInitialized": "Template '{{template}}' initialized",
+    "initializeFailed": "Failed to initialize template",
+    "levels": {
+      "story": "Story",
+      "act": "Act",
+      "sequence": "Sequence",
+      "chapter": "Chapter",
+      "scene": "Scene"
+    },
+    "roleTypes": {
+      "protagonist": "Protagonist",
+      "antagonist": "Antagonist",
+      "supporting": "Supporting",
+      "minor": "Minor"
+    },
+    "sceneSynopsis": "Synopsis",
+    "sceneContent": "Content",
+    "povCharacter": "POV Character",
+    "location": "Location",
+    "timeSetting": "Time Setting",
+    "writingStatus": "Writing Status",
+    "statusDraft": "Draft",
+    "statusRevising": "Revising",
+    "statusComplete": "Complete",
+    "appearingCharacters": "Appearing Characters",
+    "wordCount": "Word Count",
+    "basicInfo": "Basic Info",
+    "psychology": "Psychology Profile",
+    "motivation": "Core Motivation",
+    "fear": "Core Fear",
+    "desire": "Core Desire",
+    "flaw": "Fatal Flaw",
+    "backstory": "Backstory",
+    "characterArc": "Character Arc",
+    "arcStart": "Starting Point",
+    "arcEnd": "End Point",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete? This action cannot be undone.",
+    "addChild": "Add Child Node",
+    "addRelationship": "Add Relationship",
+    "newNodeTitle": "New Node",
+    "newCharacterName": "New Character",
+    "nodeCreated": "Node created",
+    "nodeDeleted": "Node deleted",
+    "createFailed": "Creation failed",
+    "deleteFailed": "Deletion failed",
+    "characterCreated": "Character created",
+    "characterDeleted": "Character deleted",
+    "characterCreateFailed": "Failed to create character",
+    "characterDeleteFailed": "Failed to delete character",
+    "characterSaved": "Character saved",
+    "sceneSaved": "Scene saved"
+  },
   "autoGraph": {
     "title": "AI Knowledge Graph Generator",
     "subtitle": "Progressive generation, infinite expansion",
@@ -2619,14 +2694,16 @@
       "project": "Project Planning",
       "analysis": "Problem Analysis",
       "architecture": "System Architecture",
-      "topicResearch": "Topic Research"
+      "topicResearch": "Topic Research",
+      "creative": "Creative"
     },
     "categoryDescription": {
       "knowledge": "Systematically learn knowledge, build complete systems",
       "project": "Plan project workflows, break down task objectives",
       "analysis": "Deeply analyze problems, find root causes and solutions",
       "architecture": "Understand system composition, organize dependencies",
-      "topicResearch": "Research specific topics with structured deep exploration"
+      "topicResearch": "Research specific topics with structured deep exploration",
+      "creative": "Creative writing and narrative work organization"
     },
     "templateType": {
       "knowledge_tree": "Knowledge Tree",
@@ -2646,6 +2723,7 @@
       "org_structure": "Org Structure",
       "system_architecture": "System Architecture",
       "knowledge_system": "Knowledge System",
+      "story_creation": "Story Creation",
       "blank": "Blank Graph"
     },
     "templateTypeDescription": {
@@ -2666,6 +2744,7 @@
       "org_structure": "Hierarchical and functional relationships",
       "system_architecture": "Module and dependency relationships",
       "knowledge_system": "Cross-domain knowledge connections",
+      "story_creation": "Organize novels, screenplays and narrative works",
       "blank": "Create freely without specific structure"
     },
     "topicResearchPreset": {

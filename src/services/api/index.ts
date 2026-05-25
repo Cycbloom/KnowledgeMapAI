@@ -49,6 +49,7 @@ export { pluginsApi } from "./plugins";
 export type { RegistryPlugin, InstalledPlugin, PluginUpdate } from "./plugins";
 export { literatureApi } from "./literature";
 export { regionsApi } from "./regions";
+export { storyCreationApi } from "./storyCreation";
 
 import { authApi } from "./auth";
 import { graphsApi } from "./graphs";
@@ -82,6 +83,7 @@ import { domainsApi, graphDomainsApi } from "./domains";
 import { pluginsApi } from "./plugins";
 import { literatureApi } from "./literature";
 import { regionsApi } from "./regions";
+import { storyCreationApi } from "./storyCreation";
 
 export const api = {
   auth: authApi,
@@ -120,6 +122,7 @@ export const api = {
   plugins: pluginsApi,
   literature: literatureApi,
   regions: regionsApi,
+  storyCreation: storyCreationApi,
 };
 
 export type {

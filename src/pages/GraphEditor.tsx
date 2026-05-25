@@ -158,6 +158,12 @@ const ConceptPreviewList = lazy(() =>
   ),
 );
 
+const StoryEditor = lazy(() =>
+  import("../components/StoryEditor/StoryEditor").then((module) => ({
+    default: module.StoryEditor,
+  })),
+);
+
 const Console = lazy(() =>
   import("../components/Console/Console").then((module) => ({
     default: module.Console,
@@ -1061,6 +1067,14 @@ export const GraphEditor = () => {
       }
     },
   });
+
+  if (graphMeta?.template_type === "story_creation") {
+    return (
+      <Suspense fallback={<ViewLoader />}>
+        <StoryEditor graphId={id!} graphMeta={graphMeta} />
+      </Suspense>
+    );
+  }
 
   return (
     <div

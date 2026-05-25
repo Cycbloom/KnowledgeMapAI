@@ -238,15 +238,16 @@ async function restoreBackupData(
       is_public?: boolean;
     }>;
     nodes?: Array<{
-      id: string;
-      graph_id: string;
-      title: string;
-      content?: string;
-      properties?: Record<string, unknown>;
-      x_position?: number;
-      y_position?: number;
-      level?: string;
-    }>;
+    id: string;
+    graph_id: string;
+    title: string;
+    content?: string;
+    learning_material?: string;
+    properties?: Record<string, unknown>;
+    x_position?: number;
+    y_position?: number;
+    level?: string;
+  }>;
     edges?: Array<{
       graph_id: string;
       source_knowledge_point_id: string;
@@ -310,6 +311,7 @@ async function restoreBackupData(
         graph_id: graphId,
         title: n.title,
         content: n.content || "",
+        learning_material: n.learning_material,
         properties: n.properties || {},
         x_position: n.x_position || 0,
         y_position: n.y_position || 0,

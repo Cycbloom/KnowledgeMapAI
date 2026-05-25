@@ -116,6 +116,7 @@ export async function createKnowledgePointWithGraphNode(
     graph_id: string;
     title: string;
     content?: string;
+    learning_material?: string;
     x_position?: number;
     y_position?: number;
     level?: string;
@@ -131,6 +132,7 @@ export async function createKnowledgePointWithGraphNode(
     .insert({
       title: data.title,
       content: data.content || "",
+      learning_material: data.learning_material || null,
       properties: data.properties || {},
       visibility: "private",
       owner_id: userId,

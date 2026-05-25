@@ -424,7 +424,9 @@
     "optional": "Optional",
     "required": "Required",
     "analyzing": "Analyzing...",
-    "generating": "Generating..."
+    "generating": "Generating...",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "auth": {
     "login": "Login",

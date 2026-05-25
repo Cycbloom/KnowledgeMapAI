@@ -21,12 +21,16 @@ interface LiteratureHoverCardProps {
   position: { x: number; y: number };
   onNodeClick?: (node: Node) => void;
   isDark?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 export const LiteratureHoverCard: React.FC<LiteratureHoverCardProps> = ({
   literature,
   position,
   isDark = false,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
@@ -69,6 +73,8 @@ export const LiteratureHoverCard: React.FC<LiteratureHoverCardProps> = ({
         top: `${adjustedPosition.y}px`,
         maxWidth: "calc(100vw - 32px)",
       }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <div className="w-[320px]">
       <LiteratureMetadataCard

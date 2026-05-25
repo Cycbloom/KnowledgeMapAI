@@ -14,6 +14,8 @@ import {
   Link,
   Tag,
   FileType,
+  Copy,
+  Check,
 } from "lucide-react";
 import type {
   LiteratureMetadata,
@@ -49,10 +51,46 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
-
+  const [copied, setCopied] = useState(false);
   const typeConfig = LITERATURE_TYPE_CONFIG[metadata.type];
   const TypeIcon = typeConfig.icon;
   const typeColor = typeConfig.color;
+
+  const formatCitationText = (): string => {
+    const parts: string[] = [];
+
+    if (metadata.authors.length > 0) {
+      parts.push(metadata.authors.join(", "));
+    }
+
+    if (metadata.year) {
+      parts.push(`(${metadata.year})`);
+    }
+
+    if (metadata.title) {
+      parts.push(metadata.title);
+    }
+
+    if (metadata.journal) {
+      parts.push(metadata.journal);
+    }
+
+    if (metadata.doi) {
+      parts.push(`DOI: ${metadata.doi}`);
+    }
+
+    return parts.join(". ") + (parts.length > 0 ? "." : "");
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(formatCitationText());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   const formatAuthors = (authors: string[]): string => {
     if (authors.length === 0) return "";
@@ -68,91 +106,111 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
 
   const renderCompactView = () => (
     <div
-      className={`group relative flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 ${
-        isDark
-          ? "border-slate-700 bg-slate-800/50 hover:bg-slate-700/50"
-          : "border-gray-200 bg-white hover:bg-gray-50"
-      }`}
+      className="group/compact relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <TypeIcon size={16} style={{ color: typeColor }} />
-      <span
-        className={`font-medium text-sm truncate ${
-          isDark ? "text-slate-100" : "text-gray-900"
+      <div
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 ${
+          isDark
+            ? "border-slate-700 bg-slate-800/50 hover:bg-slate-700/50"
+            : "border-gray-200 bg-white hover:bg-gray-50"
         }`}
       >
-        {metadata.title}
-      </span>
-      {metadata.authors.length > 0 && (
+        <TypeIcon size={16} style={{ color: typeColor }} />
         <span
-          className={`text-xs truncate ${
-            isDark ? "text-slate-400" : "text-gray-500"
+          className={`font-medium text-sm truncate ${
+            isDark ? "text-slate-100" : "text-gray-900"
           }`}
         >
-          {formatAuthors(metadata.authors)}
+          {metadata.title}
         </span>
-      )}
-      {metadata.year && (
-        <span
-          className={`text-xs flex-shrink-0 ${
-            isDark ? "text-slate-500" : "text-gray-400"
-          }`}
-        >
-          ({metadata.year})
-        </span>
-      )}
+        {metadata.authors.length > 0 && (
+          <span
+            className={`text-xs truncate ${
+              isDark ? "text-slate-400" : "text-gray-500"
+            }`}
+          >
+            {formatAuthors(metadata.authors)}
+          </span>
+        )}
+        {metadata.year && (
+          <span
+            className={`text-xs flex-shrink-0 ${
+              isDark ? "text-slate-500" : "text-gray-400"
+            }`}
+          >
+            ({metadata.year})
+          </span>
+        )}
 
-      {(onEdit || onDelete) && (
-        <div
-          className={`flex items-center gap-1 transition-opacity duration-200 ${
-            isHovered ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          {onEdit && (
+        {(onEdit || onDelete) && (
+          <div
+            className={`flex items-center gap-1 transition-opacity duration-200 ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          >
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onEdit();
+                handleCopy();
               }}
               className={`p-1 rounded transition-colors ${
-                isDark
-                  ? "hover:bg-slate-600 text-slate-400 hover:text-slate-300"
-                  : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                copied
+                  ? isDark
+                    ? "bg-green-900/30 text-green-400"
+                    : "bg-green-50 text-green-500"
+                  : isDark
+                    ? "hover:bg-slate-600 text-slate-400 hover:text-slate-300"
+                    : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
               }`}
-              title={t("common.edit")}
+              title={copied ? t("common.copied") : t("common.copy")}
             >
-              <Edit3 size={14} />
+              {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className={`p-1 rounded transition-colors ${
-                isDark
-                  ? "hover:bg-red-900/30 text-slate-400 hover:text-red-400"
-                  : "hover:bg-red-50 text-gray-400 hover:text-red-500"
-              }`}
-              title={t("common.delete")}
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      )}
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className={`p-1 rounded transition-colors ${
+                  isDark
+                    ? "hover:bg-slate-600 text-slate-400 hover:text-slate-300"
+                    : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                }`}
+                title={t("common.edit")}
+              >
+                <Edit3 size={14} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className={`p-1 rounded transition-colors ${
+                  isDark
+                    ? "hover:bg-red-900/30 text-slate-400 hover:text-red-400"
+                    : "hover:bg-red-50 text-gray-400 hover:text-red-500"
+                }`}
+                title={t("common.delete")}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {isHovered && (
         <div
-          className={`absolute left-0 right-0 top-full mt-1 z-50 p-3 rounded-lg border shadow-lg ${
+          className={`absolute left-0 right-0 top-full z-50 p-3 rounded-lg border shadow-lg mt-1 ${
             isDark
               ? "border-slate-700 bg-slate-800"
               : "border-gray-200 bg-white"
           }`}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
         >
           {renderFullContent()}
         </div>
@@ -293,6 +351,21 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
           <div className="flex-1 min-w-0">{renderFullContent()}</div>
 
           <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={handleCopy}
+              className={`p-1.5 rounded-lg transition-colors ${
+                copied
+                  ? isDark
+                    ? "bg-green-900/30 text-green-400"
+                    : "bg-green-50 text-green-500"
+                  : isDark
+                    ? "hover:bg-slate-700 text-slate-400 hover:text-slate-300"
+                    : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+              }`}
+              title={copied ? t("common.copied") : t("common.copy")}
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </button>
             {onEdit && (
               <button
                 onClick={onEdit}

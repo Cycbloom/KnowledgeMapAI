@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   ChevronRight,
@@ -572,6 +572,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     x: number;
     y: number;
   } | null>(null);
+  const literatureHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const moduleGroups = useMemo(() => {
     if (templateType !== "topic_research") return [];
@@ -864,6 +865,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                 onClick={() => toggleLiteratureExpand(group.key)}
                 onMouseEnter={(e) => {
                   if (!isUncategorized) {
+                    if (literatureHideTimerRef.current) {
+                      clearTimeout(literatureHideTimerRef.current);
+                      literatureHideTimerRef.current = null;
+                    }
                     const rect = e.currentTarget.getBoundingClientRect();
                     setHoveredLiterature({
                       key: group.key,
@@ -883,8 +888,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                   }
                 }}
                 onMouseLeave={() => {
-                  setHoveredLiterature(null);
-                  setHoverPosition(null);
+                  literatureHideTimerRef.current = setTimeout(() => {
+                    setHoveredLiterature(null);
+                    setHoverPosition(null);
+                  }, 200);
                 }}
               >
                 {isUncategorized ? (
@@ -988,6 +995,18 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             literature={hoveredLiterature}
             position={hoverPosition}
             onNodeClick={onNodeClick}
+            onMouseEnter={() => {
+              if (literatureHideTimerRef.current) {
+                clearTimeout(literatureHideTimerRef.current);
+                literatureHideTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={() => {
+              literatureHideTimerRef.current = setTimeout(() => {
+                setHoveredLiterature(null);
+                setHoverPosition(null);
+              }, 200);
+            }}
           />
         )}
       </div>

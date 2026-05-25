@@ -93,42 +93,71 @@ interface SessionGroupProps {
   getOperationLabel: (operation: string) => string;
 }
 
-const getSessionName = (logs: AIPerformanceLog[], getOperationLabel: (operation: string) => string): string => {
+const getSessionName = (
+  logs: AIPerformanceLog[],
+  getOperationLabel: (operation: string) => string,
+): string => {
   const operations = new Set(logs.map((l) => l.operation));
 
-  if (operations.has('auto_graph_init') || operations.has('auto_graph_expand')) {
-    return '图谱自动生成';
+  if (
+    operations.has("auto_graph_init") ||
+    operations.has("auto_graph_expand")
+  ) {
+    return "图谱自动生成";
   }
-  if (operations.has('recursive_graph_init') || operations.has('recursive_graph_expand_depth2') || operations.has('recursive_graph_expand_depth3')) {
-    const graphIds = new Set(logs.map((l) => l.metadata?.graphId).filter(Boolean));
+  if (
+    operations.has("recursive_graph_init") ||
+    operations.has("recursive_graph_expand_depth2") ||
+    operations.has("recursive_graph_expand_depth3")
+  ) {
+    const graphIds = new Set(
+      logs.map((l) => l.metadata?.graphId).filter(Boolean),
+    );
     if (graphIds.size > 1) {
       return `批量初始化知识图谱（${graphIds.size} 个图谱）`;
     }
-    return '递归图谱生成';
+    return "递归图谱生成";
   }
-  if (operations.has('generate_nodes_for_graph') || operations.has('expand_node_for_graph')) {
-    return '图谱节点生成';
+  if (
+    operations.has("generate_nodes_for_graph") ||
+    operations.has("expand_node_for_graph")
+  ) {
+    return "图谱节点生成";
   }
-  if (operations.has('discover_relations') || operations.has('get_intelligent_suggestions')) {
-    return '图谱关系分析';
+  if (
+    operations.has("discover_relations") ||
+    operations.has("get_intelligent_suggestions")
+  ) {
+    return "图谱关系分析";
   }
-  if (operations.has('chat') || operations.has('tutor_chat')) {
-    return 'AI 对话';
+  if (operations.has("chat") || operations.has("tutor_chat")) {
+    return "AI 对话";
   }
-  if (operations.has('generate_content') || operations.has('generate_content_stream')) {
-    return '内容生成';
+  if (
+    operations.has("generate_content") ||
+    operations.has("generate_content_stream")
+  ) {
+    return "内容生成";
   }
-  if (operations.has('ai_action_execute')) {
-    return 'AI 动作执行';
+  if (operations.has("ai_action_execute")) {
+    return "AI 动作执行";
   }
-  if (operations.has('template_generation')) {
-    return '模板生成';
+  if (operations.has("template_generation")) {
+    return "模板生成";
   }
-  if (operations.has('text_to_graph') || operations.has('document_to_graph') || operations.has('image_to_graph')) {
-    return '文档转图谱';
+  if (
+    operations.has("text_to_graph") ||
+    operations.has("document_to_graph") ||
+    operations.has("image_to_graph")
+  ) {
+    return "文档转图谱";
   }
-  if (operations.has('literature_extract') || operations.has('extractMetadata') || operations.has('extractConcepts')) {
-    return '文献提取';
+  if (
+    operations.has("literature_extract") ||
+    operations.has("extractMetadata") ||
+    operations.has("extractConcepts")
+  ) {
+    return "文献提取";
   }
 
   const firstLog = logs.sort((a, b) => a.timestamp - b.timestamp)[0];
@@ -149,39 +178,62 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
     const totalCost = logs.reduce((sum, l) => sum + l.estimatedCost, 0);
     const totalDuration = logs.reduce((sum, l) => sum + l.duration, 0);
     const successCount = logs.filter((l) => l.success).length;
-    return { totalTokens, totalCost, totalDuration, successCount, total: logs.length };
+    return {
+      totalTokens,
+      totalCost,
+      totalDuration,
+      successCount,
+      total: logs.length,
+    };
   }, [logs]);
 
-  const sortedLogs = useMemo(() => 
-    [...logs].sort((a, b) => a.timestamp - b.timestamp),
-    [logs]
+  const sortedLogs = useMemo(
+    () => [...logs].sort((a, b) => a.timestamp - b.timestamp),
+    [logs],
   );
 
-  const sessionName = useMemo(() => 
-    getSessionName(logs, getOperationLabel),
-    [logs, getOperationLabel]
+  const sessionName = useMemo(
+    () => getSessionName(logs, getOperationLabel),
+    [logs, getOperationLabel],
   );
 
   return (
-    <div className={`border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}>
+    <div
+      className={`border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}
+    >
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={`w-full px-4 py-3 flex items-center justify-between ${
-          isDark ? "bg-slate-800/30 hover:bg-slate-800/50" : "bg-gray-50 hover:bg-gray-100"
+          isDark
+            ? "bg-slate-800/30 hover:bg-slate-800/50"
+            : "bg-gray-50 hover:bg-gray-100"
         } transition-colors`}
       >
         <div className="flex items-center gap-2">
           {isExpanded ? (
-            <ChevronDown size={14} className={isDark ? "text-slate-400" : "text-gray-500"} />
+            <ChevronDown
+              size={14}
+              className={isDark ? "text-slate-400" : "text-gray-500"}
+            />
           ) : (
-            <ChevronRight size={14} className={isDark ? "text-slate-400" : "text-gray-500"} />
+            <ChevronRight
+              size={14}
+              className={isDark ? "text-slate-400" : "text-gray-500"}
+            />
           )}
-          <Layers size={14} className={isDark ? "text-primary-400" : "text-primary-600"} />
-          <span className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+          <Layers
+            size={14}
+            className={isDark ? "text-primary-400" : "text-primary-600"}
+          />
+          <span
+            className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
+          >
             {sessionName}
           </span>
-          <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
-            ({sessionStats.total} {t('console.performance.requests')})
+          <span
+            className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          >
+            ({sessionStats.total} {t("console.performance.requests")})
           </span>
         </div>
         <div className="flex items-center gap-3 text-xs">
@@ -194,16 +246,22 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
           <span className={isDark ? "text-green-400" : "text-green-600"}>
             {formatDuration(sessionStats.totalDuration)}
           </span>
-          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
-            sessionStats.successCount === sessionStats.total
-              ? isDark ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-600"
-              : isDark ? "bg-amber-900/30 text-amber-400" : "bg-amber-100 text-amber-600"
-          }`}>
+          <span
+            className={`px-1.5 py-0.5 rounded text-[10px] ${
+              sessionStats.successCount === sessionStats.total
+                ? isDark
+                  ? "bg-green-900/30 text-green-400"
+                  : "bg-green-100 text-green-600"
+                : isDark
+                  ? "bg-amber-900/30 text-amber-400"
+                  : "bg-amber-100 text-amber-600"
+            }`}
+          >
             {sessionStats.successCount}/{sessionStats.total}
           </span>
         </div>
       </button>
-      
+
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -223,20 +281,34 @@ const SessionGroup: React.FC<SessionGroupProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {log.success ? (
-                      <CheckCircle size={12} className={isDark ? "text-green-400" : "text-green-500"} />
+                      <CheckCircle
+                        size={12}
+                        className={isDark ? "text-green-400" : "text-green-500"}
+                      />
                     ) : (
-                      <XCircle size={12} className={isDark ? "text-red-400" : "text-red-500"} />
+                      <XCircle
+                        size={12}
+                        className={isDark ? "text-red-400" : "text-red-500"}
+                      />
                     )}
-                    <span className={`text-sm ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                    <span
+                      className={`text-sm ${isDark ? "text-slate-200" : "text-gray-800"}`}
+                    >
                       {getOperationLabel(log.operation)}
                     </span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      isDark ? "bg-slate-700 text-slate-400" : "bg-gray-100 text-gray-500"
-                    }`}>
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded ${
+                        isDark
+                          ? "bg-slate-700 text-slate-400"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
                       {log.model}
                     </span>
                   </div>
-                  <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                  <span
+                    className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                  >
                     {formatTimestamp(log.timestamp)}
                   </span>
                 </div>
@@ -274,49 +346,77 @@ const LogDetailModal: React.FC<{
   };
 
   const metadataLabels: Record<string, string> = {
-    graphId: '图谱ID',
-    graphTitle: '图谱标题',
-    userId: '用户ID',
-    userName: '用户名',
-    nodeId: '节点ID',
-    nodeTitle: '节点名称',
-    nodeLevel: '节点层级',
-    topic: '主题',
-    style: '风格',
-    depth: '深度',
-    actionName: '动作名称',
-    documentName: '文档名称',
-    learningStyle: '学习风格',
-    targetGoal: '目标',
-    templateType: '模板类型',
-    text: '文本内容',
-    graph1: '图谱1',
-    graph2: '图谱2',
-    title: '标题',
+    graphId: "图谱ID",
+    graphTitle: "图谱标题",
+    userId: "用户ID",
+    userName: "用户名",
+    nodeId: "节点ID",
+    nodeTitle: "节点名称",
+    nodeLevel: "节点层级",
+    topic: "主题",
+    style: "风格",
+    depth: "深度",
+    actionName: "动作名称",
+    documentName: "文档名称",
+    learningStyle: "学习风格",
+    targetGoal: "目标",
+    templateType: "模板类型",
+    text: "文本内容",
+    graph1: "图谱1",
+    graph2: "图谱2",
+    title: "标题",
   };
 
-  const priorityOrder = ['graphTitle', 'userName', 'nodeTitle', 'topic', 'style', 'nodeLevel', 'depth', 'actionName'];
+  const priorityOrder = [
+    "graphTitle",
+    "userName",
+    "nodeTitle",
+    "topic",
+    "style",
+    "nodeLevel",
+    "depth",
+    "actionName",
+  ];
 
   const isPlaceholderValue = (key: string, value: unknown): boolean => {
-    if (typeof value !== 'string') return false;
+    if (typeof value !== "string") return false;
     const lowerValue = value.toLowerCase();
-    if (key === 'graphId' && (lowerValue === 'temp' || lowerValue === 'temporary')) return true;
-    if (key === 'nodeId') {
-      if (lowerValue === 'node' || lowerValue === 'temp' || lowerValue === 'temporary') return true;
+    if (
+      key === "graphId" &&
+      (lowerValue === "temp" || lowerValue === "temporary")
+    )
+      return true;
+    if (key === "nodeId") {
+      if (
+        lowerValue === "node" ||
+        lowerValue === "temp" ||
+        lowerValue === "temporary"
+      )
+        return true;
       if (/^node[-_]?\d+$/i.test(value)) return true;
     }
     return false;
   };
 
-  const getOrderedMetadata = (): Array<{ key: string; label: string; value: unknown }> => {
+  const getOrderedMetadata = (): Array<{
+    key: string;
+    label: string;
+    value: unknown;
+  }> => {
     if (!log.metadata) return [];
 
     const entries = Object.entries(log.metadata);
     const metadata = log.metadata as Record<string, unknown>;
 
     const priorityItems = priorityOrder
-      .filter(key => metadata[key] !== undefined && metadata[key] !== null && metadata[key] !== '' && !isPlaceholderValue(key, metadata[key]))
-      .map(key => ({
+      .filter(
+        (key) =>
+          metadata[key] !== undefined &&
+          metadata[key] !== null &&
+          metadata[key] !== "" &&
+          !isPlaceholderValue(key, metadata[key]),
+      )
+      .map((key) => ({
         key,
         label: metadataLabels[key] || key,
         value: metadata[key],
@@ -324,7 +424,9 @@ const LogDetailModal: React.FC<{
 
     const otherItems = entries
       .filter(([key]) => !priorityOrder.includes(key))
-      .filter(([, value]) => value !== undefined && value !== null && value !== '')
+      .filter(
+        ([, value]) => value !== undefined && value !== null && value !== "",
+      )
       .filter(([key, value]) => !isPlaceholderValue(key, value))
       .map(([key, value]) => ({
         key,
@@ -362,8 +464,13 @@ const LogDetailModal: React.FC<{
           }`}
         >
           <div className="flex items-center gap-2">
-            <Activity size={16} className={isDark ? "text-primary-400" : "text-primary-600"} />
-            <h3 className={`font-semibold ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+            <Activity
+              size={16}
+              className={isDark ? "text-primary-400" : "text-primary-600"}
+            />
+            <h3
+              className={`font-semibold ${isDark ? "text-slate-200" : "text-gray-800"}`}
+            >
               {t("console.performance.detail.title")}
             </h3>
           </div>
@@ -380,43 +487,63 @@ const LogDetailModal: React.FC<{
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto">
-          <div className={`grid grid-cols-2 gap-x-6 gap-y-3 p-3 rounded-lg ${
-            isDark ? "bg-slate-800/50" : "bg-gray-50"
-          }`}>
+          <div
+            className={`grid grid-cols-2 gap-x-6 gap-y-3 p-3 rounded-lg ${
+              isDark ? "bg-slate-800/50" : "bg-gray-50"
+            }`}
+          >
             <div className="space-y-1">
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <span
+                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              >
                 {t("console.performance.detail.operation")}
               </span>
-              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+              <div
+                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
+              >
                 {getOperationLabel(log.operation)}
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <span
+                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              >
                 {t("console.performance.detail.model")}
               </span>
-              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+              <div
+                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
+              >
                 {log.model}
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <span
+                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              >
                 {t("console.performance.detail.provider")}
               </span>
-              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+              <div
+                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
+              >
                 {log.provider}
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <span
+                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              >
                 {t("console.performance.detail.sessionId")}
               </span>
-              <div className={`text-sm font-medium font-mono ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+              <div
+                className={`text-sm font-medium font-mono ${isDark ? "text-slate-200" : "text-gray-800"}`}
+              >
                 {log.sessionId ? (
-                  <span className="text-primary-500 dark:text-primary-400 text-xs break-all">{log.sessionId}</span>
+                  <span className="text-primary-500 dark:text-primary-400 text-xs break-all">
+                    {log.sessionId}
+                  </span>
                 ) : (
                   <span className="text-gray-400">-</span>
                 )}
@@ -424,40 +551,62 @@ const LogDetailModal: React.FC<{
             </div>
 
             <div className="space-y-1">
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <span
+                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              >
                 {t("console.performance.detail.status")}
               </span>
-              <div className={`text-sm font-medium flex items-center gap-1 ${
-                log.success
-                  ? isDark ? "text-green-400" : "text-green-600"
-                  : isDark ? "text-red-400" : "text-red-600"
-              }`}>
-                {log.success ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                {log.success ? t("console.performance.success") : t("console.performance.failed")}
+              <div
+                className={`text-sm font-medium flex items-center gap-1 ${
+                  log.success
+                    ? isDark
+                      ? "text-green-400"
+                      : "text-green-600"
+                    : isDark
+                      ? "text-red-400"
+                      : "text-red-600"
+                }`}
+              >
+                {log.success ? (
+                  <CheckCircle size={14} />
+                ) : (
+                  <XCircle size={14} />
+                )}
+                {log.success
+                  ? t("console.performance.success")
+                  : t("console.performance.failed")}
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <span
+                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              >
                 {t("console.performance.detail.duration")}
               </span>
-              <div className={`text-sm font-medium flex items-center gap-1 ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+              <div
+                className={`text-sm font-medium flex items-center gap-1 ${isDark ? "text-slate-200" : "text-gray-800"}`}
+              >
                 <Clock size={12} />
                 {formatDuration(log.duration)}
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <span
+                className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+              >
                 {t("console.performance.detail.time")}
               </span>
-              <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+              <div
+                className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
+              >
                 {formatTimestamp(log.timestamp)}
               </div>
             </div>
           </div>
 
-          {log.cachedInputTokens !== undefined && log.cachedInputTokens > 0 && (
+          {log.cachedInputTokens !== undefined && (
             <div
               className={`p-3 rounded-lg ${
                 isDark
@@ -609,13 +758,21 @@ const LogDetailModal: React.FC<{
           )}
 
           {log.errorMessage && (
-            <div className={`p-3 rounded-lg ${
-              isDark ? "bg-red-900/20 border border-red-700/30" : "bg-red-50 border border-red-200"
-            }`}>
-              <div className={`text-xs font-medium mb-1 ${isDark ? "text-red-400" : "text-red-600"}`}>
+            <div
+              className={`p-3 rounded-lg ${
+                isDark
+                  ? "bg-red-900/20 border border-red-700/30"
+                  : "bg-red-50 border border-red-200"
+              }`}
+            >
+              <div
+                className={`text-xs font-medium mb-1 ${isDark ? "text-red-400" : "text-red-600"}`}
+              >
                 错误信息
               </div>
-              <div className={`text-sm ${isDark ? "text-red-300" : "text-red-700"}`}>
+              <div
+                className={`text-sm ${isDark ? "text-red-300" : "text-red-700"}`}
+              >
                 {log.errorMessage}
               </div>
             </div>
@@ -627,17 +784,24 @@ const LogDetailModal: React.FC<{
 
             return (
               <div>
-                <div className={`text-xs font-semibold mb-2.5 flex items-center gap-1.5 ${
-                  isDark ? "text-slate-400" : "text-gray-500"
-                }`}>
+                <div
+                  className={`text-xs font-semibold mb-2.5 flex items-center gap-1.5 ${
+                    isDark ? "text-slate-400" : "text-gray-500"
+                  }`}
+                >
                   <Coins size={12} />
                   元数据信息
                 </div>
-                <div className={`rounded-lg overflow-hidden border divide-y ${
-                  isDark ? "border-slate-700 bg-slate-800/30 divide-slate-700/50" : "border-gray-200 bg-white divide-gray-100"
-                }`}>
+                <div
+                  className={`rounded-lg overflow-hidden border divide-y ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800/30 divide-slate-700/50"
+                      : "border-gray-200 bg-white divide-gray-100"
+                  }`}
+                >
                   {orderedMetadata.map(({ key, label, value }) => {
-                    const displayValue = typeof value === 'string' ? value : JSON.stringify(value);
+                    const displayValue =
+                      typeof value === "string" ? value : JSON.stringify(value);
                     const isLongText = displayValue.length > 60;
 
                     return (
@@ -647,18 +811,22 @@ const LogDetailModal: React.FC<{
                           isDark ? "bg-slate-700/30" : "bg-gray-50"
                         } transition-colors`}
                       >
-                        <span className={`text-xs font-medium shrink-0 w-16 ${
-                          isDark ? "text-slate-400" : "text-gray-500"
-                        }`}>
+                        <span
+                          className={`text-xs font-medium shrink-0 w-16 ${
+                            isDark ? "text-slate-400" : "text-gray-500"
+                          }`}
+                        >
                           {label}
                         </span>
-                        <span 
+                        <span
                           className={`text-xs text-right max-w-[280px] break-all ${
                             isDark ? "text-slate-200" : "text-gray-700"
-                          }`} 
+                          }`}
                           title={isLongText ? displayValue : undefined}
                         >
-                          {isLongText ? `${displayValue.slice(0, 57)}...` : displayValue}
+                          {isLongText
+                            ? `${displayValue.slice(0, 57)}...`
+                            : displayValue}
                         </span>
                       </div>
                     );
@@ -675,7 +843,8 @@ const LogDetailModal: React.FC<{
 
 export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   const { t } = useTranslation();
-  const { logs, stats, isLoading, error, fetchLogs, fetchStats, clearLogs } = useAIPerformanceStore();
+  const { logs, stats, isLoading, error, fetchLogs, fetchStats, clearLogs } =
+    useAIPerformanceStore();
   const [selectedLog, setSelectedLog] = useState<AIPerformanceLog | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filterOperation, setFilterOperation] = useState<string>("");
@@ -686,11 +855,14 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   >("week");
   const [showEmbeddingOps, setShowEmbeddingOps] = useState(false);
 
-  const getOperationLabel = useCallback((operation: string): string => {
-    const key = `console.performance.operations.${operation}`;
-    const translated = t(key);
-    return translated === key ? operation : translated;
-  }, [t]);
+  const getOperationLabel = useCallback(
+    (operation: string): string => {
+      const key = `console.performance.operations.${operation}`;
+      const translated = t(key);
+      return translated === key ? operation : translated;
+    },
+    [t],
+  );
 
   const getTimeRangeTimestamp = useCallback(() => {
     const now = Date.now();
@@ -730,7 +902,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   }, [loadData]);
 
   const handleClearLogs = useCallback(async () => {
-    if (window.confirm(t('console.performance.clearConfirm'))) {
+    if (window.confirm(t("console.performance.clearConfirm"))) {
       await clearLogs();
       loadData();
     }
@@ -767,7 +939,14 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
           nonEmbeddingFiltered.length
         : 0;
 
-    return { total, successCount, failedCount, totalTokens, totalCost, avgDuration };
+    return {
+      total,
+      successCount,
+      failedCount,
+      totalTokens,
+      totalCost,
+      avgDuration,
+    };
   }, [filteredLogs]);
 
   const { sessionGroups, standaloneLogs } = useMemo(() => {
@@ -792,7 +971,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
       }))
       .sort((a, b) => b.firstTimestamp - a.firstTimestamp);
 
-    const sortedStandalone = standalone.sort((a, b) => b.timestamp - a.timestamp);
+    const sortedStandalone = standalone.sort(
+      (a, b) => b.timestamp - a.timestamp,
+    );
 
     return { sessionGroups: sortedGroups, standaloneLogs: sortedStandalone };
   }, [filteredLogs]);
@@ -811,7 +992,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
             <span
               className={`font-semibold ${isDark ? "text-slate-200" : "text-gray-800"}`}
             >
-              {t('console.performance.title')}
+              {t("console.performance.title")}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -823,10 +1004,10 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                     ? "bg-slate-700 text-slate-200"
                     : "bg-gray-200 text-gray-800"
                   : isDark
-                  ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                    ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
               }`}
-              title={t('console.performance.filter')}
+              title={t("console.performance.filter")}
             >
               <Filter size={14} />
             </button>
@@ -838,7 +1019,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
               } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-              title={t('console.performance.refresh')}
+              title={t("console.performance.refresh")}
             >
               <RefreshCw
                 size={14}
@@ -852,7 +1033,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   ? "text-slate-400 hover:text-red-400 hover:bg-slate-700"
                   : "text-gray-500 hover:text-red-500 hover:bg-gray-200"
               }`}
-              title={t('console.performance.clearLogs')}
+              title={t("console.performance.clearLogs")}
             >
               <Trash2 size={14} />
             </button>
@@ -879,10 +1060,18 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                       : "bg-white border-gray-200 text-gray-700"
                   }`}
                 >
-                  <option value="today">{t('console.performance.timeRange.today')}</option>
-                  <option value="week">{t('console.performance.timeRange.week')}</option>
-                  <option value="month">{t('console.performance.timeRange.month')}</option>
-                  <option value="all">{t('console.performance.timeRange.all')}</option>
+                  <option value="today">
+                    {t("console.performance.timeRange.today")}
+                  </option>
+                  <option value="week">
+                    {t("console.performance.timeRange.week")}
+                  </option>
+                  <option value="month">
+                    {t("console.performance.timeRange.month")}
+                  </option>
+                  <option value="all">
+                    {t("console.performance.timeRange.all")}
+                  </option>
                 </select>
                 <select
                   value={filterOperation}
@@ -893,7 +1082,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                       : "bg-white border-gray-200 text-gray-700"
                   }`}
                 >
-                  <option value="">{t('console.performance.allOperations')}</option>
+                  <option value="">
+                    {t("console.performance.allOperations")}
+                  </option>
                   {filteredUniqueOperations.map((op) => (
                     <option key={op} value={op}>
                       {getOperationLabel(op)}
@@ -913,7 +1104,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                     onChange={(e) => setShowEmbeddingOps(e.target.checked)}
                     className="w-3 h-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                   />
-                  <span>{t('console.performance.showEmbedding')}</span>
+                  <span>{t("console.performance.showEmbedding")}</span>
                 </label>
                 <select
                   value={filterProvider}
@@ -926,10 +1117,18 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                       : "bg-white border-gray-200 text-gray-700"
                   }`}
                 >
-                  <option value="">{t('console.performance.allProviders')}</option>
-                  <option value="deepseek">{t('console.performance.providers.deepseek')}</option>
-                  <option value="volcengine">{t('console.performance.providers.volcengine')}</option>
-                  <option value="aliyun">{t('console.performance.providers.aliyun')}</option>
+                  <option value="">
+                    {t("console.performance.allProviders")}
+                  </option>
+                  <option value="deepseek">
+                    {t("console.performance.providers.deepseek")}
+                  </option>
+                  <option value="volcengine">
+                    {t("console.performance.providers.volcengine")}
+                  </option>
+                  <option value="aliyun">
+                    {t("console.performance.providers.aliyun")}
+                  </option>
                 </select>
                 <select
                   value={filterSuccess}
@@ -940,9 +1139,13 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                       : "bg-white border-gray-200 text-gray-700"
                   }`}
                 >
-                  <option value="">{t('console.performance.allStatus')}</option>
-                  <option value="true">{t('console.performance.success')}</option>
-                  <option value="false">{t('console.performance.failed')}</option>
+                  <option value="">{t("console.performance.allStatus")}</option>
+                  <option value="true">
+                    {t("console.performance.success")}
+                  </option>
+                  <option value="false">
+                    {t("console.performance.failed")}
+                  </option>
                 </select>
               </div>
             </motion.div>
@@ -956,7 +1159,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
         >
           <StatCard
             icon={<Activity size={14} className="text-white" />}
-            label={t('console.performance.stats.totalRequests')}
+            label={t("console.performance.stats.totalRequests")}
             value={String(displayStats.total)}
             subValue={`${displayStats.successCount}/${displayStats.failedCount}`}
             isDark={isDark}
@@ -964,21 +1167,21 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
           />
           <StatCard
             icon={<Zap size={14} className="text-white" />}
-            label={t('console.performance.stats.tokens')}
+            label={t("console.performance.stats.tokens")}
             value={formatTokens(displayStats.totalTokens)}
             isDark={isDark}
             color="bg-primary-500"
           />
           <StatCard
             icon={<Coins size={14} className="text-white" />}
-            label={t('console.performance.stats.cost')}
+            label={t("console.performance.stats.cost")}
             value={formatCost(displayStats.totalCost)}
             isDark={isDark}
             color="bg-amber-500"
           />
           <StatCard
             icon={<Clock size={14} className="text-white" />}
-            label={t('console.performance.stats.duration')}
+            label={t("console.performance.stats.duration")}
             value={formatDuration(displayStats.avgDuration)}
             isDark={isDark}
             color="bg-green-500"
@@ -996,14 +1199,20 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
         )}
 
         {isLoading && logs.length === 0 ? (
-          <div className={`p-4 text-center ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            {t('console.performance.loading')}
+          <div
+            className={`p-4 text-center ${isDark ? "text-slate-400" : "text-gray-500"}`}
+          >
+            {t("console.performance.loading")}
           </div>
         ) : logs.length === 0 ? (
-          <div className={`p-8 text-center ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+          <div
+            className={`p-8 text-center ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          >
             <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">{t('console.performance.noData')}</p>
-            <p className="text-xs mt-1 opacity-75">{t('console.performance.noDataHint')}</p>
+            <p className="text-sm">{t("console.performance.noData")}</p>
+            <p className="text-xs mt-1 opacity-75">
+              {t("console.performance.noDataHint")}
+            </p>
           </div>
         ) : (
           <div>
@@ -1012,13 +1221,13 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                 className={`text-center py-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
                 <Activity size={24} className="mx-auto mb-2 opacity-50" />
-                <p className="text-sm">{t('console.performance.noLogs')}</p>
+                <p className="text-sm">{t("console.performance.noLogs")}</p>
                 {!showEmbeddingOps && (
                   <button
                     onClick={() => setShowEmbeddingOps(true)}
                     className={`mt-2 text-xs underline ${isDark ? "text-primary-400" : "text-primary-600"}`}
                   >
-                    {t('console.performance.showEmbeddingOps')}
+                    {t("console.performance.showEmbeddingOps")}
                   </button>
                 )}
               </div>
@@ -1034,10 +1243,14 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   />
                 ))}
                 {standaloneLogs.length > 0 && sessionGroups.length > 0 && (
-                  <div className={`px-4 py-2 text-xs font-medium ${
-                    isDark ? "text-slate-500 bg-slate-900/50" : "text-gray-400 bg-gray-100"
-                  }`}>
-                    {t('console.performance.standaloneRequests')}
+                  <div
+                    className={`px-4 py-2 text-xs font-medium ${
+                      isDark
+                        ? "text-slate-500 bg-slate-900/50"
+                        : "text-gray-400 bg-gray-100"
+                    }`}
+                  >
+                    {t("console.performance.standaloneRequests")}
                   </div>
                 )}
                 {standaloneLogs.map((log) => (
@@ -1045,37 +1258,61 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                     key={log.id}
                     onClick={() => setSelectedLog(log)}
                     className={`w-full text-left px-4 py-3 transition-colors border-b ${
-                      isDark ? "hover:bg-slate-800/50 border-slate-700" : "hover:bg-gray-50 border-gray-200"
+                      isDark
+                        ? "hover:bg-slate-800/50 border-slate-700"
+                        : "hover:bg-gray-50 border-gray-200"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {log.success ? (
-                          <CheckCircle size={14} className={isDark ? "text-green-400" : "text-green-500"} />
+                          <CheckCircle
+                            size={14}
+                            className={
+                              isDark ? "text-green-400" : "text-green-500"
+                            }
+                          />
                         ) : (
-                          <XCircle size={14} className={isDark ? "text-red-400" : "text-red-500"} />
+                          <XCircle
+                            size={14}
+                            className={isDark ? "text-red-400" : "text-red-500"}
+                          />
                         )}
-                        <span className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                        <span
+                          className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}
+                        >
                           {getOperationLabel(log.operation)}
                         </span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${
-                          isDark ? "bg-slate-700 text-slate-400" : "bg-gray-100 text-gray-500"
-                        }`}>
+                        <span
+                          className={`text-xs px-1.5 py-0.5 rounded ${
+                            isDark
+                              ? "bg-slate-700 text-slate-400"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
                           {log.model}
                         </span>
                       </div>
-                      <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                      <span
+                        className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                      >
                         {formatTimestamp(log.timestamp)}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 mt-1.5 text-xs">
-                      <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                      <span
+                        className={isDark ? "text-slate-400" : "text-gray-500"}
+                      >
                         {formatTokens(log.totalTokens)} tokens
                       </span>
-                      <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                      <span
+                        className={isDark ? "text-slate-400" : "text-gray-500"}
+                      >
                         {formatCost(log.estimatedCost)}
                       </span>
-                      <span className={isDark ? "text-slate-400" : "text-gray-500"}>
+                      <span
+                        className={isDark ? "text-slate-400" : "text-gray-500"}
+                      >
                         {formatDuration(log.duration)}
                       </span>
                     </div>

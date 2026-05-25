@@ -41,6 +41,48 @@ import {
 
 type InputMode = "text" | "file" | "url";
 
+const LITERATURE_EXTRACT_SETTINGS_KEY = "literature-extract-settings";
+
+interface LiteratureExtractSettings {
+  preferredCount: number;
+  maxConcepts: number;
+  similarityThreshold: number;
+}
+
+const DEFAULT_SETTINGS: LiteratureExtractSettings = {
+  preferredCount: 13,
+  maxConcepts: 50,
+  similarityThreshold: 0.7,
+};
+
+function loadLiteratureExtractSettings(): LiteratureExtractSettings {
+  try {
+    const saved = localStorage.getItem(LITERATURE_EXTRACT_SETTINGS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<LiteratureExtractSettings>;
+      return { ...DEFAULT_SETTINGS, ...parsed };
+    }
+  } catch (error) {
+    console.error("Failed to load literature extract settings:", error);
+  }
+  return DEFAULT_SETTINGS;
+}
+
+function saveLiteratureExtractSettings(
+  settings: Partial<LiteratureExtractSettings>,
+) {
+  try {
+    const current = loadLiteratureExtractSettings();
+    const updated = { ...current, ...settings };
+    localStorage.setItem(
+      LITERATURE_EXTRACT_SETTINGS_KEY,
+      JSON.stringify(updated),
+    );
+  } catch (error) {
+    console.error("Failed to save literature extract settings:", error);
+  }
+}
+
 interface LiteratureExtractPanelProps {
   graphId: string;
   onExtractComplete?: (result: LiteratureExtractResponse) => void;
@@ -145,9 +187,14 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     "trend",
     "challenge",
   ]);
-  const [maxConcepts, setMaxConcepts] = useState(50);
-  const [preferredCount, setPreferredCount] = useState(10);
-  const [similarityThreshold, setSimilarityThreshold] = useState(0.7);
+  const savedSettings = loadLiteratureExtractSettings();
+  const [maxConcepts, setMaxConcepts] = useState(savedSettings.maxConcepts);
+  const [preferredCount, setPreferredCount] = useState(
+    savedSettings.preferredCount,
+  );
+  const [similarityThreshold, setSimilarityThreshold] = useState(
+    savedSettings.similarityThreshold,
+  );
   const [metadata, setMetadata] = useState<Partial<LiteratureMetadata>>({});
   const [isDetectingMetadata, setIsDetectingMetadata] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -164,6 +211,14 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       setShowInputSection(false);
     }
   }, [extractedResult]);
+
+  useEffect(() => {
+    saveLiteratureExtractSettings({
+      preferredCount,
+      maxConcepts,
+      similarityThreshold,
+    });
+  }, [preferredCount, maxConcepts, similarityThreshold]);
 
   const conceptTypeOptions: { value: ConceptType; labelKey: string }[] = [
     { value: "concept", labelKey: "literatureExtract.conceptTypes.concept" },
@@ -578,9 +633,9 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       "trend",
       "challenge",
     ]);
-    setMaxConcepts(50);
-    setPreferredCount(10);
-    setSimilarityThreshold(0.7);
+    setMaxConcepts(DEFAULT_SETTINGS.maxConcepts);
+    setPreferredCount(DEFAULT_SETTINGS.preferredCount);
+    setSimilarityThreshold(DEFAULT_SETTINGS.similarityThreshold);
   }, []);
 
   const handleExport = useCallback(() => {

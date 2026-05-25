@@ -956,6 +956,7 @@ router.post(
         .select(
           `
           id,
+          level,
           knowledge_point_id,
           knowledge_points (
             id,
@@ -972,6 +973,10 @@ router.post(
 
       if (backboneNodes) {
         for (const gn of backboneNodes) {
+          if (gn.level !== "root" && gn.level !== "core") {
+            continue;
+          }
+
           const kp = gn.knowledge_points as unknown as {
             id: string;
             title: string;
@@ -994,7 +999,7 @@ router.post(
             }
           }
 
-          if (moduleValue) {
+          if (moduleValue && !backboneModuleMap.has(moduleValue)) {
             backboneModuleMap.set(moduleValue, gn.id);
             backboneNodeIds.add(gn.id);
           }

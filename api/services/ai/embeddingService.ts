@@ -95,6 +95,91 @@ export class EmbeddingService {
     }
   }
 
+  async generateChunkEmbeddingsBatch(
+    supabase: SupabaseClient,
+    limit: number = 100
+  ): Promise<{ processed: number; failed: number }> {
+    if (this.isRunning) {
+      logger.warn('Embedding generation already in progress');
+      return { processed: 0, failed: 0 };
+    }
+
+    this.isRunning = true;
+    this.stopRequested = false;
+    let processed = 0;
+    let failed = 0;
+
+    try {
+      const embeddingProvider = await getProviderForTask("embedding");
+      if (!embeddingProvider) {
+        logger.info('Embedding provider not configured, skipping chunk batch generation');
+        return { processed: 0, failed: 0 };
+      }
+
+      const { data: chunks, error } = await supabase
+        .from('document_chunks')
+        .select('id, content')
+        .is('embedding', null)
+        .limit(limit);
+
+      if (error) {
+        logger.error('Failed to fetch document chunks without embedding:', error);
+        return { processed: 0, failed: 0 };
+      }
+
+      if (!chunks || chunks.length === 0) {
+        logger.info('No document chunks without embedding found');
+        return { processed: 0, failed: 0 };
+      }
+
+      logger.info(`Processing ${chunks.length} document chunks without embedding`);
+
+      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        if (this.stopRequested) {
+          logger.info('Chunk embedding generation stopped by request');
+          break;
+        }
+
+        const batch = chunks.slice(i, i + BATCH_SIZE);
+        const texts = batch.map(chunk => chunk.content);
+
+        try {
+          const embeddings = await aiService.generateEmbeddingsBatch(texts);
+
+          for (let j = 0; j < batch.length; j++) {
+            if (embeddings[j]) {
+              const { error: updateError } = await supabase
+                .from('document_chunks')
+                .update({ embedding: embeddings[j] })
+                .eq('id', batch[j].id);
+
+              if (updateError) {
+                logger.error(`Failed to update chunk embedding for ${batch[j].id}:`, updateError);
+                failed++;
+              } else {
+                processed++;
+              }
+            } else {
+              failed++;
+            }
+          }
+
+          if (i + BATCH_SIZE < chunks.length) {
+            await this.sleep(EMBEDDING_DELAY_MS);
+          }
+        } catch (error) {
+          logger.error(`Failed to generate chunk embeddings for batch starting at ${i}:`, error);
+          failed += batch.length;
+        }
+      }
+
+      logger.info(`Chunk embedding generation completed: ${processed} processed, ${failed} failed`);
+      return { processed, failed };
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
   async generateEmbeddingForKnowledgePoint(
     supabase: SupabaseClient,
     knowledgePointId: string

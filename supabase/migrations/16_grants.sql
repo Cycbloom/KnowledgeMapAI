@@ -94,6 +94,8 @@ GRANT EXECUTE ON FUNCTION get_user_graphs_with_counts(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_trashed_graphs(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION batch_update_positions(JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION match_knowledge_points(vector(1024), float, int, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION match_knowledge_points_by_graph(vector(1024), float, int, uuid, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION match_document_chunks(vector(1024), float, int, uuid, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_accessible_knowledge_points(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION search_similar_knowledge_points(vector(1024), UUID, FLOAT, INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_knowledge_point_graphs(UUID, UUID) TO authenticated;

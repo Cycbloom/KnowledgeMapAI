@@ -127,6 +127,40 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION match_knowledge_points_by_graph (
+  query_embedding vector(1024),
+  match_threshold float,
+  match_count int,
+  p_user_id uuid,
+  p_graph_id uuid
+)
+RETURNS TABLE (
+  id uuid,
+  title varchar(255),
+  content text,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    kp.id,
+    kp.title,
+    kp.content,
+    1 - (kp.embedding <=> query_embedding) as similarity
+  FROM knowledge_points kp
+  JOIN graph_nodes gn ON gn.knowledge_point_id = kp.id
+  WHERE gn.graph_id = p_graph_id
+    AND gn.deleted_at IS NULL
+    AND (kp.visibility = 'public' OR kp.owner_id = p_user_id)
+    AND kp.embedding IS NOT NULL
+    AND 1 - (kp.embedding <=> query_embedding) > match_threshold
+  ORDER BY kp.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
+
 -- Get user study stats function
 CREATE OR REPLACE FUNCTION get_user_study_stats(p_user_id UUID)
 RETURNS JSONB
@@ -607,3 +641,58 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Match document chunks function for semantic search
+CREATE OR REPLACE FUNCTION match_document_chunks (
+  query_embedding vector(1024),
+  match_threshold float,
+  match_count int,
+  p_user_id uuid,
+  p_graph_id uuid DEFAULT NULL
+)
+RETURNS TABLE (
+  id uuid,
+  knowledge_point_id uuid,
+  chunk_index int,
+  content text,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_graph_id IS NOT NULL THEN
+    RETURN QUERY
+    SELECT
+      dc.id,
+      dc.knowledge_point_id,
+      dc.chunk_index,
+      dc.content,
+      1 - (dc.embedding <=> query_embedding) as similarity
+    FROM document_chunks dc
+    JOIN knowledge_points kp ON dc.knowledge_point_id = kp.id
+    JOIN graph_nodes gn ON gn.knowledge_point_id = kp.id
+    WHERE gn.graph_id = p_graph_id
+      AND gn.deleted_at IS NULL
+      AND (kp.visibility = 'public' OR kp.owner_id = p_user_id)
+      AND dc.embedding IS NOT NULL
+      AND 1 - (dc.embedding <=> query_embedding) > match_threshold
+    ORDER BY dc.embedding <=> query_embedding
+    LIMIT match_count;
+  ELSE
+    RETURN QUERY
+    SELECT
+      dc.id,
+      dc.knowledge_point_id,
+      dc.chunk_index,
+      dc.content,
+      1 - (dc.embedding <=> query_embedding) as similarity
+    FROM document_chunks dc
+    JOIN knowledge_points kp ON dc.knowledge_point_id = kp.id
+    WHERE (kp.visibility = 'public' OR kp.owner_id = p_user_id)
+      AND dc.embedding IS NOT NULL
+      AND 1 - (dc.embedding <=> query_embedding) > match_threshold
+    ORDER BY dc.embedding <=> query_embedding
+    LIMIT match_count;
+  END IF;
+END;
+$$;

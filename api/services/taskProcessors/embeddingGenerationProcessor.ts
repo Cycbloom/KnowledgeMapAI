@@ -1,10 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
 import { aiService } from '../ai/aiService';
+import { chunkingService } from '../ai/chunkingService';
 import { logger } from '../../utils/logger';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
+const CHUNK_CONTENT_THRESHOLD = 500;
 
 export class EmbeddingGenerationProcessor implements TaskProcessor {
   async process(
@@ -21,12 +23,12 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
 
       const { graphId, knowledgePointIds } = payload;
 
-      let knowledgePoints: Array<{ id: string; title: string }> = [];
+      let knowledgePoints: Array<{ id: string; title: string; content: string | null }> = [];
 
       if (knowledgePointIds && Array.isArray(knowledgePointIds) && knowledgePointIds.length > 0) {
         const { data, error } = await supabase
           .from('knowledge_points')
-          .select('id, title')
+          .select('id, title, content')
           .in('id', knowledgePointIds)
           .is('embedding', null);
 
@@ -42,6 +44,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
             knowledge_points (
               id,
               title,
+              content,
               embedding
             )
           `)
@@ -54,16 +57,17 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
 
         knowledgePoints = (graphNodes || [])
           .filter((gn) => {
-            const kpArray = gn.knowledge_points as unknown as { id: string; title: string; embedding: number[] | null }[] | null;
+            const kpArray = gn.knowledge_points as unknown as { id: string; title: string; content: string | null; embedding: number[] | null }[] | null;
             const kp = kpArray?.[0];
             return kp && kp.embedding === null;
           })
           .map((gn) => {
-            const kpArray = gn.knowledge_points as unknown as { id: string; title: string }[] | null;
+            const kpArray = gn.knowledge_points as unknown as { id: string; title: string; content: string | null }[] | null;
             const kp = kpArray?.[0];
             return {
               id: kp!.id,
-              title: kp!.title
+              title: kp!.title,
+              content: kp!.content ?? null
             };
           });
       } else {
@@ -113,7 +117,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
             }
           }
 
-          const progress = Math.round(((i + batch.length) / knowledgePoints.length) * 100);
+          const progress = Math.round(((i + batch.length) / knowledgePoints.length) * 50);
           await updateTaskStatus(supabase, taskId, 'in_progress', {
             progress,
             processed,
@@ -128,6 +132,66 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
           logger.error(`Failed to generate embeddings for batch starting at ${i}:`, error);
           failed += batch.length;
           failedIds.push(...batch.map(kp => kp.id));
+        }
+      }
+
+      const longContentKps = knowledgePoints.filter(kp => kp.content && kp.content.length > CHUNK_CONTENT_THRESHOLD);
+
+      if (longContentKps.length > 0) {
+        logger.info(`Processing ${longContentKps.length} knowledge points for chunking`);
+
+        for (const kp of longContentKps) {
+          try {
+            const chunks = chunkingService.chunkText(kp.content!);
+
+            if (chunks.length === 0) continue;
+
+            const { error: deleteError } = await supabase
+              .from('document_chunks')
+              .delete()
+              .eq('knowledge_point_id', kp.id);
+
+            if (deleteError) {
+              logger.error(`Failed to delete existing chunks for ${kp.id}:`, deleteError);
+              continue;
+            }
+
+            const { data: insertedChunks, error: insertError } = await supabase
+              .from('document_chunks')
+              .insert(
+                chunks.map(chunk => ({
+                  knowledge_point_id: kp.id,
+                  chunk_index: chunk.index,
+                  content: chunk.content
+                }))
+              )
+              .select('id, content');
+
+            if (insertError || !insertedChunks) {
+              logger.error(`Failed to insert chunks for ${kp.id}:`, insertError);
+              continue;
+            }
+
+            const chunkTexts = insertedChunks.map(c => c.content);
+            const chunkEmbeddings = await aiService.generateEmbeddingsBatch(chunkTexts);
+
+            for (let k = 0; k < insertedChunks.length; k++) {
+              if (chunkEmbeddings[k]) {
+                const { error: updateChunkError } = await supabase
+                  .from('document_chunks')
+                  .update({ embedding: chunkEmbeddings[k] })
+                  .eq('id', insertedChunks[k].id);
+
+                if (updateChunkError) {
+                  logger.error(`Failed to update chunk embedding for ${insertedChunks[k].id}:`, updateChunkError);
+                }
+              }
+            }
+
+            await this.sleep(EMBEDDING_DELAY_MS);
+          } catch (error) {
+            logger.error(`Failed to process chunks for knowledge point ${kp.id}:`, error);
+          }
         }
       }
 

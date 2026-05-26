@@ -67,3 +67,11 @@ export {
   type GenerateBackboneOptions,
   type GenerateBackboneResult,
 } from "./backboneNetworkService";
+export {
+  rerankingService,
+  RerankingService,
+} from "./rerankingService";
+export {
+  contextWindowManager,
+  ContextWindowManager,
+} from "./contextWindowManager";

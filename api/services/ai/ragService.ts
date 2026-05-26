@@ -3,31 +3,26 @@ import { AIService } from "./aiService";
 import { getAIProviderForTask } from "./factory";
 import type { AIProvider } from "@shared/types";
 import { logger } from "../../utils/logger";
-import { buildNodeContext, buildNodesContext, NodeData } from "./utils";
+import { buildNodeContext, NodeData } from "./utils";
+import { rerankingService } from "./rerankingService";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
-
-interface GraphNodeRow {
-  knowledge_point_id: string;
-}
-
-interface GraphRow {
-  id: string;
-}
-
-interface KnowledgePointRow {
-  id: string;
-  title: string;
-  content: string | null;
-  embedding: number[] | null;
-}
+import { contextWindowManager } from "./contextWindowManager";
 
 interface GraphNodeWithKnowledge {
   knowledge_point_id: string;
   level: string;
-  knowledge_points: KnowledgePointRow | KnowledgePointRow[];
+  knowledge_points: {
+    id: string;
+    title: string;
+    content: string | null;
+  } | {
+    id: string;
+    title: string;
+    content: string | null;
+  }[];
 }
 
 interface EdgeRow {
@@ -81,6 +76,7 @@ export class RAGService {
     } = {},
   ): Promise<RAGSearchResult[]> {
     const { graphId, matchThreshold = 0.5, matchCount = 5 } = options;
+    const candidateCount = Math.max(matchCount * 4, 20);
 
     const queryEmbedding = await this.aiService.generateEmbedding(query);
     if (!queryEmbedding) {
@@ -89,105 +85,104 @@ export class RAGService {
     }
 
     try {
-      let query_builder = getSupabaseAdmin()
-        .from("knowledge_points")
-        .select("id, title, content, embedding")
-        .not("embedding", "is", null);
+      const supabase = getSupabaseAdmin();
+
+      let data: { id: string; title: string; content: string | null; similarity: number }[] | null = null;
+      let rpcError: unknown = null;
 
       if (graphId) {
-        const { data: graphNodes } = await getSupabaseAdmin()
-          .from("graph_nodes")
-          .select("knowledge_point_id")
-          .eq("graph_id", graphId)
-          .is("deleted_at", null);
-
-        if (graphNodes && graphNodes.length > 0) {
-          const kpIds = (graphNodes as GraphNodeRow[]).map(
-            (gn) => gn.knowledge_point_id,
-          );
-          query_builder = query_builder.in("id", kpIds);
-        } else {
-          return [];
-        }
+        const result = await supabase.rpc("match_knowledge_points_by_graph", {
+          query_embedding: queryEmbedding,
+          match_threshold: matchThreshold,
+          match_count: candidateCount,
+          p_user_id: userId,
+          p_graph_id: graphId,
+        });
+        data = result.data;
+        rpcError = result.error;
       } else {
-        const { data: userGraphs } = await getSupabaseAdmin()
-          .from("knowledge_graphs")
-          .select("id")
-          .eq("user_id", userId)
-          .is("deleted_at", null);
-
-        if (userGraphs && userGraphs.length > 0) {
-          const graphIds = (userGraphs as GraphRow[]).map((g) => g.id);
-          const { data: graphNodes } = await getSupabaseAdmin()
-            .from("graph_nodes")
-            .select("knowledge_point_id")
-            .in("graph_id", graphIds)
-            .is("deleted_at", null);
-
-          if (graphNodes && graphNodes.length > 0) {
-            const kpIds = (graphNodes as GraphNodeRow[]).map(
-              (gn) => gn.knowledge_point_id,
-            );
-            query_builder = query_builder.in("id", kpIds);
-          } else {
-            return [];
-          }
-        } else {
-          return [];
-        }
+        const result = await supabase.rpc("match_knowledge_points", {
+          query_embedding: queryEmbedding,
+          match_threshold: matchThreshold,
+          match_count: candidateCount,
+          p_user_id: userId,
+        });
+        data = result.data;
+        rpcError = result.error;
       }
 
-      const { data: knowledgePoints, error } = await query_builder.limit(100);
-
-      if (error || !knowledgePoints) {
-        logger.error("Failed to fetch knowledge points for RAG search", {
-          error,
-        });
+      if (rpcError || !data) {
+        logger.error("Failed to perform vector search for RAG", { error: rpcError });
         return [];
       }
 
-      const results: RAGSearchResult[] = (
-        knowledgePoints as KnowledgePointRow[]
-      )
-        .map((kp) => {
-          const similarity = this.cosineSimilarity(
-            queryEmbedding,
-            kp.embedding || [],
-          );
-          return {
-            id: kp.id,
-            title: kp.title,
-            content: kp.content || "",
-            similarity,
-            graphId: graphId || "",
-          };
-        })
-        .filter((r) => r.similarity >= matchThreshold)
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, matchCount);
+      let results: RAGSearchResult[];
 
-      return results;
+      if (graphId) {
+        results = data.map((row) => ({
+          id: row.id,
+          title: row.title,
+          content: row.content || "",
+          similarity: row.similarity,
+          graphId,
+        }));
+      } else {
+        if (data.length === 0) {
+          return [];
+        }
+
+        const kpIds = data.map((row) => row.id);
+        const { data: graphNodes } = await supabase
+          .from("graph_nodes")
+          .select("knowledge_point_id, graph_id")
+          .in("knowledge_point_id", kpIds)
+          .is("deleted_at", null);
+
+        const kpToGraphId = new Map<string, string>();
+        if (graphNodes) {
+          for (const gn of graphNodes as { knowledge_point_id: string; graph_id: string }[]) {
+            if (!kpToGraphId.has(gn.knowledge_point_id)) {
+              kpToGraphId.set(gn.knowledge_point_id, gn.graph_id);
+            }
+          }
+        }
+
+        results = data.map((row) => ({
+          id: row.id,
+          title: row.title,
+          content: row.content || "",
+          similarity: row.similarity,
+          graphId: kpToGraphId.get(row.id) || "",
+        }));
+      }
+
+      if (results.length > 1) {
+        try {
+          const rerankResults = await rerankingService.rerank(
+            query,
+            results.map((r) => ({ id: r.id, content: `${r.title}: ${r.content}` })),
+            { topN: matchCount },
+          );
+          if (rerankResults.length > 0) {
+            const resultMap = new Map(results.map((r) => [r.id, r]));
+            results = rerankResults
+              .map((rr) => {
+                const original = resultMap.get(rr.id);
+                if (!original) return null;
+                return { ...original, similarity: rr.relevanceScore };
+              })
+              .filter((r): r is RAGSearchResult => r !== null);
+          }
+        } catch {
+          // fall back to original pgvector ordering
+        }
+      }
+
+      return results.slice(0, matchCount);
     } catch (err) {
       logger.error("RAG semantic search error", { err });
       return [];
     }
-  }
-
-  private cosineSimilarity(a: number[], b: number[]): number {
-    if (!a || !b || a.length !== b.length) return 0;
-
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-
-    for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-
-    if (normA === 0 || normB === 0) return 0;
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
   async buildContext(
@@ -207,7 +202,7 @@ export class RAGService {
       matchCount: 10,
     });
 
-    let currentNodeContext = "";
+    let currentNodeContext: string | undefined;
     if (currentNodeId) {
       const { data: currentGraphNode } = await getSupabaseAdmin()
         .from("graph_nodes")
@@ -233,34 +228,23 @@ export class RAGService {
           title: kp?.title || "",
           content: kp?.content || "",
         };
-        const nodeContext = buildNodeContext(nodeData, {
+        currentNodeContext = buildNodeContext(nodeData, {
           maxContentLength: 1000,
         });
-        currentNodeContext = `\n[当前节点]\n${nodeContext}\n`;
       }
     }
 
-    const nodesData: NodeData[] = searchResults.map((r) => ({
-      title: r.title,
-      content: r.content || "",
-    }));
-    const sourcesContext = buildNodesContext(nodesData, {
-      maxContentLength: 500,
-    });
+    const maxTokens = Math.floor(maxContextLength / 2);
 
-    let context = "";
-    if (currentNodeContext) {
-      context += `${currentNodeContext}\n`;
-    }
-    if (sourcesContext) {
-      context += `[相关知识节点]\n${sourcesContext}`;
-    }
+    const { context, usedSources } = contextWindowManager.buildContext(
+      searchResults,
+      {
+        maxTokens,
+        currentNodeContext,
+      },
+    );
 
-    if (context.length > maxContextLength) {
-      context = `${context.substring(0, maxContextLength)}...(内容已截断)`;
-    }
-
-    return { context, sources: searchResults };
+    return { context, sources: usedSources };
   }
 
   async chat(

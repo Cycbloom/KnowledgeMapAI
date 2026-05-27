@@ -61,6 +61,7 @@ export type {
   HierarchyRelationInput,
   ApplyHierarchyResult,
 } from "./conceptAggregation";
+export { graphVersionsApi } from "./graphVersions";
 
 import { authApi } from "./auth";
 import { graphsApi } from "./graphs";
@@ -96,6 +97,7 @@ import { literatureApi } from "./literature";
 import { regionsApi } from "./regions";
 import { storyCreationApi } from "./storyCreation";
 import { conceptAggregationApi } from "./conceptAggregation";
+import { graphVersionsApi } from "./graphVersions";
 
 export const api = {
   auth: authApi,
@@ -136,6 +138,7 @@ export const api = {
   regions: regionsApi,
   storyCreation: storyCreationApi,
   conceptAggregation: conceptAggregationApi,
+  graphVersions: graphVersionsApi,
 };
 
 export type {

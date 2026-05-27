@@ -761,3 +761,41 @@ export const regenerateCardSchema = z.object({
   id: z.string().uuid("无效的测验集合ID"),
   cardId: z.string().uuid("无效的卡片ID"),
 });
+
+export const createSnapshotSchema = z.object({
+  description: z.string().max(500).optional(),
+});
+
+export const rollbackSchema = z.object({
+  snapshotId: z.string().uuid("无效的快照ID"),
+});
+
+export const createBranchSchema = z.object({
+  branchName: z.string().min(1, "分支名称不能为空").max(255, "分支名称最多255个字符"),
+});
+
+export const mergeSchema = z.object({
+  branchGraphId: z.string().uuid("无效的分支图谱ID"),
+  selectedChanges: z.object({
+    nodeIds: z.array(z.string().uuid()).optional(),
+    edgeIds: z.array(z.string().uuid()).optional(),
+  }).optional(),
+  conflictResolutions: z.record(z.enum(['main', 'branch'])).optional(),
+});
+
+export const diffQuerySchema = z.object({
+  sourceSnapshotId: z.string().uuid().optional(),
+  targetSnapshotId: z.string().uuid().optional(),
+});
+
+export const eventsQuerySchema = z.object({
+  page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
+  pageSize: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
+  batchId: z.string().uuid().optional(),
+  eventType: z.string().optional(),
+});
+
+export const snapshotsQuerySchema = z.object({
+  page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
+  pageSize: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
+});

@@ -13,7 +13,7 @@ ON CONFLICT (name) DO NOTHING;
 -- 依赖约束 (dependency)
 INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
   ('depends_on', '依赖', 'dependency', '#F59E0B', 'dashed', 'true', true),
-  ('prerequisite', '前提', 'dependency', '#F59E0B', 'dashed', 'true', true),
+  ('prerequisite', '前提', 'dependency', '#EF4444', 'dashed', 'true', true),
   ('constrains', '制约', 'dependency', '#F59E0B', 'dashed', 'true', true),
   ('supports', '支撑', 'dependency', '#F59E0B', 'dashed', 'true', true),
   ('mutex', '互斥', 'dependency', '#EF4444', 'dotted', 'false', true),

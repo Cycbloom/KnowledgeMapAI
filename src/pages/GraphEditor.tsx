@@ -150,6 +150,22 @@ const LiteratureLibraryPanel = lazy(() =>
   ),
 );
 
+const VersionHistoryPanel = lazy(() =>
+  import("../components/GraphEditor/panels/VersionHistoryPanel").then(
+    (module) => ({
+      default: module.VersionHistoryPanel,
+    }),
+  ),
+);
+
+const DiffDetailPanel = lazy(() =>
+  import("../components/GraphEditor/panels/DiffDetailPanel").then(
+    (module) => ({
+      default: module.DiffDetailPanel,
+    }),
+  ),
+);
+
 const ConceptPreviewList = lazy(() =>
   import("../components/LiteratureExtract/ConceptPreviewList").then(
     (module) => ({
@@ -237,6 +253,11 @@ export const GraphEditor = () => {
   const [extractedConcepts, setExtractedConcepts] = useState<any[]>([]);
   const [isConceptPreviewOpen, setIsConceptPreviewOpen] = useState(false);
   const [isConceptAggregationOpen, setIsConceptAggregationOpen] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [selectedDiff, setSelectedDiff] = useState<{
+    sourceSnapshotId: string;
+    targetSnapshotId?: string;
+  } | null>(null);
 
   const {
     isOpen: isConsoleOpen,
@@ -913,7 +934,7 @@ export const GraphEditor = () => {
           source_knowledge_point_id: sourceId,
           target_knowledge_point_id: targetId,
           graphId: id || "",
-          relationship_type: "related",
+          relationship_type: "contains",
         });
         message.success("连接已创建");
       } catch (error: unknown) {
@@ -1557,6 +1578,8 @@ export const GraphEditor = () => {
         setIsResearchProgressOpen={setIsResearchProgressOpen}
         isLiteratureLibraryOpen={isLiteratureLibraryOpen}
         setIsLiteratureLibraryOpen={setIsLiteratureLibraryOpen}
+        isVersionHistoryOpen={isVersionHistoryOpen}
+        setIsVersionHistoryOpen={setIsVersionHistoryOpen}
         regions={regions}
         collapsedRegions={collapsedRegions}
         onRegionToggle={handleRegionToggle}
@@ -1805,7 +1828,7 @@ export const GraphEditor = () => {
                 source_knowledge_point_id: sourceId,
                 target_knowledge_point_id: targetId,
                 graphId: id || "",
-                relationship_type: "related",
+                relationship_type: "contains",
               });
               message.success("连接已创建");
             } catch (error: unknown) {
@@ -1979,6 +2002,33 @@ export const GraphEditor = () => {
             graphId={id}
             onClose={() => setIsLiteratureLibraryOpen(false)}
           />
+        </Suspense>
+      )}
+
+      {isVersionHistoryOpen && id && (
+        <Suspense fallback={<ViewLoader />}>
+          <div className="fixed right-0 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-700">
+            <VersionHistoryPanel
+              graphId={id}
+              onClose={() => setIsVersionHistoryOpen(false)}
+              onDiffSelect={(sourceSnapshotId, targetSnapshotId) => {
+                setSelectedDiff({ sourceSnapshotId, targetSnapshotId });
+              }}
+            />
+          </div>
+        </Suspense>
+      )}
+
+      {selectedDiff && id && (
+        <Suspense fallback={<ViewLoader />}>
+          <div className="fixed right-80 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-700">
+            <DiffDetailPanel
+              graphId={id}
+              sourceSnapshotId={selectedDiff.sourceSnapshotId}
+              targetSnapshotId={selectedDiff.targetSnapshotId}
+              onClose={() => setSelectedDiff(null)}
+            />
+          </div>
         </Suspense>
       )}
 

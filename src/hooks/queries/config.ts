@@ -52,6 +52,14 @@ export const queryKeys = {
   statistics: ["statistics"] as const,
   templates: (category?: string) => ["templates", category || "all"] as const,
   template: (id: string) => ["template", id] as const,
+  graphSnapshots: (graphId: string) => ["graphSnapshots", graphId] as const,
+  graphSnapshot: (graphId: string, snapshotId: string) =>
+    ["graphSnapshot", graphId, snapshotId] as const,
+  graphDiff: (graphId: string, sourceId: string, targetId?: string) =>
+    ["graphDiff", graphId, sourceId, targetId] as const,
+  graphEvents: (graphId: string) => ["graphEvents", graphId] as const,
+  graphBranches: (graphId: string) =>
+    ["graphBranches", graphId] as const,
 };
 
 export type { Node, Edge, Task, NodeLevel };

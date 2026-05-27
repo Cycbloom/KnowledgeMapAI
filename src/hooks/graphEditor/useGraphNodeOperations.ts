@@ -73,7 +73,7 @@ export const useGraphNodeOperations = ({
               const newEdge = await createEdgeMutation.mutateAsync({
                 source_knowledge_point_id: parentId,
                 target_knowledge_point_id: newNode.id,
-                relationship_type: 'related',
+                relationship_type: 'contains',
                 graphId: id
               });
               record({ type: 'CREATE_EDGE', payload: newEdge });
@@ -139,7 +139,7 @@ export const useGraphNodeOperations = ({
             const newEdge = await createEdgeMutation.mutateAsync({
               source_knowledge_point_id: parentId,
               target_knowledge_point_id: selectedNode.id,
-              relationship_type: 'related',
+              relationship_type: 'contains',
               graphId: id
             });
             actions.push({ type: 'CREATE_EDGE', payload: newEdge });

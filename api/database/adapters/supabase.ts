@@ -837,7 +837,7 @@ export class SupabaseAdapter implements DatabaseInterface {
         graph_id: data.graph_id,
         source_knowledge_point_id: data.source_knowledge_point_id,
         target_knowledge_point_id: data.target_knowledge_point_id,
-        relationship_type: data.relationship_type || 'related',
+        relationship_type: data.relationship_type || 'contains',
         weight: data.weight || 1,
         custom_label: data.custom_label,
         custom_color: data.custom_color,

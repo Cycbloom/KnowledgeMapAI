@@ -15,6 +15,7 @@ import type {
   AITaskCompletedPayload,
   AITaskFailedPayload,
   CacheInvalidationNeededPayload,
+  GraphRollbackPayload,
 } from "@shared/types/events";
 
 class CacheInvalidationSubscriber {
@@ -92,6 +93,20 @@ class CacheInvalidationSubscriber {
     logger.debug(`[CacheInvalidation] edge_deleted: invalidated ${keys.length} keys for graph ${payload.graphId}`);
   };
 
+  private handleGraphRollback = async (event: AppEvent): Promise<void> => {
+    const payload = event.payload as GraphRollbackPayload;
+    const keys = [
+      CacheKeys.USER_GRAPHS(payload.userId),
+      CacheKeys.GRAPH(payload.graphId),
+      CacheKeys.GRAPH_NODES(payload.userId, payload.graphId),
+      CacheKeys.LEARNING_PATH(payload.graphId),
+      CacheKeys.STUDY_CARDS(payload.graphId),
+      CacheKeys.GRAPH_COLLABORATORS(payload.graphId),
+    ];
+    await cacheService.del(keys);
+    logger.debug(`[CacheInvalidation] graph_rollback: invalidated ${keys.length} keys for graph ${payload.graphId}`);
+  };
+
   private handleAITaskCompleted = async (event: AppEvent): Promise<void> => {
     const payload = event.payload as AITaskCompletedPayload;
     if (!payload.graphId) return;
@@ -148,6 +163,7 @@ class CacheInvalidationSubscriber {
       ["node_deleted", this.handleNodeDeleted],
       ["edge_created", this.handleEdgeCreated],
       ["edge_deleted", this.handleEdgeDeleted],
+      ["graph_rollback", this.handleGraphRollback],
       ["ai_task_completed", this.handleAITaskCompleted],
       ["ai_task_failed", this.handleAITaskFailed],
       ["cache_invalidation_needed", this.handleCacheInvalidationNeeded],

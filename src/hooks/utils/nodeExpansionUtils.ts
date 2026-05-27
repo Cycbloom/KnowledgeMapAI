@@ -68,7 +68,7 @@ export async function processExpandSuggestions({
         const newEdge = await createEdge({
           source_knowledge_point_id: selectedNode.id,
           target_knowledge_point_id: existingNode.id,
-          relationship_type: 'related',
+          relationship_type: 'contains',
           graphId
         });
         onEdgeCreated?.(newEdge);
@@ -101,7 +101,7 @@ export async function processExpandSuggestions({
       const newEdge = await createEdge({
         source_knowledge_point_id: selectedNode.id,
         target_knowledge_point_id: newNode.id,
-        relationship_type: 'related',
+        relationship_type: 'contains',
         graphId
       });
       onEdgeCreated?.(newEdge);

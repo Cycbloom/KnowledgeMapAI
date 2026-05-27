@@ -6,6 +6,7 @@ import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { api } from '../../../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Node, Edge } from '../../../types';
+import { HIERARCHICAL_EDGE_TYPES } from '../../../config/relationshipTypes';
 
 interface LayoutOrganizerProps {
   graphId: string;
@@ -68,7 +69,11 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
     const childrenMap = new Map<string, string[]>();
     const parentMap = new Map<string, string>();
     nodes.forEach(n => childrenMap.set(n.id, []));
-    edges.forEach(e => {
+    const hierarchicalEdges = edges.filter((edge) => {
+      if (!edge.relationship_type) return true;
+      return HIERARCHICAL_EDGE_TYPES.has(edge.relationship_type);
+    });
+    hierarchicalEdges.forEach(e => {
       const children = childrenMap.get(e.source_knowledge_point_id);
       if (children) {
         children.push(e.target_knowledge_point_id);

@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS edges (
   graph_id UUID NOT NULL REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
   target_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
-  relationship_type VARCHAR(50) DEFAULT 'related',
+  relationship_type VARCHAR(50) DEFAULT 'contains',
   weight INTEGER DEFAULT 1,
   custom_label TEXT,
   custom_color TEXT,
@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS edges (
   show_arrow BOOLEAN,
   deleted_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type),
   CONSTRAINT chk_line_style CHECK (custom_line_style IS NULL OR custom_line_style IN ('solid', 'dashed', 'dotted', 'double'))
 );

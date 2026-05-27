@@ -36,6 +36,7 @@ import { getLevelColors } from "../../../config/learningStatusColors";
 import { useTranslation } from "react-i18next";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 import { LiteratureHoverCard } from "../LiteratureHoverCard";
+import { HIERARCHICAL_EDGE_TYPES } from '../../../config/relationshipTypes';
 import {
   BackboneModule,
   BACKBONE_MODULE_LABELS,
@@ -43,13 +44,6 @@ import {
   BACKBONE_MODULE_COLORS,
   ConceptSource,
 } from "@shared/types/graph";
-
-const HIERARCHICAL_EDGE_TYPES = new Set([
-  "contains",
-  "parent_child",
-  "part_of",
-  "derived_from",
-]);
 
 interface GraphOutlineProps {
   nodes: Node[];

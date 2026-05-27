@@ -37,7 +37,10 @@ const GraphEdgesComponent: React.FC<GraphEdgesProps> = ({
   const edgeColorMap = useMemo(() => {
     const map = new Map<string, string>();
     edges.forEach((edge) => {
-      const relationType = edge.relationship_type as GraphRelationType;
+      const VALID_RELATION_TYPES: readonly string[] = ['prerequisite', 'extension', 'related', 'cross_domain'];
+      const relationType: GraphRelationType = VALID_RELATION_TYPES.includes(edge.relationship_type ?? '')
+        ? edge.relationship_type as GraphRelationType
+        : 'related';
       map.set(edge.id, getRelationColor(relationType));
     });
     return map;

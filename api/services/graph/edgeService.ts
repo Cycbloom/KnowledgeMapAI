@@ -4,6 +4,7 @@ import { softDelete, softDeleteBatch } from '../../utils/softDelete';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { graphVersionService } from './graphVersionService';
 
 interface CreateEdgeData {
   graph_id: string;
@@ -96,6 +97,19 @@ export class EdgeService {
           throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
         }
 
+        await graphVersionService.recordEvent(
+          supabase,
+          graph_id,
+          'edge_created',
+          {
+            edgeId: restoredEdge.id,
+            sourceKnowledgePointId: source_knowledge_point_id,
+            targetKnowledgePointId: target_knowledge_point_id,
+            relationshipType: relationship_type || 'contains',
+          },
+          null,
+        ).catch(err => logger.error('Record edge_created event error:', err));
+
         return this.mapEdge(restoredEdge);
       }
 
@@ -114,7 +128,7 @@ export class EdgeService {
         graph_id: graph_id,
         source_knowledge_point_id: source_knowledge_point_id,
         target_knowledge_point_id: target_knowledge_point_id,
-        relationship_type: relationship_type || 'related',
+        relationship_type: relationship_type || 'contains',
         weight: weight || 1,
         custom_label: custom_label,
         custom_color: custom_color,
@@ -129,15 +143,46 @@ export class EdgeService {
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
+    await graphVersionService.recordEvent(
+      supabase,
+      graph_id,
+      'edge_created',
+      {
+        edgeId: newEdge.id,
+        sourceKnowledgePointId: source_knowledge_point_id,
+        targetKnowledgePointId: target_knowledge_point_id,
+        relationshipType: relationship_type || 'contains',
+      },
+      null,
+    ).catch(err => logger.error('Record edge_created event error:', err));
+
     return this.mapEdge(newEdge);
   }
 
   async delete(supabase: SupabaseClient, edgeId: string): Promise<void> {
+    const { data: edgeData } = await supabase
+      .from('edges')
+      .select('graph_id, source_knowledge_point_id, target_knowledge_point_id')
+      .eq('id', edgeId)
+      .single();
+
     const result = await softDelete(supabase, 'edges', edgeId);
     if (!result.success) {
       logger.error('Delete edge error:', result.error);
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     }
+
+    await graphVersionService.recordEvent(
+      supabase,
+      edgeData?.graph_id,
+      'edge_deleted',
+      {
+        edgeId,
+        sourceKnowledgePointId: edgeData?.source_knowledge_point_id,
+        targetKnowledgePointId: edgeData?.target_knowledge_point_id,
+      },
+      null,
+    ).catch(err => logger.error('Record edge_deleted event error:', err));
   }
 
   async update(supabase: SupabaseClient, edgeId: string, data: UpdateEdgeData): Promise<Edge> {
@@ -157,6 +202,17 @@ export class EdgeService {
     if (!updatedEdge) {
       throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     }
+
+    await graphVersionService.recordEvent(
+      supabase,
+      updatedEdge.graph_id,
+      'edge_updated',
+      {
+        edgeId,
+        changes: data,
+      },
+      null,
+    ).catch(err => logger.error('Record edge_updated event error:', err));
 
     return this.mapEdge(updatedEdge);
   }

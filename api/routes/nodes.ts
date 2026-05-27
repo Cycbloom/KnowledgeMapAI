@@ -21,6 +21,7 @@ import {
   graphNodeService,
   edgeService,
 } from "../services/graph/index";
+import { graphVersionService } from "../services/graph/graphVersionService";
 import { buildNodeFromGraphNode } from "../utils/nodeHelpers";
 import { appEventBus } from "../services/core/eventBus";
 import type { NodeCreatedPayload, EdgeCreatedPayload } from "../../shared/types/events";
@@ -570,6 +571,18 @@ router.post(
 
     if (!graphNodes || graphNodes.length === 0) {
       return res.json({ message: "未找到匹配的节点", count: 0 });
+    }
+
+    if (node_ids.length >= 3) {
+      const graphId = graphNodes[0]?.graph_id;
+      if (graphId) {
+        await graphVersionService.autoSnapshot(
+          req.supabase!,
+          graphId,
+          'pre_batch_delete',
+          req.user.id
+        ).catch(err => logger.error('Auto snapshot error:', err));
+      }
     }
 
     const graphNodeIds = graphNodes.map((gn) => gn.id);

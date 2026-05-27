@@ -1,13 +1,7 @@
 import { hierarchy, tree } from 'd3-hierarchy';
 import type { HierarchyNode } from 'd3-hierarchy';
 import { Node, Edge, LayoutNode, LayoutLink } from '../../types';
-
-const HIERARCHICAL_EDGE_TYPES = new Set([
-  'contains',
-  'parent_child',
-  'part_of',
-  'derived_from',
-]);
+import { HIERARCHICAL_EDGE_TYPES } from '../../config/relationshipTypes';
 
 interface TreeLayoutOptions {
   width: number;

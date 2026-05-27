@@ -47,10 +47,13 @@ export function initializeEventSubscribers(qc: QueryClient): void {
       queryClient?.invalidateQueries({ queryKey: ["graphData", payload.graphId] });
       queryClient?.invalidateQueries({ queryKey: ["graphNodeStatus", payload.graphId] });
       queryClient?.invalidateQueries({ queryKey: ["graphLearningPath", payload.graphId] });
+      queryClient?.invalidateQueries({ queryKey: ["graph", payload.graphId] });
+      queryClient?.invalidateQueries({ queryKey: ["graphs"] });
     } else {
       queryClient?.invalidateQueries({ queryKey: ["graphData"] });
       queryClient?.invalidateQueries({ queryKey: ["graphNodeStatus"] });
       queryClient?.invalidateQueries({ queryKey: ["graphLearningPath"] });
+      queryClient?.invalidateQueries({ queryKey: ["graphs"] });
     }
   });
 

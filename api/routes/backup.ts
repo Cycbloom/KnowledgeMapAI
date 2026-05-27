@@ -456,7 +456,7 @@ async function restoreBackupData(
           graph_id: graphId,
           source_knowledge_point_id: sourceKPId,
           target_knowledge_point_id: targetKPId,
-          relationship_type: e.relationship_type || "related",
+          relationship_type: e.relationship_type || "contains",
           weight: e.weight || 1,
           custom_label: e.custom_label || null,
           custom_color: e.custom_color || null,

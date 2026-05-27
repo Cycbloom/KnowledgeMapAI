@@ -606,7 +606,7 @@ export const LearningMode = () => {
           source_knowledge_point_id: selectedParentNodeId,
           target_knowledge_point_id: newNode.id,
           graph_id: graphId,
-          relationship_type: "related",
+          relationship_type: "contains",
         });
       }
 

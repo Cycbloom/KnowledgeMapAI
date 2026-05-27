@@ -19,7 +19,11 @@ export type GraphEventType =
   | "node_updated"
   | "node_deleted"
   | "edge_created"
-  | "edge_deleted";
+  | "edge_updated"
+  | "edge_deleted"
+  | "graph_rollback"
+  | "graph_branch_created"
+  | "graph_merged";
 
 export type AIEventType =
   | "ai_task_completed"
@@ -175,10 +179,37 @@ export interface EdgeCreatedPayload {
   targetNodeId?: string;
 }
 
+export interface EdgeUpdatedPayload {
+  edgeId: string;
+  graphId: string;
+  userId: string;
+  changes?: Record<string, unknown>;
+}
+
 export interface EdgeDeletedPayload {
   edgeId: string;
   graphId: string;
   userId: string;
+}
+
+export interface GraphRollbackPayload {
+  graphId: string;
+  userId: string;
+  snapshotId: string;
+}
+
+export interface GraphBranchCreatedPayload {
+  graphId: string;
+  userId: string;
+  branchGraphId: string;
+  branchName: string;
+}
+
+export interface GraphMergedPayload {
+  graphId: string;
+  userId: string;
+  branchGraphId: string;
+  conflictCount: number;
 }
 
 export interface AITaskCompletedPayload {
@@ -293,7 +324,11 @@ export type AppEventPayload =
   | NodeUpdatedPayload
   | NodeDeletedPayload
   | EdgeCreatedPayload
+  | EdgeUpdatedPayload
   | EdgeDeletedPayload
+  | GraphRollbackPayload
+  | GraphBranchCreatedPayload
+  | GraphMergedPayload
   | AITaskCompletedPayload
   | AITaskFailedPayload
   | StudySessionCompletedPayload

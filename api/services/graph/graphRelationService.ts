@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
-export type GraphRelationType = 'prerequisite' | 'extension' | 'related';
+export type GraphRelationType = 'prerequisite' | 'extension' | 'related' | 'cross_domain';
 
 export interface GraphRelation {
   id: string;

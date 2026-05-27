@@ -47,6 +47,7 @@ import {
   FileText,
   LayoutGrid,
   GitMerge,
+  History,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../../hooks";
@@ -172,6 +173,9 @@ interface GraphToolbarProps {
   isLiteratureLibraryOpen?: boolean;
   setIsLiteratureLibraryOpen?: (open: boolean) => void;
 
+  isVersionHistoryOpen?: boolean;
+  setIsVersionHistoryOpen?: (open: boolean) => void;
+
   // Region Control (Quadrant View)
   regions?: Array<{
     id: string;
@@ -255,6 +259,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   setIsResearchProgressOpen,
   isLiteratureLibraryOpen,
   setIsLiteratureLibraryOpen,
+  isVersionHistoryOpen,
+  setIsVersionHistoryOpen,
   regions,
   collapsedRegions,
   onRegionToggle,
@@ -1507,6 +1513,21 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           disabled={!onTogglePodcast}
         />
       </DropdownButton>
+
+      <button
+        onClick={() => setIsVersionHistoryOpen?.(!isVersionHistoryOpen)}
+        className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
+          isVersionHistoryOpen
+            ? isDark
+              ? "bg-primary-900/40 text-primary-400"
+              : "bg-primary-50 text-primary-600"
+            : themeClasses.button.default
+        }`}
+        title="版本历史"
+      >
+        <History size={18} />
+        <span className="text-sm font-medium hidden xl:inline">版本历史</span>
+      </button>
 
       {/* AI Status Badge */}
       {aiEnabled === false && (

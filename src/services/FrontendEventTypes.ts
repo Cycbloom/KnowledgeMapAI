@@ -94,7 +94,7 @@ export interface SchedulerDeadlineApproachingPayload {
 
 export interface GraphDataChangedPayload {
   graphId?: string;
-  changeType: "node_created" | "node_updated" | "node_deleted" | "edge_created" | "edge_deleted" | "ai_action_executed";
+  changeType: "node_created" | "node_updated" | "node_deleted" | "edge_created" | "edge_deleted" | "ai_action_executed" | "graph_rollback";
 }
 
 export interface GraphListChangedPayload {

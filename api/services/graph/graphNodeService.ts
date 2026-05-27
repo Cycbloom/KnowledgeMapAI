@@ -1,10 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 import type { GraphNode, GraphNodeWithKnowledgePoint, NodeLevel } from '@/types';
 import { buildNodeFromGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
 import { softDelete, softDeleteBatch } from '../../utils/softDelete';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { graphVersionService } from './graphVersionService';
 
 interface AddToGraphData {
   graph_id: string;
@@ -62,6 +64,21 @@ export class GraphNodeService {
       throw error;
     }
 
+    await graphVersionService.recordEvent(
+      supabase,
+      data.graph_id,
+      'node_created',
+      {
+        graphNodeId: graphNode.id,
+        knowledgePointId: data.knowledge_point_id,
+        title: graphNode.knowledge_points?.[0]?.title,
+        xPosition: graphNode.x_position,
+        yPosition: graphNode.y_position,
+        level: graphNode.level,
+      },
+      null,
+    ).catch(err => logger.error('Record node_created event error:', err));
+
     return buildNodeFromGraphNode(graphNode) as GraphNodeWithKnowledgePoint;
   }
 
@@ -88,6 +105,17 @@ export class GraphNodeService {
     if (!result.success) {
       throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
+
+    await graphVersionService.recordEvent(
+      supabase,
+      graphId,
+      'node_deleted',
+      {
+        graphNodeId,
+        knowledgePointId: gn?.knowledge_point_id,
+      },
+      null,
+    ).catch(err => logger.error('Record node_deleted event error:', err));
   }
 
   async updatePosition(
@@ -96,6 +124,12 @@ export class GraphNodeService {
     x: number,
     y: number
   ): Promise<GraphNode> {
+    const { data: existingNode } = await supabase
+      .from('graph_nodes')
+      .select('graph_id')
+      .eq('id', graphNodeId)
+      .single();
+
     const { data, error } = await supabase
       .from('graph_nodes')
       .update({
@@ -109,6 +143,17 @@ export class GraphNodeService {
 
     if (error) throw error;
 
+    await graphVersionService.recordEvent(
+      supabase,
+      existingNode?.graph_id ?? data.graph_id,
+      'node_updated',
+      {
+        graphNodeId,
+        changes: { x_position: x, y_position: y },
+      },
+      null,
+    ).catch(err => logger.error('Record node_updated event error:', err));
+
     return data;
   }
 
@@ -117,7 +162,7 @@ export class GraphNodeService {
 
     const { data: graphNodes, error: findError } = await supabase
       .from('graph_nodes')
-      .select('id, knowledge_point_id')
+      .select('id, knowledge_point_id, graph_id')
       .in('knowledge_point_id', positions.map(p => p.id))
       .is('deleted_at', null);
 
@@ -152,10 +197,35 @@ export class GraphNodeService {
       logger.error('Batch position update errors:', errors);
     }
 
+    const batchId = crypto.randomUUID();
+    for (const pos of positions) {
+      const gnId = kpIdToGnId.get(pos.id);
+      if (gnId) {
+        await graphVersionService.recordEvent(
+          supabase,
+          graphNodes[0]?.graph_id,
+          'node_updated',
+          {
+            graphNodeId: gnId,
+            knowledgePointId: pos.id,
+            changes: { x_position: pos.x_position, y_position: pos.y_position },
+          },
+          null,
+          batchId,
+        ).catch(err => logger.error('Record node_updated event error:', err));
+      }
+    }
+
     return positions.length;
   }
 
   async updateLevel(supabase: SupabaseClient, graphNodeId: string, level: NodeLevel): Promise<GraphNode> {
+    const { data: existingNode } = await supabase
+      .from('graph_nodes')
+      .select('graph_id')
+      .eq('id', graphNodeId)
+      .single();
+
     const { data, error } = await supabase
       .from('graph_nodes')
       .update({
@@ -167,6 +237,17 @@ export class GraphNodeService {
       .single();
 
     if (error) throw error;
+
+    await graphVersionService.recordEvent(
+      supabase,
+      existingNode?.graph_id ?? data.graph_id,
+      'node_updated',
+      {
+        graphNodeId,
+        changes: { level },
+      },
+      null,
+    ).catch(err => logger.error('Record node_updated event error:', err));
 
     return data;
   }
@@ -211,7 +292,7 @@ export class GraphNodeService {
 
     const { data: graphNodes } = await supabase
       .from('graph_nodes')
-      .select('knowledge_point_id')
+      .select('id, knowledge_point_id')
       .in('id', graphNodeIds);
 
     const knowledgePointIds = graphNodes?.map(gn => gn.knowledge_point_id).filter(Boolean) || [];
@@ -231,6 +312,22 @@ export class GraphNodeService {
     const result = await softDeleteBatch(supabase, 'graph_nodes', graphNodeIds);
     if (!result.success) {
       throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+    }
+
+    const batchId = crypto.randomUUID();
+    for (const gnId of graphNodeIds) {
+      const kpId = graphNodes?.find(gn => gn.id === gnId)?.knowledge_point_id;
+      await graphVersionService.recordEvent(
+        supabase,
+        graphId,
+        'node_deleted',
+        {
+          graphNodeId: gnId,
+          knowledgePointId: kpId,
+        },
+        null,
+        batchId,
+      ).catch(err => logger.error('Record node_deleted event error:', err));
     }
 
     return graphNodeIds.length;

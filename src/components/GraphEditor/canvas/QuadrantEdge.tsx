@@ -80,7 +80,6 @@ const LINE_STYLES: Record<string, string> = {
   derives: "solid",
   proportional: "solid",
   inverse: "solid",
-  related_to: "dashed",
   derived_from: "dashed",
   default: "solid",
 };

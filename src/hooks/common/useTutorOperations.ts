@@ -172,7 +172,7 @@ export const useTutorOperations = ({
       const newEdge = await createEdgeMutation.mutateAsync({
         source_knowledge_point_id: parentNode.id,
         target_knowledge_point_id: newNode.id,
-        relationship_type: "related",
+        relationship_type: "contains",
         graphId: id,
       });
 
@@ -245,7 +245,7 @@ export const useTutorOperations = ({
         const newEdge = await createEdgeMutation.mutateAsync({
           source_knowledge_point_id: parentNode.id,
           target_knowledge_point_id: newNode.id,
-          relationship_type: "related",
+          relationship_type: "contains",
           graphId: id,
         });
 

@@ -9,3 +9,4 @@ export * from "./ai";
 export * from "./database";
 export * from "./performance";
 export * from "./api";
+export * from "./graphVersion";

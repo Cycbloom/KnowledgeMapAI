@@ -7,3 +7,4 @@ export * from "./useTaskQueries";
 export * from "./useLearningPathQueries";
 export * from "./useQuizQueries";
 export * from "./useActivityQueries";
+export * from "./useGraphVersionQueries";

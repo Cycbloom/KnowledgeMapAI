@@ -25,6 +25,7 @@ import {
 } from "@shared/constants/backboneModulePresets";
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
+import { graphVersionService } from "./graphVersionService";
 import type {
   GraphCreatedPayload,
   GraphUpdatedPayload,
@@ -592,6 +593,16 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.invalidateGraphCache(userId, graphId);
+
+    await graphVersionService.recordEvent(
+      supabase,
+      graphId,
+      'graph_updated',
+      {
+        changes: updates,
+      },
+      userId,
+    ).catch(err => logger.error('Record graph_updated event error:', err));
 
     await appEventBus.publish(
       "graph_updated",

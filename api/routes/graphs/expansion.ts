@@ -12,6 +12,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../utils/logger";
 import { relationDiscoveryService } from "../../services/graph/index";
+import { graphVersionService } from "../../services/graph/graphVersionService";
 import { checkDuplicateGraphTopic } from "../../utils/similaritySearch";
 import { backboneValidatorService } from "../../services/ai/backboneValidatorService";
 import { z } from "zod";
@@ -856,6 +857,13 @@ router.post(
           ErrorCodes.VALIDATION_ERROR,
         );
       }
+
+      await graphVersionService.autoSnapshot(
+        supabase,
+        id,
+        'pre_ai_expand',
+        userId
+      ).catch(err => logger.error('Auto snapshot error:', err));
 
       const task = await asyncTaskService.createTask(
         userId,

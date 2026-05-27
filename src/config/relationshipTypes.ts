@@ -40,6 +40,13 @@ export const PRESET_RELATIONSHIP_TYPES: Omit<RelationshipTypeConfig, 'id' | 'cre
   { name: 'inverse', display_name: '反比', category: 'causal', color: '#DC2626', line_style: 'solid', show_arrow: false, is_builtin: true },
 ];
 
+export const HIERARCHICAL_EDGE_TYPES = new Set([
+  'contains',
+  'parent_child',
+  'part_of',
+  'derived_from',
+]);
+
 const relationshipTypeMap = new Map<string, Omit<RelationshipTypeConfig, 'id' | 'created_at' | 'updated_at'>>();
 
 PRESET_RELATIONSHIP_TYPES.forEach(type => {

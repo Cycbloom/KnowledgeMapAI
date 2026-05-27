@@ -1,0 +1,17 @@
+- [x] `HIERARCHICAL_EDGE_TYPES` 常量仅在 `src/config/relationshipTypes.ts` 中定义一次，GraphOutline.tsx 和 treeLayout.ts 均从该文件导入
+- [x] `nodeExpansionUtils.ts` 创建的边使用 `relationship_type: 'contains'`
+- [x] `useGraphNodeOperations.ts` 创建的父子边使用 `relationship_type: 'contains'`
+- [x] `useTutorOperations.ts` 创建的父子边使用 `relationship_type: 'contains'`
+- [x] `GraphEditor.tsx` 手动连线使用 `relationship_type: 'contains'`
+- [x] `LearningMode.tsx` 连线使用 `relationship_type: 'contains'`
+- [x] `04_graph_structure.sql` 数据库 DDL 默认值为 `'contains'`
+- [x] `edgeService.ts` 默认边类型为 `'contains'`
+- [x] `supabase.ts` 适配器默认边类型为 `'contains'`
+- [x] `backup.ts` 默认边类型为 `'contains'`
+- [x] `LayoutOrganizer.tsx` 仅使用层级类型边构建父子映射，非层级边不参与布局计算
+- [x] `QuadrantEdge.tsx` 的 `LINE_STYLES` 中不存在 `related_to` 条目
+- [x] `GraphEdges.tsx` 不再使用 `as GraphRelationType` 强制类型转换
+- [x] `graphRelationService.ts` 的 `GraphRelationType` 包含 `'cross_domain'`
+- [x] `54_seed_relationship_types.sql` 中 `prerequisite` 颜色为 `'#EF4444'`
+- [x] `npm run check` 类型检查通过
+- [x] `npm run lint` 代码检查通过

@@ -666,6 +666,30 @@ export class GraphService {
    * @throws {AppError} 如果图谱不存在（RESOURCE_GRAPH_NOT_FOUND）
    */
   async deleteGraph(supabase: SupabaseClient, graphId: string, userId: string) {
+    const { data: branches } = await supabase
+      .from("knowledge_graphs")
+      .select("id")
+      .eq("parent_graph_id", graphId)
+      .eq("is_branch", true)
+      .is("deleted_at", null);
+
+    if (branches && branches.length > 0) {
+      const branchIds = branches.map((b: { id: string }) => b.id);
+      await supabase
+        .from("knowledge_graphs")
+        .update({ deleted_at: new Date().toISOString() })
+        .in("id", branchIds);
+
+      for (const branch of branches) {
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+    }
+
     const result = await softDelete(supabase, "knowledge_graphs", graphId);
     if (!result.success) {
       throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
@@ -702,6 +726,30 @@ export class GraphService {
       .select("id");
 
     if (error) throw error;
+
+    const { data: allBranches } = await supabase
+      .from("knowledge_graphs")
+      .select("id")
+      .in("parent_graph_id", graphIds)
+      .eq("is_branch", true)
+      .is("deleted_at", null);
+
+    if (allBranches && allBranches.length > 0) {
+      const branchIds = allBranches.map((b: { id: string }) => b.id);
+      await supabase
+        .from("knowledge_graphs")
+        .update({ deleted_at: new Date().toISOString() })
+        .in("id", branchIds);
+
+      for (const branch of allBranches) {
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+    }
 
     await cacheService.invalidateUserGraphsCache(userId);
 
@@ -761,6 +809,30 @@ export class GraphService {
     graphId: string,
     userId: string,
   ) {
+    const { data: branches } = await supabase
+      .from("knowledge_graphs")
+      .select("id")
+      .eq("parent_graph_id", graphId)
+      .eq("is_branch", true);
+
+    if (branches && branches.length > 0) {
+      const branchIds = branches.map((b: { id: string }) => b.id);
+      await supabase
+        .from("knowledge_graphs")
+        .delete()
+        .in("id", branchIds);
+
+      for (const branch of branches) {
+        await cacheService.invalidateAllGraphRelated(userId, branch.id);
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+    }
+
     const { error } = await supabase
       .from("knowledge_graphs")
       .delete()
@@ -836,6 +908,30 @@ export class GraphService {
       .select("id");
 
     if (error) throw error;
+
+    const { data: allBranches } = await supabase
+      .from("knowledge_graphs")
+      .select("id")
+      .in("parent_graph_id", graphIds)
+      .eq("is_branch", true);
+
+    if (allBranches && allBranches.length > 0) {
+      const branchIds = allBranches.map((b: { id: string }) => b.id);
+      await supabase
+        .from("knowledge_graphs")
+        .delete()
+        .in("id", branchIds);
+
+      for (const branch of allBranches) {
+        await cacheService.invalidateAllGraphRelated(userId, branch.id);
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+    }
 
     await cacheService.invalidateUserGraphsCache(userId);
 

@@ -7,11 +7,12 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
 import { useBranches, useGraphDiff } from "../../../hooks/queries/useGraphVersionQueries";
-import { useMergeBranch } from "../../../hooks/mutations/useGraphVersionMutations";
+import { useMergeBranch, useDeleteBranch } from "../../../hooks/mutations/useGraphVersionMutations";
 import type { MergeConflict } from "@shared/types/graphVersion";
 
 interface BranchManagePanelProps {
@@ -49,8 +50,10 @@ export const BranchManagePanel: React.FC<BranchManagePanelProps> = ({
   const navigate = useNavigate();
   const { data: branches, isLoading } = useBranches(graphId);
   const mergeBranchMutation = useMergeBranch(graphId);
+  const deleteBranchMutation = useDeleteBranch(graphId);
 
   const [mergeTarget, setMergeTarget] = useState<BranchInfo | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BranchInfo | null>(null);
   const [conflictResolutions, setConflictResolutions] = useState<
     Record<string, "main" | "branch">
   >({});
@@ -96,6 +99,23 @@ export const BranchManagePanel: React.FC<BranchManagePanelProps> = ({
     },
     [navigate],
   );
+
+  const openDeleteDialog = useCallback((branch: BranchInfo) => {
+    setDeleteTarget(branch);
+  }, []);
+
+  const closeDeleteDialog = useCallback(() => {
+    setDeleteTarget(null);
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    if (!deleteTarget) return;
+    deleteBranchMutation.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        closeDeleteDialog();
+      },
+    });
+  }, [deleteTarget, deleteBranchMutation, closeDeleteDialog]);
 
   const toggleConflictExpand = (entityId: string) => {
     setExpandedConflicts((prev) => {
@@ -157,6 +177,7 @@ export const BranchManagePanel: React.FC<BranchManagePanelProps> = ({
                 branch={branch}
                 onMerge={() => openMergeDialog(branch)}
                 onView={() => handleViewBranch(branch.id)}
+                onDelete={() => openDeleteDialog(branch)}
               />
             ))}
           </div>
@@ -219,6 +240,38 @@ export const BranchManagePanel: React.FC<BranchManagePanelProps> = ({
           </div>
         </MergeDialogOverlay>
       )}
+      {deleteTarget && (
+        <MergeDialogOverlay onClose={closeDeleteDialog}>
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm mx-4 overflow-hidden">
+            <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
+              <Trash2 size={18} className="text-red-500" />
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                删除分支
+              </h3>
+            </div>
+            <div className="p-4">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                确定要删除分支「{deleteTarget.title || deleteTarget.branch_name}」吗？此操作将移至回收站。
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={closeDeleteDialog}
+                className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteBranchMutation.isPending}
+                className="px-3 py-1.5 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleteBranchMutation.isPending ? "删除中..." : "确认删除"}
+              </button>
+            </div>
+          </div>
+        </MergeDialogOverlay>
+      )}
     </div>
   );
 };
@@ -227,9 +280,10 @@ interface BranchItemProps {
   branch: BranchInfo;
   onMerge: () => void;
   onView: () => void;
+  onDelete: () => void;
 }
 
-const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView }) => {
+const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView, onDelete }) => {
   return (
     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 group">
       <div className="flex items-center gap-3 min-w-0">
@@ -258,6 +312,13 @@ const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView }) => {
         >
           <GitMerge size={12} />
           合并
+        </button>
+        <button
+          onClick={onDelete}
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+        >
+          <Trash2 size={12} />
+          删除
         </button>
       </div>
     </div>

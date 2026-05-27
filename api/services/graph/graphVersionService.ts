@@ -482,7 +482,7 @@ export class GraphVersionService {
 
     const { data: originalGraph, error: graphError } = await supabase
       .from('knowledge_graphs')
-      .select('user_id, title')
+      .select('user_id, title, description, domain, settings, reference_books, external_links, learning_guide, podcast_script, template_type')
       .eq('id', graphId)
       .single();
 
@@ -496,6 +496,14 @@ export class GraphVersionService {
       .insert([{
         user_id: originalGraph.user_id,
         title: `${originalGraph.title} - ${branchName}`,
+        description: originalGraph.description,
+        domain: originalGraph.domain,
+        settings: originalGraph.settings,
+        reference_books: originalGraph.reference_books,
+        external_links: originalGraph.external_links,
+        learning_guide: originalGraph.learning_guide,
+        podcast_script: originalGraph.podcast_script,
+        template_type: originalGraph.template_type,
         is_branch: true,
         parent_graph_id: graphId,
         branch_name: branchName,

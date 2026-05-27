@@ -101,3 +101,23 @@ export const useMergeBranch = (graphId: string) => {
     },
   });
 };
+
+export const useDeleteBranch = (graphId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (branchId: string) => api.graphs.delete(branchId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.graphBranches(graphId),
+      });
+      frontendEventBus.publish("graph_list_changed", {
+        graphId,
+        changeType: "graph_deleted",
+      });
+      toast.success("分支已删除");
+    },
+    onError: () => {
+      toast.error("分支删除失败");
+    },
+  });
+};

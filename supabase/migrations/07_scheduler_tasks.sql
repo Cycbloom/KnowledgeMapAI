@@ -324,3 +324,23 @@ COMMENT ON COLUMN knowledge_review_tasks.last_quality_score IS '上次复习评�
 ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS task_id UUID REFERENCES user_tasks(id) ON DELETE SET NULL;
 
 COMMENT ON COLUMN knowledge_graphs.task_id IS '关联的学习任务ID，创建图谱时自动创建';
+
+CREATE TABLE IF NOT EXISTS scheduler_weight_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  weights JSONB NOT NULL DEFAULT '{"timeSlot":0.15,"mastery":0.2,"dependency":0.2,"typeMatch":0.1,"priority":0.15,"urgency":0.1,"availability":0.1}',
+  task_type_time_map JSONB,
+  chronotype TEXT DEFAULT 'balanced' CHECK (chronotype IN ('early_bird', 'night_owl', 'balanced')),
+  last_auto_adjusted_at TIMESTAMPTZ,
+  auto_adjust_enabled BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id)
+);
+
+COMMENT ON TABLE scheduler_weight_profiles IS '调度权重自适应配置，根据用户行为自动调优调度权重';
+COMMENT ON COLUMN scheduler_weight_profiles.weights IS '调度权重配置，结构: {"timeSlot":0.15,"mastery":0.2,"dependency":0.2,"typeMatch":0.1,"priority":0.15,"urgency":0.1,"availability":0.1}';
+COMMENT ON COLUMN scheduler_weight_profiles.task_type_time_map IS '任务类型与时段映射覆盖';
+COMMENT ON COLUMN scheduler_weight_profiles.chronotype IS '用户作息类型: early_bird(早起型), night_owl(夜猫型), balanced(平衡型)';
+COMMENT ON COLUMN scheduler_weight_profiles.last_auto_adjusted_at IS '上次自动调优时间';
+COMMENT ON COLUMN scheduler_weight_profiles.auto_adjust_enabled IS '是否启用自动调优';

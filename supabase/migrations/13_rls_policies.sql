@@ -513,6 +513,9 @@ CREATE POLICY "Users can view own efficiency profile" ON user_efficiency_profile
 CREATE POLICY "Users can insert own efficiency profile" ON user_efficiency_profile FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own efficiency profile" ON user_efficiency_profile FOR UPDATE USING (auth.uid() = user_id);
 
+ALTER TABLE scheduler_weight_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own weight profiles" ON scheduler_weight_profiles FOR ALL USING (auth.uid() = user_id);
+
 -- Path node tasks
 ALTER TABLE path_node_tasks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own path node tasks" ON path_node_tasks FOR SELECT USING (auth.uid() = user_id);

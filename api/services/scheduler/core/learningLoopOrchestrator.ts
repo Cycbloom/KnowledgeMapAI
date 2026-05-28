@@ -6,6 +6,9 @@ import type {
   FocusSessionEndedPayload,
   TaskCompletedPayload,
 } from "../../../../shared/types/scheduler";
+import type { StudyMode, StudyWorkflowStage, StudyWorkflowConfig } from "../../../../shared/types/scheduler";
+import { getStudyModePreset } from "../../../../shared/constants/studyModePresets";
+import { MASTERY_THRESHOLDS } from "../../../../shared/constants/masteryThresholds";
 
 type LoopStage = "learn" | "test" | "review" | "iterate";
 
@@ -15,6 +18,8 @@ interface LearningLoop {
   knowledgePointId?: string;
   graphId?: string;
   currentStage: LoopStage;
+  currentWorkflowStage?: StudyWorkflowStage;
+  studyMode?: StudyMode;
   masteryLevel: number;
   loopCount: number;
   lastStageChangeAt: string;
@@ -326,6 +331,185 @@ class LearningLoopOrchestrator {
     if (existingLoop) return existingLoop;
 
     return this.startLoop(supabase, userId, knowledgePointId, graphId);
+  }
+
+  createWorkflowForMode(studyMode: StudyMode): { stages: StudyWorkflowStage[]; config: StudyWorkflowConfig } {
+    const preset = getStudyModePreset(studyMode);
+    return {
+      stages: preset.workflow.stages,
+      config: preset.workflow,
+    };
+  }
+
+  getNextWorkflowStage(
+    currentStage: StudyWorkflowStage,
+    masteryLevel: number,
+    accuracy: number,
+    workflowConfig: StudyWorkflowConfig,
+  ): StudyWorkflowStage {
+    const transitions = workflowConfig.transitions.filter(
+      (t) => t.from === currentStage,
+    );
+
+    for (const transition of transitions) {
+      switch (transition.condition) {
+        case "always":
+          return transition.to;
+        case "mastery_above":
+          if (masteryLevel >= (transition.threshold ?? 0.7)) return transition.to;
+          break;
+        case "accuracy_above":
+          if (accuracy >= (transition.threshold ?? 0.8)) return transition.to;
+          break;
+        case "completed":
+          return transition.to;
+      }
+    }
+
+    return currentStage;
+  }
+
+  async createLoopWithMode(
+    supabase: SupabaseClient,
+    userId: string,
+    knowledgePointId: string,
+    graphId: string,
+    studyMode: StudyMode,
+  ): Promise<LearningLoop> {
+    const preset = getStudyModePreset(studyMode);
+    const initialStage = preset.workflow.stages[0] ?? "learn";
+
+    const loop: LearningLoop = {
+      id: randomUUID(),
+      userId,
+      knowledgePointId,
+      graphId,
+      currentStage: this.mapWorkflowStageToLegacy(initialStage),
+      currentWorkflowStage: initialStage,
+      studyMode,
+      masteryLevel: 0,
+      loopCount: 0,
+      lastStageChangeAt: new Date().toISOString(),
+      config: {
+        masteryThreshold: MASTERY_THRESHOLDS.PRACTICE_QUIZ,
+        testDelayMinutes: 60,
+        maxLoops: 10,
+      },
+    };
+
+    const { error } = await supabase.from("learning_loops").insert({
+      id: loop.id,
+      user_id: loop.userId,
+      knowledge_point_id: loop.knowledgePointId,
+      graph_id: loop.graphId,
+      current_stage: loop.currentStage,
+      study_mode: loop.studyMode,
+      current_workflow_stage: loop.currentWorkflowStage,
+      mastery_level: loop.masteryLevel,
+      loop_count: loop.loopCount,
+      config: loop.config,
+    });
+
+    if (error) {
+      logger.error("Failed to create learning loop with mode", { error: error.message });
+    }
+
+    return loop;
+  }
+
+  private mapWorkflowStageToLegacy(stage: StudyWorkflowStage): LoopStage {
+    const mapping: Record<StudyWorkflowStage, LoopStage> = {
+      learn: "learn",
+      recall: "learn",
+      practice: "test",
+      quiz: "test",
+      review: "review",
+      reflect: "iterate",
+    };
+    return mapping[stage];
+  }
+
+  async resumeLoop(
+    supabase: SupabaseClient,
+    loopId: string,
+  ): Promise<LearningLoop | null> {
+    const { data, error } = await supabase
+      .from("learning_loops")
+      .select("*")
+      .eq("id", loopId)
+      .single();
+
+    if (error || !data) {
+      logger.error("Failed to resume learning loop", { loopId, error: error?.message });
+      return null;
+    }
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      knowledgePointId: data.knowledge_point_id ?? undefined,
+      graphId: data.graph_id ?? undefined,
+      currentStage: data.current_stage,
+      currentWorkflowStage: data.current_workflow_stage,
+      studyMode: data.study_mode,
+      masteryLevel: data.mastery_level ?? 0,
+      loopCount: data.loop_count ?? 0,
+      lastStageChangeAt: data.last_stage_change_at ?? new Date().toISOString(),
+      config: data.config ?? {},
+      taskId: data.task_id,
+    };
+  }
+
+  async advanceWorkflowStage(
+    supabase: SupabaseClient,
+    loopId: string,
+    masteryLevel: number,
+    accuracy: number,
+  ): Promise<{ loop: LearningLoop; advanced: boolean }> {
+    const loop = await this.resumeLoop(supabase, loopId);
+    if (!loop || !loop.studyMode || !loop.currentWorkflowStage) {
+      return { loop: loop ?? {} as LearningLoop, advanced: false };
+    }
+
+    const preset = getStudyModePreset(loop.studyMode);
+    const nextStage = this.getNextWorkflowStage(
+      loop.currentWorkflowStage,
+      masteryLevel,
+      accuracy,
+      preset.workflow,
+    );
+
+    if (nextStage === loop.currentWorkflowStage) {
+      return { loop, advanced: false };
+    }
+
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("learning_loops")
+      .update({
+        current_workflow_stage: nextStage,
+        current_stage: this.mapWorkflowStageToLegacy(nextStage),
+        mastery_level: masteryLevel,
+        last_stage_change_at: now,
+        updated_at: now,
+      })
+      .eq("id", loopId);
+
+    if (error) {
+      logger.error("Failed to advance workflow stage", { loopId, error: error.message });
+      return { loop, advanced: false };
+    }
+
+    return {
+      loop: {
+        ...loop,
+        currentWorkflowStage: nextStage,
+        currentStage: this.mapWorkflowStageToLegacy(nextStage),
+        masteryLevel,
+        lastStageChangeAt: now,
+      },
+      advanced: true,
+    };
   }
 }
 

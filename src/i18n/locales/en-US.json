@@ -1613,7 +1613,27 @@
       "title": "Knowledge Learning",
       "selectChapter": "Select a chapter",
       "loading": "Loading...",
-      "enterMindMap": "Enter 3D Mind Map"
+      "enterMindMap": "Enter 3D Mind Map",
+      "studyMode": "Study Mode",
+      "studyModeSelect": "Select Study Mode"
+    },
+    "studyMode": {
+      "drill": "Drill Mode",
+      "drillDesc": "Skip materials, go straight to quizzes with short intervals for reinforcement",
+      "deep": "Deep Learning",
+      "deepDesc": "Full workflow: Learn → Recall → Practice → Quiz → Reflect",
+      "preview": "Quick Preview",
+      "previewDesc": "Read materials only, no review cards generated",
+      "review": "Spaced Review",
+      "reviewDesc": "Only show due review nodes with standard scheduling",
+      "quiz": "Quiz Mode",
+      "quizDesc": "Directly quiz all learned nodes",
+      "mixed": "Mixed Mode",
+      "mixedDesc": "Automatically select strategy based on node status",
+      "strategyHintNew": "New knowledge node, using deep learning strategy",
+      "strategyHintLow": "Low mastery, drill reinforcement recommended",
+      "strategyHintMedium": "Medium mastery, using deep learning strategy",
+      "strategyHintHigh": "Good mastery, using spaced review to maintain"
     },
     "chat": {
       "welcome": "Hello! I'm your AI learning assistant, how can I help you today?",

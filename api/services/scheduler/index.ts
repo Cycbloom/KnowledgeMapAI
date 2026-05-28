@@ -115,3 +115,18 @@ export type {
   PracticeCompletionResult,
   QuizCompletionResult,
 } from "./subtaskQuizIntegration";
+
+export {
+  adaptiveSchedulerService,
+  AdaptiveSchedulerService,
+} from "./adaptiveSchedulerService";
+export type {
+  SchedulerWeights,
+  TaskTypeTimeMap,
+  AdaptiveRecommendation,
+  AdaptiveSchedulerResult,
+} from "./adaptiveSchedulerService";
+export {
+  DEFAULT_SCHEDULER_WEIGHTS,
+  DEFAULT_TASK_TYPE_TIME_MAP,
+} from "./adaptiveSchedulerService";

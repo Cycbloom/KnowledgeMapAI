@@ -2076,7 +2076,27 @@
       "title": "知识学习",
       "selectChapter": "请选择章节",
       "loading": "加载中...",
-      "enterMindMap": "进入 3D 思维导图"
+      "enterMindMap": "进入 3D 思维导图",
+      "studyMode": "学习模式",
+      "studyModeSelect": "选择学习模式"
+    },
+    "studyMode": {
+      "drill": "刷题模式",
+      "drillDesc": "跳过学习材料，直接进入测验，短间隔高频率强化记忆",
+      "deep": "深度学习",
+      "deepDesc": "完整工作流：学习材料→主动回忆→练习→测验→反思",
+      "preview": "快速浏览",
+      "previewDesc": "仅阅读学习材料，不生成复习卡片",
+      "review": "间隔复习",
+      "reviewDesc": "仅展示到期复习的节点，按标准调度执行复习",
+      "quiz": "测验模式",
+      "quizDesc": "直接对所有已学节点进行测验",
+      "mixed": "混合模式",
+      "mixedDesc": "根据节点状态自动选择策略",
+      "strategyHintNew": "新知识节点，使用深度学习策略",
+      "strategyHintLow": "掌握度较低，建议刷题强化",
+      "strategyHintMedium": "掌握度中等，使用深度学习策略",
+      "strategyHintHigh": "掌握度良好，使用间隔复习维持"
     },
     "chat": {
       "welcome": "你好！我是你的 AI 学习助手，有什么可以帮助你的吗？",

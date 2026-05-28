@@ -72,6 +72,10 @@ CREATE TRIGGER user_efficiency_profile_updated_at
   BEFORE UPDATE ON user_efficiency_profile
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER scheduler_weight_profiles_updated_at
+  BEFORE UPDATE ON scheduler_weight_profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER knowledge_graphs_updated_at
   BEFORE UPDATE ON knowledge_graphs
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

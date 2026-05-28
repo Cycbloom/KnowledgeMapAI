@@ -86,6 +86,8 @@ GRANT ALL PRIVILEGES ON knowledge_review_tasks TO authenticated;
 GRANT SELECT ON knowledge_review_tasks TO anon;
 GRANT ALL PRIVILEGES ON user_efficiency_profile TO authenticated;
 GRANT SELECT ON user_efficiency_profile TO anon;
+GRANT ALL PRIVILEGES ON scheduler_weight_profiles TO authenticated;
+GRANT SELECT ON scheduler_weight_profiles TO anon;
 GRANT ALL PRIVILEGES ON path_node_tasks TO authenticated;
 GRANT SELECT ON path_node_tasks TO anon;
 

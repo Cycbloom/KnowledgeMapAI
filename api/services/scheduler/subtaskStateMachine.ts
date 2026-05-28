@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import { MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
 import type {
   LearningState,
   StateHistoryEntry,
@@ -23,18 +24,18 @@ const VALID_TRANSITIONS: Record<LearningState, StateTransitionConfig[]> = {
   learning: [
     {
       to: "review",
-      maxMastery: 0.3,
+      maxMastery: MASTERY_THRESHOLDS.LEARNING_REVIEW,
       description: "掌握度低于30%，进入复习阶段",
     },
     {
       to: "practice",
-      minMastery: 0.3,
-      maxMastery: 0.7,
+      minMastery: MASTERY_THRESHOLDS.LEARNING_REVIEW,
+      maxMastery: MASTERY_THRESHOLDS.PRACTICE_QUIZ,
       description: "掌握度30%-70%，进入练习阶段",
     },
     {
       to: "quiz",
-      minMastery: 0.7,
+      minMastery: MASTERY_THRESHOLDS.PRACTICE_QUIZ,
       description: "掌握度高于70%，进入测验阶段",
     },
   ],
@@ -47,40 +48,34 @@ const VALID_TRANSITIONS: Record<LearningState, StateTransitionConfig[]> = {
   practice: [
     {
       to: "quiz",
-      minMastery: 0.5,
+      minMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
       description: "练习达标，进入测验阶段",
     },
     {
       to: "review",
-      maxMastery: 0.5,
+      maxMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
       description: "练习未达标，返回复习阶段",
     },
   ],
   quiz: [
     {
       to: "review",
-      maxMastery: 0.6,
+      maxMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
       description: "测验未达标，返回复习阶段",
     },
     {
       to: "practice",
-      minMastery: 0.6,
-      maxMastery: 0.8,
+      minMastery: MASTERY_THRESHOLDS.REVIEW_PRACTICE,
+      maxMastery: MASTERY_THRESHOLDS.QUIZ_MASTERY,
       description: "测验部分达标，进入练习阶段",
     },
     {
       to: "quiz",
-      minMastery: 0.8,
+      minMastery: MASTERY_THRESHOLDS.QUIZ_MASTERY,
       description: "测验达标，继续测验阶段深化",
     },
   ],
 };
-
-const MASTERY_THRESHOLDS = {
-  LOW: 0.3,
-  MEDIUM: 0.7,
-  HIGH: 0.8,
-} as const;
 
 const CYCLE_ORDER: LearningState[] = ["review", "practice", "quiz"];
 
@@ -97,10 +92,10 @@ class SubtaskStateMachine {
   }
 
   private getNextStateFromLearning(masteryLevel: number): LearningState {
-    if (masteryLevel < MASTERY_THRESHOLDS.LOW) {
+    if (masteryLevel < MASTERY_THRESHOLDS.LEARNING_REVIEW) {
       return "review";
     }
-    if (masteryLevel < MASTERY_THRESHOLDS.MEDIUM) {
+    if (masteryLevel < MASTERY_THRESHOLDS.PRACTICE_QUIZ) {
       return "practice";
     }
     return "quiz";
@@ -117,17 +112,17 @@ class SubtaskStateMachine {
     }
 
     if (currentState === "practice") {
-      if (masteryLevel >= MASTERY_THRESHOLDS.MEDIUM) {
+      if (masteryLevel >= MASTERY_THRESHOLDS.PRACTICE_QUIZ) {
         return "quiz";
       }
       return "review";
     }
 
     if (currentState === "quiz") {
-      if (masteryLevel >= MASTERY_THRESHOLDS.HIGH) {
+      if (masteryLevel >= MASTERY_THRESHOLDS.QUIZ_MASTERY) {
         return "quiz";
       }
-      if (masteryLevel >= 0.6) {
+      if (masteryLevel >= MASTERY_THRESHOLDS.REVIEW_PRACTICE) {
         return "practice";
       }
       return "review";

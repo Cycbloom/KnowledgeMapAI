@@ -750,3 +750,38 @@ export interface TransitionSubtaskData {
   mastery_level: number;
   reason?: string;
 }
+
+export type StudyMode = "drill" | "deep" | "preview" | "review" | "quiz" | "mixed";
+
+export type StudyWorkflowStage = "learn" | "recall" | "practice" | "quiz" | "review" | "reflect";
+
+export type RatingMode = "binary" | "ternary" | "full";
+
+export interface StudyWorkflowTransition {
+  from: StudyWorkflowStage;
+  to: StudyWorkflowStage;
+  condition: "always" | "mastery_above" | "accuracy_above" | "completed";
+  threshold?: number;
+}
+
+export interface StudyWorkflowConfig {
+  stages: StudyWorkflowStage[];
+  transitions: StudyWorkflowTransition[];
+  exitConditions: Partial<Record<StudyWorkflowStage, { type: "mastery" | "accuracy" | "time"; threshold: number }>>;
+}
+
+export interface FsrsParamOverride {
+  request_retention?: number;
+  maximum_interval?: number;
+}
+
+export interface StudyModePreset {
+  mode: StudyMode;
+  label: string;
+  description: string;
+  icon: string;
+  workflow: StudyWorkflowConfig;
+  fsrsOverride: FsrsParamOverride;
+  ratingMode: RatingMode;
+  masteryThresholdOverride?: Partial<Record<"LEARNING_REVIEW" | "REVIEW_PRACTICE" | "PRACTICE_QUIZ" | "QUIZ_MASTERY", number>>;
+}

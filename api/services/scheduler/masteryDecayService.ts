@@ -1,9 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import { DEFAULT_DECAY_CONFIG as SHARED_DECAY_CONFIG } from "../../../shared/constants/masteryThresholds";
 
 const DEFAULT_EASE_FACTOR = 2.5;
 const MIN_EASE_FACTOR = 1.3;
-const DEFAULT_REVIEW_THRESHOLD = 0.5;
 
 export interface DecayResult {
   knowledge_point_id: string;
@@ -26,6 +26,7 @@ export interface DecayCalculationInput {
   masteryLevel: number;
   lastStudyAt: Date;
   easeFactor: number;
+  fsrsStability?: number;
 }
 
 export interface DecayConfig {
@@ -47,11 +48,7 @@ interface ReviewTaskData {
   ease_factor: number;
 }
 
-const DEFAULT_DECAY_CONFIG: DecayConfig = {
-  reviewThreshold: DEFAULT_REVIEW_THRESHOLD,
-  minMastery: 0,
-  decayBaseFactor: 10,
-};
+const DEFAULT_DECAY_CONFIG: DecayConfig = { ...SHARED_DECAY_CONFIG };
 
 function daysBetween(date1: Date, date2: Date): number {
   const oneDay = 24 * 60 * 60 * 1000;
@@ -70,9 +67,9 @@ export class MasteryDecayService {
     masteryLevel: number,
     lastStudyAt: Date,
     easeFactor: number,
+    fsrsStability?: number,
   ): number {
     const validatedMastery = Math.max(0, Math.min(1, masteryLevel));
-    const validatedEaseFactor = Math.max(MIN_EASE_FACTOR, easeFactor);
 
     const daysSinceLastStudy = daysBetween(lastStudyAt, new Date());
 
@@ -80,10 +77,17 @@ export class MasteryDecayService {
       return validatedMastery;
     }
 
-    const retentionRate = Math.pow(
-      Math.E,
-      -daysSinceLastStudy / (validatedEaseFactor * this.config.decayBaseFactor),
-    );
+    let retentionRate: number;
+
+    if (fsrsStability && fsrsStability > 0) {
+      retentionRate = Math.pow(Math.E, -daysSinceLastStudy / fsrsStability);
+    } else {
+      const validatedEaseFactor = Math.max(MIN_EASE_FACTOR, easeFactor);
+      retentionRate = Math.pow(
+        Math.E,
+        -daysSinceLastStudy / (validatedEaseFactor * this.config.decayBaseFactor),
+      );
+    }
 
     const newMastery = validatedMastery * retentionRate;
 
@@ -135,6 +139,19 @@ export class MasteryDecayService {
         }
       }
 
+      const { data: studyCards } = await supabase
+        .from("study_cards")
+        .select("knowledge_point_id, fsrs_stability");
+
+      const stabilityMap = new Map<string, number>();
+      if (studyCards) {
+        for (const card of studyCards as { knowledge_point_id: string; fsrs_stability: number | null }[]) {
+          if (card.fsrs_stability) {
+            stabilityMap.set(card.knowledge_point_id, card.fsrs_stability);
+          }
+        }
+      }
+
       const results: DecayResult[] = [];
 
       for (const subtask of subtasks as SubtaskData[]) {
@@ -142,10 +159,12 @@ export class MasteryDecayService {
           easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
         const lastStudyAt = new Date(subtask.last_state_change_at);
         const oldMastery = subtask.mastery_level;
+        const fsrsStability = stabilityMap.get(subtask.knowledge_point_id);
         const newMastery = this.calculateDecay(
           oldMastery,
           lastStudyAt,
           easeFactor,
+          fsrsStability,
         );
         const daysSinceStudy = daysBetween(lastStudyAt, new Date());
         const needsReview = this.needsReview(
@@ -235,16 +254,31 @@ export class MasteryDecayService {
         }
       }
 
+      const { data: studyCards } = await supabase
+        .from("study_cards")
+        .select("knowledge_point_id, fsrs_stability");
+
+      const stabilityMap = new Map<string, number>();
+      if (studyCards) {
+        for (const card of studyCards as { knowledge_point_id: string; fsrs_stability: number | null }[]) {
+          if (card.fsrs_stability) {
+            stabilityMap.set(card.knowledge_point_id, card.fsrs_stability);
+          }
+        }
+      }
+
       const pointsNeedingReview: KnowledgePointForReview[] = [];
 
       for (const subtask of subtasks as SubtaskData[]) {
         const easeFactor =
           easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
         const lastStudyAt = new Date(subtask.last_state_change_at);
+        const fsrsStability = stabilityMap.get(subtask.knowledge_point_id);
         const currentMastery = this.calculateDecay(
           subtask.mastery_level,
           lastStudyAt,
           easeFactor,
+          fsrsStability,
         );
 
         if (this.needsReview(currentMastery, reviewThreshold)) {
@@ -345,7 +379,10 @@ export class MasteryDecayService {
     return { success, failed };
   }
 
-  calculateRetentionRate(daysSinceStudy: number, easeFactor: number): number {
+  calculateRetentionRate(daysSinceStudy: number, easeFactor: number, fsrsStability?: number): number {
+    if (fsrsStability && fsrsStability > 0) {
+      return Math.pow(Math.E, -daysSinceStudy / fsrsStability);
+    }
     return Math.pow(
       Math.E,
       -daysSinceStudy / (easeFactor * this.config.decayBaseFactor),
@@ -356,6 +393,7 @@ export class MasteryDecayService {
     currentMastery: number,
     easeFactor: number,
     threshold?: number,
+    fsrsStability?: number,
   ): number {
     const reviewThreshold = threshold ?? this.config.reviewThreshold;
 
@@ -363,11 +401,50 @@ export class MasteryDecayService {
       return 0;
     }
 
-    const decayConstant = easeFactor * this.config.decayBaseFactor;
+    const decayConstant = (fsrsStability && fsrsStability > 0)
+      ? fsrsStability
+      : easeFactor * this.config.decayBaseFactor;
     const daysUntilThreshold =
       -decayConstant * Math.log(reviewThreshold / currentMastery);
 
     return Math.max(0, Math.round(daysUntilThreshold));
+  }
+
+  async applyAdjacencyDecayCorrection(
+    supabase: SupabaseClient,
+    knowledgePointId: string,
+    graphId: string,
+    currentMastery: number,
+  ): Promise<number> {
+    const { data: edges } = await supabase
+      .from("graph_edges")
+      .select("source_id, target_id")
+      .eq("graph_id", graphId)
+      .or(`source_id.eq.${knowledgePointId},target_id.eq.${knowledgePointId}`);
+
+    if (!edges || edges.length === 0) {
+      return currentMastery;
+    }
+
+    const neighborIds = edges.map((e: { source_id: string; target_id: string }) =>
+      e.source_id === knowledgePointId ? e.target_id : e.source_id,
+    );
+
+    const { data: neighbors } = await supabase
+      .from("knowledge_points")
+      .select("id, mastery_level")
+      .in("id", neighborIds);
+
+    if (!neighbors || neighbors.length === 0) {
+      return currentMastery;
+    }
+
+    const avgNeighborMastery =
+      neighbors.reduce((sum: number, n: { mastery_level: number | null }) => sum + (n.mastery_level ?? 0), 0) / neighbors.length;
+
+    const correctionFactor = 1 + 0.2 * avgNeighborMastery;
+
+    return Math.min(1, currentMastery * correctionFactor);
   }
 
   getDecayConfig(): DecayConfig {

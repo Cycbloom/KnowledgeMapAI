@@ -130,6 +130,9 @@ COMMENT ON COLUMN learning_loops.mastery_level IS 'Current mastery level (0-1)';
 COMMENT ON COLUMN learning_loops.loop_count IS 'Number of completed loop iterations';
 COMMENT ON COLUMN learning_loops.config IS 'Loop configuration (masteryThreshold, testDelayMinutes, maxLoops)';
 
+ALTER TABLE learning_loops ADD COLUMN IF NOT EXISTS study_mode TEXT;
+ALTER TABLE learning_loops ADD COLUMN IF NOT EXISTS current_workflow_stage TEXT;
+
 -- Add foreign key constraint for task_subtasks.learning_path_node_id
 ALTER TABLE task_subtasks
   ADD CONSTRAINT fk_task_subtasks_learning_path_node

@@ -3,8 +3,8 @@ import type { TaskSettings } from "@shared/types/scheduler";
 
 const DEFAULT_SETTINGS: Omit<TaskSettings, "id" | "user_id"> = {
   q0_time_slice: 25,
-  q1_time_slice: 50,
-  q2_time_slice: 100,
+  q1_time_slice: 45,
+  q2_time_slice: 90,
   break_duration: 5,
   sound_enabled: true,
   notification_enabled: true,

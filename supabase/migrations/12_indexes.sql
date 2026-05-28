@@ -260,6 +260,8 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_due ON knowledge_review_ta
 -- User efficiency profile
 CREATE INDEX IF NOT EXISTS idx_user_efficiency_profile_user ON user_efficiency_profile(user_id);
 
+CREATE INDEX IF NOT EXISTS idx_scheduler_weight_profiles_user ON scheduler_weight_profiles(user_id);
+
 -- Path node tasks
 CREATE INDEX IF NOT EXISTS idx_path_node_tasks_path ON path_node_tasks(path_id);
 CREATE INDEX IF NOT EXISTS idx_path_node_tasks_node ON path_node_tasks(node_id);

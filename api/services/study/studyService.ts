@@ -5,6 +5,9 @@ import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import type { StudyMode } from "../../../shared/types/scheduler";
+import { getStudyModePreset } from "../../../shared/constants/studyModePresets";
+import { MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
 
 interface GetCardsOptions {
   userId: string;
@@ -64,7 +67,44 @@ const mapQualityToRating = (quality: number): Rating => {
   return Rating.Easy;
 };
 
-const getFSRS = async (userId: string, supabase: SupabaseClient) => {
+export function mapBinaryRating(correct: boolean): Rating {
+  return correct ? Rating.Good : Rating.Again;
+}
+
+export async function handlePreviewMode(
+  supabase: SupabaseClient,
+  _userId: string,
+  knowledgePointId: string,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await supabase
+    .from("knowledge_points")
+    .update({
+      mastery_level: 0.1,
+      last_study_at: now,
+      updated_at: now,
+    })
+    .eq("id", knowledgePointId);
+}
+
+export function selectStrategyForNode(
+  masteryLevel: number,
+  fsrsState: string | null,
+  daysSinceLastReview: number | null,
+): StudyMode {
+  if (!fsrsState || fsrsState === "New") {
+    return "deep";
+  }
+  if (daysSinceLastReview !== null && daysSinceLastReview > 14) {
+    return "drill";
+  }
+  if (masteryLevel >= MASTERY_THRESHOLDS.PRACTICE_QUIZ) {
+    return "review";
+  }
+  return "deep";
+}
+
+const getFSRS = async (userId: string, supabase: SupabaseClient, studyMode?: StudyMode) => {
   try {
     const { data } = await supabase
       .from("users")
@@ -78,6 +118,16 @@ const getFSRS = async (userId: string, supabase: SupabaseClient) => {
     }
     if (data?.settings?.maximum_interval) {
       params.maximum_interval = Number(data.settings.maximum_interval);
+    }
+
+    if (studyMode) {
+      const preset = getStudyModePreset(studyMode);
+      if (preset.fsrsOverride.request_retention !== undefined) {
+        params.request_retention = preset.fsrsOverride.request_retention;
+      }
+      if (preset.fsrsOverride.maximum_interval !== undefined) {
+        params.maximum_interval = preset.fsrsOverride.maximum_interval;
+      }
     }
 
     return fsrs(params);

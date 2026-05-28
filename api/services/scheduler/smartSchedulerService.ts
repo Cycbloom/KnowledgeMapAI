@@ -1,6 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { efficiencyService } from "./efficiencyService";
-import { sm2Service, ReviewTaskData } from "./sm2Service";
 import { UserTask } from "./taskService";
 import { logger } from "../../utils/logger";
 
@@ -155,19 +154,15 @@ export class SmartSchedulerService {
     const masteryLevels: Record<string, number> = {};
 
     if (knowledgePointIds.length > 0) {
-      const { data: reviewTasks } = await client
-        .from("review_tasks")
-        .select("knowledge_point_id, ease_factor, repetitions, interval_days")
+      const { data: studyCards } = await client
+        .from("study_cards")
+        .select("knowledge_point_id, fsrs_stability")
         .in("knowledge_point_id", knowledgePointIds);
 
-      if (reviewTasks) {
-        for (const rt of reviewTasks) {
-          const reviewTask = rt as ReviewTaskData;
-          masteryLevels[reviewTask.knowledge_point_id] = sm2Service.estimateMasteryLevel(
-            reviewTask.ease_factor,
-            reviewTask.repetitions,
-            reviewTask.interval_days,
-          );
+      if (studyCards) {
+        for (const card of studyCards) {
+          const stability = card.fsrs_stability ?? 0;
+          masteryLevels[card.knowledge_point_id] = Math.min(1, stability / 30);
         }
       }
     }

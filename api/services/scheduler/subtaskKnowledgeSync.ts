@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { LearningState } from "../../../shared/types/scheduler";
+import { MASTERY_STATE_MAPPING, MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
 import { appEventBus } from "../core/eventBus";
 
 export interface SyncResult {
@@ -47,16 +48,6 @@ export interface SubtaskWithKnowledgePoint {
 
 const MASTERY_MAX = 1.0;
 const MASTERY_MIN = 0.0;
-const REVIEW_THRESHOLD = 0.6;
-const MASTERY_STATE_MAPPING: Record<
-  LearningState,
-  { min: number; max: number }
-> = {
-  learning: { min: 0.0, max: 0.3 },
-  review: { min: 0.3, max: 0.6 },
-  practice: { min: 0.6, max: 0.8 },
-  quiz: { min: 0.8, max: 1.0 },
-};
 
 export class SubtaskKnowledgeSyncService {
   async syncSubtaskStateToKnowledgePoint(
@@ -259,7 +250,7 @@ export class SubtaskKnowledgeSyncService {
       };
     }
 
-    if (newMasteryLevel < REVIEW_THRESHOLD) {
+    if (newMasteryLevel < MASTERY_THRESHOLDS.REVIEW_PRACTICE) {
       await this.triggerReviewReminder(supabase, subtaskId);
     }
 
@@ -503,7 +494,7 @@ export class SubtaskKnowledgeSyncService {
     const { data: knowledgePoints, error } = await supabase
       .from("knowledge_points")
       .select("id, mastery_level")
-      .lt("mastery_level", REVIEW_THRESHOLD);
+      .lt("mastery_level", MASTERY_THRESHOLDS.REVIEW_PRACTICE);
 
     if (error) {
       logger.error("Failed to fetch knowledge points for review check", {
@@ -553,11 +544,11 @@ export class SubtaskKnowledgeSyncService {
   }
 
   private determineLearningState(masteryLevel: number): LearningState {
-    if (masteryLevel < 0.3) {
+    if (masteryLevel < MASTERY_THRESHOLDS.LEARNING_REVIEW) {
       return "learning";
-    } else if (masteryLevel < 0.6) {
+    } else if (masteryLevel < MASTERY_THRESHOLDS.REVIEW_PRACTICE) {
       return "review";
-    } else if (masteryLevel < 0.8) {
+    } else if (masteryLevel < MASTERY_THRESHOLDS.PRACTICE_QUIZ) {
       return "practice";
     } else {
       return "quiz";

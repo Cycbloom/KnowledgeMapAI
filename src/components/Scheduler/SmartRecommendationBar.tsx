@@ -28,6 +28,18 @@ interface SmartRecommendation {
       estimated_duration?: number;
       deadline?: string;
       tags?: string[];
+      nextSubtask?: {
+        id: string;
+        title: string;
+        learning_state: string;
+        mastery_level: number;
+        position: number;
+        estimated_duration?: number;
+      } | null;
+      subtaskProgress?: {
+        total: number;
+        completed: number;
+      } | null;
     };
     score: number;
     reasons: string[];
@@ -251,43 +263,6 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     return details;
   };
 
-  const getBestTimeSlots = (): Array<{
-    time: string;
-    efficiency: number;
-    label: string;
-  }> => {
-    if (!efficiencyProfile) return [];
-
-    const currentHour = new Date().getHours();
-    const slots: Array<{ time: string; efficiency: number; label: string }> =
-      [];
-
-    for (let i = currentHour; i < Math.min(currentHour + 8, 24); i++) {
-      const efficiency = efficiencyProfile.hourlyEfficiency[i] || 0;
-      const isPeak = efficiencyProfile.peakHours.includes(i);
-      const isLow = efficiencyProfile.lowHours.includes(i);
-
-      let label = "";
-      if (isPeak) {
-        label = "高峰时段";
-      } else if (isLow) {
-        label = "低效时段";
-      } else if (efficiency > 0.7) {
-        label = "高效时段";
-      } else {
-        label = "正常时段";
-      }
-
-      slots.push({
-        time: `${i}:00`,
-        efficiency,
-        label,
-      });
-    }
-
-    return slots.slice(0, 4);
-  };
-
   if (loading) {
     return (
       <div className="bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-500/10 dark:to-primary-500/10 rounded-xl p-4 border border-primary-200 dark:border-primary-500/30">
@@ -324,7 +299,6 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     recommendation;
   const efficiencyBadge = getEfficiencyBadge(currentContext.efficiencyLevel);
   const recommendationDetails = getRecommendationDetails();
-  const bestTimeSlots = getBestTimeSlots();
 
   return (
     <motion.div
@@ -333,13 +307,13 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="bg-gradient-to-r from-primary-50 via-primary-50 to-primary-50 dark:from-primary-500/10 dark:via-primary-500/10 dark:to-primary-500/10 rounded-xl border border-primary-200 dark:border-primary-500/30 overflow-hidden"
     >
-      <div className="flex items-center justify-between px-4 py-3 bg-white/50 dark:bg-slate-900/50 border-b border-primary-100 dark:border-primary-500/20">
+      <div className="flex items-center justify-between px-4 py-3 bg-white/60 dark:bg-slate-900/60 border-b border-primary-100 dark:border-primary-500/20">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-500 flex items-center justify-center shadow-lg shadow-primary-500/30">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 flex items-center justify-center shadow-lg shadow-primary-500/30">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">
+            <h3 className="font-semibold tracking-tight text-slate-900 dark:text-white">
               {t("scheduler.recommendation.title")}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -351,7 +325,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <div
-            className={`px-2 py-1 rounded-full text-xs font-medium ${efficiencyBadge.color}`}
+            className={`px-2 py-1 rounded-full text-xs font-medium shadow-sm ${efficiencyBadge.color}`}
           >
             {currentContext.isPeakHour ? (
               <TrendingUp className="w-3 h-3 inline mr-1" />
@@ -391,7 +365,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
             <div className="p-4">
               <div className="flex items-start gap-4">
                 <div
-                  className={`w-2 h-full min-h-[80px] rounded-full ${getUrgencyColor(recommendedTask.urgencyLevel)}`}
+                  className={`w-1.5 h-full min-h-[80px] rounded-full ${getUrgencyColor(recommendedTask.urgencyLevel)}`}
                 />
 
                 <div className="flex-1">
@@ -400,6 +374,61 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                       <h4 className="font-medium text-slate-900 dark:text-white text-lg">
                         {recommendedTask.task.title}
                       </h4>
+                      {/* 子任务信息 */}
+                      {recommendedTask.task.nextSubtask && (
+                        <div className="mt-2 pl-3 border-l-2 border-primary-400 dark:border-primary-500">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+                              {t(
+                                "scheduler.recommendation.currentlyLearning",
+                                "正在学习",
+                              )}
+                            </span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                              {recommendedTask.task.nextSubtask.title}
+                            </span>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium shadow-sm ${
+                                recommendedTask.task.nextSubtask
+                                  .learning_state === "learning"
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+                                  : recommendedTask.task.nextSubtask
+                                        .learning_state === "review"
+                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"
+                                    : recommendedTask.task.nextSubtask
+                                          .learning_state === "practice"
+                                      ? "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400"
+                                      : "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
+                              }`}
+                            >
+                              {{
+                                learning: "学习",
+                                review: "复习",
+                                practice: "练习",
+                                quiz: "测验",
+                              }[
+                                recommendedTask.task.nextSubtask.learning_state
+                              ] ||
+                                recommendedTask.task.nextSubtask.learning_state}
+                            </span>
+                          </div>
+                          {recommendedTask.task.subtaskProgress && (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                              {t(
+                                "scheduler.recommendation.subtaskProgress",
+                                "子任务进度：{{completed}}/{{total}}",
+                                {
+                                  completed:
+                                    recommendedTask.task.subtaskProgress
+                                      .completed,
+                                  total:
+                                    recommendedTask.task.subtaskProgress.total,
+                                },
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                           Q{recommendedTask.task.queue_level}
@@ -422,15 +451,20 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleViewTask}
-                        className="px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-500/20 rounded-lg transition-colors"
+                        className="px-4 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-500/30 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-all"
                       >
                         {t("scheduler.recommendation.viewDetails")}
                       </button>
                       <button
                         onClick={handleAcceptRecommendation}
-                        className="px-4 py-1.5 text-sm bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30"
+                        className="px-5 py-2 text-sm font-medium bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-xl hover:from-primary-600 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30"
                       >
-                        {t("scheduler.recommendation.startTask")}
+                        {recommendedTask.task.nextSubtask
+                          ? t(
+                              "scheduler.recommendation.startLearning",
+                              "开始学习",
+                            )
+                          : t("scheduler.recommendation.startTask", "开始任务")}
                       </button>
                     </div>
                   </div>
@@ -439,7 +473,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     {reasons.slice(0, 4).map((reason, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-white dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700/50 text-slate-500 dark:text-slate-400"
                       >
                         {reason}
                       </span>
@@ -450,7 +484,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     <div className="mt-4 pt-3 border-t border-primary-100 dark:border-primary-500/20">
                       <button
                         onClick={() => setShowDetails(!showDetails)}
-                        className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors mb-3"
+                        className="flex items-center gap-2.5 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors mb-3"
                       >
                         <Lightbulb className="w-4 h-4" />
                         {t("scheduler.recommendation.recommendationDetails")}
@@ -497,51 +531,6 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                       </AnimatePresence>
                     </div>
                   )}
-
-                  {bestTimeSlots.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-primary-100 dark:border-primary-500/20">
-                      <h5 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        最佳执行时段建议
-                      </h5>
-                      <div className="grid grid-cols-4 gap-2">
-                        {bestTimeSlots.map((slot, index) => (
-                          <div
-                            key={index}
-                            className={`p-2 rounded-lg text-center ${
-                              slot.label === "高峰时段"
-                                ? "bg-green-100 dark:bg-green-500/20 border border-green-300 dark:border-green-500/30"
-                                : slot.label === "低效时段"
-                                  ? "bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-300 dark:border-yellow-500/30"
-                                  : slot.efficiency > 0.7
-                                    ? "bg-primary-100 dark:bg-primary-500/20 border border-primary-300 dark:border-primary-500/30"
-                                    : "bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
-                            }`}
-                          >
-                            <div className="text-xs font-medium text-slate-900 dark:text-white">
-                              {slot.time}
-                            </div>
-                            <div
-                              className={`text-xs mt-1 ${
-                                slot.label === "高峰时段"
-                                  ? "text-green-600 dark:text-green-400"
-                                  : slot.label === "低效时段"
-                                    ? "text-yellow-600 dark:text-yellow-400"
-                                    : "text-slate-500 dark:text-slate-400"
-                              }`}
-                            >
-                              {slot.label}
-                            </div>
-                            {slot.efficiency > 0 && (
-                              <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                                {Math.round(slot.efficiency * 100)}%
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -586,7 +575,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                             </div>
                             <button
                               onClick={() => onStartTask?.(alt.task.id)}
-                              className="px-3 py-1 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
+                              className="px-3 py-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-colors"
                             >
                               开始
                             </button>

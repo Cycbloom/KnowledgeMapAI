@@ -17,6 +17,20 @@ export interface TimeSlot {
   type: "morning" | "afternoon" | "evening" | "night";
 }
 
+export interface NextSubtaskInfo {
+  id: string;
+  title: string;
+  learning_state: string;
+  mastery_level: number;
+  position: number;
+  estimated_duration?: number;
+}
+
+export interface SubtaskProgressInfo {
+  total: number;
+  completed: number;
+}
+
 export interface EfficiencyData {
   hourlyEfficiency: Record<number, number>;
   tagEfficiency: Record<
@@ -755,6 +769,31 @@ export class TaskRecommendationService {
     }
 
     if (recommendedTask) {
+      // 查询该任务的子任务信息
+      const { data: subtasks } = await client
+        .from("task_subtasks")
+        .select("id, title, status, learning_state, mastery_level, position, estimated_duration")
+        .eq("task_id", recommendedTask.task.id)
+        .order("position", { ascending: true });
+
+      const pendingSubtasks = subtasks?.filter((s) => s.status !== "completed") || [];
+      const completedSubtasks = subtasks?.filter((s) => s.status === "completed") || [];
+
+      // 附加到 task 对象上
+      (recommendedTask.task as any).nextSubtask = pendingSubtasks.length > 0 ? {
+        id: pendingSubtasks[0].id,
+        title: pendingSubtasks[0].title,
+        learning_state: pendingSubtasks[0].learning_state,
+        mastery_level: pendingSubtasks[0].mastery_level,
+        position: pendingSubtasks[0].position,
+        estimated_duration: pendingSubtasks[0].estimated_duration,
+      } : null;
+
+      (recommendedTask.task as any).subtaskProgress = subtasks && subtasks.length > 0 ? {
+        total: subtasks.length,
+        completed: completedSubtasks.length,
+      } : null;
+
       reasons.push(
         ...this.generateRecommendationReasons(
           recommendedTask,

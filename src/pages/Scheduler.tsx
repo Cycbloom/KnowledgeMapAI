@@ -43,6 +43,7 @@ import {
   CreateUserTaskData,
   QueueData,
 } from "@shared/types";
+import { api } from "../services/api";
 
 const HorizontalQueueView = lazy(() =>
   import("../components/Scheduler/HorizontalQueueView").then((module) => ({
@@ -120,6 +121,8 @@ export const Scheduler: React.FC = () => {
   });
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [groupByPath, setGroupByPath] = useState(false);
+  // will be used in Task 5 for ActiveTaskPanel
+  const [activeSubtaskId, setActiveSubtaskId] = useState<string | null>(null);
 
   const mainRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainRef, {
@@ -329,10 +332,34 @@ export const Scheduler: React.FC = () => {
     }
   };
 
+  const fetchAndActivateFirstSubtask = useCallback(async (taskId: string) => {
+    try {
+      const response = await api.scheduler.getSubtasks(taskId);
+      if (response.data) {
+        const firstPending = response.data.find(
+          (s: any) => s.status === "pending" || s.status === "in_progress",
+        );
+        if (firstPending && firstPending.status === "pending") {
+          await api.scheduler.updateSubtask(taskId, firstPending.id, { status: "in_progress" });
+          setActiveSubtaskId(firstPending.id);
+        } else if (firstPending && firstPending.status === "in_progress") {
+          setActiveSubtaskId(firstPending.id);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to activate subtask:", err);
+    }
+  }, []);
+
   const handleStartTask = async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskStarted"));
+      // 如果有子任务，自动激活第一个待做子任务
+      const hasSubtasks = (task as any).has_subtasks || (task as any).subtask_count > 0;
+      if (hasSubtasks) {
+        await fetchAndActivateFirstSubtask(task.id);
+      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : t("scheduler.startTaskFailed");
       message.error(errorMessage);
@@ -638,8 +665,40 @@ export const Scheduler: React.FC = () => {
                     <ActiveTaskPanel
                       task={activeTask}
                       timeSlice={activeTaskTimeSlice}
+                      activeSubtaskId={activeSubtaskId}
                       onPause={() => handlePauseTask(activeTask)}
                       onComplete={() => handleCompleteTask(activeTask)}
+                      onSubtaskComplete={async (subtaskId) => {
+                        try {
+                          await api.scheduler.updateSubtask(
+                            activeTask!.id,
+                            subtaskId,
+                            { status: "completed" },
+                          );
+                          // 激活下一个 pending 子任务
+                          const response = await api.scheduler.getSubtasks(
+                            activeTask!.id,
+                          );
+                          if (response.data) {
+                            const nextPending = response.data.find(
+                              (s: any) => s.status === "pending",
+                            );
+                            if (nextPending) {
+                              await api.scheduler.updateSubtask(
+                                activeTask!.id,
+                                nextPending.id,
+                                { status: "in_progress" },
+                              );
+                              setActiveSubtaskId(nextPending.id);
+                            } else {
+                              // 所有子任务已完成
+                              setActiveSubtaskId(null);
+                            }
+                          }
+                        } catch (err) {
+                          console.error("Failed to complete subtask:", err);
+                        }
+                      }}
                     />
                   </Suspense>
                 </div>

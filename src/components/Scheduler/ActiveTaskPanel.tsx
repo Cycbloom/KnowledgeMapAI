@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Check, Clock, Zap, Target, ListTodo } from "lucide-react";
 import { UserTask } from "@shared/types";
 import { useUnifiedTimer } from "../../hooks/scheduler";
+import { api } from "../../services/api";
 
 interface ActiveTaskPanelProps {
   task: UserTask;
   onPause: () => void;
   onComplete: () => void;
   timeSlice: number;
+  activeSubtaskId?: string | null;
+  onSubtaskComplete?: (subtaskId: string) => void;
 }
 
 const QUEUE_CONFIG = {
@@ -46,6 +49,8 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   onPause,
   onComplete,
   timeSlice: _timeSlice,
+  activeSubtaskId,
+  onSubtaskComplete,
 }) => {
   const config =
     QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
@@ -60,6 +65,24 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     resume,
     complete,
   } = useUnifiedTimer();
+
+  const [subtasks, setSubtasks] = useState<any[]>([]);
+  const [subtasksExpanded, setSubtasksExpanded] = useState(false);
+
+  useEffect(() => {
+    if (task.id) {
+      api.scheduler
+        .getSubtasks(task.id)
+        .then((res: any) => {
+          if (res.data) setSubtasks(res.data);
+        })
+        .catch(() => {});
+    }
+  }, [task.id]);
+
+  const currentActiveSubtask = subtasks.find(
+    (s) => s.id === activeSubtaskId,
+  );
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -184,6 +207,147 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               transition={{ duration: 0.5 }}
             />
           </motion.div>
+        )}
+
+        {/* 子任务区域 */}
+        {activeSubtaskId && currentActiveSubtask && (
+          <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-700/60">
+            {/* 当前活跃子任务 */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse shrink-0" />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                  当前：{currentActiveSubtask.title}
+                </span>
+                <span
+                  className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                    currentActiveSubtask.learning_state === "learning"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+                      : currentActiveSubtask.learning_state === "review"
+                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"
+                        : currentActiveSubtask.learning_state === "practice"
+                          ? "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400"
+                          : "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
+                  }`}
+                >
+                  {(
+                    {
+                      learning: "学习",
+                      review: "复习",
+                      practice: "练习",
+                      quiz: "测验",
+                    } as Record<string, string>
+                  )[currentActiveSubtask.learning_state] ||
+                    currentActiveSubtask.learning_state}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  if (onSubtaskComplete) onSubtaskComplete(currentActiveSubtask.id);
+                }}
+                className="shrink-0 px-3 py-1 text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
+              >
+                完成此子任务
+              </button>
+            </div>
+
+            {/* 掌握度 */}
+            {currentActiveSubtask.mastery_level !== undefined && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-slate-400 dark:text-slate-500">掌握度</span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {Math.round((currentActiveSubtask.mastery_level || 0) * 100)}%
+                  </span>
+                </div>
+                <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary-400 to-primary-500 rounded-full transition-all"
+                    style={{
+                      width: `${Math.round((currentActiveSubtask.mastery_level || 0) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* 可折叠的子任务列表 */}
+            <button
+              onClick={() => setSubtasksExpanded(!subtasksExpanded)}
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            >
+              <span>
+                全部子任务 (
+                {subtasks.filter((s) => s.status === "completed").length}/
+                {subtasks.length})
+              </span>
+              <svg
+                className={`w-3 h-3 transition-transform ${subtasksExpanded ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            {subtasksExpanded && (
+              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                {subtasks.map((st) => (
+                  <div
+                    key={st.id}
+                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${
+                      st.id === activeSubtaskId
+                        ? "bg-primary-50 dark:bg-primary-500/10 text-primary-700 dark:text-primary-300"
+                        : st.status === "completed"
+                          ? "text-slate-400 line-through"
+                          : "text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    {st.status === "completed" ? (
+                      <svg
+                        className="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    ) : (
+                      <div
+                        className={`w-2 h-2 rounded-full shrink-0 ${
+                          st.id === activeSubtaskId
+                            ? "bg-primary-500 animate-pulse"
+                            : "bg-slate-300"
+                        }`}
+                      />
+                    )}
+                    <span className="truncate">{st.title}</span>
+                    <span className="ml-auto shrink-0 opacity-60">
+                      {(
+                        {
+                          learning: "学",
+                          review: "复",
+                          practice: "练",
+                          quiz: "测",
+                        } as Record<string, string>
+                      )[st.learning_state] || ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </motion.div>
     </AnimatePresence>

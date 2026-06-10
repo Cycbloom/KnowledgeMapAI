@@ -1,9 +1,9 @@
 import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 
-const pageVariants = {
+const mobileVariants = {
   initial: {
     opacity: 0,
     x: 20,
@@ -15,14 +15,6 @@ const pageVariants = {
       type: "tween",
       duration: 0.2,
       ease: "easeOut",
-    },
-  },
-  exit: {
-    opacity: 0,
-    x: -20,
-    transition: {
-      duration: 0.15,
-      ease: "easeIn",
     },
   },
 };
@@ -37,12 +29,6 @@ const desktopVariants = {
       duration: 0.15,
     },
   },
-  exit: {
-    opacity: 0,
-    transition: {
-      duration: 0.1,
-    },
-  },
 };
 
 export const AnimatedOutlet: React.FC = () => {
@@ -50,17 +36,14 @@ export const AnimatedOutlet: React.FC = () => {
   const { isMobile } = useIsMobile();
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        variants={isMobile ? pageVariants : desktopVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="h-full gpu-accelerated"
-      >
-        <Outlet />
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={location.pathname}
+      variants={isMobile ? mobileVariants : desktopVariants}
+      initial="initial"
+      animate="animate"
+      className="h-full gpu-accelerated"
+    >
+      <Outlet />
+    </motion.div>
   );
 };

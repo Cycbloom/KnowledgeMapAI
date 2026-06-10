@@ -620,8 +620,7 @@ export const Scheduler: React.FC = () => {
                         if (task) handleStartTask(task);
                       }}
                       onViewTask={(taskId) => {
-                        const task = findTaskById(taskId);
-                        if (task) handleViewTaskDetail(task);
+                        navigate(`/scheduler/task/${taskId}`);
                       }}
                       currentTaskId={null}
                       isCollapsed={recommendationCollapsed}

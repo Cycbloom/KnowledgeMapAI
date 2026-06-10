@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { useUser } from "../../hooks/queries";
@@ -89,7 +89,8 @@ export const Layout = () => {
 
   const isFullScreenPage =
     location.pathname.startsWith("/graph/") ||
-    location.pathname === "/learning";
+    location.pathname === "/learning" ||
+    location.pathname.startsWith("/scheduler/task/");
 
   const {
     isOpen: isConsoleOpen,
@@ -459,7 +460,7 @@ export const Layout = () => {
               </div>
             )}
             <ErrorBoundary>
-              <AnimatedOutlet />
+              {isFullScreenPage ? <Outlet /> : <AnimatedOutlet />}
             </ErrorBoundary>
           </div>
           {isMobile && !isFullScreenPage && (

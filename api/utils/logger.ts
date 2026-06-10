@@ -78,25 +78,20 @@ export class Logger {
 
   private formatMeta(meta?: unknown): string {
     if (!meta) return '';
-    
+
     if (meta instanceof Error) {
-      return `\n${COLORS.dim}├─ Stack:${COLORS.reset}\n${COLORS.dim}${meta.stack?.split('\n').slice(1, 4).join('\n')}${COLORS.reset}`;
+      return ` ${COLORS.dim}Stack: ${meta.stack?.split('\n').slice(1, 4).join(' | ')}${COLORS.reset}`;
     }
-    
+
     if (typeof meta === 'object') {
       try {
-        const formatted = JSON.stringify(meta, null, 2);
-        const lines = formatted.split('\n');
-        if (lines.length > 10) {
-          return `\n${COLORS.dim}├─ Data:${COLORS.reset}\n${lines.slice(0, 10).join('\n')}\n${COLORS.dim}... (${lines.length - 10} more lines)${COLORS.reset}`;
-        }
-        return `\n${COLORS.dim}├─ Data:${COLORS.reset}\n${formatted}`;
+        return ` ${COLORS.dim}${JSON.stringify(meta)}${COLORS.reset}`;
       } catch {
-        return `\n${COLORS.dim}├─ Data: [Object]${COLORS.reset}`;
+        return ` ${COLORS.dim}[Object]${COLORS.reset}`;
       }
     }
-    
-    return `\n${COLORS.dim}├─ ${meta}${COLORS.reset}`;
+
+    return ` ${COLORS.dim}${String(meta)}${COLORS.reset}`;
   }
 
   private formatMessage(level: LogLevel, message: string, meta?: unknown): string {
@@ -108,7 +103,7 @@ export class Logger {
     const time = `${COLORS.dim}${timestamp}${COLORS.reset}`;
     const metaStr = this.formatMeta(meta);
     
-    return `${time} ${header}\n${COLORS.bright}${message}${COLORS.reset}${metaStr}`;
+    return `${time} ${header} ${COLORS.bright}${message}${COLORS.reset}${metaStr}`;
   }
 
   info(message: string, meta?: unknown) {

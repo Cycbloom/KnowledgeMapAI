@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useGraphs, useDashboardStats, queryKeys } from "../hooks/queries";
@@ -820,7 +821,7 @@ export const Dashboard = () => {
         />
 
         {/* AI Graph Generator Modal */}
-        {isAIGeneratorOpen && (
+        {isAIGeneratorOpen && createPortal(
           <div
             className={`fixed inset-0 z-50 flex ${isMobile ? "" : "items-center justify-center"} p-4 bg-black/50 backdrop-blur-sm`}
           >
@@ -839,7 +840,8 @@ export const Dashboard = () => {
                 }}
               />
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Graphs Grid */}

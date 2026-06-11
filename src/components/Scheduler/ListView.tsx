@@ -688,7 +688,7 @@ export const ListView: React.FC<ListViewProps> = ({
                               {task.status === "pending" && onStartTask && (
                                 <button
                                   onClick={() => onStartTask(task)}
-                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
+                                  className="flex items-center justify-center p-2.5 rounded-lg min-h-[36px] min-w-[36px] bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
                                   title="开始"
                                 >
                                   <Play size={14} />
@@ -697,7 +697,7 @@ export const ListView: React.FC<ListViewProps> = ({
                               {task.status === "in_progress" && onPauseTask && (
                                 <button
                                   onClick={() => onPauseTask(task)}
-                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
+                                  className="flex items-center justify-center p-2.5 rounded-lg min-h-[36px] min-w-[36px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
                                   title="暂停"
                                 >
                                   <Pause size={14} />
@@ -709,7 +709,7 @@ export const ListView: React.FC<ListViewProps> = ({
                                 onCompleteTask && (
                                   <button
                                     onClick={() => onCompleteTask(task)}
-                                    className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
+                                    className="flex items-center justify-center p-2.5 rounded-lg min-h-[36px] min-w-[36px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
                                     title="完成"
                                   >
                                     <Check size={14} />
@@ -718,7 +718,7 @@ export const ListView: React.FC<ListViewProps> = ({
                               {onEditTask && (
                                 <button
                                   onClick={() => onEditTask(task)}
-                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-all"
+                                  className="flex items-center justify-center p-2.5 rounded-lg min-h-[36px] min-w-[36px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-all"
                                   title="编辑"
                                 >
                                   <Edit2 size={14} />
@@ -727,7 +727,7 @@ export const ListView: React.FC<ListViewProps> = ({
                               {onDeleteTask && (
                                 <button
                                   onClick={() => onDeleteTask(task)}
-                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                                  className="flex items-center justify-center p-2.5 rounded-lg min-h-[36px] min-w-[36px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
                                   title="删除"
                                 >
                                   <Trash2 size={14} />

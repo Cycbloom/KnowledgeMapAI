@@ -7,6 +7,8 @@ import React, {
   lazy,
   Suspense,
 } from "react";
+import { timerService } from "../services/timer/TimerService";
+import { useFocusStore } from "../store/useFocusStore";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,11 +40,7 @@ import {
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
 import { message } from "../utils/messageHelper";
-import {
-  UserTask,
-  CreateUserTaskData,
-  QueueData,
-} from "@shared/types";
+import { UserTask, CreateUserTaskData, QueueData } from "@shared/types";
 import { api } from "../services/api";
 
 const HorizontalQueueView = lazy(() =>
@@ -285,7 +283,8 @@ export const Scheduler: React.FC = () => {
       message.success(t("scheduler.taskCreated"));
       setShowTaskForm(false);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.createTaskFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.createTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -298,7 +297,8 @@ export const Scheduler: React.FC = () => {
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.updateTaskFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.updateTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -308,7 +308,8 @@ export const Scheduler: React.FC = () => {
       await deleteTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskDeleted"));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.deleteTaskFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.deleteTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -318,7 +319,8 @@ export const Scheduler: React.FC = () => {
       await moveTaskMutation.mutateAsync({ id: taskId, targetQueue });
       message.success(t("scheduler.taskMoved", { queue: targetQueue }));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.moveTaskFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.moveTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -327,7 +329,8 @@ export const Scheduler: React.FC = () => {
     try {
       await reorderMutation.mutateAsync({ queueLevel, taskIds });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.reorderFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.reorderFailed");
       message.error(errorMessage);
     }
   };
@@ -340,7 +343,9 @@ export const Scheduler: React.FC = () => {
           (s: any) => s.status === "pending" || s.status === "in_progress",
         );
         if (firstPending && firstPending.status === "pending") {
-          await api.scheduler.updateSubtask(taskId, firstPending.id, { status: "in_progress" });
+          await api.scheduler.updateSubtask(taskId, firstPending.id, {
+            status: "in_progress",
+          });
           setActiveSubtaskId(firstPending.id);
         } else if (firstPending && firstPending.status === "in_progress") {
           setActiveSubtaskId(firstPending.id);
@@ -355,13 +360,18 @@ export const Scheduler: React.FC = () => {
     try {
       await startTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskStarted"));
+      // 启动番茄钟计时器（使用专注时长，而非任务总时长）
+      const { focusDuration } = useFocusStore.getState();
+      timerService.start(task.id, focusDuration, task.queue_level);
       // 如果有子任务，自动激活第一个待做子任务
-      const hasSubtasks = (task as any).has_subtasks || (task as any).subtask_count > 0;
+      const hasSubtasks =
+        (task as any).has_subtasks || (task as any).subtask_count > 0;
       if (hasSubtasks) {
         await fetchAndActivateFirstSubtask(task.id);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.startTaskFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.startTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -371,7 +381,8 @@ export const Scheduler: React.FC = () => {
       await pauseTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskPaused"));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.pauseTaskFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.pauseTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -381,7 +392,8 @@ export const Scheduler: React.FC = () => {
       await completeTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskCompleted"));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("scheduler.completeTaskFailed");
+      const errorMessage =
+        err instanceof Error ? err.message : t("scheduler.completeTaskFailed");
       message.error(errorMessage);
     }
   };
@@ -667,7 +679,9 @@ export const Scheduler: React.FC = () => {
                       timeSlice={activeTaskTimeSlice}
                       activeSubtaskId={activeSubtaskId}
                       onPause={() => handlePauseTask(activeTask)}
-                      onComplete={() => handleCompleteTask(activeTask)}
+                      onViewDetail={() =>
+                        navigate(`/scheduler/task/${activeTask.id}`)
+                      }
                       onSubtaskComplete={async (subtaskId) => {
                         try {
                           await api.scheduler.updateSubtask(

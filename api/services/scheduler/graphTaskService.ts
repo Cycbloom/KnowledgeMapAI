@@ -62,13 +62,13 @@ export class GraphTaskService {
       .update({
         estimated_duration: metrics.estimatedDuration,
         deadline: metrics.deadline,
-        context: {
+        context: JSON.stringify({
           graph_id: graphId,
           knowledge_point_count: metrics.knowledgePointCount,
           auto_calculated_duration: true,
           auto_calculated_deadline: true,
           auto_generated: true,
-        },
+        }),
         updated_at: new Date().toISOString(),
       })
       .eq("id", taskId);
@@ -157,13 +157,13 @@ export class GraphTaskService {
         task_type: "graph_learning",
         estimated_duration: metrics.estimatedDuration,
         deadline: metrics.deadline,
-        context: {
+        context: JSON.stringify({
           graph_id: graphId,
           knowledge_point_count: metrics.knowledgePointCount,
           auto_calculated_duration: true,
           auto_calculated_deadline: true,
           auto_generated: true,
-        },
+        }),
         tags: ["图谱学习"],
         source: "system_recommendation",
       })

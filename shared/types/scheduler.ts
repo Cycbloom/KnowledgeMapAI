@@ -397,6 +397,7 @@ export interface UpdateUserTaskData {
   parent_task_id?: string;
   scheduled_start?: string;
   scheduled_end?: string;
+  status?: UserTaskStatus;
 }
 
 export interface QueueData {

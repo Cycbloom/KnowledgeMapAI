@@ -19,16 +19,21 @@ import {
   Minus,
   FileText,
   ExternalLink,
+  CircleDot,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import type {
   UserTask,
   CreateUserTaskData,
+  UpdateUserTaskData,
   TaskType,
   ProgressMode,
   TaskSettings,
+  UserTaskStatus,
 } from "@shared/types";
+
+type TaskFormData = CreateUserTaskData & Partial<UpdateUserTaskData>;
 import {
   taskRecommendationApi,
   PrioritySuggestion,
@@ -37,7 +42,7 @@ import { TemplateSelector } from "./TemplateSelector";
 
 interface TaskFormProps {
   task?: UserTask;
-  onSubmit: (data: CreateUserTaskData) => void;
+  onSubmit: (data: TaskFormData) => void;
   onCancel: () => void;
   knowledgePoints?: { id: string; title: string }[];
   defaultQueueLevel?: number;
@@ -154,7 +159,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     if (isEditing) {
       return {
         title: task?.title || "",
-        description: task?.description || "",
+        description:
+          typeof task?.description === "string" ? task.description : "",
         estimatedDuration: task?.estimated_duration || 25,
         deadline: task?.deadline ? task.deadline.slice(0, 16) : "",
         tags: task?.tags || [],
@@ -164,7 +170,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         taskType: task?.task_type || "one_time",
         totalDuration: task?.total_duration || 0,
         progressMode: task?.progress_mode || "average",
-        context: task?.context || "",
+        context: typeof task?.context === "string" ? task.context : "",
+        status: task?.status || "pending",
       };
     }
     const draft = loadDraft();
@@ -221,6 +228,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     initialState.progressMode,
   );
   const [context, setContext] = useState(initialState.context);
+  const [status, setStatus] = useState(initialState.status || "pending");
   const [selectedDependencies, setSelectedDependencies] = useState<string[]>(
     [],
   );
@@ -393,7 +401,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       task_type: taskType,
       total_duration: taskType === "long_term" ? totalDuration : undefined,
       progress_mode: taskType === "long_term" ? progressMode : undefined,
-      context: context.trim() || undefined,
+      context: typeof context === "string" ? context.trim() : undefined,
+      status: isEditing ? status : undefined,
     });
 
     if (selectedDependencies.length > 0) {
@@ -1178,6 +1187,30 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 ))}
               </div>
             </div>
+
+            {isEditing && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  <CircleDot size={14} className="inline mr-1" />
+                  状态
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as UserTaskStatus)}
+                  className="
+                    w-full select-mobile rounded-xl
+                    bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                    text-slate-900 dark:text-white
+                    focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+                    transition-all
+                  "
+                >
+                  <option value="pending">待处理</option>
+                  <option value="in_progress">进行中</option>
+                  <option value="completed">已完成</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div>

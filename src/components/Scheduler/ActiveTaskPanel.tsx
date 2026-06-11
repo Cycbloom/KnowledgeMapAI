@@ -4,14 +4,16 @@ import { Play, Pause, Check, Clock, Zap, Target, ListTodo } from "lucide-react";
 import { UserTask } from "@shared/types";
 import { useUnifiedTimer } from "../../hooks/scheduler";
 import { api } from "../../services/api";
+import { timerService } from "../../services/timer/TimerService";
+import { useFocusStore } from "../../store/useFocusStore";
 
 interface ActiveTaskPanelProps {
   task: UserTask;
   onPause: () => void;
-  onComplete: () => void;
   timeSlice: number;
   activeSubtaskId?: string | null;
   onSubtaskComplete?: (subtaskId: string) => void;
+  onViewDetail?: () => void;
 }
 
 const QUEUE_CONFIG = {
@@ -47,10 +49,10 @@ const QUEUE_CONFIG = {
 export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   task,
   onPause,
-  onComplete,
   timeSlice: _timeSlice,
   activeSubtaskId,
   onSubtaskComplete,
+  onViewDetail,
 }) => {
   const config =
     QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
@@ -60,10 +62,11 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   const {
     timeLeft,
     isActive,
+    isPaused,
+    completedSessions,
     progress,
     pause,
     resume,
-    complete,
   } = useUnifiedTimer();
 
   const [subtasks, setSubtasks] = useState<any[]>([]);
@@ -80,9 +83,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     }
   }, [task.id]);
 
-  const currentActiveSubtask = subtasks.find(
-    (s) => s.id === activeSubtaskId,
-  );
+  const currentActiveSubtask = subtasks.find((s) => s.id === activeSubtaskId);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -100,9 +101,24 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   };
 
   const handleComplete = async () => {
-    await complete();
-    onComplete();
+    // 如果有活跃子任务，优先完成子任务
+    if (activeSubtaskId && currentActiveSubtask && onSubtaskComplete) {
+      await timerService.complete();
+      onSubtaskComplete(currentActiveSubtask.id);
+    } else {
+      // 否则仅完成当前番茄钟
+      await timerService.complete();
+    }
   };
+
+  // 番茄钟联动：任务总时长 → 预计番茄数
+  const { focusDuration } = useFocusStore();
+  const estimatedMinutes = task.estimated_duration || 0;
+  const totalPomodoros =
+    estimatedMinutes > 0
+      ? Math.max(1, Math.ceil(estimatedMinutes / focusDuration))
+      : null;
+  const currentPomodoro = completedSessions + (isActive && !isPaused ? 1 : 0);
 
   return (
     <AnimatePresence>
@@ -122,7 +138,15 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
         />
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div
+            className={`flex items-center gap-4 ${onViewDetail ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
+            onClick={(e) => {
+              if (onViewDetail) {
+                e.stopPropagation();
+                onViewDetail();
+              }
+            }}
+          >
             <div
               className={`p-3 rounded-xl bg-gradient-to-br ${config.gradient} shadow-lg`}
             >
@@ -145,6 +169,16 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                   {task.description}
                 </p>
               )}
+              {/* 子任务进度概览 - 始终显示 */}
+              {subtasks.length > 0 && (
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                  子任务：
+                  <span className={config.accentColor}>
+                    {subtasks.filter((s) => s.status === "completed").length}
+                  </span>
+                  /{subtasks.length}
+                </p>
+              )}
             </div>
           </div>
 
@@ -159,7 +193,16 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                {isActive ? "专注中..." : "已暂停"}
+                {isActive ? "专注中..." : timeLeft > 0 ? "已暂停" : "准备开始"}
+                {totalPomodoros && (
+                  <span className="ml-1.5">
+                    · 第{" "}
+                    <span className={config.accentColor}>
+                      {currentPomodoro}
+                    </span>
+                    /{totalPomodoros} 番茄
+                  </span>
+                )}
               </p>
             </div>
 
@@ -186,7 +229,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 whileTap={{ scale: 0.95 }}
                 onClick={handleComplete}
                 className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
-                title="完成"
+                title={activeSubtaskId ? "完成此子任务" : "完成番茄"}
               >
                 <Check size={20} />
               </motion.button>
@@ -243,7 +286,8 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               </div>
               <button
                 onClick={() => {
-                  if (onSubtaskComplete) onSubtaskComplete(currentActiveSubtask.id);
+                  if (onSubtaskComplete)
+                    onSubtaskComplete(currentActiveSubtask.id);
                 }}
                 className="shrink-0 px-3 py-1 text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
               >
@@ -255,9 +299,14 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
             {currentActiveSubtask.mastery_level !== undefined && (
               <div className="mb-3">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-slate-400 dark:text-slate-500">掌握度</span>
+                  <span className="text-slate-400 dark:text-slate-500">
+                    掌握度
+                  </span>
                   <span className="text-slate-500 dark:text-slate-400">
-                    {Math.round((currentActiveSubtask.mastery_level || 0) * 100)}%
+                    {Math.round(
+                      (currentActiveSubtask.mastery_level || 0) * 100,
+                    )}
+                    %
                   </span>
                 </div>
                 <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">

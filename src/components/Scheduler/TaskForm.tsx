@@ -831,7 +831,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             {(() => {
               let parsedContext: Record<string, unknown> = {};
               try {
-                parsedContext = context ? JSON.parse(context) : {};
+                parsedContext = context
+                  ? typeof context === "string"
+                    ? JSON.parse(context)
+                    : context
+                  : {};
               } catch {
                 return (
                   <textarea
@@ -888,14 +892,20 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       {hasGraphContext && (
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             const graphId = String(
                               parsedContext.graph_id ||
                                 parsedContext.source_graph_id ||
                                 "",
                             );
-                            if (graphId) {
-                              navigate(`/graphs/${graphId}`);
+                            if (
+                              graphId &&
+                              graphId !== "" &&
+                              graphId !== "undefined"
+                            ) {
+                              navigate(`/graph/${graphId}`);
                             }
                           }}
                           className="w-full flex items-start gap-2 p-2 rounded-lg bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-500/50 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors cursor-pointer text-left"
@@ -927,15 +937,22 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       {!!parsedContext.node_id && (
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             const graphId = String(
                               parsedContext.graph_id ||
                                 parsedContext.source_graph_id ||
                                 "",
                             );
                             const nodeId = String(parsedContext.node_id);
-                            if (graphId && nodeId) {
-                              navigate(`/graphs/${graphId}?node=${nodeId}`);
+                            if (
+                              graphId &&
+                              nodeId &&
+                              graphId !== "" &&
+                              graphId !== "undefined"
+                            ) {
+                              navigate(`/graph/${graphId}?node=${nodeId}`);
                             }
                           }}
                           className="w-full flex items-start gap-2 p-2 rounded-lg bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-500/50 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer text-left"

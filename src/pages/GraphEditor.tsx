@@ -1481,7 +1481,7 @@ export const GraphEditor = () => {
       </div>
 
       <GraphToolbar
-        onBack={() => navigate("/dashboard")}
+        onBack={() => navigate(-1)}
         onUndo={undo}
         onRedo={redo}
         canUndo={canUndo}

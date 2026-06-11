@@ -527,7 +527,7 @@ export const optimizePromptSchema = z.object({
 
 // --- Task Schemas ---
 export const createTaskSchema = z.object({
-  task_type: z.enum(["one_time", "long_term", "periodic", "learning", "async"]),
+  task_type: z.enum(["one_time", "long_term", "periodic", "learning", "graph_learning", "async"]),
   title: z.string().min(1, "标题不能为空"),
   description: z.string().optional(),
   queue_id: z.string().optional(),
@@ -553,7 +553,7 @@ export const createUserTaskSchema = z.object({
   knowledge_point_id: z.string().uuid().optional(),
   priority: z.number().int().optional(),
   task_type: z
-    .enum(["one_time", "long_term", "periodic", "learning"])
+    .enum(["one_time", "long_term", "periodic", "learning", "graph_learning"])
     .optional(),
   total_duration: z.number().int().positive().optional(),
   progress_mode: z
@@ -578,7 +578,7 @@ export const updateUserTaskSchema = z.object({
   knowledge_point_id: z.string().uuid().nullable().optional(),
   priority: z.number().int().optional(),
   task_type: z
-    .enum(["one_time", "long_term", "periodic", "learning"])
+    .enum(["one_time", "long_term", "periodic", "learning", "graph_learning"])
     .optional(),
   total_duration: z.number().int().positive().optional(),
   progress_mode: z

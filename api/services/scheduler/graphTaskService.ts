@@ -54,6 +54,12 @@ export class GraphTaskService {
       throw new Error(`Failed to fetch graph nodes: ${nodesError.message}`);
     }
 
+    const { data: graph } = await supabase
+      .from("knowledge_graphs")
+      .select("title")
+      .eq("id", graphId)
+      .single();
+
     const knowledgePointCount = graphNodes?.length || 0;
     const metrics = this.calculateTaskMetrics(knowledgePointCount);
 
@@ -64,6 +70,7 @@ export class GraphTaskService {
         deadline: metrics.deadline,
         context: JSON.stringify({
           graph_id: graphId,
+          graph_title: graph?.title || "",
           knowledge_point_count: metrics.knowledgePointCount,
           auto_calculated_duration: true,
           auto_calculated_deadline: true,
@@ -159,6 +166,7 @@ export class GraphTaskService {
         deadline: metrics.deadline,
         context: JSON.stringify({
           graph_id: graphId,
+          graph_title: graph?.title || "",
           knowledge_point_count: metrics.knowledgePointCount,
           auto_calculated_duration: true,
           auto_calculated_deadline: true,

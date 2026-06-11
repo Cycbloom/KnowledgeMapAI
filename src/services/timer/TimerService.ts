@@ -83,7 +83,8 @@ class TimerService {
     const { soundEnabled } = useFocusStore.getState();
     if (!soundEnabled) return;
     try {
-      const AudioCtx = window.AudioContext ?? (window as never)["webkitAudioContext"];
+      const AudioCtx =
+        window.AudioContext ?? (window as never)["webkitAudioContext"];
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -159,6 +160,37 @@ class TimerService {
     });
   }
 
+  private transitionToNextMode(completedMode: TimerMode): void {
+    const { shortBreakDuration, longBreakDuration, focusDuration } =
+      useFocusStore.getState();
+
+    if (completedMode === "focus") {
+      // focus 完成 → 切换到 break
+      const breakDuration =
+        this._completedSessions > 0 && this._completedSessions % 4 === 0
+          ? longBreakDuration
+          : shortBreakDuration;
+
+      this._mode = "shortBreak"; // 或根据 sessions 数决定
+      if (this._completedSessions > 0 && this._completedSessions % 4 === 0) {
+        this._mode = "longBreak";
+      }
+      this._timeLeft = breakDuration * 60;
+      this._totalTime = breakDuration * 60;
+    } else {
+      // break 完成 → 回到 focus
+      this._mode = "focus";
+      this._timeLeft = focusDuration * 60;
+      this._totalTime = focusDuration * 60;
+    }
+
+    this._isActive = true;
+    this._isPaused = false;
+    this._startTimeRef = new Date();
+    this.startInterval();
+    this.updatePageTitle();
+  }
+
   private async onTimerEnd(): Promise<void> {
     const elapsedDuration = this._totalTime - this._timeLeft;
     const completedMode = this._mode;
@@ -170,6 +202,18 @@ class TimerService {
 
     await this.saveFocusSession(elapsedDuration);
 
+    // 更新执行记录
+    if (completedMode === "focus" && completedTaskId) {
+      try {
+        await api.scheduler.tickExecution(
+          completedTaskId,
+          Math.round(elapsedDuration),
+        );
+      } catch {
+        // 执行记录更新失败不影响主流程
+      }
+    }
+
     this.playNotificationSound();
 
     if (completedMode === "focus") {
@@ -179,11 +223,22 @@ class TimerService {
     this.sendBrowserNotification();
     document.title = "KnowledgeMap";
 
+    // ★ 新增：自动切换到下一模式
+    this.transitionToNextMode(completedMode);
+
     frontendEventBus.publish("timer_completed", {
       taskId: completedTaskId,
       mode: completedMode,
       duration: elapsedDuration,
       completedSessions: this._completedSessions,
+    });
+
+    // ★ 新增：发布模式切换事件（让前端 UI 知道已自动切换）
+    frontendEventBus.publish("timer_mode_changed", {
+      previousMode: completedMode,
+      newMode: this._mode,
+      timeLeft: this._timeLeft,
+      totalTime: this._totalTime,
     });
   }
 
@@ -240,25 +295,49 @@ class TimerService {
 
   async complete(): Promise<void> {
     const elapsedDuration = this._totalTime - this._timeLeft;
+    const completedTaskId = this._taskId; // ★ 保存再清空
+    const completedMode = this._mode;
+
     await this.saveFocusSession(elapsedDuration);
 
-    this.clearTimerInterval();
-    this._isActive = false;
-    this._isPaused = false;
-    this._taskId = null;
+    // 更新执行记录
+    if (completedMode === "focus" && completedTaskId) {
+      try {
+        await api.scheduler.tickExecution(
+          completedTaskId,
+          Math.round(elapsedDuration),
+        );
+      } catch {
+        // 执行记录更新失败不影响主流程
+      }
+    }
 
-    const { focusDuration } = useFocusStore.getState();
-    this._timeLeft = focusDuration * 60;
-    this._totalTime = focusDuration * 60;
-    this._startTimeRef = null;
+    // ★ focus 模式完成时要计数
+    if (completedMode === "focus") {
+      this._completedSessions += 1;
+    }
+
+    this.clearTimerInterval();
+    // ★ 不再设 this._taskId = null，保留任务上下文
+
+    // ★ 自动切换到下一模式
+    this.transitionToNextMode(completedMode);
 
     document.title = "KnowledgeMap";
 
     frontendEventBus.publish("timer_completed", {
-      taskId: null,
-      mode: this._mode,
+      taskId: completedTaskId, // ★ 使用保存的 taskId 而非 null
+      mode: completedMode,
       duration: elapsedDuration,
       completedSessions: this._completedSessions,
+    });
+
+    // ★ 发布模式切换事件
+    frontendEventBus.publish("timer_mode_changed", {
+      previousMode: completedMode,
+      newMode: this._mode,
+      timeLeft: this._timeLeft,
+      totalTime: this._totalTime,
     });
   }
 
@@ -272,7 +351,8 @@ class TimerService {
         : shortBreakDuration;
 
     const previousMode = this._mode;
-    const nextMode: TimerMode = previousMode === "focus" ? "shortBreak" : "focus";
+    const nextMode: TimerMode =
+      previousMode === "focus" ? "shortBreak" : "focus";
 
     this._mode = nextMode;
     this._timeLeft = breakDuration * 60;
@@ -317,7 +397,8 @@ class TimerService {
   setMode(newMode: TimerMode): void {
     this.clearTimerInterval();
 
-    const { focusDuration, shortBreakDuration, longBreakDuration } = useFocusStore.getState();
+    const { focusDuration, shortBreakDuration, longBreakDuration } =
+      useFocusStore.getState();
     let duration = focusDuration;
     if (newMode === "shortBreak") duration = shortBreakDuration;
     if (newMode === "longBreak") duration = longBreakDuration;
@@ -371,11 +452,16 @@ class TimerService {
 
   initSchedulerIntegration(): void {
     const handler = (payload: TaskStartedPayload) => {
-      const timeSliceMinutes = this.getTimeSliceForQueueLevel(payload.queueLevel);
+      const timeSliceMinutes = this.getTimeSliceForQueueLevel(
+        payload.queueLevel,
+      );
       this.start(payload.taskId, timeSliceMinutes, payload.queueLevel);
     };
 
-    this._schedulerUnsubscribe = frontendEventBus.subscribe("task_started", handler);
+    this._schedulerUnsubscribe = frontendEventBus.subscribe(
+      "task_started",
+      handler,
+    );
   }
 
   destroySchedulerIntegration(): void {

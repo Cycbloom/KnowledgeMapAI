@@ -23,6 +23,7 @@ interface FocusStreakProps {
   pomodorosCompleted: number;
   currentStreakMinutes: number;
   isActivelyFocusing?: boolean;
+  timerMode?: "focus" | "shortBreak" | "longBreak";
   showAnimation?: boolean;
 }
 
@@ -31,6 +32,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
   pomodorosCompleted,
   currentStreakMinutes,
   isActivelyFocusing = false,
+  timerMode = "focus",
   showAnimation = true,
 }) => {
   const [displayMinutes, setDisplayMinutes] = useState(totalMinutes);
@@ -115,7 +117,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
                   transition={{ duration: 1.5, repeat: Infinity }}
                   className="text-xs text-primary-400"
                 >
-                  专注中
+                  {timerMode === "focus" ? "专注中" : "休息中"}
                 </motion.span>
               )}
             </div>

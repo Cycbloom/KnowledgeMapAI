@@ -10,6 +10,7 @@ import {
 } from "../../schemas/index";
 import { logger } from "../../utils/logger";
 import { taskStateMachine } from "../../services/scheduler/core/stateMachine";
+import { taskService } from "../../services/scheduler/taskService";
 
 const router = Router();
 
@@ -633,6 +634,90 @@ router.put(
     }
 
     res.json({ success: true, data: task });
+  },
+);
+
+router.patch(
+  "/tasks/:id/progress",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id: taskId } = req.params;
+    const { progress_percentage, actual_duration_add } = req.body;
+
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (progress_percentage !== undefined) {
+      updateData.progress_percentage = Math.min(100, Math.max(0, progress_percentage));
+    }
+
+    if (actual_duration_add !== undefined) {
+      const { data: currentTask } = await supabase
+        .from("user_tasks")
+        .select("actual_duration")
+        .eq("id", taskId)
+        .eq("user_id", req.user.id)
+        .single();
+
+      const currentDuration = (currentTask?.actual_duration as number) || 0;
+      updateData.actual_duration = currentDuration + actual_duration_add;
+    }
+
+    const { data: task, error } = await supabase
+      .from("user_tasks")
+      .update(updateData)
+      .eq("id", taskId)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .select()
+      .single();
+
+    if (error || !task) {
+      logger.error("Update task progress error:", error);
+      return res.status(404).json({ error: "任务不存在或更新失败" });
+    }
+
+    res.json({ success: true, data: task });
+  },
+);
+
+router.patch(
+  "/tasks/:id/execution/tick",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const userId = req.user.id;
+    const { id: taskId } = req.params;
+    const { duration_seconds } = req.body;
+
+    if (!duration_seconds || typeof duration_seconds !== "number" || duration_seconds <= 0) {
+      return res.status(400).json({ success: false, error: "duration_seconds must be a positive number" });
+    }
+
+    const execution = await taskService.updateExecutionAfterTimeSlice(
+      supabase,
+      taskId,
+      userId,
+      duration_seconds,
+    );
+
+    res.json({ success: true, data: execution });
   },
 );
 

@@ -199,7 +199,7 @@ export class TaskService {
         user_id: userId,
         started_at: new Date().toISOString(),
         queue_level: task.queue_level,
-        status: "completed",
+        status: "in_progress",
       })
       .select()
       .single();
@@ -360,6 +360,48 @@ export class TaskService {
     return this.moveTaskToQueue(client, taskId, userId, newQueue);
   }
 
+  async updateTaskProgress(
+    client: SupabaseClient,
+    taskId: string,
+    userId: string,
+    progressData: {
+      progress_percentage?: number;
+      actual_duration_add?: number;
+    },
+  ): Promise<UserTask> {
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (progressData.progress_percentage !== undefined) {
+      updateData.progress_percentage = Math.min(100, Math.max(0, progressData.progress_percentage));
+    }
+
+    if (progressData.actual_duration_add !== undefined) {
+      const { data: currentTask } = await client
+        .from("user_tasks")
+        .select("actual_duration")
+        .eq("id", taskId)
+        .eq("user_id", userId)
+        .single();
+
+      const currentDuration = (currentTask?.actual_duration as number) || 0;
+      updateData.actual_duration = currentDuration + progressData.actual_duration_add;
+    }
+
+    const { data: task, error } = await client
+      .from("user_tasks")
+      .update(updateData)
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .select()
+      .single();
+
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
+    return task as UserTask;
+  }
+
   async getTimeSlice(
     client: SupabaseClient,
     userId: string,
@@ -385,6 +427,68 @@ export class TaskService {
       default:
         return settings.q0_time_slice;
     }
+  }
+
+  async updateExecutionAfterTimeSlice(
+    client: SupabaseClient,
+    taskId: string,
+    userId: string,
+    durationSeconds: number,
+  ): Promise<TaskExecution | null> {
+    const { data: executions, error: fetchError } = await client
+      .from("task_executions")
+      .select("*")
+      .eq("task_id", taskId)
+      .eq("user_id", userId)
+      .is("ended_at", null)
+      .order("started_at", { ascending: false })
+      .limit(1);
+
+    if (fetchError || !executions || executions.length === 0) {
+      const { data: task } = await client
+        .from("user_tasks")
+        .select("queue_level")
+        .eq("id", taskId)
+        .single();
+
+      const { data: newExecution, error: insertError } = await client
+        .from("task_executions")
+        .insert({
+          task_id: taskId,
+          user_id: userId,
+          started_at: new Date(Date.now() - durationSeconds * 1000).toISOString(),
+          ended_at: new Date().toISOString(),
+          duration: durationSeconds,
+          queue_level: task?.queue_level ?? 0,
+          status: "time_slice_ended",
+        })
+        .select()
+        .single();
+
+      if (insertError) return null;
+      return newExecution as TaskExecution;
+    }
+
+    const execution = executions[0];
+    const endedAt = new Date();
+    const startedAt = new Date(execution.started_at);
+    const totalDuration = Math.floor(
+      (endedAt.getTime() - startedAt.getTime()) / 1000,
+    );
+
+    const { data: updated, error: updateError } = await client
+      .from("task_executions")
+      .update({
+        ended_at: endedAt.toISOString(),
+        duration: totalDuration,
+        status: "time_slice_ended",
+      })
+      .eq("id", execution.id)
+      .select()
+      .single();
+
+    if (updateError) return null;
+    return updated as TaskExecution;
   }
 }
 

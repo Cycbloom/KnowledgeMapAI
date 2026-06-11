@@ -309,7 +309,7 @@ export const FocusTimer: React.FC = () => {
                       {formatTime(timeLeft)}
                     </span>
                     <span className="text-sm text-gray-400 mt-1">
-                      {isActive ? t("focusTimer.inProgress") : t("focusTimer.paused")}
+                      {isActive ? (mode === "focus" ? t("focusTimer.inProgress") : t("focusTimer.breakInProgress")) : t("focusTimer.paused")}
                     </span>
                   </div>
                 </div>

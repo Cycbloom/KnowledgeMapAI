@@ -65,6 +65,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     isPaused,
     completedSessions,
     progress,
+    mode,
     pause,
     resume,
   } = useUnifiedTimer();
@@ -101,13 +102,16 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   };
 
   const handleComplete = async () => {
-    // 如果有活跃子任务，优先完成子任务
+    // timerService.complete() 现在会：
+    // 1. 保存 focus_session
+    // 2. 递增 completedSessions
+    // 3. 自动切换到下一模式（focus→break 或 break→focus）
+    // 4. 保留 taskId
+    await timerService.complete();
+
+    // 如果有活跃子任务，同时完成子任务
     if (activeSubtaskId && currentActiveSubtask && onSubtaskComplete) {
-      await timerService.complete();
       onSubtaskComplete(currentActiveSubtask.id);
-    } else {
-      // 否则仅完成当前番茄钟
-      await timerService.complete();
     }
   };
 
@@ -193,7 +197,13 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                {isActive ? "专注中..." : timeLeft > 0 ? "已暂停" : "准备开始"}
+                {isActive
+                  ? mode === "focus"
+                    ? "专注中..."
+                    : "休息中..."
+                  : timeLeft > 0
+                    ? "已暂停"
+                    : "准备开始"}
                 {totalPomodoros && (
                   <span className="ml-1.5">
                     · 第{" "}

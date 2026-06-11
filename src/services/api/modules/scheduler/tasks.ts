@@ -101,4 +101,19 @@ export const tasksApi = {
 
   checkDependencies: (id: string) =>
     request(`/scheduler/tasks/${id}/dependency-check`),
+
+  updateProgress: (id: string, data: {
+    progress_percentage?: number;
+    actual_duration_add?: number;
+  }) =>
+    request(`/scheduler/tasks/${id}/progress`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  tickExecution: (taskId: string, durationSeconds: number) =>
+    request(`/scheduler/tasks/${taskId}/execution/tick`, {
+      method: "PATCH",
+      body: JSON.stringify({ duration_seconds: durationSeconds }),
+    }),
 };

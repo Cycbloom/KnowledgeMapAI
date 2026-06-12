@@ -1,3 +1,5 @@
+export type TimerMode = "focus" | "shortBreak" | "longBreak";
+
 export type TaskType = "one_time" | "long_term" | "periodic" | "learning" | "graph_learning";
 
 export type ProgressMode = "average" | "decreasing" | "increasing" | "custom";

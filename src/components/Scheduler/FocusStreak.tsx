@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Trophy, Star, Zap, Target, Clock } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Flame, Trophy, Star, Zap, Target, Clock } from "lucide-react";
+import type { TimerMode } from "@shared/types";
 
 interface StreakMilestone {
   minutes: number;
@@ -11,11 +12,41 @@ interface StreakMilestone {
 }
 
 const STREAK_MILESTONES: StreakMilestone[] = [
-  { minutes: 25, label: '专注达人', icon: <Star size={16} />, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
-  { minutes: 50, label: '持续专注', icon: <Zap size={16} />, color: 'text-orange-400', bgColor: 'bg-orange-500/20' },
-  { minutes: 100, label: '深度专注', icon: <Target size={16} />, color: 'text-primary-400', bgColor: 'bg-primary-500/20' },
-  { minutes: 150, label: '超级专注', icon: <Trophy size={16} />, color: 'text-primary-400', bgColor: 'bg-primary-500/20' },
-  { minutes: 200, label: '传奇专注', icon: <Flame size={16} />, color: 'text-red-400', bgColor: 'bg-red-500/20' },
+  {
+    minutes: 25,
+    label: "专注达人",
+    icon: <Star size={16} />,
+    color: "text-yellow-400",
+    bgColor: "bg-yellow-500/20",
+  },
+  {
+    minutes: 50,
+    label: "持续专注",
+    icon: <Zap size={16} />,
+    color: "text-orange-400",
+    bgColor: "bg-orange-500/20",
+  },
+  {
+    minutes: 100,
+    label: "深度专注",
+    icon: <Target size={16} />,
+    color: "text-primary-400",
+    bgColor: "bg-primary-500/20",
+  },
+  {
+    minutes: 150,
+    label: "超级专注",
+    icon: <Trophy size={16} />,
+    color: "text-primary-400",
+    bgColor: "bg-primary-500/20",
+  },
+  {
+    minutes: 200,
+    label: "传奇专注",
+    icon: <Flame size={16} />,
+    color: "text-red-400",
+    bgColor: "bg-red-500/20",
+  },
 ];
 
 interface FocusStreakProps {
@@ -23,7 +54,7 @@ interface FocusStreakProps {
   pomodorosCompleted: number;
   currentStreakMinutes: number;
   isActivelyFocusing?: boolean;
-  timerMode?: "focus" | "shortBreak" | "longBreak";
+  timerMode?: TimerMode;
   showAnimation?: boolean;
 }
 
@@ -36,20 +67,22 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
   showAnimation = true,
 }) => {
   const [displayMinutes, setDisplayMinutes] = useState(totalMinutes);
-  const [showMilestone, setShowMilestone] = useState<StreakMilestone | null>(null);
+  const [showMilestone, setShowMilestone] = useState<StreakMilestone | null>(
+    null,
+  );
   const [prevMinutes, setPrevMinutes] = useState(totalMinutes);
 
   useEffect(() => {
     if (totalMinutes !== prevMinutes) {
       const milestone = STREAK_MILESTONES.find(
-        m => prevMinutes < m.minutes && totalMinutes >= m.minutes
+        (m) => prevMinutes < m.minutes && totalMinutes >= m.minutes,
       );
-      
+
       if (milestone && showAnimation) {
         setShowMilestone(milestone);
         setTimeout(() => setShowMilestone(null), 3000);
       }
-      
+
       setPrevMinutes(totalMinutes);
     }
     setDisplayMinutes(totalMinutes);
@@ -65,13 +98,15 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
   };
 
   const getNextMilestone = () => {
-    return STREAK_MILESTONES.find(m => displayMinutes < m.minutes);
+    return STREAK_MILESTONES.find((m) => displayMinutes < m.minutes);
   };
 
   const currentMilestone = getCurrentMilestone();
   const nextMilestone = getNextMilestone();
-  const progressToNext = nextMilestone 
-    ? ((displayMinutes - (currentMilestone?.minutes || 0)) / (nextMilestone.minutes - (currentMilestone?.minutes || 0))) * 100
+  const progressToNext = nextMilestone
+    ? ((displayMinutes - (currentMilestone?.minutes || 0)) /
+        (nextMilestone.minutes - (currentMilestone?.minutes || 0))) *
+      100
     : 100;
 
   const formatTime = (minutes: number) => {
@@ -90,19 +125,27 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
       >
         <div className="flex items-center gap-4 mb-4">
           <motion.div
-            className={`relative p-3 rounded-xl ${currentMilestone?.bgColor || 'bg-slate-700/50'}`}
-            animate={isActivelyFocusing ? {
-              boxShadow: [
-                `0 0 0px ${currentMilestone?.color.replace('text-', 'rgba(') || 'rgba(100,100,100'} , 0)`,
-                `0 0 20px ${currentMilestone?.color.replace('text-', 'rgba(') || 'rgba(100,100,100'} , 0.3)`,
-                `0 0 0px ${currentMilestone?.color.replace('text-', 'rgba(') || 'rgba(100,100,100'} , 0)`,
-              ],
-            } : {}}
+            className={`relative p-3 rounded-xl ${currentMilestone?.bgColor || "bg-slate-700/50"}`}
+            animate={
+              isActivelyFocusing
+                ? {
+                    boxShadow: [
+                      `0 0 0px ${currentMilestone?.color.replace("text-", "rgba(") || "rgba(100,100,100"} , 0)`,
+                      `0 0 20px ${currentMilestone?.color.replace("text-", "rgba(") || "rgba(100,100,100"} , 0.3)`,
+                      `0 0 0px ${currentMilestone?.color.replace("text-", "rgba(") || "rgba(100,100,100"} , 0)`,
+                    ],
+                  }
+                : {}
+            }
             transition={{ duration: 2, repeat: Infinity }}
           >
-            {currentMilestone?.icon || <Flame size={20} className="text-slate-400" />}
+            {currentMilestone?.icon || (
+              <Flame size={20} className="text-slate-400" />
+            )}
             {currentMilestone && (
-              <span className={`absolute -top-1 -right-1 text-xs ${currentMilestone.color}`}>
+              <span
+                className={`absolute -top-1 -right-1 text-xs ${currentMilestone.color}`}
+              >
                 ★
               </span>
             )}
@@ -110,7 +153,9 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
 
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl font-bold text-white">{formatTime(displayMinutes)}</span>
+              <span className="text-2xl font-bold text-white">
+                {formatTime(displayMinutes)}
+              </span>
               {isActivelyFocusing && (
                 <motion.span
                   animate={{ opacity: [1, 0.5, 1] }}
@@ -123,7 +168,9 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
             </div>
             <div className="text-sm text-slate-400">
               {currentMilestone ? (
-                <span className={currentMilestone.color}>{currentMilestone.label}</span>
+                <span className={currentMilestone.color}>
+                  {currentMilestone.label}
+                </span>
               ) : (
                 <span>开始你的专注之旅</span>
               )}
@@ -139,12 +186,12 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
             </div>
             <div className="h-2 rounded-full bg-slate-700/50 overflow-hidden">
               <motion.div
-                className={`h-full rounded-full ${nextMilestone.bgColor.replace('bg-', 'bg-').replace('/20', '')}`}
+                className={`h-full rounded-full ${nextMilestone.bgColor.replace("bg-", "bg-").replace("/20", "")}`}
                 initial={{ width: 0 }}
                 animate={{ width: `${progressToNext}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
                 style={{
-                  background: `linear-gradient(90deg, ${nextMilestone.color.replace('text-', '')} 0%, ${nextMilestone.color.replace('text-', '')}80 100%)`,
+                  background: `linear-gradient(90deg, ${nextMilestone.color.replace("text-", "")} 0%, ${nextMilestone.color.replace("text-", "")}80 100%)`,
                 }}
               />
             </div>
@@ -156,14 +203,18 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
             <Clock size={14} className="text-primary-400" />
             <div>
               <div className="text-xs text-slate-400">当前连续</div>
-              <div className="text-sm font-medium text-white">{currentStreakMinutes}分钟</div>
+              <div className="text-sm font-medium text-white">
+                {currentStreakMinutes}分钟
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-700/30">
             <Trophy size={14} className="text-amber-400" />
             <div>
               <div className="text-xs text-slate-400">番茄钟</div>
-              <div className="text-sm font-medium text-white">{pomodorosCompleted}个</div>
+              <div className="text-sm font-medium text-white">
+                {pomodorosCompleted}个
+              </div>
             </div>
           </div>
         </div>
@@ -177,14 +228,20 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
                   displayMinutes >= milestone.minutes
                     ? milestone.bgColor
-                    : 'bg-slate-700/30'
+                    : "bg-slate-700/30"
                 }`}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: index * 0.1 }}
                 title={milestone.label}
               >
-                <span className={displayMinutes >= milestone.minutes ? milestone.color : 'text-slate-500'}>
+                <span
+                  className={
+                    displayMinutes >= milestone.minutes
+                      ? milestone.color
+                      : "text-slate-500"
+                  }
+                >
                   {index + 1}
                 </span>
               </motion.div>
@@ -201,7 +258,9 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
             exit={{ opacity: 0, scale: 0.5, y: -20 }}
             className="absolute -top-4 left-1/2 -translate-x-1/2 z-10"
           >
-            <div className={`px-4 py-2 rounded-full ${showMilestone.bgColor} border border-${showMilestone.color.replace('text-', '')}/30 shadow-lg`}>
+            <div
+              className={`px-4 py-2 rounded-full ${showMilestone.bgColor} border border-${showMilestone.color.replace("text-", "")}/30 shadow-lg`}
+            >
               <div className="flex items-center gap-2">
                 <motion.span
                   animate={{ rotate: [0, 10, -10, 0] }}
@@ -224,9 +283,9 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
           className="absolute -inset-1 rounded-xl pointer-events-none"
           animate={{
             boxShadow: [
-              '0 0 0px rgba(6, 182, 212, 0)',
-              '0 0 10px rgba(6, 182, 212, 0.3)',
-              '0 0 0px rgba(6, 182, 212, 0)',
+              "0 0 0px rgba(6, 182, 212, 0)",
+              "0 0 10px rgba(6, 182, 212, 0.3)",
+              "0 0 0px rgba(6, 182, 212, 0)",
             ],
           }}
           transition={{ duration: 3, repeat: Infinity }}
@@ -263,13 +322,15 @@ export const MiniStreak: React.FC<MiniStreakProps> = ({
       className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/50"
     >
       <motion.div
-        className={`${milestone?.color || 'text-slate-400'}`}
+        className={`${milestone?.color || "text-slate-400"}`}
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
         <Flame size={14} />
       </motion.div>
-      <span className="text-xs font-medium text-white">{streakMinutes}分钟</span>
+      <span className="text-xs font-medium text-white">
+        {streakMinutes}分钟
+      </span>
       <span className="text-xs text-slate-500">|</span>
       <span className="text-xs text-slate-400">{pomodorosCompleted}🍅</span>
     </motion.div>

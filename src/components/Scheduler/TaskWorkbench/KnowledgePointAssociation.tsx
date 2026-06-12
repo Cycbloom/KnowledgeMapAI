@@ -56,13 +56,8 @@ export const KnowledgePointAssociation: React.FC<
 
     setIsSearching(true);
     try {
-      const response = await fetch(
-        `/api/knowledge-points?search=${encodeURIComponent(query)}&limit=10`,
-      );
-      const data = await response.json();
-      if (data.success) {
-        setSearchResults(data.data || []);
-      }
+      const data = await api.knowledgePoints.searchSimilar({ query, limit: 10 });
+      setSearchResults(data || []);
     } catch (error) {
       console.error("Search error:", error);
     } finally {

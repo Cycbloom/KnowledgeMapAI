@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { UserTaskDetail } from "../../../types";
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message as messageHelper } from "../../../utils/messageHelper";
 import { SubtaskList } from "./SubtaskList";
 import { TaskLinks } from "./TaskLinks";
 import { KnowledgePointAssociation } from "./KnowledgePointAssociation";
@@ -57,7 +57,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       }
     } catch (error) {
       console.error("Failed to load task detail:", error);
-      frontendEventBus.publish("message_show", { type: "error", content: "加载任务详情失败" });
+      messageHelper.error("加载任务详情失败");
     } finally {
       setLoading(false);
     }
@@ -67,11 +67,11 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.start(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已开始" });
+      messageHelper.success("任务已开始");
       loadTaskDetail();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "开始任务失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : "开始任务失败";
+      messageHelper.error(errMsg);
     }
   };
 
@@ -79,11 +79,11 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.pause(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已暂停" });
+      messageHelper.success("任务已暂停");
       loadTaskDetail();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "暂停任务失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : "暂停任务失败";
+      messageHelper.error(errMsg);
     }
   };
 
@@ -91,11 +91,11 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.complete(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已完成" });
+      messageHelper.success("任务已完成");
       loadTaskDetail();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "完成任务失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : "完成任务失败";
+      messageHelper.error(errMsg);
     }
   };
 
@@ -104,11 +104,11 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!window.confirm("确定要删除这个任务吗？此操作不可撤销。")) return;
     try {
       await api.scheduler.delete(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已删除" });
+      messageHelper.success("任务已删除");
       onBack();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "删除任务失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : "删除任务失败";
+      messageHelper.error(errMsg);
     }
   };
 
@@ -119,8 +119,8 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
         await api.scheduler.updateNotes(task.id, notes);
         setTask({ ...task, notes });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "保存笔记失败";
-        frontendEventBus.publish("message_show", { type: "error", content: message });
+        const errMsg = error instanceof Error ? error.message : "保存笔记失败";
+        messageHelper.error(errMsg);
       }
     },
     [task],
@@ -434,9 +434,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           <div className="text-xs text-slate-400 dark:text-slate-500 space-y-1 pt-3 border-t border-slate-200 dark:border-slate-700">
             <p>创建: {formatDate(task.created_at)}</p>
             <p>更新: {formatDate(task.updated_at)}</p>
-            {task.completed_at && (
-              <p>完成: {formatDate(task.completed_at)}</p>
-            )}
+            {task.completed_at && <p>完成: {formatDate(task.completed_at)}</p>}
           </div>
         </div>
 
@@ -554,7 +552,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           }}
           onClose={() => setShowSaveAsTemplate(false)}
           onSuccess={() => {
-            frontendEventBus.publish("message_show", { type: "success", content: "模板保存成功!" });
+            messageHelper.success("模板保存成功!");
           }}
         />
       )}

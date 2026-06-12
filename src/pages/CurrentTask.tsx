@@ -27,8 +27,8 @@ import {
   useDemoteUserTaskMutation,
   useStartUserTaskMutation,
 } from "../hooks";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { useUnifiedTimer } from "../hooks/scheduler";
+import { message } from "../utils/messageHelper";
+import { useTimerStore } from "../store/useTimerStore";
 import type { UserTask, TaskSettings } from "@shared/types";
 
 const QUEUE_CONFIG = {
@@ -109,20 +109,18 @@ export const CurrentTask: React.FC = () => {
     return tasks?.[0] || null;
   }, [tasksData]);
 
-  const {
-    taskId: timerTaskId,
-    mode: timerMode,
-    timeLeft,
-    totalTime,
-    isActive,
-    isPaused,
-    progress: timerProgress,
-    start: startTimer,
-    pause: pauseTimer,
-    resume: resumeTimer,
-    complete: completeTimer,
-    skipToBreak,
-  } = useUnifiedTimer();
+  const timerTaskId = useTimerStore((s) => s.taskId);
+  const timerMode = useTimerStore((s) => s.mode);
+  const timeLeft = useTimerStore((s) => s.timeLeft);
+  const totalTime = useTimerStore((s) => s.totalTime);
+  const isActive = useTimerStore((s) => s.isActive);
+  const isPaused = useTimerStore((s) => s.isPaused);
+  const timerProgress = useTimerStore((s) => s.progress);
+  const startTimer = useTimerStore((s) => s.start);
+  const pauseTimer = useTimerStore((s) => s.pause);
+  const resumeTimer = useTimerStore((s) => s.resume);
+  const completeTimer = useTimerStore((s) => s.complete);
+  const skipToBreak = useTimerStore((s) => s.skipToBreak);
 
   const [soundEnabled, setSoundEnabled] = useState(
     settings?.sound_enabled ?? true,
@@ -189,9 +187,9 @@ export const CurrentTask: React.FC = () => {
     try {
       await pauseMutation.mutateAsync(currentTask.id);
       pauseTimer();
-      frontendEventBus.publish("message_show", { type: "info", content: "任务已暂停" });
+      message.info("任务已暂停");
     } catch (error) {
-      frontendEventBus.publish("message_show", { type: "error", content: "暂停失败" });
+      message.error("暂停失败");
     }
   };
 
@@ -200,9 +198,9 @@ export const CurrentTask: React.FC = () => {
     try {
       await startMutation.mutateAsync(currentTask.id);
       resumeTimer();
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已继续" });
+      message.success("任务已继续");
     } catch (error) {
-      frontendEventBus.publish("message_show", { type: "error", content: "继续失败" });
+      message.error("继续失败");
     }
   };
 
@@ -211,10 +209,10 @@ export const CurrentTask: React.FC = () => {
     try {
       await completeMutation.mutateAsync(currentTask.id);
       await completeTimer();
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已完成！" });
+      message.success("任务已完成！");
       refetch();
     } catch (error) {
-      frontendEventBus.publish("message_show", { type: "error", content: "完成失败" });
+      message.error("完成失败");
     }
   };
 
@@ -223,10 +221,10 @@ export const CurrentTask: React.FC = () => {
     try {
       await demoteMutation.mutateAsync(currentTask.id);
       await completeTimer();
-      frontendEventBus.publish("message_show", { type: "info", content: "任务已降级" });
+      message.info("任务已降级");
       refetch();
     } catch (error) {
-      frontendEventBus.publish("message_show", { type: "error", content: "降级失败" });
+      message.error("降级失败");
     }
   };
 

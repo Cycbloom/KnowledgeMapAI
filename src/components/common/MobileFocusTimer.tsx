@@ -2,8 +2,17 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
-import { useUnifiedTimer } from "../../hooks/scheduler";
-import { Play, Pause, RotateCcw, Coffee, Brain, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useTimerStore } from "../../store/useTimerStore";
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Coffee,
+  Brain,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -14,11 +23,23 @@ const formatTime = (seconds: number) => {
 const getModeColor = (m: TimerMode) => {
   switch (m) {
     case "focus":
-      return { primary: "#3b82f6", secondary: "#1d4ed8", bg: "rgba(59, 130, 246, 0.15)" };
+      return {
+        primary: "#3b82f6",
+        secondary: "#1d4ed8",
+        bg: "rgba(59, 130, 246, 0.15)",
+      };
     case "shortBreak":
-      return { primary: "#10b981", secondary: "#059669", bg: "rgba(16, 185, 129, 0.15)" };
+      return {
+        primary: "#10b981",
+        secondary: "#059669",
+        bg: "rgba(16, 185, 129, 0.15)",
+      };
     case "longBreak":
-      return { primary: "#8b5cf6", secondary: "#7c3aed", bg: "rgba(139, 92, 246, 0.15)" };
+      return {
+        primary: "#8b5cf6",
+        secondary: "#7c3aed",
+        bg: "rgba(139, 92, 246, 0.15)",
+      };
   }
 };
 
@@ -29,23 +50,13 @@ const SCREEN_MARGIN = 8;
 
 export const MobileFocusTimer: React.FC = () => {
   const { t } = useTranslation();
-  const {
-    focusDuration,
-    isInFocusMode,
-  } = useFocusStore();
+  const { focusDuration, isInFocusMode } = useFocusStore();
 
-  const {
-    timeLeft,
-    mode,
-    isActive,
-    progress,
-    completedSessions,
-    start,
-    pause,
-    resume,
-    setMode,
-    skipToBreak,
-  } = useUnifiedTimer();
+  const timeLeft = useTimerStore((s) => s.timeLeft);
+  const mode = useTimerStore((s) => s.mode);
+  const isActive = useTimerStore((s) => s.isActive);
+  const progress = useTimerStore((s) => s.progress);
+  const completedSessions = useTimerStore((s) => s.completedSessions);
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -82,49 +93,52 @@ export const MobileFocusTimer: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(
       "mobileFocusTimerState",
-      JSON.stringify({ ballY, isOnRight })
+      JSON.stringify({ ballY, isOnRight }),
     );
   }, [ballY, isOnRight]);
 
-  const handleDragStart = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setIsDragging(true);
-    dragStartPos.current = { x: info.point.x, y: info.point.y };
-  }, []);
+  const handleDragStart = useCallback(
+    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      setIsDragging(true);
+      dragStartPos.current = { x: info.point.x, y: info.point.y };
+    },
+    [],
+  );
 
   const handleDragEnd = useCallback(
     (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       setIsDragging(false);
-      
+
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
-      
+
       const newIsOnRight = info.point.x > screenWidth / 2;
       setIsOnRight(newIsOnRight);
-      
+
       const newY = Math.max(
         80,
-        Math.min(screenHeight - BALL_SIZE - 100, info.point.y - BALL_SIZE / 2)
+        Math.min(screenHeight - BALL_SIZE - 100, info.point.y - BALL_SIZE / 2),
       );
       setBallY(newY);
-      
+
       dragStartPos.current = null;
     },
-    []
+    [],
   );
 
   const handleBallClick = useCallback(() => {
     if (isDragging) return;
-    
+
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
-    
+
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
       if (isActive) {
-        pause();
+        useTimerStore.getState().pause();
       } else if (timeLeft === focusDuration * 60 && mode === "focus") {
-        start("manual", focusDuration);
+        useTimerStore.getState().start("manual", focusDuration);
       } else {
-        resume();
+        useTimerStore.getState().resume();
       }
       lastTapRef.current = 0;
     } else {
@@ -137,7 +151,15 @@ export const MobileFocusTimer: React.FC = () => {
         setIsExpanded(true);
       }
     }
-  }, [isDragging, isCollapsed, isExpanded, isActive, pause, resume, start, timeLeft, focusDuration, mode]);
+  }, [
+    isDragging,
+    isCollapsed,
+    isExpanded,
+    isActive,
+    timeLeft,
+    focusDuration,
+    mode,
+  ]);
 
   const handleCollapse = useCallback(() => {
     setIsCollapsed(true);
@@ -155,17 +177,17 @@ export const MobileFocusTimer: React.FC = () => {
 
   const handleStartPause = useCallback(() => {
     if (isActive) {
-      pause();
+      useTimerStore.getState().pause();
     } else if (timeLeft === focusDuration * 60 && mode === "focus") {
-      start("manual", focusDuration);
+      useTimerStore.getState().start("manual", focusDuration);
     } else {
-      resume();
+      useTimerStore.getState().resume();
     }
-  }, [isActive, pause, resume, start, timeLeft, focusDuration, mode]);
+  }, [isActive, timeLeft, focusDuration, mode]);
 
   const handleReset = useCallback(() => {
-    setMode(mode);
-  }, [setMode, mode]);
+    useTimerStore.getState().setMode(mode);
+  }, [mode]);
 
   if (isInFocusMode) {
     return null;
@@ -203,8 +225,12 @@ export const MobileFocusTimer: React.FC = () => {
                 ) : (
                   <Coffee size={16} color={colors.primary} />
                 )}
-                <span className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  {getModeLabel(mode)}{t("focusTimer.mode")}
+                <span
+                  className="text-sm font-semibold"
+                  style={{ color: colors.primary }}
+                >
+                  {getModeLabel(mode)}
+                  {t("focusTimer.mode")}
                 </span>
               </div>
               <div className="flex items-center gap-1">
@@ -231,24 +257,31 @@ export const MobileFocusTimer: React.FC = () => {
 
             <div className="p-4">
               <div className="flex justify-center gap-1.5 mb-4">
-                {(["focus", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMode(m)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
-                      mode === m
-                        ? "text-white shadow-sm"
-                        : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
-                    }`}
-                    style={mode === m ? { backgroundColor: colors.primary } : {}}
-                  >
-                    {getModeLabel(m)}
-                  </button>
-                ))}
+                {(["focus", "shortBreak", "longBreak"] as TimerMode[]).map(
+                  (m) => (
+                    <button
+                      key={m}
+                      onClick={() => useTimerStore.getState().setMode(m)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                        mode === m
+                          ? "text-white shadow-sm"
+                          : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
+                      }`}
+                      style={
+                        mode === m ? { backgroundColor: colors.primary } : {}
+                      }
+                    >
+                      {getModeLabel(m)}
+                    </button>
+                  ),
+                )}
               </div>
 
               <div className="relative w-32 h-32 mx-auto mb-4">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <svg
+                  className="w-full h-full transform -rotate-90"
+                  viewBox="0 0 100 100"
+                >
                   <circle
                     cx="50"
                     cy="50"
@@ -266,7 +299,9 @@ export const MobileFocusTimer: React.FC = () => {
                     strokeWidth="6"
                     fill="transparent"
                     strokeDasharray={2 * Math.PI * 44}
-                    strokeDashoffset={2 * Math.PI * 44 * (1 - progressValue / 100)}
+                    strokeDashoffset={
+                      2 * Math.PI * 44 * (1 - progressValue / 100)
+                    }
                     strokeLinecap="round"
                     className="transition-all duration-1000 ease-linear"
                   />
@@ -276,7 +311,11 @@ export const MobileFocusTimer: React.FC = () => {
                     {formatTime(timeLeft)}
                   </span>
                   <span className="text-xs text-gray-400 mt-1">
-                    {isActive ? (mode === "focus" ? t("focusTimer.inProgress") : t("focusTimer.breakInProgress")) : t("focusTimer.paused")}
+                    {isActive
+                      ? mode === "focus"
+                        ? t("focusTimer.inProgress")
+                        : t("focusTimer.breakInProgress")
+                      : t("focusTimer.paused")}
                   </span>
                 </div>
               </div>
@@ -298,15 +337,27 @@ export const MobileFocusTimer: React.FC = () => {
                   {isActive ? (
                     <Pause size={22} fill="white" color="white" />
                   ) : (
-                    <Play size={22} fill="white" color="white" className="ml-0.5" />
+                    <Play
+                      size={22}
+                      fill="white"
+                      color="white"
+                      className="ml-0.5"
+                    />
                   )}
                 </motion.button>
 
                 <button
-                  onClick={skipToBreak}
+                  onClick={() => useTimerStore.getState().skipToBreak()}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <polygon points="5 4 15 12 5 20 5 4" />
                     <line x1="19" y1="5" x2="19" y2="19" />
                   </svg>
@@ -314,7 +365,9 @@ export const MobileFocusTimer: React.FC = () => {
               </div>
 
               <div className="mt-4 text-center text-xs text-gray-400">
-                {t("focusTimer.sessionsCompleted", { count: completedSessions })}
+                {t("focusTimer.sessionsCompleted", {
+                  count: completedSessions,
+                })}
               </div>
             </div>
           </motion.div>
@@ -354,11 +407,20 @@ export const MobileFocusTimer: React.FC = () => {
                   borderRadius: isOnRight ? "14px 0 0 14px" : "0 14px 14px 0",
                   backgroundColor: colors.bg,
                   border: `2px solid ${colors.primary}`,
-                  borderRight: isOnRight ? "none" : `2px solid ${colors.primary}`,
-                  borderLeft: isOnRight ? `2px solid ${colors.primary}` : "none",
+                  borderRight: isOnRight
+                    ? "none"
+                    : `2px solid ${colors.primary}`,
+                  borderLeft: isOnRight
+                    ? `2px solid ${colors.primary}`
+                    : "none",
                 }}
               >
-                <svg width="28" height="52" viewBox="0 0 28 52" className="absolute">
+                <svg
+                  width="28"
+                  height="52"
+                  viewBox="0 0 28 52"
+                  className="absolute"
+                >
                   <circle
                     cx="14"
                     cy="26"
@@ -376,7 +438,9 @@ export const MobileFocusTimer: React.FC = () => {
                     stroke={colors.primary}
                     strokeWidth="2"
                     strokeDasharray={2 * Math.PI * 10}
-                    strokeDashoffset={2 * Math.PI * 10 * (1 - progressValue / 100)}
+                    strokeDashoffset={
+                      2 * Math.PI * 10 * (1 - progressValue / 100)
+                    }
                     strokeLinecap="round"
                     transform="rotate(-90 14 26)"
                   />

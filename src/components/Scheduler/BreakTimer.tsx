@@ -10,7 +10,7 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react';
-import { useUnifiedTimer } from '../../hooks/scheduler';
+import { useTimerStore } from '../../store/useTimerStore';
 
 interface BreakTimerProps {
   isOpen: boolean;
@@ -36,17 +36,11 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
   onResumeTask,
   onSwitchTask,
 }) => {
-  const {
-    timeLeft,
-    isActive,
-    isPaused,
-    mode,
-    progress,
-    pause,
-    resume,
-    skipToBreak,
-    setMode,
-  } = useUnifiedTimer();
+  const timeLeft = useTimerStore(s => s.timeLeft);
+  const isActive = useTimerStore(s => s.isActive);
+  const isPaused = useTimerStore(s => s.isPaused);
+  const mode = useTimerStore(s => s.mode);
+  const progress = useTimerStore(s => s.progress);
 
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
   const isRunning = isActive && !isPaused;
@@ -214,7 +208,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
 
               <div className="flex items-center justify-center gap-4">
                 <motion.button
-                  onClick={() => setMode(mode)}
+                  onClick={() => useTimerStore.getState().setMode(mode)}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -223,7 +217,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 </motion.button>
 
                 <motion.button
-                  onClick={() => isRunning ? pause() : resume()}
+                  onClick={() => isRunning ? useTimerStore.getState().pause() : useTimerStore.getState().resume()}
                   className={`p-4 rounded-full shadow-lg ${
                     isRunning
                       ? 'bg-amber-500 text-white'
@@ -236,7 +230,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 </motion.button>
 
                 <motion.button
-                  onClick={skipToBreak}
+                  onClick={() => useTimerStore.getState().skipToBreak()}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

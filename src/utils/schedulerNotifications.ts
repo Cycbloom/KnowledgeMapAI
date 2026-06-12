@@ -1,5 +1,5 @@
 import type { UserTask } from '@shared/types';
-import type { SSETaskUpdatePayload, SchedulerTaskChangedPayload } from '../services/FrontendEventTypes';
+import type { SSETaskUpdatePayload } from '../services/FrontendEventTypes';
 import { frontendEventBus } from '../services/timer/FrontendEventBus';
 
 class SchedulerNotificationService {
@@ -203,14 +203,7 @@ class DeadlineChecker {
       this.handleTaskUpdate(payload);
     });
 
-    const unsub2 = frontendEventBus.subscribe('scheduler_task_changed', (payload: SchedulerTaskChangedPayload) => {
-      const task = this.tasks.find(t => t.id === payload.taskId);
-      if (task) {
-        this.checkTaskDeadline(task);
-      }
-    });
-
-    this.unsubscribers = [unsub1, unsub2];
+    this.unsubscribers = [unsub1];
   }
 
   stopCheck(): void {
@@ -244,11 +237,6 @@ class DeadlineChecker {
       if (!this.notifiedTasks.has(task.id)) {
         this.notifiedTasks.add(task.id);
         this.playDeadlineNotification(task);
-        frontendEventBus.publish('scheduler_deadline_approaching', {
-          taskId: task.id,
-          taskTitle: task.title,
-          minutesLeft: Math.round(minutesUntilDeadline),
-        });
       }
     }
 

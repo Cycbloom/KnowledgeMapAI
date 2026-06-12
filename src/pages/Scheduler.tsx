@@ -7,7 +7,7 @@ import React, {
   lazy,
   Suspense,
 } from "react";
-import { timerService } from "../services/timer/TimerService";
+import { useTimerStore } from "../store/useTimerStore";
 import { useFocusStore } from "../store/useFocusStore";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -362,7 +362,7 @@ export const Scheduler: React.FC = () => {
       message.success(t("scheduler.taskStarted"));
       // 启动番茄钟计时器（使用专注时长，而非任务总时长）
       const { focusDuration } = useFocusStore.getState();
-      timerService.start(task.id, focusDuration, task.queue_level);
+      useTimerStore.getState().start(task.id, focusDuration, task.queue_level);
       // 如果有子任务，自动激活第一个待做子任务
       const hasSubtasks =
         (task as any).has_subtasks || (task as any).subtask_count > 0;

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskLink } from "../../../types";
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message as messageHelper } from "../../../utils/messageHelper";
 
 interface TaskLinksProps {
   taskId: string;
@@ -78,7 +78,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
 
   const handleAddLink = async () => {
     if (!newLink.url.trim()) {
-      frontendEventBus.publish("message_show", { type: "error", content: "请输入链接地址" });
+      messageHelper.error("请输入链接地址");
       return;
     }
 
@@ -93,11 +93,11 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
         setLinks([...links, response.data]);
         setNewLink({ link_type: "web", title: "", url: "", description: "" });
         setIsAdding(false);
-        frontendEventBus.publish("message_show", { type: "success", content: "链接已添加" });
+        messageHelper.success("链接已添加");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "添加链接失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : "添加链接失败";
+      messageHelper.error(errMsg);
     }
   };
 
@@ -106,11 +106,11 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
       const response = await api.scheduler.deleteLink(taskId, linkId);
       if (response.success) {
         setLinks(links.filter((l) => l.id !== linkId));
-        frontendEventBus.publish("message_show", { type: "success", content: "链接已删除" });
+        messageHelper.success("链接已删除");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "删除链接失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errMsg = error instanceof Error ? error.message : "删除链接失败";
+      messageHelper.error(errMsg);
     }
   };
 

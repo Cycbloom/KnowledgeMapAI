@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
-import { useUnifiedTimer } from "../../hooks/scheduler";
+import { useTimerStore } from "../../store/useTimerStore";
 import {
   Play,
   Pause,
@@ -33,18 +33,11 @@ export const FocusTimer: React.FC = () => {
     isInFocusMode,
   } = useFocusStore();
 
-  const {
-    timeLeft,
-    mode,
-    isActive,
-    progress,
-    completedSessions,
-    start,
-    pause,
-    resume,
-    setMode,
-    skipToBreak,
-  } = useUnifiedTimer();
+  const timeLeft = useTimerStore((s) => s.timeLeft);
+  const mode = useTimerStore((s) => s.mode);
+  const isActive = useTimerStore((s) => s.isActive);
+  const progress = useTimerStore((s) => s.progress);
+  const completedSessions = useTimerStore((s) => s.completedSessions);
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -64,20 +57,20 @@ export const FocusTimer: React.FC = () => {
 
   const handleStartPause = () => {
     if (isActive) {
-      pause();
+      useTimerStore.getState().pause();
     } else if (timeLeft === focusDuration * 60 && mode === "focus") {
-      start("manual", focusDuration);
+      useTimerStore.getState().start("manual", focusDuration);
     } else {
-      resume();
+      useTimerStore.getState().resume();
     }
   };
 
   const handleReset = () => {
-    setMode(mode);
+    useTimerStore.getState().setMode(mode);
   };
 
   const handleSkip = () => {
-    skipToBreak();
+    useTimerStore.getState().skipToBreak();
   };
 
   if (isInFocusMode) {
@@ -262,7 +255,7 @@ export const FocusTimer: React.FC = () => {
                     (m) => (
                       <button
                         key={m}
-                        onClick={() => setMode(m)}
+                        onClick={() => useTimerStore.getState().setMode(m)}
                         className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
                           mode === m
                             ? "bg-white dark:bg-slate-600 shadow text-gray-800 dark:text-white"
@@ -295,11 +288,11 @@ export const FocusTimer: React.FC = () => {
                       strokeWidth="8"
                       fill="transparent"
                       strokeDasharray={2 * Math.PI * 88}
-                      strokeDashoffset={
-                        2 * Math.PI * 88 * (1 - progress / 100)
-                      }
+                      strokeDashoffset={2 * Math.PI * 88 * (1 - progress / 100)}
                       className={`${
-                        mode === "focus" ? "text-primary-500" : "text-emerald-500"
+                        mode === "focus"
+                          ? "text-primary-500"
+                          : "text-emerald-500"
                       } transition-all duration-1000 ease-linear`}
                       strokeLinecap="round"
                     />
@@ -309,7 +302,11 @@ export const FocusTimer: React.FC = () => {
                       {formatTime(timeLeft)}
                     </span>
                     <span className="text-sm text-gray-400 mt-1">
-                      {isActive ? (mode === "focus" ? t("focusTimer.inProgress") : t("focusTimer.breakInProgress")) : t("focusTimer.paused")}
+                      {isActive
+                        ? mode === "focus"
+                          ? t("focusTimer.inProgress")
+                          : t("focusTimer.breakInProgress")
+                        : t("focusTimer.paused")}
                     </span>
                   </div>
                 </div>
@@ -347,7 +344,11 @@ export const FocusTimer: React.FC = () => {
 
                 <div className="mt-6 text-xs text-gray-400 flex items-center gap-1">
                   <CheckCircleIcon size={12} />
-                  <span>{t("focusTimer.sessionsCompleted", { count: completedSessions })}</span>
+                  <span>
+                    {t("focusTimer.sessionsCompleted", {
+                      count: completedSessions,
+                    })}
+                  </span>
                 </div>
               </div>
             )}

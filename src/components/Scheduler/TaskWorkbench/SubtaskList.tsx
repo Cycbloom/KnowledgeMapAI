@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskSubtask } from "../../../types";
-import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { message as messageHelper } from "../../../utils/messageHelper";
 import { LearningStateBadge } from "../LearningStateBadge";
 import { MasteryProgressBar } from "../MasteryProgressBar";
 
@@ -79,18 +79,12 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const handleAddSubtask = async () => {
     if (!newSubtask.title.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: "请输入子任务标题",
-      });
+      messageHelper.error("请输入子任务标题");
       return;
     }
 
     if (!newSubtask.knowledge_point_id) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: "请选择关联的知识点",
-      });
+      messageHelper.error("请选择关联的知识点");
       return;
     }
 
@@ -110,17 +104,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           knowledge_point_id: defaultKnowledgePointId || "",
         });
         setIsAdding(false);
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: "子任务已添加",
-        });
+        messageHelper.success("子任务已添加");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "添加子任务失败";
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errMsg = error instanceof Error ? error.message : "添加子任务失败";
+      messageHelper.error(errMsg);
     }
   };
 
@@ -136,11 +124,8 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         );
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "更新状态失败";
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errMsg = error instanceof Error ? error.message : "更新状态失败";
+      messageHelper.error(errMsg);
     }
   };
 
@@ -149,17 +134,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
       const response = await api.scheduler.deleteSubtask(taskId, subtaskId);
       if (response.success) {
         setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: "子任务已删除",
-        });
+        messageHelper.success("子任务已删除");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "删除子任务失败";
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: message,
-      });
+      const errMsg = error instanceof Error ? error.message : "删除子任务失败";
+      messageHelper.error(errMsg);
     }
   };
 

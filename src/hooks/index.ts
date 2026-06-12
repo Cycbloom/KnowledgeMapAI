@@ -2,6 +2,7 @@ export * from "./queries";
 export * from "./mutations";
 export * from "./common";
 export * from "./scheduler";
+export * from "./calendar";
 export * from "./graphAI";
 export * from "./graphEditor";
 export * from "./useConsole";

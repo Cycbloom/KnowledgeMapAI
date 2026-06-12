@@ -37,14 +37,15 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   useFocusStore,
+} from "../../store/useFocusStore";
+import {
   WhiteNoiseType,
   NoiseCategory,
-} from "../../store/useFocusStore";
+} from "../../store/useNoiseStore";
 import { HighlightedReader } from "./HighlightedReader";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
-import { useUnifiedTimer } from "../../hooks/scheduler";
+import { useTimerStore } from "../../store/useTimerStore";
 import { useActivityTracker } from "../../hooks/useActivityTracker";
-import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { AudioVisualizer } from "../common/AudioVisualizer";
 import { NOISE_OPTIONS, NOISE_CATEGORIES } from "../../utils/audioSynthesis";
 import type { Keyword } from "../../../shared/types/graph";
@@ -115,16 +116,14 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
     recordActivityRef.current = recordActivity;
   });
 
-  const {
-    isActive,
-    timeLeft,
-    mode,
-    completedSessions: sessionsCompleted,
-    pause: pauseTimer,
-    resume: resumeTimer,
-    setMode: setTimerMode,
-    skipToBreak,
-  } = useUnifiedTimer();
+  const isActive = useTimerStore((s) => s.isActive);
+  const timeLeft = useTimerStore((s) => s.timeLeft);
+  const mode = useTimerStore((s) => s.mode);
+  const completedSessions = useTimerStore((s) => s.completedSessions);
+  const pauseTimer = useTimerStore((s) => s.pause);
+  const resumeTimer = useTimerStore((s) => s.resume);
+  const setTimerMode = useTimerStore((s) => s.setMode);
+  const skipToBreak = useTimerStore((s) => s.skipToBreak);
 
   const {
     mixedNoises,
@@ -218,22 +217,26 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   }, [isOpen, startMixer, stopMixer]);
 
   useEffect(() => {
-    const unsubscribe = frontendEventBus.subscribe(
-      "timer_completed",
-      (payload) => {
-        if (isOpen && payload.mode === "focus") {
-          recordActivityRef.current({
-            activity_type: "focus_study",
-            title: `专注学习: ${nodeTitle || "知识点"}`,
-            started_at: sessionStartRef.current || new Date().toISOString(),
-            ended_at: new Date().toISOString(),
-            duration: payload.duration,
-            knowledge_point_id: currentNodeId ?? undefined,
-          });
-          sessionStartRef.current = new Date().toISOString();
-        }
-      },
-    );
+    let prevCompletedSessions = useTimerStore.getState().completedSessions;
+    const unsubscribe = useTimerStore.subscribe((state) => {
+      if (
+        state.completedSessions > prevCompletedSessions &&
+        state.mode !== "focus" &&
+        isOpen
+      ) {
+        const elapsed = state.totalTime - state.timeLeft;
+        recordActivityRef.current({
+          activity_type: "focus_study",
+          title: `专注学习: ${nodeTitle || "知识点"}`,
+          started_at: sessionStartRef.current || new Date().toISOString(),
+          ended_at: new Date().toISOString(),
+          duration: elapsed,
+          knowledge_point_id: currentNodeId ?? undefined,
+        });
+        sessionStartRef.current = new Date().toISOString();
+      }
+      prevCompletedSessions = state.completedSessions;
+    });
     return () => unsubscribe();
   }, [isOpen, nodeTitle, currentNodeId]);
 
@@ -536,7 +539,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           <CheckCircleIcon size={12} />
                           <span>
                             {t("learning.focusMode.sessionsCompleted", {
-                              count: sessionsCompleted,
+                              count: completedSessions,
                             })}
                           </span>
                         </div>

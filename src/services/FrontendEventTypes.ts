@@ -1,14 +1,4 @@
-import type {
-  TimerStartedPayload,
-  TimerTickPayload,
-  TimerPausedPayload,
-  TimerResumedPayload,
-  TimerCompletedPayload,
-  TimerModeChangedPayload,
-  TimerSkipToBreakPayload,
-  TimerResetPayload,
-  TaskStartedPayload,
-} from "../../shared/types/events";
+import type { TaskStartedPayload } from "../../shared/types/events";
 
 export interface SSEStatusChangedPayload {
   status: "connecting" | "connected" | "disconnected" | "error";
@@ -72,34 +62,29 @@ export interface SchedulerTaskStatusChangedPayload {
   taskType?: string;
 }
 
-export interface SchedulerTaskChangedPayload {
-  taskId: string;
-  action: "created" | "updated" | "deleted";
-}
-
-export interface SchedulerTaskCompletedPayload {
-  taskId: string;
-  queueLevel?: number;
-}
-
-export interface SchedulerStatsChangedPayload {
-  reason: string;
-}
-
-export interface SchedulerDeadlineApproachingPayload {
-  taskId: string;
-  taskTitle?: string;
-  minutesLeft: number;
-}
-
 export interface GraphDataChangedPayload {
   graphId?: string;
-  changeType: "node_created" | "node_updated" | "node_deleted" | "edge_created" | "edge_deleted" | "ai_action_executed" | "graph_rollback";
+  changeType:
+    | "node_created"
+    | "node_updated"
+    | "node_deleted"
+    | "edge_created"
+    | "edge_deleted"
+    | "ai_action_executed"
+    | "graph_rollback";
 }
 
 export interface GraphListChangedPayload {
   graphId?: string;
-  changeType: "graph_created" | "graph_updated" | "graph_deleted" | "graph_restored" | "graph_permanently_deleted" | "graphs_batch_deleted" | "graphs_batch_restored" | "graphs_batch_permanently_deleted";
+  changeType:
+    | "graph_created"
+    | "graph_updated"
+    | "graph_deleted"
+    | "graph_restored"
+    | "graph_permanently_deleted"
+    | "graphs_batch_deleted"
+    | "graphs_batch_restored"
+    | "graphs_batch_permanently_deleted";
 }
 
 export interface FocusEnterPayload {
@@ -134,14 +119,6 @@ export interface AchievementUnlockedPayload {
 }
 
 export interface FrontendEventMap extends Record<string, unknown> {
-  timer_started: TimerStartedPayload;
-  timer_tick: TimerTickPayload;
-  timer_paused: TimerPausedPayload;
-  timer_resumed: TimerResumedPayload;
-  timer_completed: TimerCompletedPayload;
-  timer_mode_changed: TimerModeChangedPayload;
-  timer_skip_to_break: TimerSkipToBreakPayload;
-  timer_reset: TimerResetPayload;
   task_started: TaskStartedPayload;
   sse_status_changed: SSEStatusChangedPayload;
   sse_message: SSEMessagePayload;
@@ -157,10 +134,6 @@ export interface FrontendEventMap extends Record<string, unknown> {
   sync_conflict_detected: SyncConflictDetectedPayload;
   notification_new: NotificationNewPayload;
   scheduler_task_status_changed: SchedulerTaskStatusChangedPayload;
-  scheduler_task_changed: SchedulerTaskChangedPayload;
-  scheduler_task_completed: SchedulerTaskCompletedPayload;
-  scheduler_stats_changed: SchedulerStatsChangedPayload;
-  scheduler_deadline_approaching: SchedulerDeadlineApproachingPayload;
   graph_data_changed: GraphDataChangedPayload;
   graph_list_changed: GraphListChangedPayload;
   focus_enter: FocusEnterPayload;

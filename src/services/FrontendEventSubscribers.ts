@@ -19,34 +19,17 @@ export function initializeEventSubscribers(qc: QueryClient): void {
     queryClient?.invalidateQueries({ queryKey: ["scheduler"] });
   });
 
-  const unsub4 = frontendEventBus.subscribe("scheduler_task_changed", (payload) => {
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "queues"] });
-    if (payload?.taskId) {
-      queryClient?.invalidateQueries({ queryKey: ["scheduler", "task", payload.taskId] });
-    }
-  });
-
-  const unsub5 = frontendEventBus.subscribe("scheduler_task_completed", (payload) => {
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "queues"] });
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "stats"] });
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "heatmap"] });
-    if (payload?.taskId) {
-      queryClient?.invalidateQueries({ queryKey: ["scheduler", "task", payload.taskId] });
-    }
-  });
-
-  const unsub6 = frontendEventBus.subscribe("scheduler_stats_changed", () => {
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "stats"] });
-    queryClient?.invalidateQueries({ queryKey: ["scheduler", "heatmap"] });
-  });
-
-  const unsub7 = frontendEventBus.subscribe("graph_data_changed", (payload) => {
+  const unsub4 = frontendEventBus.subscribe("graph_data_changed", (payload) => {
     if (payload?.graphId) {
-      queryClient?.invalidateQueries({ queryKey: ["graphData", payload.graphId] });
-      queryClient?.invalidateQueries({ queryKey: ["graphNodeStatus", payload.graphId] });
-      queryClient?.invalidateQueries({ queryKey: ["graphLearningPath", payload.graphId] });
+      queryClient?.invalidateQueries({
+        queryKey: ["graphData", payload.graphId],
+      });
+      queryClient?.invalidateQueries({
+        queryKey: ["graphNodeStatus", payload.graphId],
+      });
+      queryClient?.invalidateQueries({
+        queryKey: ["graphLearningPath", payload.graphId],
+      });
       queryClient?.invalidateQueries({ queryKey: ["graph", payload.graphId] });
       queryClient?.invalidateQueries({ queryKey: ["graphs"] });
     } else {
@@ -57,9 +40,12 @@ export function initializeEventSubscribers(qc: QueryClient): void {
     }
   });
 
-  const unsub8 = frontendEventBus.subscribe("graph_list_changed", (payload) => {
+  const unsub5 = frontendEventBus.subscribe("graph_list_changed", (payload) => {
     queryClient?.invalidateQueries({ queryKey: ["graphs"] });
-    if (payload?.changeType !== "graph_created" && payload?.changeType !== "graph_updated") {
+    if (
+      payload?.changeType !== "graph_created" &&
+      payload?.changeType !== "graph_updated"
+    ) {
       queryClient?.invalidateQueries({ queryKey: ["graphs", "trash"] });
     }
     if (payload?.graphId) {
@@ -67,7 +53,13 @@ export function initializeEventSubscribers(qc: QueryClient): void {
     }
   });
 
-  unsubscribers = [unsub1, unsub2, unsub3, unsub4, unsub5, unsub6, unsub7, unsub8];
+  unsubscribers = [
+    unsub1,
+    unsub2,
+    unsub3,
+    unsub4,
+    unsub5,
+  ];
 }
 
 export function cleanupEventSubscribers(): void {

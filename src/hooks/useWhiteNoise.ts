@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFocusStore, WhiteNoiseType, MixedNoise, NoisePreset } from '../store/useFocusStore';
+import { useNoiseStore, WhiteNoiseType, MixedNoise, NoisePreset } from '../store/useNoiseStore';
 import { NoiseMixer, BUILT_IN_PRESETS, NoisePreset as AudioNoisePreset } from '../utils/audioSynthesis';
 
 interface UseWhiteNoiseReturn {
@@ -45,7 +45,7 @@ export function useWhiteNoise(): UseWhiteNoiseReturn {
     saveCustomPreset,
     deleteCustomPreset,
     loadPreset: storeLoadPreset,
-  } = useFocusStore();
+  } = useNoiseStore();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [analyserData, setAnalyserData] = useState<Uint8Array | null>(null);
@@ -118,7 +118,7 @@ export function useWhiteNoise(): UseWhiteNoiseReturn {
       mixerRef.current = new NoiseMixer(context);
     }
 
-    const currentMixedNoises = useFocusStore.getState().mixedNoises;
+    const currentMixedNoises = useNoiseStore.getState().mixedNoises;
     currentMixedNoises.forEach((noise) => {
       if (noise.type !== 'none') {
         mixerRef.current?.addTrack(noise.type, noise.volume);

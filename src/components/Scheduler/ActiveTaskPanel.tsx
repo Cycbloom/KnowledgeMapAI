@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Check, Clock, Zap, Target, ListTodo } from "lucide-react";
 import { UserTask } from "@shared/types";
-import { useUnifiedTimer } from "../../hooks/scheduler";
 import { api } from "../../services/api";
-import { timerService } from "../../services/timer/TimerService";
+import { useTimerStore } from "../../store/useTimerStore";
 import { useFocusStore } from "../../store/useFocusStore";
 
 interface ActiveTaskPanelProps {
@@ -59,16 +58,14 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     QUEUE_CONFIG[2];
   const IconComponent = config.icon;
 
-  const {
-    timeLeft,
-    isActive,
-    isPaused,
-    completedSessions,
-    progress,
-    mode,
-    pause,
-    resume,
-  } = useUnifiedTimer();
+  const timeLeft = useTimerStore((s) => s.timeLeft);
+  const isActive = useTimerStore((s) => s.isActive);
+  const isPaused = useTimerStore((s) => s.isPaused);
+  const completedSessions = useTimerStore((s) => s.completedSessions);
+  const progress = useTimerStore((s) => s.progress);
+  const mode = useTimerStore((s) => s.mode);
+  const pause = useTimerStore((s) => s.pause);
+  const resume = useTimerStore((s) => s.resume);
 
   const [subtasks, setSubtasks] = useState<any[]>([]);
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
@@ -107,7 +104,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     // 2. 递增 completedSessions
     // 3. 自动切换到下一模式（focus→break 或 break→focus）
     // 4. 保留 taskId
-    await timerService.complete();
+    await useTimerStore.getState().complete();
 
     // 如果有活跃子任务，同时完成子任务
     if (activeSubtaskId && currentActiveSubtask && onSubtaskComplete) {

@@ -49,6 +49,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { message as msgHelper } from "../utils/messageHelper";
 import {
   useTheme,
   useSpeechRecognition,
@@ -56,7 +57,7 @@ import {
   useAILanguage,
 } from "../hooks";
 import { useGraph, useGraphData, useGraphNodeStatus } from "../hooks/queries";
-import { useUnifiedTimer } from "../hooks/scheduler";
+import { useTimerStore } from "../store/useTimerStore";
 import { preprocessMarkdown } from "../utils/markdownUtils";
 import {
   isAppError,
@@ -81,12 +82,15 @@ import { useFocusStore } from "../store/useFocusStore";
 import { useActivityTracker } from "../hooks/useActivityTracker";
 import { schedulerApi } from "../services/api";
 import type { StudyMode } from "../../shared/types/scheduler";
-import { STUDY_MODE_PRESETS, DEFAULT_STUDY_MODE } from "../../shared/constants/studyModePresets";
+import {
+  STUDY_MODE_PRESETS,
+  DEFAULT_STUDY_MODE,
+} from "../../shared/constants/studyModePresets";
 
 const ConceptAggregationPanel = lazy(() =>
   import("../components/ConceptAggregation/ConceptAggregationPanel").then(
-    (module) => ({ default: module.ConceptAggregationPanel })
-  )
+    (module) => ({ default: module.ConceptAggregationPanel }),
+  ),
 );
 
 type Message = {
@@ -150,12 +154,10 @@ export const LearningMode = () => {
     useLearningSettingsStore();
   const queryClient = useQueryClient();
 
-  const {
-    start: startFocusTimer,
-    complete: completeFocusTimer,
-    taskId: focusTaskId,
-    isActive: isFocusTimerActive,
-  } = useUnifiedTimer();
+  const startFocusTimer = useTimerStore((s) => s.start);
+  const completeFocusTimer = useTimerStore((s) => s.complete);
+  const focusTaskId = useTimerStore((s) => s.taskId);
+  const isFocusTimerActive = useTimerStore((s) => s.isActive);
 
   useEffect(() => {
     if (nodeId && !focusTaskId && !isFocusTimerActive) {
@@ -221,7 +223,12 @@ export const LearningMode = () => {
   } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { enterFocusMode, exitFocusMode, highlightEnabled, setHighlightEnabled } = useFocusStore();
+  const {
+    enterFocusMode,
+    exitFocusMode,
+    highlightEnabled,
+    setHighlightEnabled,
+  } = useFocusStore();
   const { startActivity, endActivity } = useActivityTracker();
   const activityRef = useRef(false);
   const activityFnsRef = useRef({ startActivity, endActivity });
@@ -267,7 +274,12 @@ export const LearningMode = () => {
     return stages.includes("quiz") || stages.includes("practice");
   };
 
-  const getStrategyHint = (mode: StudyMode, nodeStatus: { mastered: boolean; due?: boolean; review_count?: number } | undefined): string | null => {
+  const getStrategyHint = (
+    mode: StudyMode,
+    nodeStatus:
+      | { mastered: boolean; due?: boolean; review_count?: number }
+      | undefined,
+  ): string | null => {
     if (mode !== "mixed") return null;
 
     if (!nodeStatus) {
@@ -367,10 +379,7 @@ export const LearningMode = () => {
   const toggleListening = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!hasRecognitionSupport) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("learning.speech.notSupported"),
-      });
+      msgHelper.warning(t("learning.speech.notSupported"));
       return;
     }
 
@@ -409,10 +418,7 @@ export const LearningMode = () => {
       }
     } catch (cardError) {
       console.error("Failed to generate cards:", cardError);
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("learning.cards.generateFailed"),
-      });
+      msgHelper.error(t("learning.cards.generateFailed"));
     } finally {
       setIsGeneratingCards(false);
     }
@@ -433,10 +439,7 @@ export const LearningMode = () => {
         const node = await api.nodes.get(nodeId);
 
         if (!node) {
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: t("learning.node.loadFailed"),
-          });
+          msgHelper.error(t("learning.node.loadFailed"));
           return;
         }
 
@@ -491,10 +494,7 @@ export const LearningMode = () => {
             });
           } catch (saveError) {
             console.error("Failed to save learning material:", saveError);
-            frontendEventBus.publish("message_show", {
-              type: "error",
-              content: t("learning.material.saveFailed"),
-            });
+            msgHelper.error(t("learning.material.saveFailed"));
           }
 
           setMessages((prev) => [
@@ -506,17 +506,11 @@ export const LearningMode = () => {
             },
           ]);
         } else {
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: t("learning.material.aiFailed"),
-          });
+          msgHelper.error(t("learning.material.aiFailed"));
         }
       } catch (error) {
         console.error("Failed to load learning material:", error);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("learning.material.generateFailed"),
-        });
+        msgHelper.error(t("learning.material.generateFailed"));
       } finally {
         setIsGenerating(false);
       }
@@ -556,10 +550,7 @@ export const LearningMode = () => {
     if (!input.trim() || isChatLoading) return;
 
     if (!isOnline) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("learning.chat.offline"),
-      });
+      msgHelper.error(t("learning.chat.offline"));
       return;
     }
 
@@ -575,7 +566,7 @@ export const LearningMode = () => {
 
     let aiMessage = userMessage.content;
     if (quotes.length > 0) {
-      const quotesText = quotes.map(q => `> ${q.text}`).join('\n');
+      const quotesText = quotes.map((q) => `> ${q.text}`).join("\n");
       aiMessage = `[引用内容]\n${quotesText}\n\n[用户问题]\n${input.trim()}`;
       setQuotes([]);
     }
@@ -641,10 +632,7 @@ export const LearningMode = () => {
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("learning.node.enterTitle"),
-      });
+      msgHelper.warning(t("learning.node.enterTitle"));
       return;
     }
 
@@ -668,10 +656,7 @@ export const LearningMode = () => {
         });
       }
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("learning.node.createSuccess"),
-      });
+      msgHelper.success(t("learning.node.createSuccess"));
 
       setNewNodeTitle("");
       setNewNodeContent("");
@@ -689,19 +674,13 @@ export const LearningMode = () => {
       }
     } catch (error) {
       console.error("Failed to create node:", error);
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("learning.node.createFailed"),
-      });
+      msgHelper.error(t("learning.node.createFailed"));
     }
   };
 
   const handleStartChallenge = async () => {
     if (!nodeId || !graphId) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("learning.challenge.missingParams"),
-      });
+      msgHelper.warning(t("learning.challenge.missingParams"));
       return;
     }
 
@@ -730,10 +709,7 @@ export const LearningMode = () => {
         task_id: taskId,
       });
 
-      frontendEventBus.publish("message_show", {
-        type: "success",
-        content: t("learning.challenge.completed"),
-      });
+      msgHelper.success(t("learning.challenge.completed"));
     } catch (error) {
       console.error("Failed to create review task:", error);
     }
@@ -745,18 +721,12 @@ export const LearningMode = () => {
 
   const handleRegenerateMaterial = async () => {
     if (!nodeId || !graphId) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("learning.challenge.missingParams"),
-      });
+      msgHelper.warning(t("learning.challenge.missingParams"));
       return;
     }
 
     if (!isOnline) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("learning.material.regenerateOffline"),
-      });
+      msgHelper.error(t("learning.material.regenerateOffline"));
       return;
     }
 
@@ -785,10 +755,7 @@ export const LearningMode = () => {
 
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
 
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("learning.material.regenerated"),
-        });
+        msgHelper.success(t("learning.material.regenerated"));
 
         setMessages((prev) => [
           ...prev,
@@ -801,10 +768,7 @@ export const LearningMode = () => {
       }
     } catch (error) {
       console.error("Failed to regenerate learning material:", error);
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("learning.material.regenerateFailed"),
-      });
+      msgHelper.error(t("learning.material.regenerateFailed"));
     } finally {
       setIsGenerating(false);
     }
@@ -815,18 +779,12 @@ export const LearningMode = () => {
     types: string[];
   }) => {
     if (!nodeId) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("learning.cards.selectNode"),
-      });
+      msgHelper.warning(t("learning.cards.selectNode"));
       return;
     }
 
     if (!isOnline) {
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: t("learning.cards.offline"),
-      });
+      msgHelper.error(t("learning.cards.offline"));
       return;
     }
 
@@ -873,18 +831,12 @@ export const LearningMode = () => {
 
         if (gnError) {
           console.error("查询 graph_nodes 失败:", gnError);
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: t("learning.cards.queryFailed"),
-          });
+          msgHelper.error(t("learning.cards.queryFailed"));
           return;
         }
 
         if (!graphNodes || graphNodes.length === 0) {
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: t("learning.cards.nodeNotFound"),
-          });
+          msgHelper.error(t("learning.cards.nodeNotFound"));
           return;
         }
 
@@ -919,10 +871,9 @@ export const LearningMode = () => {
 
         for (let i = 0; i < batches; i++) {
           if (signal.aborted) {
-            frontendEventBus.publish("message_show", {
-              type: "info",
-              content: t("learning.cards.cancelled", { count: savedCount }),
-            });
+            msgHelper.info(
+              t("learning.cards.cancelled", { count: savedCount }),
+            );
             break;
           }
 
@@ -935,15 +886,14 @@ export const LearningMode = () => {
             isGenerating: true,
           });
 
-          frontendEventBus.publish("message_show", {
-            type: "info",
-            content: t("learning.cards.generating", {
+          msgHelper.info(
+            t("learning.cards.generating", {
               start: generatedCount + 1,
               end: generatedCount + currentBatchSize,
               total: totalCards,
             }),
-            duration: 3000,
-          });
+            { duration: 3000 },
+          );
 
           try {
             const result = await mobileAIService.generateAndSaveCards(
@@ -968,11 +918,10 @@ export const LearningMode = () => {
             }
           } catch (batchError) {
             console.error(`Batch ${i + 1} failed:`, batchError);
-            frontendEventBus.publish("message_show", {
-              type: "warning",
-              content: t("learning.cards.batchFailed", { batch: i + 1 }),
-              duration: 3000,
-            });
+            msgHelper.warning(
+              t("learning.cards.batchFailed", { batch: i + 1 }),
+              { duration: 3000 },
+            );
           }
         }
 
@@ -1015,16 +964,8 @@ export const LearningMode = () => {
               break;
 
             case "quota_exceeded":
-              frontendEventBus.publish("message_show", {
-                type: "error",
-                content: error.message,
-                duration: 8000,
-              });
-              frontendEventBus.publish("message_show", {
-                type: "info",
-                content: error.suggestion,
-                duration: 8000,
-              });
+              msgHelper.error(error.message, { duration: 8000 });
+              msgHelper.info(error.suggestion, { duration: 8000 });
               break;
 
             case "rate_limited":
@@ -1053,11 +994,7 @@ export const LearningMode = () => {
               break;
 
             case "database_error":
-              frontendEventBus.publish("message_show", {
-                type: "error",
-                content: error.message,
-                duration: 8000,
-              });
+              msgHelper.error(error.message, { duration: 8000 });
               frontendEventBus.publish("message_show", {
                 type: "info",
                 content: error.suggestion,
@@ -1084,11 +1021,7 @@ export const LearningMode = () => {
               break;
 
             default:
-              frontendEventBus.publish("message_show", {
-                type: "error",
-                content: error.message,
-                duration: 5000,
-              });
+              msgHelper.error(error.message, { duration: 5000 });
           }
         } else {
           let errorMessage = t("learning.cards.generateFailed");
@@ -1134,10 +1067,7 @@ export const LearningMode = () => {
         const errorMsg =
           result.message || result.error || t("learning.cards.unknownError");
         console.error("[LearningMode] 任务提交失败:", errorMsg);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("learning.cards.submitFailed", { error: errorMsg }),
-        });
+        msgHelper.error(t("learning.cards.submitFailed", { error: errorMsg }));
       }
     } catch (error) {
       console.error("[LearningMode] 题目生成异常:", {
@@ -1164,10 +1094,7 @@ export const LearningMode = () => {
         });
       }
 
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: errorMessage,
-      });
+      msgHelper.error(errorMessage);
     } finally {
       setIsGeneratingCards(false);
     }
@@ -1176,10 +1103,7 @@ export const LearningMode = () => {
   const handleCancelGenerate = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      frontendEventBus.publish("message_show", {
-        type: "info",
-        content: t("learning.cards.cancelling"),
-      });
+      msgHelper.info(t("learning.cards.cancelling"));
     }
   };
 
@@ -1193,20 +1117,16 @@ export const LearningMode = () => {
   ) => {
     const nodeIds = Array.from(selectedNodeIds);
     if (nodeIds.length === 0) {
-      frontendEventBus.publish("message_show", {
-        type: "warning",
-        content: t("learning.batch.selectNodes"),
-      });
+      msgHelper.warning(t("learning.batch.selectNodes"));
       return;
     }
 
     if (action === "delete") {
       try {
         await api.nodes.batchDelete(nodeIds);
-        frontendEventBus.publish("message_show", {
-          type: "success",
-          content: t("learning.batch.deleteSuccess", { count: nodeIds.length }),
-        });
+        msgHelper.success(
+          t("learning.batch.deleteSuccess", { count: nodeIds.length }),
+        );
         setSelectedNodeIds(new Set());
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
         queryClient.invalidateQueries({
@@ -1214,17 +1134,11 @@ export const LearningMode = () => {
         });
       } catch (error) {
         console.error("Batch delete failed:", error);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("learning.batch.deleteFailed"),
-        });
+        msgHelper.error(t("learning.batch.deleteFailed"));
       }
     } else if (action === "expand_graph") {
       if (!isOnline) {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("learning.batch.expandOffline"),
-        });
+        msgHelper.error(t("learning.batch.expandOffline"));
         return;
       }
       try {
@@ -1243,24 +1157,15 @@ export const LearningMode = () => {
           });
           setSelectedNodeIds(new Set());
         } else {
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: t("learning.batch.submitFailed"),
-          });
+          msgHelper.error(t("learning.batch.submitFailed"));
         }
       } catch (error) {
         console.error("Batch expand failed:", error);
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("learning.batch.expandError"),
-        });
+        msgHelper.error(t("learning.batch.expandError"));
       }
     } else if (action === "batch_generate_questions" && data) {
       if (!isOnline) {
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: t("learning.cards.offline"),
-        });
+        msgHelper.error(t("learning.cards.offline"));
         return;
       }
 
@@ -1285,10 +1190,9 @@ export const LearningMode = () => {
           const errorMsg =
             result.message || result.error || t("learning.cards.unknownError");
           console.error("[LearningMode] 批量生成失败:", errorMsg);
-          frontendEventBus.publish("message_show", {
-            type: "error",
-            content: t("learning.cards.submitFailed", { error: errorMsg }),
-          });
+          msgHelper.error(
+            t("learning.cards.submitFailed", { error: errorMsg }),
+          );
         }
       } catch (error) {
         console.error("[LearningMode] 批量生成异常:", {
@@ -1311,19 +1215,14 @@ export const LearningMode = () => {
           errorMessage = error.message;
         }
 
-        frontendEventBus.publish("message_show", {
-          type: "error",
-          content: errorMessage,
-        });
+        msgHelper.error(errorMessage);
       } finally {
         setIsGeneratingCards(false);
       }
     } else if (action === "create_region") {
-      frontendEventBus.publish("message_show", {
-        type: "info",
-        content:
-          t("graphEditor.region.createRegion") + " - " + t("common.comingSoon"),
-      });
+      msgHelper.info(
+        t("graphEditor.region.createRegion") + " - " + t("common.comingSoon"),
+      );
     }
   };
 
@@ -1452,7 +1351,9 @@ export const LearningMode = () => {
         >
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => setIsStudyModeDropdownOpen(!isStudyModeDropdownOpen)}
+              onClick={() =>
+                setIsStudyModeDropdownOpen(!isStudyModeDropdownOpen)
+              }
               className={`flex items-center ${isMobile ? "gap-1 px-2 py-1.5" : "gap-1.5 px-3 py-2"} rounded-full font-medium transition-all ${
                 isStudyModeDropdownOpen
                   ? isDark
@@ -1468,7 +1369,9 @@ export const LearningMode = () => {
                 const Icon = getStudyModeIcon(studyMode);
                 return <Icon size={isMobile ? 14 : 16} />;
               })()}
-              <span className={`text-sm ${isMobile ? "hidden" : "hidden sm:inline"}`}>
+              <span
+                className={`text-sm ${isMobile ? "hidden" : "hidden sm:inline"}`}
+              >
                 {t(`learning.studyMode.${studyMode}`)}
               </span>
               <ChevronDown
@@ -1485,43 +1388,53 @@ export const LearningMode = () => {
                     : "bg-white border-gray-200 text-gray-800"
                 } animate-in fade-in zoom-in-95 duration-150`}
               >
-                {(Object.keys(STUDY_MODE_PRESETS) as StudyMode[]).map((mode) => {
-                  const preset = STUDY_MODE_PRESETS[mode];
-                  const Icon = getStudyModeIcon(mode);
-                  const isActive = studyMode === mode;
-                  return (
-                    <button
-                      key={mode}
-                      onClick={() => handleStudyModeChange(mode)}
-                      className={`flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                        isActive
-                          ? isDark
-                            ? "bg-primary-900/30 text-primary-400"
-                            : "bg-primary-50 text-primary-600"
-                          : isDark
-                            ? "hover:bg-slate-700 text-slate-300"
-                            : "hover:bg-gray-50 text-gray-700"
-                      }`}
-                    >
-                      <Icon size={18} className="mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{preset.label}</span>
-                          {isActive && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                              isDark ? "bg-primary-900/50 text-primary-400" : "bg-primary-100 text-primary-600"
-                            }`}>
-                              ✓
+                {(Object.keys(STUDY_MODE_PRESETS) as StudyMode[]).map(
+                  (mode) => {
+                    const preset = STUDY_MODE_PRESETS[mode];
+                    const Icon = getStudyModeIcon(mode);
+                    const isActive = studyMode === mode;
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => handleStudyModeChange(mode)}
+                        className={`flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                          isActive
+                            ? isDark
+                              ? "bg-primary-900/30 text-primary-400"
+                              : "bg-primary-50 text-primary-600"
+                            : isDark
+                              ? "hover:bg-slate-700 text-slate-300"
+                              : "hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        <Icon size={18} className="mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">
+                              {preset.label}
                             </span>
-                          )}
+                            {isActive && (
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                  isDark
+                                    ? "bg-primary-900/50 text-primary-400"
+                                    : "bg-primary-100 text-primary-600"
+                                }`}
+                              >
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <p
+                            className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                          >
+                            {preset.description}
+                          </p>
                         </div>
-                        <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                          {preset.description}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  },
+                )}
               </div>
             )}
           </div>
@@ -1767,212 +1680,246 @@ export const LearningMode = () => {
             <div className="flex-1 flex overflow-hidden">
               {/* Left: Article Reader */}
               {shouldShowArticle() ? (
-              <div
-                className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}
-              >
-                {isGenerating ? (
-                  <div
-                    className={`flex flex-col items-center justify-center h-full space-y-6 text-center ${isMobile ? "pt-8" : ""}`}
-                  >
-                    <div className="relative">
-                      <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles
-                          size={24}
-                          className="text-primary-600 animate-pulse"
+                <div
+                  className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}
+                >
+                  {isGenerating ? (
+                    <div
+                      className={`flex flex-col items-center justify-center h-full space-y-6 text-center ${isMobile ? "pt-8" : ""}`}
+                    >
+                      <div className="relative">
+                        <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Sparkles
+                            size={24}
+                            className="text-primary-600 animate-pulse"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <h3
+                          className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
+                        >
+                          {t("learning.material.generating")}
+                        </h3>
+                        <p
+                          className={
+                            isDark ? "text-slate-400" : "text-gray-500"
+                          }
+                        >
+                          {t("learning.material.generatingTopic", {
+                            title: nodeTitle,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full">
+                      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() =>
+                              navigate(`/learning?graph_id=${graphId}`)
+                            }
+                            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+                              isDark
+                                ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                            }`}
+                            title={t("learning.overview.back")}
+                          >
+                            <ArrowLeft size={16} />
+                            <span className="hidden sm:inline">
+                              {t("learning.overview.title")}
+                            </span>
+                          </button>
+                          <div>
+                            <h2
+                              className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                            >
+                              {nodeTitle}
+                            </h2>
+                            {keywords.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {keywords.slice(0, 5).map((kw, idx) => (
+                                  <span
+                                    key={idx}
+                                    className={`px-2 py-0.5 text-xs rounded-full ${
+                                      isDark
+                                        ? "bg-primary-900/30 text-primary-300"
+                                        : "bg-primary-50 text-primary-600"
+                                    }`}
+                                  >
+                                    {kw.term}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              setHighlightEnabled(!highlightEnabled)
+                            }
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              highlightEnabled
+                                ? isDark
+                                  ? "bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 border border-yellow-500/30"
+                                  : "bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border border-yellow-200"
+                                : isDark
+                                  ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
+                                  : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
+                            }`}
+                            title={t("learning.enableKeywordHighlight")}
+                          >
+                            <Sparkles
+                              size={16}
+                              className={
+                                highlightEnabled ? "text-yellow-500" : ""
+                              }
+                            />
+                            <span className="hidden sm:inline">
+                              {t("learning.keywordHighlight")}
+                            </span>
+                          </button>
+                          <button
+                            onClick={handleRegenerateMaterial}
+                            disabled={isGenerating || !isOnline}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              isGenerating || !isOnline
+                                ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
+                                : isDark
+                                  ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
+                                  : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
+                            }`}
+                            title={
+                              isOnline
+                                ? t("learning.material.regenerate")
+                                : t("learning.cards.offlineUnavailable")
+                            }
+                          >
+                            <RefreshCw
+                              size={16}
+                              className={isGenerating ? "animate-spin" : ""}
+                            />
+                            <span className="hidden sm:inline">
+                              {t("learning.material.regenerate")}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                      {linkedTask && (
+                        <div className="mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                          <Route size={16} />
+                          <span>学习图谱: {linkedTask.graphName}</span>
+                          <span className="text-xs opacity-75">
+                            ({linkedTask.completedNodes}/{linkedTask.totalNodes}{" "}
+                            节点)
+                          </span>
+                          <span className="ml-auto">
+                            {linkedTask.progress}%
+                          </span>
+                        </div>
+                      )}
+                      {studyMode === "mixed" &&
+                        (() => {
+                          const currentNodeStatus = _nodeStatus?.[nodeId ?? ""];
+                          const hint = getStrategyHint(
+                            studyMode,
+                            currentNodeStatus,
+                          );
+                          return hint ? (
+                            <div
+                              className={`mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm ${
+                                isDark
+                                  ? "bg-amber-900/20 text-amber-300 border border-amber-500/20"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                              }`}
+                            >
+                              <Info size={16} className="flex-shrink-0" />
+                              <span>{hint}</span>
+                            </div>
+                          ) : null;
+                        })()}
+                      <div
+                        className={`${
+                          contentWidthMode === "full"
+                            ? "max-w-none"
+                            : contentWidthMode === "comfortable"
+                              ? "max-w-4xl mx-auto"
+                              : "max-w-3xl mx-auto"
+                        } ${
+                          readingMode === "default"
+                            ? isDark
+                              ? "bg-slate-900 text-slate-50"
+                              : "bg-white text-gray-900"
+                            : readingMode === "eye-care"
+                              ? "bg-amber-50 text-gray-800"
+                              : "bg-slate-900 text-slate-50"
+                        }`}
+                        style={{ fontSize: `${fontSize}px` }}
+                      >
+                        <HighlightedReader
+                          content={articleContent}
+                          isDark={isDark || readingMode === "dark"}
+                          isMobile={isMobile}
+                          keywords={keywords}
                         />
                       </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900 flex items-center justify-center`}
+                >
+                  <div className="text-center space-y-6 max-w-md">
+                    <div
+                      className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center ${
+                        isDark ? "bg-primary-900/30" : "bg-primary-50"
+                      }`}
+                    >
+                      {(() => {
+                        const Icon = getStudyModeIcon(studyMode);
+                        return (
+                          <Icon
+                            size={36}
+                            className={
+                              isDark ? "text-primary-400" : "text-primary-600"
+                            }
+                          />
+                        );
+                      })()}
                     </div>
                     <div>
                       <h3
                         className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
                       >
-                        {t("learning.material.generating")}
+                        {STUDY_MODE_PRESETS[studyMode]?.label ?? studyMode}
                       </h3>
                       <p
-                        className={isDark ? "text-slate-400" : "text-gray-500"}
+                        className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
                       >
-                        {t("learning.material.generatingTopic", {
-                          title: nodeTitle,
-                        })}
+                        {STUDY_MODE_PRESETS[studyMode]?.description ?? ""}
                       </p>
                     </div>
-                  </div>
-                ) : (
-                  <div className="w-full">
-                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() =>
-                            navigate(`/learning?graph_id=${graphId}`)
-                          }
-                          className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
-                            isDark
-                              ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                          }`}
-                          title={t("learning.overview.back")}
-                        >
-                          <ArrowLeft size={16} />
-                          <span className="hidden sm:inline">
-                            {t("learning.overview.title")}
-                          </span>
-                        </button>
-                        <div>
-                          <h2
-                            className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-                          >
-                            {nodeTitle}
-                          </h2>
-                          {keywords.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {keywords.slice(0, 5).map((kw, idx) => (
-                                <span
-                                  key={idx}
-                                  className={`px-2 py-0.5 text-xs rounded-full ${
-                                    isDark
-                                      ? "bg-primary-900/30 text-primary-300"
-                                      : "bg-primary-50 text-primary-600"
-                                  }`}
-                                >
-                                  {kw.term}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setHighlightEnabled(!highlightEnabled)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            highlightEnabled
-                              ? isDark
-                                ? "bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 border border-yellow-500/30"
-                                : "bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border border-yellow-200"
-                              : isDark
-                                ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
-                                : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
-                          }`}
-                          title={t("learning.enableKeywordHighlight")}
-                        >
-                          <Sparkles size={16} className={highlightEnabled ? "text-yellow-500" : ""} />
-                          <span className="hidden sm:inline">
-                            {t("learning.keywordHighlight")}
-                          </span>
-                        </button>
-                        <button
-                          onClick={handleRegenerateMaterial}
-                          disabled={isGenerating || !isOnline}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            isGenerating || !isOnline
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
-                              : isDark
-                                ? "bg-primary-900/30 text-primary-400 hover:bg-primary-900/50 border border-primary-500/30"
-                                : "bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200"
-                          }`}
-                          title={
-                            isOnline
-                              ? t("learning.material.regenerate")
-                              : t("learning.cards.offlineUnavailable")
-                          }
-                        >
-                          <RefreshCw
-                            size={16}
-                            className={isGenerating ? "animate-spin" : ""}
-                          />
-                          <span className="hidden sm:inline">
-                            {t("learning.material.regenerate")}
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                    {linkedTask && (
-                      <div className="mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-                        <Route size={16} />
-                        <span>学习图谱: {linkedTask.graphName}</span>
-                        <span className="text-xs opacity-75">
-                          ({linkedTask.completedNodes}/{linkedTask.totalNodes}{" "}
-                          节点)
-                        </span>
-                        <span className="ml-auto">{linkedTask.progress}%</span>
-                      </div>
+                    {shouldShowQuiz() && (
+                      <button
+                        onClick={handleStartChallenge}
+                        disabled={isGeneratingCards}
+                        className={`flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-primary-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
+                          isGeneratingCards
+                            ? "opacity-70 cursor-not-allowed"
+                            : ""
+                        }`}
+                      >
+                        <GraduationCap size={20} />
+                        <span>{t("learning.challenge.complete")}</span>
+                      </button>
                     )}
-                    {studyMode === "mixed" && (() => {
-                      const currentNodeStatus = _nodeStatus?.[nodeId ?? ""];
-                      const hint = getStrategyHint(studyMode, currentNodeStatus);
-                      return hint ? (
-                        <div className={`mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-sm ${
-                          isDark ? "bg-amber-900/20 text-amber-300 border border-amber-500/20" : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }`}>
-                          <Info size={16} className="flex-shrink-0" />
-                          <span>{hint}</span>
-                        </div>
-                      ) : null;
-                    })()}
-                    <div
-                      className={`${
-                        contentWidthMode === "full"
-                          ? "max-w-none"
-                          : contentWidthMode === "comfortable"
-                            ? "max-w-4xl mx-auto"
-                            : "max-w-3xl mx-auto"
-                      } ${
-                        readingMode === "default"
-                          ? isDark
-                            ? "bg-slate-900 text-slate-50"
-                            : "bg-white text-gray-900"
-                          : readingMode === "eye-care"
-                            ? "bg-amber-50 text-gray-800"
-                            : "bg-slate-900 text-slate-50"
-                      }`}
-                      style={{ fontSize: `${fontSize}px` }}
-                    >
-                      <HighlightedReader
-                        content={articleContent}
-                        isDark={isDark || readingMode === "dark"}
-                        isMobile={isMobile}
-                        keywords={keywords}
-                      />
-                    </div>
                   </div>
-                )}
-              </div>
-              ) : (
-              <div
-                className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900 flex items-center justify-center`}
-              >
-                <div className="text-center space-y-6 max-w-md">
-                  <div className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center ${
-                    isDark ? "bg-primary-900/30" : "bg-primary-50"
-                  }`}>
-                    {(() => {
-                      const Icon = getStudyModeIcon(studyMode);
-                      return <Icon size={36} className={isDark ? "text-primary-400" : "text-primary-600"} />;
-                    })()}
-                  </div>
-                  <div>
-                    <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-                      {STUDY_MODE_PRESETS[studyMode]?.label ?? studyMode}
-                    </h3>
-                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                      {STUDY_MODE_PRESETS[studyMode]?.description ?? ""}
-                    </p>
-                  </div>
-                  {shouldShowQuiz() && (
-                    <button
-                      onClick={handleStartChallenge}
-                      disabled={isGeneratingCards}
-                      className={`flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-primary-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
-                        isGeneratingCards ? "opacity-70 cursor-not-allowed" : ""
-                      }`}
-                    >
-                      <GraduationCap size={20} />
-                      <span>{t("learning.challenge.complete")}</span>
-                    </button>
-                  )}
                 </div>
-              </div>
               )}
             </div>
           </div>
@@ -2143,7 +2090,10 @@ export const LearningMode = () => {
                     <Suspense
                       fallback={
                         <div className="flex items-center justify-center h-full">
-                          <Loader2 size={24} className="animate-spin text-primary-500" />
+                          <Loader2
+                            size={24}
+                            className="animate-spin text-primary-500"
+                          />
                         </div>
                       }
                     >
@@ -2425,7 +2375,9 @@ export const LearningMode = () => {
                       {t("learning.chat.disclaimer")}
                     </p>
                     {quotes.length === 0 && (
-                      <p className={`text-[10px] mt-1 text-center ${isDark ? "text-slate-600" : "text-gray-300"}`}>
+                      <p
+                        className={`text-[10px] mt-1 text-center ${isDark ? "text-slate-600" : "text-gray-300"}`}
+                      >
                         {t("learning.smartCopyHint")}
                       </p>
                     )}

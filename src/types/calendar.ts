@@ -1,26 +1,52 @@
-import type { TaskSubtask } from "@shared/types";
+import type { TaskSubtask, UserTask } from "@shared/types";
 
 export type CalendarMode = "plan" | "history";
 
 export type ActivityEventType = "focus_study" | "review" | "path_progress";
 
+/**
+ * CalendarEvent 是 UserTask 的日历视图投影类型。
+ *
+ * 它将 UserTask 的数据转换为日历组件所需的格式，包含：
+ * - 从 UserTask 直接映射的字段（id, title, description 等）
+ * - 从 UserTask 计算派生的字段（start, end, type, color, allDay）
+ * - 日历视图特有的扩展字段（mode, activityType, activityData）
+ *
+ * 转换逻辑位于 `src/utils/calendarEventMapper.ts` 中的 `userTaskToCalendarEvent` 函数。
+ */
 export interface CalendarEvent {
-  id: string;
-  title: string;
-  description?: string;
+  /** 从 UserTask.id 映射 */
+  id: UserTask["id"];
+  /** 从 UserTask.title 映射 */
+  title: UserTask["title"];
+  /** 从 UserTask.description 映射 */
+  description?: UserTask["description"];
+  /** 从 UserTask.scheduled_start || UserTask.deadline || UserTask.created_at 计算 */
   start: string;
-  end?: string;
+  /** 从 UserTask.scheduled_end 映射 */
+  end?: UserTask["scheduled_end"];
+  /** 从 UserTask.tags 计算：包含"学习"→study，包含"复习"→review，否则→task */
   type: "task" | "study" | "review" | "other";
+  /** 从 UserTask.priority 计算：4→red，3→orange，其他→blue */
   color?: string;
+  /** 从 UserTask.scheduled_start 计算：无 scheduled_start 时为 true */
   allDay?: boolean;
-  estimated_duration?: number;
+  /** 从 UserTask.estimated_duration 映射 */
+  estimated_duration?: UserTask["estimated_duration"];
+  /** 日历视图特有字段：当前日历模式 */
   mode?: CalendarMode;
+  /** 活动事件特有字段 */
   activityType?: ActivityEventType;
+  /** 活动事件特有字段 */
   activityData?: Record<string, unknown>;
+  /** 从 UserTask.subtasks 映射 */
   subtasks?: TaskSubtask[];
-  subtask_count?: number;
-  subtask_completed?: number;
-  has_subtasks?: boolean;
+  /** 从 UserTask.subtask_count 映射 */
+  subtask_count?: UserTask["subtask_count"];
+  /** 从 UserTask.subtask_completed 映射 */
+  subtask_completed?: UserTask["subtask_completed"];
+  /** 从 UserTask.has_subtasks 映射 */
+  has_subtasks?: UserTask["has_subtasks"];
 }
 
 export interface ActivityEvent {

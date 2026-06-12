@@ -74,7 +74,7 @@ const rejectSuggestionSchema = z.object({
 });
 
 router.get(
-  "/knowledge-points",
+  "/",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const { visibility } = req.query;
@@ -95,7 +95,7 @@ router.get(
 );
 
 router.get(
-  "/knowledge-points/:id",
+  "/:id",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
@@ -124,7 +124,7 @@ router.get(
 );
 
 router.get(
-  "/knowledge-points/:id/graphs",
+  "/:id/graphs",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
@@ -143,7 +143,7 @@ router.get(
 );
 
 router.post(
-  "/knowledge-points",
+  "/",
   requireAuth,
   validate(createKnowledgePointSchema),
   async (req: AuthRequest, res: Response) => {
@@ -168,7 +168,7 @@ router.post(
 );
 
 router.put(
-  "/knowledge-points/:id",
+  "/:id",
   requireAuth,
   validate(updateKnowledgePointSchema),
   async (req: AuthRequest, res: Response) => {
@@ -200,7 +200,7 @@ router.put(
 );
 
 router.post(
-  "/knowledge-points/search-similar",
+  "/search-similar",
   requireAuth,
   validate(searchSimilarSchema),
   async (req: AuthRequest, res: Response) => {
@@ -230,7 +230,7 @@ router.post(
 );
 
 router.delete(
-  "/knowledge-points/:id/hard-delete",
+  "/:id/hard-delete",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
@@ -249,7 +249,7 @@ router.delete(
 );
 
 router.get(
-  "/knowledge-points/public",
+  "/public",
   async (req: AuthRequest, res: Response) => {
     const { search, limit = 20, offset = 0 } = req.query;
 
@@ -268,7 +268,7 @@ router.get(
 );
 
 router.post(
-  "/knowledge-points/submit-public",
+  "/submit-public",
   requireAuth,
   validate(submitPublicSchema),
   async (req: AuthRequest, res: Response) => {
@@ -453,7 +453,7 @@ const updateAliasesSchema = z.object({
 });
 
 router.get(
-  "/knowledge-points/:id/versions",
+  "/:id/versions",
   requireAuth,
   validate(listVersionsSchema),
   async (req: AuthRequest, res: Response) => {
@@ -486,7 +486,7 @@ router.get(
 );
 
 router.get(
-  "/knowledge-points/:id/versions/:versionNumber",
+  "/:id/versions/:versionNumber",
   requireAuth,
   validate(getVersionSchema),
   async (req: AuthRequest, res: Response) => {
@@ -526,7 +526,7 @@ router.get(
 );
 
 router.get(
-  "/knowledge-points/:id/versions/compare",
+  "/:id/versions/compare",
   requireAuth,
   validate(compareVersionsSchema),
   async (req: AuthRequest, res: Response) => {
@@ -568,7 +568,7 @@ router.get(
 );
 
 router.post(
-  "/knowledge-points/:id/versions/:versionNumber/rollback",
+  "/:id/versions/:versionNumber/rollback",
   requireAuth,
   validate(rollbackSchema),
   async (req: AuthRequest, res: Response) => {
@@ -612,7 +612,7 @@ router.post(
 );
 
 router.post(
-  "/knowledge-points/:id/versions",
+  "/:id/versions",
   requireAuth,
   validate(createManualVersionSchema),
   async (req: AuthRequest, res: Response) => {
@@ -654,7 +654,7 @@ router.post(
 );
 
 router.put(
-  "/knowledge-points/:id/aliases",
+  "/:id/aliases",
   requireAuth,
   validate(updateAliasesSchema),
   async (req: AuthRequest, res: Response) => {

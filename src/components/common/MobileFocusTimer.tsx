@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
 import { useTimerStore } from "../../store/useTimerStore";
+import { PomodoroCycleBar } from "./PomodoroCycleBar";
 import {
   Play,
   Pause,
@@ -186,8 +187,8 @@ export const MobileFocusTimer: React.FC = () => {
   }, [isActive, timeLeft, focusDuration, mode]);
 
   const handleReset = useCallback(() => {
-    useTimerStore.getState().setMode(mode);
-  }, [mode]);
+    useTimerStore.getState().reset();
+  }, []);
 
   if (isInFocusMode) {
     return null;
@@ -256,26 +257,17 @@ export const MobileFocusTimer: React.FC = () => {
             </div>
 
             <div className="p-4">
-              <div className="flex justify-center gap-1.5 mb-4">
-                {(["focus", "shortBreak", "longBreak"] as TimerMode[]).map(
-                  (m) => (
-                    <button
-                      key={m}
-                      onClick={() => useTimerStore.getState().setMode(m)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
-                        mode === m
-                          ? "text-white shadow-sm"
-                          : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
-                      }`}
-                      style={
-                        mode === m ? { backgroundColor: colors.primary } : {}
-                      }
-                    >
-                      {getModeLabel(m)}
-                    </button>
-                  ),
-                )}
+              <div className="mb-3">
+                <PomodoroCycleBar
+                  mode={mode}
+                  completedSessions={completedSessions}
+                  size="sm"
+                />
               </div>
+
+              <span className="block text-center text-xs font-medium mb-3" style={{ color: colors.primary }}>
+                {getModeLabel(mode)}
+              </span>
 
               <div className="relative w-32 h-32 mx-auto mb-4">
                 <svg
@@ -347,7 +339,7 @@ export const MobileFocusTimer: React.FC = () => {
                 </motion.button>
 
                 <button
-                  onClick={() => useTimerStore.getState().skipToBreak()}
+                  onClick={() => useTimerStore.getState().skipToNext()}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <svg

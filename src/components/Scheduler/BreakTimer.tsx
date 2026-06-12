@@ -208,7 +208,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
 
               <div className="flex items-center justify-center gap-4">
                 <motion.button
-                  onClick={() => useTimerStore.getState().setMode(mode)}
+                  onClick={() => useTimerStore.getState().reset()}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -230,7 +230,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 </motion.button>
 
                 <motion.button
-                  onClick={() => useTimerStore.getState().skipToBreak()}
+                  onClick={() => useTimerStore.getState().skipToNext()}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

@@ -29,9 +29,16 @@ interface TimerActions {
   pause: () => void;
   resume: () => void;
   complete: () => Promise<void>;
-  skipToBreak: () => void;
-  switchTask: (newTaskId: string, duration: number, queueLevel?: number) => void;
+  /** Skip to the next phase in the Pomodoro cycle, saving current progress. */
+  skipToNext: () => void;
+  /**
+   * @deprecated Use skipToNext() instead. Manual mode switching resets the timer
+   * and loses progress, which is a poor UX. The Pomodoro cycle should progress
+   * naturally via complete() or skipToNext().
+   */
   setMode: (newMode: TimerMode) => void;
+  switchTask: (newTaskId: string, duration: number, queueLevel?: number) => void;
+  /** Reset the current mode's timer to its full duration without switching modes. */
   reset: () => void;
   tick: () => void;
 }
@@ -276,28 +283,32 @@ const useTimerStore = create<TimerState & TimerActions>()(
         }
       },
 
-      skipToBreak: () => {
-        const { completedSessions, mode } = get();
+      skipToNext: () => {
+        const { totalTime, timeLeft, taskId, mode, completedSessions, startTimeRef } =
+          get();
+
+        // Save current session if at least 1 minute elapsed
+        const elapsedDuration = totalTime - timeLeft;
+        if (elapsedDuration > 60 && startTimeRef) {
+          saveFocusSession(taskId, startTimeRef, elapsedDuration, completedSessions, mode);
+          tickTaskExecution(taskId, mode, elapsedDuration);
+        }
+
+        const newCompletedSessions =
+          mode === "focus" ? completedSessions + 1 : completedSessions;
+
+        const transition = transitionToNextMode(mode, newCompletedSessions);
+
         clearTimerInterval();
 
-        const { shortBreakDuration, longBreakDuration } = useFocusStore.getState();
-        const isLongBreak = completedSessions > 0 && completedSessions % 4 === 0;
-        const breakDuration = isLongBreak ? longBreakDuration : shortBreakDuration;
-
-        const nextMode: TimerMode = mode === "focus" ? "shortBreak" : "focus";
-        const totalTime = breakDuration * 60;
-
         set({
-          mode: nextMode,
-          timeLeft: totalTime,
-          totalTime,
-          isActive: true,
-          isPaused: false,
-          startTimeRef: new Date(),
-          progress: 0,
+          completedSessions: newCompletedSessions,
+          ...transition,
         });
 
-        startInterval();
+        if (transition.isActive) {
+          startInterval();
+        }
       },
 
       switchTask: (newTaskId, duration, queueLevel = 0) => {
@@ -343,18 +354,19 @@ const useTimerStore = create<TimerState & TimerActions>()(
       reset: () => {
         clearTimerInterval();
 
-        const { focusDuration: fd } = useFocusStore.getState();
-        const totalTime = fd * 60;
+        const { mode } = get();
+        const { focusDuration, shortBreakDuration, longBreakDuration } =
+          useFocusStore.getState();
+        let duration = focusDuration;
+        if (mode === "shortBreak") duration = shortBreakDuration;
+        if (mode === "longBreak") duration = longBreakDuration;
 
+        const totalTime = duration * 60;
         set({
-          taskId: null,
-          queueLevel: 0,
-          mode: "focus",
           timeLeft: totalTime,
           totalTime,
           isActive: false,
           isPaused: false,
-          completedSessions: 0,
           startTimeRef: null,
           progress: 0,
         });

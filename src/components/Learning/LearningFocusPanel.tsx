@@ -47,6 +47,7 @@ import { useWhiteNoise } from "../../hooks/useWhiteNoise";
 import { useTimerStore } from "../../store/useTimerStore";
 import { useActivityTracker } from "../../hooks/useActivityTracker";
 import { AudioVisualizer } from "../common/AudioVisualizer";
+import { PomodoroCycleBar } from "../common/PomodoroCycleBar";
 import { NOISE_OPTIONS, NOISE_CATEGORIES } from "../../utils/audioSynthesis";
 import type { Keyword } from "../../../shared/types/graph";
 
@@ -122,8 +123,8 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   const completedSessions = useTimerStore((s) => s.completedSessions);
   const pauseTimer = useTimerStore((s) => s.pause);
   const resumeTimer = useTimerStore((s) => s.resume);
-  const setTimerMode = useTimerStore((s) => s.setMode);
-  const skipToBreak = useTimerStore((s) => s.skipToBreak);
+  const resetTimer = useTimerStore((s) => s.reset);
+  const skipToNext = useTimerStore((s) => s.skipToNext);
 
   const {
     mixedNoises,
@@ -439,23 +440,11 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       {t("learning.focusMode.timer")}
                     </h3>
                     <div className="space-y-4">
-                      <div className="flex p-1 bg-slate-200 dark:bg-slate-800/50 rounded-xl">
-                        {(["focus", "shortBreak"] as const).map((m) => (
-                          <button
-                            key={m}
-                            onClick={() => setTimerMode(m)}
-                            className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                              mode === m
-                                ? "bg-primary-500 text-white shadow-lg"
-                                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
-                            }`}
-                          >
-                            {m === "focus"
-                              ? t("learning.focusMode.focus")
-                              : t("learning.focusMode.break")}
-                          </button>
-                        ))}
-                      </div>
+                      <PomodoroCycleBar
+                        mode={mode}
+                        completedSessions={completedSessions}
+                        size="md"
+                      />
 
                       <div className="flex flex-col items-center gap-3">
                         <div className="relative">
@@ -502,7 +491,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setTimerMode(mode)}
+                            onClick={resetTimer}
                             className="p-2 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
                           >
                             <RotateCcw size={18} />
@@ -528,7 +517,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           </button>
 
                           <button
-                            onClick={skipToBreak}
+                            onClick={skipToNext}
                             className="p-2 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
                           >
                             <SkipForward size={18} />

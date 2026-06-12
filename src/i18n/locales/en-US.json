@@ -94,7 +94,10 @@
     "soundEnabled": "Sound",
     "done": "Done",
     "collapseToSide": "Collapse to Side",
-    "close": "Close"
+    "close": "Close",
+    "skipToNext": "Skip to Next",
+    "currentPhase": "Current Phase",
+    "cycleProgress": "Cycle Progress"
   },
   "study": {
     "loading": "Loading...",

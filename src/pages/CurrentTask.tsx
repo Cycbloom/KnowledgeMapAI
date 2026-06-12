@@ -120,7 +120,7 @@ export const CurrentTask: React.FC = () => {
   const pauseTimer = useTimerStore((s) => s.pause);
   const resumeTimer = useTimerStore((s) => s.resume);
   const completeTimer = useTimerStore((s) => s.complete);
-  const skipToBreak = useTimerStore((s) => s.skipToBreak);
+  const skipToNext = useTimerStore((s) => s.skipToNext);
 
   const [soundEnabled, setSoundEnabled] = useState(
     settings?.sound_enabled ?? true,
@@ -229,7 +229,7 @@ export const CurrentTask: React.FC = () => {
   };
 
   const handleStartBreak = () => {
-    skipToBreak();
+    skipToNext();
     setShowTimeUpModal(false);
   };
 

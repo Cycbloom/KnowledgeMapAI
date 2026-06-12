@@ -93,7 +93,10 @@
     "soundEnabled": "提示音",
     "done": "完成",
     "collapseToSide": "收起到侧边",
-    "close": "关闭"
+    "close": "关闭",
+    "skipToNext": "跳到下一站",
+    "currentPhase": "当前阶段",
+    "cycleProgress": "周期进度"
   },
   "study": {
     "loading": "加载中...",

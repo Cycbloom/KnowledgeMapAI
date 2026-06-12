@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
 import { useTimerStore } from "../../store/useTimerStore";
+import { PomodoroCycleBar } from "./PomodoroCycleBar";
 import {
   Play,
   Pause,
@@ -66,11 +67,11 @@ export const FocusTimer: React.FC = () => {
   };
 
   const handleReset = () => {
-    useTimerStore.getState().setMode(mode);
+    useTimerStore.getState().reset();
   };
 
   const handleSkip = () => {
-    useTimerStore.getState().skipToBreak();
+    useTimerStore.getState().skipToNext();
   };
 
   if (isInFocusMode) {
@@ -249,24 +250,19 @@ export const FocusTimer: React.FC = () => {
               </div>
             ) : (
               <div className="p-6 flex flex-col items-center">
-                {/* Tabs */}
-                <div className="flex p-1 bg-gray-100 dark:bg-slate-700 rounded-xl mb-6 w-full">
-                  {(["focus", "shortBreak", "longBreak"] as TimerMode[]).map(
-                    (m) => (
-                      <button
-                        key={m}
-                        onClick={() => useTimerStore.getState().setMode(m)}
-                        className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                          mode === m
-                            ? "bg-white dark:bg-slate-600 shadow text-gray-800 dark:text-white"
-                            : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
-                        }`}
-                      >
-                        {getModeLabel(m)}
-                      </button>
-                    ),
-                  )}
+                {/* Cycle Progress */}
+                <div className="mb-4 w-full">
+                  <PomodoroCycleBar
+                    mode={mode}
+                    completedSessions={completedSessions}
+                    size="sm"
+                  />
                 </div>
+
+                {/* Current Mode Label */}
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">
+                  {getModeLabel(mode)}
+                </span>
 
                 {/* Timer Display */}
                 <div className="relative mb-6">

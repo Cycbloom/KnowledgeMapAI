@@ -92,11 +92,15 @@ export const handleResponse = async <T = any>(res: Response): Promise<T> => {
 export const request = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
   const method = (options.method?.toUpperCase() || 'GET') as any;
   const data = options.body ? JSON.parse(options.body as string) : undefined;
-  
+
   const headers: Record<string, string> = {};
   if (options.headers) {
     const headersObj = options.headers as Record<string, string>;
     Object.assign(headers, headersObj);
+  }
+  // 确保 JSON 请求有正确的 Content-Type（axios 默认会设置，但显式声明更可靠）
+  if (data && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
   }
 
   return apiClient.request<T, T>({

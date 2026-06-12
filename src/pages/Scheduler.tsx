@@ -347,8 +347,10 @@ export const Scheduler: React.FC = () => {
             status: "in_progress",
           });
           setActiveSubtaskId(firstPending.id);
+          useTimerStore.getState().setSubtask(firstPending.id);
         } else if (firstPending && firstPending.status === "in_progress") {
           setActiveSubtaskId(firstPending.id);
+          useTimerStore.getState().setSubtask(firstPending.id);
         }
       }
     } catch (err) {
@@ -678,6 +680,7 @@ export const Scheduler: React.FC = () => {
                       task={activeTask}
                       timeSlice={activeTaskTimeSlice}
                       activeSubtaskId={activeSubtaskId}
+                      setActiveSubtaskId={setActiveSubtaskId}
                       onViewDetail={() =>
                         navigate(`/scheduler/task/${activeTask.id}`)
                       }
@@ -707,6 +710,7 @@ export const Scheduler: React.FC = () => {
                                 { status: "in_progress" },
                               );
                               setActiveSubtaskId(nextPending.id);
+                              useTimerStore.getState().setSubtask(nextPending.id);
 
                               // 4. 更新任务进度（基于子任务完成数）
                               const completedCount = response.data.filter(
@@ -728,6 +732,7 @@ export const Scheduler: React.FC = () => {
                             } else {
                               // 所有子任务已完成
                               setActiveSubtaskId(null);
+                              useTimerStore.getState().setSubtask(null);
                               // 标记任务 100% 进度
                               try {
                                 await api.scheduler.updateProgress(

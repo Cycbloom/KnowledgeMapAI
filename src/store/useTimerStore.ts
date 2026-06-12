@@ -13,6 +13,7 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 
 interface TimerState {
   taskId: string | null;
+  subtaskId: string | null; // 当前执行的子任务 ID
   queueLevel: number;
   mode: TimerMode;
   timeLeft: number; // seconds
@@ -37,10 +38,18 @@ interface TimerActions {
    * naturally via complete() or skipToNext().
    */
   setMode: (newMode: TimerMode) => void;
-  switchTask: (newTaskId: string, duration: number, queueLevel?: number) => void;
+  switchTask: (
+    newTaskId: string,
+    duration: number,
+    queueLevel?: number,
+  ) => void;
   /** Reset the current mode's timer to its full duration without switching modes. */
   reset: () => void;
   tick: () => void;
+  /** Set the current subtask ID (without changing timer state). */
+  setSubtask: (subtaskId: string | null) => void;
+  /** Switch to the next subtask, restarting the timer with a new duration. Preserves completedSessions. */
+  nextSubtask: (subtaskId: string, duration: number) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,7 +96,9 @@ function getTimeSliceForQueueLevel(queueLevel: number): number {
 function initSchedulerIntegration(): void {
   const handler = (payload: TaskStartedPayload) => {
     const timeSliceMinutes = getTimeSliceForQueueLevel(payload.queueLevel);
-    useTimerStore.getState().start(payload.taskId, timeSliceMinutes, payload.queueLevel);
+    useTimerStore
+      .getState()
+      .start(payload.taskId, timeSliceMinutes, payload.queueLevel);
   };
 
   schedulerUnsubscribe = frontendEventBus.subscribe("task_started", handler);
@@ -120,6 +131,7 @@ async function saveFocusSession(
       duration: Math.round(elapsedSeconds / 60),
       pomodoro_count: completedSessions + 1,
       is_break: mode !== "focus",
+      mode,
     });
   } catch {
     // Failed to save focus session — non-critical
@@ -147,11 +159,18 @@ function transitionToNextMode(
   completedMode: TimerMode,
   completedSessions: number,
 ): Partial<TimerState> {
-  const { shortBreakDuration, longBreakDuration, focusDuration, longBreakInterval, autoStartBreak, autoStartPomodoro } =
-    useFocusStore.getState();
+  const {
+    shortBreakDuration,
+    longBreakDuration,
+    focusDuration,
+    longBreakInterval,
+    autoStartBreak,
+    autoStartPomodoro,
+  } = useFocusStore.getState();
 
   if (completedMode === "focus") {
-    const isLongBreak = completedSessions > 0 && completedSessions % longBreakInterval === 0;
+    const isLongBreak =
+      completedSessions > 0 && completedSessions % longBreakInterval === 0;
     const breakDuration = isLongBreak ? longBreakDuration : shortBreakDuration;
     const nextMode: TimerMode = isLongBreak ? "longBreak" : "shortBreak";
     const totalTime = breakDuration * 60;
@@ -193,6 +212,7 @@ const { focusDuration } = /* evaluated once at module load */ (() => {
 
 const initialState: TimerState = {
   taskId: null,
+  subtaskId: null,
   queueLevel: 0,
   mode: "focus",
   timeLeft: focusDuration * 60,
@@ -219,6 +239,7 @@ const useTimerStore = create<TimerState & TimerActions>()(
         const totalTime = duration * 60;
         set({
           taskId,
+          subtaskId: null,
           queueLevel,
           mode: "focus",
           timeLeft: totalTime,
@@ -249,8 +270,14 @@ const useTimerStore = create<TimerState & TimerActions>()(
       },
 
       complete: async () => {
-        const { totalTime, timeLeft, taskId, mode, completedSessions, startTimeRef } =
-          get();
+        const {
+          totalTime,
+          timeLeft,
+          taskId,
+          mode,
+          completedSessions,
+          startTimeRef,
+        } = get();
 
         const elapsedDuration = totalTime - timeLeft;
         const completedTaskId = taskId;
@@ -264,12 +291,19 @@ const useTimerStore = create<TimerState & TimerActions>()(
           completedMode,
         );
 
-        await tickTaskExecution(completedTaskId, completedMode, elapsedDuration);
+        await tickTaskExecution(
+          completedTaskId,
+          completedMode,
+          elapsedDuration,
+        );
 
         const newCompletedSessions =
           completedMode === "focus" ? completedSessions + 1 : completedSessions;
 
-        const transition = transitionToNextMode(completedMode, newCompletedSessions);
+        const transition = transitionToNextMode(
+          completedMode,
+          newCompletedSessions,
+        );
 
         clearTimerInterval();
 
@@ -284,13 +318,25 @@ const useTimerStore = create<TimerState & TimerActions>()(
       },
 
       skipToNext: () => {
-        const { totalTime, timeLeft, taskId, mode, completedSessions, startTimeRef } =
-          get();
+        const {
+          totalTime,
+          timeLeft,
+          taskId,
+          mode,
+          completedSessions,
+          startTimeRef,
+        } = get();
 
         // Save current session if at least 1 minute elapsed
         const elapsedDuration = totalTime - timeLeft;
         if (elapsedDuration > 60 && startTimeRef) {
-          saveFocusSession(taskId, startTimeRef, elapsedDuration, completedSessions, mode);
+          saveFocusSession(
+            taskId,
+            startTimeRef,
+            elapsedDuration,
+            completedSessions,
+            mode,
+          );
           tickTaskExecution(taskId, mode, elapsedDuration);
         }
 
@@ -317,6 +363,7 @@ const useTimerStore = create<TimerState & TimerActions>()(
         const totalTime = duration * 60;
         set({
           taskId: newTaskId,
+          subtaskId: null,
           queueLevel,
           timeLeft: totalTime,
           totalTime,
@@ -333,8 +380,11 @@ const useTimerStore = create<TimerState & TimerActions>()(
       setMode: (newMode) => {
         clearTimerInterval();
 
-        const { focusDuration: fd, shortBreakDuration: sbd, longBreakDuration: lbd } =
-          useFocusStore.getState();
+        const {
+          focusDuration: fd,
+          shortBreakDuration: sbd,
+          longBreakDuration: lbd,
+        } = useFocusStore.getState();
         let duration = fd;
         if (newMode === "shortBreak") duration = sbd;
         if (newMode === "longBreak") duration = lbd;
@@ -363,6 +413,7 @@ const useTimerStore = create<TimerState & TimerActions>()(
 
         const totalTime = duration * 60;
         set({
+          subtaskId: null,
           timeLeft: totalTime,
           totalTime,
           isActive: false,
@@ -370,6 +421,28 @@ const useTimerStore = create<TimerState & TimerActions>()(
           startTimeRef: null,
           progress: 0,
         });
+      },
+
+      setSubtask: (subtaskId) => {
+        set({ subtaskId });
+      },
+
+      nextSubtask: (subtaskId, duration) => {
+        clearTimerInterval();
+
+        const totalTime = duration * 60;
+        set({
+          subtaskId,
+          mode: "focus",
+          timeLeft: totalTime,
+          totalTime,
+          isActive: true,
+          isPaused: false,
+          startTimeRef: new Date(),
+          progress: 0,
+        });
+
+        startInterval();
       },
 
       tick: () => {
@@ -402,7 +475,10 @@ const useTimerStore = create<TimerState & TimerActions>()(
 const DEFAULT_TITLE = document.title;
 
 useTimerStore.subscribe((state, prevState) => {
-  if (state.isActive === prevState.isActive && state.timeLeft === prevState.timeLeft) {
+  if (
+    state.isActive === prevState.isActive &&
+    state.timeLeft === prevState.timeLeft
+  ) {
     return;
   }
 
@@ -411,7 +487,9 @@ useTimerStore.subscribe((state, prevState) => {
     return;
   }
 
-  const mins = Math.floor(state.timeLeft / 60).toString().padStart(2, "0");
+  const mins = Math.floor(state.timeLeft / 60)
+    .toString()
+    .padStart(2, "0");
   const secs = (state.timeLeft % 60).toString().padStart(2, "0");
   const modeLabel = state.mode === "focus" ? "专注中" : "休息中";
   document.title = `${mins}:${secs} - ${modeLabel}`;

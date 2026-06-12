@@ -19,6 +19,7 @@ const createFocusSessionSchema = z.object({
   pomodoro_count: z.number().int().min(0).optional(),
   white_noise_type: z.string().optional(),
   is_break: z.boolean().optional(),
+  mode: z.enum(["focus", "shortBreak", "longBreak"]).optional(),
 });
 
 const getFocusSessionsQuerySchema = z.object({

@@ -17,6 +17,7 @@ export class FocusService {
     userId: string,
     data: CreateFocusSessionData,
   ): Promise<FocusSession> {
+    const mode = data.mode || (data.is_break ? "shortBreak" : "focus");
     const { data: session, error } = await client
       .from("focus_sessions")
       .insert({
@@ -28,6 +29,7 @@ export class FocusService {
         pomodoro_count: data.pomodoro_count || 0,
         white_noise_type: data.white_noise_type,
         is_break: data.is_break || false,
+        mode,
       })
       .select()
       .single();

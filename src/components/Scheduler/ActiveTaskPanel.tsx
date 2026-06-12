@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Check, Clock, Zap, Target, ListTodo, Square } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Check,
+  Clock,
+  Zap,
+  Target,
+  ListTodo,
+  Square,
+} from "lucide-react";
 import { UserTask } from "@shared/types";
 import { api } from "../../services/api";
 import { useTimerStore } from "../../store/useTimerStore";
@@ -10,6 +19,7 @@ interface ActiveTaskPanelProps {
   task: UserTask;
   timeSlice: number;
   activeSubtaskId?: string | null;
+  setActiveSubtaskId?: (id: string | null) => void;
   onSubtaskComplete?: (subtaskId: string) => void;
   onViewDetail?: () => void;
   /** 终止当前任务调度，返回智能推荐界面 */
@@ -50,6 +60,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   task,
   timeSlice: _timeSlice,
   activeSubtaskId,
+  setActiveSubtaskId,
   onSubtaskComplete,
   onViewDetail,
   onStop,
@@ -60,6 +71,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   const IconComponent = config.icon;
 
   const timeLeft = useTimerStore((s) => s.timeLeft);
+  const totalTime = useTimerStore((s) => s.totalTime);
   const isActive = useTimerStore((s) => s.isActive);
   const isPaused = useTimerStore((s) => s.isPaused);
   const completedSessions = useTimerStore((s) => s.completedSessions);
@@ -70,19 +82,44 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
 
   const [subtasks, setSubtasks] = useState<any[]>([]);
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
+  const [autoActivated, setAutoActivated] = useState(false);
 
   useEffect(() => {
     if (task.id) {
       api.scheduler
         .getSubtasks(task.id)
         .then((res: any) => {
-          if (res.data) setSubtasks(res.data);
+          if (res.data) {
+            setSubtasks(res.data);
+            // 如果还没有激活子任务，自动激活第一个 pending/in_progress 的
+            if (!activeSubtaskId && !autoActivated && res.data.length > 0) {
+              const first = res.data.find(
+                (s: any) =>
+                  s.status === "pending" || s.status === "in_progress",
+              );
+              if (first) {
+                setAutoActivated(true);
+                setActiveSubtaskId?.(first.id);
+                useTimerStore.getState().setSubtask(first.id);
+                // 如果是 pending 状态，更新为 in_progress
+                if (first.status === "pending") {
+                  api.scheduler
+                    .updateSubtask(task.id, first.id, { status: "in_progress" })
+                    .catch(() => {});
+                }
+              }
+            }
+          }
         })
         .catch(() => {});
     }
-  }, [task.id]);
+  }, [task.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentActiveSubtask = subtasks.find((s) => s.id === activeSubtaskId);
+  const currentSubtaskIndex = activeSubtaskId
+    ? subtasks.findIndex((s) => s.id === activeSubtaskId)
+    : -1;
+  const totalSubtasks = subtasks.length;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -103,17 +140,53 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     }
   };
 
-  const handleComplete = async () => {
-    // timerService.complete() 现在会：
-    // 1. 保存 focus_session
-    // 2. 递增 completedSessions
-    // 3. 自动切换到下一模式（focus→break 或 break→focus）
-    // 4. 保留 taskId
+  const handleCompleteSubtask = async () => {
+    if (!activeSubtaskId || !currentActiveSubtask) return;
+
+    // 1. 保存当前番茄的 focus_session
     await useTimerStore.getState().complete();
 
-    // 如果有活跃子任务，同时完成子任务
-    if (activeSubtaskId && currentActiveSubtask && onSubtaskComplete) {
-      onSubtaskComplete(currentActiveSubtask.id);
+    // 2. 更新当前子任务 status
+    try {
+      await api.scheduler.updateSubtask(task.id, activeSubtaskId, {
+        status: "completed",
+      });
+    } catch (err) {
+      console.warn("Failed to update subtask status:", err);
+    }
+
+    // 3. 找下一个 pending 子任务
+    let nextSubtask: any = null;
+    try {
+      const response = await api.scheduler.getSubtasks(task.id);
+      if (response.data) {
+        nextSubtask = response.data.find((s: any) => s.status === "pending");
+      }
+    } catch (err) {
+      console.warn("Failed to fetch subtasks:", err);
+    }
+
+    // 4. 如果有下一个子任务 → 激活它，等 break 结束后切换
+    if (nextSubtask) {
+      try {
+        await api.scheduler.updateSubtask(task.id, nextSubtask.id, {
+          status: "in_progress",
+        });
+      } catch (err) {
+        console.warn("Failed to activate next subtask:", err);
+      }
+      setActiveSubtaskId?.(nextSubtask.id);
+      useTimerStore.getState().setSubtask(nextSubtask.id);
+    } else {
+      // 5. 全部完成 → 标记大任务完成
+      try {
+        await api.scheduler.updateProgress(task.id, { percentage: 100 });
+      } catch (err) {
+        console.warn("Failed to mark task completed:", err);
+      }
+      setActiveSubtaskId?.(null);
+      useTimerStore.getState().setSubtask(null);
+      onStop?.(); // 触发面板消失
     }
   };
 
@@ -162,7 +235,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {task.title}
+                  {currentActiveSubtask?.title || task.title}
                 </h3>
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.accentColor} bg-white/50 dark:bg-slate-800/50`}
@@ -170,19 +243,33 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                   Q{task.queue_level}
                 </span>
               </div>
-              {task.description && (
-                <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">
-                  {task.description}
-                </p>
-              )}
-              {/* 子任务进度概览 - 始终显示 */}
-              {subtasks.length > 0 && (
+              {/* 副标题：大任务名 + 子任务进度 */}
+              <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">
+                {task.title}
+                {totalSubtasks > 0 && (
+                  <>
+                    {" · "}子任务{" "}
+                    <span className={config.accentColor}>
+                      {currentSubtaskIndex >= 0 ? currentSubtaskIndex + 1 : "-"}
+                      /{totalSubtasks}
+                    </span>
+                  </>
+                )}
+              </p>
+              {/* 第三行信息：番茄数 + 预计时间 + 已做时间 */}
+              {currentActiveSubtask && (
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  子任务：
+                  已专注 · 第{" "}
                   <span className={config.accentColor}>
-                    {subtasks.filter((s) => s.status === "completed").length}
-                  </span>
-                  /{subtasks.length}
+                    {completedSessions + 1}
+                  </span>{" "}
+                  个番茄 · 预计 {currentActiveSubtask.estimated_duration || "-"}
+                  min · 已做{" "}
+                  {(currentActiveSubtask.actual_duration || 0) +
+                    (isActive && !isPaused
+                      ? Math.round((totalTime - timeLeft) / 60)
+                      : 0)}
+                  min
                 </p>
               )}
             </div>
@@ -233,13 +320,28 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 `}
                 title={isActive && !isPaused ? "暂停" : "继续"}
               >
-                {isActive && !isPaused ? <Pause size={20} /> : <Play size={20} />}
+                {isActive && !isPaused ? (
+                  <Pause size={20} />
+                ) : (
+                  <Play size={20} />
+                )}
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
+                  // 更新当前子任务的运行时长
+                  if (activeSubtaskId) {
+                    const { timeLeft: tl, totalTime: tt } =
+                      useTimerStore.getState();
+                    const elapsedMinutes = Math.round((tt - tl) / 60);
+                    if (elapsedMinutes > 0) {
+                      api.scheduler
+                        .tickExecution(task.id, elapsedMinutes)
+                        .catch(() => {});
+                    }
+                  }
                   useTimerStore.getState().reset();
                   onStop?.();
                 }}
@@ -252,9 +354,9 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={handleComplete}
+                onClick={handleCompleteSubtask}
                 className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
-                title={activeSubtaskId ? "完成此子任务" : "完成番茄"}
+                title="完成子任务"
               >
                 <Check size={20} />
               </motion.button>
@@ -371,54 +473,117 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
             </button>
 
             {subtasksExpanded && (
-              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                {subtasks.map((st) => (
-                  <div
-                    key={st.id}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${
-                      st.id === activeSubtaskId
-                        ? "bg-primary-50 dark:bg-primary-500/10 text-primary-700 dark:text-primary-300"
-                        : st.status === "completed"
-                          ? "text-slate-400 line-through"
-                          : "text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    {st.status === "completed" ? (
-                      <svg
-                        className="w-3.5 h-3.5 text-emerald-500 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+              <div className="mt-2.5 space-y-0.5 max-h-40 overflow-y-auto rounded-lg bg-white/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50 p-1.5">
+                {subtasks.map((st) => {
+                  const isCurrent = st.id === activeSubtaskId;
+                  const isCompleted = st.status === "completed";
+                  let actualMin = st.actual_duration || 0;
+                  if (isCurrent && isActive && !isPaused) {
+                    actualMin += Math.round((totalTime - timeLeft) / 60);
+                  }
+                  const estimatedMin = st.estimated_duration || 0;
+
+                  return (
+                    <div
+                      key={st.id}
+                      className={`group flex items-center gap-2.5 px-2 py-2 rounded-md text-xs transition-all ${
+                        isCurrent
+                          ? "bg-primary-50/80 dark:bg-primary-500/10 shadow-sm ring-1 ring-primary-200/60 dark:ring-primary-500/20"
+                          : isCompleted
+                            ? "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                      }`}
+                    >
+                      {/* 状态指示器 */}
+                      <span className="shrink-0">
+                        {isCompleted ? (
+                          <svg
+                            className="w-4 h-4 text-emerald-500"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <circle cx="8" cy="8" r="7" fill="currentColor" />
+                            <path
+                              d="M5 8l2 2 4-4"
+                              stroke="white"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        ) : isCurrent ? (
+                          <span className="relative flex h-4 w-4 items-center justify-center">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-400 opacity-40" />
+                            <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-primary-500 ring-2 ring-white dark:ring-slate-900" />
+                          </span>
+                        ) : (
+                          <svg
+                            className="w-4 h-4 text-slate-300 dark:text-slate-600"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <circle
+                              cx="8"
+                              cy="8"
+                              r="6"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2.5 2"
+                            />
+                          </svg>
+                        )}
+                      </span>
+
+                      {/* 标题 */}
+                      <span
+                        className={`truncate flex-1 min-w-0 font-medium ${
+                          isCompleted ? "line-through" : ""
+                        } ${isCurrent ? "text-primary-700 dark:text-primary-300" : ""}`}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    ) : (
-                      <div
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          st.id === activeSubtaskId
-                            ? "bg-primary-500 animate-pulse"
-                            : "bg-slate-300"
-                        }`}
-                      />
-                    )}
-                    <span className="truncate">{st.title}</span>
-                    <span className="ml-auto shrink-0 opacity-60">
-                      {(
-                        {
-                          learning: "学",
-                          review: "复",
-                          practice: "练",
-                          quiz: "测",
-                        } as Record<string, string>
-                      )[st.learning_state] || ""}
-                    </span>
-                  </div>
-                ))}
+                        {st.title}
+                      </span>
+
+                      {/* 进行中标记 — 紧跟标题 */}
+                      {isCurrent && isActive && !isPaused && (
+                        <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-medium text-primary-500">
+                          <span className="w-1 h-1 rounded-full bg-current animate-pulse" />
+                          进行中
+                        </span>
+                      )}
+
+                      {/* 学习状态标签 */}
+                      {st.learning_state && (
+                        <span
+                          className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            st.learning_state === "learning"
+                              ? "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400"
+                              : st.learning_state === "review"
+                                ? "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400"
+                                : st.learning_state === "practice"
+                                  ? "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400"
+                                  : "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+                          }`}
+                        >
+                          {(
+                            {
+                              learning: "学习",
+                              review: "复习",
+                              practice: "练习",
+                              quiz: "测验",
+                            } as Record<string, string>
+                          )[st.learning_state] || st.learning_state}
+                        </span>
+                      )}
+
+                      {/* 时间信息 */}
+                      <span className="shrink-0 tabular-nums text-[11px] opacity-60">
+                        {actualMin > 0 ? `${actualMin}m` : "-"}
+                        <span className="mx-0.5 opacity-40">/</span>
+                        {estimatedMin > 0 ? `${estimatedMin}m` : "-"}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

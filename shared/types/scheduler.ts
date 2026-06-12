@@ -437,6 +437,7 @@ export interface CreateFocusSessionData {
   pomodoro_count?: number;
   white_noise_type?: string;
   is_break?: boolean;
+  mode?: "focus" | "shortBreak" | "longBreak";
 }
 
 export interface UserFocusStats {

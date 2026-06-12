@@ -38,8 +38,11 @@ export const FocusTimer: React.FC = () => {
   const timeLeft = useTimerStore((s) => s.timeLeft);
   const mode = useTimerStore((s) => s.mode);
   const isActive = useTimerStore((s) => s.isActive);
+  const isPaused = useTimerStore((s) => s.isPaused);
   const progress = useTimerStore((s) => s.progress);
   const completedSessions = useTimerStore((s) => s.completedSessions);
+
+  const isRunning = isActive && !isPaused;
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -58,7 +61,7 @@ export const FocusTimer: React.FC = () => {
   };
 
   const handleStartPause = () => {
-    if (isActive) {
+    if (isRunning) {
       useTimerStore.getState().pause();
     } else if (timeLeft === focusDuration * 60 && mode === "focus") {
       useTimerStore.getState().start("manual", focusDuration);
@@ -118,7 +121,7 @@ export const FocusTimer: React.FC = () => {
             onClick={() => setIsExpanded(!isExpanded)}
           >
             <div
-              className={`p-2 rounded-full ${isActive ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"}`}
+              className={`p-2 rounded-full ${isRunning ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"}`}
             >
               {mode === "focus" ? <Brain size={20} /> : <Coffee size={20} />}
             </div>
@@ -126,7 +129,7 @@ export const FocusTimer: React.FC = () => {
               <span className="text-sm font-bold font-mono text-gray-800 dark:text-gray-200 select-none">
                 {formatTime(timeLeft)}
               </span>
-              {isActive && (
+              {isRunning && (
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 select-none">
                   {t("focusTimer.inProgress")}...
                 </span>
@@ -300,7 +303,7 @@ export const FocusTimer: React.FC = () => {
                       {formatTime(timeLeft)}
                     </span>
                     <span className="text-sm text-gray-400 mt-1">
-                      {isActive
+                      {isRunning
                         ? mode === "focus"
                           ? t("focusTimer.inProgress")
                           : t("focusTimer.breakInProgress")
@@ -320,12 +323,12 @@ export const FocusTimer: React.FC = () => {
                   <button
                     onClick={handleStartPause}
                     className={`p-4 rounded-full shadow-lg transform transition-transform active:scale-95 ${
-                      isActive
+                      isRunning
                         ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
                         : "bg-primary-600 text-white hover:bg-primary-700"
                     }`}
                   >
-                    {isActive ? (
+                    {isRunning ? (
                       <Pause size={28} fill="currentColor" />
                     ) : (
                       <Play size={28} fill="currentColor" className="ml-1" />

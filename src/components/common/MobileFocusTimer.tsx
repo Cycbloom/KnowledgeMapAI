@@ -56,8 +56,11 @@ export const MobileFocusTimer: React.FC = () => {
   const timeLeft = useTimerStore((s) => s.timeLeft);
   const mode = useTimerStore((s) => s.mode);
   const isActive = useTimerStore((s) => s.isActive);
+  const isPaused = useTimerStore((s) => s.isPaused);
   const progress = useTimerStore((s) => s.progress);
   const completedSessions = useTimerStore((s) => s.completedSessions);
+
+  const isRunning = isActive && !isPaused;
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -134,7 +137,7 @@ export const MobileFocusTimer: React.FC = () => {
     const DOUBLE_TAP_DELAY = 300;
 
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      if (isActive) {
+      if (isRunning) {
         useTimerStore.getState().pause();
       } else if (timeLeft === focusDuration * 60 && mode === "focus") {
         useTimerStore.getState().start("manual", focusDuration);
@@ -156,7 +159,7 @@ export const MobileFocusTimer: React.FC = () => {
     isDragging,
     isCollapsed,
     isExpanded,
-    isActive,
+    isRunning,
     timeLeft,
     focusDuration,
     mode,
@@ -177,14 +180,14 @@ export const MobileFocusTimer: React.FC = () => {
   }, []);
 
   const handleStartPause = useCallback(() => {
-    if (isActive) {
+    if (isRunning) {
       useTimerStore.getState().pause();
     } else if (timeLeft === focusDuration * 60 && mode === "focus") {
       useTimerStore.getState().start("manual", focusDuration);
     } else {
       useTimerStore.getState().resume();
     }
-  }, [isActive, timeLeft, focusDuration, mode]);
+  }, [isRunning, timeLeft, focusDuration, mode]);
 
   const handleReset = useCallback(() => {
     useTimerStore.getState().reset();
@@ -307,7 +310,7 @@ export const MobileFocusTimer: React.FC = () => {
                     {formatTime(timeLeft)}
                   </span>
                   <span className="text-xs text-gray-400 mt-1">
-                    {isActive
+                    {isRunning
                       ? mode === "focus"
                         ? t("focusTimer.inProgress")
                         : t("focusTimer.breakInProgress")
@@ -330,7 +333,7 @@ export const MobileFocusTimer: React.FC = () => {
                   style={{ backgroundColor: colors.primary }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {isActive ? (
+                  {isRunning ? (
                     <Pause size={22} fill="white" color="white" />
                   ) : (
                     <Play
@@ -518,7 +521,7 @@ export const MobileFocusTimer: React.FC = () => {
                 </div>
               </div>
 
-              {isActive && (
+              {isRunning && (
                 <motion.div
                   className="absolute inset-0 rounded-full pointer-events-none"
                   style={{ border: `2px solid ${colors.primary}` }}

@@ -678,10 +678,10 @@ export const Scheduler: React.FC = () => {
                       task={activeTask}
                       timeSlice={activeTaskTimeSlice}
                       activeSubtaskId={activeSubtaskId}
-                      onPause={() => handlePauseTask(activeTask)}
                       onViewDetail={() =>
                         navigate(`/scheduler/task/${activeTask.id}`)
                       }
+                      onStop={() => handlePauseTask(activeTask)}
                       onSubtaskComplete={async (subtaskId) => {
                         try {
                           // 1. 将当前子任务标记为 completed

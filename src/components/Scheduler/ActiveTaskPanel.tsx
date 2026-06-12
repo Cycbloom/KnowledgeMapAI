@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Check, Clock, Zap, Target, ListTodo } from "lucide-react";
+import { Play, Pause, Check, Clock, Zap, Target, ListTodo, Square } from "lucide-react";
 import { UserTask } from "@shared/types";
 import { api } from "../../services/api";
 import { useTimerStore } from "../../store/useTimerStore";
@@ -8,11 +8,12 @@ import { useFocusStore } from "../../store/useFocusStore";
 
 interface ActiveTaskPanelProps {
   task: UserTask;
-  onPause: () => void;
   timeSlice: number;
   activeSubtaskId?: string | null;
   onSubtaskComplete?: (subtaskId: string) => void;
   onViewDetail?: () => void;
+  /** 终止当前任务调度，返回智能推荐界面 */
+  onStop?: () => void;
 }
 
 const QUEUE_CONFIG = {
@@ -47,11 +48,11 @@ const QUEUE_CONFIG = {
 
 export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   task,
-  onPause,
   timeSlice: _timeSlice,
   activeSubtaskId,
   onSubtaskComplete,
   onViewDetail,
+  onStop,
 }) => {
   const config =
     QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
@@ -90,12 +91,16 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   };
 
   const handlePauseResume = () => {
-    if (isActive) {
+    if (isActive && !isPaused) {
+      // 运行中 → 暂停
       pause();
-    } else {
+    } else if (isActive && isPaused) {
+      // 已暂停 → 恢复
       resume();
+    } else {
+      // 未启动（如 force reload 后）→ 用当前任务的 focusDuration 重新启动
+      useTimerStore.getState().start(task.id, focusDuration, task.queue_level);
     }
-    onPause();
   };
 
   const handleComplete = async () => {
@@ -119,7 +124,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     estimatedMinutes > 0
       ? Math.max(1, Math.ceil(estimatedMinutes / focusDuration))
       : null;
-  const currentPomodoro = completedSessions + (isActive && !isPaused ? 1 : 0);
+  const currentPomodoro = completedSessions + 1;
 
   return (
     <AnimatePresence>
@@ -194,7 +199,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                {isActive
+                {isActive && !isPaused
                   ? mode === "focus"
                     ? "专注中..."
                     : "休息中..."
@@ -221,14 +226,27 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 className={`
                   p-3 rounded-xl transition-all
                   ${
-                    isActive
+                    isActive && !isPaused
                       ? "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30"
                       : "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-500/30"
                   }
                 `}
-                title={isActive ? "暂停" : "继续"}
+                title={isActive && !isPaused ? "暂停" : "继续"}
               >
-                {isActive ? <Pause size={20} /> : <Play size={20} />}
+                {isActive && !isPaused ? <Pause size={20} /> : <Play size={20} />}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  useTimerStore.getState().reset();
+                  onStop?.();
+                }}
+                className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all"
+                title="停止调度"
+              >
+                <Square size={16} fill="currentColor" />
               </motion.button>
 
               <motion.button
@@ -244,7 +262,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
           </div>
         </div>
 
-        {isActive && (
+        {isActive && !isPaused && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

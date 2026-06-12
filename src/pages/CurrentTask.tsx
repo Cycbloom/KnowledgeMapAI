@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -505,15 +511,11 @@ export const CurrentTask: React.FC = () => {
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: queueConfig.color }}
                 />
-                <span>
-                  已用: {formatTime(totalTime - timeLeft)}
-                </span>
+                <span>已用: {formatTime(totalTime - timeLeft)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
-                <span>
-                  总计: {formatTime(totalTime)}
-                </span>
+                <span>总计: {formatTime(totalTime)}</span>
               </div>
             </div>
           </motion.div>

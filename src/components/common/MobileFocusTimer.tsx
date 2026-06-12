@@ -51,7 +51,7 @@ const SCREEN_MARGIN = 8;
 
 export const MobileFocusTimer: React.FC = () => {
   const { t } = useTranslation();
-  const { focusDuration, isInFocusMode } = useFocusStore();
+  const { focusDuration, isInFocusMode, longBreakInterval } = useFocusStore();
 
   const timeLeft = useTimerStore((s) => s.timeLeft);
   const mode = useTimerStore((s) => s.mode);
@@ -261,11 +261,15 @@ export const MobileFocusTimer: React.FC = () => {
                 <PomodoroCycleBar
                   mode={mode}
                   completedSessions={completedSessions}
+                  longBreakInterval={longBreakInterval}
                   size="sm"
                 />
               </div>
 
-              <span className="block text-center text-xs font-medium mb-3" style={{ color: colors.primary }}>
+              <span
+                className="block text-center text-xs font-medium mb-3"
+                style={{ color: colors.primary }}
+              >
                 {getModeLabel(mode)}
               </span>
 

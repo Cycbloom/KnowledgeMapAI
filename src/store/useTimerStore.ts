@@ -147,11 +147,11 @@ function transitionToNextMode(
   completedMode: TimerMode,
   completedSessions: number,
 ): Partial<TimerState> {
-  const { shortBreakDuration, longBreakDuration, focusDuration } =
+  const { shortBreakDuration, longBreakDuration, focusDuration, longBreakInterval, autoStartBreak, autoStartPomodoro } =
     useFocusStore.getState();
 
   if (completedMode === "focus") {
-    const isLongBreak = completedSessions > 0 && completedSessions % 4 === 0;
+    const isLongBreak = completedSessions > 0 && completedSessions % longBreakInterval === 0;
     const breakDuration = isLongBreak ? longBreakDuration : shortBreakDuration;
     const nextMode: TimerMode = isLongBreak ? "longBreak" : "shortBreak";
     const totalTime = breakDuration * 60;
@@ -159,9 +159,9 @@ function transitionToNextMode(
       mode: nextMode,
       timeLeft: totalTime,
       totalTime,
-      isActive: true,
+      isActive: autoStartBreak,
       isPaused: false,
-      startTimeRef: new Date(),
+      startTimeRef: autoStartBreak ? new Date() : null,
       progress: 0,
     };
   }
@@ -172,9 +172,9 @@ function transitionToNextMode(
     mode: "focus",
     timeLeft: totalTime,
     totalTime,
-    isActive: true,
+    isActive: autoStartPomodoro,
     isPaused: false,
-    startTimeRef: new Date(),
+    startTimeRef: autoStartPomodoro ? new Date() : null,
     progress: 0,
   };
 }

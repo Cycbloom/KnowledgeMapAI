@@ -47,7 +47,6 @@ export { EfficiencyTrend } from "./EfficiencyTrend";
 export { TaskDistribution } from "./TaskDistribution";
 export { TimeAnalysis } from "./TimeAnalysis";
 
-export { PomodoroSettings } from "./PomodoroSettings";
 export { QueueSettings } from "./QueueSettings";
 export type {
   Queue,

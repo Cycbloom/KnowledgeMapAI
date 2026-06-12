@@ -35,13 +35,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  useFocusStore,
-} from "../../store/useFocusStore";
-import {
-  WhiteNoiseType,
-  NoiseCategory,
-} from "../../store/useNoiseStore";
+import { useFocusStore } from "../../store/useFocusStore";
+import { WhiteNoiseType, NoiseCategory } from "../../store/useNoiseStore";
 import { HighlightedReader } from "./HighlightedReader";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
 import { useTimerStore } from "../../store/useTimerStore";
@@ -108,6 +103,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
     setHighlightIntensity,
     exitFocusMode,
     currentNodeId,
+    longBreakInterval,
   } = useFocusStore();
 
   const { recordActivity } = useActivityTracker();
@@ -443,6 +439,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       <PomodoroCycleBar
                         mode={mode}
                         completedSessions={completedSessions}
+                        longBreakInterval={longBreakInterval}
                         size="md"
                       />
 

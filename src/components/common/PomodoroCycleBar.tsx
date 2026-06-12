@@ -32,9 +32,9 @@ function generateVisibleStations(
   completedSessions: number,
   longBreakInterval: number,
 ): { stations: Station[]; currentIdx: number } {
-  // Figure out the global sequence number of the current station
-  // Each cycle has: F0, S0, F1, S1, ..., F(n-1), L  = 2n-1 stations
-  const stationsPerCycle = longBreakInterval * 2 - 1; // e.g. 4 → 7
+  // Each cycle has: F0, S0, F1, S1, ..., F(n-1), S(n-2), L = 2n stations
+  // e.g. interval=4: F0,S0,F1,S1,F2,S2,F3,L = 8 stations
+  const stationsPerCycle = longBreakInterval * 2;
 
   // How many full cycles completed before current cycle
   const currentCycle = Math.floor(completedSessions / longBreakInterval);
@@ -130,11 +130,11 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
   );
 
   // Dimensions based on size
-  const dotR = isSm ? 6 : 9;          // dot radius
+  const dotR = isSm ? 8 : 11; // dot radius
   const dotD = dotR * 2;
-  const connLen = isSm ? 16 : 24;      // connector length
+  const connLen = isSm ? 16 : 24; // connector length
   const labelSize = isSm ? "text-[7px]" : "text-[9px]";
-  const iconSize = isSm ? 10 : 13;
+  const iconSize = isSm ? 14 : 18;
 
   // Auto-scroll to center current station
   useEffect(() => {
@@ -168,22 +168,51 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
     switch (type) {
       case "focus":
         return (
-          <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width={iconSize}
+            height={iconSize}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
         );
       case "shortBreak":
         return (
-          <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10 2v2" /><path d="M14 2v2" /><path d="M16 8a5 5 0 0 1 1 2.5c0 1.5-.5 2.5-1.5 3.5" />
-            <path d="M18 2a8 8 0 0 1 2 5c0 2.5-1 4.5-3 6" />
-            <path d="M8 2a8 8 0 0 0-2 5c0 2.5 1 4.5 3 6" />
+          <svg
+            width={iconSize}
+            height={iconSize}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z" />
+            <line x1="6" y1="2" x2="6" y2="4" />
+            <line x1="10" y1="2" x2="10" y2="4" />
+            <line x1="14" y1="2" x2="14" y2="4" />
           </svg>
         );
       case "longBreak":
         return (
-          <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width={iconSize}
+            height={iconSize}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M12 2c1 3 4 5.5 4 8.5a4 4 0 1 1-8 0c0-3 3-5.5 4-8.5z" />
           </svg>
         );
@@ -198,10 +227,18 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
       {/* Scrollable track */}
       <div
         ref={scrollRef}
-        className="flex items-center overflow-x-auto scrollbar-none py-1"
+        className="flex items-center overflow-x-auto scrollbar-none"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <div className="flex items-center" style={{ minWidth: "fit-content" }}>
+        <div
+          className="flex items-center"
+          style={{
+            minWidth: "fit-content",
+            paddingLeft: "calc(50% - 12px)",
+            paddingRight: "50%",
+            paddingBottom: isSm ? 14 : 18,
+          }}
+        >
           {stations.map((station, idx) => {
             const isCompleted = idx < currentIdx;
             const isCurrent = idx === currentIdx;
@@ -222,8 +259,8 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                   >
                     {/* Background track */}
                     <div className="absolute inset-0 rounded-full bg-gray-200 dark:bg-slate-700" />
-                    {/* Filled portion */}
-                    {isCompleted && (
+                    {/* Filled portion — green if previous station is completed or current */}
+                    {(isCompleted || isCurrent) && (
                       <motion.div
                         className="absolute inset-y-0 left-0 rounded-full"
                         style={{ backgroundColor: "#10b981" }}
@@ -232,19 +269,13 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                         transition={{ duration: 0.4, ease: "easeOut" }}
                       />
                     )}
-                    {isCurrent && (
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-full"
-                        style={{ width: "50%", backgroundColor: color }}
-                      />
-                    )}
                   </div>
                 )}
 
-                {/* Station dot */}
+                {/* Station dot with label positioned below without affecting layout */}
                 <div
                   data-station
-                  className="flex flex-col items-center flex-shrink-0"
+                  className="flex-shrink-0 relative"
                   style={{ opacity }}
                 >
                   <div
@@ -299,9 +330,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                         style={{
                           width: dotR - 2,
                           height: dotR - 2,
-                          backgroundColor: isNearFuture
-                            ? color
-                            : "#d1d5db",
+                          backgroundColor: isNearFuture ? color : "#d1d5db",
                           opacity: isNearFuture ? 0.5 : 0.3,
                         }}
                       />
@@ -325,15 +354,16 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                     )}
                   </div>
 
-                  {/* Label */}
+                  {/* Label — absolutely positioned below dot so it doesn't affect flex alignment */}
                   <span
-                    className={`${labelSize} mt-1 leading-none select-none whitespace-nowrap ${
+                    className={`absolute left-1/2 -translate-x-1/2 ${labelSize} leading-none select-none whitespace-nowrap ${
                       isCompleted
                         ? "text-emerald-500"
                         : isCurrent
                           ? "font-semibold text-gray-700 dark:text-gray-200"
                           : "text-gray-400 dark:text-gray-500"
                     }`}
+                    style={{ top: isCurrent ? dotD + 6 : dotD + 4 }}
                   >
                     {getLabel(station.type)}
                   </span>

@@ -29,6 +29,7 @@ export const FocusTimer: React.FC = () => {
     focusDuration,
     shortBreakDuration,
     longBreakDuration,
+    longBreakInterval,
     soundEnabled,
     updateSettings,
     isInFocusMode,
@@ -255,6 +256,7 @@ export const FocusTimer: React.FC = () => {
                   <PomodoroCycleBar
                     mode={mode}
                     completedSessions={completedSessions}
+                    longBreakInterval={longBreakInterval}
                     size="sm"
                   />
                 </div>

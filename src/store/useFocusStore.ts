@@ -20,7 +20,11 @@ interface FocusState {
   focusDuration: number;
   shortBreakDuration: number;
   longBreakDuration: number;
+  longBreakInterval: number;
+  autoStartBreak: boolean;
+  autoStartPomodoro: boolean;
   soundEnabled: boolean;
+  notificationEnabled: boolean;
 
   isInFocusMode: boolean;
   highlightEnabled: boolean;
@@ -34,7 +38,11 @@ interface FocusState {
         | "focusDuration"
         | "shortBreakDuration"
         | "longBreakDuration"
+        | "longBreakInterval"
+        | "autoStartBreak"
+        | "autoStartPomodoro"
         | "soundEnabled"
+        | "notificationEnabled"
       >
     >,
   ) => void;
@@ -44,20 +52,31 @@ interface FocusState {
   setHighlightIntensity: (intensity: number) => void;
 }
 
-const DEFAULT_DURATIONS = {
-  focus: 25,
-  shortBreak: 5,
-  longBreak: 15,
+const DEFAULT_SETTINGS = {
+  focusDuration: 25,
+  shortBreakDuration: 5,
+  longBreakDuration: 15,
+  longBreakInterval: 4,
+  autoStartBreak: true,
+  autoStartPomodoro: false,
+  soundEnabled: true,
+  notificationEnabled: true,
 };
+
+export { DEFAULT_SETTINGS };
 
 export const useFocusStore = create<FocusState>()(
   devtools(
     persist(
       (set) => ({
-        focusDuration: DEFAULT_DURATIONS.focus,
-        shortBreakDuration: DEFAULT_DURATIONS.shortBreak,
-        longBreakDuration: DEFAULT_DURATIONS.longBreak,
-        soundEnabled: true,
+        focusDuration: DEFAULT_SETTINGS.focusDuration,
+        shortBreakDuration: DEFAULT_SETTINGS.shortBreakDuration,
+        longBreakDuration: DEFAULT_SETTINGS.longBreakDuration,
+        longBreakInterval: DEFAULT_SETTINGS.longBreakInterval,
+        autoStartBreak: DEFAULT_SETTINGS.autoStartBreak,
+        autoStartPomodoro: DEFAULT_SETTINGS.autoStartPomodoro,
+        soundEnabled: DEFAULT_SETTINGS.soundEnabled,
+        notificationEnabled: DEFAULT_SETTINGS.notificationEnabled,
 
         isInFocusMode: false,
         highlightEnabled: false,
@@ -94,7 +113,11 @@ export const useFocusStore = create<FocusState>()(
           focusDuration: state.focusDuration,
           shortBreakDuration: state.shortBreakDuration,
           longBreakDuration: state.longBreakDuration,
+          longBreakInterval: state.longBreakInterval,
+          autoStartBreak: state.autoStartBreak,
+          autoStartPomodoro: state.autoStartPomodoro,
           soundEnabled: state.soundEnabled,
+          notificationEnabled: state.notificationEnabled,
           highlightEnabled: state.highlightEnabled,
           highlightIntensity: state.highlightIntensity,
         }),

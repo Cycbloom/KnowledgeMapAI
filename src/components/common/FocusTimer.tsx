@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useFocusStore, TimerMode } from "../../store/useFocusStore";
+import { useFocusStore } from "../../store/useFocusStore";
+import type { TimerMode } from "@shared/types";
 import { useTimerStore } from "../../store/useTimerStore";
 import { PomodoroCycleBar } from "./PomodoroCycleBar";
 import {

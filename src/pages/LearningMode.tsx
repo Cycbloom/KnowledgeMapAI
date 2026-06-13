@@ -2544,9 +2544,6 @@ export const LearningMode = () => {
         onClose={() => {
           setIsFocusModeOpen(false);
           exitFocusMode();
-          frontendEventBus.publish("focus_exit", {
-            nodeId: nodeId ?? undefined,
-          });
         }}
         articleContent={articleContent}
         nodeTitle={nodeTitle}

@@ -1,0 +1,14 @@
+- [x] `focus_settings_changed` 事件类型已添加到 `FrontendEventTypes.ts`
+- [x] `useFocusStore` 不再 import `useNoiseStore`
+- [x] `useFocusStore.exitFocusMode` 通过 `frontendEventBus` 发布 `focus_exit` 事件
+- [x] `useFocusStore.updateSettings` 通过 `frontendEventBus` 发布 `focus_settings_changed` 事件
+- [x] `useTimerStore` 不再 import `useFocusStore`（仅保留 `DEFAULT_SETTINGS` 常量导入）
+- [x] `useTimerStore` 维护自己的 `focusSettings` 副本
+- [x] `useTimerStore` 提供 `syncFocusSettings` 动作
+- [x] `useTimerStore` 中所有 `useFocusStore.getState()` 调用已替换为内部 `focusSettings`
+- [x] `storeIntegrations.ts` 已创建并包含两个事件订阅
+- [x] `LearningMode.tsx` 中冗余的 `focus_exit` 发布已移除
+- [x] `storeIntegrations` 在应用启动时被 import
+- [x] `npm run check` 类型检查通过
+- [x] `npm run lint` 代码检查通过（仅有 1 个预存错误，与本次改动无关）
+- [x] Store 文件之间无直接 Store 实例 import 依赖

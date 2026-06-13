@@ -1,20 +1,7 @@
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 
-import type { TimerMode } from "@shared/types";
-export type { TimerMode };
-
-// Re-export noise types and store for backward compatibility
-export { useNoiseStore } from "./useNoiseStore";
-export type {
-  WhiteNoiseType,
-  NoiseCategory,
-  MixedNoise,
-  NoisePreset,
-  NoiseOption,
-} from "./useNoiseStore";
-
-import { useNoiseStore } from "./useNoiseStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 
 interface FocusState {
   focusDuration: number;
@@ -68,7 +55,7 @@ export { DEFAULT_SETTINGS };
 export const useFocusStore = create<FocusState>()(
   devtools(
     persist(
-      (set) => ({
+      (set, get) => ({
         focusDuration: DEFAULT_SETTINGS.focusDuration,
         shortBreakDuration: DEFAULT_SETTINGS.shortBreakDuration,
         longBreakDuration: DEFAULT_SETTINGS.longBreakDuration,
@@ -88,6 +75,16 @@ export const useFocusStore = create<FocusState>()(
             const newState = { ...state, ...settings };
             return newState;
           });
+          // Notify subscribers of settings change
+          const current = get();
+          frontendEventBus.publish("focus_settings_changed", {
+            focusDuration: current.focusDuration,
+            shortBreakDuration: current.shortBreakDuration,
+            longBreakDuration: current.longBreakDuration,
+            longBreakInterval: current.longBreakInterval,
+            autoStartBreak: current.autoStartBreak,
+            autoStartPomodoro: current.autoStartPomodoro,
+          });
         },
 
         enterFocusMode: (nodeId) =>
@@ -97,9 +94,9 @@ export const useFocusStore = create<FocusState>()(
           }),
 
         exitFocusMode: () => {
+          const nodeId = get().currentNodeId;
           set({ isInFocusMode: false });
-          // Sync: reset noise when exiting focus mode
-          useNoiseStore.getState().setNoise("none");
+          frontendEventBus.publish("focus_exit", { nodeId: nodeId ?? undefined });
         },
 
         setHighlightEnabled: (enabled) => set({ highlightEnabled: enabled }),

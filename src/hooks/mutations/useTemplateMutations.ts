@@ -1,42 +1,25 @@
 import { useCallback } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys } from "../queries/config";
 import type { TemplateCategory } from "@shared/types/graph";
+import { createInvalidationMutation } from "./mutationFactory";
 
-export const useCreateTemplateMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.templates.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
-};
+export const useCreateTemplateMutation = createInvalidationMutation(
+  api.templates.create,
+  [["templates"]],
+);
 
-export const useUpdateTemplateMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
-      api.templates.update(id, data),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.template(variables.id),
-      });
-    },
-  });
-};
+export const useUpdateTemplateMutation = createInvalidationMutation(
+  ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+    api.templates.update(id, data),
+  [["templates"], (vars) => queryKeys.template(vars.id)],
+);
 
-export const useDeleteTemplateMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.templates.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
-};
+export const useDeleteTemplateMutation = createInvalidationMutation(
+  api.templates.delete,
+  [["templates"]],
+);
 
 export const usePrefetchTemplates = () => {
   const queryClient = useQueryClient();

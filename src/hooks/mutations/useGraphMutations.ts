@@ -11,64 +11,71 @@ import {
 import { useCreateCardsBatchMutation } from "./useStudyMutations";
 import { useCreateTaskMutation } from "./useTaskMutations";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import {
+  createSimpleMutation,
+  createEventPublishMutation,
+  createOptimisticMutation,
+} from "./mutationFactory";
 
-export const useCreateGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.graphs.create,
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graph_created" });
-    },
-  });
-};
+// ============================================================
+// Event publish mutations — graph list
+// ============================================================
 
-export const useCreateGraphFromTemplateMutation = () => {
-  return useMutation({
-    mutationFn: (data: {
-      template_id: string;
-      title: string;
-      description?: string;
-    }) => api.graphs.createFromTemplate(data),
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graph_created" });
-    },
-  });
-};
+export const useCreateGraphMutation = createEventPublishMutation(
+  api.graphs.create,
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graph_created" }),
+  },
+);
 
-export const useImportGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.data.import,
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graph_created" });
-    },
-  });
-};
+export const useCreateGraphFromTemplateMutation = createEventPublishMutation(
+  (data: {
+    template_id: string;
+    title: string;
+    description?: string;
+  }) => api.graphs.createFromTemplate(data),
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graph_created" }),
+  },
+);
 
-export const useDeleteGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.graphs.delete,
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graph_deleted" });
-    },
-  });
-};
+export const useImportGraphMutation = createEventPublishMutation(
+  api.data.import,
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graph_created" }),
+  },
+);
 
-export const useRestoreGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.graphs.restore,
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graph_restored" });
-    },
-  });
-};
+export const useDeleteGraphMutation = createEventPublishMutation(
+  api.graphs.delete,
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graph_deleted" }),
+  },
+);
 
-export const usePermanentDeleteGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.graphs.permanentDelete,
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graph_permanently_deleted" });
-    },
-  });
-};
+export const useRestoreGraphMutation = createEventPublishMutation(
+  api.graphs.restore,
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graph_restored" }),
+  },
+);
+
+export const usePermanentDeleteGraphMutation = createEventPublishMutation(
+  api.graphs.permanentDelete,
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graph_permanently_deleted" }),
+  },
+);
+
+// ============================================================
+// Batch operation helper
+// ============================================================
 
 const batchOperation = async <T>(
   operation: (ids: string[]) => Promise<T>,
@@ -81,38 +88,40 @@ const batchOperation = async <T>(
     const result = await operation(batch);
     results.push(result as { count: number });
   }
-  return {
-    count: results.reduce((sum, r) => sum + r.count, 0),
-  };
+  return { count: results.reduce((sum, r) => sum + r.count, 0) };
 };
 
-export const useBatchRestoreGraphsMutation = () => {
-  return useMutation({
-    mutationFn: (ids: string[]) => batchOperation(api.graphs.batchRestore, ids),
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graphs_batch_restored" });
-    },
-  });
-};
+// ============================================================
+// Event publish mutations — batch graph operations
+// ============================================================
 
-export const useBatchPermanentDeleteGraphsMutation = () => {
-  return useMutation({
-    mutationFn: (ids: string[]) =>
-      batchOperation(api.graphs.batchPermanentDelete, ids),
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graphs_batch_permanently_deleted" });
-    },
-  });
-};
+export const useBatchRestoreGraphsMutation = createEventPublishMutation(
+  (ids: string[]) => batchOperation(api.graphs.batchRestore, ids),
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graphs_batch_restored" }),
+  },
+);
 
-export const useBatchDeleteGraphsMutation = () => {
-  return useMutation({
-    mutationFn: (ids: string[]) => batchOperation(api.graphs.batchDelete, ids),
-    onSuccess: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graphs_batch_deleted" });
-    },
-  });
-};
+export const useBatchPermanentDeleteGraphsMutation = createEventPublishMutation(
+  (ids: string[]) => batchOperation(api.graphs.batchPermanentDelete, ids),
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graphs_batch_permanently_deleted" }),
+  },
+);
+
+export const useBatchDeleteGraphsMutation = createEventPublishMutation(
+  (ids: string[]) => batchOperation(api.graphs.batchDelete, ids),
+  {
+    event: "graph_list_changed",
+    getPayload: () => ({ changeType: "graphs_batch_deleted" }),
+  },
+);
+
+// ============================================================
+// useUpdateGraphMutation — publishes 2 events, kept as-is
+// ============================================================
 
 export const useUpdateGraphMutation = () => {
   return useMutation({
@@ -125,98 +134,235 @@ export const useUpdateGraphMutation = () => {
   });
 };
 
-export const useToggleFavoriteMutation = () => {
-  const queryClient = useQueryClient();
+// ============================================================
+// Optimistic mutation — toggle favorite
+// ============================================================
 
-  return useMutation({
-    mutationFn: ({ id, is_favorite }: { id: string; is_favorite: boolean }) =>
-      api.graphs.toggleFavorite(id, is_favorite),
-    onMutate: async ({ id, is_favorite }) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.graphs });
-      const previousGraphs = queryClient.getQueryData(queryKeys.graphs);
+export const useToggleFavoriteMutation = createOptimisticMutation({
+  mutationFn: ({ id, is_favorite }: { id: string; is_favorite: boolean }) =>
+    api.graphs.toggleFavorite(id, is_favorite),
+  queryKey: queryKeys.graphs,
+  optimisticUpdater: (
+    old: Graph[] | undefined,
+    { id, is_favorite }: { id: string; is_favorite: boolean },
+  ) =>
+    old?.map((graph) =>
+      graph.id === id ? { ...graph, is_favorite } : graph,
+    ),
+  onSettled: () => {
+    frontendEventBus.publish("graph_list_changed", { changeType: "graph_updated" });
+  },
+});
 
-      queryClient.setQueryData(queryKeys.graphs, (old: Graph[] | undefined) => {
-        if (!old) return old;
-        return old.map((graph) =>
-          graph.id === id ? { ...graph, is_favorite } : graph,
-        );
+// ============================================================
+// Simple mutations — export & AI
+// ============================================================
+
+export const useExportGraphMutation = createSimpleMutation(
+  ({ id, format }: { id: string; format: "json" | "pdf" }) =>
+    api.data.export(id, format),
+);
+
+export const useAIGenerateMutation = createSimpleMutation(
+  api.ai.generateContent,
+);
+
+export const useAIExpandMutation = createSimpleMutation(api.ai.expand);
+
+export const useAIGenerateCardsMutation = createSimpleMutation(
+  api.ai.generateCards,
+);
+
+export const useDocumentToGraphMutation = createSimpleMutation(
+  api.ai.documentToGraph,
+);
+
+export const useImageToGraphMutation = createSimpleMutation(
+  api.ai.imageToGraph,
+);
+
+export const useRecommendConnectionsMutation = createSimpleMutation(
+  api.ai.recommendConnections,
+);
+
+// ============================================================
+// Optimistic mutations — graph data (nodes & edges)
+// ============================================================
+
+export const useCreateNodeMutation = createOptimisticMutation({
+  mutationFn: (variables: CreateNodeData) => api.nodes.create(variables),
+  queryKey: (vars) => queryKeys.graphData(vars.graph_id),
+  optimisticUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    newNodeVariables: CreateNodeData,
+  ) => {
+    if (!old) return { nodes: [], edges: [] };
+
+    const tempNode: Node = {
+      id: `temp-${Date.now()}`,
+      x_position: newNodeVariables.x_position ?? 0,
+      y_position: newNodeVariables.y_position ?? 0,
+      ...newNodeVariables,
+      level: newNodeVariables.level as NodeLevel | undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Node;
+
+    return {
+      ...old,
+      nodes: [...old.nodes, tempNode],
+    };
+  },
+  onSettled: (_data, _error, variables) => {
+    frontendEventBus.publish("graph_data_changed", { graphId: variables.graph_id, changeType: "node_created" });
+  },
+});
+
+export const useUpdateNodeOptimisticMutation = createOptimisticMutation({
+  mutationFn: ({
+    id,
+    data,
+    graphId: _graphId,
+  }: {
+    id: string;
+    data: UpdateNodeData;
+    graphId: string;
+  }) => api.nodes.update(id, data),
+  queryKey: (vars) => queryKeys.graphData(vars.graphId),
+  optimisticUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    { id, data }: { id: string; data: UpdateNodeData; graphId: string },
+  ) => {
+    if (!old) return old;
+    return {
+      ...old,
+      nodes: old.nodes.map((node) =>
+        node.id === id ? ({ ...node, ...data } as Node) : node,
+      ),
+    };
+  },
+  onSettled: (_data, _error, variables) => {
+    frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_updated" });
+  },
+});
+
+export const useDeleteNodeMutation = createOptimisticMutation({
+  mutationFn: ({
+    id,
+    graphId: _graphId,
+    hardDelete,
+  }: {
+    id: string;
+    graphId: string;
+    hardDelete?: boolean;
+  }) => api.nodes.delete(id, hardDelete),
+  queryKey: (vars) => queryKeys.graphData(vars.graphId),
+  optimisticUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    { id }: { id: string; graphId: string; hardDelete?: boolean },
+  ) => {
+    if (!old) return old;
+    return {
+      ...old,
+      nodes: old.nodes.filter((node) => node.id !== id),
+      edges: old.edges.filter(
+        (edge) =>
+          edge.source_knowledge_point_id !== id &&
+          edge.target_knowledge_point_id !== id,
+      ),
+    };
+  },
+  onSettled: (data, _error, variables) => {
+    if (data?.affected_graphs) {
+      (data.affected_graphs as string[]).forEach((graphId: string) => {
+        frontendEventBus.publish("graph_data_changed", { graphId, changeType: "node_deleted" });
       });
+    }
+    frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_deleted" });
+  },
+});
 
-      return { previousGraphs };
+export const useBatchDeleteNodesMutation = createOptimisticMutation({
+  mutationFn: ({
+    nodeIds,
+    graphId: _graphId,
+  }: {
+    nodeIds: string[];
+    graphId: string;
+  }) => api.nodes.batchDelete(nodeIds),
+  queryKey: (vars) => queryKeys.graphData(vars.graphId),
+  optimisticUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    { nodeIds }: { nodeIds: string[]; graphId: string },
+  ) => {
+    if (!old) return old;
+    return {
+      ...old,
+      nodes: old.nodes.filter((node) => !nodeIds.includes(node.id)),
+      edges: old.edges.filter(
+        (edge) =>
+          !nodeIds.includes(edge.source_knowledge_point_id) &&
+          !nodeIds.includes(edge.target_knowledge_point_id),
+      ),
+    };
+  },
+  onSettled: (_data, _error, variables) => {
+    frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_deleted" });
+  },
+});
+
+export const useCreateEdgeMutation = createOptimisticMutation({
+  mutationFn: (data: {
+    source_knowledge_point_id: string;
+    target_knowledge_point_id: string;
+    relationship_type: string;
+    graphId?: string;
+  }) => {
+    const { graphId, relationship_type, ...edgeData } = data;
+    return api.edges.create({
+      ...edgeData,
+      graph_id: graphId || "",
+      relationship_type,
+    });
+  },
+  queryKey: (vars) => queryKeys.graphData(vars.graphId || ""),
+  optimisticUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    newEdgeVariables: {
+      source_knowledge_point_id: string;
+      target_knowledge_point_id: string;
+      relationship_type: string;
+      graphId?: string;
     },
-    onError: (_err, _variables, context) => {
-      if (context?.previousGraphs) {
-        queryClient.setQueryData(queryKeys.graphs, context.previousGraphs);
-      }
-    },
-    onSettled: () => {
-      frontendEventBus.publish("graph_list_changed", { changeType: "graph_updated" });
-    },
-  });
-};
+  ) => {
+    const { graphId, ...edgeData } = newEdgeVariables;
 
-export const useExportGraphMutation = () => {
-  return useMutation({
-    mutationFn: ({ id, format }: { id: string; format: "json" | "pdf" }) =>
-      api.data.export(id, format),
-  });
-};
+    if (!graphId) return old;
+    if (!old) return { nodes: [], edges: [] };
 
-export const useCreateNodeMutation = () => {
-  const queryClient = useQueryClient();
+    const tempEdge: Edge = {
+      id: `temp-edge-${Date.now()}`,
+      graph_id: graphId,
+      ...edgeData,
+    };
 
-  return useMutation({
-    mutationFn: (variables: CreateNodeData) => api.nodes.create(variables),
-    onMutate: async (newNodeVariables) => {
-      const graphId = newNodeVariables.graph_id;
+    return {
+      ...old,
+      edges: [...old.edges, tempEdge],
+    };
+  },
+  onSettled: (_data, _error, variables) => {
+    if (variables.graphId) {
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "edge_created" });
+    } else {
+      frontendEventBus.publish("graph_data_changed", { changeType: "edge_created" });
+    }
+  },
+});
 
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.graphData(graphId),
-      });
-
-      const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId),
-      );
-
-      queryClient.setQueryData(
-        queryKeys.graphData(graphId),
-        (old: { nodes: Node[]; edges: Edge[] } | undefined) => {
-          if (!old) return { nodes: [], edges: [] };
-
-          const tempNode: Node = {
-            id: `temp-${Date.now()}`,
-            x_position: newNodeVariables.x_position ?? 0,
-            y_position: newNodeVariables.y_position ?? 0,
-            ...newNodeVariables,
-            level: newNodeVariables.level as NodeLevel | undefined,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as Node;
-
-          return {
-            ...old,
-            nodes: [...old.nodes, tempNode],
-          };
-        },
-      );
-
-      return { previousData };
-    },
-    onSuccess: (_data, _variables) => {
-    },
-    onError: (_err, newNode, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(
-          queryKeys.graphData(newNode.graph_id),
-          context.previousData,
-        );
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      frontendEventBus.publish("graph_data_changed", { graphId: variables.graph_id, changeType: "node_created" });
-    },
-  });
-};
+// ============================================================
+// Non-optimistic mutations — kept as-is
+// ============================================================
 
 export const useUpdateNodeMutation = () => {
   return useMutation({
@@ -243,233 +389,6 @@ export const useUpdateNodeMutation = () => {
   });
 };
 
-export const useUpdateNodeOptimisticMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      data,
-      graphId: _graphId,
-    }: {
-      id: string;
-      data: UpdateNodeData;
-      graphId: string;
-    }) => api.nodes.update(id, data),
-    onMutate: async ({ id, data, graphId }) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.graphData(graphId),
-      });
-      const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId),
-      );
-
-      queryClient.setQueryData(
-        queryKeys.graphData(graphId),
-        (old: { nodes: Node[]; edges: Edge[] } | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            nodes: old.nodes.map((node) =>
-              node.id === id ? { ...node, ...data } : node,
-            ),
-          };
-        },
-      );
-
-      return { previousData };
-    },
-    onError: (_err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(
-          queryKeys.graphData(variables.graphId),
-          context.previousData,
-        );
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_updated" });
-    },
-  });
-};
-
-export const useDeleteNodeMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      graphId: _graphId,
-      hardDelete,
-    }: {
-      id: string;
-      graphId: string;
-      hardDelete?: boolean;
-    }) => api.nodes.delete(id, hardDelete),
-    onMutate: async ({ id, graphId }) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.graphData(graphId),
-      });
-      const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId),
-      );
-
-      queryClient.setQueryData(
-        queryKeys.graphData(graphId),
-        (old: { nodes: Node[]; edges: Edge[] } | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            nodes: old.nodes.filter((node) => node.id !== id),
-            edges: old.edges.filter(
-              (edge) =>
-                edge.source_knowledge_point_id !== id &&
-                edge.target_knowledge_point_id !== id,
-            ),
-          };
-        },
-      );
-
-      return { previousData };
-    },
-    onSuccess: (data, _variables) => {
-      if (data?.affected_graphs) {
-        data.affected_graphs.forEach((graphId: string) => {
-          frontendEventBus.publish("graph_data_changed", { graphId, changeType: "node_deleted" });
-        });
-      }
-    },
-    onError: (_err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(
-          queryKeys.graphData(variables.graphId),
-          context.previousData,
-        );
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_deleted" });
-    },
-  });
-};
-
-export const useBatchDeleteNodesMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      nodeIds,
-      graphId: _graphId,
-    }: {
-      nodeIds: string[];
-      graphId: string;
-    }) => api.nodes.batchDelete(nodeIds),
-    onMutate: async ({ nodeIds, graphId }) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.graphData(graphId),
-      });
-      const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId),
-      );
-
-      queryClient.setQueryData(
-        queryKeys.graphData(graphId),
-        (old: { nodes: Node[]; edges: Edge[] } | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            nodes: old.nodes.filter((node) => !nodeIds.includes(node.id)),
-            edges: old.edges.filter(
-              (edge) =>
-                !nodeIds.includes(edge.source_knowledge_point_id) &&
-                !nodeIds.includes(edge.target_knowledge_point_id),
-            ),
-          };
-        },
-      );
-
-      return { previousData };
-    },
-    onError: (_err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(
-          queryKeys.graphData(variables.graphId),
-          context.previousData,
-        );
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_deleted" });
-    },
-  });
-};
-
-export const useCreateEdgeMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: {
-      source_knowledge_point_id: string;
-      target_knowledge_point_id: string;
-      relationship_type: string;
-      graphId?: string;
-    }) => {
-      const { graphId, relationship_type, ...edgeData } = data;
-      return api.edges.create({
-        ...edgeData,
-        graph_id: graphId || "",
-        relationship_type,
-      });
-    },
-    onMutate: async (newEdgeVariables) => {
-      const { graphId, ...edgeData } = newEdgeVariables;
-      if (!graphId) return;
-
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.graphData(graphId),
-      });
-      const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId),
-      );
-
-      queryClient.setQueryData(
-        queryKeys.graphData(graphId),
-        (old: { nodes: Node[]; edges: Edge[] } | undefined) => {
-          if (!old) return { nodes: [], edges: [] };
-
-          const tempEdge: Edge = {
-            id: `temp-edge-${Date.now()}`,
-            graph_id: graphId,
-            ...edgeData,
-          };
-
-          return {
-            ...old,
-            edges: [...old.edges, tempEdge],
-          };
-        },
-      );
-
-      return { previousData };
-    },
-    onError: (_err, variables, context) => {
-      if (context?.previousData && variables.graphId) {
-        queryClient.setQueryData(
-          queryKeys.graphData(variables.graphId),
-          context.previousData,
-        );
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      if (variables.graphId) {
-        frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "edge_created" });
-      } else {
-        frontendEventBus.publish("graph_data_changed", { changeType: "edge_created" });
-      }
-    },
-  });
-};
-
 export const useDeleteEdgeMutation = () => {
   return useMutation({
     mutationFn: ({ id }: { id: string }) => api.edges.delete(id),
@@ -477,18 +396,6 @@ export const useDeleteEdgeMutation = () => {
       frontendEventBus.publish("graph_data_changed", { changeType: "edge_deleted" });
     },
   });
-};
-
-export const useAIGenerateMutation = () => {
-  return useMutation({ mutationFn: api.ai.generateContent });
-};
-
-export const useAIExpandMutation = () => {
-  return useMutation({ mutationFn: api.ai.expand });
-};
-
-export const useAIGenerateCardsMutation = () => {
-  return useMutation({ mutationFn: api.ai.generateCards });
 };
 
 export const useTextToGraphMutation = () => {
@@ -502,23 +409,9 @@ export const useTextToGraphMutation = () => {
   });
 };
 
-export const useDocumentToGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.ai.documentToGraph,
-  });
-};
-
-export const useImageToGraphMutation = () => {
-  return useMutation({
-    mutationFn: api.ai.imageToGraph,
-  });
-};
-
-export const useRecommendConnectionsMutation = () => {
-  return useMutation({
-    mutationFn: api.ai.recommendConnections,
-  });
-};
+// ============================================================
+// Prefetch hooks
+// ============================================================
 
 export const usePrefetchGraph = () => {
   const queryClient = useQueryClient();
@@ -560,6 +453,10 @@ export const usePrefetchStudyCards = () => {
     [queryClient],
   );
 };
+
+// ============================================================
+// Composite hook
+// ============================================================
 
 export const useGraphMutations = () => {
   const createNodeMutation = useCreateNodeMutation();

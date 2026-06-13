@@ -1,28 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import { createSimpleMutation, createInvalidationMutation } from "./mutationFactory";
 
-export const useCreateTaskMutation = () => {
-  return useMutation({
-    mutationFn: api.tasks.create,
-  });
-};
+export const useCreateTaskMutation = createSimpleMutation(api.tasks.create);
 
-export const useRetryTaskMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.tasks.retry,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-};
+export const useRetryTaskMutation = createInvalidationMutation(
+  api.tasks.retry,
+  [["tasks"]],
+);
 
-export const useDeleteTaskMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.tasks.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-};
+export const useDeleteTaskMutation = createInvalidationMutation(
+  api.tasks.delete,
+  [["tasks"]],
+);

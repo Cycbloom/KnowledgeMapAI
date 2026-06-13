@@ -1,0 +1,14 @@
+- [x] `mutationFactory.ts` 存在且导出 `createSimpleMutation`、`createInvalidationMutation`、`createEventPublishMutation`、`createOptimisticMutation` 四个工厂函数
+- [x] `createOptimisticMutation` 的 onMutate 正确执行乐观更新并返回 previousData
+- [x] `createOptimisticMutation` 的 onError 正确回滚到 previousData
+- [x] `createOptimisticMutation` 的 onSettled 正确调用用户提供的回调
+- [x] `createInvalidationMutation` 支持静态 queryKey 数组和函数形式的 queryKey
+- [x] `createEventPublishMutation` 支持静态 payload 和函数形式的 getPayload
+- [x] `useGraphMutations.ts` 中所有乐观更新 mutation 已替换为工厂函数
+- [x] `useGraphMutations.ts` 中所有事件发布 mutation 已替换为工厂函数
+- [x] `useStudyMutations.ts` 中所有 mutation 已替换为工厂函数
+- [x] `useTaskMutations.ts` 中所有 mutation 已替换为工厂函数
+- [x] `useTemplateMutations.ts` 中所有 mutation 已替换为工厂函数
+- [x] `useLearningPathMutations.ts` 中所有 mutation 已替换为工厂函数
+- [x] `npm run check` 类型检查通过，无新增类型错误
+- [x] `npm run lint` 代码检查通过，无新增 lint 错误

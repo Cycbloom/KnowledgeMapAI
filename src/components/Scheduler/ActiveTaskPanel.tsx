@@ -115,6 +115,37 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     }
   }, [task.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 注册 focus 番茄完成回调：自动保存当前子任务的 actual_duration
+  useEffect(() => {
+    useTimerStore.getState().setOnFocusSessionComplete((elapsedSeconds) => {
+      if (!activeSubtaskId) return;
+      const elapsedMinutes = Math.round(elapsedSeconds / 60);
+      if (elapsedMinutes <= 0) return;
+
+      setSubtasks((prev) =>
+        prev.map((s) =>
+          s.id === activeSubtaskId
+            ? {
+                ...s,
+                actual_duration: (s.actual_duration || 0) + elapsedMinutes,
+              }
+            : s,
+        ),
+      );
+
+      api.scheduler
+        .updateSubtask(task.id, activeSubtaskId, {
+          actual_duration:
+            (currentActiveSubtask?.actual_duration || 0) + elapsedMinutes,
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      useTimerStore.getState().setOnFocusSessionComplete(undefined);
+    };
+  }, [task.id, activeSubtaskId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const currentActiveSubtask = subtasks.find((s) => s.id === activeSubtaskId);
   const currentSubtaskIndex = activeSubtaskId
     ? subtasks.findIndex((s) => s.id === activeSubtaskId)
@@ -146,10 +177,16 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     // 1. 保存当前番茄的 focus_session
     await useTimerStore.getState().complete();
 
-    // 2. 更新当前子任务 status
+    // 2. 计算当前子任务累计时长并保存
+    const { timeLeft: tl, totalTime: tt } = useTimerStore.getState();
+    const elapsedThisSession = Math.round((tt - tl) / 60);
+    const totalActualDuration =
+      (currentActiveSubtask.actual_duration || 0) + elapsedThisSession;
+
     try {
       await api.scheduler.updateSubtask(task.id, activeSubtaskId, {
         status: "completed",
+        actual_duration: totalActualDuration,
       });
     } catch (err) {
       console.warn("Failed to update subtask status:", err);
@@ -266,7 +303,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                   个番茄 · 预计 {currentActiveSubtask.estimated_duration || "-"}
                   min · 已做{" "}
                   {(currentActiveSubtask.actual_duration || 0) +
-                    (isActive && !isPaused
+                    (isActive && !isPaused && mode === "focus"
                       ? Math.round((totalTime - timeLeft) / 60)
                       : 0)}
                   min
@@ -331,11 +368,22 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
-                  // 更新当前子任务的运行时长
-                  if (activeSubtaskId) {
+                  // 保存当前子任务的累计运行时长
+                  if (activeSubtaskId && currentActiveSubtask) {
                     const { timeLeft: tl, totalTime: tt } =
                       useTimerStore.getState();
                     const elapsedMinutes = Math.round((tt - tl) / 60);
+                    const totalActual =
+                      (currentActiveSubtask.actual_duration || 0) +
+                      elapsedMinutes;
+                    if (totalActual > 0) {
+                      api.scheduler
+                        .updateSubtask(task.id, activeSubtaskId, {
+                          actual_duration: totalActual,
+                        })
+                        .catch(() => {});
+                    }
+                    // 同时更新大任务级别
                     if (elapsedMinutes > 0) {
                       api.scheduler
                         .tickExecution(task.id, elapsedMinutes)
@@ -408,7 +456,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                       quiz: "测验",
                     } as Record<string, string>
                   )[currentActiveSubtask.learning_state] ||
-                    currentActiveSubtask.learning_state}
+                    String(currentActiveSubtask.learning_state)}
                 </span>
               </div>
               <button
@@ -422,28 +470,56 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               </button>
             </div>
 
-            {/* 掌握度 */}
-            {currentActiveSubtask.mastery_level !== undefined && (
+            {/* 掌握度 — 基于实际已用时间/预计时间实时计算 */}
+            {currentActiveSubtask && (
               <div className="mb-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-slate-400 dark:text-slate-500">
-                    掌握度
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {Math.round(
-                      (currentActiveSubtask.mastery_level || 0) * 100,
-                    )}
-                    %
-                  </span>
-                </div>
-                <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary-400 to-primary-500 rounded-full transition-all"
-                    style={{
-                      width: `${Math.round((currentActiveSubtask.mastery_level || 0) * 100)}%`,
-                    }}
-                  />
-                </div>
+                {(() => {
+                  const estSec =
+                    (currentActiveSubtask.estimated_duration || 0) * 60;
+                  let actSec = (currentActiveSubtask.actual_duration || 0) * 60;
+                  // 只在 focus 模式下累计当前番茄时间，休息不计入
+                  if (isActive && !isPaused && mode === "focus") {
+                    actSec += totalTime - timeLeft;
+                  }
+                  const rawPct = estSec > 0 ? (actSec / estSec) * 100 : 0;
+                  const isOver = rawPct > 100;
+                  const displayPct = Math.round(rawPct);
+                  return (
+                    <>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-slate-400 dark:text-slate-500">
+                          掌握度
+                        </span>
+                        <span
+                          className={
+                            isOver
+                              ? "text-amber-500 dark:text-amber-400 font-medium"
+                              : "text-slate-500 dark:text-slate-400"
+                          }
+                        >
+                          {displayPct}%{isOver && " 超时"}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden relative">
+                        {/* 基础进度条（最多100%） */}
+                        <div
+                          className="h-full absolute inset-y-0 left-0 bg-gradient-to-r from-primary-400 to-primary-500 rounded-full transition-all duration-1000"
+                          style={{ width: `${Math.min(rawPct, 100)}%` }}
+                        />
+                        {/* 超出部分（琥珀色） */}
+                        {isOver && (
+                          <div
+                            className="h-full absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-orange-500 rounded-r-full transition-all duration-1000"
+                            style={{
+                              width: `${rawPct}%`,
+                              clipPath: `inset(0 ${100 - rawPct}% 0 0)`,
+                            }}
+                          />
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
@@ -478,7 +554,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                   const isCurrent = st.id === activeSubtaskId;
                   const isCompleted = st.status === "completed";
                   let actualMin = st.actual_duration || 0;
-                  if (isCurrent && isActive && !isPaused) {
+                  if (isCurrent && isActive && !isPaused && mode === "focus") {
                     actualMin += Math.round((totalTime - timeLeft) / 60);
                   }
                   const estimatedMin = st.estimated_duration || 0;
@@ -543,16 +619,19 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                         {st.title}
                       </span>
 
-                      {/* 进行中标记 — 紧跟标题 */}
-                      {isCurrent && isActive && !isPaused && (
-                        <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-medium text-primary-500">
-                          <span className="w-1 h-1 rounded-full bg-current animate-pulse" />
-                          进行中
-                        </span>
-                      )}
+                      {/* 进行中标记 — 仅 focus 模式显示 */}
+                      {isCurrent &&
+                        isActive &&
+                        !isPaused &&
+                        mode === "focus" && (
+                          <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-medium text-primary-500">
+                            <span className="w-1 h-1 rounded-full bg-current animate-pulse" />
+                            进行中
+                          </span>
+                        )}
 
                       {/* 学习状态标签 */}
-                      {st.learning_state && (
+                      {typeof st.learning_state === "string" && (
                         <span
                           className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
                             st.learning_state === "learning"
@@ -571,7 +650,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                               practice: "练习",
                               quiz: "测验",
                             } as Record<string, string>
-                          )[st.learning_state] || st.learning_state}
+                          )[st.learning_state] || String(st.learning_state)}
                         </span>
                       )}
 

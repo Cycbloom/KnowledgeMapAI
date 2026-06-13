@@ -23,6 +23,8 @@ interface TimerState {
   completedSessions: number;
   startTimeRef: Date | null;
   progress: number; // 0-100, derived from totalTime & timeLeft
+  /** 每次 focus 番茄完成时回调，传入本次 focus 的已跑秒数 */
+  onFocusSessionComplete?: (elapsedSeconds: number) => void;
 }
 
 interface TimerActions {
@@ -50,6 +52,10 @@ interface TimerActions {
   setSubtask: (subtaskId: string | null) => void;
   /** Switch to the next subtask, restarting the timer with a new duration. Preserves completedSessions. */
   nextSubtask: (subtaskId: string, duration: number) => void;
+  /** 注册 focus 番茄完成回调（面板用来保存子任务 actual_duration） */
+  setOnFocusSessionComplete: (
+    cb: ((elapsedSeconds: number) => void) | undefined,
+  ) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -297,6 +303,12 @@ const useTimerStore = create<TimerState & TimerActions>()(
           elapsedDuration,
         );
 
+        // focus 番茄完成时通知面板保存子任务 actual_duration
+        if (completedMode === "focus") {
+          const { onFocusSessionComplete } = get();
+          onFocusSessionComplete?.(elapsedDuration);
+        }
+
         const newCompletedSessions =
           completedMode === "focus" ? completedSessions + 1 : completedSessions;
 
@@ -425,6 +437,10 @@ const useTimerStore = create<TimerState & TimerActions>()(
 
       setSubtask: (subtaskId) => {
         set({ subtaskId });
+      },
+
+      setOnFocusSessionComplete: (cb) => {
+        set({ onFocusSessionComplete: cb });
       },
 
       nextSubtask: (subtaskId, duration) => {

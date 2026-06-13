@@ -685,69 +685,6 @@ export const Scheduler: React.FC = () => {
                         navigate(`/scheduler/task/${activeTask.id}`)
                       }
                       onStop={() => handlePauseTask(activeTask)}
-                      onSubtaskComplete={async (subtaskId) => {
-                        try {
-                          // 1. 将当前子任务标记为 completed
-                          await api.scheduler.updateSubtask(
-                            activeTask!.id,
-                            subtaskId,
-                            { status: "completed" },
-                          );
-
-                          // 2. 获取该任务的所有子任务
-                          const response = await api.scheduler.getSubtasks(
-                            activeTask!.id,
-                          );
-                          if (response.data) {
-                            const nextPending = response.data.find(
-                              (s: any) => s.status === "pending",
-                            );
-                            if (nextPending) {
-                              // 3. 激活下一个 pending 子任务
-                              await api.scheduler.updateSubtask(
-                                activeTask!.id,
-                                nextPending.id,
-                                { status: "in_progress" },
-                              );
-                              setActiveSubtaskId(nextPending.id);
-                              useTimerStore.getState().setSubtask(nextPending.id);
-
-                              // 4. 更新任务进度（基于子任务完成数）
-                              const completedCount = response.data.filter(
-                                (s: any) => s.status === "completed",
-                              ).length;
-                              const totalCount = response.data.length;
-                              try {
-                                await api.scheduler.updateProgress(
-                                  activeTask!.id,
-                                  {
-                                    percentage: Math.round(
-                                      (completedCount / totalCount) * 100,
-                                    ),
-                                  },
-                                );
-                              } catch {
-                                // 进度更新失败不影响主流程
-                              }
-                            } else {
-                              // 所有子任务已完成
-                              setActiveSubtaskId(null);
-                              useTimerStore.getState().setSubtask(null);
-                              // 标记任务 100% 进度
-                              try {
-                                await api.scheduler.updateProgress(
-                                  activeTask!.id,
-                                  { percentage: 100 },
-                                );
-                              } catch {
-                                // 进度更新失败不影响主流程
-                              }
-                            }
-                          }
-                        } catch (err) {
-                          console.error("Failed to complete subtask:", err);
-                        }
-                      }}
                     />
                   </Suspense>
                 </div>

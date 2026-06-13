@@ -10,28 +10,26 @@ const uuidParamsSchema = z.object({
   id: z.string().uuid("无效的任务ID"),
 });
 
-const createTaskKPSchema = z.object({
-  body: z.object({
-    knowledge_point_id: z.string().uuid("无效的知识点ID"),
-    relevance_score: z.number().int().min(0).max(100).optional(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid("无效的任务ID"),
-  }),
+const createTaskKPBodySchema = z.object({
+  knowledge_point_id: z.string().uuid("无效的知识点ID"),
+  relevance_score: z.number().int().min(0).max(100).optional(),
+  is_primary: z.boolean().optional(),
+  notes: z.string().optional(),
 });
 
-const updateTaskKPSchema = z.object({
-  body: z.object({
-    relevance_score: z.number().int().min(0).max(100).optional(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid("无效的任务ID"),
-    kpId: z.string().uuid("无效的知识点关联ID"),
-  }),
+const createTaskKPParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+});
+
+const updateTaskKPBodySchema = z.object({
+  relevance_score: z.number().int().min(0).max(100).optional(),
+  is_primary: z.boolean().optional(),
+  notes: z.string().optional(),
+});
+
+const updateTaskKPParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+  kpId: z.string().uuid("无效的知识点关联ID"),
 });
 
 const taskKPParamsSchema = z.object({
@@ -42,7 +40,7 @@ const taskKPParamsSchema = z.object({
 router.post(
   "/tasks/:id/knowledge-points",
   requireAuth,
-  validate(createTaskKPSchema),
+  validate({ body: createTaskKPBodySchema, params: createTaskKPParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
@@ -160,7 +158,7 @@ router.get(
 router.put(
   "/tasks/:id/knowledge-points/:kpId",
   requireAuth,
-  validate(updateTaskKPSchema),
+  validate({ body: updateTaskKPBodySchema, params: updateTaskKPParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {

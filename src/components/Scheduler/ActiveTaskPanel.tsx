@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -20,7 +20,6 @@ interface ActiveTaskPanelProps {
   timeSlice: number;
   activeSubtaskId?: string | null;
   setActiveSubtaskId?: (id: string | null) => void;
-  onSubtaskComplete?: (subtaskId: string) => void;
   onViewDetail?: () => void;
   /** 终止当前任务调度，返回智能推荐界面 */
   onStop?: () => void;
@@ -61,7 +60,6 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   timeSlice: _timeSlice,
   activeSubtaskId,
   setActiveSubtaskId,
-  onSubtaskComplete,
   onViewDetail,
   onStop,
 }) => {
@@ -83,6 +81,10 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   const [subtasks, setSubtasks] = useState<any[]>([]);
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [autoActivated, setAutoActivated] = useState(false);
+
+  // 用 ref 保存最新 subtasks，避免回调闭包捕获旧值
+  const subtasksRef = useRef(subtasks);
+  subtasksRef.current = subtasks;
 
   useEffect(() => {
     if (task.id) {
@@ -122,21 +124,24 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
       const elapsedMinutes = Math.round(elapsedSeconds / 60);
       if (elapsedMinutes <= 0) return;
 
+      // 从 ref 读最新数据（避免闭包旧值）
+      const currentSt = subtasksRef.current.find(
+        (s: any) => s.id === activeSubtaskId,
+      );
+      const prevDuration = currentSt?.actual_duration || 0;
+      const newDuration = prevDuration + elapsedMinutes;
+
+      // 更新本地 state
       setSubtasks((prev) =>
         prev.map((s) =>
-          s.id === activeSubtaskId
-            ? {
-                ...s,
-                actual_duration: (s.actual_duration || 0) + elapsedMinutes,
-              }
-            : s,
+          s.id === activeSubtaskId ? { ...s, actual_duration: newDuration } : s,
         ),
       );
 
+      // 持久化到数据库
       api.scheduler
         .updateSubtask(task.id, activeSubtaskId, {
-          actual_duration:
-            (currentActiveSubtask?.actual_duration || 0) + elapsedMinutes,
+          actual_duration: newDuration,
         })
         .catch(() => {});
     });
@@ -174,22 +179,24 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   const handleCompleteSubtask = async () => {
     if (!activeSubtaskId || !currentActiveSubtask) return;
 
+    // 0. 先读取当前计时器状态（complete() 会重置它）
+    const { timeLeft: tl, totalTime: tt } = useTimerStore.getState();
+    const elapsedThisSession = Math.round((tt - tl) / 60);
+    // 确保数值安全：从 DB 可能返回字符串或 null
+    const prevDuration = Number(currentActiveSubtask.actual_duration || 0);
+    const totalActualDuration = prevDuration + elapsedThisSession;
+
     // 1. 保存当前番茄的 focus_session
     await useTimerStore.getState().complete();
 
-    // 2. 计算当前子任务累计时长并保存
-    const { timeLeft: tl, totalTime: tt } = useTimerStore.getState();
-    const elapsedThisSession = Math.round((tt - tl) / 60);
-    const totalActualDuration =
-      (currentActiveSubtask.actual_duration || 0) + elapsedThisSession;
-
+    // 2. 更新当前子任务 status + actual_duration
     try {
       await api.scheduler.updateSubtask(task.id, activeSubtaskId, {
         status: "completed",
         actual_duration: totalActualDuration,
       });
     } catch (err) {
-      console.warn("Failed to update subtask status:", err);
+      console.warn("Failed to complete subtask:", err);
     }
 
     // 3. 找下一个 pending 子任务
@@ -460,10 +467,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 </span>
               </div>
               <button
-                onClick={() => {
-                  if (onSubtaskComplete)
-                    onSubtaskComplete(currentActiveSubtask.id);
-                }}
+                onClick={handleCompleteSubtask}
                 className="shrink-0 px-3 py-1 text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
               >
                 完成此子任务

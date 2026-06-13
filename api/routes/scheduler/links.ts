@@ -10,31 +10,29 @@ const uuidParamsSchema = z.object({
   id: z.string().uuid("无效的任务ID"),
 });
 
-const createLinkSchema = z.object({
-  body: z.object({
-    link_type: z.enum(["web", "file", "api"]).default("web"),
-    title: z.string().optional(),
-    url: z.string().min(1, "链接地址不能为空"),
-    description: z.string().optional(),
-    icon: z.string().optional(),
-    metadata: z.record(z.unknown()).optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid("无效的任务ID"),
-  }),
+const createLinkBodySchema = z.object({
+  link_type: z.enum(["web", "file", "api"]).default("web"),
+  title: z.string().optional(),
+  url: z.string().min(1, "链接地址不能为空"),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
-const updateLinkSchema = z.object({
-  body: z.object({
-    title: z.string().optional(),
-    description: z.string().optional(),
-    icon: z.string().optional(),
-    metadata: z.record(z.unknown()).optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid("无效的任务ID"),
-    linkId: z.string().uuid("无效的链接ID"),
-  }),
+const createLinkParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+});
+
+const updateLinkBodySchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+const updateLinkParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+  linkId: z.string().uuid("无效的链接ID"),
 });
 
 const linkParamsSchema = z.object({
@@ -45,7 +43,7 @@ const linkParamsSchema = z.object({
 router.post(
   "/tasks/:id/links",
   requireAuth,
-  validate(createLinkSchema),
+  validate({ body: createLinkBodySchema, params: createLinkParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
@@ -142,7 +140,7 @@ router.get(
 router.put(
   "/tasks/:id/links/:linkId",
   requireAuth,
-  validate(updateLinkSchema),
+  validate({ body: updateLinkBodySchema, params: updateLinkParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {

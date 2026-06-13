@@ -8,50 +8,47 @@ import { subtaskKnowledgeSyncService } from "../../services/scheduler/subtaskKno
 
 const router = Router();
 
-const createSubtaskSchema = z.object({
-  body: z.object({
-    title: z.string().min(1, "标题不能为空"),
-    description: z.string().optional(),
-    knowledge_point_id: z.string().uuid("无效的知识点ID"),
-    priority: z.number().int().min(0).optional(),
-    estimated_duration: z.number().int().min(0).optional(),
-    due_date: z.string().datetime().optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid("无效的任务ID"),
-  }),
+const createSubtaskBodySchema = z.object({
+  title: z.string().min(1, "标题不能为空"),
+  description: z.string().optional(),
+  knowledge_point_id: z.string().uuid("无效的知识点ID"),
+  priority: z.number().int().min(0).optional(),
+  estimated_duration: z.number().int().min(0).optional(),
+  due_date: z.string().datetime().optional(),
 });
 
-const updateSubtaskSchema = z.object({
-  body: z.object({
-    title: z.string().min(1, "标题不能为空").optional(),
-    description: z.string().optional(),
-    status: z.enum(["pending", "in_progress", "completed"]).optional(),
-    priority: z.number().int().min(0).optional(),
-    estimated_duration: z.number().int().min(0).optional(),
-    actual_duration: z.number().int().min(0).optional(),
-    due_date: z.string().datetime().optional().nullable(),
-    learning_state: z
-      .enum(["learning", "review", "practice", "quiz"])
-      .optional(),
-    mastery_level: z.number().min(0).max(100).optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid("无效的任务ID"),
-    subtaskId: z.string().uuid("无效的子任务ID"),
-  }),
+const createSubtaskParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
 });
 
-const transitionSubtaskSchema = z.object({
-  body: z.object({
-    to_state: z.enum(["learning", "review", "practice", "quiz"]),
-    mastery_level: z.number().min(0).max(100),
-    reason: z.string().optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid("无效的任务ID"),
-    subtaskId: z.string().uuid("无效的子任务ID"),
-  }),
+const updateSubtaskBodySchema = z.object({
+  title: z.string().min(1, "标题不能为空").optional(),
+  description: z.string().optional(),
+  status: z.enum(["pending", "in_progress", "completed"]).optional(),
+  priority: z.number().int().min(0).optional(),
+  estimated_duration: z.number().int().min(0).optional(),
+  actual_duration: z.number().int().min(0).optional(),
+  due_date: z.string().datetime().optional().nullable(),
+  learning_state: z
+    .enum(["learning", "review", "practice", "quiz"])
+    .optional(),
+  mastery_level: z.number().min(0).max(100).optional(),
+});
+
+const updateSubtaskParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+  subtaskId: z.string().uuid("无效的子任务ID"),
+});
+
+const transitionSubtaskBodySchema = z.object({
+  to_state: z.enum(["learning", "review", "practice", "quiz"]),
+  mastery_level: z.number().min(0).max(100),
+  reason: z.string().optional(),
+});
+
+const transitionSubtaskParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+  subtaskId: z.string().uuid("无效的子任务ID"),
 });
 
 const subtaskParamsSchema = z.object({
@@ -62,7 +59,7 @@ const subtaskParamsSchema = z.object({
 router.post(
   "/tasks/:id/subtasks",
   requireAuth,
-  validate(createSubtaskSchema),
+  validate({ body: createSubtaskBodySchema, params: createSubtaskParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
@@ -182,7 +179,7 @@ router.get(
 router.put(
   "/tasks/:id/subtasks/:subtaskId",
   requireAuth,
-  validate(updateSubtaskSchema),
+  validate({ body: updateSubtaskBodySchema, params: updateSubtaskParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
@@ -295,7 +292,7 @@ router.delete(
 router.post(
   "/tasks/:id/subtasks/:subtaskId/transition",
   requireAuth,
-  validate(transitionSubtaskSchema),
+  validate({ body: transitionSubtaskBodySchema, params: transitionSubtaskParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {

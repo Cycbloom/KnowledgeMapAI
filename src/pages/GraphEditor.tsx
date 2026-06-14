@@ -68,6 +68,7 @@ import type {
   CustomRegion,
   RegionInfo,
   GraphBackboneModule,
+  TemplateLayout,
 } from "@shared/types/graph";
 import {
   BackboneModule,
@@ -418,7 +419,7 @@ export const GraphEditor = () => {
   const { data: aiStatus } = useAIStatus(!!token);
   const aiEnabled = aiStatus?.enabled ?? true;
 
-  const templateLayout = graphMeta?.settings?.layout;
+  const templateLayout = graphMeta?.settings?.layout as TemplateLayout | undefined;
 
   const nodes = useMemo(() => graphData?.nodes || [], [graphData?.nodes]);
   const edges = useMemo(() => graphData?.edges || [], [graphData?.edges]);
@@ -615,7 +616,7 @@ export const GraphEditor = () => {
     nodes,
     edges,
     state,
-    mutations,
+    mutations: mutations as any,
     record,
     navigate,
     token,
@@ -1793,7 +1794,7 @@ export const GraphEditor = () => {
             state={state}
             nodes={nodes}
             edges={edges}
-            nodeStatus={nodeStatus}
+            nodeStatus={nodeStatus as any}
             graphStats={graphStats}
             nodeOps={nodeOps}
             aiOps={aiOps}

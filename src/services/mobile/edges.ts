@@ -1,8 +1,12 @@
 import { getMobileSupabaseClient } from '@/lib/supabase';
 import type { Edge } from '@shared/types/graph';
 import type { CreateEdgeData } from '@shared/types/api';
+import type { IEdgesApi } from '../api/contracts/IEdgesApi';
 
-export const mobileEdgesApi = {
+export const mobileEdgesApi: IEdgesApi & {
+  getByGraphId: (graphId: string) => Promise<Edge[]>;
+  update: (id: string, data: Partial<Edge>) => Promise<Edge>;
+} = {
   create: async (data: CreateEdgeData): Promise<Edge> => {
     const client = getMobileSupabaseClient();
     if (!client) {

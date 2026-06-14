@@ -13,8 +13,9 @@ import {
   createStreamHandler,
   handleUnauthorized,
 } from "../shared/streamHandler";
+import type { IAiApi, IAiActionsApi } from "./contracts/IAiApi";
 
-export const aiActionsApi = {
+export const aiActionsApi: IAiActionsApi = {
   list: (graphId?: string) =>
     request(`/ai-actions${graphId ? `?graph_id=${graphId}` : ""}`),
 
@@ -49,7 +50,7 @@ const createApiStreamHandler = async (
   });
 };
 
-export const aiApi = {
+export const aiApi: IAiApi = {
   status: () => request("/ai/status"),
 
   generateContent: (data: {

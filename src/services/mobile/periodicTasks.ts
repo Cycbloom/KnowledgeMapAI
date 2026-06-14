@@ -1,5 +1,6 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { PeriodicTaskRow } from "@shared/types/database";
+import type { IPeriodicTasksApi } from "../api/contracts/IPeriodicTasksApi";
 
 export interface PeriodicTask {
   id: string;
@@ -233,7 +234,7 @@ async function initPeriodicTasks(
   }
 }
 
-export const mobilePeriodicTasksApi = {
+export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
   list: async (): Promise<PeriodicTask[]> => {
     const client = getMobileSupabaseClient();
     if (!client) {

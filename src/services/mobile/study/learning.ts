@@ -1,6 +1,7 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { StudyCard } from "@shared/types/common";
 import type { GetCardsParams, CardGroup, StudyStats } from "@shared/types/api";
+import type { IStudyApi } from "../../api/contracts/IStudyApi";
 
 interface StudyCardInsert {
   user_id: string;
@@ -27,7 +28,7 @@ interface CardGroupRow {
   card_type: string;
 }
 
-export const mobileStudyApi = {
+export const mobileStudyApi: IStudyApi = {
   getCards: async (params?: GetCardsParams) => {
     const client = getMobileSupabaseClient();
     if (!client) {
@@ -39,7 +40,7 @@ export const mobileStudyApi = {
     } = await client.auth.getUser();
 
     if (!user) {
-      return { cards: [] };
+      return [];
     }
 
     let query = client.from("study_cards").select("*").eq("user_id", user.id);
@@ -62,7 +63,7 @@ export const mobileStudyApi = {
       throw new Error(error.message);
     }
 
-    return { cards: (data as StudyCard[]) || [] };
+    return (data as StudyCard[]) || [];
   },
 
   getCardsByKnowledgePoint: async (knowledgePointId: string, _params?: Record<string, unknown>) => {
@@ -76,7 +77,7 @@ export const mobileStudyApi = {
     } = await client.auth.getUser();
 
     if (!user) {
-      return { cards: [] };
+      return [];
     }
 
     const { data, error } = await client
@@ -89,7 +90,7 @@ export const mobileStudyApi = {
       throw new Error(error.message);
     }
 
-    return { cards: (data as StudyCard[]) || [] };
+    return (data as StudyCard[]) || [];
   },
 
   createCardsBatch: async (cards: unknown[]) => {

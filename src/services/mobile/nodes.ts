@@ -6,6 +6,8 @@ import type {
   NodePositionUpdate,
   DeleteNodeResult,
 } from "@shared/types/api";
+import type { INodesApi } from "../api/contracts/INodesApi";
+import { NotSupportedError } from "../api/contracts/types";
 import {
   GRAPH_NODES_SELECT,
   buildNodeFromGraphNode,
@@ -13,7 +15,9 @@ import {
   type GraphNodeRaw,
 } from "@shared/utils/nodeHelpers";
 
-export const mobileNodesApi = {
+export const mobileNodesApi: INodesApi & {
+  getByGraphId: (graphId: string) => Promise<Node[]>;
+} = {
   create: async (data: CreateNodeData): Promise<Node> => {
     const client = getMobileSupabaseClient();
     if (!client) {
@@ -239,7 +243,7 @@ export const mobileNodesApi = {
   },
 
   getRelated: async (_id: string) => {
-    return { related_nodes: [] };
+    throw new NotSupportedError("getRelated");
   },
 
   searchSimilar: async (_params: {
@@ -248,10 +252,10 @@ export const mobileNodesApi = {
     threshold?: number;
     limit?: number;
   }) => {
-    return [];
+    throw new NotSupportedError("searchSimilar");
   },
 
   getKnowledgePointGraphs: async (_nodeId: string) => {
-    return [];
+    throw new NotSupportedError("getKnowledgePointGraphs");
   },
 };

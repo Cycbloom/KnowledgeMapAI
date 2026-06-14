@@ -1,7 +1,8 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
 import type { StudyCardRow } from "@shared/types/database";
+import type { IDashboardApi } from "../../api/contracts/IDashboardApi";
 
-export const mobileDashboardApi = {
+export const mobileDashboardApi: IDashboardApi = {
   getStats: async () => {
     const client = getMobileSupabaseClient();
     if (!client) {

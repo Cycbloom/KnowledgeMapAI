@@ -1,8 +1,9 @@
 import { request } from "./client";
 import type { GetCardsParams, CardGroup } from "@shared/types/api";
 import type { StudyCard } from "@shared/types/common";
+import type { IStudyApi, IDashboardApi, IStatisticsApi } from "./contracts";
 
-export const studyApi = {
+export const studyApi: IStudyApi = {
   getCards: (params?: GetCardsParams) => {
     const search = new URLSearchParams();
     if (params?.graph_id) search.set("graph_id", params.graph_id);
@@ -69,10 +70,10 @@ export const studyApi = {
   },
 };
 
-export const dashboardApi = {
+export const dashboardApi: IDashboardApi = {
   getStats: () => request("/dashboard/stats"),
 };
 
-export const statisticsApi = {
+export const statisticsApi: IStatisticsApi = {
   getStats: () => request("/statistics"),
 };

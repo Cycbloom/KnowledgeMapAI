@@ -120,7 +120,7 @@ const handleNodeList = async (args: ParsedArgs, _context: CommandContext): Promi
 
   try {
     const result = await graphsApi.getNodes(graphId);
-    const nodes = result as Array<{ id: string; title: string; level?: string; content?: string }>;
+    const nodes = result as unknown as Array<{ id: string; title: string; level?: string; content?: string }>;
 
     const nodeList = nodes.map((n, index) => ({
       index: index + 1,

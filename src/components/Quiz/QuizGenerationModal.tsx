@@ -89,7 +89,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   const createMutation = useCreateQuizSetMutation();
   const generateMutation = useGenerateQuizMutation();
   const { data: aiStatus } = useAIStatus(open);
-  const { data: learningPath } = useGraphLearningPath(selectedGraphId || '');
+  const { data: learningPath } = useGraphLearningPath(selectedGraphId || '') as unknown as { data?: { stages?: LearningPathStage[] } };
 
   const { data: progress } = useQuizGenerationProgress(taskId, !!taskId);
 

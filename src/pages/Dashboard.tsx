@@ -196,7 +196,7 @@ export const Dashboard = () => {
 
     if (selectedFilterTags.length > 0) {
       result = result.filter((g) => {
-        const graphTags = g.tags || [];
+        const graphTags = ((g as unknown) as { tags?: string[] }).tags || [];
         return selectedFilterTags.some((tag) => graphTags.includes(tag));
       });
     }
@@ -412,7 +412,7 @@ export const Dashboard = () => {
             </div>
 
             {/* Stats Overview - Compact */}
-            {statsData && (
+            {!!statsData && (
               <div
                 className={`flex items-center gap-3 sm:gap-4 px-4 py-3 sm:px-5 rounded-xl border ${
                   isDark
@@ -1841,7 +1841,7 @@ const TagCloudSection = ({
     queryKey: ["graphTags"],
     queryFn: async () => {
       const res = await api.graphs.getTags();
-      return res.tags || [];
+      return ((res as unknown) as { tags?: { name: string; count: number }[] }).tags || [];
     },
   });
 

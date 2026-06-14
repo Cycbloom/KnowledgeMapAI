@@ -8,6 +8,7 @@ import type {
   UpdateProfileData,
 } from '@shared/types/api';
 import type { User } from '@shared/types/user';
+import type { IAuthApi } from './contracts/IAuthApi';
 
 const localAuthApi = {
   register: (data: RegisterData): Promise<AuthResponse> =>
@@ -161,7 +162,7 @@ const supabaseAuthApi = {
   },
 };
 
-export const authApi = {
+export const authApi: IAuthApi = {
   register: (data: RegisterData): Promise<AuthResponse> => {
     if (authConfig.isSupabase()) {
       return supabaseAuthApi.register(data);

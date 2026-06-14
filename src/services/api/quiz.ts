@@ -8,8 +8,9 @@ import type {
   QuizGenerationProgress,
   RegenerateCardData,
 } from '@shared/types/quiz';
+import type { IQuizApi } from './contracts/IQuizApi';
 
-export const quizApi = {
+export const quizApi: IQuizApi = {
   list: () => request<QuizSet[]>('/quiz-sets'),
 
   get: (id: string) => request<QuizSetWithCards>(`/quiz-sets/${id}`),

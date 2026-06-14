@@ -7,8 +7,9 @@ import type {
   NodePositionUpdate,
   DeleteNodeResult,
 } from '@shared/types/api';
+import type { INodesApi, IEdgesApi } from './contracts';
 
-export const nodesApi = {
+export const nodesApi: INodesApi = {
   create: (data: CreateNodeData) => request<Node>('/nodes', { method: 'POST', body: JSON.stringify(data) }),
   
   get: (id: string) => request<Node>(`/nodes/${id}`),
@@ -57,7 +58,7 @@ export const nodesApi = {
     }>>(`/nodes/${nodeId}/knowledge-point-graphs`, { method: 'GET' }),
 };
 
-export const edgesApi = {
+export const edgesApi: IEdgesApi = {
   create: (data: CreateEdgeData) => request<Edge>('/edges', { method: 'POST', body: JSON.stringify(data) }),
   
   delete: (id: string) => request(`/edges/${id}`, { method: 'DELETE' }),

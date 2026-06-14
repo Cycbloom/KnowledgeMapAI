@@ -3,6 +3,7 @@ import { useStore } from "@/store/useStore";
 import { createErrorFromResponse } from "@/utils/errors";
 import { getAIConfig, injectAIConfig } from "../api/client";
 import type { AIAction, TutorMode } from "@shared/types";
+import type { IAiApi, IAiActionsApi } from "../api/contracts/IAiApi";
 import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "@/config/mobileApiConfig";
 import { getAILanguage } from "@/hooks/useAILanguage";
@@ -69,7 +70,7 @@ const createMobileStreamHandler = async (
   });
 };
 
-export const mobileAiApi = {
+export const mobileAiApi: IAiApi & { aiActions: IAiActionsApi } = {
   status: () => mobileAiClient.get("/ai/status"),
 
   generateContent: (data: {
@@ -303,7 +304,7 @@ export const mobileAiApi = {
     return mobileAiClient
       .post("/ai/batch-generate-cards", payload)
       .then((result) => {
-        return result;
+        return result as unknown as { success: boolean; taskIds: string[]; message: string; error?: string; results?: Array<{ nodeId: string; success: boolean; count: number }> };
       })
       .catch((error) => {
         console.error("[Mobile API] batchGenerateCards 失败:", {

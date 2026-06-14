@@ -7,6 +7,7 @@ import type {
 } from '@shared/types/api';
 import type { User } from '@shared/types/user';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { IAuthApi } from '../api/contracts/IAuthApi';
 
 const toUser = (supabaseUser: SupabaseUser | null): User | null => {
   if (!supabaseUser) return null;
@@ -18,7 +19,7 @@ const toUser = (supabaseUser: SupabaseUser | null): User | null => {
   };
 };
 
-export const mobileAuthApi = {
+export const mobileAuthApi: IAuthApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
     const client = getMobileSupabaseClient();
     if (!client) {

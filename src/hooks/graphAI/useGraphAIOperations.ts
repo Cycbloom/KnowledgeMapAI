@@ -1,6 +1,7 @@
 import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
 import type { BatchGenerateConfig } from '../../components/GraphEditor/modals/BatchGenerateDialog';
+import type { RelatedNode } from '../graphEditor/useMiscState';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from '../graphEditor';
@@ -371,7 +372,7 @@ export const useGraphAIOperations = ({
     await asyncHandler(
       async () => {
         const res = await api.nodes.getRelated(selectedNode.id);
-        state.setRelatedNodes(res || []);
+        state.setRelatedNodes((res as RelatedNode[]) || []);
         return res;
       },
       {

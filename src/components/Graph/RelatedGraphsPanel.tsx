@@ -51,7 +51,11 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
     setIsLoading(true);
     try {
       const result = await api.graphs.getRelations(graphId);
-      setRelations(result);
+      setRelations(result as unknown as {
+        prerequisites: GraphRelation[];
+        extensions: GraphRelation[];
+        related: GraphRelation[];
+      });
     } catch (error) {
       handleError(error, { context: 'Relations', fallbackMessage: '获取关联图谱失败' });
     } finally {

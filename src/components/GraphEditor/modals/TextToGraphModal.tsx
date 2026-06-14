@@ -129,9 +129,9 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         action: 'analyze'
       });
       
-      setPreviewData(result as TextToGraphResult);
+      setPreviewData(result as unknown as TextToGraphResult);
       if (result.nodes) {
-        setSelectedNodeIds(new Set(result.nodes.map((n: PreviewNode) => n.id)));
+        setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
       }
       setStep('preview');
       frontendEventBus.publish("message_show", { type: 'success', content: 'AI 分析完成，请确认生成内容' });
@@ -165,8 +165,8 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         throw new Error('AI 未能从图片中识别出有效节点。');
       }
 
-      setPreviewData(result as TextToGraphResult);
-      setSelectedNodeIds(new Set(result.nodes.map((n: PreviewNode) => n.id)));
+      setPreviewData(result as unknown as TextToGraphResult);
+      setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
       setStep('preview');
       frontendEventBus.publish("message_show", { type: 'success', content: '图片分析成功' });
     } catch (err: unknown) {
@@ -204,8 +204,8 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
             throw new Error('AI 未能从文档中解析出任何节点，请检查文档内容。');
           }
 
-          setPreviewData(result as TextToGraphResult);
-          setSelectedNodeIds(new Set(result.nodes.map((n: PreviewNode) => n.id)));
+          setPreviewData(result as unknown as TextToGraphResult);
+          setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
           setStep('preview');
           frontendEventBus.publish("message_show", { type: 'success', content: '文档解析成功' });
         } catch (err: unknown) {

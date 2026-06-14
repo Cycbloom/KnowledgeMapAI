@@ -149,7 +149,7 @@ const handleAiBatch = async (args: ParsedArgs, _context: CommandContext): Promis
 
   try {
     const nodes = await graphsApi.getNodes(graphId);
-    const nodeArray = nodes as Array<{ id: string; title: string; content?: string }>;
+    const nodeArray = nodes as unknown as Array<{ id: string; title: string; content?: string }>;
 
     if (!nodeArray || nodeArray.length === 0) {
       return { success: false, error: '图谱中没有节点' };

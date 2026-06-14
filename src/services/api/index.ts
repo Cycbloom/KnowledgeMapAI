@@ -98,8 +98,9 @@ import { regionsApi } from "./regions";
 import { storyCreationApi } from "./storyCreation";
 import { conceptAggregationApi } from "./conceptAggregation";
 import { graphVersionsApi } from "./graphVersions";
+import type { IApi } from "./contracts/IApi";
 
-export const api = {
+export const api: IApi = {
   auth: authApi,
   graphs: graphsApi,
   nodes: nodesApi,

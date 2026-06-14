@@ -280,13 +280,13 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             history,
             session_id: chatState.sessionId,
           },
-          (chunk) => {
+          (chunk: string) => {
             fullResponse += chunk;
             chatState.updateMessage(assistantMessageId, {
               content: fullResponse,
             });
           },
-          (s) => {
+          (s: Source[]) => {
             sources = s;
           },
         );

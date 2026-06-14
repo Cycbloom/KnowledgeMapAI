@@ -746,7 +746,7 @@ export const GraphMap = () => {
               content: result.root.content,
               level: "root",
             },
-            ...result.coreNodes.map((n) => ({
+            ...result.coreNodes.map((n: CoreNode) => ({
               title: n.title,
               content: n.content,
               level: n.level || "core",
@@ -765,7 +765,7 @@ export const GraphMap = () => {
 
           if (saveResult.nodeMapping) {
             const coreNodesWithIds = result.coreNodes.map(
-              (n, index: number) => {
+              (n: CoreNode, index: number) => {
                 const tempId = `temp-${index + 1}`;
                 return {
                   ...n,
@@ -814,7 +814,7 @@ export const GraphMap = () => {
         });
 
         if (result.children && result.children.length > 0) {
-          const nodes = result.children.map((n) => ({
+          const nodes = result.children.map((n: ChildNode) => ({
             title: n.title,
             content: n.content,
             level: n.level || "sub",
@@ -1857,8 +1857,7 @@ export const GraphMap = () => {
             return { graphs: result.graphs };
           }}
           onLoadDomains={async () => {
-            const result = await api.graphs.getDomains();
-            return { domains: result.domains };
+            return await api.graphs.getDomains();
           }}
           onExpandDomain={async (graphIds: string[], count: number, domain?: string) => {
             const result = await api.graphs.expandDomain(graphIds, count, domain);

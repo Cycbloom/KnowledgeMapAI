@@ -8,6 +8,7 @@ import type {
   TemplateDifficulty,
   LayoutSuggestion,
 } from '@shared/types/graph';
+import type { IAchievementsApi, IPeriodicTasksApi } from './contracts';
 
 export interface SaveTemplateData {
   name: string;
@@ -76,7 +77,7 @@ export const focusApi = {
   getStats: () => request('/focus/stats'),
 };
 
-export const achievementsApi = {
+export const achievementsApi: IAchievementsApi = {
   list: () => request('/achievements'),
   
   check: (type: string, value: number) => 
@@ -87,7 +88,7 @@ export const achievementsApi = {
   checkIn: () => request('/achievements/daily-tasks/check-in', { method: 'POST' }),
 };
 
-export const periodicTasksApi = {
+export const periodicTasksApi: IPeriodicTasksApi = {
   list: () => request('/periodic-tasks'),
   
   check: (taskType: string, value: number) => 

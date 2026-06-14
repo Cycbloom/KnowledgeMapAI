@@ -412,7 +412,7 @@ export const RecycleBin = () => {
                 <div
                   className={`pt-4 border-t text-xs ${isDark ? "border-slate-700 text-slate-500" : "border-gray-50 text-gray-400"}`}
                 >
-                  {t("recycleBin.deletedAt")}: {new Date(graph.deleted_at).toLocaleString()}
+                  {t("recycleBin.deletedAt")}: {new Date(((graph as unknown) as { deleted_at?: string }).deleted_at ?? new Date().toISOString()).toLocaleString()}
                 </div>
               </div>
             ))

@@ -5,6 +5,7 @@ import type {
   GraphNodeRow,
   StudyCardRow,
   CreateGraphFromTemplateData,
+  GraphRelationType,
 } from "@shared/types";
 import { toGraph } from "@shared/types/database";
 import type { NodeStatus } from "@shared/types/graph";
@@ -12,6 +13,8 @@ import type {
   CreateGraphData,
   UpdateGraphData,
 } from "@shared/types/api";
+import type { IGraphsApi } from "../api/contracts/IGraphsApi";
+import { NotSupportedError } from "../api/contracts/types";
 import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
 
@@ -27,7 +30,7 @@ interface GraphWithSettings extends KnowledgeGraphRow {
   settings?: GraphSettings | null;
 }
 
-export const mobileGraphsApi = {
+export const mobileGraphsApi: IGraphsApi = {
   list: async (): Promise<Graph[]> => {
     return withClient(async (client) => {
       const { data: graphs, error } = await client
@@ -357,7 +360,7 @@ export const mobileGraphsApi = {
   getDomains: async () => {
     return withClientOptionalUser(async (client, userId) => {
       if (!userId) {
-        return [];
+        return { domains: [] };
       }
 
       const { data, error } = await client
@@ -369,7 +372,7 @@ export const mobileGraphsApi = {
 
       if (error) {
         console.error("getDomains error:", error);
-        return [];
+        return { domains: [] };
       }
 
       const domainMap = new Map<string, number>();
@@ -379,9 +382,11 @@ export const mobileGraphsApi = {
         }
       });
 
-      return Array.from(domainMap.entries())
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count);
+      return {
+        domains: Array.from(domainMap.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count),
+      };
     });
   },
 
@@ -451,13 +456,24 @@ export const mobileGraphsApi = {
             nodes_count: countMap.get(g.id) || 0,
             node_count: countMap.get(g.id) || 0,
           })),
-          relations: (relationsResult.data || []) as Array<{
+          relations: (relationsResult.data || []).map((r) => {
+            const row = r as Record<string, unknown>;
+            return {
+              id: row.id as string,
+              source_graph_id: row.source_graph_id as string,
+              target_graph_id: row.target_graph_id as string,
+              relation_type: row.relation_type as GraphRelationType,
+              context: row.context ?? undefined,
+              metadata: row.metadata ?? undefined,
+              created_at: row.created_at as string,
+            };
+          }) as Array<{
             id: string;
             source_graph_id: string;
             target_graph_id: string;
-            relation_type: string;
-            context?: string | null;
-            metadata?: Record<string, unknown> | null;
+            relation_type: GraphRelationType;
+            context?: string;
+            metadata?: Record<string, unknown>;
             created_at: string;
           }>,
         };
@@ -506,5 +522,180 @@ export const mobileGraphsApi = {
 
       return toGraph(result as KnowledgeGraphRow);
     });
+  },
+
+  checkTopic: async (_topic: string, _excludeGraphId?: string) => {
+    throw new NotSupportedError("checkTopic");
+  },
+
+  analyze: async (_id: string) => {
+    throw new NotSupportedError("analyze");
+  },
+
+  getLiterature: async (_id: string, _module?: string) => {
+    throw new NotSupportedError("getLiterature");
+  },
+
+  getResearchProgress: async (_id: string) => {
+    throw new NotSupportedError("getResearchProgress");
+  },
+
+  getModuleGaps: async (_id: string) => {
+    throw new NotSupportedError("getModuleGaps");
+  },
+
+  getModuleOverlap: async (_id: string) => {
+    throw new NotSupportedError("getModuleOverlap");
+  },
+
+  getMissingConnections: async (_id: string, _max?: number) => {
+    throw new NotSupportedError("getMissingConnections");
+  },
+
+  getRelations: async (_id: string) => {
+    throw new NotSupportedError("getRelations");
+  },
+
+  createPrerequisiteGraph: async (
+    _id: string,
+    _data: { topic: string; description?: string; auto_generate?: boolean },
+  ) => {
+    throw new NotSupportedError("createPrerequisiteGraph");
+  },
+
+  createPrerequisiteGraphs: async (
+    _id: string,
+    _data: {
+      topics: Array<{
+        topic: string;
+        description?: string;
+        mastery_level: string;
+      }>;
+      depth?: number;
+      style?: "academic" | "practical" | "beginner";
+    },
+  ) => {
+    throw new NotSupportedError("createPrerequisiteGraphs");
+  },
+
+  deleteRelation: async (_graphId: string, _relationId: string) => {
+    throw new NotSupportedError("deleteRelation");
+  },
+
+  createRelation: async (_data: {
+    source_graph_id: string;
+    target_graph_id: string;
+    relation_type: "prerequisite" | "extension" | "related" | "cross_domain";
+    context?: string;
+  }) => {
+    throw new NotSupportedError("createRelation");
+  },
+
+  deleteRelationById: async (_relationId: string) => {
+    throw new NotSupportedError("deleteRelationById");
+  },
+
+  infiniteExpand: async (
+    _graphId: string,
+    _data: {
+      max_depth?: number;
+      max_graphs_per_level?: number;
+      relation_types?: string[];
+      auto_generate_nodes?: boolean;
+      node_depth?: number;
+    },
+  ) => {
+    throw new NotSupportedError("infiniteExpand");
+  },
+
+  analyzeDomain: async (
+    _domain: string,
+    _count?: number,
+    _sessionId?: string,
+  ) => {
+    throw new NotSupportedError("analyzeDomain");
+  },
+
+  expandDomain: async (
+    _graphIds: string[],
+    _count?: number,
+    _domain?: string,
+  ) => {
+    throw new NotSupportedError("expandDomain");
+  },
+
+  batchCreateDomainGraphs: async (_data: {
+    graphs: Array<{
+      title: string;
+      description?: string;
+    }>;
+    domain?: string;
+    relations?: Array<{
+      from_title: string;
+      to_title: string;
+      type: "prerequisite" | "extension" | "related";
+      reason?: string;
+    }>;
+  }) => {
+    throw new NotSupportedError("batchCreateDomainGraphs");
+  },
+
+  initializeGraph: async (
+    _graphId: string,
+    _style?: "academic" | "practical" | "beginner",
+  ) => {
+    throw new NotSupportedError("initializeGraph");
+  },
+
+  batchInitializeGraphs: async (_data: {
+    graph_ids: string[];
+    style?: "academic" | "practical" | "beginner";
+    session_id?: string;
+  }) => {
+    throw new NotSupportedError("batchInitializeGraphs");
+  },
+
+  discoverRelations: async (_data?: {
+    graph_ids?: string[];
+    max_suggestions?: number;
+    include_cross_domain?: boolean;
+  }) => {
+    throw new NotSupportedError("discoverRelations");
+  },
+
+  createDiscoveredRelation: async (_data: {
+    source_graph_id: string;
+    target_graph_id: string;
+    relation_type: unknown;
+    context?: string;
+    confidence?: number;
+    shared_concepts?: string[];
+  }) => {
+    throw new NotSupportedError("createDiscoveredRelation");
+  },
+
+  getIntelligentSuggestions: async (_graphIds?: string[]) => {
+    throw new NotSupportedError("getIntelligentSuggestions");
+  },
+
+  getCrossDomainInsights: async (_options?: {
+    graph_ids?: string[];
+    min_intersection?: number;
+  }) => {
+    throw new NotSupportedError("getCrossDomainInsights");
+  },
+
+  getLearningPathSuggestions: async (_options?: {
+    graph_ids?: string[];
+    difficulty?: "beginner" | "intermediate" | "advanced";
+  }) => {
+    throw new NotSupportedError("getLearningPathSuggestions");
+  },
+
+  getKnowledgeGaps: async (_options?: {
+    graph_ids?: string[];
+    min_importance?: "high" | "medium" | "low";
+  }) => {
+    throw new NotSupportedError("getKnowledgeGaps");
   },
 };

@@ -8,10 +8,11 @@ import type {
   GenerateQuizData,
   RegenerateCardData,
 } from "@shared/types/quiz";
+import type { IQuizApi } from "../api/contracts/IQuizApi";
 import type { StudyCard } from "@shared/types/common";
 
 
-export const mobileQuizApi = {
+export const mobileQuizApi: IQuizApi = {
   list: async (): Promise<QuizSet[]> => {
     const client = getMobileSupabaseClient();
     if (!client) {

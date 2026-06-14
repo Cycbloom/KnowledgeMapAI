@@ -161,10 +161,21 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         style: 'academic'
       });
 
-      setCreatedGraphs(result.created);
+      const typedResult = result as unknown as {
+        graph_ids: string[];
+        created: Array<{
+          topic: string;
+          graphId: string;
+          isNew: boolean;
+          similarity?: number;
+          matchedTitle?: string;
+        }>;
+      };
+
+      setCreatedGraphs(typedResult.created);
       
-      const newCount = result.created.filter((g: { isNew: boolean }) => g.isNew).length;
-      const linkedCount = result.created.filter((g: { isNew: boolean }) => !g.isNew).length;
+      const newCount = typedResult.created.filter((g) => g.isNew).length;
+      const linkedCount = typedResult.created.filter((g) => !g.isNew).length;
       
       let message = '';
       if (newCount > 0 && linkedCount > 0) {

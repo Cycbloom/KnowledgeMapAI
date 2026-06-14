@@ -1,4 +1,5 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
+import type { IStatisticsApi } from "../../api/contracts/IStatisticsApi";
 
 interface StudyCardStateRow {
   fsrs_state: string | null;
@@ -8,7 +9,7 @@ interface StudyCardStateRow {
   created_at: string | null;
 }
 
-export const mobileStatisticsApi = {
+export const mobileStatisticsApi: IStatisticsApi = {
   getStats: async () => {
     const client = getMobileSupabaseClient();
     if (!client) {

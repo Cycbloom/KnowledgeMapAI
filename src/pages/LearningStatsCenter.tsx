@@ -272,7 +272,17 @@ const FocusStatsCard = ({ stats, isDark, t }: { stats: FocusStats | null, isDark
 export const LearningStatsCenter = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { data: stats, isLoading, error } = useStatistics();
+  const { data: stats, isLoading, error } = useStatistics() as unknown as {
+    data?: {
+      distribution: Array<{ name: string; value: number; color: string }>;
+      metrics: { learning: number; dueToday: number; totalCards: number; avgStability: number };
+      heatmap: { date: string; count: number }[];
+      forecast: { date: string; count: number }[];
+      growth: { date: string; count: number }[];
+    } | null;
+    isLoading: boolean;
+    error: Error | null;
+  };
   const { data: userData } = useUser();
   const { data: graphsData } = useGraphs();
   const retention = userData?.user?.profile?.settings?.request_retention || 0.9;

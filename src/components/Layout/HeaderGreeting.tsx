@@ -22,7 +22,7 @@ export const HeaderGreeting: React.FC = () => {
 
   const userName =
     (user?.user_metadata as any)?.name || user?.email?.split("@")[0] || t('layout.greeting.user');
-  const dueToday = statsData?.metrics?.dueToday || 0;
+  const dueToday = (statsData as { metrics?: { dueToday?: number } } | null | undefined)?.metrics?.dueToday || 0;
   const streak = (user?.user_metadata as any)?.study_streak || 0;
 
   return (

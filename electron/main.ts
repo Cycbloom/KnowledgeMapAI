@@ -6,6 +6,9 @@ import * as fs from "fs";
 import pkg from "electron-updater";
 const { autoUpdater } = pkg;
 import dotenv from "dotenv";
+import { DatabaseManager } from "./db/database";
+import { registerDbIpcHandlers } from "./ipc/dbHandlers";
+import { SyncEngine } from "./sync/syncEngine";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -56,6 +59,8 @@ function loadEnvVariables() {
 loadEnvVariables();
 
 let apiApp: any = null;
+let dbManager: DatabaseManager | null = null;
+let syncEngine: SyncEngine | null = null;
 
 async function loadApiApp() {
   if (app.isPackaged) {
@@ -178,6 +183,31 @@ async function stopApiServer(): Promise<void> {
   });
 }
 
+async function initializeLocalDatabase(): Promise<DatabaseManager | null> {
+  try {
+    const dbPath = path.join(app.getPath('userData'), 'knowledgemap.db');
+    console.log('[Main] 初始化本地 SQLite 数据库:', dbPath);
+
+    dbManager = new DatabaseManager(dbPath);
+    dbManager.initialize();
+
+    // Register IPC handlers for database access
+    registerDbIpcHandlers(dbManager);
+
+    // Initialize sync engine
+    syncEngine = new SyncEngine(dbManager, mainWindow);
+    syncEngine.registerIpcHandlers();
+
+    console.log('[Main] 本地数据库和同步引擎初始化成功');
+    return dbManager;
+  } catch (error) {
+    console.error('[Main] 本地数据库初始化失败，将降级到 HTTP 模式:', error);
+    dbManager = null;
+    syncEngine = null;
+    return null;
+  }
+}
+
 async function createWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -196,6 +226,10 @@ async function createWindow(): Promise<void> {
     backgroundColor: "#1a1a2e",
     icon: getResourcePath("public", "favicon.svg"),
   });
+
+  if (syncEngine) {
+    syncEngine.setMainWindow(mainWindow);
+  }
 
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
@@ -237,6 +271,9 @@ async function createWindow(): Promise<void> {
 
   mainWindow.on("closed", () => {
     mainWindow = null;
+    if (syncEngine) {
+      syncEngine.setMainWindow(null);
+    }
   });
 }
 
@@ -285,18 +322,30 @@ function configureCrashReporter(): void {
 
 app.whenReady().then(async () => {
   configureCrashReporter();
-  
+
+  // Initialize local SQLite database (before API server)
+  await initializeLocalDatabase();
+
   if (app.isPackaged && !VITE_DEV_SERVER_URL) {
     try {
       const port = await startApiServer();
       console.log(`[Main] API 服务器已启动，端口: ${port}`);
+      // Set API port for sync engine
+      if (syncEngine) {
+        syncEngine.setApiPort(port);
+      }
     } catch (error) {
       console.error("[Main] 启动 API 服务器失败:", error);
     }
   }
-  
+
   await createWindow();
   configureAutoUpdater();
+
+  // Start sync engine in packaged mode
+  if (app.isPackaged && syncEngine) {
+    syncEngine.start();
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -312,7 +361,15 @@ app.on("window-all-closed", () => {
 });
 
 app.on("will-quit", async () => {
+  if (syncEngine) {
+    syncEngine.stop();
+    console.log('[Main] 同步引擎已停止');
+  }
   await stopApiServer();
+  if (dbManager) {
+    dbManager.close();
+    console.log('[Main] 本地数据库已关闭');
+  }
 });
 
 ipcMain.handle("app:getVersion", () => {

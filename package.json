@@ -71,7 +71,8 @@
     "mobile:build:release": "npm run mobile:sync && cd android && gradlew assembleRelease",
     "mobile:build:debug": "npm run mobile:sync && cd android && gradlew assembleDebug",
     "mobile:test": "npx playwright test --grep=\"移动端\"",
-    "mobile:clean": "cd android && gradlew clean"
+    "mobile:clean": "cd android && gradlew clean",
+    "postinstall": "electron-rebuild"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
@@ -95,6 +96,7 @@
     "@types/three": "^0.182.0",
     "axios": "^1.15.0",
     "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.10.1",
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "comlink": "^4.4.2",
@@ -151,6 +153,7 @@
     "@testing-library/react": "^16.3.2",
     "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -176,6 +179,7 @@
     "electron": "^41.0.2",
     "electron-builder": "^26.8.1",
     "electron-icon-builder": "^2.0.1",
+    "electron-rebuild": "^3.2.9",
     "eslint": "^9.39.3",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",
@@ -279,7 +283,8 @@
     ],
     "asar": true,
     "asarUnpack": [
-      "node_modules/sharp/**/*"
+      "node_modules/sharp/**/*",
+      "node_modules/better-sqlite3/**/*"
     ],
     "win": {
       "target": [

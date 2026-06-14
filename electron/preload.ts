@@ -91,6 +91,24 @@ const electronAPI = {
     read: () => ipcRenderer.invoke("config:read"),
     write: (data: Record<string, unknown>) => ipcRenderer.invoke("config:write", data),
   },
+  db: {
+    query: (request: { resource: string; method: string; params: Record<string, unknown> }) =>
+      ipcRenderer.invoke('db:query', request),
+    batch: (operations: Array<{ resource: string; method: string; params: Record<string, unknown> }>) =>
+      ipcRenderer.invoke('db:batch', { operations }),
+    getStatus: () => ipcRenderer.invoke('db:getStatus'),
+  },
+  sync: {
+    getStatus: () => ipcRenderer.invoke('sync:getStatus'),
+    trigger: () => ipcRenderer.invoke('sync:trigger'),
+    pause: () => ipcRenderer.invoke('sync:pause'),
+    resume: () => ipcRenderer.invoke('sync:resume'),
+    onStatusChanged: (callback: (status: unknown) => void) => {
+      const subscription = (_event: Electron.IpcRendererEvent, status: unknown) => callback(status);
+      ipcRenderer.on('sync:statusChanged', subscription);
+      return () => ipcRenderer.removeListener('sync:statusChanged', subscription);
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

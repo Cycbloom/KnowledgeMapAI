@@ -36,6 +36,7 @@ import {
   MobileFocusTimer,
   HelpModal,
   SSEStatusIndicator,
+  SyncStatusIndicator,
 } from "../common";
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
@@ -380,6 +381,7 @@ export const Layout = () => {
               </div>
 
               <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+                <SyncStatusIndicator />
                 <SSEStatusIndicator />
                 <NotificationCenter />
                 <button

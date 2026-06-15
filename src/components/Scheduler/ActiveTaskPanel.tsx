@@ -84,7 +84,9 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
 
   // 用 ref 保存最新 subtasks，避免回调闭包捕获旧值
   const subtasksRef = useRef(subtasks);
-  subtasksRef.current = subtasks;
+  useEffect(() => {
+    subtasksRef.current = subtasks;
+  }, [subtasks]);
 
   useEffect(() => {
     if (task.id) {

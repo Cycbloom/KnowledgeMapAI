@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect, useCallback, memo, useMemo } from 'react';
+import React, { memo } from 'react';
+import { useVirtualScroll } from '../../hooks/common/useVirtualScroll';
 
 interface VirtualListProps<T> {
   items: T[];
@@ -21,55 +22,18 @@ function VirtualListComponent<T>({
   onEndReached,
   endReachedThreshold = 5,
 }: VirtualListProps<T>) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollTop, setScrollTop] = useState(0);
-  const rafRef = useRef<number | null>(null);
-  const lastScrollTopRef = useRef(0);
-
-  const totalHeight = items.length * itemHeight;
-  const visibleCount = Math.ceil(containerHeight / itemHeight);
-  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = Math.min(items.length, startIndex + visibleCount + overscan * 2);
-
-  const visibleItems = useMemo(() => items.slice(startIndex, endIndex), [items, startIndex, endIndex]);
-  const offsetY = startIndex * itemHeight;
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const newScrollTop = e.currentTarget.scrollTop;
-
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-    }
-
-    rafRef.current = requestAnimationFrame(() => {
-      setScrollTop(newScrollTop);
-
-      if (onEndReached) {
-        const scrollBottom = newScrollTop + containerHeight;
-        const threshold = endReachedThreshold * itemHeight;
-
-        if (totalHeight - scrollBottom < threshold) {
-          const lastScrollBottom = lastScrollTopRef.current + containerHeight;
-          if (totalHeight - lastScrollBottom >= threshold) {
-            onEndReached();
-          }
-        }
-      }
-      lastScrollTopRef.current = newScrollTop;
+  const { visibleItems, startIndex, totalHeight, offsetY, handleScroll } =
+    useVirtualScroll({
+      items,
+      containerHeight,
+      itemHeight,
+      overscan,
+      onEndReached,
+      endReachedThreshold,
     });
-  }, [onEndReached, containerHeight, itemHeight, totalHeight, endReachedThreshold]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div
-      ref={containerRef}
       className={`overflow-auto ${className}`}
       style={{
         height: containerHeight,
@@ -125,65 +89,18 @@ function VirtualGridComponent<T>({
   overscan = 1,
   className = '',
 }: VirtualGridProps<T>) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollTop, setScrollTop] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const rafRef = useRef<number | null>(null);
-
-  const columns = Math.floor((containerWidth + gap) / (itemWidth + gap));
-  const rows = Math.ceil(items.length / columns);
-  const totalHeight = rows * (itemHeight + gap);
-
-  const startRow = Math.max(0, Math.floor(scrollTop / (itemHeight + gap)) - overscan);
-  const endRow = Math.min(rows, startRow + Math.ceil(containerHeight / (itemHeight + gap)) + overscan * 2);
-
-  const startCol = Math.max(0, Math.floor(scrollLeft / (itemWidth + gap)) - overscan);
-  const endCol = Math.min(columns, startCol + Math.ceil(containerWidth / (itemWidth + gap)) + overscan * 2);
-
-  const visibleItems = useMemo(() => {
-    const result: { item: T; index: number; x: number; y: number }[] = [];
-
-    for (let row = startRow; row < endRow; row++) {
-      for (let col = startCol; col < endCol; col++) {
-        const index = row * columns + col;
-        if (index < items.length) {
-          result.push({
-            item: items[index],
-            index,
-            x: col * (itemWidth + gap),
-            y: row * (itemHeight + gap),
-          });
-        }
-      }
-    }
-    return result;
-  }, [items, startRow, endRow, startCol, endCol, columns, gap, itemWidth, itemHeight]);
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const newScrollTop = e.currentTarget.scrollTop;
-    const newScrollLeft = e.currentTarget.scrollLeft;
-
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-    }
-
-    rafRef.current = requestAnimationFrame(() => {
-      setScrollTop(newScrollTop);
-      setScrollLeft(newScrollLeft);
-    });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, []);
+  const { visibleItems, totalHeight, handleScroll } = useVirtualScroll<T>({
+    items,
+    itemWidth,
+    itemHeight,
+    containerWidth,
+    containerHeight,
+    gap,
+    overscan,
+  });
 
   return (
     <div
-      ref={containerRef}
       className={`overflow-auto ${className}`}
       style={{
         height: containerHeight,

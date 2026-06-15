@@ -76,9 +76,14 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
 
       const relationshipCountMap = new Map<string, number>();
       (relationships || []).forEach((rel) => {
+        // Count both source and target directions
         relationshipCountMap.set(
           rel.source_character_id,
           (relationshipCountMap.get(rel.source_character_id) || 0) + 1,
+        );
+        relationshipCountMap.set(
+          rel.target_character_id,
+          (relationshipCountMap.get(rel.target_character_id) || 0) + 1,
         );
       });
 

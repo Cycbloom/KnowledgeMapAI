@@ -37,7 +37,7 @@ export const useChatState = () => {
     string | null
   >(null);
   const [isResizing, setIsResizing] = useState(false);
-  const [sessionId] = useState<string>(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID());
 
   const addMessage = useCallback((message: Message) => {
     setMessages((prev) => [...prev, message]);
@@ -51,6 +51,12 @@ export const useChatState = () => {
 
   const clearInput = useCallback(() => {
     setInput("");
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    setSuggestedQuestions([]);
+    setSessionId(crypto.randomUUID());
   }, []);
 
   const setSuggestedQuestionsWrapper = useCallback((questions: string[]) => {
@@ -73,5 +79,6 @@ export const useChatState = () => {
     addMessage,
     updateMessage,
     clearInput,
+    clearMessages,
   };
 };

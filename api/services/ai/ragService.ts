@@ -11,19 +11,22 @@ import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
 import { contextWindowManager } from "./contextWindowManager";
 import { graphTraversalService } from "../graph/graphTraversalService";
+import { promptService } from "./promptService";
 
 interface GraphNodeWithKnowledge {
   knowledge_point_id: string;
   level: string;
-  knowledge_points: {
-    id: string;
-    title: string;
-    content: string | null;
-  } | {
-    id: string;
-    title: string;
-    content: string | null;
-  }[];
+  knowledge_points:
+    | {
+        id: string;
+        title: string;
+        content: string | null;
+      }
+    | {
+        id: string;
+        title: string;
+        content: string | null;
+      }[];
 }
 
 interface EdgeRow {
@@ -94,7 +97,14 @@ export class RAGService {
     try {
       const supabase = getSupabaseAdmin();
 
-      let data: { id: string; title: string; content: string | null; similarity: number }[] | null = null;
+      let data:
+        | {
+            id: string;
+            title: string;
+            content: string | null;
+            similarity: number;
+          }[]
+        | null = null;
       let rpcError: unknown = null;
 
       if (graphId) {
@@ -119,7 +129,9 @@ export class RAGService {
       }
 
       if (rpcError || !data) {
-        logger.error("Failed to perform vector search for RAG", { error: rpcError });
+        logger.error("Failed to perform vector search for RAG", {
+          error: rpcError,
+        });
         return [];
       }
 
@@ -147,7 +159,10 @@ export class RAGService {
 
         const kpToGraphId = new Map<string, string>();
         if (graphNodes) {
-          for (const gn of graphNodes as { knowledge_point_id: string; graph_id: string }[]) {
+          for (const gn of graphNodes as {
+            knowledge_point_id: string;
+            graph_id: string;
+          }[]) {
             if (!kpToGraphId.has(gn.knowledge_point_id)) {
               kpToGraphId.set(gn.knowledge_point_id, gn.graph_id);
             }
@@ -167,7 +182,10 @@ export class RAGService {
         try {
           const rerankResults = await rerankingService.rerank(
             query,
-            results.map((r) => ({ id: r.id, content: `${r.title}: ${r.content}` })),
+            results.map((r) => ({
+              id: r.id,
+              content: `${r.title}: ${r.content}`,
+            })),
             { topN: matchCount },
           );
           if (rerankResults.length > 0) {
@@ -203,7 +221,13 @@ export class RAGService {
       relationshipTypes?: string[];
     } = {},
   ): Promise<GraphRAGSearchResult[]> {
-    const { graphId, matchThreshold, matchCount, graphHops, relationshipTypes } = options;
+    const {
+      graphId,
+      matchThreshold,
+      matchCount,
+      graphHops,
+      relationshipTypes,
+    } = options;
 
     const searchResults = await this.semanticSearch(query, userId, {
       graphId,
@@ -288,10 +312,25 @@ export class RAGService {
       graphHops?: number;
     } = {},
   ): Promise<{ context: string; sources: RAGSearchResult[] }> {
-    const { graphId, currentNodeId, maxContextLength = 8000, useGraphContext, graphHops } = options;
+    const {
+      graphId,
+      currentNodeId,
+      maxContextLength = 8000,
+      useGraphContext,
+      graphHops,
+    } = options;
 
     let searchResults: RAGSearchResult[];
-    let graphSources: { id: string; title: string; content: string; hopDistance: number; relationshipPath: string; relationshipType: string }[] | undefined;
+    let graphSources:
+      | {
+          id: string;
+          title: string;
+          content: string;
+          hopDistance: number;
+          relationshipPath: string;
+          relationshipType: string;
+        }[]
+      | undefined;
 
     if (useGraphContext && graphId) {
       const graphResults = await this.graphAugmentedSearch(query, userId, {
@@ -364,7 +403,30 @@ export class RAGService {
       },
     );
 
-    return { context, sources: usedSources };
+    const allSources: GraphRAGSearchResult[] = [
+      ...usedSources.map((s) => ({
+        id: s.id,
+        title: s.title,
+        content: s.content,
+        similarity: s.similarity,
+        graphId: s.graphId,
+        hopDistance: 0,
+        relationshipPath: "",
+        relationshipType: "",
+      })),
+      ...(graphSources || []).map((gs) => ({
+        id: gs.id,
+        title: gs.title,
+        content: gs.content,
+        similarity: 0,
+        graphId: graphId || "",
+        hopDistance: gs.hopDistance,
+        relationshipPath: gs.relationshipPath,
+        relationshipType: gs.relationshipType,
+      })),
+    ];
+
+    return { context, sources: allSources };
   }
 
   async chat(
@@ -382,7 +444,15 @@ export class RAGService {
       graphHops?: number;
     } = {},
   ): Promise<RAGResponse> {
-    const { graphId, currentNodeId, history = [], model, language, useGraphContext, graphHops } = options;
+    const {
+      graphId,
+      currentNodeId,
+      history = [],
+      model,
+      language,
+      useGraphContext,
+      graphHops,
+    } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
@@ -405,31 +475,32 @@ export class RAGService {
       };
     }
 
-    const isEnglish = language === "en-US" || language === "en" || (language && language.startsWith("en"));
-    const languageInstruction = isEnglish ? "Please respond in English." : "请用中文回答";
+    const isEnglish =
+      language === "en-US" ||
+      language === "en" ||
+      (language && language.startsWith("en"));
+    const languageInstruction = isEnglish
+      ? "Please respond in English."
+      : "请用中文回答";
 
-    const graphContextHint = (useGraphContext && graphId && context.includes("[图谱关联节点]"))
-      ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
-      : "";
+    const graphContextHint =
+      useGraphContext && graphId && context.includes("[图谱关联节点]")
+        ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
+        : "";
 
-    const systemPrompt = `你是一个智能知识图谱助手，专门帮助用户理解和探索知识图谱中的内容。
-
-你的能力：
-1. 基于提供的知识上下文回答用户问题
-2. 如果上下文中没有相关信息，可以基于你的知识回答，但要明确说明
-3. 帮助用户发现知识之间的关联
-4. 建议用户可能感兴趣的相关问题
-
-回答规则：
-1. 优先使用提供的知识上下文回答问题
-2. 如果上下文不足以回答，可以补充你的知识，但要说明"根据我的知识..."
-3. 使用清晰的 Markdown 格式组织回答
-4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
-5. 在回答末尾，可以建议 1-3 个相关的后续问题
-6. ${languageInstruction}
-${graphContextHint}
-知识上下文：
-${context || "(暂无相关上下文)"}`;
+    const supabase = getSupabaseAdmin();
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabase,
+      "rag_chat",
+      {
+        context: context || "(暂无相关上下文)",
+        languageInstruction,
+        graphContextHint,
+      },
+      undefined,
+      graphId,
+      language,
+    );
 
     const messages: Array<{
       role: "system" | "user" | "assistant";
@@ -562,7 +633,15 @@ ${context || "(暂无相关上下文)"}`;
       graphHops?: number;
     } = {},
   ): Promise<RAGSearchResult[]> {
-    const { graphId, currentNodeId, history = [], model, language, useGraphContext, graphHops } = options;
+    const {
+      graphId,
+      currentNodeId,
+      history = [],
+      model,
+      language,
+      useGraphContext,
+      graphHops,
+    } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
@@ -582,30 +661,32 @@ ${context || "(暂无相关上下文)"}`;
       return sources.slice(0, 3);
     }
 
-    const isEnglish = language === "en-US" || language === "en" || (language && language.startsWith("en"));
-    const languageInstruction = isEnglish ? "Please respond in English." : "请用中文回答";
+    const isEnglish =
+      language === "en-US" ||
+      language === "en" ||
+      (language && language.startsWith("en"));
+    const languageInstruction = isEnglish
+      ? "Please respond in English."
+      : "请用中文回答";
 
-    const graphContextHint = (useGraphContext && graphId && context.includes("[图谱关联节点]"))
-      ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
-      : "";
+    const graphContextHint =
+      useGraphContext && graphId && context.includes("[图谱关联节点]")
+        ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
+        : "";
 
-    const systemPrompt = `你是一个智能知识图谱助手，专门帮助用户理解和探索知识图谱中的内容。
-
-你的能力：
-1. 基于提供的知识上下文回答用户问题
-2. 如果上下文中没有相关信息，可以基于你的知识回答，但要明确说明
-3. 帮助用户发现知识之间的关联
-4. 建议用户可能感兴趣的相关问题
-
-回答规则：
-1. 优先使用提供的知识上下文回答问题
-2. 如果上下文不足以回答，可以补充你的知识，但要说明"根据我的知识..."
-3. 使用清晰的 Markdown 格式组织回答
-4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
-5. ${languageInstruction}
-${graphContextHint}
-知识上下文：
-${context || "(暂无相关上下文)"}`;
+    const supabase = getSupabaseAdmin();
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabase,
+      "rag_chat",
+      {
+        context: context || "(暂无相关上下文)",
+        languageInstruction,
+        graphContextHint,
+      },
+      undefined,
+      graphId,
+      language,
+    );
 
     const messages: Array<{
       role: "system" | "user" | "assistant";

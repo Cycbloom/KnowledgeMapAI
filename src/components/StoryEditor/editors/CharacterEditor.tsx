@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Save, Loader2, User, Palette, Heart, Brain, Target, Shield, BookOpen, TrendingUp, Link2, Film } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { storyCreationApi } from "../../../services/api/storyCreation";
+import { storyCreationHttpApi } from "../../../services/api/storyCreation";
+import { message } from "../../../utils/messageHelper";
 import type { StoryCharacter } from "../../../services/api/storyCreation";
 
 interface CharacterEditorProps {
@@ -35,10 +36,30 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
   const [arcStart, setArcStart] = useState(character.arc_start || "");
   const [arcEnd, setArcEnd] = useState(character.arc_end || "");
 
+  // Reset form when character changes
+  useEffect(() => {
+    setName(character.name);
+    setRoleType(character.role_type);
+    setArchetype(character.archetype || "");
+    setAppearance(character.appearance || "");
+    setAge(character.age || "");
+    setGender(character.gender || "");
+    setMotivation(character.motivation || "");
+    setFear(character.fear || "");
+    setDesire(character.desire || "");
+    setFlaw(character.flaw || "");
+    setBackstory(character.backstory || "");
+    setArcStart(character.arc_start || "");
+    setArcEnd(character.arc_end || "");
+  }, [character.id, character.name, character.role_type, character.archetype,
+    character.appearance, character.age, character.gender, character.motivation,
+    character.fear, character.desire, character.flaw, character.backstory,
+    character.arc_start, character.arc_end]);
+
   const handleSave = async () => {
     try {
       setSaving(true);
-      const updatedCharacter = await storyCreationApi.characters.update(graphId, character.id, {
+      const updatedCharacter = await storyCreationHttpApi.characters.update(graphId, character.id, {
         name,
         role_type: roleType,
         archetype: archetype || null,
@@ -54,8 +75,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
         arc_end: arcEnd || null,
       });
       onSave(updatedCharacter);
+      message.success(t("storyEditor.characterSaved"));
     } catch (error) {
       console.error("Failed to save character:", error);
+      message.error(t("storyEditor.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -72,6 +95,7 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
         <button
           onClick={handleSave}
           disabled={saving}
+          data-save-trigger="true"
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
         >
           {saving ? (

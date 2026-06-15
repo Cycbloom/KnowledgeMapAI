@@ -15,32 +15,39 @@ const ROLE_TYPE_COLORS: Record<StoryCharacter["role_type"], {
   bg: string;
   text: string;
   border: string;
-  label: string;
+  labelKey: string;
 }> = {
   protagonist: {
     bg: "bg-purple-100 dark:bg-purple-900/30",
     text: "text-purple-700 dark:text-purple-300",
     border: "border-purple-300 dark:border-purple-700",
-    label: "主角",
+    labelKey: "storyEditor.roleTypes.protagonist",
   },
   antagonist: {
     bg: "bg-red-100 dark:bg-red-900/30",
     text: "text-red-700 dark:text-red-300",
     border: "border-red-300 dark:border-red-700",
-    label: "反派",
+    labelKey: "storyEditor.roleTypes.antagonist",
   },
   supporting: {
     bg: "bg-blue-100 dark:bg-blue-900/30",
     text: "text-blue-700 dark:text-blue-300",
     border: "border-blue-300 dark:border-blue-700",
-    label: "配角",
+    labelKey: "storyEditor.roleTypes.supporting",
   },
   minor: {
     bg: "bg-gray-100 dark:bg-gray-800",
     text: "text-gray-600 dark:text-gray-400",
     border: "border-gray-300 dark:border-gray-600",
-    label: "路人",
+    labelKey: "storyEditor.roleTypes.minor",
   },
+};
+
+const DEFAULT_ROLE_CONFIG = {
+  bg: "bg-gray-100 dark:bg-gray-800",
+  text: "text-gray-600 dark:text-gray-400",
+  border: "border-gray-300 dark:border-gray-600",
+  labelKey: "storyEditor.roleTypes.minor",
 };
 
 export const CharacterPanel: React.FC<CharacterPanelProps> = ({
@@ -54,7 +61,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (window.confirm(t("storyEditor.confirmDeleteCharacter"))) {
+    if (window.confirm(t("storyEditor.confirmDelete"))) {
       onDelete(id);
     }
   };
@@ -69,7 +76,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
       <div className="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
         <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
           <Users size={14} />
-          {t("storyEditor.charactersTitle", { count: characters.length })}
+          {t("storyEditor.characters", { count: characters.length })}
         </h3>
         <button
           onClick={onAdd}
@@ -95,7 +102,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
           <div className="space-y-1 px-2">
             {characters.map(character => {
               const isSelected = selectedId === character.id;
-              const roleConfig = ROLE_TYPE_COLORS[character.role_type];
+              const roleConfig = ROLE_TYPE_COLORS[character.role_type] ?? DEFAULT_ROLE_CONFIG;
 
               return (
                 <div
@@ -126,7 +133,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
                     </div>
                     <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium mt-0.5
                       ${roleConfig.bg} ${roleConfig.text}`}>
-                      {roleConfig.label}
+                      {t(roleConfig.labelKey)}
                     </span>
                   </div>
 
@@ -134,7 +141,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
                   <button
                     onClick={(e) => handleDelete(e, character.id)}
                     className="w-5 h-5 flex items-center justify-center rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title={t("storyEditor.deleteCharacter")}
+                    title={t("storyEditor.delete")}
                   >
                     <Trash2 size={12} />
                   </button>

@@ -108,11 +108,6 @@ router.get(
               structure_id,
               location_name,
               writing_status
-            ),
-            story_structures!story_scene_details_structure_id_fkey (
-              id,
-              title,
-              structure_level
             )
           `,
           )
@@ -136,7 +131,7 @@ router.get(
           `,
           )
           .eq("graph_id", graphId)
-          .eq("source_character_id", characterId),
+          .or(`source_character_id.eq.${characterId},target_character_id.eq.${characterId}`),
       ]);
 
       const roleStats = {

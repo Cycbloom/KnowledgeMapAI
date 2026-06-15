@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Save, Loader2, FileText, MapPin, Clock, User, Type, CheckSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { storyCreationApi } from "../../../services/api/storyCreation";
+import { storyCreationHttpApi } from "../../../services/api/storyCreation";
+import { message } from "../../../utils/messageHelper";
 import type { StoryStructure, StoryCharacter, StorySceneDetail } from "../../../services/api/storyCreation";
 
 interface SceneEditorProps {
@@ -10,6 +11,8 @@ interface SceneEditorProps {
   characters: StoryCharacter[];
   onSave: () => void;
 }
+
+type SceneRole = "protagonist" | "antagonist" | "supporting" | "minor" | "mentioned";
 
 export const SceneEditor: React.FC<SceneEditorProps> = ({
   graphId,
@@ -29,7 +32,10 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
   const [locationName, setLocationName] = useState("");
   const [timeSetting, setTimeSetting] = useState("");
   const [writingStatus, setWritingStatus] = useState<"draft" | "revising" | "complete">("draft");
-  const [appearances, setAppearances] = useState<Map<string, { checked: boolean; role: string }>>(new Map());
+  const [appearances, setAppearances] = useState<Map<string, { checked: boolean; role: SceneRole }>>(new Map());
+
+  // Track original appearances to detect changes for persistence
+  const originalAppearancesRef = useRef<Map<string, { checked: boolean; role: SceneRole }>>(new Map());
 
   useEffect(() => {
     loadSceneData();
@@ -38,7 +44,7 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
   const loadSceneData = async () => {
     try {
       setLoading(true);
-      const result = await storyCreationApi.scenes.get(graphId, structure.id);
+      const result = await storyCreationHttpApi.scenes.get(graphId, structure.id);
       if (result.scene) {
         setSceneData(result.scene);
         setSynopsis(result.scene.synopsis || "");
@@ -49,18 +55,34 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
         setWritingStatus(result.scene.writing_status || "draft");
 
         if (result.scene.appearances) {
-          const appearanceMap = new Map<string, { checked: boolean; role: string }>();
+          const appearanceMap = new Map<string, { checked: boolean; role: SceneRole }>();
           result.scene.appearances.forEach((appearance: { character_id: string; role_in_scene: string }) => {
             appearanceMap.set(appearance.character_id, {
               checked: true,
-              role: appearance.role_in_scene,
+              role: appearance.role_in_scene as SceneRole,
             });
           });
           setAppearances(appearanceMap);
+          originalAppearancesRef.current = new Map(appearanceMap);
+        } else {
+          setAppearances(new Map());
+          originalAppearancesRef.current = new Map();
         }
+      } else {
+        // No scene data yet, reset form
+        setSceneData(null);
+        setSynopsis("");
+        setContent("");
+        setPovCharacterId("");
+        setLocationName("");
+        setTimeSetting("");
+        setWritingStatus("draft");
+        setAppearances(new Map());
+        originalAppearancesRef.current = new Map();
       }
     } catch (error) {
       console.error("Failed to load scene data:", error);
+      message.error(t("storyEditor.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -70,8 +92,11 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
     try {
       setSaving(true);
 
-      if (sceneData) {
-        await storyCreationApi.scenes.update(graphId, sceneData.id, {
+      let currentSceneData = sceneData;
+
+      // Save scene content
+      if (currentSceneData) {
+        await storyCreationHttpApi.scenes.update(graphId, currentSceneData.id, {
           synopsis,
           content,
           pov_character_id: povCharacterId || null,
@@ -81,7 +106,7 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
           word_count: content.length,
         });
       } else {
-        const newScene = await storyCreationApi.scenes.create(graphId, {
+        const newScene = await storyCreationHttpApi.scenes.create(graphId, {
           structure_id: structure.id,
           synopsis,
           content,
@@ -92,11 +117,71 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
           word_count: content.length,
         });
         setSceneData(newScene);
+        currentSceneData = newScene;
+      }
+
+      // Persist appearance changes
+      if (currentSceneData) {
+        const original = originalAppearancesRef.current;
+        const current = appearances;
+
+        // Find newly added appearances (in current but not in original)
+        const addedPromises: Promise<unknown>[] = [];
+        const removedIds: string[] = [];
+
+        current.forEach((value, characterId) => {
+          if (!original.has(characterId)) {
+            // New appearance - create it
+            addedPromises.push(
+              storyCreationHttpApi.appearances.create(graphId, {
+                character_id: characterId,
+                scene_detail_id: currentSceneData.id,
+                role_in_scene: value.role,
+              })
+            );
+          } else if (original.get(characterId)?.role !== value.role) {
+            // Role changed - remove old and create new
+            removedIds.push(characterId);
+            addedPromises.push(
+              storyCreationHttpApi.appearances.create(graphId, {
+                character_id: characterId,
+                scene_detail_id: currentSceneData.id,
+                role_in_scene: value.role,
+              })
+            );
+          }
+        });
+
+        // Find removed appearances (in original but not in current)
+        original.forEach((_value, characterId) => {
+          if (!current.has(characterId)) {
+            removedIds.push(characterId);
+          }
+        });
+
+        // Execute removals and additions
+        if (removedIds.length > 0 || addedPromises.length > 0) {
+          // For removals, we need to find the appearance IDs
+          // Re-fetch appearances to get IDs for removal
+          const result = await storyCreationHttpApi.scenes.get(graphId, structure.id);
+          if (result.scene?.appearances) {
+            const deletePromises = result.scene.appearances
+              .filter((app: { character_id: string }) => removedIds.includes(app.character_id))
+              .map((app: { id: string }) => storyCreationHttpApi.appearances.delete(graphId, app.id));
+
+            await Promise.all([...deletePromises, ...addedPromises]);
+          }
+        }
+
+        // Update original appearances ref
+        originalAppearancesRef.current = new Map(current);
       }
 
       onSave();
+      message.success(t("storyEditor.sceneSaved"));
     } catch (error) {
       console.error("Failed to save scene:", error);
+      message.error(t("storyEditor.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -114,11 +199,12 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
     });
   };
 
-  const handleRoleChange = (characterId: string, role: string) => {
+  const handleRoleChange = (characterId: string, role: SceneRole) => {
     setAppearances(prev => {
       const next = new Map(prev);
-      if (next.has(characterId)) {
-        next.set(characterId, { ...next.get(characterId)!, role });
+      const existing = next.get(characterId);
+      if (existing) {
+        next.set(characterId, { ...existing, role });
       }
       return next;
     });
@@ -145,6 +231,7 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
         <button
           onClick={handleSave}
           disabled={saving}
+          data-save-trigger="true"
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
         >
           {saving ? (
@@ -311,7 +398,7 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
                     {isChecked && (
                       <select
                         value={currentRole}
-                        onChange={(e) => handleRoleChange(character.id, e.target.value)}
+                        onChange={(e) => handleRoleChange(character.id, e.target.value as SceneRole)}
                         className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-primary-500"
                       >
                         <option value="protagonist">{t("storyEditor.roles.protagonist")}</option>

@@ -8,7 +8,6 @@ import {
   Settings2,
   GraduationCap,
   MessageCircle,
-  Network,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { useTheme } from "../../hooks";
@@ -408,15 +407,6 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               <Settings2 size={16} />
             </button>
           )}
-          <button
-            onClick={() => setUseGraphContext(!useGraphContext)}
-            className={`p-2 rounded-lg transition-colors ${
-              useGraphContext ? "bg-white/20" : "hover:bg-white/10"
-            }`}
-            title={t("aiChat.graphContext")}
-          >
-            <Network size={16} />
-          </button>
           {onToggleTutorMode && (
             <button
               onClick={onToggleTutorMode}
@@ -760,6 +750,9 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
           )}
           quotes={quotes}
           onRemoveQuote={removeQuote}
+          useGraphContext={useGraphContext}
+          onToggleGraphContext={() => setUseGraphContext(!useGraphContext)}
+          onClearChat={() => chatState.clearMessages()}
         />
       )}
     </motion.div>

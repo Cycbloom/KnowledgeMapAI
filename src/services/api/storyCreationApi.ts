@@ -30,9 +30,11 @@ function buildTree(flatList: StoryStructure[]): StoryStructure[] {
   });
 
   flatList.forEach(item => {
-    const node = map.get(item.id)!;
+    const node = map.get(item.id);
+    if (!node) return;
     if (item.parent_structure_id && map.has(item.parent_structure_id)) {
-      map.get(item.parent_structure_id)!.children!.push(node);
+      const parent = map.get(item.parent_structure_id);
+      parent?.children?.push(node);
     } else {
       roots.push(node);
     }
@@ -41,7 +43,7 @@ function buildTree(flatList: StoryStructure[]): StoryStructure[] {
   return roots;
 }
 
-export const storyCreationApi = {
+export const storyCreationSupabaseApi = {
   structures: {
     list: async (graphId: string): Promise<StoryStructure[]> => {
       const { data, error } = await getSupabase()
@@ -75,6 +77,7 @@ export const storyCreationApi = {
     },
 
     update: async (
+      graphId: string,
       id: string,
       data: Partial<Omit<CreateStoryStructureData, 'graph_id'>>,
     ): Promise<StoryStructure> => {
@@ -84,6 +87,7 @@ export const storyCreationApi = {
           ...data,
           updated_at: new Date().toISOString(),
         })
+        .eq('graph_id', graphId)
         .eq('id', id)
         .select()
         .single();
@@ -92,10 +96,11 @@ export const storyCreationApi = {
       return result as StoryStructure;
     },
 
-    delete: async (id: string): Promise<void> => {
+    delete: async (graphId: string, id: string): Promise<void> => {
       const { error } = await getSupabase()
         .from('story_structures')
         .delete()
+        .eq('graph_id', graphId)
         .eq('id', id);
 
       if (error) throw error;
@@ -173,7 +178,7 @@ export const storyCreationApi = {
         }
       }
 
-      return storyCreationApi.structures.list(graphId);
+      return storyCreationSupabaseApi.structures.list(graphId);
     },
   },
 
@@ -201,12 +206,14 @@ export const storyCreationApi = {
     },
 
     update: async (
+      graphId: string,
       id: string,
       data: Partial<CreateCharacterData>,
     ): Promise<StoryCharacter> => {
       const { data: result, error } = await getSupabase()
         .from('story_characters')
         .update({ ...data, updated_at: new Date().toISOString() })
+        .eq('graph_id', graphId)
         .eq('id', id)
         .select()
         .single();
@@ -215,10 +222,11 @@ export const storyCreationApi = {
       return result as StoryCharacter;
     },
 
-    delete: async (id: string): Promise<void> => {
+    delete: async (graphId: string, id: string): Promise<void> => {
       const { error } = await getSupabase()
         .from('story_characters')
         .delete()
+        .eq('graph_id', graphId)
         .eq('id', id);
 
       if (error) throw error;
@@ -297,10 +305,11 @@ export const storyCreationApi = {
       return result as StoryAppearance;
     },
 
-    remove: async (id: string): Promise<void> => {
+    remove: async (graphId: string, id: string): Promise<void> => {
       const { error } = await getSupabase()
         .from('story_appearances')
         .delete()
+        .eq('graph_id', graphId)
         .eq('id', id);
 
       if (error) throw error;

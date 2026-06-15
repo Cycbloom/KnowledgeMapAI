@@ -717,7 +717,8 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 3. 使用清晰的 Markdown 格式组织回答
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
 5. 在回答末尾，可以建议 1-3 个相关的后续问题
-
+6. {{languageInstruction}}
+{{graphContextHint}}
 引用上下文处理：
 当用户消息中包含 [引用内容] 标记时，表示用户引用了学习材料中的特定内容。请：
 1. 优先基于引用内容回答用户问题

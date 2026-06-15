@@ -70,6 +70,20 @@ export interface StoryAppearance {
   created_at: string;
 }
 
+export interface StoryCharacterRelationship {
+  id: string;
+  graph_id: string;
+  source_character_id: string;
+  target_character_id: string;
+  relationship_type: string;
+  strength: number;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  source_character?: { id: string; name: string; role_type: string };
+  target_character?: { id: string; name: string; role_type: string };
+}
+
 export interface InitializeTemplateResponse {
   message: string;
   templateName: string;
@@ -78,7 +92,7 @@ export interface InitializeTemplateResponse {
   count: number;
 }
 
-export const storyCreationApi = {
+export const storyCreationHttpApi = {
   structures: {
     list: (graphId: string): Promise<{ structures: StoryStructure[] }> => {
       return request(`/story/${graphId}/structures`);
@@ -268,6 +282,40 @@ export const storyCreationApi = {
       return request(
         `/story/${graphId}/appearances/stats/${characterId}`,
       );
+    },
+  },
+
+  relationships: {
+    list: (
+      graphId: string,
+    ): Promise<{ relationships: StoryCharacterRelationship[] }> => {
+      return request(`/story/${graphId}/relationships`);
+    },
+
+    create: (
+      graphId: string,
+      data: {
+        source_character_id: string;
+        target_character_id: string;
+        relationship_type: string;
+        strength?: number;
+        status?: string;
+        notes?: string;
+      },
+    ): Promise<StoryCharacterRelationship> => {
+      return request(`/story/${graphId}/relationships`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+
+    delete: (
+      graphId: string,
+      id: string,
+    ): Promise<{ message: string }> => {
+      return request(`/story/${graphId}/relationships/${id}`, {
+        method: "DELETE",
+      });
     },
   },
 };

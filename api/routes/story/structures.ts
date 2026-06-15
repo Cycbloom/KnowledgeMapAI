@@ -253,15 +253,11 @@ router.post(
 
       const sortedBeats = [...beats].sort((a, b) => a.order - b.order);
 
-      const actMap = new Map<string, string>();
-
+      // Step 1: Insert all structures with parent_structure_id = null first
       const structuresToInsert = sortedBeats.map((beat) => ({
         graph_id: graphId,
         structure_level: beat.level,
-        parent_structure_id:
-          beat.level === "sequence" && beat.parent_act && actMap.has(beat.parent_act)
-            ? actMap.get(beat.parent_act)
-            : null,
+        parent_structure_id: null as string | null,
         title: beat.name_zh || beat.name,
         synopsis: beat.description || null,
         display_order: beat.order - 1,
@@ -276,7 +272,9 @@ router.post(
 
       if (insertError) throw insertError;
 
-      createdStructures?.forEach((structure: StoryStructure) => {
+      // Step 2: Build actMap from created structures (matching by template_beat_id)
+      const actMap = new Map<string, string>();
+      (createdStructures || []).forEach((structure: StoryStructure) => {
         const matchingBeat = sortedBeats.find(
           (beat) => beat.id === structure.template_beat_id,
         );
@@ -285,7 +283,44 @@ router.post(
         }
       });
 
-      const tree = buildTree(createdStructures || []);
+      // Step 3: Update parent_structure_id for sequence-level structures
+      const updatePromises = (createdStructures || [])
+        .filter((structure: StoryStructure) => {
+          const matchingBeat = sortedBeats.find(
+            (beat) => beat.id === structure.template_beat_id,
+          );
+          return matchingBeat?.level === "sequence" && matchingBeat.parent_act;
+        })
+        .map((structure: StoryStructure) => {
+          const matchingBeat = sortedBeats.find(
+            (beat) => beat.id === structure.template_beat_id,
+          );
+          const parentId = actMap.get(matchingBeat?.parent_act ?? "");
+          if (!parentId) return null;
+          return supabase
+            .from("story_structures")
+            .update({ parent_structure_id: parentId, updated_at: new Date().toISOString() })
+            .eq("id", structure.id)
+            .eq("graph_id", graphId);
+        })
+        .filter(Boolean);
+
+      if (updatePromises.length > 0) {
+        const updateResults = await Promise.all(updatePromises);
+        const updateError = updateResults.find((r) => r?.error);
+        if (updateError?.error) throw updateError.error;
+      }
+
+      // Step 4: Re-fetch all structures to get the updated tree
+      const { data: finalStructures, error: refetchError } = await supabase
+        .from("story_structures")
+        .select("*")
+        .eq("graph_id", graphId)
+        .order("display_order", { ascending: true });
+
+      if (refetchError) throw refetchError;
+
+      const tree = buildTree(finalStructures || []);
 
       res.status(201).json({
         message: `已根据「${template.name_zh}」模板初始化故事骨架`,

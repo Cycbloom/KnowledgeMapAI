@@ -33,12 +33,12 @@ const LEVEL_ICONS: Record<StoryStructure["structure_level"], React.ReactNode> = 
   scene: <Clapperboard size={14} />,
 };
 
-const NEXT_LEVEL_MAP: Record<StoryStructure["structure_level"], StoryStructure["structure_level"]> = {
+const NEXT_LEVEL_MAP: Record<StoryStructure["structure_level"], StoryStructure["structure_level"] | null> = {
   story: "act",
   act: "sequence",
   sequence: "chapter",
   chapter: "scene",
-  scene: "scene",
+  scene: null, // scene is a leaf node, cannot add children
 };
 
 export const StructurePanel: React.FC<StructurePanelProps> = ({
@@ -69,6 +69,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
   const handleAddChild = (e: React.MouseEvent, parentId: string, currentLevel: StoryStructure["structure_level"]) => {
     e.stopPropagation();
     const nextLevel = NEXT_LEVEL_MAP[currentLevel];
+    if (!nextLevel) return; // scene is leaf node
     onAddChild(parentId, nextLevel);
 
     if (!expandedIds.has(parentId)) {
@@ -158,7 +159,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
         {/* Children */}
         {hasChildren && isExpanded && (
           <div>
-            {node.children!.map((child: StoryStructure) => renderNode(child, depth + 1))}
+            {node.children?.map((child: StoryStructure) => renderNode(child, depth + 1))}
           </div>
         )}
       </div>
@@ -230,28 +231,12 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
             </h4>
             <div className="space-y-2">
               <button
-                onClick={() => handleInitializeTemplate("three_act_structure")}
+                onClick={() => handleInitializeTemplate("three_act")}
                 disabled={initializing}
                 className="w-full text-left px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50"
               >
-                <div className="font-medium text-gray-900 dark:text-white">三幕结构</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">经典的三幕式故事结构</div>
-              </button>
-              <button
-                onClick={() => handleInitializeTemplate("hero_journey")}
-                disabled={initializing}
-                className="w-full text-left px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50"
-              >
-                <div className="font-medium text-gray-900 dark:text-white">英雄之旅</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">约瑟夫·坎贝尔的英雄旅程模型</div>
-              </button>
-              <button
-                onClick={() => handleInitializeTemplate("save_the_cat")}
-                disabled={initializing}
-                className="w-full text-left px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50"
-              >
-                <div className="font-medium text-gray-900 dark:text-white">救猫咪</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">布莱克·斯奈德的15点结构</div>
+                <div className="font-medium text-gray-900 dark:text-white">{t("storyEditor.templateThreeAct")}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t("storyEditor.templateThreeActDesc")}</div>
               </button>
             </div>
             <button

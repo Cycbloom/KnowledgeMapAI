@@ -12,7 +12,12 @@ import {
 import {
   getLearningStatus,
   getStatusColors,
+  getLevelColors,
+  getHeatmapColors,
+  calculateNodeHeat,
+  getDecayColors,
 } from "../../../config/learningStatusColors";
+import { DECAY_CONFIG } from "../../../config/graphConfig";
 import { truncateText } from "../../../utils/textUtils";
 
 interface QuadrantNodeProps {
@@ -70,7 +75,7 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
   onClick,
   onDrag,
   colorScheme = "default",
-  coloringMode: _coloringMode = "status",
+  coloringMode = "status",
   originX,
   originY,
   regionRadius,
@@ -87,9 +92,25 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
 
   const level = (node.level || "leaf") as NodeLevel;
   const status = getLearningStatus(nodeStatus?.[node.id]);
-  const colors = getStatusColors(status, isDark, colorScheme);
 
-  const nodeOpacity = !hasFocusMode ? 1 : focused ? 1 : 0.45;
+  const colors = useMemo(() => {
+    if (coloringMode === "level") {
+      return getLevelColors(level, isDark);
+    }
+    if (coloringMode === "heatmap") {
+      const heatValue = calculateNodeHeat(nodeStatus?.[node.id]);
+      return getHeatmapColors(heatValue, isDark);
+    }
+    if (coloringMode === "decay") {
+      const retrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
+      const decayValue = retrievability != null ? retrievability : -1;
+      return getDecayColors(decayValue, isDark);
+    }
+    return getStatusColors(status, isDark, colorScheme);
+  }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id]);
+
+  const decayOpacity = coloringMode === "decay" && colors.opacity != null ? colors.opacity : 1;
+  const nodeOpacity = (!hasFocusMode ? 1 : focused ? 1 : 0.45) * decayOpacity;
 
   const titleInfo = useMemo(
     () => truncateText(node.title || "未命名"),
@@ -245,11 +266,15 @@ export const QuadrantNode: React.FC<QuadrantNodeProps> = ({
 
   const shadowStyle = getShadowStyle(styleConfig.shadow);
   const hoverScale = isHovered ? styleConfig.animation.hoverScale : 1;
+  const isSeverelyDecayed = coloringMode === "decay" &&
+    nodeStatus?.[node.id]?.fsrs_retrievability != null &&
+    nodeStatus[node.id].fsrs_retrievability < DECAY_CONFIG.severeDecayThreshold;
 
   return (
     <g
       data-node-id={node.id}
       transform={`translate(${x}, ${y})`}
+      className={isSeverelyDecayed ? "decay-pulse" : undefined}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

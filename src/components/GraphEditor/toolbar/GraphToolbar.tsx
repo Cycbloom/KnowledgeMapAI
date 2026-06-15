@@ -38,6 +38,7 @@ import {
   MonitorPlay,
   Headphones,
   Activity,
+  Brain,
   ChevronRight,
   Globe,
   Keyboard,
@@ -1472,24 +1473,29 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             const nextMode: Record<string, GraphColorMode> = {
               level: "status",
               status: "heatmap",
-              heatmap: "level",
+              heatmap: "decay",
+              decay: "level",
             };
             setColoringMode(nextMode[coloringMode] || "level");
           }}
-          icon={coloringMode === "level" ? Layers : coloringMode === "status" ? Activity : BarChart3}
+          icon={coloringMode === "level" ? Layers : coloringMode === "status" ? Activity : coloringMode === "heatmap" ? BarChart3 : Brain}
           label={
             coloringMode === "level"
               ? t("graphEditor.toolbar.coloringModeLevel")
               : coloringMode === "status"
                 ? t("graphEditor.toolbar.coloringModeStatus")
-                : t("graphEditor.toolbar.coloringModeHeatmap")
+                : coloringMode === "heatmap"
+                  ? t("graphEditor.toolbar.coloringModeHeatmap")
+                  : t("graphEditor.toolbar.coloringModeDecay")
           }
           colorClass={
             coloringMode === "level"
               ? "text-primary-500"
               : coloringMode === "status"
                 ? "text-orange-500"
-                : "text-red-500"
+                : coloringMode === "heatmap"
+                  ? "text-red-500"
+                  : "text-emerald-500"
           }
         />
 

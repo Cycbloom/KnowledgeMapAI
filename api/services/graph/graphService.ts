@@ -1045,7 +1045,7 @@ export class GraphService {
     const { data: cards, error } = await supabase
       .from("study_cards")
       .select(
-        "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, review_count",
+        "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
       )
       .eq("user_id", userId)
       .eq("graph_id", graphId);
@@ -1060,21 +1060,43 @@ export class GraphService {
 
     const statusMap: Record<string, NodeStatus> = {};
 
-    (cards || []).forEach((card: Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'review_count'>) => {
+    // Group cards by knowledge_point_id and aggregate FSRS data
+    type CardPick = Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count'>;
+    const cardGroups = new Map<string, { cards: CardPick[]; stabilitySum: number; retrievabilitySum: number; reviewCountSum: number; count: number }>();
+
+    (cards || []).forEach((card: CardPick) => {
+      const kpId = card.knowledge_point_id;
+      if (!cardGroups.has(kpId)) {
+        cardGroups.set(kpId, { cards: [], stabilitySum: 0, retrievabilitySum: 0, reviewCountSum: 0, count: 0 });
+      }
+      const group = cardGroups.get(kpId)!;
+      group.cards.push(card);
+      group.stabilitySum += card.fsrs_stability ?? 0;
+      group.retrievabilitySum += card.fsrs_retrievability ?? 0;
+      group.reviewCountSum += card.review_count || 0;
+      group.count += 1;
+    });
+
+    cardGroups.forEach((group, kpId) => {
+      const card = group.cards[0]; // Use first card for non-aggregated fields
       const nextReview = card.next_review ? new Date(card.next_review) : null;
       const isDue = nextReview && nextReview <= now;
       const isDueToday =
         nextReview &&
         nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
-      const isMastered = !!card.fsrs_stability && card.fsrs_stability > 21;
+      const avgStability = group.stabilitySum / group.count;
+      const isMastered = avgStability > 21;
+      const avgRetrievability = group.retrievabilitySum / group.count;
 
-      statusMap[card.knowledge_point_id] = {
+      statusMap[kpId] = {
         mastered: isMastered,
         locked: false,
-        review_count: card.review_count || 0,
+        review_count: group.reviewCountSum,
         next_review: card.next_review ?? undefined,
         due: !!isDue,
         due_today: !!isDueToday,
+        fsrs_stability: avgStability,
+        fsrs_retrievability: avgRetrievability,
       };
     });
 

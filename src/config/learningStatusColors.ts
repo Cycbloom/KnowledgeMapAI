@@ -1,5 +1,5 @@
 import { LearningStatus, ColorScheme, NodeLevel } from '../types';
-import { HEATMAP_CONFIG } from './graphConfig';
+import { HEATMAP_CONFIG, DECAY_CONFIG } from './graphConfig';
 
 export interface ColorConfig {
   primary: string;
@@ -11,6 +11,7 @@ export interface ColorConfig {
     enabled: boolean;
     colors: string[];
   };
+  opacity?: number;
 }
 
 export const LEARNING_STATUS_COLORS: Record<LearningStatus, ColorConfig> = {
@@ -550,5 +551,80 @@ export const getHeatmapColors = (heatValue: number, isDark: boolean = false): Co
       enabled: true,
       colors: [primaryColor, secondaryColor, glowColor],
     },
+  };
+};
+
+/**
+ * Get decay color based on FSRS retrievability value
+ * Returns hex color string
+ */
+export const getDecayColor = (retrievability: number): string => {
+  const clampedValue = Math.max(0, Math.min(1, retrievability));
+  const stops = DECAY_CONFIG.colorStops;
+
+  let lowerStop: { value: number; color: string } = stops[0];
+  let upperStop: { value: number; color: string } = stops[stops.length - 1];
+
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (clampedValue >= stops[i].value && clampedValue <= stops[i + 1].value) {
+      lowerStop = stops[i];
+      upperStop = stops[i + 1];
+      break;
+    }
+  }
+
+  const range = upperStop.value - lowerStop.value;
+  const factor = range === 0 ? 0 : (clampedValue - lowerStop.value) / range;
+
+  const lowerRgb = hexToRgb(lowerStop.color);
+  const upperRgb = hexToRgb(upperStop.color);
+
+  if (!lowerRgb || !upperRgb) return lowerStop.color;
+
+  const r = Math.round(lowerRgb.r + (upperRgb.r - lowerRgb.r) * factor);
+  const g = Math.round(lowerRgb.g + (upperRgb.g - lowerRgb.g) * factor);
+  const b = Math.round(lowerRgb.b + (upperRgb.b - lowerRgb.b) * factor);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+/**
+ * Get decay ColorConfig for a node based on FSRS retrievability
+ * @param retrievability - FSRS retrievability value (0-1), or -1 for no data
+ * @param isDark - whether dark mode is active
+ */
+export const getDecayColors = (retrievability: number, isDark: boolean = false): ColorConfig & { opacity: number } => {
+  if (retrievability < 0) {
+    // No data - use neutral gray
+    return {
+      primary: DECAY_CONFIG.noDataColor,
+      secondary: '#D1D5DB',
+      glow: '#E5E7EB',
+      background: isDark ? '#374151' : '#F3F4F6',
+      text: isDark ? '#9CA3AF' : '#6B7280',
+      gradient: { enabled: false, colors: [DECAY_CONFIG.noDataColor] },
+      opacity: 0.6,
+    };
+  }
+
+  const primaryColor = getDecayColor(retrievability);
+  const secondaryColor = getDecayColor(Math.min(1, retrievability + 0.1));
+  const glowColor = getDecayColor(Math.min(1, retrievability + 0.2));
+
+  // Map retrievability to opacity: low retrievability = more transparent
+  const { opacityRange } = DECAY_CONFIG;
+  const opacity = opacityRange.min + (opacityRange.max - opacityRange.min) * retrievability;
+
+  return {
+    primary: primaryColor,
+    secondary: secondaryColor,
+    glow: glowColor,
+    background: isDark ? '#1E293B' : '#F8FAFC',
+    text: isDark ? '#F1F5F9' : '#0F172A',
+    gradient: {
+      enabled: true,
+      colors: [primaryColor, secondaryColor, glowColor],
+    },
+    opacity,
   };
 };

@@ -1,15 +1,14 @@
 import React from "react";
-import type { Node, Edge } from "../../../types";
+import type { Node, Edge, GraphColorMode } from "../../../types";
 import type { RelatedNode } from "../../../hooks/graphEditor/useMiscState";
-import { levelLabels } from "../../../config/graphConfig";
+import { levelLabels, DECAY_CONFIG } from "../../../config/graphConfig";
 import {
   getLearningStatus,
   getStatusColors,
 } from "../../../config/learningStatusColors";
 import { getLevel } from "../../../lib/graphUtils";
 import { preprocessMarkdown } from "../../../utils/markdownUtils";
-import { TermTooltip } from "../../common";
-import { CodeBlock, Mermaid } from "../../common";
+import { TermTooltip, CodeBlock, Mermaid } from "../../common";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -31,9 +30,9 @@ import {
   Link as LinkIcon,
   ChevronRight,
   History,
+  AlertTriangle,
 } from "lucide-react";
-import { useTheme } from "../../../hooks";
-import { useIsMobile } from "../../../hooks";
+import { useTheme, useIsMobile } from "../../../hooks";
 import { useTranslation } from "react-i18next";
 
 interface NodeDetailSidebarProps {
@@ -66,6 +65,7 @@ interface NodeDetailSidebarProps {
   isReadOnly?: boolean;
   onShowVersionHistory?: () => void;
   isGeneratingContent?: boolean;
+  coloringMode?: GraphColorMode;
 }
 
 export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
@@ -95,6 +95,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   isReadOnly = false,
   onShowVersionHistory,
   isGeneratingContent = false,
+  coloringMode = "status",
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -163,6 +164,27 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
             🔒 {t("nodeDetail.readOnlyMode")} - {t("nodeDetail.readOnlyHint")}
           </p>
+        </div>
+      )}
+
+      {coloringMode === "decay" && nodeStatus?.[node.id]?.fsrs_retrievability != null && nodeStatus[node.id].fsrs_retrievability < DECAY_CONFIG.severeDecayThreshold && (
+        <div className="mb-4 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <div className="flex items-center gap-2 mb-1.5">
+            <AlertTriangle size={14} className="text-amber-500" />
+            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+              {t("nodeDetail.memoryDecay")}
+            </span>
+          </div>
+          <p className="text-xs text-amber-600 dark:text-amber-500 mb-2">
+            {t("nodeDetail.retrievability", { percent: Math.round(nodeStatus[node.id].fsrs_retrievability * 100) })}
+          </p>
+          <button
+            onClick={onStartLearningMode}
+            className={`w-full flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors text-xs font-bold ${isMobile ? "py-2.5 min-h-[40px]" : "py-1.5"}`}
+          >
+            <Navigation size={14} className="mr-1.5" />
+            {t("nodeDetail.reviewNow")}
+          </button>
         </div>
       )}
 

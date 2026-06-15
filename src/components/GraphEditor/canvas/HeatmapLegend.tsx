@@ -1,17 +1,34 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { HEATMAP_CONFIG } from '../../../config/graphConfig';
+import { HEATMAP_CONFIG, DECAY_CONFIG } from '../../../config/graphConfig';
+import type { GraphColorMode } from '@shared/types/graph';
 
-interface HeatmapLegendProps {
+interface ColorModeLegendProps {
+  coloringMode: GraphColorMode;
   isDark?: boolean;
 }
 
-export const HeatmapLegend: React.FC<HeatmapLegendProps> = ({ isDark = false }) => {
+export const ColorModeLegend: React.FC<ColorModeLegendProps> = ({ coloringMode, isDark = false }) => {
   const { t } = useTranslation();
 
-  const gradientStops = HEATMAP_CONFIG.colorStops
+  // Only show legend for heatmap and decay modes
+  if (coloringMode !== 'heatmap' && coloringMode !== 'decay') {
+    return null;
+  }
+
+  const config = coloringMode === 'heatmap' ? HEATMAP_CONFIG : DECAY_CONFIG;
+
+  const gradientStops = config.colorStops
     .map((stop) => `${stop.color} ${stop.value * 100}%`)
     .join(', ');
+
+  const lowLabel = coloringMode === 'heatmap'
+    ? t('graphEditor.heatmap.low', '低活跃')
+    : t('graphEditor.decay.decayed', '衰减');
+
+  const highLabel = coloringMode === 'heatmap'
+    ? t('graphEditor.heatmap.high', '高活跃')
+    : t('graphEditor.decay.fresh', '牢固');
 
   return (
     <div
@@ -48,9 +65,14 @@ export const HeatmapLegend: React.FC<HeatmapLegendProps> = ({ isDark = false }) 
           color: isDark ? '#94A3B8' : '#64748B',
         }}
       >
-        <span>{t('graphEditor.heatmap.low', '低活跃')}</span>
-        <span>{t('graphEditor.heatmap.high', '高活跃')}</span>
+        <span>{lowLabel}</span>
+        <span>{highLabel}</span>
       </div>
     </div>
   );
+};
+
+// Keep backward compatibility alias
+export const HeatmapLegend: React.FC<Omit<ColorModeLegendProps, 'coloringMode'> & { coloringMode?: GraphColorMode }> = (props) => {
+  return <ColorModeLegend {...props} coloringMode={props.coloringMode ?? 'heatmap'} />;
 };

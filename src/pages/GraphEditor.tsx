@@ -1909,6 +1909,7 @@ export const GraphEditor = () => {
             isReadOnly={isReadOnly}
             customRegions={customRegions}
             onCreateRegion={handleCreateRegion}
+            coloringMode={coloringMode}
           />
         </ErrorBoundary>
       </Suspense>

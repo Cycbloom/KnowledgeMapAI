@@ -2350,7 +2350,10 @@
     "moreChildren": "还有 {{count}} 个子节点",
     "markMastered": "标记已掌握",
     "viewParentNode": "查看父节点：{{title}}",
-    "viewChildNode": "查看子节点：{{title}}"
+    "viewChildNode": "查看子节点：{{title}}",
+    "memoryDecay": "记忆衰减",
+    "retrievability": "可提取性: {{percent}}%",
+    "reviewNow": "立即复习"
   },
   "quickCreate": {
     "title": "快速创建图谱",
@@ -2749,6 +2752,7 @@
       "coloringModeLevel": "着色模式: 结构",
       "coloringModeStatus": "着色模式: 状态",
       "coloringModeHeatmap": "着色模式: 热力图",
+      "coloringModeDecay": "着色模式: 衰减",
       "hideTimeline": "隐藏时间轴",
       "showTimeline": "显示时间轴",
       "presentationMode": "演示播放",
@@ -2838,6 +2842,12 @@
     "heatmap": {
       "low": "低活跃",
       "high": "高活跃"
+    },
+    "decay": {
+      "decayed": "衰减",
+      "fresh": "牢固",
+      "decayWarning": "{{count}} 个知识点记忆衰减中",
+      "clickToFocus": "点击查看"
     },
     "outline": {
       "title": "大纲视图 ({{count}})",

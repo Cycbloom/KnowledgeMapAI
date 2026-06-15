@@ -27,7 +27,7 @@ import { MindMapLink } from "./MindMapLink";
 import { AlternativeBranches } from "../shared/AlternativeBranches";
 import { CanvasLayout } from "./CanvasLayout";
 import { MiniMap } from "./MiniMap";
-import { HeatmapLegend } from "./HeatmapLegend";
+import { ColorModeLegend } from "./HeatmapLegend";
 import { LayoutOrganizer } from "../shared/LayoutOrganizer";
 import { NodePreviewCard } from "../shared/NodePreviewCard";
 import { MobileNodePreviewCard } from "../mobile/MobileNodePreviewCard";
@@ -42,6 +42,7 @@ import {
 } from "../shared/hooks/useVirtualization";
 import { createMindMapLayout } from "../../../utils/mindmapLayout";
 import { THEME_COLORS } from "../../../config/learningStatusColors";
+import { DECAY_CONFIG } from "../../../config/graphConfig";
 import { useTheme } from "../../../hooks";
 import {
   calculateNodeImportance,
@@ -345,6 +346,24 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       });
       return map;
     }, [isNarrativeMode, narrativeFilteredLinks, semanticVisibleLinks, edges, nodes, edgeWidthMode]);
+
+    const decayStats = useMemo(() => {
+      if (coloringMode !== "decay" || !nodeStatus) return null;
+      const entries = Object.entries(nodeStatus);
+      const decayedNodes = entries.filter(([, status]) =>
+        status.fsrs_retrievability != null && status.fsrs_retrievability < DECAY_CONFIG.severeDecayThreshold
+      );
+      if (decayedNodes.length === 0) return null;
+
+      const mostDecayed = decayedNodes.reduce((worst, current) =>
+        (current[1].fsrs_retrievability ?? 1) < (worst[1].fsrs_retrievability ?? 1) ? current : worst
+      );
+
+      return {
+        count: decayedNodes.length,
+        mostDecayedNodeId: mostDecayed[0],
+      };
+    }, [coloringMode, nodeStatus]);
 
     const visualCenterY = interaction.visualCenterY;
 
@@ -871,7 +890,47 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           </span>
         </div>
 
-        {coloringMode === "heatmap" && <HeatmapLegend isDark={isDark} />}
+        <ColorModeLegend coloringMode={coloringMode} isDark={isDark} />
+
+        {decayStats && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 16,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 16px',
+              borderRadius: 20,
+              background: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
+              border: `1px solid ${isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.2)'}`,
+              backdropFilter: 'blur(4px)',
+              zIndex: 10,
+              cursor: 'pointer',
+              fontSize: 13,
+              color: isDark ? '#FCD34D' : '#B45309',
+            }}
+            onClick={() => {
+              const targetNode = layout?.nodes.find(n => n.id === decayStats.mostDecayedNodeId);
+              if (targetNode) {
+                const targetK = 1.2;
+                const targetX = interaction.visualCenterX - targetNode.x * targetK;
+                const targetY = interaction.visualCenterY - targetNode.y * targetK;
+                animateCamera(targetX, targetY, targetK, 800);
+              }
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <span>{t('graphEditor.decay.decayWarning', { count: decayStats.count })}</span>
+            <span style={{ fontSize: 11, opacity: 0.7 }}>{t('graphEditor.decay.clickToFocus')}</span>
+          </div>
+        )}
 
         {interaction.showPreview &&
           interaction.previewNode &&

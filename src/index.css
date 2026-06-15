@@ -1129,3 +1129,12 @@ select:focus-visible {
 .dark .text-disabled {
   color: #6b7280;
 }
+
+/* Knowledge Decay Pulse Animation - 知识衰退脉冲动画 */
+@keyframes decay-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.decay-pulse {
+  animation: decay-pulse 2s ease-in-out infinite;
+}

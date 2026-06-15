@@ -26,8 +26,9 @@ import {
   getLevelColors,
   getHeatmapColors,
   calculateNodeHeat,
+  getDecayColors,
 } from "../../../config/learningStatusColors";
-import { HEATMAP_CONFIG, type SemanticZoomLevel } from "../../../config/graphConfig";
+import { HEATMAP_CONFIG, DECAY_CONFIG, type SemanticZoomLevel } from "../../../config/graphConfig";
 import { getLevel, calculateNodeImportance } from "../../../lib/graphUtils";
 import { truncateText } from "../../../utils/textUtils";
 import { BACKBONE_MODULE_COLORS } from "@shared/types/graph";
@@ -218,20 +219,34 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       const heatValue = calculateNodeHeat(nodeStatus?.[node.id]);
       return getHeatmapColors(heatValue, isDark);
     }
+    if (coloringMode === "decay") {
+      const retrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
+      const decayValue = retrievability != null ? retrievability : -1;
+      return getDecayColors(decayValue, isDark);
+    }
     return getStatusColors(status, isDark, colorScheme);
   }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id]);
 
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
 
   const heatGlowIntensity = useMemo(() => {
-    if (coloringMode !== "heatmap") return undefined;
-    const heat = calculateNodeHeat(nodeStatus?.[node.id]);
-    if (heat < 0) return undefined;
-    const { glowRange } = HEATMAP_CONFIG;
-    return glowRange.min + (glowRange.max - glowRange.min) * heat;
+    if (coloringMode === "heatmap") {
+      const heat = calculateNodeHeat(nodeStatus?.[node.id]);
+      if (heat < 0) return undefined;
+      const { glowRange } = HEATMAP_CONFIG;
+      return glowRange.min + (glowRange.max - glowRange.min) * heat;
+    }
+    if (coloringMode === "decay") {
+      const retrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
+      if (retrievability == null) return undefined;
+      const { glowRange } = DECAY_CONFIG;
+      return glowRange.min + (glowRange.max - glowRange.min) * retrievability;
+    }
+    return undefined;
   }, [coloringMode, nodeStatus, node.id]);
 
   const nodeOpacity = !hasFocusMode ? 1 : focused ? 1 : 0.3;
+  const decayOpacity = coloringMode === "decay" && colors.opacity != null ? colors.opacity : 1;
   const learningPathOpacity = isInLearningPath
     ? 1
     : learningPathHighlighted
@@ -239,8 +254,11 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       : 1;
   const finalOpacity = learningPathHighlighted
     ? learningPathOpacity
-    : nodeOpacity;
+    : Math.min(nodeOpacity, decayOpacity);
   const isAccepted = node.is_accepted !== false;
+  const isSeverelyDecayed = coloringMode === "decay" &&
+    nodeStatus?.[node.id]?.fsrs_retrievability != null &&
+    nodeStatus[node.id].fsrs_retrievability < DECAY_CONFIG.severeDecayThreshold;
   const hoverScale =
     isHovered || isTouchPressed ? styleConfig.animation.hoverScale : 1;
   const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;
@@ -497,6 +515,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     <g
       data-node-id={node.id}
       transform={`translate(${node.x}, ${node.y})`}
+      className={isSeverelyDecayed ? "decay-pulse" : undefined}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}

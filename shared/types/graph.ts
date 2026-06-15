@@ -22,7 +22,7 @@ export type GraphViewMode =
   | "planet"
   | "quadrant";
 
-export type GraphColorMode = "level" | "status" | "heatmap";
+export type GraphColorMode = "level" | "status" | "heatmap" | "decay";
 
 export type NodeSizeMode = "fixed" | "importance" | "degree" | "children";
 
@@ -498,6 +498,8 @@ export interface NodeStatus {
   due?: boolean;
   review_count?: number;
   next_review?: string;
+  fsrs_stability?: number;
+  fsrs_retrievability?: number;
 }
 
 export interface LayoutNode extends Node {

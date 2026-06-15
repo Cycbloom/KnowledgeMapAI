@@ -2448,6 +2448,7 @@
       "coloringModeLevel": "Coloring Mode: Structure",
       "coloringModeStatus": "Coloring Mode: Status",
       "coloringModeHeatmap": "Coloring Mode: Heatmap",
+      "coloringModeDecay": "Coloring Mode: Decay",
       "hideTimeline": "Hide Timeline",
       "showTimeline": "Show Timeline",
       "presentationMode": "Presentation Mode",
@@ -2537,6 +2538,12 @@
     "heatmap": {
       "low": "Low Activity",
       "high": "High Activity"
+    },
+    "decay": {
+      "decayed": "Decayed",
+      "fresh": "Fresh",
+      "decayWarning": "{{count}} knowledge points decaying",
+      "clickToFocus": "Click to view"
     },
     "outline": {
       "title": "Outline View ({{count}})",
@@ -3055,7 +3062,10 @@
     "moreChildren": "{{count}} more child nodes",
     "markMastered": "Mark Mastered",
     "viewParentNode": "View parent node: {{title}}",
-    "viewChildNode": "View child node: {{title}}"
+    "viewChildNode": "View child node: {{title}}",
+    "memoryDecay": "Memory Decay",
+    "retrievability": "Retrievability: {{percent}}%",
+    "reviewNow": "Review Now"
   },
   "quickCreate": {
     "title": "Quick Create Graph",

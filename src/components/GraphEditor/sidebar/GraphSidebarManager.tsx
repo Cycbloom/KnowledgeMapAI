@@ -1,8 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Node, Edge } from "../../../types";
-import { GraphEditorState } from "../../../hooks";
-import { useIsMobile } from "../../../hooks";
+import { Node, Edge, GraphColorMode } from "../../../types";
+import { GraphEditorState, useIsMobile } from "../../../hooks";
 import {
   getFocusedNodes,
   getFocusedLinks,
@@ -71,6 +70,7 @@ interface GraphSidebarManagerProps {
   onConnectNodes?: (sourceId: string, targetId: string) => void;
   isReadOnly?: boolean;
   customRegions?: CustomRegion[];
+  coloringMode?: GraphColorMode;
   onCreateRegion?: (
     region: Omit<CustomRegion, "id" | "createdAt" | "updatedAt">,
   ) => void;
@@ -93,6 +93,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   onConnectNodes,
   isReadOnly = false,
   customRegions: _customRegions = [],
+  coloringMode = "status",
   onCreateRegion,
 }) => {
   const {
@@ -308,6 +309,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           isReadOnly={isReadOnly}
           onShowVersionHistory={() => setIsVersionHistoryOpen(true)}
           isGeneratingContent={loading}
+          coloringMode={coloringMode}
         />
       ) : sidebarMode === "create" || sidebarMode === "edit" ? (
         <NodeEditSidebar

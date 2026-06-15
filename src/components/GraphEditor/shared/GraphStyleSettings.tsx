@@ -181,6 +181,14 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                   </p>
                 </div>
               )}
+
+              {coloringMode === 'decay' && (
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                    当前处于"衰减"着色模式，配色方案仅在"状态"模式下生效。
+                  </p>
+                </div>
+              )}
               
               <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">选择配色方案</h3>

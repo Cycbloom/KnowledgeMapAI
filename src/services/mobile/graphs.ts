@@ -117,7 +117,7 @@ export const mobileGraphsApi: IGraphsApi = {
       const { data: cards, error } = await client
         .from("study_cards")
         .select(
-          "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, review_count",
+          "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
         )
         .eq("user_id", userId)
         .eq("graph_id", graphId);
@@ -132,22 +132,39 @@ export const mobileGraphsApi: IGraphsApi = {
 
       const statusMap: Record<string, NodeStatus> = {};
 
+      const cardGroups = new Map<string, { stabilitySum: number; retrievabilitySum: number; reviewCountSum: number; count: number; firstCard: StudyCardRow }>();
+
       ((cards || []) as StudyCardRow[]).forEach((card) => {
+        const kpId = card.knowledge_point_id;
+        if (!cardGroups.has(kpId)) {
+          cardGroups.set(kpId, { stabilitySum: 0, retrievabilitySum: 0, reviewCountSum: 0, count: 0, firstCard: card });
+        }
+        const group = cardGroups.get(kpId)!;
+        group.stabilitySum += card.fsrs_stability ?? 0;
+        group.retrievabilitySum += card.fsrs_retrievability ?? 0;
+        group.reviewCountSum += card.review_count ?? 0;
+        group.count += 1;
+      });
+
+      cardGroups.forEach((group, kpId) => {
+        const card = group.firstCard;
         const nextReview = card.next_review ? new Date(card.next_review) : null;
         const isDue = nextReview ? nextReview <= now : false;
         const isDueToday = nextReview
           ? nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000)
           : false;
-        const isMastered =
-          card.fsrs_stability != null && card.fsrs_stability > 21;
+        const avgStability = group.stabilitySum / group.count;
+        const isMastered = avgStability > 21;
 
-        statusMap[card.knowledge_point_id] = {
+        statusMap[kpId] = {
           mastered: isMastered,
           locked: false,
-          review_count: card.review_count ?? 0,
+          review_count: group.reviewCountSum,
           next_review: card.next_review ?? undefined,
           due: isDue,
           due_today: isDueToday ? true : undefined,
+          fsrs_stability: avgStability,
+          fsrs_retrievability: group.retrievabilitySum / group.count,
         };
       });
 

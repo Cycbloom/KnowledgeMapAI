@@ -78,3 +78,29 @@ export const HEATMAP_CONFIG = {
   // Recent activity decay window (days)
   activityDecayDays: 7,
 } as const;
+
+export const DECAY_CONFIG = {
+  // Color gradient stops for decay visualization (fresh → decayed)
+  // High retrievability = fresh/bright, Low retrievability = decayed/dim
+  colorStops: [
+    { value: 0.0, color: '#EF4444' },   // Red (severely decayed, retrievability < 0.3)
+    { value: 0.25, color: '#F97316' },   // Orange-red (significantly decayed, 0.3-0.5)
+    { value: 0.5, color: '#F59E0B' },    // Orange (starting to forget, 0.5-0.7)
+    { value: 0.75, color: '#84CC16' },   // Yellow-green (fairly stable, 0.7-0.9)
+    { value: 1.0, color: '#22C55E' },    // Green (well remembered, retrievability >= 0.9)
+  ],
+  // Opacity mapping: lower retrievability = more transparent
+  opacityRange: { min: 0.5, max: 1.0 },
+  // Glow intensity range for decay mode
+  glowRange: { min: 0.05, max: 0.4 },
+  // No-data fallback color
+  noDataColor: '#9CA3AF',
+  // Threshold for "severely decayed" nodes (for pulse animation)
+  severeDecayThreshold: 0.5,
+  // Pulse animation config
+  pulse: {
+    duration: 2000,  // ms
+    minScale: 1.0,
+    maxScale: 1.05,
+  },
+} as const;

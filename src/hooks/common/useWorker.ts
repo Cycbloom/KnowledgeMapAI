@@ -82,6 +82,33 @@ interface GraphWorkerApi {
     sortBy: string,
     ascending?: boolean
   ) => Promise<Array<{ id: string; [key: string]: unknown }>>;
+  calculateMindMapLayout: (
+    nodes: Array<{
+      id: string;
+      x?: number;
+      y?: number;
+      level?: string;
+      properties?: Record<string, unknown>;
+    }>,
+    edges: Array<Record<string, unknown>>,
+    options: {
+      width: number;
+      height: number;
+      chargeStrength?: number;
+      linkDistance?: number;
+      centerForce?: number;
+      domainGroups?: Map<string, string[]>;
+    }
+  ) => Promise<{
+    nodes: Array<{
+      id: string;
+      x: number;
+      y: number;
+      level?: string;
+      properties?: Record<string, unknown>;
+    }>;
+    links: Array<Record<string, unknown> & { source: string; target: string }>;
+  }>;
 }
 
 export const useGraphWorker = () => {
@@ -138,11 +165,34 @@ export const useGraphWorker = () => {
     return proxyRef.current.sortNodes(nodes, sortBy, ascending);
   }, []);
 
+  const calculateMindMapLayout = useCallback(async (
+    nodes: Array<{
+      id: string;
+      x?: number;
+      y?: number;
+      level?: string;
+      properties?: Record<string, unknown>;
+    }>,
+    edges: Array<Record<string, unknown>>,
+    options: {
+      width: number;
+      height: number;
+      chargeStrength?: number;
+      linkDistance?: number;
+      centerForce?: number;
+      domainGroups?: Map<string, string[]>;
+    }
+  ) => {
+    if (!proxyRef.current) return null;
+    return proxyRef.current.calculateMindMapLayout(nodes, edges, options);
+  }, []);
+
   return {
     calculateLayout,
     calculateImportance,
     filterNodes,
     sortNodes,
+    calculateMindMapLayout,
   };
 };
 

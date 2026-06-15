@@ -40,7 +40,8 @@ import {
   useVisibleEdges,
   useVisibleNodeSet,
 } from "../shared/hooks/useVirtualization";
-import { createMindMapLayout } from "../../../utils/mindmapLayout";
+import { createMindMapLayout, type LayoutResult } from "../../../utils/mindmapLayout";
+import { useGraphWorker } from "../../../hooks/common/useWorker";
 import { THEME_COLORS } from "../../../config/learningStatusColors";
 import { DECAY_CONFIG } from "../../../config/graphConfig";
 import { useTheme } from "../../../hooks";
@@ -223,13 +224,57 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       edges,
     });
 
-    const layout = useMemo(() => {
-      if (nodes.length === 0) return null;
-      return createMindMapLayout(nodes, edges, {
-        width: containerSize.width,
-        height: containerSize.height,
-      });
-    }, [nodes, edges, containerSize]);
+    // 异步布局状态
+    const [layout, setLayout] = useState<LayoutResult | null>(null);
+    const [isLayoutCalculating, setIsLayoutCalculating] = useState(false);
+
+    // Worker hook
+    const { calculateMindMapLayout } = useGraphWorker();
+
+    // 防抖 + 异步布局计算
+    useEffect(() => {
+      if (nodes.length === 0) {
+        setLayout(null);
+        return;
+      }
+
+      const timer = setTimeout(async () => {
+        setIsLayoutCalculating(true);
+        try {
+          const result = await calculateMindMapLayout(
+            nodes as any,
+            edges as any,
+            {
+              width: containerSize.width,
+              height: containerSize.height,
+            }
+          );
+          if (result) {
+            setLayout(result as any);
+          } else {
+            // Fallback: Worker 不可用时降级为主线程同步计算
+            console.warn('[MindMapCanvas] Worker layout failed, falling back to main thread');
+            const fallbackResult = createMindMapLayout(nodes, edges, {
+              width: containerSize.width,
+              height: containerSize.height,
+            });
+            setLayout(fallbackResult as any);
+          }
+        } catch (error) {
+          // 错误时也降级到主线程
+          console.warn('[MindMapCanvas] Worker layout error, falling back to main thread', error);
+          const fallbackResult = createMindMapLayout(nodes, edges, {
+            width: containerSize.width,
+            height: containerSize.height,
+          });
+          setLayout(fallbackResult as any);
+        } finally {
+          setIsLayoutCalculating(false);
+        }
+      }, 300); // 300ms 防抖
+
+      return () => clearTimeout(timer);
+    }, [nodes, edges, containerSize, calculateMindMapLayout]);
 
     const layoutNodes = useMemo(() => layout?.nodes ?? [], [layout]);
     const layoutLinks = useMemo(() => layout?.links ?? [], [layout]);
@@ -563,11 +608,26 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                   {t('graphEditor.mindMap.addNodeHint')}
                 </p>
               </>
+            ) : isLayoutCalculating ? (
+              <>
+                <div className="flex flex-col items-center gap-3 mx-auto mb-4">
+                  <div className="w-64 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                  <div className="w-48 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                  <div className="w-56 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                  <div className="w-40 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                </div>
+                <p className="text-gray-500 dark:text-gray-500 text-sm">
+                  {t('graphEditor.mindMap.loading')}
+                </p>
+              </>
             ) : (
               <>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {t('graphEditor.mindMap.loading')}
+                <div className="text-5xl mb-4">⚠️</div>
+                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                  {t('graphEditor.mindMap.layoutFailed', '布局计算失败，请刷新重试')}
+                </p>
+                <p className="text-gray-500 dark:text-gray-500 text-sm">
+                  {t('graphEditor.mindMap.layoutFailedHint', '正在使用备用方案重新计算...')}
                 </p>
               </>
             )}

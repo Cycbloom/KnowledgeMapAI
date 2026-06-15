@@ -1,4 +1,6 @@
 import { expose } from 'comlink';
+import * as d3 from 'd3-force';
+import type { SimulationNodeDatum } from 'd3-force';
 
 interface Node {
   id: string;
@@ -219,11 +221,227 @@ const sortNodes = (
   return ascending ? sorted : sorted.reverse();
 };
 
+// ============ MindMap Layout Types ============
+
+type MindMapNodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
+
+interface MindMapLayoutNode {
+  id: string;
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+  level?: MindMapNodeLevel;
+  properties?: Record<string, unknown>;
+}
+
+interface MindMapLayoutEdge {
+  id: string;
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+}
+
+interface MindMapLayoutOptions {
+  width: number;
+  height: number;
+  chargeStrength?: number;
+  linkDistance?: number;
+  centerForce?: number;
+  domainGroups?: Map<string, string[]>;
+}
+
+interface MindMapLayoutResult {
+  nodes: MindMapLayoutNode[];
+  links: Array<MindMapLayoutEdge & { source: string; target: string }>;
+}
+
+// ============ MindMap Layout Implementation ============
+
+const LEVEL_CHARGE_STRENGTH: Record<MindMapNodeLevel, number> = {
+  root: -300,
+  core: -250,
+  sub: -180,
+  normal: -150,
+  leaf: -120,
+};
+
+function getMindMapLevel(
+  node: MindMapLayoutNode,
+  edges: MindMapLayoutEdge[]
+): MindMapNodeLevel {
+  if (node.level) return node.level;
+
+  const nodeId = String(node.id).trim();
+
+  const outDegree = edges.filter(
+    (e) => String(e.source_knowledge_point_id).trim() === nodeId
+  ).length;
+
+  const inDegree = edges.filter(
+    (e) => String(e.target_knowledge_point_id).trim() === nodeId
+  ).length;
+
+  if (inDegree === 0 && outDegree > 0) return 'root';
+  if (outDegree === 0 && inDegree > 0) return 'leaf';
+  if (outDegree > 0 && inDegree > 0) return 'core';
+
+  return 'normal';
+}
+
+function getLevelRadius(level: MindMapNodeLevel): number {
+  const radii: Record<MindMapNodeLevel, number> = {
+    root: 70,
+    core: 60,
+    sub: 50,
+    normal: 40,
+    leaf: 35,
+  };
+  return radii[level] || 40;
+}
+
+const calculateMindMapLayout = (
+  nodes: MindMapLayoutNode[],
+  edges: MindMapLayoutEdge[],
+  options: MindMapLayoutOptions
+): MindMapLayoutResult => {
+  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups } =
+    options;
+
+  const nodeCount = nodes.length;
+
+  // Dynamic parameter adjustment based on node count
+  const dynamicLinkDistance = linkDistance ?? (nodeCount > 100 ? 150 : nodeCount > 50 ? 130 : 100);
+  const dynamicChargeStrength = chargeStrength ?? (nodeCount > 100 ? -200 : nodeCount > 50 ? -150 : -100);
+  const dynamicCenterForce = centerForce ?? (nodeCount > 100 ? 0.2 : nodeCount > 50 ? 0.18 : 0.15);
+  const dynamicIterations = nodeCount > 100 ? 700 : nodeCount > 50 ? 600 : 500;
+
+  const nodeIds = new Set(nodes.map((n) => n.id));
+
+  // Initialize layout nodes with domain-grouped initial positions
+  const layoutNodes: MindMapLayoutNode[] = nodes.map((node) => {
+    const domain = node.properties?.domain as string | undefined;
+    let initialX = width / 2 + (Math.random() - 0.5) * 100;
+    let initialY = height / 2 + (Math.random() - 0.5) * 100;
+
+    if (domain && domainGroups) {
+      const domainNodeIds = domainGroups.get(domain);
+      if (domainNodeIds) {
+        const domainIndex = Array.from(domainGroups.keys()).indexOf(domain);
+        const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
+        const radius = Math.min(width, height) * 0.3;
+        initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;
+        initialY = height / 2 + Math.sin(angle) * radius + (Math.random() - 0.5) * 50;
+      }
+    }
+
+    return {
+      ...node,
+      x: initialX,
+      y: initialY,
+      vx: 0,
+      vy: 0,
+    };
+  });
+
+  // Build layout links
+  const layoutLinks: MindMapLayoutResult['links'] = edges
+    .filter(
+      (edge) =>
+        nodeIds.has(edge.source_knowledge_point_id) &&
+        nodeIds.has(edge.target_knowledge_point_id)
+    )
+    .map((edge) => ({
+      ...edge,
+      source: edge.source_knowledge_point_id,
+      target: edge.target_knowledge_point_id,
+    }));
+
+  // Build d3-force simulation
+  const simulation = d3
+    .forceSimulation(layoutNodes as SimulationNodeDatum[])
+    .force(
+      'link',
+      d3
+        .forceLink(layoutLinks)
+        .id((d: SimulationNodeDatum) => (d as MindMapLayoutNode).id)
+        .distance(dynamicLinkDistance)
+        .strength(0.3)
+    )
+    .force(
+      'charge',
+      d3.forceManyBody().strength((d: SimulationNodeDatum) => {
+        const layoutNode = d as MindMapLayoutNode;
+        const level = getMindMapLevel(layoutNode, edges);
+        return (
+          dynamicChargeStrength *
+          (1 + LEVEL_CHARGE_STRENGTH[level] / -100)
+        );
+      })
+    )
+    .force(
+      'center',
+      d3.forceCenter(width / 2, height / 2).strength(dynamicCenterForce)
+    )
+    .force(
+      'collide',
+      d3
+        .forceCollide()
+        .radius((d: SimulationNodeDatum) => {
+          const layoutNode = d as MindMapLayoutNode;
+          const level = getMindMapLevel(layoutNode, edges);
+          const baseRadius = getLevelRadius(level);
+          return nodeCount > 50 ? baseRadius * 1.2 : baseRadius;
+        })
+        .strength(0.9)
+    )
+    .force('x', d3.forceX(width / 2).strength(0.03))
+    .force('y', d3.forceY(height / 2).strength(0.03));
+
+  // Domain grouping force
+  if (domainGroups && domainGroups.size > 0) {
+    const domainCenters = new Map<string, { x: number; y: number }>();
+    const domainIndexList = Array.from(domainGroups.keys());
+
+    domainIndexList.forEach((domain, idx) => {
+      const angle = (idx / domainGroups.size) * Math.PI * 2;
+      const radius = Math.min(width, height) * 0.25;
+      domainCenters.set(domain, {
+        x: width / 2 + Math.cos(angle) * radius,
+        y: height / 2 + Math.sin(angle) * radius,
+      });
+    });
+
+    simulation.force('domain', (alpha: number) => {
+      layoutNodes.forEach((node) => {
+        const domain = node.properties?.domain as string | undefined;
+        if (domain && domainCenters.has(domain)) {
+          const center = domainCenters.get(domain)!;
+          node.vx = (node.vx || 0) + (center.x - (node.x ?? 0)) * alpha * 0.1;
+          node.vy = (node.vy || 0) + (center.y - (node.y ?? 0)) * alpha * 0.1;
+        }
+      });
+    });
+  }
+
+  simulation.stop();
+
+  // Run synchronous ticks in worker
+  for (let i = 0; i < dynamicIterations; i++) {
+    simulation.tick();
+  }
+
+  return {
+    nodes: layoutNodes,
+    links: layoutLinks,
+  };
+};
+
 const graphWorker = {
   calculateForceDirectedLayout,
   calculateNodeImportance,
   filterNodes,
   sortNodes,
+  calculateMindMapLayout,
 };
 
 export type GraphWorker = typeof graphWorker;

@@ -16,6 +16,8 @@ export interface ViewState {
   setIsDeleteMode: React.Dispatch<React.SetStateAction<boolean>>;
   isFocusMode: boolean;
   setIsFocusMode: React.Dispatch<React.SetStateAction<boolean>>;
+  isNarrativeMode: boolean;
+  setIsNarrativeMode: React.Dispatch<React.SetStateAction<boolean>>;
   saveViewMode: (mode: GraphViewMode) => Promise<void>;
   isInitialized: boolean;
 }
@@ -29,6 +31,7 @@ export const useViewState = (graphId?: string): ViewState => {
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isNarrativeMode, setIsNarrativeMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const { data: graph } = useGraph(graphId || "");
@@ -93,6 +96,8 @@ export const useViewState = (graphId?: string): ViewState => {
     setIsDeleteMode,
     isFocusMode,
     setIsFocusMode,
+    isNarrativeMode,
+    setIsNarrativeMode,
     saveViewMode,
     isInitialized,
   };

@@ -115,8 +115,8 @@ export const autoGraphApi = {
     customModules?: BackboneModuleCustomConfig[];
   }): Promise<{
     sessionId: string;
-    root: { title: string; content: string };
-    coreNodes: Array<{ title: string; content?: string; level?: string; backboneModule?: string; needsRefinement?: boolean; color?: string }>;
+    root: { title: string; content: string; summary?: string };
+    coreNodes: Array<{ title: string; content?: string; summary?: string; level?: string; backboneModule?: string; needsRefinement?: boolean; color?: string }>;
   }> => {
     const config = getAIConfig("text");
     const payload = {
@@ -149,7 +149,7 @@ export const autoGraphApi = {
   }): Promise<{
     sessionId: string;
     parentNodeId: string;
-    children: Array<{ title: string; content?: string; level?: string }>;
+    children: Array<{ title: string; content?: string; summary?: string; level?: string }>;
   }> => {
     const config = getAIConfig("text");
     const payload = {
@@ -172,6 +172,7 @@ export const autoGraphApi = {
       id?: string;
       title: string;
       content?: string;
+      summary?: string;
       level?: string;
       parentId?: string;
       backboneModule?: string;

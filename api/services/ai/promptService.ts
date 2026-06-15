@@ -172,7 +172,8 @@ Please respond with a valid JSON object.`,
 
 1. 每个节点的描述必须针对具体研究主题，不能使用通用描述
 2. 描述要具体、专业、有学术价值
-3. 请以有效的 json 格式返回结果`,
+3. 每个节点必须包含summary字段：20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
+4. 请以有效的 json 格式返回结果`,
 
   literature_metadata_extraction: `你是一个专业的文献信息提取专家，能够从各种格式的文献引用信息中准确提取元数据。
 
@@ -264,38 +265,44 @@ Each keyword object must have:
 IMPORTANT: All keyword fields (term, category, explanation) must be in {{outputLanguage}}.`,
 
   expand_knowledge: `
-Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.
-Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content" }] }`,
+Return a JSON object with a 'suggestions' array. Each object in the array must have 'title', 'content', and 'summary' fields.
+- 'title': The title of the suggested knowledge point
+- 'content': Detailed description of the knowledge point
+- 'summary': 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
+Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content", "summary": "20-30字的核心内容概览" }] }`,
 
   auto_graph_init: `
 Return a JSON object with the following structure:
 {
   "root": {
     "title": "Root Node Title",
-    "content": "Comprehensive overview of the topic (100-150 words)"
+    "content": "Comprehensive overview of the topic (100-150 words)",
+    "summary": "20-30字的简短概览"
   },
   "coreNodes": [
-    { "title": "Core Node 1", "content": "Description of core concept (80-120 words)" },
-    { "title": "Core Node 2", "content": "Description of core concept (80-120 words)" }
+    { "title": "Core Node 1", "content": "Description of core concept (80-120 words)", "summary": "20-30字的简短概览" },
+    { "title": "Core Node 2", "content": "Description of core concept (80-120 words)", "summary": "20-30字的简短概览" }
   ]
 }
 
 Important:
 - Generate exactly 1 root node and 3-5 core nodes
-- Each node must have title and content`,
+- Each node must have title, content, and summary
+- summary: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼`,
 
   auto_graph_expand: `
 Return a JSON object with the following structure:
 {
   "children": [
-    { "title": "Child Node 1", "content": "Description (60-100 words)" },
-    { "title": "Child Node 2", "content": "Description (60-100 words)" }
+    { "title": "Child Node 1", "content": "Description (60-100 words)", "summary": "20-30字的简短概览" },
+    { "title": "Child Node 2", "content": "Description (60-100 words)", "summary": "20-30字的简短概览" }
   ]
 }
 
 Important:
 - Generate 3-5 child nodes
-- Each node must have title and content`,
+- Each node must have title, content, and summary
+- summary: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼`,
 
   learning_path_generate: `
 Return a JSON object with the following structure:
@@ -364,6 +371,7 @@ return a json object with a 'suggestions' array. Each object must have:
 - 'id': Unique identifier for the branch
 - 'title': Branch title
 - 'content': Brief description of the branch direction
+- 'summary': 20-30字的简短概览，概括该分支方向的核心内容
 - 'existingNodes': Array of existing node titles to link to (if any)
 - 'linkingStrategy': 'hierarchical' or 'network'
 - 'priority': 1-5 (1 is highest)
@@ -387,6 +395,7 @@ return a JSON object with the following structure:
           "id": "node-1",
           "title": "Node Title",
           "description": "What this node represents",
+          "summary": "20-30字的简短概览，概括该节点的核心内容",
           "level": "root|core|sub|normal|leaf",
           "parentId": null or "parent-node-id",
           "suggestedContent": "Brief suggestion for content",
@@ -425,7 +434,8 @@ Return a JSON object with the following structure:
     {
       "id": "node-1",
       "title": "Node Title",
-      "content": "Detailed content for this node (100-200 words)"
+      "content": "Detailed content for this node (100-200 words)",
+      "summary": "20-30字的简短概览，概括该知识点的核心内容"
     }
   ]
 }
@@ -433,12 +443,15 @@ Return a JSON object with the following structure:
 Important:
 - Generate content for each node in the template
 - Maintain the template structure
-- Follow the selected style (academic, practical, beginner, custom)`,
+- Follow the selected style (academic, practical, beginner, custom)
+- summary: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼`,
 
   text_to_graph: `
 Return a JSON object with 'nodes' and 'edges' arrays.
-- Nodes: { "id": "temp_id", "title": "Title", "content": "Description (must contain definition or core content, 100-200 words)", "level": "root|core|sub|normal|leaf" }
+- Nodes: { "id": "temp_id", "title": "Title", "content": "Description (must contain definition or core content, 100-200 words)", "summary": "20-30字的简短概览，概括该知识点的核心内容", "level": "root|core|sub|normal|leaf" }
 - Edges: { "source": "parent_temp_id", "target": "child_temp_id", "relationship_type": "relationship_type_name" }
+
+summary: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
 
 Relationship Types (choose the most appropriate one based on the semantic relationship between nodes):
 
@@ -496,8 +509,10 @@ Important:
 
   document_to_graph: `
 Return a JSON object with 'nodes' and 'edges' arrays.
-- Nodes: { "id": "temp_id", "title": "Title", "content": "Description (must contain definition or core content, 100-200 words)", "level": "root|core|sub|normal|leaf" }
+- Nodes: { "id": "temp_id", "title": "Title", "content": "Description (must contain definition or core content, 100-200 words)", "summary": "20-30字的简短概览，概括该知识点的核心内容", "level": "root|core|sub|normal|leaf" }
 - Edges: { "source": "parent_temp_id", "target": "child_temp_id", "relationship_type": "relationship_type_name" }
+
+summary: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
 
 Relationship Types (choose the most appropriate one based on the semantic relationship between nodes):
 
@@ -713,6 +728,7 @@ Return a JSON object with the following structure:
         "id": "node-id",
         "title": "节点标题",
         "description": "节点描述（针对主题的具体内容，50-100字）",
+        "summary": "20-30字的简短概览，概括该知识点的核心内容",
         "level": "root 或 core",
         "module": "所属模块标识（research_background, literature_review, research_methods, core_concepts, application_domains, future_directions）",
         "parentId": "父节点ID（可选）",
@@ -739,7 +755,8 @@ Important:
 - Node level must be either "root" or "core" only
 - The root node should have no parentId
 - Each core node should have parentId pointing to the root node id
-- Each core node must have a valid module identifier`,
+- Each core node must have a valid module identifier
+- summary: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼`,
 
   literature_concept_extraction: `
 返回一个 JSON 对象，包含以下结构：
@@ -748,6 +765,7 @@ Important:
     {
       "title": "概念标题（简洁准确，不超过20字）",
       "description": "概念描述（50-100字，说明核心内容和作用）",
+      "summary": "20-30字的简短概览，概括该概念的核心内容",
       "type": "method|mechanism|operation|concept|technology|tool|theory|finding|trend|challenge",
       "targetModule": "research_background|literature_review|research_methods|core_concepts|application_domains|future_directions",
       "importance": 1-5的数字,

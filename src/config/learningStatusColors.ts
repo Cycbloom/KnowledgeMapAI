@@ -1,4 +1,5 @@
 import { LearningStatus, ColorScheme, NodeLevel } from '../types';
+import { HEATMAP_CONFIG } from './graphConfig';
 
 export interface ColorConfig {
   primary: string;
@@ -420,7 +421,7 @@ export const LEVEL_COLORS: Record<NodeLevel, ColorConfig> = {
 
 export const getLevelColors = (level: NodeLevel, isDark: boolean = false): ColorConfig => {
   const colors = LEVEL_COLORS[level] || LEVEL_COLORS.leaf;
-  
+
   if (isDark) {
     return {
       ...colors,
@@ -428,6 +429,126 @@ export const getLevelColors = (level: NodeLevel, isDark: boolean = false): Color
       text: adjustColorForDarkMode(colors.text)
     };
   }
-  
+
   return colors;
+};
+
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+};
+
+/**
+ * Interpolate color from heatmap gradient based on value [0, 1]
+ */
+export const getHeatmapColor = (value: number): string => {
+  const clampedValue = Math.max(0, Math.min(1, value));
+  const stops: readonly { readonly value: number; readonly color: string }[] = HEATMAP_CONFIG.colorStops;
+
+  // Find the two stops to interpolate between
+  let lowerStop = stops[0];
+  let upperStop = stops[stops.length - 1];
+
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (clampedValue >= stops[i].value && clampedValue <= stops[i + 1].value) {
+      lowerStop = stops[i];
+      upperStop = stops[i + 1];
+      break;
+    }
+  }
+
+  // Interpolate between the two stops
+  const range = upperStop.value - lowerStop.value;
+  const factor = range === 0 ? 0 : (clampedValue - lowerStop.value) / range;
+
+  const lowerRgb = hexToRgb(lowerStop.color);
+  const upperRgb = hexToRgb(upperStop.color);
+
+  if (!lowerRgb || !upperRgb) return lowerStop.color;
+
+  const r = Math.round(lowerRgb.r + (upperRgb.r - lowerRgb.r) * factor);
+  const g = Math.round(lowerRgb.g + (upperRgb.g - lowerRgb.g) * factor);
+  const b = Math.round(lowerRgb.b + (upperRgb.b - lowerRgb.b) * factor);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+/**
+ * Calculate heat value for a node based on learning data
+ * Returns a value between 0 (cold) and 1 (hot), or -1 for no data
+ */
+export const calculateNodeHeat = (
+  nodeStatus: { locked: boolean; mastered: boolean; due_today?: boolean; due?: boolean; review_count?: number; next_review?: string } | undefined,
+): number => {
+  if (!nodeStatus) return -1; // -1 means no data
+
+  const { weights, masteryValues, activityDecayDays } = HEATMAP_CONFIG;
+
+  // 1. Review count component (normalize: 0 reviews = 0, 10+ reviews = 1)
+  const reviewScore = Math.min(1, (nodeStatus.review_count ?? 0) / 10);
+
+  // 2. Mastery status component
+  const status = getLearningStatus(nodeStatus);
+  const masteryScore = masteryValues[status] ?? 0;
+
+  // 3. Recent activity component (based on next_review date proximity)
+  let activityScore = 0;
+  if (nodeStatus.next_review) {
+    const nextReviewDate = new Date(nodeStatus.next_review);
+    const now = new Date();
+    const daysUntilReview = (nextReviewDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    // If review is due (daysUntilReview <= 0), high activity
+    // If review is far in the future, lower activity
+    if (daysUntilReview <= 0) {
+      activityScore = 1;
+    } else if (daysUntilReview < activityDecayDays) {
+      activityScore = 1 - (daysUntilReview / activityDecayDays);
+    } else {
+      activityScore = 0;
+    }
+  } else if (nodeStatus.review_count && nodeStatus.review_count > 0) {
+    // Has reviews but no next_review set - moderate activity
+    activityScore = 0.5;
+  }
+
+  return reviewScore * weights.reviewCount + masteryScore * weights.masteryStatus + activityScore * weights.recentActivity;
+};
+
+/**
+ * Get heatmap ColorConfig for a node
+ */
+export const getHeatmapColors = (heatValue: number, isDark: boolean = false): ColorConfig => {
+  if (heatValue < 0) {
+    // No data - use neutral gray
+    return {
+      primary: HEATMAP_CONFIG.noDataColor,
+      secondary: '#D1D5DB',
+      glow: '#E5E7EB',
+      background: isDark ? '#374151' : '#F3F4F6',
+      text: isDark ? '#9CA3AF' : '#6B7280',
+      gradient: { enabled: false, colors: [HEATMAP_CONFIG.noDataColor] },
+    };
+  }
+
+  const primaryColor = getHeatmapColor(heatValue);
+  const secondaryColor = getHeatmapColor(Math.min(1, heatValue + 0.15));
+  const glowColor = getHeatmapColor(Math.min(1, heatValue + 0.3));
+
+  return {
+    primary: primaryColor,
+    secondary: secondaryColor,
+    glow: glowColor,
+    background: isDark ? '#1E293B' : '#F8FAFC',
+    text: isDark ? '#F1F5F9' : '#0F172A',
+    gradient: {
+      enabled: true,
+      colors: [primaryColor, secondaryColor, glowColor],
+    },
+  };
 };

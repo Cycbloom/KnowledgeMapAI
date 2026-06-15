@@ -101,6 +101,7 @@ export const mobileNodesApi: INodesApi & {
         .update({
           title: data.title !== undefined ? data.title : kp.title,
           content: data.content !== undefined ? data.content : kp.content,
+          summary: data.summary !== undefined ? data.summary : kp.summary,
           learning_material:
             data.learning_material !== undefined
               ? data.learning_material

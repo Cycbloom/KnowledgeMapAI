@@ -33,6 +33,7 @@ export interface CreateNodeData {
   graph_id: string;
   title: string;
   content?: string;
+  summary?: string;
   level?: string;
   x_position?: number;
   y_position?: number;
@@ -49,6 +50,7 @@ export interface CreateNodeData {
 export interface UpdateNodeData {
   title?: string;
   content?: string;
+  summary?: string;
   level?: string;
   x_position?: number;
   y_position?: number;

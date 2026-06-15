@@ -39,6 +39,7 @@ router.post(
       graph_id,
       title,
       content,
+      summary,
       x_position,
       y_position,
       properties,
@@ -94,6 +95,7 @@ router.post(
       const newKp = await knowledgePointService.create(req.supabase!, {
         title,
         content: content || "",
+        summary,
         learning_material: learning_material || "",
         properties: properties || {},
         visibility: "private",
@@ -180,6 +182,7 @@ router.get(
         id,
         title,
         content,
+        summary,
         learning_material,
         properties,
         visibility,
@@ -230,6 +233,7 @@ router.put(
         id,
         title,
         content,
+        summary,
         learning_material,
         properties,
         visibility,
@@ -279,6 +283,7 @@ router.put(
     const kpUpdates: {
       title?: string;
       content?: string;
+      summary?: string;
       learning_material?: string;
       properties?: Record<string, unknown>;
       visibility?: "private" | "public";
@@ -293,6 +298,7 @@ router.put(
 
     if (updates.title !== undefined) kpUpdates.title = updates.title;
     if (updates.content !== undefined) kpUpdates.content = updates.content;
+    if (updates.summary !== undefined) kpUpdates.summary = updates.summary;
     if (updates.learning_material !== undefined)
       kpUpdates.learning_material = updates.learning_material;
     if (updates.properties !== undefined)
@@ -357,6 +363,7 @@ router.put(
         id,
         title,
         content,
+        summary,
         learning_material,
         properties,
         visibility,
@@ -742,6 +749,7 @@ router.post(
       const kpUpdates: {
         title?: string;
         content?: string;
+        summary?: string;
         learning_material?: string;
         properties?: Record<string, unknown>;
       } = {};
@@ -767,6 +775,8 @@ router.post(
 
       if (nodeUpdate.content !== undefined)
         kpUpdates.content = nodeUpdate.content;
+      if (nodeUpdate.summary !== undefined)
+        kpUpdates.summary = nodeUpdate.summary;
       if (nodeUpdate.learning_material !== undefined)
         kpUpdates.learning_material = nodeUpdate.learning_material;
       if (nodeUpdate.properties !== undefined)

@@ -107,7 +107,7 @@ export class KnowledgePointVersionService {
     newer: KnowledgePointVersion
   ): KnowledgePointVersionDiff[] {
     const diffs: KnowledgePointVersionDiff[] = [];
-    const fields: (keyof KnowledgePointVersion)[] = ['title', 'content', 'learning_material', 'properties'];
+    const fields: (keyof KnowledgePointVersion)[] = ['title', 'content', 'summary', 'learning_material', 'properties'];
 
     for (const field of fields) {
       const oldVal = older[field];
@@ -152,6 +152,7 @@ export class KnowledgePointVersionService {
       .update({
         title: version.title,
         content: version.content,
+        summary: version.summary,
         learning_material: version.learning_material,
         properties: version.properties,
         updated_at: new Date().toISOString(),
@@ -238,6 +239,7 @@ export class KnowledgePointVersionService {
         version_number: nextVersion,
         title: kp.data.title,
         content: kp.data.content,
+        summary: kp.data.summary,
         learning_material: kp.data.learning_material,
         properties: kp.data.properties,
         change_summary: changeSummary,

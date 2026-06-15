@@ -98,6 +98,7 @@ interface LearningPathPanelProps {
   onNodeSelect?: (nodeId: string) => void;
   onPathSelect?: (pathId: string | null) => void;
   selectedPathId?: string | null;
+  onStartNarrative?: () => void;
 }
 
 type ViewMode = "list" | "create" | "wizard" | "detail";
@@ -107,6 +108,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   onNodeSelect,
   onPathSelect,
   selectedPathId,
+  onStartNarrative,
 }) => {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -718,6 +720,16 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                               ? t("learning.learningPath.deselect")
                               : t("learning.learningPath.switchToPath")}
                           </button>
+                          {isSelected && onStartNarrative && (
+                            <button
+                              onClick={onStartNarrative}
+                              className="py-1.5 px-2 text-xs rounded flex items-center justify-center gap-1 transition-colors bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                              title={t("graphEditor.narrative.startNarrative", "叙事播放")}
+                            >
+                              <Play className="w-3 h-3" />
+                              {t("graphEditor.narrative.startNarrative", "叙事播放")}
+                            </button>
+                          )}
                           <button
                             onClick={() =>
                               window.open(

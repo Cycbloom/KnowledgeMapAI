@@ -42,6 +42,7 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     updated_at: gn.updated_at,
     title: kp.title || "",
     content: kp.content || "",
+    summary: kp.summary || "",
     learning_material: kp.learning_material || "",
     keywords: kp.keywords || [],
     properties: kp.properties || {},
@@ -116,6 +117,7 @@ export async function createKnowledgePointWithGraphNode(
     graph_id: string;
     title: string;
     content?: string;
+    summary?: string;
     learning_material?: string;
     x_position?: number;
     y_position?: number;
@@ -132,6 +134,7 @@ export async function createKnowledgePointWithGraphNode(
     .insert({
       title: data.title,
       content: data.content || "",
+      summary: data.summary || null,
       learning_material: data.learning_material || null,
       properties: data.properties || {},
       visibility: "private",

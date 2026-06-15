@@ -21,6 +21,7 @@ const createKnowledgePointSchema = z.object({
   body: z.object({
     title: z.string().min(1).max(255),
     content: z.string().optional(),
+    summary: z.string().max(200).optional(),
     learning_material: z.string().optional(),
     properties: z.record(z.unknown()).optional(),
     visibility: z
@@ -34,6 +35,7 @@ const updateKnowledgePointSchema = z.object({
   body: z.object({
     title: z.string().min(1).max(255).optional(),
     content: z.string().optional(),
+    summary: z.string().max(200).optional(),
     learning_material: z.string().optional(),
     properties: z.record(z.unknown()).optional(),
     visibility: z.enum(["private", "public", "pending"]).optional(),
@@ -58,6 +60,7 @@ const submitPublicSchema = z.object({
       .object({
         title: z.string().min(1).max(255).optional(),
         content: z.string().optional(),
+        summary: z.string().max(200).optional(),
         learning_material: z.string().optional(),
       })
       .optional(),
@@ -147,13 +150,14 @@ router.post(
   requireAuth,
   validate(createKnowledgePointSchema),
   async (req: AuthRequest, res: Response) => {
-    const { title, content, learning_material, properties, visibility } =
+    const { title, content, summary, learning_material, properties, visibility } =
       req.body;
 
     try {
       const data = await knowledgePointService.create(req.supabase!, {
         title,
         content,
+        summary,
         learning_material,
         properties,
         visibility,

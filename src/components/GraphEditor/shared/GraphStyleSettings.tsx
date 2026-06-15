@@ -169,7 +169,15 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               {coloringMode === 'level' && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-3 mb-4">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    当前处于"结构"着色模式，配色方案仅在"热力图"模式下生效。
+                    当前处于"结构"着色模式，配色方案仅在"状态"模式下生效。
+                  </p>
+                </div>
+              )}
+
+              {coloringMode === 'heatmap' && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    当前处于"热力图"着色模式，配色方案仅在"状态"模式下生效。
                   </p>
                 </div>
               )}
@@ -190,12 +198,12 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       <button
                         key={scheme.key}
                         onClick={() => onColorSchemeChange(scheme.key)}
-                        disabled={coloringMode === 'level'}
+                        disabled={coloringMode !== 'status'}
                         className={`p-4 rounded-lg border-2 transition-all ${
                           currentColorScheme === scheme.key
                             ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
                             : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
-                        } ${coloringMode === 'level' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${coloringMode !== 'status' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <div className="flex items-center space-x-2">
                           <div className="flex space-x-1">

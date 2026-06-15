@@ -747,6 +747,7 @@ router.post(
         tempId: string;
         title: string;
         content: string;
+        summary?: string;
         level: string;
         x_position: number;
         y_position: number;
@@ -936,6 +937,7 @@ router.post(
             tempId: concept.title,
             title: concept.title,
             content: concept.description,
+            summary: concept.summary,
             level: "normal",
             x_position: Math.round(Math.cos(angle) * radius),
             y_position: Math.round(Math.sin(angle) * radius),
@@ -1048,6 +1050,7 @@ router.post(
             parentId: backboneNodeId || null,
             title: node.title,
             content: node.content,
+            summary: node.summary,
             level: node.level,
             x_position: node.x_position,
             y_position: node.y_position,

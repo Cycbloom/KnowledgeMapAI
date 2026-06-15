@@ -1468,17 +1468,28 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         />
 
         <MenuItem
-          onClick={() =>
-            setColoringMode(coloringMode === "level" ? "status" : "level")
-          }
-          icon={coloringMode === "level" ? Layers : Activity}
+          onClick={() => {
+            const nextMode: Record<string, GraphColorMode> = {
+              level: "status",
+              status: "heatmap",
+              heatmap: "level",
+            };
+            setColoringMode(nextMode[coloringMode] || "level");
+          }}
+          icon={coloringMode === "level" ? Layers : coloringMode === "status" ? Activity : BarChart3}
           label={
             coloringMode === "level"
               ? t("graphEditor.toolbar.coloringModeLevel")
-              : t("graphEditor.toolbar.coloringModeHeatmap")
+              : coloringMode === "status"
+                ? t("graphEditor.toolbar.coloringModeStatus")
+                : t("graphEditor.toolbar.coloringModeHeatmap")
           }
           colorClass={
-            coloringMode === "level" ? "text-primary-500" : "text-orange-500"
+            coloringMode === "level"
+              ? "text-primary-500"
+              : coloringMode === "status"
+                ? "text-orange-500"
+                : "text-red-500"
           }
         />
 

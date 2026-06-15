@@ -972,14 +972,15 @@ Please respond with a valid JSON object.`;
               {
                 role: "system",
                 content: `You are a knowledge graph expert capable of analyzing visual content.
-                
+
 Your task:
 1. Analyze the provided image to extract the structured knowledge hierarchy.
 2. Output a JSON object with 'nodes' and 'edges' arrays.
-   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "level": "root|core|sub|normal|leaf" }
+   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "summary": "20-30字的简短概览，概括该知识点的核心内容", "level": "root|core|sub|normal|leaf" }
    - Edges: { "source": "parent_id", "target": "child_id", "relationship": "contains|related" }
 3. Limit to 30-50 nodes.
-4. Respond in Chinese.`,
+4. Each node must have a summary field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
+5. Respond in Chinese.`,
               },
               {
                 role: "user",

@@ -77,6 +77,7 @@ import {
   BACKBONE_MODULE_ICONS,
 } from "@shared/types/graph";
 import { PresentationControls } from "../components/GraphEditor/toolbar/PresentationControls";
+import { NarrativeControls } from "../components/GraphEditor/canvas/NarrativeControls";
 import { ActionResultModal } from "../components/GraphEditor/modals/ActionResultModal";
 import { NodeContextMenu } from "../components/GraphEditor/context-menu/NodeContextMenu";
 import {
@@ -464,6 +465,22 @@ export const GraphEditor = () => {
     setHistoricalAlternativeBranches,
     isAnalysisPanelOpen,
     setIsAnalysisPanelOpen,
+    // Narrative state
+    isNarrativeMode: isNarrativeModeState,
+    isPlaying: isNarrativePlaying,
+    playSpeed: narrativePlaySpeed,
+    currentStep: narrativeCurrentStep,
+    totalSteps: narrativeTotalSteps,
+    revealedNodeIds: narrativeRevealedNodeIds,
+    narrativePath,
+    isNarrativeComplete,
+    startNarrative,
+    exitNarrative,
+    playNext: narrativePlayNext,
+    playPrev: narrativePlayPrev,
+    reset: narrativeReset,
+    togglePlay: narrativeTogglePlay,
+    setPlaySpeed: setNarrativePlaySpeed,
   } = state;
 
   const handleSelectParentFromGraph = useCallback(
@@ -492,6 +509,51 @@ export const GraphEditor = () => {
       setIsSelectingParentNode(false);
     }
   }, [sidebarMode]);
+
+  // Narrative mode handlers
+  const handleStartNarrative = useCallback(() => {
+    if (!selectedLearningPathId || learningPathNodeIds.size === 0) {
+      message.warning("请先选择学习路径");
+      return;
+    }
+
+    // Build ordered path from learning path
+    const orderedEntries = Array.from(learningPathOrderMap.entries())
+      .sort(([, a], [, b]) => a - b);
+    const path = orderedEntries.map(([nodeId]) => nodeId);
+
+    if (path.length === 0) {
+      message.warning("学习路径中没有节点");
+      return;
+    }
+
+    // Get current camera transform from canvas
+    const currentTransform = graphRef.current?.getTransform?.() ?? { x: 0, y: 0, k: 1 };
+
+    // Switch to mindmap view if not already
+    if (viewMode !== "mindmap") {
+      setViewMode("mindmap");
+    }
+
+    // Exit presentation mode if active
+    if (state.isPresentationMode) {
+      state.setIsPresentationMode(false);
+      state.setFocusedNodeId(null);
+      state.setFocusedNodeIds(new Set());
+      state.setFocusedLinkIds(new Set());
+    }
+
+    startNarrative(path, 'learningPath', currentTransform);
+  }, [selectedLearningPathId, learningPathNodeIds, learningPathOrderMap, viewMode, setViewMode, state, startNarrative, graphRef]);
+
+  const handleExitNarrative = useCallback(() => {
+    const saved = state.savedTransform;
+    exitNarrative();
+    // Restore camera position after exiting narrative mode
+    if (saved) {
+      graphRef.current?.animateToTransform?.(saved, 600);
+    }
+  }, [exitNarrative, state.savedTransform, graphRef]);
 
   const handleLearningPathNodeClick = useCallback(
     (nodeId: string) => {
@@ -592,6 +654,20 @@ export const GraphEditor = () => {
     setFocusedNodeIds,
     setFocusedLinkIds,
   ]);
+
+  // Narrative mode: camera follow effect
+  React.useEffect(() => {
+    if (!isNarrativeModeState || narrativeCurrentStep <= 0 || narrativePath.length === 0) return;
+
+    const currentNodeId = narrativePath[narrativeCurrentStep - 1];
+    if (!currentNodeId) return;
+
+    // Center camera on the current narrative node
+    const ref = graphRef.current;
+    if (ref?.centerNode) {
+      ref.centerNode(currentNodeId);
+    }
+  }, [isNarrativeModeState, narrativeCurrentStep, narrativePath, graphRef]);
 
   // Mutations Hook
   const mutations = useGraphMutations();
@@ -1273,6 +1349,13 @@ export const GraphEditor = () => {
               highlightedPathNodeId={
                 selectedLearningPathId ? focusedNodeId : null
               }
+              isNarrativeMode={isNarrativeModeState}
+              narrativeRevealedNodeIds={narrativeRevealedNodeIds}
+              narrativeCurrentNodeId={
+                isNarrativeModeState && narrativeCurrentStep > 0
+                  ? narrativePath[narrativeCurrentStep - 1] ?? null
+                  : null
+              }
             />
               </ErrorBoundary>
           )}
@@ -1606,6 +1689,23 @@ export const GraphEditor = () => {
         />
       )}
 
+      {isNarrativeModeState && (
+        <NarrativeControls
+          isPlaying={isNarrativePlaying}
+          onTogglePlay={narrativeTogglePlay}
+          onPlayNext={narrativePlayNext}
+          onPlayPrev={narrativePlayPrev}
+          onReset={narrativeReset}
+          onExit={handleExitNarrative}
+          playSpeed={narrativePlaySpeed}
+          onSpeedChange={setNarrativePlaySpeed}
+          currentStep={narrativeCurrentStep}
+          totalSteps={narrativeTotalSteps}
+          isNarrativeComplete={isNarrativeComplete}
+          isDark={isDark}
+        />
+      )}
+
       {isTimelineVisible && isExplorationMode && (
         <ExplorationTimeline
           explorationPath={explorationPathOps.explorationPath}
@@ -1902,6 +2002,7 @@ export const GraphEditor = () => {
           selectedLearningPathId={selectedLearningPathId}
           onPathSelect={handleSelectLearningPath}
           onLearningPathNodeClick={handleLearningPathNodeClick}
+          onStartNarrative={handleStartNarrative}
         />
       </Suspense>
 

@@ -29,17 +29,19 @@ export const knowledgePointsApi = {
   create: (data: {
     title: string;
     content?: string;
+    summary?: string;
     learning_material?: string;
     properties?: Record<string, unknown>;
     visibility?: KnowledgePointVisibility;
-  }) => request<KnowledgePoint>('/knowledge-points', { 
-    method: 'POST', 
-    body: JSON.stringify(data) 
+  }) => request<KnowledgePoint>('/knowledge-points', {
+    method: 'POST',
+    body: JSON.stringify(data)
   }),
-  
+
   update: (id: string, data: {
     title?: string;
     content?: string;
+    summary?: string;
     learning_material?: string;
     properties?: Record<string, unknown>;
     visibility?: KnowledgePointVisibility;

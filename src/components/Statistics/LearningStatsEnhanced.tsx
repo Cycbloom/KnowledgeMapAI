@@ -167,34 +167,42 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
       </h3>
       
       <div className="flex flex-col sm:flex-row items-center">
-        <div className="w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={distributionData}
-                cx="50%"
-                cy="50%"
-                innerRadius={30}
-                outerRadius={50}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {distributionData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value) => [`${value} ${t('learningStats.masteryDistribution.nodes')}`, '']}
-                contentStyle={{ 
-                  borderRadius: '8px', 
-                  border: 'none', 
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                  backgroundColor: isDark ? '#1e293b' : '#fff'
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        {total > 0 ? (
+          <div className="w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={distributionData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={30}
+                  outerRadius={50}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {distributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value) => [`${value} ${t('learningStats.masteryDistribution.nodes')}`, '']}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: 'none',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    backgroundColor: isDark ? '#1e293b' : '#fff'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className={`w-32 h-32 md:w-40 md:h-40 flex-shrink-0 rounded-full border-2 border-dashed ${
+            isDark ? 'border-slate-600' : 'border-gray-200'
+          } flex items-center justify-center`}>
+            <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('learningStats.masteryDistribution.noData')}</span>
+          </div>
+        )}
         
         <div className="flex-1 sm:ml-4 mt-4 sm:mt-0 space-y-2 w-full">
           {distributionData.map(item => (
@@ -353,35 +361,43 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
       </div>
       
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={(v) => new Date(v).toLocaleDateString('zh-CN', { weekday: 'short' })}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }}
-            />
-            <YAxis 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }}
-              tickFormatter={(v) => `${v}h`}
-            />
-            <Tooltip 
-              formatter={(value) => [`${value} ${t('learningStats.learningTimeTrend.hours')}`, t('learningStats.learningTimeTrend.learningTime')]}
-              labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
-              contentStyle={{ 
-                borderRadius: '8px', 
-                border: 'none', 
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                backgroundColor: isDark ? '#1e293b' : '#fff'
-              }}
-            />
-            <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={24} />
-          </BarChart>
-        </ResponsiveContainer>
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(v) => new Date(v).toLocaleDateString('zh-CN', { weekday: 'short' })}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }}
+                tickFormatter={(v) => `${v}h`}
+              />
+              <Tooltip
+                formatter={(value) => [`${value} ${t('learningStats.learningTimeTrend.hours')}`, t('learningStats.learningTimeTrend.learningTime')]}
+                labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
+                contentStyle={{
+                  borderRadius: '8px',
+                  border: 'none',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  backgroundColor: isDark ? '#1e293b' : '#fff'
+                }}
+              />
+              <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={24} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className={`w-full h-full rounded-lg border-2 border-dashed flex items-center justify-center ${
+            isDark ? 'border-slate-600' : 'border-gray-200'
+          }`}>
+            <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('learningStats.chartNoData')}</span>
+          </div>
+        )}
       </div>
     </div>
   );

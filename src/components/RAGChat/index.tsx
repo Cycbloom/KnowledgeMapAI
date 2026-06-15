@@ -71,6 +71,7 @@ interface RAGChatPanelProps {
   selectedLearningPathId?: string | null;
   onPathSelect?: (pathId: string | null) => void;
   onLearningPathNodeClick?: (nodeId: string) => void;
+  onStartNarrative?: () => void;
 }
 
 export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
@@ -98,6 +99,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   selectedLearningPathId,
   onPathSelect,
   onLearningPathNodeClick,
+  onStartNarrative,
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -537,6 +539,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             onNodeSelect={onLearningPathNodeClick || onNodeClick}
             onPathSelect={onPathSelect}
             selectedPathId={selectedLearningPathId}
+            onStartNarrative={onStartNarrative}
           />
         ) : isTutorMode && tutorMode === "literature-extract" && graphId ? (
           <LiteratureExtractPanel
@@ -820,6 +823,8 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
   isMobilePreviewMode,
   selectedLearningPathId,
   onPathSelect,
+  onLearningPathNodeClick,
+  onStartNarrative,
 }) => {
   const { isDark } = useTheme();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -877,6 +882,8 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
                 onWidthChange={onWidthChange}
                 selectedLearningPathId={selectedLearningPathId}
                 onPathSelect={onPathSelect}
+                onLearningPathNodeClick={onLearningPathNodeClick}
+                onStartNarrative={onStartNarrative}
               />
             </motion.div>
           </div>

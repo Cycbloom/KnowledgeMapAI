@@ -27,6 +27,7 @@ import { MindMapLink } from "./MindMapLink";
 import { AlternativeBranches } from "../shared/AlternativeBranches";
 import { CanvasLayout } from "./CanvasLayout";
 import { MiniMap } from "./MiniMap";
+import { HeatmapLegend } from "./HeatmapLegend";
 import { LayoutOrganizer } from "../shared/LayoutOrganizer";
 import { NodePreviewCard } from "../shared/NodePreviewCard";
 import { MobileNodePreviewCard } from "../mobile/MobileNodePreviewCard";
@@ -51,6 +52,7 @@ import {
   useCanvasInteraction,
   useEdgeManagement,
 } from "./MindMapCanvas/index";
+import { useSemanticZoom } from "../../../hooks/graphEditor/useSemanticZoom";
 
 interface MindMapCanvasProps {
   nodes: Node[];
@@ -105,6 +107,10 @@ interface MindMapCanvasProps {
   learningPathNodeIds?: Set<string>;
   learningPathOrderMap?: Map<string, number>;
   highlightedPathNodeId?: string | null;
+  // Narrative mode
+  isNarrativeMode?: boolean;
+  narrativeRevealedNodeIds?: Set<string>;
+  narrativeCurrentNodeId?: string | null;
 }
 
 export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
@@ -158,6 +164,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       learningPathNodeIds = new Set(),
       learningPathOrderMap = new Map(),
       highlightedPathNodeId = null,
+      isNarrativeMode = false,
+      narrativeRevealedNodeIds = new Set(),
+      narrativeCurrentNodeId = null,
     },
     ref,
   ) => {
@@ -201,6 +210,17 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
     } = useCanvasTransform({ contentRef });
 
     const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
+
+    const {
+      semanticLevel,
+      semanticLevelLabel,
+      nodeStrategies,
+      semanticVisibleEdgeIds,
+    } = useSemanticZoom({
+      zoomK: transform.k,
+      nodes,
+      edges,
+    });
 
     const layout = useMemo(() => {
       if (nodes.length === 0) return null;
@@ -257,7 +277,15 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       isExplorationMode,
     );
 
-    const visibleNodeIds = useVisibleNodeSet(visibleNodes);
+    // Apply semantic zoom filtering on top of virtualization
+    const semanticallyFilteredNodes = useMemo(() => {
+      return visibleNodes.filter((node) => {
+        const strategy = nodeStrategies.get(node.id);
+        return strategy?.visible ?? true;
+      });
+    }, [visibleNodes, nodeStrategies]);
+
+    const visibleNodeIds = useVisibleNodeSet(semanticallyFilteredNodes);
 
     const visibleLinks = useVisibleEdges(
       layoutLinks,
@@ -266,10 +294,33 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       viewportBounds,
     );
 
+    // Filter edges by semantic zoom level - only show edges where both endpoints are visible
+    const semanticVisibleLinks = useMemo(() => {
+      if (semanticVisibleEdgeIds.size === 0) return [];
+      return visibleLinks.filter(link => semanticVisibleEdgeIds.has(link.id));
+    }, [visibleLinks, semanticVisibleEdgeIds]);
+
+    // Narrative mode filtering - narrative takes priority over semantic zoom
+    // but still respects semantic zoom visibility (nodes hidden by zoom stay hidden)
+    const narrativeFilteredNodes = useMemo(() => {
+      if (!isNarrativeMode) return semanticallyFilteredNodes;
+      return semanticallyFilteredNodes.filter(node => narrativeRevealedNodeIds.has(node.id));
+    }, [isNarrativeMode, semanticallyFilteredNodes, narrativeRevealedNodeIds]);
+
+    const narrativeFilteredLinks = useMemo(() => {
+      if (!isNarrativeMode) return semanticVisibleLinks;
+      return layoutLinks.filter(link => {
+        const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+        const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+        return narrativeRevealedNodeIds.has(sourceId) && narrativeRevealedNodeIds.has(targetId);
+      });
+    }, [isNarrativeMode, semanticVisibleLinks, narrativeRevealedNodeIds, layoutLinks]);
+
     const nodeImportanceMap = useMemo(() => {
       if (nodeSizeMode === "fixed") return new Map<string, number>();
       const map = new Map<string, number>();
-      visibleNodes.forEach((node) => {
+      const nodesToProcess = isNarrativeMode ? narrativeFilteredNodes : semanticallyFilteredNodes;
+      nodesToProcess.forEach((node) => {
         const importance = calculateNodeImportance(
           node as Node,
           nodes,
@@ -279,12 +330,13 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         map.set(node.id, importance.score);
       });
       return map;
-    }, [visibleNodes, nodes, edges, nodeStatus, nodeSizeMode]);
+    }, [isNarrativeMode, narrativeFilteredNodes, semanticallyFilteredNodes, nodes, edges, nodeStatus, nodeSizeMode]);
 
     const edgeStrengthMap = useMemo(() => {
       if (edgeWidthMode === "fixed") return new Map<string, number>();
       const map = new Map<string, number>();
-      visibleLinks.forEach((link) => {
+      const linksToProcess = isNarrativeMode ? narrativeFilteredLinks : semanticVisibleLinks;
+      linksToProcess.forEach((link) => {
         const edge = edges.find((e) => e.id === link.id);
         if (edge) {
           const strength = calculateEdgeStrength(edge, nodes, edges);
@@ -292,7 +344,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         }
       });
       return map;
-    }, [visibleLinks, edges, nodes, edgeWidthMode]);
+    }, [isNarrativeMode, narrativeFilteredLinks, semanticVisibleLinks, edges, nodes, edgeWidthMode]);
 
     const visualCenterY = interaction.visualCenterY;
 
@@ -423,6 +475,13 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
 
         animateCamera(targetX, targetY, 1, 500);
       },
+      getTransform: () => {
+        const t = transformRef.current;
+        return { x: t.x, y: t.y, k: t.k };
+      },
+      animateToTransform: (targetTransform: { x: number; y: number; k: number }, duration: number = 800) => {
+        animateCamera(targetTransform.x, targetTransform.y, targetTransform.k, duration);
+      },
     }));
 
     useEffect(() => {
@@ -530,7 +589,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
               width={containerSize.width}
               height={containerSize.height}
             />
-            {visibleLinks.map((link) => (
+            {narrativeFilteredLinks.map((link) => {
+              const linkSourceId = typeof link.source === 'string' ? link.source : link.source.id;
+              const linkTargetId = typeof link.target === 'string' ? link.target : link.target.id;
+              const isNarrativeEdge = isNarrativeMode && (linkSourceId === narrativeCurrentNodeId || linkTargetId === narrativeCurrentNodeId);
+              return (
               <MindMapLink
                 key={link.id}
                 link={link}
@@ -540,15 +603,16 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                 focused={focusedLinkIds.has(link.id)}
                 hasFocusMode={hasFocusMode}
                 linkStyle={linkStyle}
-                linkAnimation={linkAnimation}
+                linkAnimation={isNarrativeEdge ? "flow" : linkAnimation}
                 edgeWidthMode={edgeWidthMode}
                 edgeStrength={edgeStrengthMap.get(link.id)}
                 allNodes={nodes}
                 allEdges={edges}
                 onContextMenu={edgeMgmt.handleEdgeContextMenu}
               />
-            ))}
-            {visibleNodes.map((node) => {
+              );
+            })}
+            {narrativeFilteredNodes.map((node) => {
               const isSelectableAsParent =
                 isSelectingParent && node.id !== currentNodeId;
               const isSelectedAsParent = selectedParentIds.includes(node.id);
@@ -559,6 +623,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
               const learningPathHighlighted =
                 highlightedPathNodeId === node.id ||
                 (hasLearningPathHighlight && isInLearningPath);
+              const semanticStrategy = nodeStrategies.get(node.id);
               return (
                 <MindMapNode
                   key={node.id}
@@ -589,6 +654,13 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                   isInLearningPath={isInLearningPath}
                   learningOrder={learningOrder}
                   learningPathHighlighted={learningPathHighlighted}
+                  isNarrativeCurrent={isNarrativeMode && node.id === narrativeCurrentNodeId}
+                  semanticZoomLevel={semanticLevel}
+                  showContentPreview={semanticStrategy?.showContentPreview ?? false}
+                  showLearningStatus={semanticStrategy?.showLearningStatus ?? false}
+                  showReviewCount={semanticStrategy?.showReviewCount ?? false}
+                  maxTitleLength={semanticStrategy?.maxTitleLength}
+                  childCount={semanticStrategy?.childCount ?? 0}
                 />
               );
             })}
@@ -794,7 +866,12 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           className={`absolute left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm pointer-events-none transition-all duration-300 ${isMobilePreviewMode && selectedNodeId ? "bottom-72" : "bottom-4"}`}
         >
           {t('graphEditor.mindMap.zoom', { percent: Math.round(transform.k * 100) })}
+          <span style={{ fontSize: 10, color: isDark ? '#64748B' : '#94A3B8', marginLeft: 4 }}>
+            {t(`graphEditor.semanticZoom.${semanticLevel}`, semanticLevelLabel)}
+          </span>
         </div>
+
+        {coloringMode === "heatmap" && <HeatmapLegend isDark={isDark} />}
 
         {interaction.showPreview &&
           interaction.previewNode &&

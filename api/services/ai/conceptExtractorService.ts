@@ -57,6 +57,7 @@ interface ConceptExtractionResponse {
   concepts: Array<{
     title: string;
     description: string;
+    summary?: string;
     type: ConceptType;
     targetModule?: BackboneModule;
     importance: number;
@@ -217,13 +218,14 @@ ${contextInfo}
 ${content.slice(0, 8000)}
 
 ## 提取要求
-1. 每个概念必须包含：标题、描述、类型、目标模块、重要性评分(1-5)
+1. 每个概念必须包含：标题、描述、概览(summary)、类型、目标模块、重要性评分(1-5)
 2. 概念标题要简洁准确（不超过20字）
 3. 描述要说明概念的核心内容和作用（50-100字）
-4. 类型必须从给定的概念类型中选择
-5. 目标模块根据概念性质智能定位
-6. 重要性评分反映概念在文献中的核心程度
-7. 同时提取概念之间的关系（如依赖、关联、对比等）
+4. summary: 20-30字的简短概览，概括该概念的核心内容，应比标题更具体但比完整内容更精炼
+5. 类型必须从给定的概念类型中选择
+6. 目标模块根据概念性质智能定位
+7. 重要性评分反映概念在文献中的核心程度
+8. 同时提取概念之间的关系（如依赖、关联、对比等）
 
 ## 概念筛选原则
 **优先提取：**
@@ -268,6 +270,7 @@ function buildExtractionSchema(
     {
       "title": "概念标题（简洁准确，不超过20字）",
       "description": "概念描述（50-100字，说明核心内容和作用）",
+      "summary": "20-30字的简短概览，概括该概念的核心内容，应比标题更具体但比完整内容更精炼",
       "type": "method|mechanism|operation|concept|technology|tool|theory|finding|trend|challenge",
       "targetModule": "research_background|literature_review|research_methods|core_concepts|application_domains|future_directions",
       "importance": 1-5的数字,
@@ -406,6 +409,7 @@ export class ConceptExtractorService {
             (c) => ({
               title: c.title,
               description: c.description,
+              summary: c.summary,
               type: c.type,
               source: literature,
               targetModule: c.targetModule || CONCEPT_TO_MODULE_MAP[c.type],

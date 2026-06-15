@@ -1850,6 +1850,7 @@
     "subtitle": "Comprehensive overview of your learning progress and knowledge base status",
     "loading": "Loading statistics...",
     "error": "Unable to load statistics",
+    "chartNoData": "No data",
     "cards": {
       "totalCards": "Total Cards",
       "totalCardsDesc": "Cumulative knowledge points created",
@@ -1895,7 +1896,8 @@
     },
     "masteryDistribution": {
       "title": "Knowledge Mastery Distribution",
-      "nodes": "nodes"
+      "nodes": "nodes",
+      "noData": "No data"
     },
     "weakPoints": {
       "title": "Weak Points Analysis",
@@ -2444,6 +2446,7 @@
       "explorationMode": "Exploration Mode",
       "exitExplorationMode": "Exit Exploration Mode",
       "coloringModeLevel": "Coloring Mode: Structure",
+      "coloringModeStatus": "Coloring Mode: Status",
       "coloringModeHeatmap": "Coloring Mode: Heatmap",
       "hideTimeline": "Hide Timeline",
       "showTimeline": "Show Timeline",
@@ -2507,7 +2510,33 @@
       "zoomOut": "Zoom Out",
       "resetView": "Reset View",
       "fitScreen": "Fit Screen",
-      "zoom": "Zoom: {{percent}}%"
+      "zoom": "Zoom: {{percent}}%",
+      "statusMastered": "✓ Mastered",
+      "statusLearning": "Learning",
+      "statusDue": "Due",
+      "statusLocked": "Locked",
+      "statusNew": "New",
+      "reviewCount": "{{count}} reviews"
+    },
+    "narrative": {
+      "play": "Play",
+      "pause": "Pause",
+      "next": "Next",
+      "prev": "Previous",
+      "reset": "Reset",
+      "exit": "Exit Narrative",
+      "complete": "Narrative Complete",
+      "startNarrative": "Narrative Play"
+    },
+    "semanticZoom": {
+      "overview": "Overview",
+      "cluster": "Cluster",
+      "node": "Node",
+      "detail": "Detail"
+    },
+    "heatmap": {
+      "low": "Low Activity",
+      "high": "High Activity"
     },
     "outline": {
       "title": "Outline View ({{count}})",

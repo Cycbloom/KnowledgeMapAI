@@ -7,6 +7,7 @@ import { useModalState, ModalState } from './useModalState';
 import { useFormState, FormState } from './useFormState';
 import { useViewState, ViewState } from './useViewState';
 import { usePresentationState, PresentationState } from './usePresentationState';
+import { useNarrativeState, NarrativeState } from './useNarrativeState';
 import { useMiscState, MiscState } from './useMiscState';
 
 export { useSelectionState } from './useSelectionState';
@@ -17,6 +18,7 @@ export { useModalState } from './useModalState';
 export { useFormState } from './useFormState';
 export { useViewState } from './useViewState';
 export { usePresentationState } from './usePresentationState';
+export { useNarrativeState } from './useNarrativeState';
 export { useMiscState } from './useMiscState';
 
 export { useGraphComputed } from './useGraphComputed';
@@ -31,11 +33,13 @@ export { useExplorationPath } from './useExplorationPath';
 interface GraphRef {
   centerNode?: (nodeId: string, options?: { forceRightPanelOpen?: boolean }) => void;
   captureScreenshot?: (options: { transparent: boolean; fitView: boolean; hideGrid: boolean }) => Promise<string>;
+  getTransform?: () => { x: number; y: number; k: number };
+  animateToTransform?: (transform: { x: number; y: number; k: number }, duration?: number) => void;
 }
 
 export type GraphEditorState = {
   graphRef: React.RefObject<GraphRef | null>;
-} & SelectionState & SidebarState & ExplorationState & FocusState & ModalState & FormState & ViewState & PresentationState & MiscState;
+} & SelectionState & SidebarState & ExplorationState & FocusState & ModalState & FormState & ViewState & PresentationState & NarrativeState & MiscState;
 
 export const useGraphEditorState = (): GraphEditorState => {
   const graphRef = useRef<GraphRef | null>(null);
@@ -48,6 +52,7 @@ export const useGraphEditorState = (): GraphEditorState => {
   const form = useFormState();
   const view = useViewState();
   const presentation = usePresentationState();
+  const narrative = useNarrativeState();
   const misc = useMiscState();
 
   return {
@@ -60,6 +65,7 @@ export const useGraphEditorState = (): GraphEditorState => {
     ...form,
     ...view,
     ...presentation,
+    ...narrative,
     ...misc,
   };
 };

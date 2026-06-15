@@ -24,7 +24,10 @@ import {
   getLearningStatus,
   getStatusColors,
   getLevelColors,
+  getHeatmapColors,
+  calculateNodeHeat,
 } from "../../../config/learningStatusColors";
+import { HEATMAP_CONFIG, type SemanticZoomLevel } from "../../../config/graphConfig";
 import { getLevel, calculateNodeImportance } from "../../../lib/graphUtils";
 import { truncateText } from "../../../utils/textUtils";
 import { BACKBONE_MODULE_COLORS } from "@shared/types/graph";
@@ -58,6 +61,13 @@ interface MindMapNodeProps {
   learningOrder?: number;
   isInLearningPath?: boolean;
   learningPathHighlighted?: boolean;
+  isNarrativeCurrent?: boolean;
+  semanticZoomLevel?: SemanticZoomLevel;
+  showContentPreview?: boolean;
+  showLearningStatus?: boolean;
+  showReviewCount?: boolean;
+  maxTitleLength?: number;
+  childCount?: number;
 }
 
 // 提取到函数外部，避免每次调用都创建新对象
@@ -131,6 +141,13 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   learningOrder,
   isInLearningPath = false,
   learningPathHighlighted = false,
+  isNarrativeCurrent = false,
+  semanticZoomLevel,
+  showContentPreview = false,
+  showLearningStatus = false,
+  showReviewCount = false,
+  maxTitleLength,
+  childCount = 0,
 }) => {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
@@ -149,6 +166,18 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     () => truncateText(node.title || t("graphEditor.mindMap.unnamed")),
     [node.title, t],
   );
+
+  // Apply semantic zoom title truncation
+  const displayTitle = useMemo(() => {
+    if (maxTitleLength !== undefined && maxTitleLength > 0 && maxTitleLength < Infinity) {
+      const raw = node.title || t("graphEditor.mindMap.unnamed");
+      if (raw.length > maxTitleLength) {
+        return raw.slice(0, maxTitleLength) + '...';
+      }
+      return raw;
+    }
+    return titleInfo.truncated;
+  }, [maxTitleLength, node.title, t, titleInfo.truncated]);
 
   const dynamicSize = useMemo(() => {
     if (nodeSizeMode === "fixed") {
@@ -185,10 +214,22 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     if (coloringMode === "level") {
       return getLevelColors(level, isDark);
     }
+    if (coloringMode === "heatmap") {
+      const heatValue = calculateNodeHeat(nodeStatus?.[node.id]);
+      return getHeatmapColors(heatValue, isDark);
+    }
     return getStatusColors(status, isDark, colorScheme);
-  }, [coloringMode, level, status, isDark, colorScheme]);
+  }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id]);
 
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
+
+  const heatGlowIntensity = useMemo(() => {
+    if (coloringMode !== "heatmap") return undefined;
+    const heat = calculateNodeHeat(nodeStatus?.[node.id]);
+    if (heat < 0) return undefined;
+    const { glowRange } = HEATMAP_CONFIG;
+    return glowRange.min + (glowRange.max - glowRange.min) * heat;
+  }, [coloringMode, nodeStatus, node.id]);
 
   const nodeOpacity = !hasFocusMode ? 1 : focused ? 1 : 0.3;
   const learningPathOpacity = isInLearningPath
@@ -212,6 +253,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   }, [isNew]);
 
   const currentScale = isNew ? hoverScale : animationTransform.scale;
+  const narrativeScale = isNarrativeCurrent ? 1.2 : 1;
+  const effectiveScale = currentScale * narrativeScale;
   const currentOpacity = isNew
     ? isAccepted
       ? finalOpacity
@@ -528,11 +571,35 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           />
         </circle>
       )}
+      {isNarrativeCurrent && (
+        <circle
+          r={styleConfig.baseRadius + 12}
+          fill="none"
+          stroke="#3B82F6"
+          strokeWidth={3}
+          opacity={0.7}
+        >
+          <animate
+            attributeName="r"
+            values={`${styleConfig.baseRadius + 10};${styleConfig.baseRadius + 16};${styleConfig.baseRadius + 10}`}
+            dur="1.5s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0.5;0.9;0.5"
+            dur="1.5s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      )}
       <g
         style={{
           transition: `transform ${transitionDuration}ms ease`,
-          transform: `scale(${currentScale})`,
-          filter: shadowStyle,
+          transform: `scale(${effectiveScale})`,
+          filter: heatGlowIntensity !== undefined
+            ? `${shadowStyle} drop-shadow(0 0 ${12 / zoomLevel}px ${colors.glow}${Math.round(heatGlowIntensity * 255).toString(16).padStart(2, '0')})`
+            : shadowStyle,
         }}
       >
         {isAccepted ? (
@@ -706,7 +773,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
               : `0 ${2 / zoomLevel}px ${4 / zoomLevel}px rgba(0,0,0,0.15), 0 0 ${8 / zoomLevel}px rgba(0,0,0,0.1)`,
           }}
         >
-          {titleInfo.truncated}
+          {displayTitle}
           {titleInfo.isTruncated && <title>{titleInfo.original}</title>}
         </text>
       )}
@@ -821,6 +888,89 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           </text>
         </g>
       )}
+
+      {/* Semantic Zoom: Overview mode aggregate rendering */}
+      {semanticZoomLevel === 'overview' && (level === 'root' || level === 'core') && childCount > 0 && (
+        <g>
+          <circle
+            r={styleConfig.baseRadius * 1.5}
+            fill={colors.primary}
+            opacity={0.15}
+          />
+          <text
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={12}
+            fontWeight={700}
+            fill={colors.primary}
+            style={{ pointerEvents: "none" }}
+          >
+            {childCount}
+          </text>
+        </g>
+      )}
+
+      {/* Semantic Zoom: Detail level content preview */}
+      {showContentPreview && (node.summary || node.content) && textVisibility.visible && (() => {
+        const previewText = node.summary || (node.content ? node.content.slice(0, 30) + (node.content.length > 30 ? '...' : '') : '');
+        return previewText ? (
+          <text
+            x={0}
+            y={textOffset + scaledFontSize * 1.4}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={scaledFontSize * 0.7}
+            fontWeight={400}
+            fill={isDark ? "#94A3B8" : "#64748B"}
+            opacity={textVisibility.opacity * 0.8}
+            style={{ pointerEvents: "none" }}
+          >
+            {previewText}
+          </text>
+        ) : null;
+      })()}
+
+      {/* Semantic Zoom: Detail level learning status badge */}
+      {showLearningStatus && nodeStatus?.[node.id] && textVisibility.visible && (
+        <g transform={`translate(0, ${textOffset + scaledFontSize * (showContentPreview && (node.summary || node.content) ? 2.6 : 1.4)})`}>
+          <rect
+            x={-24}
+            y={-7}
+            width={48}
+            height={14}
+            rx={7}
+            fill={colors.primary}
+            opacity={0.2}
+          />
+          <text
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={8}
+            fontWeight={500}
+            fill={colors.primary}
+            style={{ pointerEvents: "none" }}
+          >
+            {status === 'mastered' ? t('graphEditor.mindMap.statusMastered') : status === 'learning' ? t('graphEditor.mindMap.statusLearning') : status === 'due' ? t('graphEditor.mindMap.statusDue') : status === 'locked' ? t('graphEditor.mindMap.statusLocked') : t('graphEditor.mindMap.statusNew')}
+          </text>
+        </g>
+      )}
+
+      {/* Semantic Zoom: Detail level review count */}
+      {showReviewCount && nodeStatus?.[node.id]?.review_count !== undefined && textVisibility.visible && (
+        <text
+          x={0}
+          y={textOffset + scaledFontSize * (showContentPreview && (node.summary || node.content) ? (showLearningStatus ? 3.8 : 2.6) : (showLearningStatus ? 2.6 : 1.4))}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={scaledFontSize * 0.6}
+          fontWeight={400}
+          fill={isDark ? "#64748B" : "#94A3B8"}
+          opacity={textVisibility.opacity * 0.6}
+          style={{ pointerEvents: "none" }}
+        >
+          {t('graphEditor.mindMap.reviewCount', { count: nodeStatus[node.id].review_count })}
+        </text>
+      )}
     </g>
   );
 };
@@ -851,6 +1001,13 @@ export const MindMapNode = React.memo(
       prevProps.isTouchPressed === nextProps.isTouchPressed &&
       prevProps.learningOrder === nextProps.learningOrder &&
       prevProps.learningPathHighlighted === nextProps.learningPathHighlighted &&
+      prevProps.isNarrativeCurrent === nextProps.isNarrativeCurrent &&
+      prevProps.semanticZoomLevel === nextProps.semanticZoomLevel &&
+      prevProps.showContentPreview === nextProps.showContentPreview &&
+      prevProps.showLearningStatus === nextProps.showLearningStatus &&
+      prevProps.showReviewCount === nextProps.showReviewCount &&
+      prevProps.maxTitleLength === nextProps.maxTitleLength &&
+      prevProps.childCount === nextProps.childCount &&
       prevProps.node.x === nextProps.node.x &&
       prevProps.node.y === nextProps.node.y &&
       prevProps.node.title === nextProps.node.title &&

@@ -45,6 +45,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
         id,
         title,
         content,
+        summary,
         learning_material,
         properties
       )
@@ -65,12 +66,14 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
       id?: string;
       title?: string;
       content?: string;
+      summary?: string;
       learning_material?: string;
       properties?: Record<string, unknown>;
     } | {
       id?: string;
       title?: string;
       content?: string;
+      summary?: string;
       learning_material?: string;
       properties?: Record<string, unknown>;
     }[];
@@ -84,6 +87,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
       knowledge_point_id: gn.knowledge_point_id,
       title: kp?.title || '',
       content: kp?.content || '',
+      summary: kp?.summary || '',
       learning_material: kp?.learning_material || '',
       properties: kp?.properties || {},
       x_position: gn.x_position,

@@ -22,6 +22,7 @@ export interface AINodeData {
   parentId: string | null;
   title: string;
   content: string;
+  summary?: string | null;
   level: string;
   x_position: number;
   y_position: number;
@@ -523,6 +524,7 @@ export class AutoGraphService {
       const records = batchNodes.map((node) => ({
         title: node.title,
         content: node.content || "",
+        summary: node.summary || null,
         properties: {
           source: "ai-generated",
           generated_at: new Date().toISOString(),
@@ -549,6 +551,7 @@ export class AutoGraphService {
                   {
                     title: batchNodes[j].title,
                     content: batchNodes[j].content || "",
+                    summary: batchNodes[j].summary || null,
                     properties: {
                       source: "ai-generated",
                       ...(batchNodes[j].properties || {}),

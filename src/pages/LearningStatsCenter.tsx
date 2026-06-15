@@ -1,22 +1,40 @@
-import { useMemo } from 'react';
-import { useStatistics, useUser, useGraphs } from '../hooks/queries';
-import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
+import { useMemo } from "react";
+import { useStatistics, useUser, useGraphs } from "../hooks/queries";
+import { ActivityHeatmap } from "../components/Statistics/ActivityHeatmap";
 import {
   KnowledgeHeatmap,
   MasteryDistributionChart,
-  QuickStatsCards
-} from '../components/Statistics/LearningStatsEnhanced';
+  QuickStatsCards,
+} from "../components/Statistics/LearningStatsEnhanced";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  AreaChart, Area, LineChart, Line, ReferenceLine
-} from 'recharts';
-import { BookOpen, Brain, Clock, TrendingUp, Zap, Target, LucideIcon } from 'lucide-react';
-import { useTheme } from '../hooks';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
-import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
-import type { Graph } from '../types';
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  ReferenceLine,
+} from "recharts";
+import {
+  BookOpen,
+  Brain,
+  Clock,
+  TrendingUp,
+  Zap,
+  Target,
+  LucideIcon,
+} from "lucide-react";
+import { useTheme } from "../hooks";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../services/api";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import type { Graph } from "../types";
 
 interface MetricCardProps {
   title: string;
@@ -27,14 +45,37 @@ interface MetricCardProps {
   isDark: boolean;
 }
 
-const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: MetricCardProps) => (
-  <div className={`p-3 md:p-4 rounded-xl shadow-sm border flex items-start justify-between ${
-    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-  }`}>
+const MetricCard = ({
+  title,
+  value,
+  subtext,
+  icon: Icon,
+  color,
+  isDark,
+}: MetricCardProps) => (
+  <div
+    className={`p-3 md:p-4 rounded-xl shadow-sm border flex items-start justify-between ${
+      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"
+    }`}
+  >
     <div className="flex-1 min-w-0">
-      <p className={`text-xs font-medium mb-1 truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{title}</p>
-      <h3 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{value}</h3>
-      {subtext && <p className={`text-xs mt-1 truncate ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{subtext}</p>}
+      <p
+        className={`text-xs font-medium mb-1 truncate ${isDark ? "text-slate-400" : "text-gray-500"}`}
+      >
+        {title}
+      </p>
+      <h3
+        className={`text-xl md:text-2xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
+      >
+        {value}
+      </h3>
+      {subtext && (
+        <p
+          className={`text-xs mt-1 truncate ${isDark ? "text-slate-500" : "text-gray-400"}`}
+        >
+          {subtext}
+        </p>
+      )}
     </div>
     <div className={`p-2 rounded-full ${color} flex-shrink-0 ml-2`}>
       <Icon size={20} className="text-white" />
@@ -47,46 +88,99 @@ interface ForecastDataItem {
   count: number;
 }
 
-const ForecastChart = ({ data, isDark, t }: { data: ForecastDataItem[], isDark: boolean, t: TFunction }) => (
-  <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
-    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-  }`}>
-    <h3 className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.forecast.title')}</h3>
-    <div className="flex-1 w-full min-h-0">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(value) => `${new Date(value).getDate()}${t('learningStats.forecast.day')}`}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
-            dy={10}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
-            width={30}
-          />
-          <RechartsTooltip
-            cursor={{ fill: isDark ? '#1e293b' : '#f8fafc' }}
-            contentStyle={{
-              borderRadius: '8px',
-              border: 'none',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-              backgroundColor: isDark ? '#1e293b' : '#fff'
-            }}
-          />
-          <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={24} name={t('learningStats.forecast.reviewCards')} />
-        </BarChart>
-      </ResponsiveContainer>
+const ForecastChart = ({
+  data,
+  isDark,
+  t,
+}: {
+  data: ForecastDataItem[];
+  isDark: boolean;
+  t: TFunction;
+}) => (
+  <div
+    className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
+      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"
+    }`}
+  >
+    <h3
+      className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? "text-white" : "text-gray-800"}`}
+    >
+      {t("learningStats.forecast.title")}
+    </h3>
+    <div className="w-full h-[200px] md:h-[260px]">
+      {data.length > 0 ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 0, right: 10, left: -20, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={isDark ? "#334155" : "#f1f5f9"}
+            />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value) =>
+                `${new Date(value).getDate()}${t("learningStats.forecast.day")}`
+              }
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
+              width={30}
+            />
+            <RechartsTooltip
+              cursor={{ fill: isDark ? "#1e293b" : "#f8fafc" }}
+              contentStyle={{
+                borderRadius: "8px",
+                border: "none",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                backgroundColor: isDark ? "#1e293b" : "#fff",
+              }}
+            />
+            <Bar
+              dataKey="count"
+              fill="#6366f1"
+              radius={[4, 4, 0, 0]}
+              barSize={24}
+              name={t("learningStats.forecast.reviewCards")}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div
+          className={`w-full h-full rounded-lg border-2 border-dashed flex items-center justify-center ${
+            isDark ? "border-slate-600" : "border-gray-200"
+          }`}
+        >
+          <span
+            className={`text-sm ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          >
+            {t("learningStats.chartNoData")}
+          </span>
+        </div>
+      )}
     </div>
   </div>
 );
 
-const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark, t }: { retentionThreshold: number, avgStability: number, isDark: boolean, t: TFunction }) => {
+const ForgettingCurveChart = ({
+  retentionThreshold,
+  avgStability,
+  isDark,
+  t,
+}: {
+  retentionThreshold: number;
+  avgStability: number;
+  isDark: boolean;
+  t: TFunction;
+}) => {
   const data = useMemo(() => {
     const points = [];
     const stability = avgStability > 0 ? avgStability : 7;
@@ -101,46 +195,71 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark, t }: {
   }, [avgStability]);
 
   return (
-    <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
-      isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-    }`}>
-      <h3 className={`text-base md:text-lg font-bold mb-1 md:mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.forgettingCurve.title')}</h3>
-      <p className={`text-[10px] md:text-xs mb-4 md:mb-6 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-        {`${t('learningStats.forgettingCurve.description')} ${avgStability > 0 ? avgStability.toFixed(1) : 7}${t('learningStats.forgettingCurve.daysUnit')}`}
+    <div
+      className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
+        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"
+      }`}
+    >
+      <h3
+        className={`text-base md:text-lg font-bold mb-1 md:mb-2 ${isDark ? "text-white" : "text-gray-800"}`}
+      >
+        {t("learningStats.forgettingCurve.title")}
+      </h3>
+      <p
+        className={`text-[10px] md:text-xs mb-4 md:mb-6 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+      >
+        {`${t("learningStats.forgettingCurve.description")} ${avgStability > 0 ? avgStability.toFixed(1) : 7}${t("learningStats.forgettingCurve.daysUnit")}`}
       </p>
-      <div className="flex-1 w-full min-h-0">
+      <div className="w-full h-[200px] md:h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
+          <LineChart
+            data={data}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={isDark ? "#334155" : "#f1f5f9"}
+            />
             <XAxis
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
             />
             <YAxis
               domain={[0, 100]}
               axisLine={false}
               tickLine={false}
-              tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
               tickFormatter={(val) => `${val}%`}
               width={35}
             />
             <RechartsTooltip
-              formatter={(value) => [`${value}%`, t('learningStats.forgettingCurve.retentionRate')]}
-              labelFormatter={(label) => `${t('learningStats.forgettingCurve.day')} ${label}`}
+              formatter={(value) => [
+                `${value}%`,
+                t("learningStats.forgettingCurve.retentionRate"),
+              ]}
+              labelFormatter={(label) =>
+                `${t("learningStats.forgettingCurve.day")} ${label}`
+              }
               contentStyle={{
-                borderRadius: '8px',
-                border: 'none',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                backgroundColor: isDark ? '#1e293b' : '#fff'
+                borderRadius: "8px",
+                border: "none",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                backgroundColor: isDark ? "#1e293b" : "#fff",
               }}
             />
             <ReferenceLine
               y={retentionThreshold * 100}
               stroke="#ef4444"
               strokeDasharray="3 3"
-              label={{ value: `${t('learningStats.forgettingCurve.target')} ${retentionThreshold * 100}%`, position: 'right', fill: '#ef4444', fontSize: 10 }}
+              label={{
+                value: `${t("learningStats.forgettingCurve.target")} ${retentionThreshold * 100}%`,
+                position: "right",
+                fill: "#ef4444",
+                fontSize: 10,
+              }}
             />
             <Line
               type="monotone"
@@ -148,7 +267,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark, t }: {
               stroke="#6366f1"
               strokeWidth={2}
               dot={false}
-              name={t('learningStats.forgettingCurve.retentionRate')}
+              name={t("learningStats.forgettingCurve.retentionRate")}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -162,54 +281,93 @@ interface GrowthDataItem {
   count: number;
 }
 
-const GrowthChart = ({ data, isDark, t }: { data: GrowthDataItem[], isDark: boolean, t: TFunction }) => (
-  <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
-    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-  }`}>
-    <h3 className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.growth.title')}</h3>
-    <div className="flex-1 w-full min-h-0">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-          <defs>
-            <linearGradient id="colorGrowthStats" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(value, index) => index % 5 === 0 ? `${new Date(value).getMonth() + 1}/${new Date(value).getDate()}` : ''}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
-            dy={10}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
-            width={30}
-          />
-          <RechartsTooltip
-            contentStyle={{
-              borderRadius: '8px',
-              border: 'none',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-              backgroundColor: isDark ? '#1e293b' : '#fff'
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="count"
-            stroke="#10b981"
-            strokeWidth={2}
-            fillOpacity={1}
-            fill="url(#colorGrowthStats)"
-            name={t('learningStats.growth.newCards')}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+const GrowthChart = ({
+  data,
+  isDark,
+  t,
+}: {
+  data: GrowthDataItem[];
+  isDark: boolean;
+  t: TFunction;
+}) => (
+  <div
+    className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
+      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"
+    }`}
+  >
+    <h3
+      className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? "text-white" : "text-gray-800"}`}
+    >
+      {t("learningStats.growth.title")}
+    </h3>
+    <div className="w-full h-[200px] md:h-[260px]">
+      {data.length > 0 ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={data}
+            margin={{ top: 0, right: 10, left: -20, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorGrowthStats" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={isDark ? "#334155" : "#f1f5f9"}
+            />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value, index) =>
+                index % 5 === 0
+                  ? `${new Date(value).getMonth() + 1}/${new Date(value).getDate()}`
+                  : ""
+              }
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
+              width={30}
+            />
+            <RechartsTooltip
+              contentStyle={{
+                borderRadius: "8px",
+                border: "none",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                backgroundColor: isDark ? "#1e293b" : "#fff",
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="count"
+              stroke="#10b981"
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorGrowthStats)"
+              name={t("learningStats.growth.newCards")}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <div
+          className={`w-full h-full rounded-lg border-2 border-dashed flex items-center justify-center ${
+            isDark ? "border-slate-600" : "border-gray-200"
+          }`}
+        >
+          <span
+            className={`text-sm ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          >
+            {t("learningStats.chartNoData")}
+          </span>
+        </div>
+      )}
     </div>
   </div>
 );
@@ -219,50 +377,98 @@ interface FocusStats {
   total?: { minutes?: number; sessions?: number };
 }
 
-const FocusStatsCard = ({ stats, isDark, t }: { stats: FocusStats | null, isDark: boolean, t: TFunction }) => {
+const FocusStatsCard = ({
+  stats,
+  isDark,
+  t,
+}: {
+  stats: FocusStats | null;
+  isDark: boolean;
+  t: TFunction;
+}) => {
   if (!stats) return null;
 
   return (
-    <div className={`p-4 md:p-6 rounded-xl shadow-sm border ${
-      isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-    }`}>
-      <h3 className={`text-base md:text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-        {t('learningStats.focus.title')}
+    <div
+      className={`p-4 md:p-6 rounded-xl shadow-sm border ${
+        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"
+      }`}
+    >
+      <h3
+        className={`text-base md:text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+      >
+        {t("learningStats.focus.title")}
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className={`p-3 md:p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+        <div
+          className={`p-3 md:p-4 rounded-xl ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
+        >
           <div className="flex items-center gap-2 mb-2">
             <Clock size={16} className="text-primary-500" />
-            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.today')}</span>
+            <span
+              className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {t("learningStats.focus.today")}
+            </span>
           </div>
-          <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            {stats.today?.minutes || 0} {t('learningStats.focus.minutes')}
+          <p
+            className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
+          >
+            {stats.today?.minutes || 0} {t("learningStats.focus.minutes")}
           </p>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-            {stats.today?.sessions || 0} {t('learningStats.focus.sessions')}
+          <p
+            className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          >
+            {stats.today?.sessions || 0} {t("learningStats.focus.sessions")}
           </p>
         </div>
-        <div className={`p-3 md:p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+        <div
+          className={`p-3 md:p-4 rounded-xl ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
+        >
           <div className="flex items-center gap-2 mb-2">
             <Zap size={16} className="text-amber-500" />
-            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.total')}</span>
+            <span
+              className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {t("learningStats.focus.total")}
+            </span>
           </div>
-          <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            {((stats.total?.minutes || 0) / 60).toFixed(1)} {t('learningStats.focus.hours')}
+          <p
+            className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
+          >
+            {((stats.total?.minutes || 0) / 60).toFixed(1)}{" "}
+            {t("learningStats.focus.hours")}
           </p>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-            {stats.total?.sessions || 0} {t('learningStats.focus.sessions')}
+          <p
+            className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          >
+            {stats.total?.sessions || 0} {t("learningStats.focus.sessions")}
           </p>
         </div>
-        <div className={`p-3 md:p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+        <div
+          className={`p-3 md:p-4 rounded-xl ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
+        >
           <div className="flex items-center gap-2 mb-2">
             <Target size={16} className="text-emerald-500" />
-            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.avgDuration')}</span>
+            <span
+              className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {t("learningStats.focus.avgDuration")}
+            </span>
           </div>
-          <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            {stats.total?.sessions && stats.total?.minutes ? Math.round(stats.total.minutes / stats.total.sessions) : 0} {t('learningStats.focus.minutes')}
+          <p
+            className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
+          >
+            {stats.total?.sessions && stats.total?.minutes
+              ? Math.round(stats.total.minutes / stats.total.sessions)
+              : 0}{" "}
+            {t("learningStats.focus.minutes")}
           </p>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('learningStats.focus.perSession')}</p>
+          <p
+            className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          >
+            {t("learningStats.focus.perSession")}
+          </p>
         </div>
       </div>
     </div>
@@ -272,10 +478,19 @@ const FocusStatsCard = ({ stats, isDark, t }: { stats: FocusStats | null, isDark
 export const LearningStatsCenter = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { data: stats, isLoading, error } = useStatistics() as unknown as {
+  const {
+    data: stats,
+    isLoading,
+    error,
+  } = useStatistics() as unknown as {
     data?: {
       distribution: Array<{ name: string; value: number; color: string }>;
-      metrics: { learning: number; dueToday: number; totalCards: number; avgStability: number };
+      metrics: {
+        learning: number;
+        dueToday: number;
+        totalCards: number;
+        avgStability: number;
+      };
       heatmap: { date: string; count: number }[];
       forecast: { date: string; count: number }[];
       growth: { date: string; count: number }[];
@@ -288,7 +503,7 @@ export const LearningStatsCenter = () => {
   const retention = userData?.user?.profile?.settings?.request_retention || 0.9;
 
   const { data: focusStats } = useQuery({
-    queryKey: ['focus-stats'],
+    queryKey: ["focus-stats"],
     queryFn: async () => {
       try {
         const res = await api.focus.getStats();
@@ -296,12 +511,15 @@ export const LearningStatsCenter = () => {
       } catch {
         return null;
       }
-    }
+    },
   });
 
   const totalNodesCount = useMemo(() => {
     if (!graphsData) return 0;
-    return graphsData.reduce((sum: number, g: Graph) => sum + (g.nodes_count || 0), 0);
+    return graphsData.reduce(
+      (sum: number, g: Graph) => sum + (g.nodes_count || 0),
+      0,
+    );
   }, [graphsData]);
 
   const graphHeatmapData = useMemo(() => {
@@ -310,33 +528,55 @@ export const LearningStatsCenter = () => {
       id: graph.id,
       title: graph.title,
       nodes: [],
-      nodes_count: graph.nodes_count || 0
+      nodes_count: graph.nodes_count || 0,
     }));
   }, [graphsData]);
 
   const distributionData = useMemo(() => {
     if (!stats?.distribution) return [];
-    return stats.distribution.map((item: { name: string; value: number; color: string }) => ({
-      name: item.name,
-      value: item.value,
-      color: item.color
-    }));
+    return stats.distribution.map(
+      (item: { name: string; value: number; color: string }) => ({
+        name: item.name,
+        value: item.value,
+        color: item.color,
+      }),
+    );
   }, [stats]);
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-slate-400">{t('learningStats.loading')}</div>;
-  if (error) return <div className="p-8 text-center text-red-500">{t('learningStats.error')}</div>;
+  if (isLoading)
+    return (
+      <div className="p-8 text-center text-gray-500 dark:text-slate-400">
+        {t("learningStats.loading")}
+      </div>
+    );
+  if (error)
+    return (
+      <div className="p-8 text-center text-red-500">
+        {t("learningStats.error")}
+      </div>
+    );
   if (!stats) return null;
 
   return (
-    <div className={`h-full overflow-y-auto p-4 md:p-8 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+    <div
+      className={`h-full overflow-y-auto p-4 md:p-8 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}
+    >
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 md:mb-8">
-          <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.title')}</h1>
-          <p className={`mt-1 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.subtitle')}</p>
+          <h1
+            className={`text-2xl md:text-3xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
+          >
+            {t("learningStats.title")}
+          </h1>
+          <p
+            className={`mt-1 text-sm md:text-base ${isDark ? "text-slate-400" : "text-gray-500"}`}
+          >
+            {t("learningStats.subtitle")}
+          </p>
         </div>
 
         <div className="space-y-6">
-          <QuickStatsCards 
+          <QuickStatsCards
             totalNodes={totalNodesCount}
             masteredNodes={stats.metrics.learning}
             dueToday={stats.metrics.dueToday}
@@ -349,33 +589,33 @@ export const LearningStatsCenter = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <MetricCard
-              title={t('learningStats.cards.totalCards')}
+              title={t("learningStats.cards.totalCards")}
               value={stats.metrics.totalCards}
-              subtext={t('learningStats.cards.totalCardsDesc')}
+              subtext={t("learningStats.cards.totalCardsDesc")}
               icon={BookOpen}
               color="bg-primary-500"
               isDark={isDark}
             />
             <MetricCard
-              title={t('learningStats.cards.dueToday')}
+              title={t("learningStats.cards.dueToday")}
               value={stats.metrics.dueToday}
-              subtext={t('learningStats.cards.dueTodayDesc')}
+              subtext={t("learningStats.cards.dueTodayDesc")}
               icon={Clock}
               color="bg-amber-500"
               isDark={isDark}
             />
             <MetricCard
-              title={t('learningStats.cards.learning')}
+              title={t("learningStats.cards.learning")}
               value={stats.metrics.learning}
-              subtext={t('learningStats.cards.learningDesc')}
+              subtext={t("learningStats.cards.learningDesc")}
               icon={Brain}
               color="bg-green-500"
               isDark={isDark}
             />
             <MetricCard
-              title={t('learningStats.cards.avgStability')}
+              title={t("learningStats.cards.avgStability")}
               value={stats.metrics.avgStability}
-              subtext={`${t('learningStats.cards.days')} (FSRS)`}
+              subtext={`${t("learningStats.cards.days")} (FSRS)`}
               icon={TrendingUp}
               color="bg-primary-500"
               isDark={isDark}

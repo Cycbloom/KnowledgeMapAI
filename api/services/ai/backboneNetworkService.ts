@@ -30,6 +30,7 @@ export interface BackboneNode {
   id: string;
   title: string;
   description?: string;
+  summary?: string;
   level: NodeLevel;
   module: string;
   parentId?: string;
@@ -199,6 +200,7 @@ const BACKBONE_GENERATION_PROMPT = `你是一个专业的知识图谱架构师�
         "id": "node-unique-id",
         "title": "节点标题",
         "description": "节点描述",
+        "summary": "20-30字的简短概览，概括该知识点的核心内容",
         "level": "root|core",
         "module": "research_background|literature_review|research_methods|core_concepts|application_domains|future_directions",
         "parentId": "父节点ID（如果是根节点则为null）",
@@ -319,6 +321,7 @@ function validateBackboneNode(
     id: n.id as string,
     title: n.title as string,
     description,
+    summary: n.summary as string | undefined,
     level,
     module,
     parentId: n.parentId as string | undefined,
@@ -1062,7 +1065,8 @@ ${moduleDescriptions}
     prompt += `\n\n注意：`;
     prompt += `\n1. 只生成 root 和 core 级别的节点，不要生成更细粒度的节点`;
     prompt += `\n2. **每个节点都必须有 description 字段**，描述应该针对具体研究主题，不能使用通用描述`;
-    prompt += `\n3. 根节点的描述应该概括该模块或主题的核心内容`;
+    prompt += `\n3. **每个节点都必须有 summary 字段**：20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼`;
+    prompt += `\n4. 根节点的描述应该概括该模块或主题的核心内容`;
     prompt += `\n\n请以有效的 json 格式返回结果。`;
 
     return prompt;

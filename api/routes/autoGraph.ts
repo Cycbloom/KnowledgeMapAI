@@ -38,6 +38,7 @@ interface AIGeneratedNode {
   id?: string;
   title: string;
   content?: string;
+  summary?: string;
   level?: string;
   parentId?: string | null;
   backboneModule?: string;
@@ -737,6 +738,7 @@ router.post(
             parentId: node.parentId || null,
             title: node.title,
             content: node.content || "",
+            summary: node.summary || null,
             level: node.level || "normal",
             x_position: Math.round(Math.cos(angle) * radius),
             y_position: Math.round(Math.sin(angle) * radius),

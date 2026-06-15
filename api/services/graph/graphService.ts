@@ -996,6 +996,7 @@ export class GraphService {
               graph_node_id: node.id,
               title: node.title,
               content: node.content,
+              summary: node.summary,
               x_position: node.x_position,
               y_position: node.y_position,
               level: node.level,

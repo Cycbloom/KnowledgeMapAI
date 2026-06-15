@@ -251,6 +251,7 @@ async function restoreBackupData(
       graph_id: string;
       title: string;
       content?: string;
+      summary?: string;
       learning_material?: string;
       keywords?: Record<string, unknown>[] | null;
       aliases?: string[] | null;
@@ -405,6 +406,7 @@ async function restoreBackupData(
         .insert({
           title: n.title,
           content: n.content || "",
+          summary: n.summary || null,
           learning_material: n.learning_material || null,
           keywords: n.keywords || [],
           aliases: n.aliases || [],

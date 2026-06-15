@@ -22,7 +22,7 @@ export type GraphViewMode =
   | "planet"
   | "quadrant";
 
-export type GraphColorMode = "level" | "status";
+export type GraphColorMode = "level" | "status" | "heatmap";
 
 export type NodeSizeMode = "fixed" | "importance" | "degree" | "children";
 
@@ -300,6 +300,7 @@ export interface KnowledgePoint {
   id: string;
   title: string;
   content?: string;
+  summary?: string;
   learning_material?: string;
   properties?: NodeProperties;
   visibility: KnowledgePointVisibility;
@@ -319,6 +320,7 @@ export interface KnowledgePointVersion {
   version_number: number;
   title: string;
   content?: string;
+  summary?: string;
   learning_material?: string;
   properties?: NodeProperties;
   change_summary?: string;
@@ -535,6 +537,7 @@ export interface TemplateNode {
   id: string;
   title: string;
   description?: string;
+  summary?: string;
   level: NodeLevel;
   parentId?: string;
   aiPrompt?: string;
@@ -972,6 +975,7 @@ export interface LiteratureInfo {
 export interface ExtractedConcept {
   title: string;
   description: string;
+  summary?: string;
   type: ConceptType;
   source: LiteratureInfo;
   targetModule?: BackboneModule;

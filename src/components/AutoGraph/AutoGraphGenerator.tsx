@@ -51,10 +51,12 @@ interface GeneratedNode {
 interface AIGeneratedNode {
   title: string;
   content?: string;
+  summary?: string;
 }
 
 interface TreeNode extends GeneratedNode {
   id: string;
+  summary?: string;
   children?: TreeNode[];
   isExpanded?: boolean;
   isLoading?: boolean;
@@ -413,11 +415,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         id: generateNodeId(),
         title: result.root.title,
         content: result.root.content,
+        summary: result.root.summary,
         level: "root",
         children: result.coreNodes.map((n: AIGeneratedNode) => ({
           id: generateNodeId(),
           title: n.title,
           content: n.content || "",
+          summary: n.summary,
           level: "core",
           children: [],
           isExpanded: false,
@@ -471,6 +475,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           id: generateNodeId(),
           title: n.title,
           content: n.content || "",
+          summary: n.summary,
           level: childLevel,
           children: [],
           isExpanded: false,
@@ -545,12 +550,13 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   );
 
   const collectAllNodes = useCallback(
-    (node: TreeNode, parentId?: string): Array<{ id: string; title: string; content: string; level: string | undefined; parentId: string | undefined }> => {
-      const nodes: Array<{ id: string; title: string; content: string; level: string | undefined; parentId: string | undefined }> = [
+    (node: TreeNode, parentId?: string): Array<{ id: string; title: string; content: string; summary?: string; level: string | undefined; parentId: string | undefined }> => {
+      const nodes: Array<{ id: string; title: string; content: string; summary?: string; level: string | undefined; parentId: string | undefined }> = [
         {
           id: node.id,
           title: node.title,
           content: node.content,
+          summary: node.summary,
           level: node.level,
           parentId,
         },

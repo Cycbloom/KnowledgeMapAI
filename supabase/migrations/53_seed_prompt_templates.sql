@@ -8,6 +8,8 @@ INSERT INTO prompt_templates ("code", "scope", "user_id", "graph_id", "template_
 Goal: Prioritize generating NEW, specific concepts to broaden the graph''s coverage.
 Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.
 
+Each suggestion must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
+
 Linking Strategy:
 {{#if isRootOrCore}}
 Linking Strategy (HIERARCHICAL):
@@ -95,7 +97,8 @@ Requirements:
 4. Output a TREE structure. Minimise cross-links to keep it clean. Ensure every node (except root) has a valid parent.
 5. **Content Richness**: Every node must have substantial ''content'' description, not just a title.
 6. IMPORTANT: All mathematical formulas in ''content'' must be wrapped in standard LaTeX delimiters. Use $...$ for inline formulas and $$...$$ for block formulas.
-7. Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.', NOW(), NOW()),
+7. Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.
+8. **Summary**: Every node must have a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。', NOW(), NOW()),
 ('tutor_chat', 'system', null, null, 'You are an intelligent knowledge tutor for a Knowledge Graph application.
 
 {{#if isGuided}}
@@ -130,6 +133,8 @@ Goal: Generate 3-5 distinct branch suggestions for the user to explore from the 
 Each branch should represent a different direction or perspective the user could take.
 
 Quantity: Generate exactly 3-5 branches.
+
+Each branch must include a "summary" field: 20-30字的简短概览，概括该分支方向的核心内容，应比标题更具体但比完整内容更精炼。
 
 Linking Strategy:
 {{#if isRootOrCore}}
@@ -188,6 +193,7 @@ Your Task:
 Output Requirements:
 - Node titles must preserve core terminology.
 - **Content Richness**: Each node MUST have substantial ''content'' (100-200 words), not just a title.
+- **Summary**: Every node must have a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
 - Node count: 40-60 nodes to ensure completeness.
 - All titles and descriptions should match the language of the source document.', NOW(), NOW()),
 ('generate_content', 'system', null, null, 'You are an expert tutor and content creator. Generate detailed, structured educational content for the topic "{{topic}}".
@@ -236,6 +242,8 @@ Provide a detailed ''explanation'' clarifying the fact.', NOW(), NOW()),
 ## Task
 Generate the ROOT node and 3-5 CORE nodes for the topic. This is the FIRST step of progressive graph building.
 
+Each node must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
+
 {{#if isCustom}}
 ## Custom Instructions
 {{customPrompt}}
@@ -272,6 +280,8 @@ Topic: {{topic}}', NOW(), NOW()),
 
 ## Task
 Generate 3-5 child nodes for the given parent node. Each child should be a specific sub-concept or detail.
+
+Each child node must include a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼。
 
 ## Context
 - Parent Node: {{nodeTitle}}
@@ -528,9 +538,10 @@ For each template scheme, provide:
 2. **Node Hierarchy**: Clear parent-child relationships with appropriate levels (root, core, sub, normal, leaf)
 3. **Edge Relationships**: Meaningful connections between nodes
 4. **Content Suggestions**: Brief description of what each node should contain
-5. **Layout Recommendation**: Suggest the best layout type (radial, tree, network, hierarchical)
-6. **Difficulty Assessment**: Rate the complexity (easy, medium, hard)
-7. **Tags**: Auto-generate relevant tags for categorization
+5. **Summary**: Each node must have a "summary" field: 20-30字的简短概览，概括该节点的核心内容，应比标题更具体但比完整内容更精炼
+6. **Layout Recommendation**: Suggest the best layout type (radial, tree, network, hierarchical)
+7. **Difficulty Assessment**: Rate the complexity (easy, medium, hard)
+8. **Tags**: Auto-generate relevant tags for categorization
 
 ## Template Types to Consider
 
@@ -572,6 +583,7 @@ For each node in the template:
 1. **Detailed Content**: Generate comprehensive content based on the node''s title and suggested content
 2. **Style Consistency**: Maintain the selected style throughout (academic, practical, beginner, or custom)
 3. **Context Awareness**: Consider the topic and context when generating content
+4. **Summary**: Each node must have a "summary" field: 20-30字的简短概览，概括该知识点的核心内容，应比标题更具体但比完整内容更精炼
 
 ## Style Guidelines
 
@@ -790,6 +802,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 3. **层次性**：区分核心概念和次要概念
 4. **去重**：避免重复提取相似概念
 5. **语言**：保持与原文一致的语言风格
+6. **概览(summary)**：每个概念必须包含summary字段，20-30字的简短概览，概括该概念的核心内容，应比标题更具体但比完整内容更精炼
 
 ## 概念筛选原则
 

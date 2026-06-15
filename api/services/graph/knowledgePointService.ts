@@ -52,6 +52,7 @@ export interface PendingKnowledgePointItem {
 export interface CreateKnowledgePointData {
   title: string;
   content?: string;
+  summary?: string;
   learning_material?: string;
   properties?: Record<string, unknown>;
   visibility?: KnowledgePointVisibility;
@@ -62,6 +63,7 @@ export interface CreateKnowledgePointData {
 export interface UpdateKnowledgePointData {
   title?: string;
   content?: string;
+  summary?: string;
   learning_material?: string;
   properties?: Record<string, unknown>;
   visibility?: KnowledgePointVisibility;
@@ -94,6 +96,7 @@ export class KnowledgePointService {
     const kpData: Record<string, unknown> = {
       title: data.title,
       content: data.content || '',
+      summary: data.summary || null,
       learning_material: data.learning_material || '',
       properties: data.properties || {},
       visibility: data.visibility || 'private',
@@ -324,7 +327,7 @@ export class KnowledgePointService {
 
     let query = supabase
       .from('knowledge_points')
-      .select('id, title, content, learning_material, properties, visibility, owner_id, created_at, updated_at', { count: 'exact' })
+      .select('id, title, content, summary, learning_material, properties, visibility, owner_id, created_at, updated_at', { count: 'exact' })
       .eq('visibility', 'public');
 
     if (search) {
@@ -436,7 +439,7 @@ export class KnowledgePointService {
 
     const { data, error, count } = await supabase
       .from('knowledge_points')
-      .select('id, title, content, learning_material, properties, owner_id, created_at, updated_at', { count: 'exact' })
+      .select('id, title, content, summary, learning_material, properties, owner_id, created_at, updated_at', { count: 'exact' })
       .eq('visibility', 'pending')
       .order('updated_at', { ascending: true })
       .range(offset, end);

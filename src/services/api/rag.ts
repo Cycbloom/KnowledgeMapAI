@@ -10,15 +10,17 @@ interface Source {
 }
 
 export const ragApi = {
-  chat: (data: { 
-    message: string; 
-    graph_id?: string; 
-    current_node_id?: string; 
+  chat: (data: {
+    message: string;
+    graph_id?: string;
+    current_node_id?: string;
     history?: Array<{ role: 'user' | 'assistant'; content: string }>;
-    provider?: string; 
-    model?: string; 
+    provider?: string;
+    model?: string;
     language?: string;
     session_id?: string;
+    use_graph_context?: boolean;
+    graph_hops?: number;
   }) => {
     const config = getAIConfig('text');
     const payload = { ...data, language: data.language || getAILanguage() };
@@ -28,15 +30,17 @@ export const ragApi = {
   },
   
   chatStream: async (
-    data: { 
-      message: string; 
-      graph_id?: string; 
-      current_node_id?: string; 
+    data: {
+      message: string;
+      graph_id?: string;
+      current_node_id?: string;
       history?: Array<{ role: 'user' | 'assistant'; content: string }>;
-      provider?: string; 
-      model?: string; 
+      provider?: string;
+      model?: string;
       language?: string;
       session_id?: string;
+      use_graph_context?: boolean;
+      graph_hops?: number;
     }, 
     onChunk: (content: string) => void,
     onSources?: (sources: Source[]) => void
@@ -95,11 +99,13 @@ export const ragApi = {
     }
   },
   
-  search: (data: { 
-    query: string; 
-    graph_id?: string; 
-    match_threshold?: number; 
-    match_count?: number; 
+  search: (data: {
+    query: string;
+    graph_id?: string;
+    match_threshold?: number;
+    match_count?: number;
+    use_graph_context?: boolean;
+    graph_hops?: number;
   }) => request('/rag/search', { method: 'POST', body: JSON.stringify(data) }),
   
   analyzeGaps: (graphId: string) => request('/rag/analyze-gaps', { 

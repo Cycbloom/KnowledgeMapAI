@@ -8,6 +8,7 @@ import {
   Settings2,
   GraduationCap,
   MessageCircle,
+  Network,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { useTheme } from "../../hooks";
@@ -119,6 +120,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   const [showConceptsPanel, setShowConceptsPanel] = useState(false);
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [useGraphContext, setUseGraphContext] = useState(false);
   const [quotes, setQuotes] = useState<QuoteReference[]>([]);
 
   const removeQuote = (id: string) => {
@@ -281,6 +283,8 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             current_node_id: currentNodeId,
             history,
             session_id: chatState.sessionId,
+            use_graph_context: useGraphContext,
+            graph_hops: useGraphContext ? 2 : undefined,
           },
           (chunk: string) => {
             fullResponse += chunk;
@@ -404,6 +408,15 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               <Settings2 size={16} />
             </button>
           )}
+          <button
+            onClick={() => setUseGraphContext(!useGraphContext)}
+            className={`p-2 rounded-lg transition-colors ${
+              useGraphContext ? "bg-white/20" : "hover:bg-white/10"
+            }`}
+            title={t("aiChat.graphContext")}
+          >
+            <Network size={16} />
+          </button>
           {onToggleTutorMode && (
             <button
               onClick={onToggleTutorMode}

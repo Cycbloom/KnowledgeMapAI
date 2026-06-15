@@ -24,6 +24,8 @@ const ragChatSchema = z.object({
   model: z.string().optional(),
   language: z.string().optional(),
   session_id: z.string().uuid().optional(),
+  use_graph_context: z.boolean().optional(),
+  graph_hops: z.number().min(1).max(3).optional(),
 });
 
 const ragSearchSchema = z.object({
@@ -31,6 +33,8 @@ const ragSearchSchema = z.object({
   graph_id: z.string().uuid().optional(),
   match_threshold: z.number().min(0).max(1).optional(),
   match_count: z.number().min(1).max(20).optional(),
+  use_graph_context: z.boolean().optional(),
+  graph_hops: z.number().min(1).max(3).optional(),
 });
 
 const analyzeGapsSchema = z.object({
@@ -38,7 +42,7 @@ const analyzeGapsSchema = z.object({
 });
 
 router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, current_node_id, history, provider, model, language, session_id } = req.body;
+  const { message, graph_id, current_node_id, history, provider, model, language, session_id, use_graph_context, graph_hops } = req.body;
   const sessionId = session_id || crypto.randomUUID();
 
   try {
@@ -51,6 +55,8 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
       model,
       language,
       sessionId,
+      useGraphContext: use_graph_context,
+      graphHops: graph_hops,
     });
     const duration = Date.now() - startTime;
 
@@ -82,7 +88,7 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
 });
 
 router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, current_node_id, history, provider, model, language, session_id } = req.body;
+  const { message, graph_id, current_node_id, history, provider, model, language, session_id, use_graph_context, graph_hops } = req.body;
   const sessionId = session_id || crypto.randomUUID();
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -106,6 +112,8 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
         model,
         language,
         sessionId,
+        useGraphContext: use_graph_context,
+        graphHops: graph_hops,
       }
     );
     const duration = Date.now() - startTime;
@@ -141,14 +149,24 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
 });
 
 router.post('/search', requireAuth, validate(ragSearchSchema), async (req: AuthRequest, res: Response) => {
-  const { query, graph_id, match_threshold, match_count } = req.body;
+  const { query, graph_id, match_threshold, match_count, use_graph_context, graph_hops } = req.body;
 
   try {
-    const results = await ragService.semanticSearch(query, req.user.id, {
-      graphId: graph_id,
-      matchThreshold: match_threshold,
-      matchCount: match_count
-    });
+    let results;
+    if (use_graph_context && graph_id) {
+      results = await ragService.graphAugmentedSearch(query, req.user.id, {
+        graphId: graph_id,
+        matchThreshold: match_threshold,
+        matchCount: match_count,
+        graphHops: graph_hops,
+      });
+    } else {
+      results = await ragService.semanticSearch(query, req.user.id, {
+        graphId: graph_id,
+        matchThreshold: match_threshold,
+        matchCount: match_count,
+      });
+    }
 
     res.json({ results });
   } catch (error) {

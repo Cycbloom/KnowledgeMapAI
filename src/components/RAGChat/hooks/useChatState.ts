@@ -14,6 +14,8 @@ export interface Source {
   title: string;
   content: string;
   similarity: number;
+  relationshipPath?: string;
+  hopDistance?: number;
 }
 
 export interface ChatState {

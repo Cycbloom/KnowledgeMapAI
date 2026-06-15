@@ -696,3 +696,112 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- GraphRAG: BFS traverse neighbors from seed nodes
+CREATE OR REPLACE FUNCTION graph_traverse_neighbors(
+  p_graph_id uuid,
+  p_source_ids uuid[],
+  p_max_hops int DEFAULT 2,
+  p_relationship_types text[] DEFAULT NULL
+)
+RETURNS TABLE (
+  knowledge_point_id uuid,
+  title varchar,
+  content text,
+  hop_distance int,
+  relationship_path text,
+  relationship_type text
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_current_hop int := 0;
+  v_frontier uuid[];
+  v_next_frontier uuid[];
+  v_source_id uuid;
+  v_target_id uuid;
+  v_rel_type text;
+  v_source_title varchar;
+  v_target_title varchar;
+  v_path_text text;
+BEGIN
+  -- Return empty if no source IDs provided
+  IF p_source_ids IS NULL OR array_length(p_source_ids, 1) IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- Initialize visited set with source IDs (excluded from results)
+  CREATE TEMP TABLE _visited (
+    kp_id uuid PRIMARY KEY,
+    hop int NOT NULL,
+    path text,
+    rel_type text
+  ) ON COMMIT DROP;
+
+  -- Mark source IDs as visited at hop 0
+  INSERT INTO _visited (kp_id, hop, path, rel_type)
+  SELECT unnest(p_source_ids), 0, NULL, NULL;
+
+  -- Initialize frontier with source IDs
+  v_frontier := p_source_ids;
+
+  -- BFS loop
+  WHILE v_current_hop < p_max_hops AND array_length(v_frontier, 1) IS NOT NULL LOOP
+    v_current_hop := v_current_hop + 1;
+    v_next_frontier := ARRAY[]::uuid[];
+
+    -- Find all edges from current frontier nodes
+    FOR v_source_id, v_target_id, v_rel_type, v_source_title, v_target_title IN
+      SELECT
+        e.source_knowledge_point_id,
+        e.target_knowledge_point_id,
+        e.relationship_type,
+        src_kp.title,
+        tgt_kp.title
+      FROM edges e
+      JOIN knowledge_points src_kp ON src_kp.id = e.source_knowledge_point_id
+      JOIN knowledge_points tgt_kp ON tgt_kp.id = e.target_knowledge_point_id
+      WHERE e.graph_id = p_graph_id
+        AND e.deleted_at IS NULL
+        AND e.source_knowledge_point_id = ANY(v_frontier)
+        AND (p_relationship_types IS NULL OR e.relationship_type = ANY(p_relationship_types))
+    LOOP
+      -- Skip if already visited (cycle detection)
+      IF EXISTS (SELECT 1 FROM _visited WHERE kp_id = v_target_id) THEN
+        CONTINUE;
+      END IF;
+
+      -- Build path text
+      SELECT path INTO v_path_text FROM _visited WHERE kp_id = v_source_id;
+      IF v_path_text IS NULL THEN
+        v_path_text := v_source_title || ' → ' || COALESCE(v_rel_type, '') || ' → ' || v_target_title;
+      ELSE
+        v_path_text := v_path_text || ' → ' || COALESCE(v_rel_type, '') || ' → ' || v_target_title;
+      END IF;
+
+      -- Mark as visited
+      INSERT INTO _visited (kp_id, hop, path, rel_type)
+      VALUES (v_target_id, v_current_hop, v_path_text, v_rel_type);
+
+      -- Add to next frontier
+      v_next_frontier := v_next_frontier || v_target_id;
+    END LOOP;
+
+    v_frontier := v_next_frontier;
+  END LOOP;
+
+  -- Return results (exclude source IDs at hop 0), ordered by hop_distance
+  RETURN QUERY
+  SELECT
+    v.kp_id AS knowledge_point_id,
+    kp.title,
+    kp.content,
+    v.hop AS hop_distance,
+    v.path AS relationship_path,
+    v.rel_type AS relationship_type
+  FROM _visited v
+  JOIN knowledge_points kp ON kp.id = v.kp_id
+  WHERE v.hop > 0
+  ORDER BY v.hop ASC;
+END;
+$$;

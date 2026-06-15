@@ -10,6 +10,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
 import { contextWindowManager } from "./contextWindowManager";
+import { graphTraversalService } from "../graph/graphTraversalService";
 
 interface GraphNodeWithKnowledge {
   knowledge_point_id: string;
@@ -51,6 +52,12 @@ export interface RAGSearchResult {
   content: string;
   similarity: number;
   graphId: string;
+}
+
+export interface GraphRAGSearchResult extends RAGSearchResult {
+  hopDistance: number;
+  relationshipPath: string;
+  relationshipType: string;
 }
 
 export interface RAGResponse {
@@ -185,6 +192,91 @@ export class RAGService {
     }
   }
 
+  async graphAugmentedSearch(
+    query: string,
+    userId: string,
+    options: {
+      graphId?: string;
+      matchThreshold?: number;
+      matchCount?: number;
+      graphHops?: number;
+      relationshipTypes?: string[];
+    } = {},
+  ): Promise<GraphRAGSearchResult[]> {
+    const { graphId, matchThreshold, matchCount, graphHops, relationshipTypes } = options;
+
+    const searchResults = await this.semanticSearch(query, userId, {
+      graphId,
+      matchThreshold,
+      matchCount,
+    });
+
+    if (searchResults.length === 0 || !graphId) {
+      return searchResults.map((r) => ({
+        ...r,
+        hopDistance: 0,
+        relationshipPath: "",
+        relationshipType: "",
+      }));
+    }
+
+    const seedIds = searchResults.map((r) => r.id);
+
+    try {
+      const supabase = getSupabaseAdmin();
+      const expandedNodes = await graphTraversalService.getNeighbors(
+        supabase,
+        graphId,
+        seedIds,
+        graphHops ?? 1,
+        relationshipTypes,
+      );
+
+      const seedIdSet = new Set(seedIds);
+      const filteredExpanded = expandedNodes.filter(
+        (node) => !seedIdSet.has(node.knowledgePointId),
+      );
+
+      const expandedResults: GraphRAGSearchResult[] = filteredExpanded.map(
+        (node) => ({
+          id: node.knowledgePointId,
+          title: node.title,
+          content: node.content,
+          similarity: 0,
+          graphId,
+          hopDistance: node.hopDistance,
+          relationshipPath: node.relationshipPath,
+          relationshipType: node.relationshipType,
+        }),
+      );
+
+      const seedResults: GraphRAGSearchResult[] = searchResults.map((r) => ({
+        ...r,
+        hopDistance: 0,
+        relationshipPath: "",
+        relationshipType: "",
+      }));
+
+      seedResults.sort((a, b) => b.similarity - a.similarity);
+      expandedResults.sort((a, b) => {
+        if (a.hopDistance !== b.hopDistance) {
+          return a.hopDistance - b.hopDistance;
+        }
+        return a.relationshipPath.localeCompare(b.relationshipPath);
+      });
+
+      return [...seedResults, ...expandedResults];
+    } catch (err) {
+      logger.error("Graph augmented search error", { err });
+      return searchResults.map((r) => ({
+        ...r,
+        hopDistance: 0,
+        relationshipPath: "",
+        relationshipType: "",
+      }));
+    }
+  }
+
   async buildContext(
     query: string,
     userId: string,
@@ -192,15 +284,42 @@ export class RAGService {
       graphId?: string;
       currentNodeId?: string;
       maxContextLength?: number;
+      useGraphContext?: boolean;
+      graphHops?: number;
     } = {},
   ): Promise<{ context: string; sources: RAGSearchResult[] }> {
-    const { graphId, currentNodeId, maxContextLength = 8000 } = options;
+    const { graphId, currentNodeId, maxContextLength = 8000, useGraphContext, graphHops } = options;
 
-    const searchResults = await this.semanticSearch(query, userId, {
-      graphId,
-      matchThreshold: 0.3,
-      matchCount: 10,
-    });
+    let searchResults: RAGSearchResult[];
+    let graphSources: { id: string; title: string; content: string; hopDistance: number; relationshipPath: string; relationshipType: string }[] | undefined;
+
+    if (useGraphContext && graphId) {
+      const graphResults = await this.graphAugmentedSearch(query, userId, {
+        graphId,
+        matchThreshold: 0.3,
+        matchCount: 10,
+        graphHops,
+      });
+
+      const seedResults = graphResults.filter((r) => r.hopDistance === 0);
+      const expandedResults = graphResults.filter((r) => r.hopDistance > 0);
+
+      searchResults = seedResults;
+      graphSources = expandedResults.map((r) => ({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        hopDistance: r.hopDistance,
+        relationshipPath: r.relationshipPath,
+        relationshipType: r.relationshipType,
+      }));
+    } else {
+      searchResults = await this.semanticSearch(query, userId, {
+        graphId,
+        matchThreshold: 0.3,
+        matchCount: 10,
+      });
+    }
 
     let currentNodeContext: string | undefined;
     if (currentNodeId) {
@@ -241,6 +360,7 @@ export class RAGService {
       {
         maxTokens,
         currentNodeContext,
+        graphSources,
       },
     );
 
@@ -258,13 +378,17 @@ export class RAGService {
       model?: string;
       language?: string;
       sessionId?: string;
+      useGraphContext?: boolean;
+      graphHops?: number;
     } = {},
   ): Promise<RAGResponse> {
-    const { graphId, currentNodeId, history = [], model, language } = options;
+    const { graphId, currentNodeId, history = [], model, language, useGraphContext, graphHops } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
       currentNodeId,
+      useGraphContext,
+      graphHops,
     });
 
     const aiProvider = await getAIProviderForTask("text");
@@ -284,6 +408,10 @@ export class RAGService {
     const isEnglish = language === "en-US" || language === "en" || (language && language.startsWith("en"));
     const languageInstruction = isEnglish ? "Please respond in English." : "请用中文回答";
 
+    const graphContextHint = (useGraphContext && graphId && context.includes("[图谱关联节点]"))
+      ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
+      : "";
+
     const systemPrompt = `你是一个智能知识图谱助手，专门帮助用户理解和探索知识图谱中的内容。
 
 你的能力：
@@ -299,7 +427,7 @@ export class RAGService {
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
 5. 在回答末尾，可以建议 1-3 个相关的后续问题
 6. ${languageInstruction}
-
+${graphContextHint}
 知识上下文：
 ${context || "(暂无相关上下文)"}`;
 
@@ -430,13 +558,17 @@ ${context || "(暂无相关上下文)"}`;
       model?: string;
       language?: string;
       sessionId?: string;
+      useGraphContext?: boolean;
+      graphHops?: number;
     } = {},
   ): Promise<RAGSearchResult[]> {
-    const { graphId, currentNodeId, history = [], model, language } = options;
+    const { graphId, currentNodeId, history = [], model, language, useGraphContext, graphHops } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
       currentNodeId,
+      useGraphContext,
+      graphHops,
     });
 
     const aiProvider = await getAIProviderForTask("text");
@@ -453,6 +585,10 @@ ${context || "(暂无相关上下文)"}`;
     const isEnglish = language === "en-US" || language === "en" || (language && language.startsWith("en"));
     const languageInstruction = isEnglish ? "Please respond in English." : "请用中文回答";
 
+    const graphContextHint = (useGraphContext && graphId && context.includes("[图谱关联节点]"))
+      ? `\n\n重要提示：以下知识上下文中包含通过图谱关系发现的关联节点（标记为"图谱关联"）。这些节点之间存在图谱关系路径，请利用这些关系进行推理和解释，帮助用户理解知识之间的深层联系。\n`
+      : "";
+
     const systemPrompt = `你是一个智能知识图谱助手，专门帮助用户理解和探索知识图谱中的内容。
 
 你的能力：
@@ -467,7 +603,7 @@ ${context || "(暂无相关上下文)"}`;
 3. 使用清晰的 Markdown 格式组织回答
 4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
 5. ${languageInstruction}
-
+${graphContextHint}
 知识上下文：
 ${context || "(暂无相关上下文)"}`;
 

@@ -3391,7 +3391,8 @@
     "resume": "Resume",
     "stop": "Stop",
     "quoteReference": "Quoted Reference",
-    "removeQuote": "Remove quote"
+    "removeQuote": "Remove quote",
+    "graphContext": "Graph Augmented Search"
   },
   "literatureExtract": {
     "title": "Literature Extract",

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Bot, User, BookOpen, Loader2 } from 'lucide-react';
+import { Bot, User, BookOpen, Loader2, Network } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -119,17 +119,28 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     <button
                       key={source.id}
                       onClick={() => onNodeClick && onNodeClick(source.id)}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${
-                        isDark 
-                          ? 'bg-slate-700 hover:bg-slate-600 text-white' 
+                      className={`inline-flex flex-col items-start gap-0.5 px-2 py-1 rounded-lg transition-colors ${
+                        isDark
+                          ? 'bg-slate-700 hover:bg-slate-600 text-white'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
                       }`}
                     >
-                      <BookOpen size={10} />
-                      <span className="truncate max-w-[80px]">{source.title}</span>
-                      <span className="text-[10px] opacity-70">
-                        {Math.round(source.similarity * 100)}%
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <BookOpen size={10} />
+                        {source.hopDistance && source.hopDistance > 0 && (
+                          <span className="text-[10px] text-amber-500 font-medium">[{source.hopDistance}跳]</span>
+                        )}
+                        <span className="truncate max-w-[80px]">{source.title}</span>
+                        <span className="text-[10px] opacity-70">
+                          {Math.round(source.similarity * 100)}%
+                        </span>
+                      </div>
+                      {source.relationshipPath && (
+                        <span className="text-xs text-amber-500 flex items-center gap-1">
+                          <Network size={10} />
+                          {source.relationshipPath}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>

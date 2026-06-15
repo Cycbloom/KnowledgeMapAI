@@ -1,0 +1,10 @@
+- [x] PostgreSQL 函数 `graph_traverse_neighbors` 已创建并通过本地数据库验证
+- [x] `GraphTraversalService` 服务已创建，`getNeighbors` 方法可正确返回邻居节点及关系路径
+- [x] `RAGService.graphAugmentedSearch` 方法在向量检索基础上正确扩展图关联节点
+- [x] `ContextWindowManager.buildContext` 支持图增强上下文，种子节点占 70% 预算，扩展节点占 30%
+- [x] `RAGService.chat` 和 `streamChat` 支持 `useGraphContext` 选项，启用时系统 Prompt 包含关系推理指引
+- [x] RAG 路由 `/rag/chat`、`/rag/chat/stream`、`/rag/search` 支持 `use_graph_context` 和 `graph_hops` 参数
+- [x] 前端 `ragApi` 正确传递图增强参数
+- [x] RAG 聊天面板展示关系路径信息，包含图增强开关
+- [x] 类型检查通过：`npm run check`
+- [x] 代码检查通过：`npm run lint`

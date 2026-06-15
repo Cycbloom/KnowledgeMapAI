@@ -107,3 +107,4 @@ GRANT EXECUTE ON FUNCTION search_similar_graphs(vector(1024), UUID, FLOAT, INT, 
 GRANT EXECUTE ON FUNCTION get_user_study_stats(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION check_duplicate_graph_topic(VARCHAR(255), UUID, FLOAT, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION is_graph_collaborator(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION graph_traverse_neighbors(uuid, uuid[], int, text[]) TO authenticated;

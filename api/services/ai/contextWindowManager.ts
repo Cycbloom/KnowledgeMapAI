@@ -9,6 +9,15 @@ interface ContextSource {
   graphId: string;
 }
 
+interface GraphContextSource {
+  id: string;
+  title: string;
+  content: string;
+  hopDistance: number;
+  relationshipPath: string;
+  relationshipType: string;
+}
+
 interface ContextChunk {
   knowledgePointId: string;
   chunkIndex: number;
@@ -20,6 +29,7 @@ interface BuildContextOptions {
   maxTokens: number;
   currentNodeContext?: string;
   chunks?: ContextChunk[];
+  graphSources?: GraphContextSource[];
 }
 
 interface BuildContextResult {
@@ -47,7 +57,7 @@ export class ContextWindowManager {
     sources: ContextSource[],
     options: BuildContextOptions,
   ): BuildContextResult {
-    const { maxTokens, currentNodeContext, chunks } = options;
+    const { maxTokens, currentNodeContext, chunks, graphSources } = options;
 
     const sortedSources = [...sources].sort(
       (a, b) => b.similarity - a.similarity,
@@ -62,8 +72,13 @@ export class ContextWindowManager {
       currentNodeSection = `[当前节点]\n${currentNodeContext}\n`;
     }
 
+    const seedBudget = Math.floor(remainingBudget * 0.7);
+    const graphBudget = remainingBudget - seedBudget;
+
     const usedSources: ContextSource[] = [];
     const sourceEntries: string[] = [];
+
+    let seedRemaining = seedBudget;
 
     for (const source of sortedSources) {
       let effectiveContent = source.content;
@@ -87,10 +102,10 @@ export class ContextWindowManager {
       const entryText = buildNodeContext(nodeData, { maxContentLength: 1000 });
       const entryTokens = this.estimateTokens(entryText);
 
-      if (entryTokens <= remainingBudget) {
+      if (entryTokens <= seedRemaining) {
         sourceEntries.push(entryText);
         usedSources.push(source);
-        remainingBudget -= entryTokens;
+        seedRemaining -= entryTokens;
       } else {
         logger.warn(
           `Context window budget exhausted. Skipping source: ${source.title}`,
@@ -108,6 +123,40 @@ export class ContextWindowManager {
         .map((entry, i) => `[${i + 1}] ${entry}`)
         .join("\n\n");
       context += `[相关知识节点]\n${formattedSources}`;
+    }
+
+    if (graphSources && graphSources.length > 0) {
+      const sortedGraphSources = [...graphSources].sort((a, b) => {
+        if (a.hopDistance !== b.hopDistance) {
+          return a.hopDistance - b.hopDistance;
+        }
+        return a.relationshipPath.localeCompare(b.relationshipPath);
+      });
+
+      const graphEntries: string[] = [];
+      let graphRemaining = graphBudget;
+
+      for (const gs of sortedGraphSources) {
+        const graphEntryText = `[图谱关联] [${gs.hopDistance}跳] ${gs.relationshipPath}\n${gs.title}: ${gs.content}`;
+        const graphEntryTokens = this.estimateTokens(graphEntryText);
+
+        if (graphEntryTokens <= graphRemaining) {
+          graphEntries.push(graphEntryText);
+          graphRemaining -= graphEntryTokens;
+        } else {
+          logger.warn(
+            `Graph context budget exhausted. Skipping graph source: ${gs.title}`,
+          );
+          break;
+        }
+      }
+
+      if (graphEntries.length > 0) {
+        if (context) {
+          context += "\n\n";
+        }
+        context += `[图谱关联节点]\n${graphEntries.join("\n\n")}`;
+      }
     }
 
     return { context, usedSources };

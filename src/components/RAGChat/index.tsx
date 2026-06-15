@@ -204,7 +204,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             ],
       );
     }
-  }, [currentNodeTitle, chatState.messages.length, isTutorMode, chatState]);
+  }, [currentNodeTitle, chatState.messages.length, isTutorMode]);
 
   const handlePlayMessage = (messageId: string, content: string) => {
     if (chatState.currentSpeakingMessageId === messageId && isSpeaking) {

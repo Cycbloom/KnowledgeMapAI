@@ -61,6 +61,7 @@ export const useGraphNodeOperations = ({
             graph_id: id,
             title: nodeForm.title,
             content: nodeForm.content,
+            summary: nodeForm.summary,
             x_position: Math.round((Math.random() - 0.5) * 20),
             y_position: Math.round((Math.random() - 0.5) * 20),
             level: nodeForm.level,
@@ -90,6 +91,7 @@ export const useGraphNodeOperations = ({
             graph_id: selectedNode.graph_id,
             title: selectedNode.title,
             content: selectedNode.content,
+            summary: selectedNode.summary,
             level: selectedNode.level,
             tags: selectedNode.properties?.tags,
             properties: selectedNode.properties
@@ -99,6 +101,7 @@ export const useGraphNodeOperations = ({
             graph_id: selectedNode.graph_id,
             title: nodeForm.title,
             content: nodeForm.content,
+            summary: nodeForm.summary,
             level: nodeForm.level,
             properties: { ...selectedNode.properties, tags: nodeForm.tags }
           };
@@ -382,6 +385,7 @@ export const useGraphNodeOperations = ({
       setNodeForm({
         title: '',
         content: '',
+        summary: '',
         parentNodeIds: selectedNode?.id ? [selectedNode.id] : [],
         level: 'leaf',
         tags: []

@@ -445,7 +445,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
     nodes.forEach((node) => {
       const nodeTags = new Set(node.tags || node.properties?.tags || []);
-      const nodeContent = (node.content || "").toLowerCase();
+      const nodeContent = (node.summary || node.content || "").toLowerCase();
       const connectedIds = new Set(
         edges
           .filter(

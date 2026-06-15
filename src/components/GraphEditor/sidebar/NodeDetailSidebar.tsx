@@ -171,10 +171,16 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
       >
         <section>
           <h1
-            className={`font-bold text-gray-900 dark:text-gray-100 leading-tight ${isMobile ? "text-xl mb-4" : "text-2xl mb-3"}`}
+            className={`font-bold text-gray-900 dark:text-gray-100 leading-tight ${isMobile ? "text-xl mb-2" : "text-2xl mb-2"}`}
           >
             {node.title}
           </h1>
+
+          {node.summary && (
+            <p className={`text-gray-500 dark:text-gray-400 leading-relaxed ${isMobile ? "text-sm mb-3" : "text-sm mb-3"}`}>
+              {node.summary}
+            </p>
+          )}
 
           {/* Metadata Row */}
           <div

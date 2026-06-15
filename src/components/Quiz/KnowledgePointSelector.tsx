@@ -273,9 +273,9 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
                 <div className={`text-sm font-medium truncate ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                   {node.title}
                 </div>
-                {node.content && (
+                {(node.summary || node.content) && (
                   <div className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    {node.content}
+                    {node.summary || node.content}
                   </div>
                 )}
               </div>

@@ -128,9 +128,15 @@ export const CombinedNodeDetailSidebar: React.FC<
               {graphTitle}
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-2">
             {node.title}
           </h1>
+
+          {node.summary && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-3">
+              {node.summary}
+            </p>
+          )}
 
           <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">

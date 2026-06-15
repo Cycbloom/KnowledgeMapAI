@@ -5,6 +5,7 @@ export interface FormState {
   nodeForm: {
     title: string;
     content: string;
+    summary: string;
     parentNodeIds: string[];
     level: NodeLevel;
     tags: string[];
@@ -13,6 +14,7 @@ export interface FormState {
     React.SetStateAction<{
       title: string;
       content: string;
+      summary: string;
       parentNodeIds: string[];
       level: NodeLevel;
       tags: string[];
@@ -50,12 +52,14 @@ export const useFormState = (): FormState => {
   const [nodeForm, setNodeForm] = useState<{
     title: string;
     content: string;
+    summary: string;
     parentNodeIds: string[];
     level: NodeLevel;
     tags: string[];
   }>({
     title: "",
     content: "",
+    summary: "",
     parentNodeIds: [],
     level: "leaf",
     tags: [],

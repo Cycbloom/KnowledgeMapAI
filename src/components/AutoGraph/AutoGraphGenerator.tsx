@@ -228,7 +228,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
             <p
               className={`${isMobile ? "text-xs" : "text-sm"} mt-1 opacity-70 line-clamp-1`}
             >
-              {node.content}
+              {node.summary || node.content}
             </p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">

@@ -54,14 +54,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const matchedNodes: CommandItem[] = [];
     if (query && nodes.length > 0 && onNodeSelect) {
       nodes.forEach(node => {
-        if (node.title.toLowerCase().includes(lowerQuery) || (node.content && node.content.toLowerCase().includes(lowerQuery))) {
+        if (node.title.toLowerCase().includes(lowerQuery) || (node.summary && node.summary.toLowerCase().includes(lowerQuery)) || (node.content && node.content.toLowerCase().includes(lowerQuery))) {
           matchedNodes.push({
             id: `node-${node.id}`,
             label: node.title || 'Untitled Node',
             icon: <FileText size={14} />,
             category: 'node',
             action: () => onNodeSelect(node.id),
-            keywords: [node.content?.slice(0, 50) || '']
+            keywords: [node.summary || node.content?.slice(0, 50) || '']
           });
         }
       });

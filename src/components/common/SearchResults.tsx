@@ -183,9 +183,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                         </span>
                       )}
                     </div>
-                    {node.content && (
+                    {(node.summary || node.content) && (
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                        <HighlightText text={node.content} query={query} />
+                        <HighlightText text={node.summary || node.content || ''} query={query} />
                       </p>
                     )}
                     <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">

@@ -67,11 +67,13 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
   const [nodeForm, setNodeForm] = useState<{
     title: string;
     content: string;
+    summary: string;
     level: string;
     tags: string[];
   }>({
     title: '',
     content: '',
+    summary: '',
     level: 'normal',
     tags: []
   });
@@ -117,6 +119,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
       setNodeForm({
         title: selectedNode.title || '',
         content: selectedNode.content || '',
+        summary: selectedNode.summary || '',
         level: selectedNode.level || 'normal',
         tags: selectedNode.tags || selectedNode.properties?.tags || []
       });
@@ -212,6 +215,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
       setNodeForm({
         title: selectedNode.title || '',
         content: selectedNode.content || '',
+        summary: selectedNode.summary || '',
         level: selectedNode.level || 'normal',
         tags: selectedNode.tags || selectedNode.properties?.tags || []
       });
@@ -230,6 +234,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
       nodeOps.handleUpdateNode(selectedNode.id, {
         title: nodeForm.title,
         content: nodeForm.content,
+        summary: nodeForm.summary,
         level: nodeForm.level as any,
         tags: nodeForm.tags
       });

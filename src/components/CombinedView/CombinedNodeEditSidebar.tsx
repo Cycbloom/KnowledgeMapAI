@@ -5,6 +5,7 @@ import { X, ArrowLeft, Save } from 'lucide-react';
 interface NodeFormState {
   title: string;
   content: string;
+  summary: string;
   level: string;
   tags: string[];
 }
@@ -69,6 +70,21 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
             onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             placeholder="输入节点标题"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            概览
+            <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">(20-30字短概述)</span>
+          </label>
+          <input
+            type="text"
+            value={nodeForm.summary}
+            onChange={(e) => setNodeForm({ ...nodeForm, summary: e.target.value })}
+            maxLength={200}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
+            placeholder="简短概览，概括核心内容..."
           />
         </div>
 

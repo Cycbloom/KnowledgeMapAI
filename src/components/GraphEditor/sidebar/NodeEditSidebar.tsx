@@ -21,6 +21,7 @@ import { BackboneNodeIcon } from "../BackboneNodeIcon";
 interface NodeFormState {
   title: string;
   content: string;
+  summary: string;
   parentNodeIds: string[];
   level: NodeLevel;
   tags: string[];
@@ -253,6 +254,27 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             readOnly={isBackboneNode}
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2"} ${isBackboneNode ? "cursor-not-allowed opacity-75" : ""}`}
             placeholder="输入节点标题"
+          />
+        </div>
+
+        <div>
+          <label
+            className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
+          >
+            概览
+            <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">
+              (20-30字短概述，用于图谱预览)
+            </span>
+          </label>
+          <input
+            type="text"
+            value={nodeForm.summary}
+            onChange={(e) =>
+              setNodeForm({ ...nodeForm, summary: e.target.value })
+            }
+            maxLength={200}
+            className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2 text-sm"}`}
+            placeholder="简短概览，概括核心内容..."
           />
         </div>
 

@@ -19,6 +19,7 @@ export interface SearchNodeResult {
   id: string;
   title: string;
   content?: string;
+  summary?: string;
   graph_id: string;
   knowledge_graphs?: {
     title: string;
@@ -186,6 +187,7 @@ export class SearchService {
             knowledge_point_id: kp.id,
             title: kp.title,
             content: kp.content,
+            summary: kp.summary || "",
             graph_id: gn.graph_id,
             graph_title: gn.knowledge_graphs?.title || "",
             similarity: kp.similarity,

@@ -14,6 +14,7 @@ export interface SearchNodeResult {
   graph_id: string;
   title: string;
   content?: string;
+  summary?: string;
   graph_title: string;
   similarity?: number;
   updated_at?: string;

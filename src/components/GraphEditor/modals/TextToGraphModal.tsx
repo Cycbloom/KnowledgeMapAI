@@ -19,6 +19,7 @@ type PreviewNode = {
   id: string;
   title: string;
   content: string;
+  summary?: string;
   level: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
 };
 
@@ -629,7 +630,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-gray-900 text-sm truncate">{node.title}</h4>
-                            <p className="text-gray-500 text-xs mt-1 line-clamp-2">{node.content}</p>
+                            <p className="text-gray-500 text-xs mt-1 line-clamp-2">{node.summary || node.content}</p>
                           </div>
                         </div>
                       ))}

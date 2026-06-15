@@ -259,6 +259,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
               setNodeForm({
                 title: selectedNode.title || "",
                 content: selectedNode.content || "",
+                summary: selectedNode.summary || "",
                 parentNodeIds: parentEdges.map(
                   (e) => e.source_knowledge_point_id,
                 ),

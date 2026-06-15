@@ -61,10 +61,11 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
   }, [node, edges, nodes]);
   
   const contentPreview = React.useMemo(() => {
+    if (node.summary) return node.summary;
     if (!node.content) return null;
     const text = node.content.replace(/[#*`[\]]/g, '').slice(0, 120);
     return text.length < node.content.length ? `${text}...` : text;
-  }, [node.content]);
+  }, [node.summary, node.content]);
   
   const isMastered = nodeStatus?.[node.id]?.mastered;
   const isLocked = nodeStatus?.[node.id]?.locked;

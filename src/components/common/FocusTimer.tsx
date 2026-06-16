@@ -119,7 +119,11 @@ export const FocusTimer: React.FC = () => {
             exit={{ opacity: 0 }}
             className="flex items-center gap-2 p-2 cursor-pointer"
             onPointerDown={(e) => dragControls.start(e)}
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => {
+              if (!isDragging.current) {
+                setIsExpanded(!isExpanded);
+              }
+            }}
           >
             <div
               className={`p-2 rounded-full ${isRunning ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"}`}

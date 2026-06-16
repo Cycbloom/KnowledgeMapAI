@@ -67,6 +67,7 @@ const CATEGORIES: TemplateCategory[] = [
   "project",
   "analysis",
   "architecture",
+  "creative",
 ];
 
 const getCategoryIcon = (cat: TemplateCategory, isMobile: boolean) => {

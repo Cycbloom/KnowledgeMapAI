@@ -23,10 +23,25 @@ export interface StructuredAnalysisResult {
   graphIndex?: Record<string, string>;
 }
 
+export type ToolCategory = "read" | "write";
+
+export type RiskLevel = "low" | "medium" | "high";
+
+export type PendingActionStatus =
+  | "pending"
+  | "confirmed"
+  | "rejected"
+  | "expired"
+  | "executed"
+  | "failed";
+
 export interface AgentTool {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
+  category?: ToolCategory;
+  requiresConfirmation?: boolean;
+  riskLevel?: RiskLevel;
   execute: (
     params: Record<string, unknown>,
     context: ToolContext,
@@ -44,7 +59,7 @@ export interface ToolContext {
 export interface AgentSession {
   id: string;
   userId: string;
-  status: "pending" | "running" | "completed" | "failed" | "interrupted";
+  status: "pending" | "running" | "completed" | "failed" | "interrupted" | "awaiting_confirmation";
   skillId?: string;
   graphIds?: string[];
   messages: AgentMessage[];
@@ -74,6 +89,20 @@ export interface ToolCall {
   timestamp: Date;
 }
 
+export interface PendingAction {
+  id: string;
+  sessionId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  category: ToolCategory;
+  riskLevel: RiskLevel;
+  description: string;
+  status: PendingActionStatus;
+  result?: unknown;
+  createdAt: Date;
+  executedAt?: Date;
+}
+
 export interface SkillDefinition {
   id: string;
   name: string;
@@ -81,6 +110,7 @@ export interface SkillDefinition {
   systemPrompt: string;
   userPromptTemplate: string;
   tools: string[];
+  allowWrite?: boolean;
   maxIterations?: number;
 }
 

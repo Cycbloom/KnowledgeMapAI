@@ -83,6 +83,8 @@ export const getGraphTagsTool: AgentTool = {
 export const getNodeRelationsTool: AgentTool = {
   name: 'get_node_relations',
   description: '获取指定知识点节点的关系网络，包括上游节点（前置依赖）和下游节点（后续扩展），支持指定查询深度',
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: 'object',
     properties: {

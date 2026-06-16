@@ -6,7 +6,9 @@ import {
   agentApi,
   type AgentSession,
   type SkillDefinition,
+  type PendingAction,
 } from "../../services/api/agent";
+import { ActionConfirmationPanel } from "./ActionConfirmationPanel";
 import { SkillSelector } from "./SkillSelector";
 import { SessionLog } from "./SessionLog";
 import { AnalysisResultView } from "./AnalysisResultView";
@@ -48,6 +50,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(
     new Set(),
   );
+  const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const [step, setStep] = useState<AnalysisStep>('select');
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     mode: 'quick',
@@ -142,6 +145,15 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
 
       const result = await agentApi.executeSession(newSession.id);
       setSession(result.session);
+
+      if (result.session.status === "awaiting_confirmation") {
+        try {
+          const { pendingActions: actions } = await agentApi.getPendingActions(newSession.id);
+          setPendingActions(actions);
+        } catch {
+          // Ignore fetch errors, panel will show empty
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
     } finally {
@@ -163,6 +175,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     setSession(null);
     setError(null);
     setDismissedSuggestions(new Set());
+    setPendingActions([]);
     setStep('select');
     setConfirmState({ mode: 'quick', customPrompt: '' });
   }, []);
@@ -181,6 +194,26 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     const key = graphIds.join("-");
     setDismissedSuggestions((prev) => new Set(prev).add(key));
   };
+
+  const handleActionConfirmed = useCallback((actionId: string, _result: unknown) => {
+    setPendingActions(prev => prev.filter(a => a.id !== actionId));
+  }, []);
+
+  const handleActionRejected = useCallback((actionId: string) => {
+    setPendingActions(prev => prev.filter(a => a.id !== actionId));
+  }, []);
+
+  const handleAllActionsResolved = useCallback(async () => {
+    setPendingActions([]);
+    if (session?.id) {
+      try {
+        const { session: updatedSession } = await agentApi.getSession(session.id);
+        setSession(updatedSession);
+      } catch {
+        // Ignore fetch errors
+      }
+    }
+  }, [session?.id]);
 
   const activeMergeSuggestions =
     session?.structuredResult?.merge_suggestions?.filter(
@@ -269,6 +302,16 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
               )}
 
               {session && <SessionLog session={session} />}
+
+              {session?.status === "awaiting_confirmation" && pendingActions.length > 0 && (
+                <ActionConfirmationPanel
+                  sessionId={session.id}
+                  pendingActions={pendingActions}
+                  onActionConfirmed={handleActionConfirmed}
+                  onActionRejected={handleActionRejected}
+                  onAllActionsResolved={handleAllActionsResolved}
+                />
+              )}
 
               {session?.result && (
                 <AnalysisResultView

@@ -28,6 +28,8 @@ export const getGraphOverviewTool: AgentTool = {
   name: "get_graph_overview",
   description:
     "获取用户知识图谱的整体概览，包括图谱数量、节点总数、关系总数等统计信息",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {
@@ -125,6 +127,8 @@ export const getGraphOverviewTool: AgentTool = {
 export const getGraphRelationsTool: AgentTool = {
   name: "get_graph_relations",
   description: "获取图谱之间的关系信息，包括图谱间的连接和依赖",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {
@@ -227,6 +231,8 @@ export const getGraphRelationsTool: AgentTool = {
 export const getIsolatedGraphsTool: AgentTool = {
   name: "get_isolated_graphs",
   description: "获取所有孤立的知识图谱（没有与其他图谱建立关系的图谱）",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {
@@ -558,6 +564,8 @@ export const getGraphNodesTool: AgentTool = {
 export const searchGraphsTool: AgentTool = {
   name: "search_graphs",
   description: "搜索图谱和节点",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {

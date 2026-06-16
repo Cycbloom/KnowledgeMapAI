@@ -18,7 +18,7 @@ export interface GraphRecommendation {
 export interface AgentSession {
   id: string;
   userId: string;
-  status: "pending" | "running" | "completed" | "failed" | "interrupted";
+  status: "pending" | "running" | "completed" | "failed" | "interrupted" | "awaiting_confirmation";
   skillId?: string;
   graphIds?: string[];
   messages: AgentMessage[];
@@ -64,6 +64,31 @@ export interface MergeSuggestion {
   shared_concepts: string[];
 }
 
+export type PendingActionStatus =
+  | "pending"
+  | "confirmed"
+  | "rejected"
+  | "expired"
+  | "executed"
+  | "failed";
+
+export type ToolCategory = "read" | "write";
+export type RiskLevel = "low" | "medium" | "high";
+
+export interface PendingAction {
+  id: string;
+  sessionId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  category: ToolCategory;
+  riskLevel: RiskLevel;
+  description: string;
+  status: PendingActionStatus;
+  result?: unknown;
+  createdAt: string;
+  executedAt?: string;
+}
+
 export interface SkillDefinition {
   id: string;
   name: string;
@@ -71,6 +96,7 @@ export interface SkillDefinition {
   systemPrompt: string;
   userPromptTemplate: string;
   tools: string[];
+  allowWrite?: boolean;
 }
 
 export interface ToolDefinition {
@@ -131,4 +157,43 @@ export interface IAgentApi {
     sessionId: string,
     goal: AnalysisGoal,
   ): Promise<ExecuteResult>;
+
+  getPendingActions(
+    sessionId: string,
+  ): Promise<{ pendingActions: PendingAction[] }>;
+
+  confirmAction(
+    sessionId: string,
+    actionId: string,
+  ): Promise<{ success: boolean; result?: unknown }>;
+
+  rejectAction(
+    sessionId: string,
+    actionId: string,
+  ): Promise<{ success: boolean }>;
+
+  batchConfirmActions(
+    sessionId: string,
+    actionIds: string[],
+  ): Promise<{
+    success: boolean;
+    results: Array<{
+      actionId: string;
+      success: boolean;
+      result?: unknown;
+      error?: string;
+    }>;
+  }>;
+
+  batchRejectActions(
+    sessionId: string,
+    actionIds: string[],
+  ): Promise<{
+    success: boolean;
+    results: Array<{
+      actionId: string;
+      success: boolean;
+      error?: string;
+    }>;
+  }>;
 }

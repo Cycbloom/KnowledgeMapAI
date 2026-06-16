@@ -44,7 +44,14 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
               {SKILL_ICONS[skill.id] || <Network className="w-5 h-5" />}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-gray-900 dark:text-white">{skill.name}</div>
+              <div className="flex items-center gap-2">
+                <div className="font-medium text-gray-900 dark:text-white">{skill.name}</div>
+                {skill.allowWrite && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                    执行型
+                  </span>
+                )}
+              </div>
               <div className="text-sm text-gray-500 dark:text-gray-400">{skill.description}</div>
             </div>
           </button>

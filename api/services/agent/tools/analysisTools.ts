@@ -22,6 +22,8 @@ const resolveGraphId = (
 export const getDomainDistributionTool: AgentTool = {
   name: "get_domain_distribution",
   description: "获取知识领域分布统计，返回各领域的图谱数量分布",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {
@@ -200,6 +202,8 @@ export const analyzeGraphStructureTool: AgentTool = {
 export const getLearningPathsTool: AgentTool = {
   name: "get_learning_paths",
   description: "获取学习路径，基于图谱间的前置关系生成推荐学习顺序",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {
@@ -417,6 +421,8 @@ export const getLearningPathsTool: AgentTool = {
 export const getSimilarGraphsTool: AgentTool = {
   name: "get_similar_graphs",
   description: "获取与指定图谱相似的其他图谱，基于共同概念和结构相似度",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {
@@ -610,6 +616,8 @@ export const getSimilarGraphsTool: AgentTool = {
 export const getKnowledgeCoverageTool: AgentTool = {
   name: "get_knowledge_coverage",
   description: "获取知识覆盖度统计，包括图谱连接率和孤岛图谱信息",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {
@@ -706,6 +714,8 @@ export const getKnowledgeCoverageTool: AgentTool = {
 export const analyzeMergeCandidatesTool: AgentTool = {
   name: "analyze_merge_candidates",
   description: "分析可能适合合并的图谱对，基于相似度和内容重叠度",
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: "object",
     properties: {

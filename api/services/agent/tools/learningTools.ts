@@ -506,6 +506,8 @@ export const getPrerequisiteChainTool: AgentTool = {
 export const getExtensionSuggestionsTool: AgentTool = {
   name: 'get_extension_suggestions',
   description: '获取指定图谱的扩展学习建议，返回推荐的扩展图谱列表及推荐理由',
+  category: "read" as const,
+  riskLevel: "low" as const,
   parameters: {
     type: 'object',
     properties: {

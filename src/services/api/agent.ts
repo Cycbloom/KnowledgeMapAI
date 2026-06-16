@@ -36,7 +36,7 @@ export interface StructuredAnalysisResult {
 export interface AgentSession {
   id: string;
   userId: string;
-  status: "pending" | "running" | "completed" | "failed" | "interrupted";
+  status: "pending" | "running" | "completed" | "failed" | "interrupted" | "awaiting_confirmation";
   skillId?: string;
   graphIds?: string[];
   messages: AgentMessage[];
@@ -73,6 +73,7 @@ export interface SkillDefinition {
   systemPrompt: string;
   userPromptTemplate: string;
   tools: string[];
+  allowWrite?: boolean;
 }
 
 export interface AnalysisGoal {
@@ -92,6 +93,31 @@ export interface ToolDefinition {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
+}
+
+export type PendingActionStatus =
+  | "pending"
+  | "confirmed"
+  | "rejected"
+  | "expired"
+  | "executed"
+  | "failed";
+
+export type ToolCategory = "read" | "write";
+export type RiskLevel = "low" | "medium" | "high";
+
+export interface PendingAction {
+  id: string;
+  sessionId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  category: ToolCategory;
+  riskLevel: RiskLevel;
+  description: string;
+  status: PendingActionStatus;
+  result?: unknown;
+  createdAt: string;
+  executedAt?: string;
 }
 
 export const agentApi = {
@@ -165,5 +191,59 @@ export const agentApi = {
     request(`/agent/sessions/${sessionId}/autonomous`, {
       method: "POST",
       body: JSON.stringify({ goal }),
+    }),
+
+  getPendingActions: (
+    sessionId: string,
+  ): Promise<{ pendingActions: PendingAction[] }> =>
+    request(`/agent/sessions/${sessionId}/pending-actions`),
+
+  confirmAction: (
+    sessionId: string,
+    actionId: string,
+  ): Promise<{ success: boolean; result?: unknown }> =>
+    request(`/agent/sessions/${sessionId}/actions/${actionId}/confirm`, {
+      method: "POST",
+    }),
+
+  rejectAction: (
+    sessionId: string,
+    actionId: string,
+  ): Promise<{ success: boolean }> =>
+    request(`/agent/sessions/${sessionId}/actions/${actionId}/reject`, {
+      method: "POST",
+    }),
+
+  batchConfirmActions: (
+    sessionId: string,
+    actionIds: string[],
+  ): Promise<{
+    success: boolean;
+    results: Array<{
+      actionId: string;
+      success: boolean;
+      result?: unknown;
+      error?: string;
+    }>;
+  }> =>
+    request(`/agent/sessions/${sessionId}/actions/batch-confirm`, {
+      method: "POST",
+      body: JSON.stringify({ action_ids: actionIds }),
+    }),
+
+  batchRejectActions: (
+    sessionId: string,
+    actionIds: string[],
+  ): Promise<{
+    success: boolean;
+    results: Array<{
+      actionId: string;
+      success: boolean;
+      error?: string;
+    }>;
+  }> =>
+    request(`/agent/sessions/${sessionId}/actions/batch-reject`, {
+      method: "POST",
+      body: JSON.stringify({ action_ids: actionIds }),
     }),
 };

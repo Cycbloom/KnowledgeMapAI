@@ -12,6 +12,7 @@ import type {
   StructuredAnalysisResult,
   GraphRecommendation,
   AnalysisGoal,
+  PendingAction,
 } from "./types";
 import { getAIProviderForTask } from "../ai/factory";
 import { logger } from "../../utils/logger";
@@ -19,10 +20,26 @@ import { allTools } from "./tools";
 import { getStrategyForGoal } from "./strategies/ToolSelectionStrategy";
 import { indexMappingService } from "../indexMapping/IndexMappingService";
 
+function generateActionDescription(
+  toolName: string,
+  args: Record<string, unknown>,
+): string {
+  const descriptions: Record<string, (args: Record<string, unknown>) => string> = {
+    create_node: (a) => `在图谱中创建节点「${a.title ?? ""}」`,
+    create_edge: (a) => `创建关系：${a.relationship_type ?? ""}`,
+    create_graph_relation: (a) => `在图谱间创建${a.relation_type ?? ""}关系`,
+    create_study_card: (a) => `创建学习卡片：${(a.question as string ?? "").substring(0, 30)}`,
+    update_node: (a) => `更新知识点「${a.title ?? ""}」的内容`,
+  };
+  const generator = descriptions[toolName];
+  return generator ? generator(args) : `执行操作：${toolName}`;
+}
+
 export class AgentService {
   private toolRegistry: ToolRegistry;
   private sessionManager: SessionManager;
   private supabase: SupabaseClient;
+  private pendingActions: Map<string, PendingAction[]> = new Map();
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
@@ -30,6 +47,8 @@ export class AgentService {
     this.sessionManager = SessionManager.getInstance();
 
     allTools.forEach((tool) => this.toolRegistry.register(tool));
+
+    setInterval(() => this.expirePendingActions(), 60 * 1000);
   }
 
   registerTool(tool: AgentTool): void {
@@ -94,8 +113,9 @@ export class AgentService {
     });
 
     const aiProvider = await getAIProviderForTask("text");
-    const allToolsDefinitions = this.toolRegistry.getToolDefinitions();
-    
+    const skillAllowWrite = skill?.allowWrite ?? false;
+    const allToolsDefinitions = this.toolRegistry.getToolDefinitions(skillAllowWrite);
+
     const filteredTools = skill?.tools
       ? allToolsDefinitions.filter((t) => skill.tools.includes(t.name))
       : allToolsDefinitions;
@@ -137,6 +157,7 @@ export class AgentService {
           for (const toolCall of response.message.tool_calls) {
             const toolName = toolCall.function.name;
             const args = JSON.parse(toolCall.function.arguments);
+            const tool = this.toolRegistry.get(toolName);
 
             this.sessionManager.addToolCall(sessionId, {
               toolName,
@@ -144,25 +165,71 @@ export class AgentService {
               status: "running",
             });
 
-            const result = await this.toolRegistry.execute(
-              toolName,
-              args,
-              context,
-            );
+            // Check if this is a write tool that requires confirmation
+            if (tool && (tool.category === "write" || tool.requiresConfirmation)) {
+              const actionId = `action-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+              const pendingAction: PendingAction = {
+                id: actionId,
+                sessionId,
+                toolName,
+                args,
+                category: tool.category ?? "write",
+                riskLevel: tool.riskLevel ?? "low",
+                description: generateActionDescription(toolName, args),
+                status: "pending",
+                createdAt: new Date(),
+              };
 
-            this.sessionManager.addMessage(sessionId, {
-              role: "tool",
-              content: JSON.stringify(result),
-              toolName,
-              toolArgs: args,
-              toolResult: result,
-            });
+              // Store the pending action
+              const sessionActions = this.pendingActions.get(sessionId) ?? [];
+              sessionActions.push(pendingAction);
+              this.pendingActions.set(sessionId, sessionActions);
 
-            messages.push({
-              role: "tool",
-              content: JSON.stringify(result),
-              tool_call_id: toolCall.id,
-            });
+              // Add a message indicating the action is pending
+              this.sessionManager.addMessage(sessionId, {
+                role: "tool",
+                content: JSON.stringify({ pending: true, actionId, description: pendingAction.description }),
+                toolName,
+                toolArgs: args,
+                toolResult: { pending: true, actionId, description: pendingAction.description },
+              });
+
+              messages.push({
+                role: "tool",
+                content: JSON.stringify({ pending: true, actionId, description: pendingAction.description }),
+                tool_call_id: toolCall.id,
+              });
+            } else {
+              // Read tool: execute directly as before
+              const result = await this.toolRegistry.execute(
+                toolName,
+                args,
+                context,
+              );
+
+              this.sessionManager.addMessage(sessionId, {
+                role: "tool",
+                content: JSON.stringify(result),
+                toolName,
+                toolArgs: args,
+                toolResult: result,
+              });
+
+              messages.push({
+                role: "tool",
+                content: JSON.stringify(result),
+                tool_call_id: toolCall.id,
+              });
+            }
+          }
+
+          // After processing all tool calls, check if any pending actions were created
+          const currentPendingActions = this.pendingActions.get(sessionId) ?? [];
+          const hasPendingActions = currentPendingActions.some(a => a.status === "pending");
+
+          if (hasPendingActions) {
+            this.sessionManager.update(sessionId, { status: "awaiting_confirmation" });
+            break; // Exit the loop, wait for confirmation
           }
         } else if (response.message.content) {
           finalResult = response.message.content;
@@ -532,6 +599,124 @@ export class AgentService {
     return undefined;
   }
 
+  getPendingActions(sessionId: string): PendingAction[] {
+    return (this.pendingActions.get(sessionId) ?? []).filter(
+      (a) => a.status === "pending",
+    );
+  }
+
+  async confirmAction(sessionId: string, actionId: string): Promise<{ success: boolean; result?: unknown; error?: string }> {
+    const actions = this.pendingActions.get(sessionId);
+    if (!actions) {
+      return { success: false, error: "No pending actions found for session" };
+    }
+
+    const action = actions.find((a) => a.id === actionId);
+    if (!action) {
+      return { success: false, error: "Action not found" };
+    }
+    if (action.status !== "pending") {
+      return { success: false, error: `Action is already ${action.status}` };
+    }
+
+    try {
+      const context: ToolContext = {
+        supabase: this.supabase,
+        userId: this.sessionManager.get(sessionId)?.userId ?? "",
+        graphIds: this.sessionManager.get(sessionId)?.graphIds,
+      };
+
+      const result = await this.toolRegistry.execute(action.toolName, action.args, context);
+
+      action.status = "executed";
+      action.result = result;
+      action.executedAt = new Date();
+
+      // Check if there are more pending actions
+      const remainingPending = actions.filter((a) => a.status === "pending");
+      if (remainingPending.length === 0) {
+        // Resume the session
+        this.sessionManager.update(sessionId, { status: "running" });
+        // Note: The Agent loop will need to be resumed by the caller
+        // For now, we just mark the session as running again
+      }
+
+      return { success: true, result };
+    } catch (error) {
+      action.status = "failed";
+      action.result = { error: (error as Error).message };
+      action.executedAt = new Date();
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  rejectAction(sessionId: string, actionId: string): { success: boolean; error?: string } {
+    const actions = this.pendingActions.get(sessionId);
+    if (!actions) {
+      return { success: false, error: "No pending actions found for session" };
+    }
+
+    const action = actions.find((a) => a.id === actionId);
+    if (!action) {
+      return { success: false, error: "Action not found" };
+    }
+    if (action.status !== "pending") {
+      return { success: false, error: `Action is already ${action.status}` };
+    }
+
+    action.status = "rejected";
+
+    // Check if there are more pending actions
+    const remainingPending = actions.filter((a) => a.status === "pending");
+    if (remainingPending.length === 0) {
+      this.sessionManager.update(sessionId, { status: "running" });
+    }
+
+    return { success: true };
+  }
+
+  async batchConfirmActions(sessionId: string, actionIds: string[]): Promise<Array<{ actionId: string; success: boolean; result?: unknown; error?: string }>> {
+    const results: Array<{ actionId: string; success: boolean; result?: unknown; error?: string }> = [];
+    for (const actionId of actionIds) {
+      const result = await this.confirmAction(sessionId, actionId);
+      results.push({ actionId, ...result });
+    }
+    return results;
+  }
+
+  batchRejectActions(sessionId: string, actionIds: string[]): Array<{ actionId: string; success: boolean; error?: string }> {
+    const results: Array<{ actionId: string; success: boolean; error?: string }> = [];
+    for (const actionId of actionIds) {
+      const result = this.rejectAction(sessionId, actionId);
+      results.push({ actionId, ...result });
+    }
+    return results;
+  }
+
+  expirePendingActions(): void {
+    const now = new Date();
+    const EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+
+    for (const [sessionId, actions] of this.pendingActions.entries()) {
+      let hasExpired = false;
+      for (const action of actions) {
+        if (action.status === "pending" && (now.getTime() - action.createdAt.getTime()) > EXPIRY_MS) {
+          action.status = "expired";
+          hasExpired = true;
+        }
+      }
+      if (hasExpired) {
+        const hasPending = actions.some((a) => a.status === "pending");
+        if (!hasPending) {
+          const session = this.sessionManager.get(sessionId);
+          if (session?.status === "awaiting_confirmation") {
+            this.sessionManager.update(sessionId, { status: "interrupted" });
+          }
+        }
+      }
+    }
+  }
+
   private getSystemPrompt(skill?: SkillDefinition | null): string {
     if (skill) {
       return skill.systemPrompt;
@@ -861,5 +1046,80 @@ export const SKILLS: SkillDefinition[] = [
       "analyze_merge_candidates",
       "get_similar_graphs",
     ],
+  },
+  {
+    id: "auto_fix_islands",
+    name: "自动修复知识孤岛",
+    description: "检测孤立的知识图谱，并自动提议创建关联关系来消除孤岛",
+    systemPrompt: `你是知识图谱修复助手，专门负责检测和修复知识孤岛。
+
+请按以下步骤操作：
+1. 使用 get_isolated_graphs 工具检测所有孤立的图谱
+2. 对每个孤岛图谱，使用 get_similar_graphs 发现相似图谱
+3. 使用 create_graph_relation 工具为孤岛图谱提议创建关联关系
+4. 所有创建关系的操作需要用户确认后才会执行
+
+重要规则：
+1. 只在确实存在语义关联时才提议创建关系
+2. 每个关系的 context 字段要清晰说明为什么建立这个关联
+3. 如果找不到合适的关联目标，不要强行创建关系
+4. 关系类型选择：prerequisite（前置依赖）、extension（扩展）、related（相关）、cross_domain（跨领域）
+
+输出格式：
+用 Markdown 格式输出修复报告，包括：
+- 检测到的孤岛图谱列表
+- 提议创建的关联关系及理由
+- 无法修复的孤岛及建议`,
+    userPromptTemplate: "请检测我的知识图谱中的孤岛，并自动提议修复方案",
+    tools: [
+      "get_isolated_graphs",
+      "get_similar_graphs",
+      "get_graph_overview",
+      "get_graph_details",
+      "create_graph_relation",
+    ],
+    maxIterations: 15,
+    allowWrite: true,
+  },
+  {
+    id: "auto_expand_knowledge",
+    name: "自动扩展知识",
+    description: "分析图谱结构，识别可扩展的知识点，并提议创建新节点和关系",
+    systemPrompt: `你是知识扩展助手，负责帮助用户扩展知识图谱。
+
+请按以下步骤操作：
+1. 使用 analyze_graph_structure 分析图谱结构特征
+2. 识别叶子节点（没有下游关系的知识点）和可扩展方向
+3. 使用 create_node 工具提议创建新的知识点节点
+4. 使用 create_edge 工具提议创建新的知识关系
+5. 所有创建操作需要用户确认后才会执行
+
+扩展策略：
+1. 对叶子节点：考虑添加更细分的子知识点
+2. 对缺少前置关系的节点：考虑添加前置知识节点
+3. 对缺少关联的节点：考虑添加跨领域关联
+
+重要规则：
+1. 新节点的标题和内容要具体、有价值
+2. 新关系要选择正确的 relationship_type
+3. 不要过度扩展，每次建议不超过 5 个新节点
+4. 确保新节点与现有知识体系有合理的逻辑关系
+
+输出格式：
+用 Markdown 格式输出扩展报告，包括：
+- 当前图谱结构分析
+- 提议新增的知识点及理由
+- 提议新增的关系及理由`,
+    userPromptTemplate: "请分析我的知识图谱，提议扩展方案",
+    tools: [
+      "analyze_graph_structure",
+      "get_graph_details",
+      "get_graph_nodes",
+      "get_node_relations",
+      "create_node",
+      "create_edge",
+    ],
+    maxIterations: 15,
+    allowWrite: true,
   },
 ];

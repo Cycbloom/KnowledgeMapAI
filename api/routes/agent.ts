@@ -28,6 +28,10 @@ const autonomousSchema = z.object({
   ]),
 }) as z.ZodSchema;
 
+const batchActionSchema = z.object({
+  action_ids: z.array(z.string()).min(1),
+});
+
 const applyRecommendationsSchema = z.object({
   recommendations: z.array(
     z.object({
@@ -283,6 +287,111 @@ router.post(
       res
         .status(500)
         .json({ error: err.message || "Failed to apply recommendations" });
+    }
+  },
+);
+
+router.get(
+  "/sessions/:id/pending-actions",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const agentService = new AgentService(req.supabase!);
+    const pendingActions = agentService.getPendingActions(id);
+    res.json({ pendingActions });
+  },
+);
+
+router.post(
+  "/sessions/:id/actions/:actionId/confirm",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { id, actionId } = req.params;
+    const agentService = new AgentService(req.supabase!);
+    try {
+      const result = await agentService.confirmAction(id, actionId);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+      res.json({ success: true, result: result.result });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Failed to confirm action", error);
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
+
+router.post(
+  "/sessions/:id/actions/:actionId/reject",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { id, actionId } = req.params;
+    const agentService = new AgentService(req.supabase!);
+    try {
+      const result = agentService.rejectAction(id, actionId);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Failed to reject action", error);
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
+
+router.post(
+  "/sessions/:id/actions/batch-confirm",
+  requireAuth,
+  validate({ body: batchActionSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { id } = req.params;
+    const { action_ids } = req.body;
+    const agentService = new AgentService(req.supabase!);
+    try {
+      const results = await agentService.batchConfirmActions(id, action_ids);
+      res.json({ success: true, results });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Failed to batch confirm actions", error);
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
+
+router.post(
+  "/sessions/:id/actions/batch-reject",
+  requireAuth,
+  validate({ body: batchActionSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { id } = req.params;
+    const { action_ids } = req.body;
+    const agentService = new AgentService(req.supabase!);
+    try {
+      const results = agentService.batchRejectActions(id, action_ids);
+      res.json({ success: true, results });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Failed to batch reject actions", error);
+      res.status(500).json({ error: err.message });
     }
   },
 );

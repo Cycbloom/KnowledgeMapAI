@@ -1,0 +1,20 @@
+- [x] AgentTool 类型已扩展 category、requiresConfirmation、riskLevel 字段
+- [x] PendingAction 接口已定义，包含完整的字段和状态枚举
+- [x] AgentSession.status 新增 "awaiting_confirmation" 状态
+- [x] SkillDefinition 新增 allowWrite 字段
+- [x] 5 个写入工具已实现（create_node、create_edge、create_graph_relation、create_study_card、update_node）
+- [x] 所有现有只读工具已标记 category: "read"、riskLevel: "low"
+- [x] ToolRegistry 支持 getByCategory 和 getWriteTools 方法
+- [x] AgentService 执行循环在遇到写入工具时创建 PendingAction 并暂停
+- [x] AgentService 实现 confirmAction、rejectAction、batchConfirmActions、batchRejectActions 方法
+- [x] 操作描述自动生成函数 generateActionDescription 已实现
+- [x] PendingAction 超时检查（10 分钟）已实现
+- [x] 确认流程 API 路由已实现（5 个端点）
+- [x] auto_fix_islands 技能已实现，allowWrite: true
+- [x] auto_expand_knowledge 技能已实现，allowWrite: true
+- [x] 前端 API 客户端已扩展 PendingAction 类型和 5 个确认流程方法
+- [x] ActionConfirmationPanel 组件已实现，支持逐项/批量确认拒绝
+- [x] AgentAnalysisPanel 已集成确认流程，awaiting_confirmation 状态时展示确认面板
+- [x] 执行型技能在 SkillSelector 中有"执行型"标签区分
+- [x] 类型检查通过（npm run check）
+- [x] 代码检查通过（npm run lint）

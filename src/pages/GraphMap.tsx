@@ -759,7 +759,7 @@ export const GraphMap = () => {
           const saveResult = await api.autoGraph.saveNodes({
             graph_id: selectedGraphId,
             nodes,
-          });
+          }) as { nodeMapping?: Record<string, { graphNodeId: string }> };
 
           queryClient.invalidateQueries({ queryKey: ["graphMap"] });
 
@@ -769,7 +769,7 @@ export const GraphMap = () => {
                 const tempId = `temp-${index + 1}`;
                 return {
                   ...n,
-                  id: saveResult.nodeMapping[tempId]?.graphNodeId,
+                  id: saveResult.nodeMapping![tempId]?.graphNodeId,
                 };
               },
             );

@@ -84,15 +84,6 @@ interface SavedLearningPath {
   progress_percentage?: number;
 }
 
-interface LearningPathNode {
-  id: string;
-  knowledge_point_id?: string;
-  title: string;
-  status: "pending" | "in_progress" | "completed" | "skipped";
-  order_index: number;
-  estimated_time?: number;
-}
-
 interface LearningPathPanelProps {
   graphId: string;
   onNodeSelect?: (nodeId: string) => void;
@@ -168,7 +159,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         graph_id: graphId,
         learning_style: selectedStyle,
         daily_time_minutes: dailyTime,
-      });
+      }) as TempLearningPath;
       setTempPath(result);
     } catch (error) {
       handleError(error, {
@@ -205,7 +196,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         daily_time_minutes: data.dailyTimeMinutes,
         target_goal: data.targetGoal,
         current_knowledge: knowledgeStr,
-      });
+      }) as TempLearningPath;
 
       setGenerationStep(t("learning.learningPath.optimizingOrder"));
       setTempPath(result);
@@ -775,7 +766,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                               </div>
                               <div className="space-y-1 max-h-48 overflow-y-auto">
                                 {selectedPathDetail.nodes.map(
-                                  (node: LearningPathNode, index: number) => {
+                                  (node, index) => {
                                     const nodeStatus = node.status || "pending";
                                     const isCompleted =
                                       nodeStatus === "completed";
@@ -807,7 +798,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                                                 path_id: path.id,
                                                 node_id: node.id,
                                                 progress:
-                                                  progressMap[node.status] ?? 0,
+                                                  progressMap[node.status ?? 'pending'] ?? 0,
                                               },
                                             });
                                             onNodeSelect?.(kpId);

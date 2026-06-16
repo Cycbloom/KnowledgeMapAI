@@ -1183,7 +1183,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                       const result = await api.autoGraph.optimizePrompt({
                         topic,
                         currentPrompt: customPrompt,
-                      });
+                      }) as { optimizedPrompt: string };
                       setCustomPrompt(result.optimizedPrompt);
                       frontendEventBus.publish("message_show", {
                         type: "success",

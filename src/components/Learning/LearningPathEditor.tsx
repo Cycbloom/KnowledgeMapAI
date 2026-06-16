@@ -328,13 +328,13 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
         target_goal: '根据图谱结构生成最优学习路径',
         learning_style: 'sequential',
         daily_time_minutes: 30
-      });
-      
+      }) as { stages: LearningPathStage[]; graphTitle: string; targetGoal?: string };
+
       if (result.stages && result.stages.length > 0) {
         const nodes = result.stages.map((stage: LearningPathStage, index: number) => ({
           knowledge_point_id: stage.nodeId,
           order_index: index,
-          title: stage.nodeTitle,
+          title: stage.nodeTitle || '',
           estimated_time: stage.estimatedTime,
           is_milestone: stage.priority === 'high',
         }));

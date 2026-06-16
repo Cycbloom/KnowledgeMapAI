@@ -351,7 +351,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
           </div>
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-lg font-bold text-primary-500">
-              {nodes.filter((n: LearningPathNodeItem) => n.status === "in_progress").length}
+              {nodes.filter((n) => n.status === "in_progress").length}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
               {t("learning.pathOutline.inProgress")}

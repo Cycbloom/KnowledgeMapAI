@@ -58,7 +58,7 @@ export function useAnalysisModules(): UseAnalysisModulesReturn {
 
   const loadPromptTemplates = useCallback(async () => {
     try {
-      const result = await api.prompts.list();
+      const result = await api.prompts.list() as { user?: Array<{ code: string; template_content: string; id: string }>; [key: string]: unknown };
       const templates: Record<string, string> = {};
       const analysisScenarios: AnalysisPromptScenarioId[] = ['relation_discovery', 'cross_domain_insights', 'learning_path_suggestions', 'knowledge_gaps'];
       for (const scenarioId of analysisScenarios) {
@@ -108,7 +108,7 @@ export function useAnalysisModules(): UseAnalysisModulesReturn {
   const resetPrompt = useCallback(async (moduleId: AnalysisModuleId): Promise<void> => {
     const scenarioId = MODULE_TO_SCENARIO[moduleId];
     try {
-      const result = await api.prompts.list();
+      const result = await api.prompts.list() as { user?: Array<{ code: string; id: string }>; [key: string]: unknown };
       const template = result.user?.find((t: { code: string }) => t.code === scenarioId);
       if (template) {
         await api.prompts.reset(template.id);

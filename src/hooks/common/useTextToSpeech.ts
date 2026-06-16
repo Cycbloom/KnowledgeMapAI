@@ -284,7 +284,7 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
       setVoices(browserTTS.voices);
     } else {
       try {
-        const data = await api.tts.voices();
+        const data = await api.tts.voices() as { voices: string[] };
         setVoices(data.voices || []);
         setError(null);
       } catch (err: unknown) {

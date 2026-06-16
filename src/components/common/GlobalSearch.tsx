@@ -131,8 +131,8 @@ export const GlobalSearch = () => {
       }
       setLoading(true);
       try {
-        const data = await api.search.query(debouncedQuery, searchType);
-        
+        const data = await api.search.query(debouncedQuery, searchType) as SearchResult;
+
         let filteredNodes = data.nodes || [];
         
         if (filters.status !== 'all') {

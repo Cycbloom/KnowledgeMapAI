@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
-import { LearningPathStatus } from "../../services/api/learningPaths";
+import { LearningPathStatus, type NodeStatus } from "../../services/api/learningPaths";
 
 export const learningPathKeys = {
   all: ["learningPaths"] as const,
@@ -27,7 +27,31 @@ export const useLearningPaths = (status?: LearningPathStatus) => {
 export const useLearningPath = (id: string) => {
   return useQuery({
     queryKey: learningPathKeys.detail(id),
-    queryFn: () => api.learningPaths.get(id),
+    queryFn: async () => {
+      const result = await api.learningPaths.get(id);
+      return result as {
+        nodes?: Array<{
+          id: string;
+          knowledge_point_id?: string;
+          title: string;
+          description?: string;
+          status?: NodeStatus;
+          estimated_time?: number;
+          estimated_minutes?: number;
+          difficulty_level?: number;
+          order_index?: number;
+          is_milestone?: boolean;
+        }>;
+        progress?: {
+          completed_nodes: number;
+          total_nodes: number;
+          progress_percentage: number;
+        };
+        title?: string;
+        target_completion_date?: string;
+        [key: string]: unknown;
+      };
+    },
     enabled: !!id,
     staleTime: 1000 * 60 * 5,
   });

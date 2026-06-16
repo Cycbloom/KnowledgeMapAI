@@ -447,12 +447,12 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     setSelectedTemplate(null);
 
     try {
-      const result = await api.autoGraph.generateTemplates({
+      const result = (await api.autoGraph.generateTemplates({
         topic,
         context: context.trim() || undefined,
         category,
         graph_id: graphId,
-      });
+      })) as { templates: GeneratedTemplate[] };
 
       if (result.templates && result.templates.length > 0) {
         setTemplates(result.templates);
@@ -510,7 +510,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         style,
         customPrompt: style === "custom" ? customPrompt : undefined,
         graph_id: graphId,
-      });
+      }) as { nodes: unknown[]; edges: unknown[] };
 
       frontendEventBus.publish("message_show", {
         type: "success",

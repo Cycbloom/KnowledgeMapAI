@@ -33,8 +33,8 @@ export const FocusStats = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['focus-stats'],
     queryFn: async () => {
-      const res = await api.focus.getStats();
-      return res.data as FocusStatsData;
+      const res = await api.focus.getStats() as { data: FocusStatsData };
+      return res.data;
     }
   });
 

@@ -91,7 +91,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   const fetchQuestions = async () => {
     setIsLoading(true);
     try {
-      const result = await api.learningPath.getQuestions({ graph_id: graphId });
+      const result = await api.learningPath.getQuestions({ graph_id: graphId }) as QuestionsData;
       setQuestionsData(result);
       if (result.suggestedGoals.length > 0) {
         setSelectedGoal(result.suggestedGoals[0]);

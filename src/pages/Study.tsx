@@ -162,9 +162,9 @@ export const Study = () => {
     const fetchHealthData = async () => {
       try {
         const [overviewRes, weakRes, predRes] = await Promise.all([
-          api.health.getOverview(),
-          api.health.getWeakPoints(),
-          api.health.getPredictions(),
+          api.health.getOverview() as { streakDays?: number; weeklyStudyTime?: number },
+          api.health.getWeakPoints() as { weakPoints?: WeakPoint[] },
+          api.health.getPredictions() as { predictions?: Prediction[] },
         ]);
 
         setStreakDays(overviewRes?.streakDays || 0);

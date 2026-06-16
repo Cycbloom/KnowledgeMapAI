@@ -506,7 +506,7 @@ export const LearningStatsCenter = () => {
     queryKey: ["focus-stats"],
     queryFn: async () => {
       try {
-        const res = await api.focus.getStats();
+        const res = await api.focus.getStats() as { data: FocusStats };
         return res.data;
       } catch {
         return null;

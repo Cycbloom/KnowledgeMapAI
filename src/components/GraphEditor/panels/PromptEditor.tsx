@@ -61,7 +61,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       const result = await api.prompts.optimize({
         template_content: content,
         instruction: optimizeInstruction,
-      });
+      }) as { optimized_content: string };
       setContent(result.optimized_content);
       setShowOptimizeInput(false);
       setOptimizeInstruction(""); // Clear instruction

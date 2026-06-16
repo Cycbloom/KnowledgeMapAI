@@ -1665,7 +1665,8 @@
       "aiTutor": "AI Tutor",
       "online": "Online",
       "placeholder": "Ask me anything...",
-      "disclaimer": "Powered by AI Tutor, content is for reference only"
+      "disclaimer": "Powered by AI Tutor, content is for reference only",
+      "clear": "Clear chat"
     },
     "material": {
       "generated": "Learning material generated",
@@ -3441,8 +3442,16 @@
     "stop": "Stop",
     "quoteReference": "Quoted Reference",
     "removeQuote": "Remove quote",
+    "quoteThisMessage": "Quote this message",
+    "quoteSelectedText": "Quote selected text",
     "graphContext": "Graph Augmented Search",
-    "clearConversation": "Clear Chat"
+    "clearConversation": "Clear Chat",
+    "clearAllQuotes": "Clear all quotes",
+    "editQuote": "Edit quote",
+    "charCount": "{{count}} chars",
+    "quoteTip": "Tip: Select text and press Ctrl+U to quickly quote it",
+    "startRecording": "Start voice input",
+    "stopRecording": "Stop voice input"
   },
   "literatureExtract": {
     "title": "Literature Extract",

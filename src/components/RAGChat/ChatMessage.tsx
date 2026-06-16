@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Bot, User, BookOpen, Loader2, Network } from "lucide-react";
+import { Bot, User, BookOpen, Loader2, Network, Quote } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Message } from "./hooks/useChatState";
+import { addQuote } from "./index";
+import { TermTooltip } from "../common";
+import { useTranslation } from "react-i18next";
 
 interface CodeBlockProps extends React.HTMLAttributes<HTMLElement> {
   className?: string;
@@ -18,6 +21,7 @@ interface ChatMessageProps {
   isTutorMode: boolean;
   onNodeClick?: (nodeId: string) => void;
   voiceControl?: React.ReactNode;
+  enableTermTooltip?: boolean;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -26,7 +30,17 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   isTutorMode,
   onNodeClick,
   voiceControl,
+  enableTermTooltip,
 }) => {
+  const { t } = useTranslation();
+  const messageRef = useRef<HTMLDivElement>(null);
+
+  const handleQuoteMessage = useCallback(() => {
+    if (message.content && !message.isStreaming) {
+      addQuote(message.content);
+    }
+  }, [message.content, message.isStreaming]);
+
   const renderCodeBlock = ({
     className,
     children,
@@ -102,7 +116,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         className={`flex-1 max-w-[85%] ${message.role === "user" ? "flex justify-end" : ""}`}
       >
         <div
-          className={`inline-block p-3 rounded-2xl text-sm ${
+          ref={messageRef}
+          className={`inline-block p-3 rounded-2xl text-sm relative ${
             message.role === "user"
               ? isTutorMode
                 ? "bg-amber-500 text-white rounded-tr-sm"
@@ -147,6 +162,27 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     </li>
                   ),
                   code: renderCodeBlock,
+                  ...(enableTermTooltip
+                    ? {
+                        a: ({ href, children }) => {
+                          if (href?.startsWith("term:")) {
+                            const term = String(children);
+                            const explanation = decodeURIComponent(href.replace("term:", ""));
+                            return (
+                              <TermTooltip term={term} explanation={explanation} />
+                            );
+                          }
+                          return (
+                            <a
+                              href={href}
+                              className="text-primary-500 hover:underline"
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
+                      }
+                    : {}),
                 }}
               >
                 {message.content}
@@ -158,10 +194,25 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           ) : (
             <span className="text-white">{message.content}</span>
           )}
+
         </div>
 
         {message.role === "assistant" && (
           <div className="flex items-center gap-2 mt-1">
+            {!message.isStreaming && message.content && (
+              <button
+                onClick={handleQuoteMessage}
+                className={`p-1.5 rounded-md transition-colors ${
+                  isDark
+                    ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+                    : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                }`}
+                title={t("aiChat.quoteThisMessage")}
+              >
+                <Quote size={14} />
+              </button>
+            )}
+
             {message.sources && message.sources.length > 0 && (
               <div
                 className={`text-xs ${isDark ? "text-slate-300" : "text-gray-400"}`}

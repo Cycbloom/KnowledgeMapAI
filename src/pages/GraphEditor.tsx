@@ -37,6 +37,7 @@ import {
   useGlobalShortcuts,
   useTutorOperations,
   useConsole,
+  useQuoteShortcut,
 } from "../hooks";
 import {
   useGraph,
@@ -127,6 +128,8 @@ const RAGChatButton = lazy(() =>
     default: module.RAGChatButton,
   })),
 );
+
+import { addQuote } from "../components/RAGChat";
 
 const LiteratureExtractPanel = lazy(() =>
   import("../components/LiteratureExtract/LiteratureExtractPanel").then(
@@ -249,6 +252,12 @@ export const GraphEditor = () => {
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
   const [ragChatWidth, setRagChatWidth] = useState(420);
+
+  useQuoteShortcut({
+    onAddQuote: addQuote,
+    isChatOpen: isRAGChatOpen,
+    onOpenChat: () => setIsRAGChatOpen(true),
+  });
   const [isLiteratureExtractOpen, setIsLiteratureExtractOpen] = useState(false);
   const [isResearchProgressOpen, setIsResearchProgressOpen] = useState(false);
   const [isLiteratureLibraryOpen, setIsLiteratureLibraryOpen] = useState(false);

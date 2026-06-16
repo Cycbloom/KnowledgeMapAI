@@ -20,3 +20,4 @@ export * from './useCollaborators';
 export * from './useGestures';
 export * from './useFocusTrap';
 export * from './useSyncStatus';
+export * from './useQuoteShortcut';

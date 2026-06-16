@@ -72,6 +72,10 @@ interface RAGChatPanelProps {
   onPathSelect?: (pathId: string | null) => void;
   onLearningPathNodeClick?: (nodeId: string) => void;
   onStartNarrative?: () => void;
+  variant?: "floating" | "embedded";
+  enableTermTooltip?: boolean;
+  enableSTT?: boolean;
+  onNavigateToNode?: (nodeId: string) => void;
 }
 
 export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
@@ -100,6 +104,10 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   onPathSelect,
   onLearningPathNodeClick,
   onStartNarrative,
+  variant = "floating",
+  enableTermTooltip = false,
+  enableSTT = false,
+  onNavigateToNode,
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -121,14 +129,32 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [useGraphContext, setUseGraphContext] = useState(false);
   const [quotes, setQuotes] = useState<QuoteReference[]>([]);
+  const [showQuoteTip, setShowQuoteTip] = useState(
+    () => localStorage.getItem("ai-chat-quote-used") !== "true",
+  );
 
   const removeQuote = (id: string) => {
     setQuotes(prev => prev.filter(q => q.id !== id));
   };
 
+  const editQuote = (id: string, newText: string) => {
+    setQuotes(prev => prev.map(q => q.id === id ? { ...q, text: newText } : q));
+  };
+
+  const clearQuotes = () => {
+    setQuotes([]);
+  };
+
+  const dismissQuoteTip = () => {
+    localStorage.setItem("ai-chat-quote-used", "true");
+    setShowQuoteTip(false);
+  };
+
   useEffect(() => {
     addQuoteFn = (text: string) => {
       setQuotes(prev => [...prev, { id: Date.now().toString(), text }]);
+      localStorage.setItem("ai-chat-quote-used", "true");
+      setShowQuoteTip(false);
     };
     return () => {
       addQuoteFn = null;
@@ -230,8 +256,8 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
     let aiMessage = text;
     if (quotes.length > 0) {
-      const quotesText = quotes.map(q => `> ${q.text}`).join('\n');
-      aiMessage = `[引用内容]\n${quotesText}\n\n[用户问题]\n${text}`;
+      const quotesText = quotes.map((q, i) => `[引用 #${i + 1}]\n${q.text}`).join('\n\n');
+      aiMessage = `${quotesText}\n\n[用户问题]\n${text}`;
     }
 
     const userMessage: Message = {
@@ -350,6 +376,9 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
     }
   };
 
+  const isEmbedded = variant === "embedded";
+  const nodeClickHandler = onNavigateToNode || onNodeClick;
+
   if (!isOpen) return null;
 
   const headerBgClass = isTutorMode
@@ -359,24 +388,27 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   return (
     <motion.div
       ref={panelRef}
-      initial={{ opacity: 0, x: -300 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -300 }}
+      initial={isEmbedded ? { opacity: 0 } : { opacity: 0, x: -300 }}
+      animate={isEmbedded ? { opacity: 1 } : { opacity: 1, x: 0 }}
+      exit={isEmbedded ? { opacity: 0 } : { opacity: 0, x: -300 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
       className={`flex flex-col h-full relative ${
         isDark ? "bg-slate-900 border-slate-700" : "bg-white border-gray-200"
-      } border-r`}
-      style={{ width: `${width}px` }}
+      } ${isEmbedded ? "" : "border-r"}`}
+      style={isEmbedded ? undefined : { width: `${width}px` }}
     >
-      <div
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary-400 z-50 flex items-center justify-center group transition-colors"
-        onMouseDown={handleMouseDown}
-      >
+      {!isEmbedded && (
         <div
-          className={`h-8 w-1 rounded-full group-hover:bg-primary-500 transition-colors ${chatState.isResizing ? "bg-primary-500" : "bg-gray-300"}`}
-        />
-      </div>
+          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary-400 z-50 flex items-center justify-center group transition-colors"
+          onMouseDown={handleMouseDown}
+        >
+          <div
+            className={`h-8 w-1 rounded-full group-hover:bg-primary-500 transition-colors ${chatState.isResizing ? "bg-primary-500" : "bg-gray-300"}`}
+          />
+        </div>
+      )}
 
+      {!isEmbedded && (
       <div
         className={`flex items-center justify-between p-4 border-b ${
           isDark ? "border-slate-700" : "border-gray-200"
@@ -426,7 +458,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               )}
             </button>
           )}
-          {onClose && (
+          {onClose && !isEmbedded && (
             <button
               onClick={onClose}
               className="p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -436,6 +468,55 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
           )}
         </div>
       </div>
+      )}
+
+      {isEmbedded && onToggleTutorMode && (
+        <div
+          className={`flex items-center justify-between px-4 py-2 border-b ${
+            isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-200 bg-gray-50"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onToggleTutorMode}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                isTutorMode
+                  ? isDark
+                    ? "bg-amber-600/20 text-amber-400 hover:bg-amber-600/30"
+                    : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                  : isDark
+                    ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+              title={
+                isTutorMode
+                  ? t("aiChat.switchToNormal")
+                  : t("aiChat.switchToTutor")
+              }
+            >
+              {isTutorMode ? (
+                <MessageCircle size={14} />
+              ) : (
+                <GraduationCap size={14} />
+              )}
+              {isTutorMode ? t("aiChat.switchToNormal") : t("aiChat.switchToTutor")}
+            </button>
+          </div>
+          {hasSupport && (
+            <button
+              onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+              className={`p-1.5 rounded-lg transition-colors ${
+                showVoiceSettings
+                  ? isDark ? "bg-slate-600 text-white" : "bg-gray-300 text-gray-800"
+                  : isDark ? "text-slate-400 hover:bg-slate-700" : "text-gray-500 hover:bg-gray-100"
+              }`}
+              title={t("aiChat.voiceSettings")}
+            >
+              <Settings2 size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       {showVoiceSettings && hasSupport && (
         <VoiceSettings
@@ -539,7 +620,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
         ) : isTutorMode && tutorMode === "learning-path" && graphId ? (
           <LearningPathPanel
             graphId={graphId}
-            onNodeSelect={onLearningPathNodeClick || onNodeClick}
+            onNodeSelect={onLearningPathNodeClick || nodeClickHandler}
             onPathSelect={onPathSelect}
             selectedPathId={selectedLearningPathId}
             onStartNarrative={onStartNarrative}
@@ -647,7 +728,8 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
                 message={message}
                 isDark={isDark}
                 isTutorMode={isTutorMode}
-                onNodeClick={onNodeClick}
+                onNodeClick={nodeClickHandler}
+                enableTermTooltip={enableTermTooltip}
                 voiceControl={
                   hasSupport && !message.isStreaming && message.content ? (
                     <VoiceControl
@@ -750,9 +832,14 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
           )}
           quotes={quotes}
           onRemoveQuote={removeQuote}
+          onClearQuotes={clearQuotes}
+          onEditQuote={editQuote}
           useGraphContext={useGraphContext}
           onToggleGraphContext={() => setUseGraphContext(!useGraphContext)}
           onClearChat={() => chatState.clearMessages()}
+          showQuoteTip={showQuoteTip}
+          onDismissQuoteTip={dismissQuoteTip}
+          enableSTT={enableSTT}
         />
       )}
     </motion.div>

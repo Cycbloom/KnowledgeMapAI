@@ -2183,7 +2183,8 @@
       "aiTutor": "AI 助教",
       "online": "在线",
       "placeholder": "有问题尽管问我...",
-      "disclaimer": "由 AI 导师提供支持，内容仅供参考"
+      "disclaimer": "由 AI 导师提供支持，内容仅供参考",
+      "clear": "清空对话"
     },
     "material": {
       "generated": "学习教材已生成",
@@ -3458,8 +3459,16 @@
     "stop": "停止",
     "quoteReference": "引用内容",
     "removeQuote": "移除引用",
+    "quoteThisMessage": "引用此消息",
+    "quoteSelectedText": "引用选中文本",
     "graphContext": "图增强检索",
-    "clearConversation": "清空对话"
+    "clearConversation": "清空对话",
+    "clearAllQuotes": "清空所有引用",
+    "editQuote": "编辑引用",
+    "charCount": "{{count}}字",
+    "quoteTip": "提示：选中任意文本后按 Ctrl+U 可快速引用到对话",
+    "startRecording": "开始语音输入",
+    "stopRecording": "停止语音输入"
   },
   "literatureExtract": {
     "title": "文献提取",

@@ -1,19 +1,11 @@
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
-import { TermTooltip } from "../components/common";
-import { CodeBlock } from "../components/common";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import {
   ArrowLeft,
   BookOpen,
   Microscope,
   MessageSquare,
-  Send,
   Bot,
-  User,
   Loader2,
   Sparkles,
   GraduationCap,
@@ -23,8 +15,6 @@ import {
   Network,
   Sun,
   Moon,
-  Mic,
-  MicOff,
   BrainCircuit,
   Home,
   X,
@@ -52,13 +42,12 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { message as msgHelper } from "../utils/messageHelper";
 import {
   useTheme,
-  useSpeechRecognition,
   useNetworkStatus,
   useAILanguage,
+  useQuoteShortcut,
 } from "../hooks";
 import { useGraph, useGraphData, useGraphNodeStatus } from "../hooks/queries";
 import { useTimerStore } from "../store/useTimerStore";
-import { preprocessMarkdown } from "../utils/markdownUtils";
 import {
   isAppError,
   isNetworkError,
@@ -77,6 +66,7 @@ import { HighlightedReader } from "../components/Learning/HighlightedReader";
 import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
 import { LiteratureExtractPanel } from "../components/LiteratureExtract/LiteratureExtractPanel";
+import { RAGChatPanel, addQuote } from "../components/RAGChat";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 import { useActivityTracker } from "../hooks/useActivityTracker";
@@ -92,13 +82,6 @@ const ConceptAggregationPanel = lazy(() =>
     (module) => ({ default: module.ConceptAggregationPanel }),
   ),
 );
-
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  isStreaming?: boolean;
-};
 
 type OutlineMode = "graph" | "learning-path";
 
@@ -126,6 +109,16 @@ export const LearningMode = () => {
   const [rightPanelMode, setRightPanelMode] = useState<
     "chat" | "learning-path" | "literature-extract" | "concept-aggregation"
   >("chat");
+
+  useQuoteShortcut({
+    onAddQuote: addQuote,
+    isChatOpen: isChatOpen && rightPanelMode === "chat",
+    onOpenChat: () => {
+      if (!isChatOpen) setIsChatOpen(true);
+      if (rightPanelMode !== "chat") setRightPanelMode("chat");
+    },
+  });
+
   const [newNodeTitle, setNewNodeTitle] = useState("");
   const [newNodeContent, setNewNodeContent] = useState("");
   const [newNodeLevel, setNewNodeLevel] = useState<NodeLevel>("leaf");
@@ -316,81 +309,6 @@ export const LearningMode = () => {
   const { data: graphMeta } = useGraph(graphId || "");
   const { data: _nodeStatus } = useGraphNodeStatus(graphId || "");
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: t("learning.chat.welcome"),
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [inputBeforeVoice, setInputBeforeVoice] = useState("");
-  const [quotes, setQuotes] = useState<{ id: string; text: string }[]>([]);
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLTextAreaElement>(null);
-
-  const {
-    isListening,
-    transcript,
-    startListening,
-    stopListening,
-    error: speechError,
-    hasRecognitionSupport,
-  } = useSpeechRecognition();
-
-  useEffect(() => {
-    if (speechError) {
-      const isNetworkError = speechError.includes(
-        t("learning.speech.networkError"),
-      );
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: speechError,
-        duration: isNetworkError ? 8000 : 5000,
-        action: isNetworkError
-          ? {
-              label: t("learning.speech.viewSolution"),
-              onClick: () => {
-                alert(t("learning.speech.solutionDetail"));
-              },
-            }
-          : undefined,
-      });
-    }
-  }, [speechError, t]);
-
-  useEffect(() => {
-    if (isListening) {
-      setInput(
-        inputBeforeVoice +
-          (inputBeforeVoice && transcript ? " " : "") +
-          transcript,
-      );
-    } else if (transcript) {
-      setInput(
-        inputBeforeVoice +
-          (inputBeforeVoice && transcript ? " " : "") +
-          transcript,
-      );
-    }
-  }, [transcript, isListening, inputBeforeVoice]);
-
-  const toggleListening = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!hasRecognitionSupport) {
-      msgHelper.warning(t("learning.speech.notSupported"));
-      return;
-    }
-
-    if (isListening) {
-      stopListening();
-    } else {
-      setInputBeforeVoice(input);
-      startListening();
-    }
-  };
-
   const handleGenerateCards = async (targetNodeId: string) => {
     setIsGeneratingCards(true);
     try {
@@ -452,14 +370,6 @@ export const LearningMode = () => {
         ) {
           setArticleContent(node.learning_material);
 
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `existing-${Date.now()}`,
-              role: "assistant",
-              content: t("learning.node.welcomeBack", { title: node.title }),
-            },
-          ]);
           setIsGenerating(false);
           return;
         }
@@ -496,15 +406,6 @@ export const LearningMode = () => {
             console.error("Failed to save learning material:", saveError);
             msgHelper.error(t("learning.material.saveFailed"));
           }
-
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `generated-${Date.now()}`,
-              role: "assistant",
-              content: t("learning.material.contentGenerated"),
-            },
-          ]);
         } else {
           msgHelper.error(t("learning.material.aiFailed"));
         }
@@ -519,116 +420,6 @@ export const LearningMode = () => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "u") {
-        const selection = window.getSelection();
-        if (selection && selection.toString().trim()) {
-          e.preventDefault();
-          const text = selection.toString().trim();
-          setQuotes((prev) => [...prev, { id: Date.now().toString(), text }]);
-          navigator.clipboard.writeText(text).catch(() => {});
-          chatInputRef.current?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const handleChatSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isChatLoading) return;
-
-    if (!isOnline) {
-      msgHelper.error(t("learning.chat.offline"));
-      return;
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input.trim(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsChatLoading(true);
-
-    let aiMessage = userMessage.content;
-    if (quotes.length > 0) {
-      const quotesText = quotes.map((q) => `> ${q.text}`).join("\n");
-      aiMessage = `[引用内容]\n${quotesText}\n\n[用户问题]\n${input.trim()}`;
-      setQuotes([]);
-    }
-
-    const assistantMessageId = (Date.now() + 1).toString();
-    const assistantMessage: Message = {
-      id: assistantMessageId,
-      role: "assistant",
-      content: "",
-      isStreaming: true,
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
-
-    try {
-      let fullContent = "";
-      const history = messages.map((msg) => ({
-        role: msg.role === "user" ? "user" : "assistant",
-        content: msg.content,
-      }));
-
-      await api.ai.chatStream(
-        {
-          message: aiMessage,
-          graph_id: graphId || "",
-          history,
-          context_node_ids: nodeId ? [nodeId] : undefined,
-        },
-        (chunk) => {
-          fullContent += chunk;
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: fullContent }
-                : msg,
-            ),
-          );
-        },
-      );
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMessageId ? { ...msg, isStreaming: false } : msg,
-        ),
-      );
-    } catch (error) {
-      console.error("Chat error:", error);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMessageId
-            ? {
-                ...msg,
-                content: t("learning.chat.error"),
-                isStreaming: false,
-              }
-            : msg,
-        ),
-      );
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) {
@@ -756,15 +547,6 @@ export const LearningMode = () => {
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
 
         msgHelper.success(t("learning.material.regenerated"));
-
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `regenerated-${Date.now()}`,
-            role: "assistant",
-            content: t("learning.material.regeneratedMessage"),
-          },
-        ]);
       }
     } catch (error) {
       console.error("Failed to regenerate learning material:", error);
@@ -1963,7 +1745,7 @@ export const LearningMode = () => {
                   flex flex-col dark:border-slate-800 ${isDark ? "bg-slate-900" : "bg-white"}
                 `}
               >
-                {/* Chat Header */}
+                {/* Panel Header */}
                 <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400">
@@ -2055,27 +1837,6 @@ export const LearningMode = () => {
                       </button>
                     </div>
                     <button
-                      onClick={() => {
-                        if (rightPanelMode === "chat") {
-                          setMessages([
-                            {
-                              id: "welcome",
-                              role: "assistant",
-                              content: t("learning.chat.welcomeShort"),
-                            },
-                          ]);
-                        }
-                      }}
-                      className={`p-1.5 rounded-md transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
-                      title={
-                        rightPanelMode === "chat"
-                          ? t("learning.chat.clear")
-                          : t("learning.path.refresh")
-                      }
-                    >
-                      <RefreshCw size={14} />
-                    </button>
-                    <button
                       onClick={() => setIsChatOpen(false)}
                       className={`p-1.5 rounded-md transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
                     >
@@ -2148,241 +1909,21 @@ export const LearningMode = () => {
                       />
                     </div>
                   ) : (
-                    <div className="p-4 space-y-4">
-                      {messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`flex max-w-[90%] ${msg.role === "user" ? "flex-row-reverse" : "flex-row"} items-start gap-2`}
-                          >
-                            <div
-                              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                msg.role === "user"
-                                  ? "bg-primary-600 text-white"
-                                  : isDark
-                                    ? "bg-slate-800 text-primary-400 border border-slate-700"
-                                    : "bg-white text-primary-600 border border-gray-100 shadow-sm"
-                              }`}
-                            >
-                              {msg.role === "user" ? (
-                                <User size={16} />
-                              ) : (
-                                <Bot size={16} />
-                              )}
-                            </div>
-                            <div
-                              className={`p-3 rounded-2xl text-sm leading-relaxed ${
-                                msg.role === "user"
-                                  ? "bg-primary-600 text-white rounded-tr-none"
-                                  : isDark
-                                    ? "bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700"
-                                    : "bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100"
-                              }`}
-                            >
-                              {msg.isStreaming && !msg.content ? (
-                                <div className="flex items-center space-x-2">
-                                  <div
-                                    className="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce"
-                                    style={{ animationDelay: "0ms" }}
-                                  ></div>
-                                  <div
-                                    className="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce"
-                                    style={{ animationDelay: "150ms" }}
-                                  ></div>
-                                  <div
-                                    className="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce"
-                                    style={{ animationDelay: "300ms" }}
-                                  ></div>
-                                </div>
-                              ) : (
-                                <div
-                                  className={
-                                    msg.role === "user"
-                                      ? "text-white"
-                                      : "prose prose-sm dark:prose-invert prose-indigo max-w-none"
-                                  }
-                                >
-                                  <ReactMarkdown
-                                    remarkPlugins={[remarkGfm, remarkMath]}
-                                    rehypePlugins={[
-                                      [rehypeKatex, { output: "html" }],
-                                    ]}
-                                    components={{
-                                      code: ({
-                                        className,
-                                        children,
-                                        node: _node,
-                                      }) => (
-                                        <CodeBlock
-                                          className={className}
-                                          isDark={isDark}
-                                          node={_node}
-                                        >
-                                          {children}
-                                        </CodeBlock>
-                                      ),
-                                      a: ({ node: _node, ...props }) => {
-                                        const { href, children } = props;
-                                        if (href && href.startsWith("term:")) {
-                                          const explanation = href.replace(
-                                            "term:",
-                                            "",
-                                          );
-                                          return (
-                                            <TermTooltip
-                                              term={String(children)}
-                                              explanation={decodeURIComponent(
-                                                explanation,
-                                              )}
-                                            />
-                                          );
-                                        }
-                                        return msg.role === "user" ? (
-                                          <a
-                                            {...props}
-                                            className="text-white/80 hover:text-white hover:underline"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          />
-                                        ) : (
-                                          <a
-                                            {...props}
-                                            className="text-primary-600 hover:underline"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          />
-                                        );
-                                      },
-                                    }}
-                                  >
-                                    {msg.role === "assistant"
-                                      ? preprocessMarkdown(msg.content)
-                                      : msg.content}
-                                  </ReactMarkdown>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <div ref={messagesEndRef} />
-                    </div>
+                    <RAGChatPanel
+                      graphId={graphId || undefined}
+                      currentNodeId={nodeId || undefined}
+                      currentNodeTitle={nodeTitle || undefined}
+                      isOpen={true}
+                      selectedNodeIds={[]}
+                      variant="embedded"
+                      enableTermTooltip={true}
+                      enableSTT={true}
+                      onNavigateToNode={(targetNodeId) => {
+                        navigate(`/learning?graph_id=${graphId}&node_id=${targetNodeId}`);
+                      }}
+                    />
                   )}
                 </div>
-
-                {/* Chat Input - Only show in chat mode */}
-                {rightPanelMode === "chat" && (
-                  <div className="p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                    <form onSubmit={handleChatSubmit} className="relative">
-                      {quotes.length > 0 && (
-                        <div className="mb-2 max-h-32 overflow-y-auto space-y-1">
-                          {quotes.map((quote) => (
-                            <div
-                              key={quote.id}
-                              className={`flex items-start gap-2 px-2 py-1.5 rounded text-xs border-l-[3px] ${
-                                isDark
-                                  ? "border-primary-500 bg-primary-900/20 text-primary-200"
-                                  : "border-primary-500 bg-primary-50 text-primary-800"
-                              }`}
-                            >
-                              <span className="flex-1 line-clamp-2 break-all">
-                                {quote.text.length > 100
-                                  ? quote.text.slice(0, 100) + "…"
-                                  : quote.text}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setQuotes((prev) =>
-                                    prev.filter((q) => q.id !== quote.id),
-                                  )
-                                }
-                                className={`flex-shrink-0 p-0.5 rounded transition-colors ${
-                                  isDark
-                                    ? "hover:bg-slate-700 text-slate-400"
-                                    : "hover:bg-gray-200 text-gray-400"
-                                }`}
-                              >
-                                <X size={12} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <textarea
-                        ref={chatInputRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleChatSubmit(e);
-                          }
-                        }}
-                        placeholder={t("learning.chat.placeholder")}
-                        className={`w-full p-3 pr-20 pl-4 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${
-                          isDark
-                            ? "bg-slate-800 text-white placeholder-slate-500 border-slate-700"
-                            : "bg-white text-gray-900 placeholder-gray-400 border-gray-200"
-                        } border`}
-                        rows={2}
-                      />
-                      <div className="absolute right-2 bottom-2 flex items-center space-x-1">
-                        <button
-                          type="button"
-                          onClick={toggleListening}
-                          className={`p-2 rounded-lg transition-all ${
-                            isListening
-                              ? "bg-red-500 text-white animate-pulse"
-                              : isDark
-                                ? "text-slate-400 hover:bg-slate-700 hover:text-primary-400"
-                                : "text-gray-400 hover:bg-gray-100 hover:text-primary-600"
-                          }`}
-                          title={
-                            isListening
-                              ? t("learning.speech.stop")
-                              : t("learning.speech.start")
-                          }
-                        >
-                          {isListening ? (
-                            <Mic size={18} />
-                          ) : (
-                            <MicOff size={18} />
-                          )}
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={!input.trim() || isChatLoading}
-                          className={`p-2 rounded-lg transition-all ${
-                            input.trim() && !isChatLoading
-                              ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
-                              : "bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500"
-                          }`}
-                        >
-                          {isChatLoading ? (
-                            <Loader2 size={18} className="animate-spin" />
-                          ) : (
-                            <Send size={18} />
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                    <p
-                      className={`text-[10px] mt-2 text-center ${isDark ? "text-slate-500" : "text-gray-400"}`}
-                    >
-                      {t("learning.chat.disclaimer")}
-                    </p>
-                    {quotes.length === 0 && (
-                      <p
-                        className={`text-[10px] mt-1 text-center ${isDark ? "text-slate-600" : "text-gray-300"}`}
-                      >
-                        {t("learning.smartCopyHint")}
-                      </p>
-                    )}
-                  </div>
-                )}
               </motion.div>
             </>
           )}

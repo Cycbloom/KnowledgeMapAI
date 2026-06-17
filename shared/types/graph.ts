@@ -67,6 +67,12 @@ export enum BackboneModule {
   FUTURE_DIRECTIONS = "future_directions",
 }
 
+export interface StoryCreationConfig {
+  genre?: string;
+  coreConflict?: string;
+  characterHints?: string;
+}
+
 export interface TemplateTypeInfo {
   type: TemplateType;
   category: TemplateCategory;
@@ -76,6 +82,7 @@ export interface TemplateTypeInfo {
   backboneModules?: BackboneModule[];
   backbonePresetId?: string;
   initLevelOnly?: boolean;
+  storyConfig?: StoryCreationConfig;
 }
 
 export const TEMPLATE_TYPE_MAP: Record<TemplateType, TemplateTypeInfo> = {

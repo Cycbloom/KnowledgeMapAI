@@ -49,11 +49,7 @@ router.post(
     } catch (error: unknown) {
       logger.error("Create appearance error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError(
-        "添加出场记录失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("添加出场记录失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -75,11 +71,7 @@ router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error: unknown) {
     logger.error("Delete appearance error:", error);
     if (error instanceof AppError) throw error;
-    throw new AppError(
-      "删除出场记录失败",
-      500,
-      ErrorCodes.INTERNAL_ERROR,
-    );
+    throw new AppError("删除出场记录失败", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -91,14 +83,12 @@ router.get(
     const supabase = req.supabase!;
 
     try {
-      const [
-        { data: appearances },
-        { data: relationships },
-      ] = await Promise.all([
-        supabase
-          .from("story_appearances")
-          .select(
-            `
+      const [{ data: appearances }, { data: relationships }] =
+        await Promise.all([
+          supabase
+            .from("story_appearances")
+            .select(
+              `
             id,
             scene_detail_id,
             role_in_scene,
@@ -110,13 +100,13 @@ router.get(
               writing_status
             )
           `,
-          )
-          .eq("graph_id", graphId)
-          .eq("character_id", characterId),
-        supabase
-          .from("story_character_relationships")
-          .select(
-            `
+            )
+            .eq("graph_id", graphId)
+            .eq("character_id", characterId),
+          supabase
+            .from("story_character_relationships")
+            .select(
+              `
             id,
             relationship_type,
             strength,
@@ -129,10 +119,12 @@ router.get(
               role_type
             )
           `,
-          )
-          .eq("graph_id", graphId)
-          .or(`source_character_id.eq.${characterId},target_character_id.eq.${characterId}`),
-      ]);
+            )
+            .eq("graph_id", graphId)
+            .or(
+              `source_character_id.eq.${characterId},target_character_id.eq.${characterId}`,
+            ),
+        ]);
 
       const roleStats = {
         protagonist: 0,
@@ -165,11 +157,7 @@ router.get(
     } catch (error: unknown) {
       logger.error("Get appearance stats error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError(
-        "获取出场统计失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("获取出场统计失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

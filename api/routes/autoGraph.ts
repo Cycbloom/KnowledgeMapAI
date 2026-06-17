@@ -179,6 +179,13 @@ const initGraphSchema = z.object({
   language: z.string().optional(),
   session_id: z.string().uuid().optional(),
   template_type: z.string().optional(),
+  storyConfig: z
+    .object({
+      genre: z.string().optional(),
+      coreConflict: z.string().optional(),
+      characterHints: z.string().optional(),
+    })
+    .optional(),
 });
 
 const expandNodeSchema = z.object({
@@ -285,6 +292,7 @@ router.post(
       language,
       session_id,
       template_type,
+      storyConfig,
     } = req.body;
     const supabase = req.supabase;
     if (!supabase) {
@@ -324,30 +332,64 @@ router.post(
             content: rootContent,
           },
           coreNodes: coreNodes.map((n) => {
-          const aiNode = n as AIGeneratedTemplateNode;
-          return {
-            title: n.title,
-            content:
-              n.description ||
-              n.suggestedContent ||
-              `${n.title}：${aiNode.backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
-            level: n.level || "core",
-            backboneModule: aiNode.backboneModule,
-            needsRefinement: aiNode.needsRefinement,
-            color: aiNode.color,
-          };
-        }),
-      });
-      return;
-    } catch (error) {
-      const err = error as Error;
-      logger.error("Topic Research Template Error:", error);
-      throw new AppError(
-        err.message || "专题研究模板生成失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+            const aiNode = n as AIGeneratedTemplateNode;
+            return {
+              title: n.title,
+              content:
+                n.description ||
+                n.suggestedContent ||
+                `${n.title}：${aiNode.backboneModule ? `${n.title}模块的核心内容` : "该节点的详细内容"}`,
+              level: n.level || "core",
+              backboneModule: aiNode.backboneModule,
+              needsRefinement: aiNode.needsRefinement,
+              color: aiNode.color,
+            };
+          }),
+        });
+        return;
+      } catch (error) {
+        const err = error as Error;
+        logger.error("Topic Research Template Error:", error);
+        throw new AppError(
+          err.message || "专题研究模板生成失败",
+          500,
+          ErrorCodes.INTERNAL_ERROR,
+        );
+      }
     }
+
+    // Story creation branch
+    if (template_type === "story_creation") {
+      try {
+        const result =
+          await templateGeneratorService.generateStoryCreationStructure(
+            topic,
+            storyConfig as
+              | {
+                  genre?: string;
+                  coreConflict?: string;
+                  characterHints?: string;
+                }
+              | undefined,
+            req.user.id,
+            graph_id,
+          );
+
+        res.json({
+          sessionId,
+          root: result.root,
+          coreNodes: result.coreNodes,
+        });
+        return;
+      } catch (error) {
+        const err = error as Error;
+        logger.error("Story Creation Template Error:", error);
+        throw new AppError(
+          err.message || "故事创作模板生成失败",
+          500,
+          ErrorCodes.INTERNAL_ERROR,
+        );
+      }
     }
 
     const provider = providerType
@@ -521,7 +563,9 @@ router.post(
             hasExistingChildren:
               existing_children && existing_children.length > 0,
             existingChildren:
-              (existing_children as ExistingChild[] | undefined)?.map((c) => c.title).join("、") || "",
+              (existing_children as ExistingChild[] | undefined)
+                ?.map((c) => c.title)
+                .join("、") || "",
           },
           req.user.id,
           graph_id,
@@ -537,7 +581,9 @@ router.post(
           hasExistingChildren:
             existing_children && existing_children.length > 0,
           existingChildren:
-            (existing_children as ExistingChild[] | undefined)?.map((c) => c.title).join("、") || "",
+            (existing_children as ExistingChild[] | undefined)
+              ?.map((c) => c.title)
+              .join("、") || "",
         };
 
         systemPrompt = await promptService.getRenderedPrompt(
@@ -728,8 +774,12 @@ router.post(
 
           const properties = {
             ...(node.backboneModule && { backboneModule: node.backboneModule }),
-            ...(node.needsRefinement !== undefined && { needsRefinement: node.needsRefinement }),
-            ...(node.suggestedContent && { suggestedContent: node.suggestedContent }),
+            ...(node.needsRefinement !== undefined && {
+              needsRefinement: node.needsRefinement,
+            }),
+            ...(node.suggestedContent && {
+              suggestedContent: node.suggestedContent,
+            }),
             ...(node.color && { color: node.color }),
           };
 
@@ -742,7 +792,8 @@ router.post(
             level: node.level || "normal",
             x_position: Math.round(Math.cos(angle) * radius),
             y_position: Math.round(Math.sin(angle) * radius),
-            properties: Object.keys(properties).length > 0 ? properties : undefined,
+            properties:
+              Object.keys(properties).length > 0 ? properties : undefined,
           };
         });
 
@@ -767,7 +818,9 @@ router.post(
           req.user.id,
           "auto_graph_route",
         )
-        .catch((err) => logger.error("node_created event publish failed:", err));
+        .catch((err) =>
+          logger.error("node_created event publish failed:", err),
+        );
 
       const nodeMapping: Record<
         string,

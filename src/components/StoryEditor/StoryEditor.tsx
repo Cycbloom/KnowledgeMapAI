@@ -1,10 +1,20 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Loader2, BookOpen, Users, Settings, Save, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  BookOpen,
+  Users,
+  Settings,
+  Save,
+  ArrowLeft,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { message } from "../../utils/messageHelper";
 import { storyCreationHttpApi } from "../../services/api/storyCreation";
-import type { StoryStructure, StoryCharacter } from "../../services/api/storyCreation";
+import type {
+  StoryStructure,
+  StoryCharacter,
+} from "../../services/api/storyCreation";
 import type { Graph } from "@shared/types/graph";
 
 import { StructurePanel } from "./panels/StructurePanel";
@@ -17,14 +27,19 @@ interface StoryEditorProps {
   graphMeta?: Graph;
 }
 
-export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) => {
+export const StoryEditor: React.FC<StoryEditorProps> = ({
+  graphId,
+  graphMeta,
+}) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const [structures, setStructures] = useState<StoryStructure[]>([]);
   const [characters, setCharacters] = useState<StoryCharacter[]>([]);
-  const [selectedStructure, setSelectedStructure] = useState<StoryStructure | null>(null);
-  const [selectedCharacter, setSelectedCharacter] = useState<StoryCharacter | null>(null);
+  const [selectedStructure, setSelectedStructure] =
+    useState<StoryStructure | null>(null);
+  const [selectedCharacter, setSelectedCharacter] =
+    useState<StoryCharacter | null>(null);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(false);
 
@@ -49,19 +64,29 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
     }
   }, [graphId, t]);
 
-  const handleInitializeTemplate = useCallback(async (templateCode: string) => {
-    setInitializing(true);
-    try {
-      const result = await storyCreationHttpApi.structures.initializeTemplate(graphId, templateCode);
-      setStructures(result.structures || []);
-      message.success(t("storyEditor.templateInitialized", { template: result.templateName }));
-    } catch (error) {
-      console.error("Failed to initialize template:", error);
-      message.error(t("storyEditor.initializeFailed"));
-    } finally {
-      setInitializing(false);
-    }
-  }, [graphId, t]);
+  const handleInitializeTemplate = useCallback(
+    async (templateCode: string) => {
+      setInitializing(true);
+      try {
+        const result = await storyCreationHttpApi.structures.initializeTemplate(
+          graphId,
+          templateCode,
+        );
+        setStructures(result.structures || []);
+        message.success(
+          t("storyEditor.templateInitialized", {
+            template: result.templateName,
+          }),
+        );
+      } catch (error) {
+        console.error("Failed to initialize template:", error);
+        message.error(t("storyEditor.initializeFailed"));
+      } finally {
+        setInitializing(false);
+      }
+    },
+    [graphId, t],
+  );
 
   const handleSelectStructure = useCallback((structure: StoryStructure) => {
     setSelectedStructure(structure);
@@ -73,56 +98,75 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
     setSelectedStructure(null);
   }, []);
 
-  const handleAddChildStructure = useCallback(async (parentId: string, level: StoryStructure["structure_level"]) => {
-    try {
-      // Calculate next display_order by finding max among siblings
-      const findNode = (nodes: StoryStructure[], id: string): StoryStructure | null => {
-        for (const node of nodes) {
-          if (node.id === id) return node;
-          const found = findNode(node.children ?? [], id);
-          if (found) return found;
-        }
-        return null;
-      };
-      const parent = findNode(structures, parentId);
-      const maxOrder = parent?.children?.reduce((max, child) => Math.max(max, child.display_order), -1) ?? -1;
+  const handleAddChildStructure = useCallback(
+    async (parentId: string, level: StoryStructure["structure_level"]) => {
+      try {
+        // Calculate next display_order by finding max among siblings
+        const findNode = (
+          nodes: StoryStructure[],
+          id: string,
+        ): StoryStructure | null => {
+          for (const node of nodes) {
+            if (node.id === id) return node;
+            const found = findNode(node.children ?? [], id);
+            if (found) return found;
+          }
+          return null;
+        };
+        const parent = findNode(structures, parentId);
+        const maxOrder =
+          parent?.children?.reduce(
+            (max, child) => Math.max(max, child.display_order),
+            -1,
+          ) ?? -1;
 
-      const newStructure = await storyCreationHttpApi.structures.create(graphId, {
-        structure_level: level,
-        parent_structure_id: parentId,
-        title: t("storyEditor.newNodeTitle"),
-        display_order: maxOrder + 1,
-      });
+        const newStructure = await storyCreationHttpApi.structures.create(
+          graphId,
+          {
+            structure_level: level,
+            parent_structure_id: parentId,
+            title: t("storyEditor.newNodeTitle"),
+            display_order: maxOrder + 1,
+          },
+        );
 
-      setStructures(prev => addToTree(prev, newStructure, parentId));
-      message.success(t("storyEditor.nodeCreated"));
-    } catch (error) {
-      console.error("Failed to add child structure:", error);
-      message.error(t("storyEditor.createFailed"));
-    }
-  }, [graphId, t]);
-
-  const handleDeleteStructure = useCallback(async (id: string) => {
-    try {
-      await storyCreationHttpApi.structures.delete(graphId, id);
-      setStructures(prev => removeFromTree(prev, id));
-      if (selectedStructure?.id === id) {
-        setSelectedStructure(null);
+        setStructures((prev) => addToTree(prev, newStructure, parentId));
+        message.success(t("storyEditor.nodeCreated"));
+      } catch (error) {
+        console.error("Failed to add child structure:", error);
+        message.error(t("storyEditor.createFailed"));
       }
-      message.success(t("storyEditor.nodeDeleted"));
-    } catch (error) {
-      console.error("Failed to delete structure:", error);
-      message.error(t("storyEditor.deleteFailed"));
-    }
-  }, [graphId, selectedStructure, t]);
+    },
+    [graphId, t],
+  );
+
+  const handleDeleteStructure = useCallback(
+    async (id: string) => {
+      try {
+        await storyCreationHttpApi.structures.delete(graphId, id);
+        setStructures((prev) => removeFromTree(prev, id));
+        if (selectedStructure?.id === id) {
+          setSelectedStructure(null);
+        }
+        message.success(t("storyEditor.nodeDeleted"));
+      } catch (error) {
+        console.error("Failed to delete structure:", error);
+        message.error(t("storyEditor.deleteFailed"));
+      }
+    },
+    [graphId, selectedStructure, t],
+  );
 
   const handleAddCharacter = useCallback(async () => {
     try {
-      const newCharacter = await storyCreationHttpApi.characters.create(graphId, {
-        name: t("storyEditor.newCharacterName"),
-        role_type: "supporting",
-      });
-      setCharacters(prev => [...prev, newCharacter]);
+      const newCharacter = await storyCreationHttpApi.characters.create(
+        graphId,
+        {
+          name: t("storyEditor.newCharacterName"),
+          role_type: "supporting",
+        },
+      );
+      setCharacters((prev) => [...prev, newCharacter]);
       message.success(t("storyEditor.characterCreated"));
     } catch (error) {
       console.error("Failed to create character:", error);
@@ -130,19 +174,22 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
     }
   }, [graphId, t]);
 
-  const handleDeleteCharacter = useCallback(async (id: string) => {
-    try {
-      await storyCreationHttpApi.characters.delete(graphId, id);
-      setCharacters(prev => prev.filter(c => c.id !== id));
-      if (selectedCharacter?.id === id) {
-        setSelectedCharacter(null);
+  const handleDeleteCharacter = useCallback(
+    async (id: string) => {
+      try {
+        await storyCreationHttpApi.characters.delete(graphId, id);
+        setCharacters((prev) => prev.filter((c) => c.id !== id));
+        if (selectedCharacter?.id === id) {
+          setSelectedCharacter(null);
+        }
+        message.success(t("storyEditor.characterDeleted"));
+      } catch (error) {
+        console.error("Failed to delete character:", error);
+        message.error(t("storyEditor.characterDeleteFailed"));
       }
-      message.success(t("storyEditor.characterDeleted"));
-    } catch (error) {
-      console.error("Failed to delete character:", error);
-      message.error(t("storyEditor.characterDeleteFailed"));
-    }
-  }, [graphId, selectedCharacter, t]);
+    },
+    [graphId, selectedCharacter, t],
+  );
 
   const isSceneSelected = selectedStructure?.structure_level === "scene";
 
@@ -151,7 +198,9 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
       <div className="h-screen flex items-center justify-center bg-white dark:bg-slate-900">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400 font-medium">{t("storyEditor.loading")}</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">
+            {t("storyEditor.loading")}
+          </p>
         </div>
       </div>
     );
@@ -192,7 +241,9 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
               // Trigger save on the currently active editor
               // The individual editors (SceneEditor, CharacterEditor) have their own save buttons
               // This toolbar save button provides a convenient shortcut
-              const saveButton = document.querySelector<HTMLButtonElement>('[data-save-trigger="true"]');
+              const saveButton = document.querySelector<HTMLButtonElement>(
+                '[data-save-trigger="true"]',
+              );
               if (saveButton) {
                 saveButton.click();
               } else {
@@ -241,33 +292,37 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
 
         {/* Center Workspace */}
         <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900">
-          {!selectedStructure && !selectedCharacter && structures.length === 0 && (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center max-w-md">
-                <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  {t("storyEditor.welcomeTitle")}
-                </h2>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  {t("storyEditor.welcomeDescription")}
-                </p>
+          {!selectedStructure &&
+            !selectedCharacter &&
+            structures.length === 0 && (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center max-w-md">
+                  <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    {t("storyEditor.welcomeTitle")}
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400 mb-6">
+                    {t("storyEditor.welcomeDescription")}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {!selectedStructure && !selectedCharacter && structures.length > 0 && (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center max-w-md">
-                <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  {t("storyEditor.selectToEdit")}
-                </h2>
-                <p className="text-gray-500 dark:text-gray-400">
-                  {t("storyEditor.selectHint")}
-                </p>
+          {!selectedStructure &&
+            !selectedCharacter &&
+            structures.length > 0 && (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center max-w-md">
+                  <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    {t("storyEditor.selectToEdit")}
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {t("storyEditor.selectHint")}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {selectedStructure && !isSceneSelected && (
             <div className="max-w-2xl mx-auto">
@@ -308,8 +363,10 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
                 graphId={graphId}
                 character={selectedCharacter}
                 onSave={(updatedCharacter) => {
-                  setCharacters(prev =>
-                    prev.map(c => c.id === updatedCharacter.id ? updatedCharacter : c)
+                  setCharacters((prev) =>
+                    prev.map((c) =>
+                      c.id === updatedCharacter.id ? updatedCharacter : c,
+                    ),
                   );
                   setSelectedCharacter(updatedCharacter);
                   message.success(t("storyEditor.characterSaved"));
@@ -323,30 +380,37 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ graphId, graphMeta }) 
   );
 };
 
-function addToTree(structures: StoryStructure[], newNode: StoryStructure, parentId: string): StoryStructure[] {
-  return structures.map(node => {
+function addToTree(
+  structures: StoryStructure[],
+  newNode: StoryStructure,
+  parentId: string,
+): StoryStructure[] {
+  return structures.map((node) => {
     if (node.id === parentId) {
       return {
         ...node,
-        children: [...(node.children || []), newNode]
+        children: [...(node.children || []), newNode],
       };
     }
     if (node.children?.length) {
       return {
         ...node,
-        children: addToTree(node.children, newNode, parentId)
+        children: addToTree(node.children, newNode, parentId),
       };
     }
     return node;
   });
 }
 
-function removeFromTree(structures: StoryStructure[], id: string): StoryStructure[] {
+function removeFromTree(
+  structures: StoryStructure[],
+  id: string,
+): StoryStructure[] {
   return structures
-    .filter(node => node.id !== id)
-    .map(node => ({
+    .filter((node) => node.id !== id)
+    .map((node) => ({
       ...node,
-      children: node.children ? removeFromTree(node.children, id) : undefined
+      children: node.children ? removeFromTree(node.children, id) : undefined,
     }));
 }
 

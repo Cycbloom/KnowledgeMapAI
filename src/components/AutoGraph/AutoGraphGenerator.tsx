@@ -38,7 +38,15 @@ import {
 
 interface AutoGraphGeneratorProps {
   graphId?: string;
-  onGraphGenerated?: (nodes: Array<{ id: string; title: string; content: string; level?: string }>, edges: Array<{ source: string; target: string }>) => void;
+  onGraphGenerated?: (
+    nodes: Array<{
+      id: string;
+      title: string;
+      content: string;
+      level?: string;
+    }>,
+    edges: Array<{ source: string; target: string }>,
+  ) => void;
   onClose?: () => void;
 }
 
@@ -325,6 +333,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [newSource, setNewSource] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  const [storyGenre, setStoryGenre] = useState<string>("");
+  const [coreConflict, setCoreConflict] = useState<string>("");
+  const [characterHints, setCharacterHints] = useState<string>("");
+
   const [isInitializing, setIsInitializing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isInputCollapsed, setIsInputCollapsed] = useState(false);
@@ -382,7 +394,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       return;
     }
 
-    if (style === "custom" && !customPrompt.trim()) {
+    if (
+      style === "custom" &&
+      !customPrompt.trim() &&
+      selectedTemplateType !== "story_creation"
+    ) {
       frontendEventBus.publish("message_show", {
         type: "warning",
         content: t("autoGraph.enterCustomRules"),
@@ -407,6 +423,14 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           selectedTemplateType === "topic_research" &&
           moduleConfig?.customModules
             ? moduleConfig.customModules
+            : undefined,
+        storyConfig:
+          selectedTemplateType === "story_creation"
+            ? {
+                genre: storyGenre || undefined,
+                coreConflict: coreConflict || undefined,
+                characterHints: characterHints || undefined,
+              }
             : undefined,
       });
 
@@ -454,6 +478,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     t,
     selectedTemplateType,
     moduleConfig,
+    storyGenre,
+    coreConflict,
+    characterHints,
   ]);
 
   const handleExpandNode = useCallback(
@@ -551,8 +578,25 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   );
 
   const collectAllNodes = useCallback(
-    (node: TreeNode, parentId?: string): Array<{ id: string; title: string; content: string; summary?: string; level: string | undefined; parentId: string | undefined }> => {
-      const nodes: Array<{ id: string; title: string; content: string; summary?: string; level: string | undefined; parentId: string | undefined }> = [
+    (
+      node: TreeNode,
+      parentId?: string,
+    ): Array<{
+      id: string;
+      title: string;
+      content: string;
+      summary?: string;
+      level: string | undefined;
+      parentId: string | undefined;
+    }> => {
+      const nodes: Array<{
+        id: string;
+        title: string;
+        content: string;
+        summary?: string;
+        level: string | undefined;
+        parentId: string | undefined;
+      }> = [
         {
           id: node.id,
           title: node.title,
@@ -670,6 +714,18 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       setIsTemplateSelectorOpen(false);
       setExpandedCategory(null);
       setShowTopicResearchCustomEditor(false);
+    } else if (type === "story_creation") {
+      setSelectedTemplateType(type);
+      setIsTemplateSelectorOpen(false);
+      setExpandedCategory(null);
+      setShowTopicResearchCustomEditor(false);
+      setModuleConfig(null);
+      setSelectedPresetId(null);
+      // Clear general config
+      setStyle("academic");
+      setCustomPrompt("");
+      setSources([]);
+      setShowAdvanced(false);
     } else {
       setSelectedTemplateType(type);
       setIsTemplateSelectorOpen(false);
@@ -677,6 +733,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       setShowTopicResearchCustomEditor(false);
       setModuleConfig(null);
       setSelectedPresetId(null);
+      // Clear story config when switching away from story_creation
+      setStoryGenre("");
+      setCoreConflict("");
+      setCharacterHints("");
     }
   };
 
@@ -1041,6 +1101,66 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     </div>
   );
 
+  const renderStoryCreationConfig = () => (
+    <div className="space-y-3">
+      <div>
+        <label
+          className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
+        >
+          {t("autoGraph.storyGenre")}
+        </label>
+        <select
+          value={storyGenre}
+          onChange={(e) => setStoryGenre(e.target.value)}
+          className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white`}
+          disabled={isInitializing}
+        >
+          <option value="">{t("autoGraph.storyGenrePlaceholder")}</option>
+          <option value="fantasy">{t("autoGraph.storyGenres.fantasy")}</option>
+          <option value="scifi">{t("autoGraph.storyGenres.scifi")}</option>
+          <option value="mystery">{t("autoGraph.storyGenres.mystery")}</option>
+          <option value="romance">{t("autoGraph.storyGenres.romance")}</option>
+          <option value="historical">
+            {t("autoGraph.storyGenres.historical")}
+          </option>
+          <option value="urban">{t("autoGraph.storyGenres.urban")}</option>
+          <option value="wuxia">{t("autoGraph.storyGenres.wuxia")}</option>
+          <option value="other">{t("autoGraph.storyGenres.other")}</option>
+        </select>
+      </div>
+
+      <div>
+        <label
+          className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
+        >
+          {t("autoGraph.coreConflict")}
+        </label>
+        <textarea
+          value={coreConflict}
+          onChange={(e) => setCoreConflict(e.target.value)}
+          placeholder={t("autoGraph.coreConflictPlaceholder")}
+          className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[60px]" : "min-h-[80px]"} resize-y`}
+          disabled={isInitializing}
+        />
+      </div>
+
+      <div>
+        <label
+          className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
+        >
+          {t("autoGraph.characterHints")}
+        </label>
+        <textarea
+          value={characterHints}
+          onChange={(e) => setCharacterHints(e.target.value)}
+          placeholder={t("autoGraph.characterHintsPlaceholder")}
+          className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[80px]" : "min-h-[100px]"} resize-y`}
+          disabled={isInitializing}
+        />
+      </div>
+    </div>
+  );
+
   const renderForm = () => (
     <div className="space-y-3 md:space-y-4">
       {renderTemplateSelector()}
@@ -1049,14 +1169,21 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         <label
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
-          {t("autoGraph.topic")} <span className="text-red-500">*</span>
+          {selectedTemplateType === "story_creation"
+            ? t("autoGraph.storyTitle")
+            : t("autoGraph.topic")}{" "}
+          <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder={t("autoGraph.topicPlaceholder")}
+            placeholder={
+              selectedTemplateType === "story_creation"
+                ? t("autoGraph.storyTitlePlaceholder")
+                : t("autoGraph.topicPlaceholder")
+            }
             className={`w-full ${isMobile ? "px-3 py-2 text-sm" : "px-4 py-3"} border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
               isDuplicate
                 ? "border-amber-500 focus:ring-amber-500"
@@ -1092,193 +1219,205 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         <label
           className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
         >
-          {t("templates.generator.backgroundInfo")}
+          {selectedTemplateType === "story_creation"
+            ? t("autoGraph.storySynopsis")
+            : t("templates.generator.backgroundInfo")}
         </label>
         <textarea
           value={backgroundInfo}
           onChange={(e) => setBackgroundInfo(e.target.value)}
-          placeholder={t("templates.generator.backgroundPlaceholder")}
+          placeholder={
+            selectedTemplateType === "story_creation"
+              ? t("autoGraph.storySynopsisPlaceholder")
+              : t("templates.generator.backgroundPlaceholder")
+          }
           className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[60px]" : "min-h-[80px]"} resize-y`}
           disabled={isInitializing}
         />
       </div>
 
-      <div>
-        <label
-          className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
-        >
-          {t("autoGraph.generationStyle")}
-        </label>
-        <div
-          className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-4 gap-2"}`}
-        >
-          {styleOptions.map((option) => {
-            const Icon = styleIcons[option.value];
-            return (
-              <button
-                key={option.value}
-                onClick={() => setStyle(option.value)}
-                disabled={isInitializing}
-                className={`${isMobile ? "p-2" : "p-2"} rounded-lg border-2 transition-all text-left ${
-                  style === option.value
-                    ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
-                }`}
-              >
-                <div
-                  className={`flex items-center gap-1 ${isMobile ? "mb-0.5" : "mb-0.5"}`}
-                >
-                  <Icon
-                    className={`${isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} ${
-                      style === option.value
-                        ? "text-primary-500"
-                        : "text-gray-400"
-                    }`}
-                  />
-                  <span
-                    className={`${isMobile ? "text-[10px]" : "text-xs"} font-medium ${
-                      style === option.value
-                        ? "text-primary-600 dark:text-primary-400"
-                        : "text-gray-700 dark:text-gray-300"
-                    }`}
-                  >
-                    {t(option.labelKey)}
-                  </span>
-                </div>
-                <p
-                  className={`${isMobile ? "text-[9px]" : "text-[10px]"} text-gray-500 dark:text-gray-400 line-clamp-1`}
-                >
-                  {t(option.detailsKey)}
-                </p>
-              </button>
-            );
-          })}
-        </div>
-
-        <AnimatePresence>
-          {style === "custom" && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
+      {selectedTemplateType === "story_creation" ? (
+        renderStoryCreationConfig()
+      ) : (
+        <>
+          <div>
+            <label
+              className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
             >
-              <div
-                className={`flex items-center justify-between ${isMobile ? "mb-1.5 mt-2" : "mb-2 mt-3"}`}
-              >
-                <label
-                  className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300`}
-                >
-                  {t("autoGraph.customRules")}
-                </label>
-                <button
-                  onClick={async () => {
-                    if (!topic.trim()) {
-                      frontendEventBus.publish("message_show", {
-                        type: "warning",
-                        content: t("autoGraph.topicRequired"),
-                      });
-                      return;
-                    }
-                    try {
-                      const result = await api.autoGraph.optimizePrompt({
-                        topic,
-                        currentPrompt: customPrompt,
-                      }) as { optimizedPrompt: string };
-                      setCustomPrompt(result.optimizedPrompt);
-                      frontendEventBus.publish("message_show", {
-                        type: "success",
-                        content: t("autoGraph.rulesOptimized"),
-                      });
-                    } catch (error) {
-                      handleError(error, {
-                        context: "OptimizePrompt",
-                        fallbackMessage: t("autoGraph.optimizeFailed"),
-                      });
-                    }
-                  }}
-                  disabled={isInitializing}
-                  className={`flex items-center gap-1 px-2 py-1 ${isMobile ? "text-[10px]" : "text-xs"} bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded hover:bg-primary-200 dark:hover:bg-primary-900/50 disabled:opacity-50`}
-                >
-                  <Sparkles size={isMobile ? 10 : 12} />
-                  {t("autoGraph.aiOptimize")}
-                </button>
-              </div>
-              <textarea
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder={t("autoGraph.customRulesPlaceholder")}
-                className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[80px]" : "min-h-[100px]"} resize-y`}
-                disabled={isInitializing}
-              />
-              <p
-                className={`${isMobile ? "text-[10px]" : "text-xs"} text-gray-400 mt-1`}
-              >
-                {t("autoGraph.customRulesDesc")}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <button
-        onClick={() => setShowAdvanced(!showAdvanced)}
-        className={`flex items-center gap-2 ${isMobile ? "text-xs" : "text-sm"} text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200`}
-      >
-        {showAdvanced ? (
-          <ChevronUp size={isMobile ? 14 : 16} />
-        ) : (
-          <ChevronDown size={isMobile ? 14 : 16} />
-        )}
-        {t("autoGraph.referenceSources")}
-      </button>
-
-      <AnimatePresence>
-        {showAdvanced && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="space-y-2 md:space-y-3 overflow-hidden"
-          >
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newSource}
-                onChange={(e) => setNewSource(e.target.value)}
-                placeholder={t("autoGraph.sourcePlaceholder")}
-                className={`flex-1 ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white`}
-                disabled={isInitializing}
-              />
-              <button
-                onClick={handleAddSource}
-                disabled={isInitializing || !newSource.trim()}
-                className={`${isMobile ? "px-2 py-1.5" : "px-3 py-2"} bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50`}
-              >
-                <Plus size={isMobile ? 14 : 16} />
-              </button>
-            </div>
-            {sources.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {sources.map((source, index) => (
-                  <span
-                    key={index}
-                    className={`inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded ${isMobile ? "text-[10px]" : "text-xs"}`}
+              {t("autoGraph.generationStyle")}
+            </label>
+            <div
+              className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-4 gap-2"}`}
+            >
+              {styleOptions.map((option) => {
+                const Icon = styleIcons[option.value];
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => setStyle(option.value)}
+                    disabled={isInitializing}
+                    className={`${isMobile ? "p-2" : "p-2"} rounded-lg border-2 transition-all text-left ${
+                      style === option.value
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
+                        : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
+                    }`}
                   >
-                    {source.slice(0, 30)}...
-                    <button
-                      onClick={() => handleRemoveSource(index)}
-                      className="text-gray-400 hover:text-red-500"
+                    <div
+                      className={`flex items-center gap-1 ${isMobile ? "mb-0.5" : "mb-0.5"}`}
                     >
-                      ×
+                      <Icon
+                        className={`${isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} ${
+                          style === option.value
+                            ? "text-primary-500"
+                            : "text-gray-400"
+                        }`}
+                      />
+                      <span
+                        className={`${isMobile ? "text-[10px]" : "text-xs"} font-medium ${
+                          style === option.value
+                            ? "text-primary-600 dark:text-primary-400"
+                            : "text-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {t(option.labelKey)}
+                      </span>
+                    </div>
+                    <p
+                      className={`${isMobile ? "text-[9px]" : "text-[10px]"} text-gray-500 dark:text-gray-400 line-clamp-1`}
+                    >
+                      {t(option.detailsKey)}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            <AnimatePresence>
+              {style === "custom" && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div
+                    className={`flex items-center justify-between ${isMobile ? "mb-1.5 mt-2" : "mb-2 mt-3"}`}
+                  >
+                    <label
+                      className={`block ${isMobile ? "text-xs" : "text-sm"} font-medium text-gray-700 dark:text-gray-300`}
+                    >
+                      {t("autoGraph.customRules")}
+                    </label>
+                    <button
+                      onClick={async () => {
+                        if (!topic.trim()) {
+                          frontendEventBus.publish("message_show", {
+                            type: "warning",
+                            content: t("autoGraph.topicRequired"),
+                          });
+                          return;
+                        }
+                        try {
+                          const result = (await api.autoGraph.optimizePrompt({
+                            topic,
+                            currentPrompt: customPrompt,
+                          })) as { optimizedPrompt: string };
+                          setCustomPrompt(result.optimizedPrompt);
+                          frontendEventBus.publish("message_show", {
+                            type: "success",
+                            content: t("autoGraph.rulesOptimized"),
+                          });
+                        } catch (error) {
+                          handleError(error, {
+                            context: "OptimizePrompt",
+                            fallbackMessage: t("autoGraph.optimizeFailed"),
+                          });
+                        }
+                      }}
+                      disabled={isInitializing}
+                      className={`flex items-center gap-1 px-2 py-1 ${isMobile ? "text-[10px]" : "text-xs"} bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded hover:bg-primary-200 dark:hover:bg-primary-900/50 disabled:opacity-50`}
+                    >
+                      <Sparkles size={isMobile ? 10 : 12} />
+                      {t("autoGraph.aiOptimize")}
                     </button>
-                  </span>
-                ))}
-              </div>
+                  </div>
+                  <textarea
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder={t("autoGraph.customRulesPlaceholder")}
+                    className={`w-full ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[80px]" : "min-h-[100px]"} resize-y`}
+                    disabled={isInitializing}
+                  />
+                  <p
+                    className={`${isMobile ? "text-[10px]" : "text-xs"} text-gray-400 mt-1`}
+                  >
+                    {t("autoGraph.customRulesDesc")}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className={`flex items-center gap-2 ${isMobile ? "text-xs" : "text-sm"} text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200`}
+          >
+            {showAdvanced ? (
+              <ChevronUp size={isMobile ? 14 : 16} />
+            ) : (
+              <ChevronDown size={isMobile ? 14 : 16} />
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {t("autoGraph.referenceSources")}
+          </button>
+
+          <AnimatePresence>
+            {showAdvanced && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="space-y-2 md:space-y-3 overflow-hidden"
+              >
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newSource}
+                    onChange={(e) => setNewSource(e.target.value)}
+                    placeholder={t("autoGraph.sourcePlaceholder")}
+                    className={`flex-1 ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white`}
+                    disabled={isInitializing}
+                  />
+                  <button
+                    onClick={handleAddSource}
+                    disabled={isInitializing || !newSource.trim()}
+                    className={`${isMobile ? "px-2 py-1.5" : "px-3 py-2"} bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50`}
+                  >
+                    <Plus size={isMobile ? 14 : 16} />
+                  </button>
+                </div>
+                {sources.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {sources.map((source, index) => (
+                      <span
+                        key={index}
+                        className={`inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded ${isMobile ? "text-[10px]" : "text-xs"}`}
+                      >
+                        {source.slice(0, 30)}...
+                        <button
+                          onClick={() => handleRemoveSource(index)}
+                          className="text-gray-400 hover:text-red-500"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
 
       <button
         onClick={handleInitialize}

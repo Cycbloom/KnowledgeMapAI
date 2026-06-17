@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Save, Loader2, User, Palette, Heart, Brain, Target, Shield, BookOpen, TrendingUp, Link2, Film } from "lucide-react";
+import {
+  Save,
+  Loader2,
+  User,
+  Palette,
+  Heart,
+  Brain,
+  Target,
+  Shield,
+  BookOpen,
+  TrendingUp,
+  Link2,
+  Film,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { storyCreationHttpApi } from "../../../services/api/storyCreation";
 import { message } from "../../../utils/messageHelper";
@@ -21,7 +34,9 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState(character.name);
-  const [roleType, setRoleType] = useState<StoryCharacter["role_type"]>(character.role_type);
+  const [roleType, setRoleType] = useState<StoryCharacter["role_type"]>(
+    character.role_type,
+  );
   const [archetype, setArchetype] = useState(character.archetype || "");
   const [appearance, setAppearance] = useState(character.appearance || "");
   const [age, setAge] = useState(character.age || "");
@@ -51,29 +66,45 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
     setBackstory(character.backstory || "");
     setArcStart(character.arc_start || "");
     setArcEnd(character.arc_end || "");
-  }, [character.id, character.name, character.role_type, character.archetype,
-    character.appearance, character.age, character.gender, character.motivation,
-    character.fear, character.desire, character.flaw, character.backstory,
-    character.arc_start, character.arc_end]);
+  }, [
+    character.id,
+    character.name,
+    character.role_type,
+    character.archetype,
+    character.appearance,
+    character.age,
+    character.gender,
+    character.motivation,
+    character.fear,
+    character.desire,
+    character.flaw,
+    character.backstory,
+    character.arc_start,
+    character.arc_end,
+  ]);
 
   const handleSave = async () => {
     try {
       setSaving(true);
-      const updatedCharacter = await storyCreationHttpApi.characters.update(graphId, character.id, {
-        name,
-        role_type: roleType,
-        archetype: archetype || null,
-        appearance: appearance || null,
-        age: age || null,
-        gender: gender || null,
-        motivation: motivation || null,
-        fear: fear || null,
-        desire: desire || null,
-        flaw: flaw || null,
-        backstory: backstory || null,
-        arc_start: arcStart || null,
-        arc_end: arcEnd || null,
-      });
+      const updatedCharacter = await storyCreationHttpApi.characters.update(
+        graphId,
+        character.id,
+        {
+          name,
+          role_type: roleType,
+          archetype: archetype || null,
+          appearance: appearance || null,
+          age: age || null,
+          gender: gender || null,
+          motivation: motivation || null,
+          fear: fear || null,
+          desire: desire || null,
+          flaw: flaw || null,
+          backstory: backstory || null,
+          arc_start: arcStart || null,
+          arc_end: arcEnd || null,
+        },
+      );
       onSave(updatedCharacter);
       message.success(t("storyEditor.characterSaved"));
     } catch (error) {
@@ -137,14 +168,36 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
             </label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { value: "protagonist", label: t("storyEditor.roles.protagonist"), color: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300" },
-                { value: "antagonist", label: t("storyEditor.roles.antagonist"), color: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" },
-                { value: "supporting", label: t("storyEditor.roles.supporting"), color: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" },
-                { value: "minor", label: t("storyEditor.roles.minor"), color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" },
-              ].map(role => (
+                {
+                  value: "protagonist",
+                  label: t("storyEditor.roles.protagonist"),
+                  color:
+                    "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+                },
+                {
+                  value: "antagonist",
+                  label: t("storyEditor.roles.antagonist"),
+                  color:
+                    "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
+                },
+                {
+                  value: "supporting",
+                  label: t("storyEditor.roles.supporting"),
+                  color:
+                    "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                },
+                {
+                  value: "minor",
+                  label: t("storyEditor.roles.minor"),
+                  color:
+                    "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
+                },
+              ].map((role) => (
                 <button
                   key={role.value}
-                  onClick={() => setRoleType(role.value as StoryCharacter["role_type"])}
+                  onClick={() =>
+                    setRoleType(role.value as StoryCharacter["role_type"])
+                  }
                   className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
                     roleType === role.value
                       ? `${role.color} ring-2 ring-offset-1`

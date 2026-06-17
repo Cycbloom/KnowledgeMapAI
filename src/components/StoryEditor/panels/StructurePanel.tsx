@@ -19,21 +19,28 @@ interface StructurePanelProps {
   structures: StoryStructure[];
   selectedId: string | null;
   onSelect: (node: StoryStructure) => void;
-  onAddChild: (parentId: string, level: StoryStructure["structure_level"]) => void;
+  onAddChild: (
+    parentId: string,
+    level: StoryStructure["structure_level"],
+  ) => void;
   onDelete: (id: string) => void;
   onInitializeTemplate: (templateCode: string) => void;
   initializing: boolean;
 }
 
-const LEVEL_ICONS: Record<StoryStructure["structure_level"], React.ReactNode> = {
-  story: <BookOpen size={14} />,
-  act: <Theater size={14} />,
-  sequence: <ListOrdered size={14} />,
-  chapter: <FileText size={14} />,
-  scene: <Clapperboard size={14} />,
-};
+const LEVEL_ICONS: Record<StoryStructure["structure_level"], React.ReactNode> =
+  {
+    story: <BookOpen size={14} />,
+    act: <Theater size={14} />,
+    sequence: <ListOrdered size={14} />,
+    chapter: <FileText size={14} />,
+    scene: <Clapperboard size={14} />,
+  };
 
-const NEXT_LEVEL_MAP: Record<StoryStructure["structure_level"], StoryStructure["structure_level"] | null> = {
+const NEXT_LEVEL_MAP: Record<
+  StoryStructure["structure_level"],
+  StoryStructure["structure_level"] | null
+> = {
   story: "act",
   act: "sequence",
   sequence: "chapter",
@@ -55,7 +62,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   const toggleExpand = (nodeId: string) => {
-    setExpandedIds(prev => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(nodeId)) {
         next.delete(nodeId);
@@ -66,7 +73,11 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
     });
   };
 
-  const handleAddChild = (e: React.MouseEvent, parentId: string, currentLevel: StoryStructure["structure_level"]) => {
+  const handleAddChild = (
+    e: React.MouseEvent,
+    parentId: string,
+    currentLevel: StoryStructure["structure_level"],
+  ) => {
     e.stopPropagation();
     const nextLevel = NEXT_LEVEL_MAP[currentLevel];
     if (!nextLevel) return; // scene is leaf node
@@ -89,7 +100,10 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
     await onInitializeTemplate(templateCode);
   };
 
-  const renderNode = (node: StoryStructure, depth: number = 0): React.ReactNode => {
+  const renderNode = (
+    node: StoryStructure,
+    depth: number = 0,
+  ): React.ReactNode => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedId === node.id;
@@ -98,9 +112,10 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
       <div key={node.id}>
         <div
           className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer transition-colors
-            ${isSelected
-              ? "bg-primary-50 dark:bg-primary-900/20 border-l-2 border-primary-500"
-              : "hover:bg-gray-100 dark:hover:bg-slate-700"
+            ${
+              isSelected
+                ? "bg-primary-50 dark:bg-primary-900/20 border-l-2 border-primary-500"
+                : "hover:bg-gray-100 dark:hover:bg-slate-700"
             }`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={() => onSelect(node)}
@@ -122,18 +137,24 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
           </button>
 
           {/* Level Icon */}
-          <span className={`flex-shrink-0 ${
-            isSelected ? "text-primary-600 dark:text-primary-400" : "text-gray-500 dark:text-gray-400"
-          }`}>
+          <span
+            className={`flex-shrink-0 ${
+              isSelected
+                ? "text-primary-600 dark:text-primary-400"
+                : "text-gray-500 dark:text-gray-400"
+            }`}
+          >
             {LEVEL_ICONS[node.structure_level]}
           </span>
 
           {/* Title */}
-          <span className={`flex-1 text-sm truncate font-medium ${
-            isSelected
-              ? "text-primary-700 dark:text-primary-300"
-              : "text-gray-700 dark:text-gray-300"
-          }`}>
+          <span
+            className={`flex-1 text-sm truncate font-medium ${
+              isSelected
+                ? "text-primary-700 dark:text-primary-300"
+                : "text-gray-700 dark:text-gray-300"
+            }`}
+          >
             {node.title}
           </span>
 
@@ -159,7 +180,9 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
         {/* Children */}
         {hasChildren && isExpanded && (
           <div>
-            {node.children?.map((child: StoryStructure) => renderNode(child, depth + 1))}
+            {node.children?.map((child: StoryStructure) =>
+              renderNode(child, depth + 1),
+            )}
           </div>
         )}
       </div>
@@ -219,7 +242,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
         ) : (
           /* Tree View */
           <div className="space-y-0.5 px-1">
-            {structures.map(node => renderNode(node))}
+            {structures.map((node) => renderNode(node))}
           </div>
         )}
 
@@ -235,8 +258,12 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                 disabled={initializing}
                 className="w-full text-left px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50"
               >
-                <div className="font-medium text-gray-900 dark:text-white">{t("storyEditor.templateThreeAct")}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{t("storyEditor.templateThreeActDesc")}</div>
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {t("storyEditor.templateThreeAct")}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {t("storyEditor.templateThreeActDesc")}
+                </div>
               </button>
             </div>
             <button

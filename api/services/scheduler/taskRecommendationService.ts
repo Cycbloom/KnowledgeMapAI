@@ -391,7 +391,13 @@ export class TaskRecommendationService {
 
     const { data: tasks, error } = await client
       .from("user_tasks")
-      .select("*")
+      .select(`
+        *,
+        knowledge_graphs!left(
+          id,
+          deleted_at
+        )
+      `)
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
       .is("deleted_at", null)
@@ -401,10 +407,29 @@ export class TaskRecommendationService {
       return [];
     }
 
+    // 过滤掉关联了已删除图谱的任务
+    const validTasks = tasks.filter(task => {
+      // 非图谱学习任务，直接保留
+      if (task.task_type !== 'graph_learning') {
+        return true;
+      }
+
+      // 图谱学习任务，检查图谱是否被删除
+      const graphData = task.knowledge_graphs;
+      if (!graphData || (Array.isArray(graphData) && graphData.length === 0)) {
+        // 没有关联图谱，可能是数据不一致，但仍然保留
+        return true;
+      }
+
+      // 检查图谱是否被软删除
+      const graph = Array.isArray(graphData) ? graphData[0] : graphData;
+      return !graph.deleted_at;
+    });
+
     const efficiencyData = await this.calculateEfficiencyData(client, userId);
     const currentTimeSlot = this.getCurrentTimeSlot(now);
 
-    const recommendations: TaskRecommendation[] = tasks.map((task) => {
+    const recommendations: TaskRecommendation[] = validTasks.map((task) => {
       const urgencyScore = this.calculateUrgencyScore(task, now);
       const urgencyLevel = this.getUrgencyLevel(urgencyScore);
       const reasons: string[] = [];

@@ -58,21 +58,19 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
     let charactersWithStats = characters || [];
 
     if (charactersWithStats.length > 0) {
-      const [
-        { data: relationships },
-        { data: appearances },
-      ] = await Promise.all([
-        supabase
-          .from("story_character_relationships")
-          .select(
-            "source_character_id, target_character_id, relationship_type",
-          )
-          .eq("graph_id", graphId),
-        supabase
-          .from("story_appearances")
-          .select("character_id")
-          .eq("graph_id", graphId),
-      ]);
+      const [{ data: relationships }, { data: appearances }] =
+        await Promise.all([
+          supabase
+            .from("story_character_relationships")
+            .select(
+              "source_character_id, target_character_id, relationship_type",
+            )
+            .eq("graph_id", graphId),
+          supabase
+            .from("story_appearances")
+            .select("character_id")
+            .eq("graph_id", graphId),
+        ]);
 
       const relationshipCountMap = new Map<string, number>();
       (relationships || []).forEach((rel) => {
@@ -98,8 +96,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
       charactersWithStats = charactersWithStats.map((character) => ({
         ...character,
         _count: {
-          relationships:
-            relationshipCountMap.get(character.id) || 0,
+          relationships: relationshipCountMap.get(character.id) || 0,
           appearances: appearanceCountMap.get(character.id) || 0,
         },
       }));
@@ -109,11 +106,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error: unknown) {
     logger.error("Get story characters error:", error);
     if (error instanceof AppError) throw error;
-    throw new AppError(
-      "获取角色列表失败",
-      500,
-      ErrorCodes.INTERNAL_ERROR,
-    );
+    throw new AppError("获取角色列表失败", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -143,11 +136,7 @@ router.post(
     } catch (error: unknown) {
       logger.error("Create story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError(
-        "创建角色失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("创建角色失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -184,11 +173,7 @@ router.put(
     } catch (error: unknown) {
       logger.error("Update story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError(
-        "更新角色失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("更新角色失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -210,11 +195,7 @@ router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error: unknown) {
     logger.error("Delete story character error:", error);
     if (error instanceof AppError) throw error;
-    throw new AppError(
-      "删除角色失败",
-      500,
-      ErrorCodes.INTERNAL_ERROR,
-    );
+    throw new AppError("删除角色失败", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

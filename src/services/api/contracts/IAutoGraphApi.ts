@@ -13,6 +13,11 @@ export interface IAutoGraphApi {
     session_id?: string;
     template_type?: string;
     customModules?: BackboneModuleCustomConfig[];
+    storyConfig?: {
+      genre?: string;
+      coreConflict?: string;
+      characterHints?: string;
+    };
   }): Promise<{
     sessionId: string;
     root: { title: string; content: string; summary?: string };
@@ -67,7 +72,10 @@ export interface IAutoGraphApi {
     }>;
   }): Promise<unknown>;
 
-  optimizePrompt(data: { topic: string; currentPrompt?: string }): Promise<unknown>;
+  optimizePrompt(data: {
+    topic: string;
+    currentPrompt?: string;
+  }): Promise<unknown>;
 
   generateEmbeddings(limit?: number): Promise<unknown>;
 

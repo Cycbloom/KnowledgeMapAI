@@ -64,7 +64,10 @@ function buildTree(structures: StoryStructure[]): StoryStructure[] {
 
   structures.forEach((structure) => {
     const node = map.get(structure.id)!;
-    if (structure.parent_structure_id && map.has(structure.parent_structure_id)) {
+    if (
+      structure.parent_structure_id &&
+      map.has(structure.parent_structure_id)
+    ) {
       const parent = map.get(structure.parent_structure_id)!;
       parent.children!.push(node);
     } else {
@@ -75,36 +78,28 @@ function buildTree(structures: StoryStructure[]): StoryStructure[] {
   return roots;
 }
 
-router.get(
-  "/",
-  requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    const { graphId } = req.params;
-    const supabase = req.supabase!;
+router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
+  const { graphId } = req.params;
+  const supabase = req.supabase!;
 
-    try {
-      const { data: structures, error } = await supabase
-        .from("story_structures")
-        .select("*")
-        .eq("graph_id", graphId)
-        .order("display_order", { ascending: true });
+  try {
+    const { data: structures, error } = await supabase
+      .from("story_structures")
+      .select("*")
+      .eq("graph_id", graphId)
+      .order("display_order", { ascending: true });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      const tree = buildTree(structures || []);
+    const tree = buildTree(structures || []);
 
-      res.json({ structures: tree });
-    } catch (error: unknown) {
-      logger.error("Get story structures error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "获取故事结构失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
-  },
-);
+    res.json({ structures: tree });
+  } catch (error: unknown) {
+    logger.error("Get story structures error:", error);
+    if (error instanceof AppError) throw error;
+    throw new AppError("获取故事结构失败", 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
 
 router.post(
   "/",
@@ -146,11 +141,7 @@ router.post(
     } catch (error: unknown) {
       logger.error("Create story structure error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError(
-        "创建故事结构失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("创建故事结构失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -187,43 +178,31 @@ router.put(
     } catch (error: unknown) {
       logger.error("Update story structure error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError(
-        "更新故事结构失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("更新故事结构失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
 
-router.delete(
-  "/:id",
-  requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    const { graphId, id } = req.params;
-    const supabase = req.supabase!;
+router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
+  const { graphId, id } = req.params;
+  const supabase = req.supabase!;
 
-    try {
-      const { error } = await supabase
-        .from("story_structures")
-        .delete()
-        .eq("id", id)
-        .eq("graph_id", graphId);
+  try {
+    const { error } = await supabase
+      .from("story_structures")
+      .delete()
+      .eq("id", id)
+      .eq("graph_id", graphId);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      res.json({ message: "故事结构已删除" });
-    } catch (error: unknown) {
-      logger.error("Delete story structure error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "删除故事结构失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
-  },
-);
+    res.json({ message: "故事结构已删除" });
+  } catch (error: unknown) {
+    logger.error("Delete story structure error:", error);
+    if (error instanceof AppError) throw error;
+    throw new AppError("删除故事结构失败", 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
 
 router.post(
   "/initialize-template",
@@ -248,7 +227,11 @@ router.post(
       const beats = template.beats as StoryTemplateBeat[];
 
       if (!beats || beats.length === 0) {
-        throw new AppError("模板没有定义节拍", 400, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(
+          "模板没有定义节拍",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
       }
 
       const sortedBeats = [...beats].sort((a, b) => a.order - b.order);
@@ -299,7 +282,10 @@ router.post(
           if (!parentId) return null;
           return supabase
             .from("story_structures")
-            .update({ parent_structure_id: parentId, updated_at: new Date().toISOString() })
+            .update({
+              parent_structure_id: parentId,
+              updated_at: new Date().toISOString(),
+            })
             .eq("id", structure.id)
             .eq("graph_id", graphId);
         })
@@ -332,11 +318,7 @@ router.post(
     } catch (error: unknown) {
       logger.error("Initialize template error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError(
-        "初始化模板失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError("初始化模板失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

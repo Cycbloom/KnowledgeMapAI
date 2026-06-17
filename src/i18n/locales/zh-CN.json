@@ -3371,7 +3371,27 @@
     "templatePromptConfig": "模板提示词配置",
     "selectTemplateType": "请从左侧选择一个模板类型",
     "graphLevel": "图谱级",
-    "userLevel": "用户级"
+    "userLevel": "用户级",
+    "storyGenre": "故事题材",
+    "storyGenrePlaceholder": "选择故事题材类型",
+    "storyGenres": {
+      "fantasy": "奇幻",
+      "scifi": "科幻",
+      "mystery": "悬疑",
+      "romance": "言情",
+      "historical": "历史",
+      "urban": "都市",
+      "wuxia": "武侠",
+      "other": "其他"
+    },
+    "coreConflict": "核心冲突",
+    "coreConflictPlaceholder": "用1-2句话描述故事的核心矛盾或冲突",
+    "characterHints": "主要角色提示",
+    "characterHintsPlaceholder": "列出2-5个角色的名字和简要描述，每行一个\n例如：\n张三 - 一个失去记忆的剑客\n李四 - 神秘的女药师",
+    "storyTitle": "故事标题",
+    "storyTitlePlaceholder": "例如：哈利波特与魔法石、三体、红楼梦",
+    "storySynopsis": "故事简介（可选）",
+    "storySynopsisPlaceholder": "简要描述故事的整体背景、世界观或主要情节走向"
   },
   "prompts": {
     "categories": {

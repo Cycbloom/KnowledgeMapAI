@@ -42,3 +42,4 @@ export async function closeDatabase(): Promise<void> {
 
 export { DatabaseInterface, DatabaseConfig };
 export { SupabaseAdapter } from './adapters/supabase';
+export { transactionExecutor } from './transactionExecutor';

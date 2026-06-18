@@ -9,6 +9,7 @@ import { pdfService } from '../services/common/pdfService';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { logger } from '../utils/logger';
 import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers';
+import { transactionExecutor } from '../database/transactionExecutor';
 
 const router = Router();
 
@@ -245,19 +246,15 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
 // Import Markdown
 router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Response) => {
   const { content } = req.body;
-  
+
   if (!content || typeof content !== 'string') {
     return res.status(400).json({ error: 'Content is required and must be a string' });
   }
 
+  let createdGraphId: string | null = null;
+
   try {
     const { graph_title, nodes, edges } = parseMarkdownToGraph(content);
-
-    // Reuse the same logic as regular import, but we need to call it internally or duplicate logic.
-    // Let's duplicate logic for now but keep it clean, or refactor to a service.
-    // Since graphService.createGraph exists, we should use it? 
-    // But createGraph only creates the graph, not nodes/edges in batch.
-    // We'll stick to the transaction logic here.
 
     // 1. Create Graph
     const { data: graph, error: graphError } = await req.supabase!
@@ -267,9 +264,10 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
       .single();
 
     if (graphError) throw new Error(graphError.message);
+    createdGraphId = graph.id;
 
     const nodeMap = new Map();
-    
+
     if (nodes && Array.isArray(nodes)) {
       for (const n of nodes) {
         const result = await createKnowledgePointWithGraphNode(
@@ -285,7 +283,7 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
             properties: n.properties || {}
           }
         );
-        
+
         if (result) {
           const oldId = n.id;
           if (oldId) {
@@ -296,11 +294,11 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
 
       if (edges && Array.isArray(edges) && edges.length > 0) {
         const edgesToInsert = [];
-        
+
         for (const e of edges) {
           const sourceId = nodeMap.get(e.source);
           const targetId = nodeMap.get(e.target);
-          
+
           if (sourceId && targetId) {
             edgesToInsert.push({
               source_knowledge_point_id: sourceId,
@@ -310,12 +308,12 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
             });
           }
         }
-        
+
         if (edgesToInsert.length > 0) {
           const { error: edgesError } = await req.supabase!
             .from('edges')
             .insert(edgesToInsert);
-            
+
           if (edgesError) throw new Error(edgesError.message);
         }
       }
@@ -323,11 +321,21 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
 
     // Success! Invalidate user graphs cache
     await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
-    
+
     res.status(201).json({ graph });
 
   } catch (error) {
-    logger.error('Import Markdown Error:', error);
+    logger.error('Import Markdown failed, rolling back:', error);
+
+    if (createdGraphId) {
+      // Clean up graph_nodes for this graph
+      await req.supabase!.from('graph_nodes').delete().eq('graph_id', createdGraphId);
+      // Clean up edges for this graph
+      await req.supabase!.from('edges').delete().eq('graph_id', createdGraphId);
+      // Delete the graph
+      await req.supabase!.from('knowledge_graphs').delete().eq('id', createdGraphId);
+    }
+
     res.status(500).json({ error: (error as Error).message || 'Import failed' });
   }
 });
@@ -408,14 +416,16 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
 
   } catch (error) {
     logger.error('Import failed, rolling back:', error);
-    
+
     if (createdGraphId) {
-      await req.supabase!
-        .from('knowledge_graphs')
-        .delete()
-        .eq('id', createdGraphId);
+      // Delete graph_nodes for this graph
+      await req.supabase!.from('graph_nodes').delete().eq('graph_id', createdGraphId);
+      // Delete edges for this graph
+      await req.supabase!.from('edges').delete().eq('graph_id', createdGraphId);
+      // Delete the graph
+      await req.supabase!.from('knowledge_graphs').delete().eq('id', createdGraphId);
     }
-    
+
     throw error;
   }
 });
@@ -444,48 +454,52 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
     error?: string;
   }
 
+  interface TableInfo {
+    table: string;
+    column: string;
+    extraFilter?: { column: string; value: unknown };
+  }
+
   const results: TableResult[] = [];
 
-  const processTable = async (
+  const countTable = async (
     table: string,
     column: string,
     extraFilter?: { column: string; value: unknown }
-  ): Promise<TableResult> => {
-    const result: TableResult = { table, count: 0, deleted: 0 };
-    try {
-      let query = req.supabase!.from(table).select('*', { count: 'exact', head: true }).eq(column, userId);
-      if (extraFilter) {
-        query = query.eq(extraFilter.column, extraFilter.value);
-      }
-      const { count } = await query;
-      result.count = count || 0;
-
-      if (willDelete && result.count > 0) {
-        let deleteQuery = req.supabase!.from(table).delete().eq(column, userId);
-        if (extraFilter) {
-          deleteQuery = deleteQuery.eq(extraFilter.column, extraFilter.value);
-        }
-        const { error } = await deleteQuery;
-        if (error) {
-          result.error = error.message;
-          logger.warn(`删除表 ${table} 失败`, { error: error.message });
-        } else {
-          result.deleted = result.count;
-        }
-      }
-    } catch (e) {
-      result.error = (e as Error).message || String(e);
-      logger.warn(`处理表 ${table} 时出错`, { error: (e as Error).message });
+  ): Promise<number> => {
+    let query = req.supabase!.from(table).select('*', { count: 'exact', head: true }).eq(column, userId);
+    if (extraFilter) {
+      query = query.eq(extraFilter.column, extraFilter.value);
     }
-    return result;
+    const { count } = await query;
+    return count || 0;
+  };
+
+  const deleteTableViaSupabase = async (
+    table: string,
+    column: string,
+    extraFilter?: { column: string; value: unknown }
+  ): Promise<{ deleted: number; error?: string }> => {
+    let deleteQuery = req.supabase!.from(table).delete().eq(column, userId);
+    if (extraFilter) {
+      deleteQuery = deleteQuery.eq(extraFilter.column, extraFilter.value);
+    }
+    const { error } = await deleteQuery;
+    if (error) {
+      return { deleted: 0, error: error.message };
+    }
+    return { deleted: 0 }; // actual count unknown, will use pre-counted value
   };
 
   const shouldProcess = (type: string): boolean =>
     types.includes('all') || types.includes(type);
 
+  // Collect all tables to process
+  const allTables: TableInfo[] = [];
+
   // graphs 类型
   if (shouldProcess('graphs')) {
-    const graphTables = [
+    allTables.push(
       { table: 'graph_collaborators', column: 'user_id' },
       { table: 'learning_path_progress', column: 'user_id' },
       { table: 'graph_domains', column: 'user_id' },
@@ -496,16 +510,12 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
       { table: 'prompt_templates', column: 'user_id', extraFilter: { column: 'scope', value: 'user' } },
       { table: 'templates', column: 'user_id' },
       { table: 'knowledge_graphs', column: 'user_id' }
-    ];
-
-    for (const t of graphTables) {
-      results.push(await processTable(t.table, t.column, t.extraFilter));
-    }
+    );
   }
 
   // tasks 类型
   if (shouldProcess('user_tasks')) {
-    const taskTables = [
+    allTables.push(
       { table: 'task_subtasks', column: 'user_id' },
       { table: 'task_links', column: 'user_id' },
       { table: 'task_knowledge_points', column: 'user_id' },
@@ -516,16 +526,12 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
       { table: 'task_schedules', column: 'user_id' },
       { table: 'task_progress_plans', column: 'user_id' },
       { table: 'user_tasks', column: 'user_id' }
-    ];
-
-    for (const t of taskTables) {
-      results.push(await processTable(t.table, t.column));
-    }
+    );
   }
 
   // study 类型
   if (shouldProcess('study')) {
-    const studyTables = [
+    allTables.push(
       { table: 'user_activities', column: 'user_id' },
       { table: 'user_time_slots', column: 'user_id' },
       { table: 'user_achievements', column: 'user_id' },
@@ -544,24 +550,101 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
       { table: 'backup_snapshots', column: 'user_id' },
       { table: 'queues', column: 'user_id' },
       { table: 'user_tasks', column: 'user_id' }
-    ];
-
-    for (const t of studyTables) {
-      results.push(await processTable(t.table, t.column));
-    }
+    );
   }
 
   // 公共表（all类型都删）
   if (types.includes('all')) {
-    const commonTables = [
+    allTables.push(
       { table: 'knowledge_points', column: 'owner_id' },
       { table: 'domains', column: 'user_id' },
       { table: 'quiz_sets', column: 'user_id' },
       { table: 'relationship_types', column: 'user_id', extraFilter: { column: 'is_builtin', value: false } }
-    ];
+    );
+  }
 
-    for (const t of commonTables) {
-      results.push(await processTable(t.table, t.column, t.extraFilter));
+  // Phase 1: Count all tables
+  for (const t of allTables) {
+    const result: TableResult = { table: t.table, count: 0, deleted: 0 };
+    try {
+      result.count = await countTable(t.table, t.column, t.extraFilter);
+    } catch (e) {
+      result.error = (e as Error).message || String(e);
+      logger.warn(`计数表 ${t.table} 时出错`, { error: (e as Error).message });
+    }
+    results.push(result);
+  }
+
+  // Phase 2: Delete if requested
+  if (willDelete) {
+    const tablesWithCount = allTables.map((t, i) => ({ ...t, count: results[i].count }));
+    const tablesToDelete = tablesWithCount.filter(t => t.count > 0);
+
+    if (tablesToDelete.length > 0 && transactionExecutor.isAvailable()) {
+      // Use transaction executor for atomic deletion
+      try {
+        await transactionExecutor.executeInTransaction(async (client) => {
+          for (const t of tablesToDelete) {
+            if (t.extraFilter) {
+              await client.query(
+                `DELETE FROM ${t.table} WHERE ${t.column} = $1 AND ${t.extraFilter.column} = $2`,
+                [userId, t.extraFilter.value]
+              );
+            } else {
+              await client.query(
+                `DELETE FROM ${t.table} WHERE ${t.column} = $1`,
+                [userId]
+              );
+            }
+          }
+        });
+
+        // Mark all as deleted on success
+        for (let i = 0; i < results.length; i++) {
+          if (allTables[i] && tablesWithCount[i].count > 0) {
+            results[i].deleted = results[i].count;
+          }
+        }
+      } catch (error) {
+        logger.error('事务删除失败，回退到逐表删除', { error: (error as Error).message });
+        // Fallback: delete one by one via Supabase client
+        for (let i = 0; i < allTables.length; i++) {
+          const t = allTables[i];
+          if (results[i].count > 0) {
+            try {
+              const { error: delError } = await deleteTableViaSupabase(t.table, t.column, t.extraFilter);
+              if (delError) {
+                results[i].error = delError;
+                logger.warn(`删除表 ${t.table} 失败`, { error: delError });
+              } else {
+                results[i].deleted = results[i].count;
+              }
+            } catch (e) {
+              results[i].error = (e as Error).message || String(e);
+              logger.warn(`删除表 ${t.table} 时出错`, { error: (e as Error).message });
+            }
+          }
+        }
+      }
+    } else if (tablesToDelete.length > 0) {
+      // No transaction executor available, delete one by one via Supabase client
+      for (let i = 0; i < allTables.length; i++) {
+        const t = allTables[i];
+        if (results[i].count > 0) {
+          try {
+            const { error: delError } = await deleteTableViaSupabase(t.table, t.column, t.extraFilter);
+            if (delError) {
+              results[i].error = delError;
+              logger.warn(`删除表 ${t.table} 失败`, { error: delError });
+            } else {
+              results[i].deleted = results[i].count;
+            }
+          } catch (e) {
+            results[i].error = (e as Error).message || String(e);
+            logger.warn(`删除表 ${t.table} 时出错`, { error: (e as Error).message });
+          }
+        }
+      }
     }
   }
 

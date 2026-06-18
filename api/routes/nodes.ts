@@ -593,18 +593,8 @@ router.post(
     }
 
     const graphNodeIds = graphNodes.map((gn) => gn.id);
-    const { error: deleteError } = await req
-      .supabase!.from("graph_nodes")
-      .update({ deleted_at: new Date().toISOString() })
-      .in("id", graphNodeIds);
-
-    if (deleteError) {
-      throw new AppError(
-        deleteError.message || "批量删除节点失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    const graphId = graphNodes[0]?.graph_id ?? '';
+    const deletedCount = await graphNodeService.batchDelete(req.supabase!, graphNodeIds, graphId);
 
     const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
     for (const gid of graphIds) {
@@ -613,8 +603,8 @@ router.post(
     await cacheService.invalidateUserGraphsCache(req.user.id);
 
     res.json({
-      message: `成功删除 ${graphNodes.length} 个节点`,
-      count: graphNodes.length,
+      message: `成功删除 ${deletedCount} 个节点`,
+      count: deletedCount,
     });
   },
 );

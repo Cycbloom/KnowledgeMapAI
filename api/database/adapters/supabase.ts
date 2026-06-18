@@ -19,6 +19,7 @@ import type {
   UpdateStudyCardInput,
   CreateFocusSessionInput,
 } from '../interface';
+import { transactionExecutor } from '../transactionExecutor';
 
 import type {
   User,
@@ -110,6 +111,16 @@ export class SupabaseAdapter implements DatabaseInterface {
   }
 
   async transaction<T>(fn: (tx: TransactionContext) => Promise<T>): Promise<T> {
+    if (transactionExecutor.isAvailable()) {
+      return transactionExecutor.executeInTransaction(async (_client) => {
+        const txContext: TransactionContext = {
+          execute: async <U>(innerFn: () => Promise<U>) => innerFn(),
+        };
+        return fn(txContext);
+      });
+    }
+
+    logger.warn('TransactionExecutor unavailable (DATABASE_URL not set), falling back to non-transactional execution');
     return fn({
       execute: async <U>(innerFn: () => Promise<U>) => innerFn()
     });

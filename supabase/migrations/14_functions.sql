@@ -805,3 +805,485 @@ BEGIN
   ORDER BY v.hop ASC;
 END;
 $$;
+
+-- ============================================================
+-- Graph deletion functions (soft delete & permanent delete)
+-- ============================================================
+
+-- 1. Permanent delete a single graph and all its cascading data
+CREATE OR REPLACE FUNCTION permanent_delete_graph(p_graph_id uuid, p_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_deleted_graphs int;
+  v_deleted_nodes int;
+  v_deleted_edges int;
+  v_deleted_cards int;
+  v_graph_ids uuid[];
+BEGIN
+  -- Verify ownership
+  SELECT id INTO v_deleted_graphs
+  FROM knowledge_graphs
+  WHERE id = p_graph_id AND user_id = p_user_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Graph not found or user does not own it';
+  END IF;
+
+  -- Collect main graph + branch graph IDs
+  SELECT array_agg(id) INTO v_graph_ids
+  FROM knowledge_graphs
+  WHERE (id = p_graph_id OR (parent_graph_id = p_graph_id AND is_branch = true));
+
+  -- Delete study_cards associated with graph_nodes in these graphs
+  DELETE FROM study_cards
+  WHERE graph_id = ANY(v_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_cards = ROW_COUNT;
+
+  -- Delete edges for these graphs
+  DELETE FROM edges
+  WHERE graph_id = ANY(v_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_edges = ROW_COUNT;
+
+  -- Delete graph_nodes for these graphs
+  DELETE FROM graph_nodes
+  WHERE graph_id = ANY(v_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_nodes = ROW_COUNT;
+
+  -- Delete branches first, then main graph
+  DELETE FROM knowledge_graphs
+  WHERE id = ANY(v_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_graphs = ROW_COUNT;
+
+  RETURN jsonb_build_object(
+    'deleted_graphs', v_deleted_graphs,
+    'deleted_nodes', v_deleted_nodes,
+    'deleted_edges', v_deleted_edges,
+    'deleted_cards', v_deleted_cards
+  );
+END;
+$$;
+
+-- 2. Soft delete a single graph and its branches
+CREATE OR REPLACE FUNCTION soft_delete_graph_with_branches(p_graph_id uuid, p_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_soft_deleted_graphs int;
+BEGIN
+  -- Verify ownership
+  IF NOT EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE id = p_graph_id AND user_id = p_user_id
+  ) THEN
+    RAISE EXCEPTION 'Graph not found or user does not own it';
+  END IF;
+
+  -- Soft delete main graph + branches
+  UPDATE knowledge_graphs
+  SET deleted_at = NOW()
+  WHERE (id = p_graph_id OR (parent_graph_id = p_graph_id AND is_branch = true AND deleted_at IS NULL))
+    AND user_id = p_user_id;
+
+  GET DIAGNOSTICS v_soft_deleted_graphs = ROW_COUNT;
+
+  RETURN jsonb_build_object(
+    'soft_deleted_graphs', v_soft_deleted_graphs
+  );
+END;
+$$;
+
+-- 3. Batch soft delete multiple graphs and their branches
+CREATE OR REPLACE FUNCTION batch_soft_delete_graphs(p_graph_ids uuid[], p_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_soft_deleted_graphs int;
+  v_owned_count int;
+BEGIN
+  -- Verify ownership for all graphs
+  SELECT count(*) INTO v_owned_count
+  FROM knowledge_graphs
+  WHERE id = ANY(p_graph_ids) AND user_id = p_user_id;
+
+  IF v_owned_count <> array_length(p_graph_ids, 1) THEN
+    RAISE EXCEPTION 'One or more graphs not found or user does not own them';
+  END IF;
+
+  -- Soft delete specified graphs + their branches
+  UPDATE knowledge_graphs
+  SET deleted_at = NOW()
+  WHERE (
+    id = ANY(p_graph_ids)
+    OR (parent_graph_id = ANY(p_graph_ids) AND is_branch = true AND deleted_at IS NULL)
+  ) AND user_id = p_user_id;
+
+  GET DIAGNOSTICS v_soft_deleted_graphs = ROW_COUNT;
+
+  RETURN jsonb_build_object(
+    'soft_deleted_graphs', v_soft_deleted_graphs
+  );
+END;
+$$;
+
+-- 4. Batch permanent delete multiple graphs and their cascading data
+CREATE OR REPLACE FUNCTION batch_permanent_delete_graphs(p_graph_ids uuid[], p_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_deleted_graphs int;
+  v_deleted_nodes int;
+  v_deleted_edges int;
+  v_deleted_cards int;
+  v_all_graph_ids uuid[];
+  v_owned_count int;
+BEGIN
+  -- Verify ownership for all graphs
+  SELECT count(*) INTO v_owned_count
+  FROM knowledge_graphs
+  WHERE id = ANY(p_graph_ids) AND user_id = p_user_id;
+
+  IF v_owned_count <> array_length(p_graph_ids, 1) THEN
+    RAISE EXCEPTION 'One or more graphs not found or user does not own them';
+  END IF;
+
+  -- Collect all graph IDs (main + branches)
+  SELECT array_agg(id) INTO v_all_graph_ids
+  FROM knowledge_graphs
+  WHERE (id = ANY(p_graph_ids) OR (parent_graph_id = ANY(p_graph_ids) AND is_branch = true));
+
+  -- Delete study_cards associated with graph_nodes in these graphs
+  DELETE FROM study_cards
+  WHERE graph_id = ANY(v_all_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_cards = ROW_COUNT;
+
+  -- Delete edges for these graphs
+  DELETE FROM edges
+  WHERE graph_id = ANY(v_all_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_edges = ROW_COUNT;
+
+  -- Delete graph_nodes for these graphs
+  DELETE FROM graph_nodes
+  WHERE graph_id = ANY(v_all_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_nodes = ROW_COUNT;
+
+  -- Delete the graphs themselves
+  DELETE FROM knowledge_graphs
+  WHERE id = ANY(v_all_graph_ids);
+
+  GET DIAGNOSTICS v_deleted_graphs = ROW_COUNT;
+
+  RETURN jsonb_build_object(
+    'deleted_graphs', v_deleted_graphs,
+    'deleted_nodes', v_deleted_nodes,
+    'deleted_edges', v_deleted_edges,
+    'deleted_cards', v_deleted_cards
+  );
+END;
+$$;
+
+-- ============================================================
+-- Knowledge Point & Graph Node Transaction Functions
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION create_knowledge_point_with_node(
+  p_user_id uuid,
+  p_graph_id uuid,
+  p_title varchar,
+  p_content text DEFAULT '',
+  p_x_position float DEFAULT 0,
+  p_y_position float DEFAULT 0,
+  p_level varchar DEFAULT 'normal',
+  p_properties jsonb DEFAULT '{}'::jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_knowledge_point_id uuid;
+  v_graph_node_id uuid;
+  v_graph_owner_id uuid;
+BEGIN
+  -- Verify user owns the graph
+  SELECT user_id INTO v_graph_owner_id
+  FROM knowledge_graphs
+  WHERE id = p_graph_id AND deleted_at IS NULL;
+
+  IF v_graph_owner_id IS NULL THEN
+    RAISE EXCEPTION 'Graph not found';
+  END IF;
+
+  IF v_graph_owner_id != p_user_id THEN
+    RAISE EXCEPTION 'User does not own this graph';
+  END IF;
+
+  -- Insert knowledge point
+  INSERT INTO knowledge_points (title, content, visibility, owner_id, properties)
+  VALUES (p_title, p_content, 'private', p_user_id, p_properties)
+  RETURNING id INTO v_knowledge_point_id;
+
+  -- Insert graph node
+  BEGIN
+    INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted)
+    VALUES (p_graph_id, v_knowledge_point_id, p_x_position, p_y_position, p_level, true)
+    RETURNING id INTO v_graph_node_id;
+  EXCEPTION WHEN OTHERS THEN
+    -- Roll back the knowledge point insert on failure
+    DELETE FROM knowledge_points WHERE id = v_knowledge_point_id;
+    RAISE EXCEPTION 'Failed to create graph node: %', SQLERRM;
+  END;
+
+  RETURN jsonb_build_object(
+    'knowledge_point_id', v_knowledge_point_id,
+    'graph_node_id', v_graph_node_id
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION remove_node_with_edges(
+  p_graph_node_id uuid,
+  p_graph_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_knowledge_point_id uuid;
+  v_deleted_edges int;
+BEGIN
+  -- Find the knowledge_point_id from the graph node
+  SELECT knowledge_point_id INTO v_knowledge_point_id
+  FROM graph_nodes
+  WHERE id = p_graph_node_id AND graph_id = p_graph_id AND deleted_at IS NULL;
+
+  IF v_knowledge_point_id IS NULL THEN
+    RAISE EXCEPTION 'Graph node not found';
+  END IF;
+
+  -- Soft-delete associated edges
+  UPDATE edges
+  SET deleted_at = NOW()
+  WHERE graph_id = p_graph_id
+    AND (source_knowledge_point_id = v_knowledge_point_id OR target_knowledge_point_id = v_knowledge_point_id)
+    AND deleted_at IS NULL;
+
+  GET DIAGNOSTICS v_deleted_edges = ROW_COUNT;
+
+  -- Soft-delete the graph node
+  UPDATE graph_nodes
+  SET deleted_at = NOW(), updated_at = NOW()
+  WHERE id = p_graph_node_id AND graph_id = p_graph_id AND deleted_at IS NULL;
+
+  RETURN jsonb_build_object(
+    'deleted_edges', v_deleted_edges,
+    'success', true
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION batch_remove_nodes_with_edges(
+  p_graph_node_ids uuid[],
+  p_graph_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_knowledge_point_ids uuid[];
+  v_deleted_nodes int;
+  v_deleted_edges int;
+BEGIN
+  -- Get all knowledge_point_ids for the given graph_node_ids
+  SELECT array_agg(knowledge_point_id) INTO v_knowledge_point_ids
+  FROM graph_nodes
+  WHERE id = ANY(p_graph_node_ids)
+    AND graph_id = p_graph_id
+    AND deleted_at IS NULL;
+
+  IF v_knowledge_point_ids IS NULL OR array_length(v_knowledge_point_ids, 1) = 0 THEN
+    RETURN jsonb_build_object(
+      'deleted_nodes', 0,
+      'deleted_edges', 0,
+      'success', true
+    );
+  END IF;
+
+  -- Soft-delete all edges connected to those knowledge_point_ids in the graph
+  UPDATE edges
+  SET deleted_at = NOW()
+  WHERE graph_id = p_graph_id
+    AND (source_knowledge_point_id = ANY(v_knowledge_point_ids) OR target_knowledge_point_id = ANY(v_knowledge_point_ids))
+    AND deleted_at IS NULL;
+
+  GET DIAGNOSTICS v_deleted_edges = ROW_COUNT;
+
+  -- Soft-delete all the specified graph_nodes
+  UPDATE graph_nodes
+  SET deleted_at = NOW(), updated_at = NOW()
+  WHERE id = ANY(p_graph_node_ids)
+    AND graph_id = p_graph_id
+    AND deleted_at IS NULL;
+
+  GET DIAGNOSTICS v_deleted_nodes = ROW_COUNT;
+
+  RETURN jsonb_build_object(
+    'deleted_nodes', v_deleted_nodes,
+    'deleted_edges', v_deleted_edges,
+    'success', true
+  );
+END;
+$$;
+
+-- ============================================================
+-- Task Atomic Operations
+-- ============================================================
+
+-- Start a task and create an execution record atomically
+CREATE OR REPLACE FUNCTION start_task_with_execution(
+  p_task_id uuid,
+  p_user_id uuid
+)
+RETURNS TABLE(
+  task_id uuid,
+  task_status text,
+  task_queue_level integer,
+  execution_id uuid,
+  execution_started_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_queue_level integer;
+  v_execution_id uuid;
+  v_started_at timestamptz;
+BEGIN
+  -- Update task status
+  UPDATE user_tasks
+  SET status = 'in_progress',
+      updated_at = now()
+  WHERE id = p_task_id
+    AND user_id = p_user_id
+    AND deleted_at IS NULL
+  RETURNING queue_level INTO v_queue_level;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Task not found or already deleted';
+  END IF;
+
+  -- Create execution record
+  INSERT INTO task_executions (task_id, user_id, started_at, queue_level, status)
+  VALUES (p_task_id, p_user_id, now(), v_queue_level, 'in_progress')
+  RETURNING id, started_at INTO v_execution_id, v_started_at;
+
+  RETURN QUERY SELECT
+    p_task_id AS task_id,
+    'in_progress'::text AS task_status,
+    v_queue_level AS task_queue_level,
+    v_execution_id AS execution_id,
+    v_started_at AS execution_started_at;
+END;
+$$;
+
+-- Complete a task and end its latest execution atomically
+CREATE OR REPLACE FUNCTION complete_task_with_execution(
+  p_task_id uuid,
+  p_user_id uuid
+)
+RETURNS TABLE(
+  task_id uuid,
+  task_status text,
+  execution_id uuid,
+  execution_duration integer
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_execution_id uuid;
+  v_duration integer;
+BEGIN
+  -- End the latest open execution
+  UPDATE task_executions
+  SET ended_at = now(),
+      duration = EXTRACT(EPOCH FROM (now() - started_at))::integer
+  WHERE id = (
+    SELECT id FROM task_executions
+    WHERE task_id = p_task_id
+      AND ended_at IS NULL
+    ORDER BY started_at DESC
+    LIMIT 1
+  )
+  RETURNING id, duration INTO v_execution_id, v_duration;
+
+  -- Update task status
+  UPDATE user_tasks
+  SET status = 'completed',
+      completed_at = now(),
+      updated_at = now()
+  WHERE id = p_task_id
+    AND user_id = p_user_id
+    AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Task not found or already deleted';
+  END IF;
+
+  RETURN QUERY SELECT
+    p_task_id AS task_id,
+    'completed'::text AS task_status,
+    v_execution_id AS execution_id,
+    COALESCE(v_duration, 0) AS execution_duration;
+END;
+$$;
+
+-- Reorder tasks in a queue atomically
+CREATE OR REPLACE FUNCTION reorder_tasks(
+  p_user_id uuid,
+  p_queue_level integer,
+  p_task_ids uuid[]
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_count integer := 0;
+  v_task_id uuid;
+  v_position integer;
+BEGIN
+  FOR i IN 1..array_length(p_task_ids, 1) LOOP
+    v_task_id := p_task_ids[i];
+    v_position := i - 1; -- 0-based position
+
+    UPDATE user_tasks
+    SET position = v_position,
+        queue_level = p_queue_level,
+        updated_at = now()
+    WHERE id = v_task_id
+      AND user_id = p_user_id;
+
+    v_count := v_count + 1;
+  END LOOP;
+
+  RETURN v_count;
+END;
+$$;

@@ -666,6 +666,45 @@ export class GraphService {
    * @throws {AppError} 如果图谱不存在（RESOURCE_GRAPH_NOT_FOUND）
    */
   async deleteGraph(supabase: SupabaseClient, graphId: string, userId: string) {
+    try {
+      const { error } = await supabase.rpc('soft_delete_graph_with_branches', {
+        p_graph_id: graphId,
+        p_user_id: userId,
+      });
+      if (error) throw error;
+
+      // RPC succeeded — publish events and invalidate cache
+      const { data: branches } = await supabase
+        .from("knowledge_graphs")
+        .select("id")
+        .eq("parent_graph_id", graphId)
+        .eq("is_branch", true)
+        .not("deleted_at", "is", null);
+
+      for (const branch of branches ?? []) {
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+
+      await cacheService.invalidateAllGraphRelated(userId, graphId);
+
+      await appEventBus.publish(
+        "graph_deleted",
+        { graphId, userId } as GraphDeletedPayload,
+        userId,
+        "graph_service",
+      );
+
+      return;
+    } catch (rpcError) {
+      logger.warn('RPC soft_delete_graph_with_branches failed, falling back to sequential operations', { error: rpcError });
+    }
+
+    // Fallback: original sequential implementation
     const { data: branches } = await supabase
       .from("knowledge_graphs")
       .select("id")
@@ -718,6 +757,48 @@ export class GraphService {
     graphIds: string[],
     userId: string,
   ) {
+    // Get branch IDs before RPC for event publishing
+    const { data: allBranches } = await supabase
+      .from("knowledge_graphs")
+      .select("id")
+      .in("parent_graph_id", graphIds)
+      .eq("is_branch", true)
+      .is("deleted_at", null);
+
+    try {
+      const { data, error } = await supabase.rpc('batch_soft_delete_graphs', {
+        p_graph_ids: graphIds,
+        p_user_id: userId,
+      });
+      if (error) throw error;
+
+      // RPC succeeded — publish events and invalidate cache
+      for (const branch of allBranches ?? []) {
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+
+      await cacheService.invalidateUserGraphsCache(userId);
+
+      for (const id of graphIds) {
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+
+      return { count: (data as { graph_count: number })?.graph_count ?? graphIds.length };
+    } catch (rpcError) {
+      logger.warn('RPC batch_soft_delete_graphs failed, falling back to sequential operations', { error: rpcError });
+    }
+
+    // Fallback: original sequential implementation
     const { data, error } = await supabase
       .from("knowledge_graphs")
       .update({ deleted_at: new Date().toISOString() })
@@ -726,13 +807,6 @@ export class GraphService {
       .select("id");
 
     if (error) throw error;
-
-    const { data: allBranches } = await supabase
-      .from("knowledge_graphs")
-      .select("id")
-      .in("parent_graph_id", graphIds)
-      .eq("is_branch", true)
-      .is("deleted_at", null);
 
     if (allBranches && allBranches.length > 0) {
       const branchIds = allBranches.map((b: { id: string }) => b.id);
@@ -809,12 +883,46 @@ export class GraphService {
     graphId: string,
     userId: string,
   ) {
+    // Get branch IDs before RPC since they will be hard-deleted
     const { data: branches } = await supabase
       .from("knowledge_graphs")
       .select("id")
       .eq("parent_graph_id", graphId)
       .eq("is_branch", true);
 
+    try {
+      const { error } = await supabase.rpc('permanent_delete_graph', {
+        p_graph_id: graphId,
+        p_user_id: userId,
+      });
+      if (error) throw error;
+
+      // RPC succeeded — publish events and invalidate cache
+      for (const branch of branches ?? []) {
+        await cacheService.invalidateAllGraphRelated(userId, branch.id);
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+
+      await cacheService.invalidateAllGraphRelated(userId, graphId);
+
+      await appEventBus.publish(
+        "graph_deleted",
+        { graphId, userId } as GraphDeletedPayload,
+        userId,
+        "graph_service",
+      );
+
+      return;
+    } catch (rpcError) {
+      logger.warn('RPC permanent_delete_graph failed, falling back to sequential operations', { error: rpcError });
+    }
+
+    // Fallback: original sequential implementation
     if (branches && branches.length > 0) {
       const branchIds = branches.map((b: { id: string }) => b.id);
       await supabase
@@ -900,6 +1008,48 @@ export class GraphService {
     graphIds: string[],
     userId: string,
   ) {
+    // Get branch IDs before RPC since they will be hard-deleted
+    const { data: allBranches } = await supabase
+      .from("knowledge_graphs")
+      .select("id")
+      .in("parent_graph_id", graphIds)
+      .eq("is_branch", true);
+
+    try {
+      const { data, error } = await supabase.rpc('batch_permanent_delete_graphs', {
+        p_graph_ids: graphIds,
+        p_user_id: userId,
+      });
+      if (error) throw error;
+
+      // RPC succeeded — publish events and invalidate cache
+      for (const branch of allBranches ?? []) {
+        await cacheService.invalidateAllGraphRelated(userId, branch.id);
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: branch.id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+
+      await cacheService.invalidateUserGraphsCache(userId);
+
+      for (const id of graphIds) {
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId: id, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+      }
+
+      return { count: (data as { graph_count: number })?.graph_count ?? graphIds.length };
+    } catch (rpcError) {
+      logger.warn('RPC batch_permanent_delete_graphs failed, falling back to sequential operations', { error: rpcError });
+    }
+
+    // Fallback: original sequential implementation
     const { data, error } = await supabase
       .from("knowledge_graphs")
       .delete()
@@ -908,12 +1058,6 @@ export class GraphService {
       .select("id");
 
     if (error) throw error;
-
-    const { data: allBranches } = await supabase
-      .from("knowledge_graphs")
-      .select("id")
-      .in("parent_graph_id", graphIds)
-      .eq("is_branch", true);
 
     if (allBranches && allBranches.length > 0) {
       const branchIds = allBranches.map((b: { id: string }) => b.id);

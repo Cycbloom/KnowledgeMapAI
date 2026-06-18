@@ -12,6 +12,7 @@ import type {
 } from "../../../shared/types/index";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { logger } from "../../utils/logger";
 
 export type {
   UserTask,
@@ -177,6 +178,35 @@ export class TaskService {
     taskId: string,
     userId: string,
   ): Promise<{ task: UserTask; execution: TaskExecution }> {
+    try {
+      const { data, error } = await client.rpc('start_task_with_execution', {
+        p_task_id: taskId,
+        p_user_id: userId,
+      });
+      if (error) throw error;
+
+      // Fetch the full task and execution objects
+      const { data: task } = await client
+        .from('user_tasks')
+        .select('*')
+        .eq('id', taskId)
+        .single();
+
+      const { data: execution } = await client
+        .from('task_executions')
+        .select('*')
+        .eq('id', data[0].execution_id)
+        .single();
+
+      return {
+        task: task as UserTask,
+        execution: execution as TaskExecution,
+      };
+    } catch (rpcError) {
+      logger.warn('RPC start_task_with_execution failed, falling back to sequential operations', { error: rpcError });
+    }
+
+    // Fallback: original sequential implementation
     const { data: task, error: taskError } = await client
       .from("user_tasks")
       .update({
@@ -240,6 +270,25 @@ export class TaskService {
     taskId: string,
     userId: string,
   ): Promise<UserTask> {
+    try {
+      const { error } = await client.rpc('complete_task_with_execution', {
+        p_task_id: taskId,
+        p_user_id: userId,
+      });
+      if (error) throw error;
+
+      const { data: task } = await client
+        .from('user_tasks')
+        .select('*')
+        .eq('id', taskId)
+        .single();
+
+      return task as UserTask;
+    } catch (rpcError) {
+      logger.warn('RPC complete_task_with_execution failed, falling back to sequential operations', { error: rpcError });
+    }
+
+    // Fallback: original sequential implementation
     const { data: executions, error: execError } = await client
       .from("task_executions")
       .select("*")
@@ -327,6 +376,19 @@ export class TaskService {
     queueLevel: number,
     taskIds: string[],
   ): Promise<void> {
+    try {
+      const { error } = await client.rpc('reorder_tasks', {
+        p_user_id: userId,
+        p_queue_level: queueLevel,
+        p_task_ids: taskIds,
+      });
+      if (error) throw error;
+      return;
+    } catch (rpcError) {
+      logger.warn('RPC reorder_tasks failed, falling back to sequential operations', { error: rpcError });
+    }
+
+    // Fallback: original sequential implementation
     for (let i = 0; i < taskIds.length; i++) {
       const { error } = await client
         .from("user_tasks")

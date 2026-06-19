@@ -10,7 +10,6 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
 import { contextWindowManager } from "./contextWindowManager";
-import { graphTraversalService } from "../graph/graphTraversalService";
 import { promptService } from "./promptService";
 
 interface GraphNodeWithKnowledge {
@@ -69,8 +68,30 @@ export interface RAGResponse {
   suggestedQuestions?: string[];
 }
 
+export interface TraversalResult {
+  knowledgePointId: string;
+  title: string;
+  content: string;
+  hopDistance: number;
+  relationshipPath: string;
+  relationshipType: string;
+}
+
+export type TraversalFunction = (
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  graphId: string,
+  sourceKpIds: string[],
+  maxHops?: number,
+  relationshipTypes?: string[],
+) => Promise<TraversalResult[]>;
+
 export class RAGService {
   private aiService: AIService;
+  private graphTraversal: TraversalFunction | null = null;
+
+  setGraphTraversal(fn: TraversalFunction): void {
+    this.graphTraversal = fn;
+  }
 
   constructor() {
     this.aiService = new AIService();
@@ -248,7 +269,16 @@ export class RAGService {
 
     try {
       const supabase = getSupabaseAdmin();
-      const expandedNodes = await graphTraversalService.getNeighbors(
+      if (!this.graphTraversal) {
+        logger.warn("Graph traversal not configured, skipping graph-augmented search");
+        return searchResults.map((r) => ({
+          ...r,
+          hopDistance: 0,
+          relationshipPath: "",
+          relationshipType: "",
+        }));
+      }
+      const expandedNodes = await this.graphTraversal(
         supabase,
         graphId,
         seedIds,

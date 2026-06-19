@@ -1,3 +1,11 @@
+/**
+ * Service Dependency Direction (low → high):
+ * common(0) ← core(1) ← ai(2) ← graph(3) ← study(4) ← scheduler(5)
+ *
+ * Services MUST only import from equal or lower layers.
+ * Reverse dependencies (e.g., ai → graph) MUST use injection or event bus.
+ */
+
 export { achievementService } from "./achievementService";
 export {
   aiActionService,
@@ -56,3 +64,12 @@ export type {
   DistributionItem,
   DashboardStats,
 } from "./common/index";
+
+import { graphTraversalService } from "./graph/graphTraversalService";
+import { ragService } from "./ai/ragService";
+
+// Inject graph traversal into RAG service to avoid ai → graph circular dependency
+ragService.setGraphTraversal(
+  (supabase, graphId, sourceKpIds, maxHops, relationshipTypes) =>
+    graphTraversalService.getNeighbors(supabase, graphId, sourceKpIds, maxHops, relationshipTypes),
+);

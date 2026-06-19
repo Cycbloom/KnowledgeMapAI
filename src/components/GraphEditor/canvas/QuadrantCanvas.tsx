@@ -13,8 +13,18 @@ import type {
   Edge,
   RegionInfo,
   GraphColorMode,
+  LayoutNode,
+  LayoutLink,
 } from "@shared/types/graph";
 import type { ColorScheme } from "@shared/types/styles";
+import {
+  useViewportUpdate,
+  useSpatialGrid,
+  useViewportBounds,
+  useVisibleNodes,
+  useVisibleNodeSet,
+  useVisibleEdges,
+} from "../shared/hooks/useVirtualization";
 import { RegionBackground } from "./RegionBackground";
 import { RegionHeader } from "./RegionHeader";
 import { QuadrantNode } from "./QuadrantNode";
@@ -151,6 +161,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
 
     const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
     const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
+    const { viewportVersion, scheduleViewportUpdate, forceUpdate } = useViewportUpdate();
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [isDraggingOrigin, setIsDraggingOrigin] = useState(false);
@@ -252,6 +263,21 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
       return adjusted;
     }, [nodePositions, totalNodeCount]);
 
+    // Build LayoutNode array for virtualization hooks
+    const layoutNodes = useMemo(() => {
+      return Object.entries(adjustedNodePositions).map(([id, pos]) => {
+        // Find the original node to get its data
+        const node = _nodes.find(n => normalizeId(n.id) === id);
+        if (!node) return null;
+        return {
+          ...node,
+          id,
+          x: pos.x,
+          y: pos.y,
+        } as LayoutNode;
+      }).filter((n): n is LayoutNode => n !== null);
+    }, [adjustedNodePositions, _nodes]);
+
     const regionEdges = useMemo(() => {
       const nodeIds = new Set(Object.keys(nodePositions));
 
@@ -263,6 +289,22 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
 
       return filtered;
     }, [edges, nodePositions]);
+
+    // Build LayoutLink array for virtualization hooks
+    const layoutLinks = useMemo(() => {
+      return regionEdges.map(edge => ({
+        ...edge,
+        source: normalizeId(edge.source_knowledge_point_id),
+        target: normalizeId(edge.target_knowledge_point_id),
+      })) as LayoutLink[];
+    }, [regionEdges]);
+
+    // Pre-build edge lookup map for O(1) access during rendering
+    const regionEdgeMap = useMemo(() => {
+      const map = new Map<string, Edge>();
+      regionEdges.forEach(edge => map.set(String(edge.id), edge));
+      return map;
+    }, [regionEdges]);
 
     const visibleFocusedLinkIds = useMemo(() => {
       if (!hasFocusMode) return new Set<string>();
@@ -323,6 +365,18 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
       regionEdges,
       nodePositions,
     ]);
+
+    // Virtualization: viewport culling
+    const spatialGrid = useSpatialGrid(layoutNodes);
+    const viewportBounds = useViewportBounds(
+      transformRef.current,
+      containerSize,
+      200,
+      viewportVersion,
+    );
+    const visibleLayoutNodes = useVisibleNodes(layoutNodes, spatialGrid, viewportBounds, true);
+    const visibleNodeIds = useVisibleNodeSet(visibleLayoutNodes);
+    const visibleLayoutEdges = useVisibleEdges(layoutLinks, layoutNodes, visibleNodeIds, viewportBounds);
 
     const updateTransformDOM = useCallback((t: Transform) => {
       if (contentRef.current) {
@@ -453,8 +507,9 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
         transformRef.current = newTransform;
         updateTransformDOM(newTransform);
         setTransform(newTransform);
+        scheduleViewportUpdate();
       },
-      [updateTransformDOM],
+      [updateTransformDOM, scheduleViewportUpdate],
     );
 
     useEffect(() => {
@@ -504,6 +559,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
           const newX = (e.clientX - dragStart.x) / transformRef.current.k;
           const newY = (e.clientY - dragStart.y) / transformRef.current.k;
           onOriginMove({ x: newX, y: newY });
+          scheduleViewportUpdate();
         } else if (isDragging) {
           const newTransform = {
             x: e.clientX - dragStart.x,
@@ -513,6 +569,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
           transformRef.current = newTransform;
           updateTransformDOM(newTransform);
           setTransform(newTransform);
+          scheduleViewportUpdate();
         }
       },
       [
@@ -521,13 +578,15 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
         dragStart,
         onOriginMove,
         updateTransformDOM,
+        scheduleViewportUpdate,
       ],
     );
 
     const handleMouseUp = useCallback(() => {
       setIsDragging(false);
       setIsDraggingOrigin(false);
-    }, []);
+      forceUpdate();
+    }, [forceUpdate]);
 
     const handleNodeClick = useCallback(
       (node: Node) => {
@@ -600,18 +659,12 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
               );
             })}
 
-            {regionEdges.map((edge) => {
-              const sourcePos =
-                adjustedNodePositions[
-                  normalizeId(edge.source_knowledge_point_id)
-                ];
-              const targetPos =
-                adjustedNodePositions[
-                  normalizeId(edge.target_knowledge_point_id)
-                ];
-
+            {visibleLayoutEdges.map((layoutEdge) => {
+              const edge = regionEdgeMap.get(String(layoutEdge.id));
+              if (!edge) return null;
+              const sourcePos = adjustedNodePositions[normalizeId(edge.source_knowledge_point_id)];
+              const targetPos = adjustedNodePositions[normalizeId(edge.target_knowledge_point_id)];
               if (!sourcePos || !targetPos) return null;
-
               return (
                 <QuadrantEdge
                   key={edge.id}
@@ -632,7 +685,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
                 <g key={`nodes-${region.id}`}>
                   <AnimatePresence mode="popLayout">
                     {region.nodes
-                      .filter((node) => node.level !== "core")
+                      .filter((node) => node.level !== "core" && visibleNodeIds.has(normalizeId(node.id)))
                       .map((node, index) => (
                         <motion.g
                           key={node.id}

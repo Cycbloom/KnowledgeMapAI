@@ -557,8 +557,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       ) {
         const rootNode =
           layout.nodes.find((n) => n.level === "root") || layout.nodes[0];
+        // 与 resetView/fitView 方法保持一致：直接基于 props 计算有效视口中心
+        const effectiveRightWidth = rightPanelWidth || 0;
+        const effectiveLeftWidth = leftPanelWidth || 0;
+        const initVisualCenterX =
+          (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
+
         const targetK = transformRef.current.k;
-        const targetX = interaction.visualCenterX - rootNode.x * targetK;
+        const targetX = initVisualCenterX - rootNode.x * targetK;
         const targetY = interaction.visualCenterY - rootNode.y * targetK;
 
         if (
@@ -575,7 +581,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       layout,
       focusedNodeId,
       interaction.hasUserInteracted,
-      interaction.visualCenterX,
+      containerSize.width,
+      rightPanelWidth,
+      leftPanelWidth,
       interaction.visualCenterY,
       transformRef,
       updateTransformDOM,
@@ -586,13 +594,18 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       if (focusedNodeId && layout) {
         const node = layout.nodes.find((n) => n.id === focusedNodeId);
         if (node) {
+          // 与 centerNode 方法保持一致：直接基于 props 计算有效视口中心
+          const effectiveRightWidth = rightPanelWidth || 0;
+          const effectiveVisualCenterX =
+            (containerSize.width - effectiveRightWidth) / 2;
+
           const targetK = 1.2;
-          const targetX = interaction.visualCenterX - node.x * targetK;
+          const targetX = effectiveVisualCenterX - node.x * targetK;
           const targetY = interaction.visualCenterY - node.y * targetK;
           animateCamera(targetX, targetY, targetK, 800);
         }
       }
-    }, [focusedNodeId, layout, interaction.visualCenterX, interaction.visualCenterY, animateCamera]);
+    }, [focusedNodeId, layout, containerSize.width, rightPanelWidth, interaction.visualCenterY, animateCamera]);
 
     if (!layout) {
       return (

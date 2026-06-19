@@ -4,21 +4,19 @@ import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import type { AIProviderType } from "@shared/types";
-import { getAIProviderForTask, getAIProvider } from "../services/ai/factory";
-import { promptService } from "../services/ai/promptService";
-import { cacheService, CacheKeys } from "../services/common/cacheService";
-import {
-  performanceMonitor,
-  enrichMetadata,
-} from "../services/ai/performanceMonitor";
-import { pricingService } from "../services/ai/pricingService";
+import { getAIProviderForTask } from "../services/ai";
+import { promptService, performanceMonitor } from "../services/ai";
+import { cacheService, CacheKeys } from "../services/common";
 import { logger } from "../utils/logger";
-import { scrapeUrl } from "../utils/scraper";
-import { autoGraphService, graphNodeService } from "../services/graph/index";
-import { appEventBus } from "../services/core/eventBus";
+import {
+  autoGraphService,
+  graphNodeService,
+  autoGraphRouteService,
+} from "../services/graph";
+import { appEventBus } from "../services/core";
 import type { NodeCreatedPayload } from "../../shared/types/events";
-import { embeddingService } from "../services/ai/embeddingService";
-import { templateGeneratorService } from "../services/ai/templateGeneratorService";
+import { embeddingService } from "../services/ai";
+import { templateGeneratorService } from "../services/ai";
 import type {
   TemplateCategory,
   TemplateType,
@@ -34,137 +32,7 @@ interface AIGeneratedTemplateNode extends TemplateNode {
   suggestedContent?: string;
 }
 
-interface AIGeneratedNode {
-  id?: string;
-  title: string;
-  content?: string;
-  summary?: string;
-  level?: string;
-  parentId?: string | null;
-  backboneModule?: string;
-  needsRefinement?: boolean;
-  suggestedContent?: string;
-  color?: string;
-}
-
-interface ExistingChild {
-  title: string;
-  content?: string;
-}
-
 const router = Router();
-
-const URL_PATTERN = /^https?:\/\/.+/;
-
-async function withAutoGraphTracking<T>(
-  operation: string,
-  providerType: AIProviderType,
-  model: string,
-  fn: () => Promise<{
-    result: T;
-    usage?: {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-      prompt_tokens_details?: {
-        cached_tokens?: number;
-        audio_tokens?: number;
-      };
-      completion_tokens_details?: {
-        reasoning_tokens?: number;
-        audio_tokens?: number;
-      };
-    };
-  }>,
-  metadata?: {
-    graphId?: string;
-    graphTitle?: string;
-    userId?: string;
-    userName?: string;
-    topic?: string;
-    nodeTitle?: string;
-    nodeId?: string;
-    nodeLevel?: string;
-    style?: string;
-  },
-  sessionId?: string,
-): Promise<T> {
-  const startTime = Date.now();
-  let success = true;
-  let errorMessage: string | undefined;
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let cachedInputTokens = 0;
-  let uncachedInputTokens = 0;
-  let reasoningTokens = 0;
-
-  try {
-    const { result, usage } = await fn();
-    inputTokens = usage?.prompt_tokens || 0;
-    outputTokens = usage?.completion_tokens || 0;
-
-    cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
-    uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
-    reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
-
-    return result;
-  } catch (error: unknown) {
-    success = false;
-    const err = error as Error;
-    errorMessage = err.message;
-    throw error;
-  } finally {
-    const duration = Date.now() - startTime;
-    const totalTokens = inputTokens + outputTokens;
-    const cacheHitRate =
-      inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
-
-    const costBreakdown = pricingService.calculateDetailedCost(
-      providerType,
-      model,
-      inputTokens,
-      outputTokens,
-      cachedInputTokens,
-    );
-
-    performanceMonitor.recordLog({
-      operation,
-      provider: providerType,
-      model,
-      inputTokens,
-      outputTokens,
-      totalTokens,
-      estimatedCost: costBreakdown.totalCost,
-      duration,
-      success,
-      errorMessage,
-      metadata,
-      sessionId,
-
-      cachedInputTokens,
-      uncachedInputTokens,
-      reasoningTokens,
-      cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
-      costBreakdown,
-    });
-  }
-}
-
-async function processSource(source: string): Promise<string> {
-  const trimmed = source.trim();
-
-  if (URL_PATTERN.test(trimmed)) {
-    try {
-      logger.info(`Fetching URL content: ${trimmed}`);
-      const result = await scrapeUrl(trimmed);
-      return `【来源: ${result.title}】\n${result.text.slice(0, 3000)}`;
-    } catch (error) {
-      logger.warn(`Failed to scrape URL: ${trimmed}`, error);
-      return `【URL: ${trimmed}】(无法获取内容)`;
-    }
-  }
-
-  return trimmed;
-}
 
 const initGraphSchema = z.object({
   topic: z.string().min(2).max(200),
@@ -392,114 +260,21 @@ router.post(
       }
     }
 
-    const provider = providerType
-      ? await getAIProvider(providerType)
-      : await getAIProviderForTask("text");
-
-    if (!provider.hasKey) {
-      throw new AppError(
-        "AI provider not configured",
-        503,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
-
     try {
-      let processedSources: string[] = [];
-      if (sources && sources.length > 0) {
-        processedSources = await Promise.all(sources.map(processSource));
-      }
-
-      let systemPrompt: string;
-
-      if (style === "custom" && customPrompt) {
-        systemPrompt = await promptService.getRenderedPrompt(
-          supabase,
-          "auto_graph_init",
-          {
-            topic,
-            isCustom: true,
-            customPrompt,
-            hasSources: processedSources.length > 0,
-            sources: processedSources.join("\n\n---\n\n"),
-            isInit: true,
-          },
-          req.user.id,
-          graph_id,
-          language,
-        );
-      } else {
-        const templateData: Record<string, unknown> = {
-          topic,
-          isAcademic: style === "academic",
-          isPractical: style === "practical",
-          hasSources: processedSources.length > 0,
-          sources: processedSources.join("\n\n---\n\n"),
-          isInit: true,
-        };
-
-        systemPrompt = await promptService.getRenderedPrompt(
-          supabase,
-          "auto_graph_init",
-          templateData,
-          req.user.id,
-          graph_id,
-          language,
-        );
-      }
-
-      const completion = await withAutoGraphTracking(
-        "auto_graph_init",
-        provider.providerType,
-        model || provider.model,
-        async () => {
-          const result = await provider.client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content: `主题：${topic}${processedSources.length > 0 ? `\n\n参考来源：\n${processedSources.join("\n\n---\n\n")}` : ""}`,
-              },
-            ],
-            model: model || provider.model,
-            response_format: { type: "json_object" },
-            max_tokens: 4000,
-          });
-          return {
-            result,
-            usage: result.usage,
-          };
-        },
-        await enrichMetadata(supabase, {
-          graphId: graph_id,
-          userId: req.user.id,
-          topic,
-          style,
-        }),
+      const result = await autoGraphService.initGraph(supabase, {
+        topic,
+        style,
+        customPrompt,
+        sources,
+        graphId: graph_id,
+        providerType,
+        model,
+        language,
         sessionId,
-      );
-
-      const content = completion.choices[0].message.content;
-      let parsed;
-      try {
-        parsed = JSON.parse(content || '{"root": null, "coreNodes": []}');
-      } catch (e) {
-        logger.error("JSON Parse Error:", { content: content?.slice(-100) });
-        throw new AppError(
-          "AI 生成内容解析失败",
-          422,
-          ErrorCodes.INTERNAL_ERROR,
-        );
-      }
-
-      res.json({
-        sessionId,
-        root: parsed.root || {
-          title: topic,
-          content: `${topic}的核心概念和知识体系`,
-        },
-        coreNodes: parsed.coreNodes || [],
+        userId: req.user.id,
       });
+
+      res.json(result);
     } catch (error) {
       const err = error as Error;
       logger.error("Auto Graph Init Error:", error);
@@ -533,119 +308,25 @@ router.post(
       session_id,
     } = req.body;
     const supabase = req.supabase!;
-    const provider = providerType
-      ? await getAIProvider(providerType)
-      : await getAIProviderForTask("text");
-
-    if (!provider.hasKey) {
-      throw new AppError(
-        "AI provider not configured",
-        503,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
-
-    const sessionId = session_id || crypto.randomUUID();
 
     try {
-      let systemPrompt: string;
-
-      if (style === "custom" && customPrompt) {
-        systemPrompt = await promptService.getRenderedPrompt(
-          supabase,
-          "auto_graph_expand",
-          {
-            nodeTitle: node_title,
-            nodeContent: node_content || "",
-            nodeLevel: node_level || "normal",
-            isCustom: true,
-            customPrompt,
-            hasExistingChildren:
-              existing_children && existing_children.length > 0,
-            existingChildren:
-              (existing_children as ExistingChild[] | undefined)
-                ?.map((c) => c.title)
-                .join("、") || "",
-          },
-          req.user.id,
-          graph_id,
-          language,
-        );
-      } else {
-        const templateData: Record<string, unknown> = {
-          nodeTitle: node_title,
-          nodeContent: node_content || "",
-          nodeLevel: node_level || "normal",
-          isAcademic: style === "academic",
-          isPractical: style === "practical",
-          hasExistingChildren:
-            existing_children && existing_children.length > 0,
-          existingChildren:
-            (existing_children as ExistingChild[] | undefined)
-              ?.map((c) => c.title)
-              .join("、") || "",
-        };
-
-        systemPrompt = await promptService.getRenderedPrompt(
-          supabase,
-          "auto_graph_expand",
-          templateData,
-          req.user.id,
-          graph_id,
-          language,
-        );
-      }
-
-      const completion = await withAutoGraphTracking(
-        "auto_graph_expand",
-        provider.providerType,
-        model || provider.model,
-        async () => {
-          const result = await provider.client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content: `请为「${node_title}」生成子节点。${existing_children && existing_children.length > 0 ? `\n\n已有的子节点：${(existing_children as ExistingChild[]).map((c) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
-              },
-            ],
-            model: model || provider.model,
-            response_format: { type: "json_object" },
-            max_tokens: 3000,
-          });
-          return {
-            result,
-            usage: result.usage,
-          };
-        },
-        await enrichMetadata(supabase, {
-          graphId: graph_id,
-          userId: req.user.id,
-          nodeTitle: node_title,
-          nodeId: node_id,
-          nodeLevel: node_level,
-        }),
-        sessionId,
-      );
-
-      const content = completion.choices[0].message.content;
-      let parsed;
-      try {
-        parsed = JSON.parse(content || '{"children": []}');
-      } catch (e) {
-        logger.error("JSON Parse Error:", { content: content?.slice(-100) });
-        throw new AppError(
-          "AI 生成内容解析失败",
-          422,
-          ErrorCodes.INTERNAL_ERROR,
-        );
-      }
-
-      res.json({
-        sessionId,
-        parentNodeId: node_id,
-        children: parsed.children || [],
+      const result = await autoGraphService.expandNode(supabase, {
+        nodeId: node_id,
+        nodeTitle: node_title,
+        nodeContent: node_content,
+        nodeLevel: node_level,
+        graphId: graph_id,
+        style,
+        customPrompt,
+        existingChildren: existing_children,
+        providerType,
+        model,
+        language,
+        sessionId: session_id,
+        userId: req.user.id,
       });
+
+      res.json(result);
     } catch (error) {
       const err = error as Error;
       logger.error("Auto Graph Expand Error:", error);
@@ -665,6 +346,7 @@ router.post(
   validate(optimizePromptSchema),
   async (req: AuthRequest, res: Response) => {
     const { topic, currentPrompt } = req.body;
+    const supabase = req.supabase!;
     const provider = await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
@@ -676,22 +358,16 @@ router.post(
     }
 
     try {
-      const systemPrompt = `You are a prompt optimization expert. Your task is to improve the user's custom prompt for generating knowledge graph nodes.
-
-## Guidelines for Optimization
-1. Make the instructions more specific and actionable
-2. Add constraints on content length, depth, and style
-3. Include examples of desired output format
-4. Ensure the prompt is clear and unambiguous
-5. Keep the user's original intent
-
-## Output Format
-Return a JSON object with:
-{
-  "optimizedPrompt": "The improved prompt text"
-}
-
-Respond in Chinese.`;
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        "optimize_prompt",
+        {
+          topic,
+          currentPrompt: currentPrompt || "",
+          hasCurrentPrompt: !!currentPrompt,
+        },
+        req.user.id,
+      );
 
       const userMessage = `主题：${topic}
 
@@ -699,7 +375,7 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
 
 请优化这个规则，使其更适合生成知识图谱节点。`;
 
-      const completion = await withAutoGraphTracking(
+      const completion = await performanceMonitor.withAutoGraphTracking(
         "auto_graph_optimize_prompt",
         provider.providerType,
         provider.model,
@@ -760,42 +436,10 @@ router.post(
 
       const existingCount = existingGraphNodes?.length || 0;
 
-      const typedNodes = nodes as AIGeneratedNode[];
-      const nodesWithTempId = typedNodes
-        .filter((node) => node.title && node.title.trim() !== "")
-        .map((node, index) => {
-          const angle =
-            ((existingCount + index) / (existingCount + nodes.length)) *
-            Math.PI *
-            2;
-          const radius = 15 + (existingCount + index) * 2;
-
-          const tempId = node.id || `temp-${index}`;
-
-          const properties = {
-            ...(node.backboneModule && { backboneModule: node.backboneModule }),
-            ...(node.needsRefinement !== undefined && {
-              needsRefinement: node.needsRefinement,
-            }),
-            ...(node.suggestedContent && {
-              suggestedContent: node.suggestedContent,
-            }),
-            ...(node.color && { color: node.color }),
-          };
-
-          return {
-            tempId,
-            parentId: node.parentId || null,
-            title: node.title,
-            content: node.content || "",
-            summary: node.summary || null,
-            level: node.level || "normal",
-            x_position: Math.round(Math.cos(angle) * radius),
-            y_position: Math.round(Math.sin(angle) * radius),
-            properties:
-              Object.keys(properties).length > 0 ? properties : undefined,
-          };
-        });
+      const nodesWithTempId = autoGraphService.calculateNodePositions(
+        nodes,
+        existingCount,
+      );
 
       if (nodesWithTempId.length === 0) {
         return res.json({ success: true, nodeCount: 0, edgeCount: 0 });
@@ -873,14 +517,13 @@ router.get("/embedding-status", async (req: AuthRequest, res) => {
   try {
     const status = embeddingService.getStatus();
 
-    const { count } = await req
-      .supabase!.from("knowledge_points")
-      .select("*", { count: "exact", head: true })
-      .is("embedding", null);
+    const embeddingStatus = await autoGraphRouteService.getEmbeddingStatus(
+      req.supabase!,
+    );
 
     res.json({
       ...status,
-      pendingCount: count || 0,
+      pendingCount: embeddingStatus.pendingCount,
     });
   } catch (error) {
     const err = error as Error;
@@ -974,27 +617,6 @@ router.post(
     } = req.body;
 
     const supabase = req.supabase!;
-    const startTime = Date.now();
-
-    if (!template && !templateId) {
-      throw new AppError(
-        "必须提供 template 或 templateId 参数",
-        400,
-        ErrorCodes.VALIDATION_ERROR,
-      );
-    }
-
-    const provider = providerType
-      ? await getAIProvider(providerType)
-      : await getAIProviderForTask("text");
-
-    if (!provider.hasKey) {
-      throw new AppError(
-        "AI provider not configured",
-        503,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
 
     try {
       logger.info("Applying template", {
@@ -1005,135 +627,19 @@ router.post(
         graphId: graph_id,
       });
 
-      let selectedTemplate = template;
-
-      if (!selectedTemplate && templateId) {
-        const { data: storedTemplate, error: fetchError } = await supabase
-          .from("graph_templates")
-          .select("*")
-          .eq("id", templateId)
-          .single();
-
-        if (fetchError || !storedTemplate) {
-          throw new AppError("模板不存在或无权访问", 404, ErrorCodes.NOT_FOUND);
-        }
-
-        selectedTemplate = {
-          id: storedTemplate.id,
-          name: storedTemplate.name,
-          description: storedTemplate.description || undefined,
-          nodes: storedTemplate.template_data?.nodes || [],
-          edges: storedTemplate.template_data?.edges || [],
-          layoutSuggestion: storedTemplate.layout_suggestion || "radial",
-          estimatedNodes: storedTemplate.estimated_nodes,
-          difficulty: storedTemplate.difficulty || "medium",
-          tags: storedTemplate.tags || [],
-          reasoning: undefined,
-        };
-      }
-
-      const systemPrompt = await promptService.getRenderedPrompt(
-        supabase,
-        "apply_template",
-        {
-          topic,
-          template: selectedTemplate,
-          style,
-          isCustom: style === "custom",
-          customPrompt: customPrompt || "",
-          isAcademic: style === "academic",
-          isPractical: style === "practical",
-          isBeginner: style === "beginner",
-        },
-        req.user.id,
-        graph_id,
-      );
-
-      const completion = await withAutoGraphTracking(
-        "apply_template",
-        provider.providerType,
-        model || provider.model,
-        async () => {
-          const result = await provider.client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content: `主题：${topic}\n\n模板名称：${selectedTemplate!.name}\n模板结构：\n${JSON.stringify(
-                  {
-                    nodes: selectedTemplate!.nodes.map(
-                      (n: {
-                        id: string;
-                        title: string;
-                        level: string;
-                        parentId?: string;
-                      }) => ({
-                        id: n.id,
-                        title: n.title,
-                        level: n.level,
-                        parentId: n.parentId,
-                      }),
-                    ),
-                    edges: selectedTemplate!.edges,
-                  },
-                  null,
-                  2,
-                )}\n\n请根据模板结构生成完整的知识图谱内容。`,
-              },
-            ],
-            model: model || provider.model,
-            response_format: { type: "json_object" },
-            max_tokens: 6000,
-          });
-          return {
-            result,
-            usage: result.usage as
-              | { prompt_tokens?: number; completion_tokens?: number }
-              | undefined,
-          };
-        },
-        { graphId: graph_id, userId: req.user.id },
-      );
-
-      const content = completion.choices[0].message.content;
-      let parsed;
-      try {
-        parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
-      } catch (e) {
-        logger.error("JSON Parse Error in apply-template:", {
-          content: content?.slice(-200),
-        });
-        throw new AppError(
-          "AI 生成内容解析失败",
-          422,
-          ErrorCodes.INTERNAL_ERROR,
-        );
-      }
-
-      const duration = Date.now() - startTime;
-
-      logger.info("Template applied successfully", {
+      const result = await autoGraphService.applyTemplate(supabase, {
+        template,
+        templateId,
         topic,
-        templateId: selectedTemplate!.id,
-        nodeCount: parsed.nodes?.length || 0,
-        edgeCount: parsed.edges?.length || 0,
-        duration,
+        style,
+        customPrompt,
+        graphId: graph_id,
+        providerType,
+        model,
+        userId: req.user.id,
       });
 
-      res.json({
-        templateId: selectedTemplate!.id,
-        templateName: selectedTemplate!.name,
-        nodes: parsed.nodes || [],
-        edges: parsed.edges || [],
-        layoutSuggestion: selectedTemplate!.layoutSuggestion,
-        metadata: {
-          topic,
-          style,
-          generatedAt: new Date().toISOString(),
-          provider: provider.providerType,
-          model: model || provider.model,
-        },
-      });
+      res.json(result);
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Apply template error:", {

@@ -9,11 +9,11 @@ import {
 } from "../../schemas/index";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
-import { aiService } from "../../services/ai/aiService";
-import { getMockResponse } from "../../services/ai/mock";
-import { getAIProviderForTask, getAIProvider } from "../../services/ai/factory";
+import { aiService } from "../../services/ai";
+import { getMockResponse } from "../../services/ai";
+import { getAIProviderForTask, getAIProvider } from "../../services/ai";
 import { logger } from "../../utils/logger";
-import { promptService } from "../../services/ai/promptService";
+import { promptService } from "../../services/ai";
 import { getSupabaseAdmin } from "../../supabase";
 import {
   setSSEHeaders,
@@ -21,8 +21,9 @@ import {
   sendStreamDone,
   sendStreamError,
 } from "./utils";
-import { performanceMonitor, enrichMetadata } from "../../services/ai/performanceMonitor";
-import { pricingService } from "../../services/ai/pricingService";
+import { performanceMonitor, enrichMetadata } from "../../services/ai";
+import { pricingService } from "../../services/ai";
+import { annotationService } from "../../services/ai";
 
 const router = Router();
 
@@ -114,67 +115,14 @@ ${content}`;
       }
 
       const aiContent = completion.choices[0].message.content || "{}";
-      let terms: { term: string; explanation: string }[] = [];
-
-      try {
-        const parsed = JSON.parse(aiContent);
-        if (Array.isArray(parsed)) {
-          terms = parsed;
-        } else if (parsed.terms && Array.isArray(parsed.terms)) {
-          terms = parsed.terms;
-        } else {
-          const values = Object.values(parsed);
-          const arrayVal = values.find((v) => Array.isArray(v));
-          if (arrayVal)
-            terms = arrayVal as { term: string; explanation: string }[];
-        }
-      } catch (e) {
-        logger.error("Failed to parse annotation terms JSON", {
-          aiContent,
-          error: e,
-        });
-      }
-
-      let annotatedContent = content || "";
-
-      if (terms.length > 0) {
-        const placeholders: string[] = [];
-
-        annotatedContent = annotatedContent.replace(
-          /```[\s\S]*?```|`[^`]*`/g,
-          (match: string) => {
-            placeholders.push(match);
-            return `__CODE_BLOCK_${placeholders.length - 1}__`;
-          },
-        );
-
-        terms.forEach(({ term, explanation }) => {
-          if (!term || !explanation) return;
-
-          const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const index = annotatedContent.indexOf(term);
-          if (index !== -1) {
-            const regex = new RegExp(`(?<!\\[)${escapedTerm}(?!\\]\\(term:)`);
-            annotatedContent = annotatedContent.replace(
-              regex,
-              `[${term}](term:${explanation})`,
-            );
-          }
-        });
-
-        placeholders.forEach((code, i) => {
-          annotatedContent = annotatedContent.replace(
-            `__CODE_BLOCK_${i}__`,
-            () => code,
-          );
-        });
-      }
+      const terms = annotationService.parseTermsResponse(aiContent);
+      const annotatedContent = annotationService.annotateContent(content || "", terms);
 
       res.json({ content: annotatedContent });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Annotate Terms Error:", error);
-      res.status(500).json({ error: err.message || "Annotation failed" });
+      throw new AppError(err.message || "Annotation failed", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -192,7 +140,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Podcast Script Generation Error:", error);
-      res.status(500).json({ error: err.message });
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -220,13 +168,7 @@ router.post(
     }
 
     try {
-      const templateContext = {
-        topic,
-        context: context || "General knowledge",
-        isRoot: level === "root" || level === "core",
-        isNormal: level === "sub" || level === "normal",
-        isLeaf: level === "leaf",
-      };
+      const templateContext = annotationService.buildTemplateContext(topic, context, level);
 
       const systemPrompt = await promptService.getRenderedPrompt(
         getSupabaseAdmin(),
@@ -285,7 +227,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
-      res.status(500).json({ error: err.message || "AI 生成失败" });
+      throw new AppError(err.message || "AI 生成失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -311,7 +253,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Learning Material Error:", error);
-      res.status(500).json({ error: err.message || "AI 生成学习内容失败" });
+      throw new AppError(err.message || "AI 生成学习内容失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -353,13 +295,7 @@ router.post(
     }
 
     try {
-      const templateContext = {
-        topic,
-        context: context || "General knowledge",
-        isRoot: level === "root" || level === "core",
-        isNormal: level === "sub" || level === "normal",
-        isLeaf: level === "leaf",
-      };
+      const templateContext = annotationService.buildTemplateContext(topic, context, level);
 
       const systemPrompt = await promptService.getRenderedPrompt(
         getSupabaseAdmin(),

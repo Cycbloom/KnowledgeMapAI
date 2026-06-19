@@ -2,6 +2,9 @@ import { Router } from "express";
 import os from "os";
 import { logger } from "../utils/logger";
 import { getSupabaseAdmin } from "../supabase";
+import { systemMonitorService } from "../services/common";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -80,54 +83,25 @@ router.get("/system", async (_req, res) => {
     res.json(stats);
   } catch (error) {
     logger.error("Failed to get system stats:", error);
-    res.status(500).json({ error: "Failed to get system stats" });
+    throw new AppError("Failed to get system stats", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
 router.get("/services", async (_req, res) => {
-  const services: ServiceStatus[] = [];
   const now = new Date().toISOString();
 
-  const checkDatabase = async (): Promise<ServiceStatus> => {
-    const start = Date.now();
-    try {
-      const { error } = await getSupabaseAdmin()
-        .from("knowledge_graphs")
-        .select("id")
-        .limit(1);
+  const admin = getSupabaseAdmin();
+  const dbHealth = await systemMonitorService.checkDatabaseHealth(admin);
 
-      const latency = Date.now() - start;
-
-      if (error) {
-        return {
-          name: "PostgreSQL (Supabase)",
-          status: "down",
-          latency,
-          message: error.message,
-          lastCheck: now,
-        };
-      }
-
-      return {
-        name: "PostgreSQL (Supabase)",
-        status: latency < 100 ? "healthy" : "degraded",
-        latency,
-        lastCheck: now,
-      };
-    } catch (error) {
-      return {
-        name: "PostgreSQL (Supabase)",
-        status: "down",
-        message: error instanceof Error ? error.message : "Unknown error",
-        lastCheck: now,
-      };
-    }
+  const dbStatus: ServiceStatus = {
+    name: "PostgreSQL (Supabase)",
+    status: dbHealth.status,
+    latency: dbHealth.latency,
+    message: dbHealth.message,
+    lastCheck: now,
   };
 
-  const dbStatus = await checkDatabase();
-  services.push(dbStatus);
-
-  res.json({ services });
+  res.json({ services: [dbStatus] });
 });
 
 interface RequestStats {
@@ -218,7 +192,7 @@ router.get("/logs", async (_req, res) => {
     res.json({ logs, count: logs.length });
   } catch (error) {
     logger.error("Failed to get logs:", error);
-    res.status(500).json({ error: "Failed to get logs" });
+    throw new AppError("Failed to get logs", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -227,19 +201,9 @@ router.get("/dashboard", async (_req, res) => {
     const [cpuUsage, memoryUsage] = [getCpuUsage(), getMemoryUsage()];
     const cpus = os.cpus();
 
-    const dbStart = Date.now();
-    let dbStatus = "healthy";
-    let dbLatency = 0;
-    try {
-      const { error } = await getSupabaseAdmin()
-        .from("knowledge_graphs")
-        .select("id")
-        .limit(1);
-      dbLatency = Date.now() - dbStart;
-      if (error) dbStatus = "down";
-    } catch {
-      dbStatus = "down";
-    }
+    const dbHealth = await systemMonitorService.checkDatabaseHealth(getSupabaseAdmin());
+    const dbStatus = dbHealth.status;
+    const dbLatency = dbHealth.latency;
 
     res.json({
       system: {
@@ -276,7 +240,7 @@ router.get("/dashboard", async (_req, res) => {
     });
   } catch (error) {
     logger.error("Failed to get dashboard data:", error);
-    res.status(500).json({ error: "Failed to get dashboard data" });
+    throw new AppError("Failed to get dashboard data", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

@@ -1,7 +1,9 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
-import { schedulerDecisionEngine } from "../../services/scheduler/core/decisionEngine";
+import { schedulerDecisionEngine } from "../../services/scheduler/core";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -11,9 +13,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const limit = req.query.limit
@@ -32,9 +32,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Decision engine recommendations error:", err);
-      res
-        .status(500)
-        .json({ error: err.message || "获取决策引擎推荐失败" });
+      throw new AppError(err.message || "获取决策引擎推荐失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

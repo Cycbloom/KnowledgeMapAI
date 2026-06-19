@@ -2,6 +2,8 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { supabaseManagementApi } from "../services/supabase/managementApi";
 import { logger } from "../utils/logger";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -13,22 +15,21 @@ router.get(
       const accessToken = req.query.accessToken as string;
 
       if (!accessToken) {
-        res.status(400).json({ error: "accessToken is required" });
-        return;
+        throw new AppError("accessToken is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const organizations = await supabaseManagementApi.listOrganizations(accessToken);
       res.json({ organizations });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
 
       if (message.includes("401") || message.includes("Unauthorized")) {
-        res.status(401).json({ error: "Personal Access Token is invalid or expired" });
-        return;
+        throw new AppError("Personal Access Token is invalid or expired", 401, ErrorCodes.UNAUTHORIZED);
       }
 
       logger.error("Failed to list organizations:", error);
-      res.status(500).json({ error: message });
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -41,22 +42,21 @@ router.get(
       const accessToken = req.query.accessToken as string;
 
       if (!accessToken) {
-        res.status(400).json({ error: "accessToken is required" });
-        return;
+        throw new AppError("accessToken is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const regions = await supabaseManagementApi.listRegions(accessToken);
       res.json({ regions });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
 
       if (message.includes("401") || message.includes("Unauthorized")) {
-        res.status(401).json({ error: "Personal Access Token is invalid or expired" });
-        return;
+        throw new AppError("Personal Access Token is invalid or expired", 401, ErrorCodes.UNAUTHORIZED);
       }
 
       logger.error("Failed to list regions:", error);
-      res.status(500).json({ error: message });
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -75,10 +75,11 @@ router.post(
       };
 
       if (!accessToken || !organizationSlug || !projectName || !dbPassword || !region) {
-        res.status(400).json({
-          error: "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
-        });
-        return;
+        throw new AppError(
+          "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
       }
 
       const project = await supabaseManagementApi.createProject(accessToken, {
@@ -91,8 +92,7 @@ router.post(
       try {
         await supabaseManagementApi.waitForProjectReady(accessToken, project.ref);
       } catch {
-        res.status(408).json({ error: "Project creation timed out", projectRef: project.ref });
-        return;
+        throw new AppError("Project creation timed out", 408, ErrorCodes.INTERNAL_ERROR);
       }
 
       const credentials = await supabaseManagementApi.getProjectCredentials(
@@ -103,9 +103,10 @@ router.post(
 
       res.json(credentials);
     } catch (error) {
+      if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       logger.error("Failed to create project:", error);
-      res.status(500).json({ error: message });
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -124,10 +125,11 @@ router.post(
       };
 
       if (!accessToken || !organizationSlug || !projectName || !dbPassword || !region) {
-        res.status(400).json({
-          error: "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
-        });
-        return;
+        throw new AppError(
+          "Missing required fields: accessToken, organizationSlug, projectName, dbPassword, region",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
       }
 
       const result = await supabaseManagementApi.quickSetup(accessToken, {
@@ -139,16 +141,10 @@ router.post(
 
       res.json(result);
     } catch (error) {
+      if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       logger.error("Failed to quick setup:", error);
-
-      const errorResponse: { error: string; projectRef?: string } = { error: message };
-
-      if (error instanceof Error && "projectRef" in error) {
-        errorResponse.projectRef = (error as Error & { projectRef: string }).projectRef;
-      }
-
-      res.status(500).json(errorResponse);
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

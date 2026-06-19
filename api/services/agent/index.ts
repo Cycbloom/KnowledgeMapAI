@@ -1,6 +1,7 @@
 export { AgentService, SKILLS } from './AgentService';
 export { ToolRegistry } from './ToolRegistry';
 export { SessionManager } from './SessionManager';
+export { agentRouteService } from './agentRouteService';
 export type {
   AgentTool,
   AgentSession,

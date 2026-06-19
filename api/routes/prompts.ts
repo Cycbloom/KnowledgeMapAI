@@ -1,7 +1,6 @@
 import { Router, Response } from 'express';
 import { AuthRequest, requireAuth } from '../middleware/auth';
-import { getAIProviderForTask } from '../services/ai/factory';
-import { promptService } from '../services/ai/promptService';
+import { promptService } from '../services/ai';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { logger } from '../utils/logger';
@@ -24,8 +23,9 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json(result);
 
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Get Prompts Error:', error);
-    res.status(500).json({ error: (error as Error).message });
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -59,8 +59,9 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json(data);
 
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Save Prompt Error:', error);
-    res.status(500).json({ error: (error as Error).message });
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -74,8 +75,9 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 
     res.json({ success: true });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Delete Prompt Error:', error);
-    res.status(500).json({ error: (error as Error).message });
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -88,48 +90,13 @@ router.post('/optimize', requireAuth, async (req: AuthRequest, res: Response) =>
   }
 
   try {
-    const provider = await getAIProviderForTask('text');
-    
-    if (!provider.hasKey) {
-      throw new AppError('AI服务未配置', 500, ErrorCodes.INTERNAL_ERROR);
-    }
-
-    const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-      {
-        role: "system",
-        content: `You are an expert Prompt Engineer. Your task is to optimize the given prompt template for an LLM.
-        
-        Goals:
-        1. Improve clarity and precision.
-        2. Maintain all existing Handlebars variables (e.g., {{variable}}). DO NOT remove or rename them.
-        3. Maintain the original intent and output format.
-        4. Apply best practices (Persona, Context, Task, Constraints).
-        5. If an instruction is provided, follow it to modify the prompt.
-        
-        Output:
-        Return ONLY the optimized prompt text. Do not include explanations or markdown fences unless part of the prompt.`
-      },
-      {
-        role: "user",
-        content: `Original Prompt:
-${template_content}
-
-${instruction ? `User Instruction: ${instruction}` : ''}`
-      }
-    ];
-
-    const completion = await provider.client.chat.completions.create({
-      messages,
-      model: provider.model,
-      temperature: 0.7,
-    });
-
-    const optimizedContent = completion.choices[0].message.content;
+    const optimizedContent = await promptService.optimizeWithAI(template_content, instruction);
     res.json({ optimized_content: optimizedContent });
 
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Optimize Prompt Error:', error);
-    res.status(500).json({ error: (error as Error).message });
+    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

@@ -8,6 +8,8 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyMode } from "../../../shared/types/scheduler";
 import { getStudyModePreset } from "../../../shared/constants/studyModePresets";
 import { MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
+import { appEventBus } from "../core";
+import type { ReviewCompletedPayload } from "../../../shared/types/events";
 
 interface GetCardsOptions {
   userId: string;
@@ -355,6 +357,21 @@ export class StudyService {
       await cacheService.del(CacheKeys.STUDY_CARDS(card.graph_id));
     }
 
+    appEventBus
+      .publish<ReviewCompletedPayload>(
+        "review_completed",
+        {
+          reviewTaskId: cardId,
+          knowledgePointId: (updatedCard as StudyCard)?.knowledge_point_id ?? "",
+          qualityScore: quality,
+          nextReviewDate: scheduledCard.due?.toISOString() ?? new Date().toISOString(),
+          algorithm: "fsrs",
+        },
+        userId,
+        "study_service",
+      )
+      .catch((err) => logger.error("review_completed event publish failed:", err));
+
     return {
       card: updatedCard as StudyCard,
       scheduledCard,
@@ -503,6 +520,71 @@ export class StudyService {
       averageRetrievability: count > 0 ? Math.round((totalRetrievability / count) * 1000) / 1000 : 0,
       averageStability: count > 0 ? Math.round((totalStability / count) * 100) / 100 : 0,
       averageDifficulty: count > 0 ? Math.round((totalDifficulty / count) * 100) / 100 : 0,
+    };
+  }
+
+  async insertCards(
+    supabase: SupabaseClient,
+    cards: Array<{
+      user_id: string;
+      knowledge_point_id: string;
+      graph_id: string;
+      question: string;
+      answer: string;
+      explanation?: string | null;
+      card_type?: string;
+      options?: string | null;
+      next_review: string;
+      difficulty: number;
+      fsrs_state: string;
+      fsrs_stability: number;
+      fsrs_difficulty: number;
+      fsrs_elapsed_days: number;
+      fsrs_scheduled_days: number;
+      fsrs_retrievability: number;
+    }>,
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase.from("study_cards").insert(cards);
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  }
+
+  async getUserStudyStats(
+    supabase: SupabaseClient,
+    userId: string,
+  ): Promise<{
+    distribution?: Array<{ state: string; count: number }>;
+    heatmap?: unknown[];
+    forecast?: Array<{ date: string | number; count: number }>;
+    growth?: Array<{ date: string | number; count: number }>;
+    metrics: {
+      totalCards: number;
+      dueToday: number;
+      learning: number;
+      avgStability: number;
+    };
+  }> {
+    const { data, error } = await supabase.rpc("get_user_study_stats", {
+      p_user_id: userId,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data as {
+      distribution?: Array<{ state: string; count: number }>;
+      heatmap?: unknown[];
+      forecast?: Array<{ date: string | number; count: number }>;
+      growth?: Array<{ date: string | number; count: number }>;
+      metrics: {
+        totalCards: number;
+        dueToday: number;
+        learning: number;
+        avgStability: number;
+      };
     };
   }
 }

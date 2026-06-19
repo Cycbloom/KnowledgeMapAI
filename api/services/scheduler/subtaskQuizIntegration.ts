@@ -90,6 +90,14 @@ const PRACTICE_MAX_IMPROVEMENT = 0.3;
 const QUIZ_WEIGHT = 0.2;
 const QUIZ_MAX_IMPROVEMENT = 0.4;
 
+interface SubtaskWithTaskId {
+  id: string;
+  task_id: string;
+  knowledge_point_id?: string;
+  learning_state?: string;
+  mastery_level?: number;
+}
+
 const PRACTICE_SESSIONS_TABLE = "practice_sessions";
 const QUIZ_SESSIONS_TABLE = "quiz_sessions";
 const PRACTICE_RESULTS_TABLE = "practice_results";
@@ -931,7 +939,7 @@ export class SubtaskQuizIntegrationService {
     const { data: task } = await supabase
       .from("user_tasks")
       .select("user_id")
-      .eq("id", (subtask as any).task_id)
+      .eq("id", (subtask as SubtaskWithTaskId).task_id)
       .single();
 
     return {
@@ -986,7 +994,7 @@ export class SubtaskQuizIntegrationService {
       const { data: task } = await supabase
         .from("user_tasks")
         .select("user_id")
-        .eq("id", (subtask as any).task_id)
+        .eq("id", (subtask as SubtaskWithTaskId).task_id)
         .single();
 
       if (task?.user_id) {

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { alertManager, type AlertRule } from '../utils/alertManager';
 import { logger } from '../utils/logger';
+import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '../../shared/types/errorCodes';
 
 const router = Router();
 
@@ -16,7 +18,7 @@ router.post('/rules', (req, res) => {
     res.status(201).json({ rule: newRule });
   } catch (error) {
     logger.error('Failed to add alert rule:', error);
-    res.status(500).json({ error: 'Failed to add alert rule' });
+    throw new AppError('Failed to add alert rule', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -27,14 +29,14 @@ router.put('/rules/:id', (req, res) => {
     const rule = alertManager.updateRule(id, updates);
     
     if (!rule) {
-      res.status(404).json({ error: 'Rule not found' });
-      return;
+      throw new AppError('Rule not found', 404, ErrorCodes.NOT_FOUND);
     }
     
     res.json({ rule });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Failed to update alert rule:', error);
-    res.status(500).json({ error: 'Failed to update alert rule' });
+    throw new AppError('Failed to update alert rule', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -44,14 +46,14 @@ router.delete('/rules/:id', (req, res) => {
     const deleted = alertManager.deleteRule(id);
     
     if (!deleted) {
-      res.status(404).json({ error: 'Rule not found' });
-      return;
+      throw new AppError('Rule not found', 404, ErrorCodes.NOT_FOUND);
     }
     
     res.json({ success: true });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Failed to delete alert rule:', error);
-    res.status(500).json({ error: 'Failed to delete alert rule' });
+    throw new AppError('Failed to delete alert rule', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -74,14 +76,14 @@ router.post('/:id/acknowledge', (req, res) => {
     const alert = alertManager.acknowledgeAlert(id, acknowledgedBy || 'system');
     
     if (!alert) {
-      res.status(404).json({ error: 'Alert not found' });
-      return;
+      throw new AppError('Alert not found', 404, ErrorCodes.NOT_FOUND);
     }
     
     res.json({ alert });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Failed to acknowledge alert:', error);
-    res.status(500).json({ error: 'Failed to acknowledge alert' });
+    throw new AppError('Failed to acknowledge alert', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -90,15 +92,15 @@ router.post('/check', (req, res) => {
     const { metric, value } = req.body;
     
     if (!metric || typeof value !== 'number') {
-      res.status(400).json({ error: 'Invalid metric or value' });
-      return;
+      throw new AppError('Invalid metric or value', 400, ErrorCodes.VALIDATION_ERROR);
     }
     
     const triggeredAlerts = alertManager.checkMetric(metric, value);
     res.json({ triggered: triggeredAlerts });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error('Failed to check metric:', error);
-    res.status(500).json({ error: 'Failed to check metric' });
+    throw new AppError('Failed to check metric', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

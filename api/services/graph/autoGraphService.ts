@@ -8,6 +8,17 @@ import {
   conceptAggregationService,
   normalizeTitle,
 } from "./conceptAggregationService";
+import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
+import { cacheService, CacheKeys } from "../common/cacheService";
+import type { NodeLevel } from "../../../shared/types/graph";
+import type { AIProviderType } from "../../../shared/types";
+import { promptService } from "../ai/promptService";
+import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
+import { getAIProvider, getAIProviderForTask } from "../ai/factory";
+import { autoGraphRouteService } from "./autoGraphRouteService";
+import { scrapeUrl } from "../../utils/scraper";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 200;
@@ -17,13 +28,144 @@ const MERGE_THRESHOLD = parseFloat(
   process.env.CONCEPT_MERGE_THRESHOLD || "0.85",
 );
 
+const validLevels = ["root", "core", "sub", "normal", "leaf"];
+
+const URL_PATTERN = /^https?:\/\/.+/;
+
+interface AIGeneratedNode {
+  id?: string;
+  title: string;
+  content?: string;
+  summary?: string;
+  level?: string;
+  parentId?: string | null;
+  backboneModule?: string;
+  needsRefinement?: boolean;
+  suggestedContent?: string;
+  color?: string;
+}
+
+interface ExistingChild {
+  title: string;
+  content?: string;
+}
+
+export interface InitGraphParams {
+  topic: string;
+  style: string;
+  customPrompt?: string;
+  sources?: string[];
+  graphId?: string;
+  providerType?: string;
+  model?: string;
+  language?: string;
+  sessionId?: string;
+  userId: string;
+}
+
+export interface InitGraphResult {
+  sessionId: string;
+  root: {
+    title: string;
+    content: string;
+  };
+  coreNodes: AIGeneratedNode[];
+}
+
+export interface ExpandNodeParams {
+  nodeId: string;
+  nodeTitle: string;
+  nodeContent?: string;
+  nodeLevel?: string;
+  graphId: string;
+  style: string;
+  customPrompt?: string;
+  existingChildren?: ExistingChild[];
+  providerType?: string;
+  model?: string;
+  language?: string;
+  sessionId?: string;
+  userId: string;
+}
+
+export interface ExpandNodeResult {
+  sessionId: string;
+  parentNodeId: string;
+  children: AIGeneratedNode[];
+}
+
+export interface CalculateNodePositionsResult {
+  tempId: string;
+  parentId: string | null;
+  title: string;
+  content: string;
+  summary: string | null;
+  level: string;
+  x_position: number;
+  y_position: number;
+  properties?: Record<string, unknown>;
+}
+
+export interface ApplyTemplateParams {
+  template?: {
+    id: string;
+    name: string;
+    description?: string;
+    nodes: Array<{
+      id: string;
+      title: string;
+      level: string;
+      parentId?: string;
+    }>;
+    edges: Array<{
+      source: string;
+      target: string;
+      relationship_type?: string;
+      description?: string;
+    }>;
+    layoutSuggestion: string;
+    estimatedNodes?: number;
+    difficulty?: string;
+    tags?: string[];
+    reasoning?: string;
+  };
+  templateId?: string;
+  topic: string;
+  style: string;
+  customPrompt?: string;
+  graphId: string;
+  providerType?: string;
+  model?: string;
+  userId: string;
+}
+
+export interface ApplyTemplateResult {
+  templateId: string;
+  templateName: string;
+  nodes: AIGeneratedNode[];
+  edges: Array<{
+    source: string;
+    target: string;
+    relationship_type?: string;
+    description?: string;
+  }>;
+  layoutSuggestion: string;
+  metadata: {
+    topic: string;
+    style: string;
+    generatedAt: string;
+    provider: string;
+    model: string;
+  };
+}
+
 export interface AINodeData {
   tempId: string;
   parentId: string | null;
   title: string;
   content: string;
   summary?: string | null;
-  level: string;
+  level: NodeLevel | string;
   x_position: number;
   y_position: number;
   relationshipType?: string;
@@ -151,7 +293,7 @@ export class AutoGraphService {
             knowledge_point_id: kp.id,
             x_position: nodeData.x_position,
             y_position: nodeData.y_position,
-            level: (nodeData.level as any) || "normal",
+            level: (validLevels.includes(nodeData.level) ? nodeData.level : "normal") as NodeLevel,
             is_accepted: true,
           }),
         );
@@ -728,6 +870,559 @@ export class AutoGraphService {
       logger.error("Batch edge insertion failed:", error);
       return 0;
     }
+  }
+
+  async saveTextToGraph(
+    supabase: SupabaseClient,
+    userId: string,
+    graphId: string,
+    nodes: Array<{
+      id?: string;
+      title?: string;
+      content?: string;
+      level?: string;
+      properties?: Record<string, unknown>;
+    }>,
+    edges?: Array<{
+      source: string;
+      target: string;
+      relationship_type?: string;
+      relationship?: string;
+    }>,
+  ): Promise<{ nodeCount: number; edgeCount: number }> {
+    const nodeMap = new Map<string, string>();
+    const createdNodes: {
+      id: string;
+      title: string;
+      content?: string;
+      knowledge_point_id?: string;
+    }[] = [];
+
+    const validNodes = nodes.filter(
+      (node) => node.title && node.title.trim() !== "",
+    );
+
+    if (validNodes.length === 0) {
+      return { nodeCount: 0, edgeCount: 0 };
+    }
+
+    for (const node of validNodes) {
+      const result = await createKnowledgePointWithGraphNode(
+        supabase,
+        userId,
+        {
+          graph_id: graphId,
+          title: node.title!,
+          content: node.content || "",
+          x_position: Math.round((Math.random() - 0.5) * 50),
+          y_position: Math.round((Math.random() - 0.5) * 50),
+          level: node.level || "leaf",
+          properties: { ...node.properties, source: "ai-text-to-graph" },
+        },
+      );
+
+      if (result) {
+        if (node.id) nodeMap.set(node.id, result.knowledge_point_id || result.id);
+        createdNodes.push({
+          id: result.id,
+          title: node.title!,
+          content: node.content,
+          knowledge_point_id: result.knowledge_point_id,
+        });
+      }
+    }
+
+    let edgeCount = 0;
+    if (edges && Array.isArray(edges)) {
+      for (const edge of edges) {
+        const sourceKPId = nodeMap.get(edge.source);
+        const targetKPId = nodeMap.get(edge.target);
+
+        if (sourceKPId && targetKPId) {
+          try {
+            await edgeService.create(supabase, {
+              graph_id: graphId,
+              source_knowledge_point_id: sourceKPId,
+              target_knowledge_point_id: targetKPId,
+              relationship_type: edge.relationship_type || edge.relationship || "contains",
+            });
+            edgeCount++;
+          } catch (err) {
+            logger.warn("Failed to create edge:", err);
+          }
+        }
+      }
+    }
+
+    cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
+    cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+    return { nodeCount: createdNodes.length, edgeCount };
+  }
+
+  async processSource(source: string): Promise<string> {
+    const trimmed = source.trim();
+
+    if (URL_PATTERN.test(trimmed)) {
+      try {
+        logger.info(`Fetching URL content: ${trimmed}`);
+        const result = await scrapeUrl(trimmed);
+        return `【来源: ${result.title}】\n${result.text.slice(0, 3000)}`;
+      } catch (error) {
+        logger.warn(`Failed to scrape URL: ${trimmed}`, error);
+        return `【URL: ${trimmed}】(无法获取内容)`;
+      }
+    }
+
+    return trimmed;
+  }
+
+  async initGraph(
+    supabase: SupabaseClient,
+    params: InitGraphParams,
+  ): Promise<InitGraphResult> {
+    const {
+      topic,
+      style,
+      customPrompt,
+      sources,
+      graphId,
+      providerType,
+      model,
+      language,
+      sessionId: inputSessionId,
+      userId,
+    } = params;
+
+    const sessionId = inputSessionId || crypto.randomUUID();
+
+    const provider = providerType
+      ? await getAIProvider(providerType as AIProviderType)
+      : await getAIProviderForTask("text");
+
+    if (!provider.hasKey) {
+      throw new AppError(
+        "AI provider not configured",
+        503,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    let processedSources: string[] = [];
+    if (sources && sources.length > 0) {
+      processedSources = await Promise.all(
+        sources.map((s) => this.processSource(s)),
+      );
+    }
+
+    let systemPrompt: string;
+
+    if (style === "custom" && customPrompt) {
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        "auto_graph_init",
+        {
+          topic,
+          isCustom: true,
+          customPrompt,
+          hasSources: processedSources.length > 0,
+          sources: processedSources.join("\n\n---\n\n"),
+          isInit: true,
+        },
+        userId,
+        graphId,
+        language,
+      );
+    } else {
+      const templateData: Record<string, unknown> = {
+        topic,
+        isAcademic: style === "academic",
+        isPractical: style === "practical",
+        hasSources: processedSources.length > 0,
+        sources: processedSources.join("\n\n---\n\n"),
+        isInit: true,
+      };
+
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        "auto_graph_init",
+        templateData,
+        userId,
+        graphId,
+        language,
+      );
+    }
+
+    const completion = await performanceMonitor.withAutoGraphTracking(
+      "auto_graph_init",
+      provider.providerType,
+      model || provider.model,
+      async () => {
+        const result = await provider.client.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `主题：${topic}${processedSources.length > 0 ? `\n\n参考来源：\n${processedSources.join("\n\n---\n\n")}` : ""}`,
+            },
+          ],
+          model: model || provider.model,
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
+        });
+        return {
+          result,
+          usage: result.usage,
+        };
+      },
+      await enrichMetadata(supabase, {
+        graphId,
+        userId,
+        topic,
+        style,
+      }),
+      sessionId,
+    );
+
+    const content = completion.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(content || '{"root": null, "coreNodes": []}');
+    } catch (e) {
+      logger.error("JSON Parse Error:", { content: content?.slice(-100) });
+      throw new AppError(
+        "AI 生成内容解析失败",
+        422,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    return {
+      sessionId,
+      root: parsed.root || {
+        title: topic,
+        content: `${topic}的核心概念和知识体系`,
+      },
+      coreNodes: parsed.coreNodes || [],
+    };
+  }
+
+  async expandNode(
+    supabase: SupabaseClient,
+    params: ExpandNodeParams,
+  ): Promise<ExpandNodeResult> {
+    const {
+      nodeId,
+      nodeTitle,
+      nodeContent,
+      nodeLevel,
+      graphId,
+      style,
+      customPrompt,
+      existingChildren,
+      providerType,
+      model,
+      language,
+      sessionId: inputSessionId,
+      userId,
+    } = params;
+
+    const provider = providerType
+      ? await getAIProvider(providerType as AIProviderType)
+      : await getAIProviderForTask("text");
+
+    if (!provider.hasKey) {
+      throw new AppError(
+        "AI provider not configured",
+        503,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    const sessionId = inputSessionId || crypto.randomUUID();
+
+    let systemPrompt: string;
+
+    if (style === "custom" && customPrompt) {
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        "auto_graph_expand",
+        {
+          nodeTitle,
+          nodeContent: nodeContent || "",
+          nodeLevel: nodeLevel || "normal",
+          isCustom: true,
+          customPrompt,
+          hasExistingChildren:
+            existingChildren && existingChildren.length > 0,
+          existingChildren:
+            existingChildren?.map((c) => c.title).join("、") || "",
+        },
+        userId,
+        graphId,
+        language,
+      );
+    } else {
+      const templateData: Record<string, unknown> = {
+        nodeTitle,
+        nodeContent: nodeContent || "",
+        nodeLevel: nodeLevel || "normal",
+        isAcademic: style === "academic",
+        isPractical: style === "practical",
+        hasExistingChildren:
+          existingChildren && existingChildren.length > 0,
+        existingChildren:
+          existingChildren?.map((c) => c.title).join("、") || "",
+      };
+
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        "auto_graph_expand",
+        templateData,
+        userId,
+        graphId,
+        language,
+      );
+    }
+
+    const completion = await performanceMonitor.withAutoGraphTracking(
+      "auto_graph_expand",
+      provider.providerType,
+      model || provider.model,
+      async () => {
+        const result = await provider.client.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `请为「${nodeTitle}」生成子节点。${existingChildren && existingChildren.length > 0 ? `\n\n已有的子节点：${existingChildren.map((c) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
+            },
+          ],
+          model: model || provider.model,
+          response_format: { type: "json_object" },
+          max_tokens: 3000,
+        });
+        return {
+          result,
+          usage: result.usage,
+        };
+      },
+      await enrichMetadata(supabase, {
+        graphId,
+        userId,
+        nodeTitle,
+        nodeId,
+        nodeLevel,
+      }),
+      sessionId,
+    );
+
+    const content = completion.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(content || '{"children": []}');
+    } catch (e) {
+      logger.error("JSON Parse Error:", { content: content?.slice(-100) });
+      throw new AppError(
+        "AI 生成内容解析失败",
+        422,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    return {
+      sessionId,
+      parentNodeId: nodeId,
+      children: parsed.children || [],
+    };
+  }
+
+  calculateNodePositions(
+    nodes: AIGeneratedNode[],
+    existingCount: number,
+  ): CalculateNodePositionsResult[] {
+    return nodes
+      .filter((node) => node.title && node.title.trim() !== "")
+      .map((node, index) => {
+        const angle =
+          ((existingCount + index) / (existingCount + nodes.length)) *
+          Math.PI *
+          2;
+        const radius = 15 + (existingCount + index) * 2;
+
+        const tempId = node.id || `temp-${index}`;
+
+        const properties = {
+          ...(node.backboneModule && { backboneModule: node.backboneModule }),
+          ...(node.needsRefinement !== undefined && {
+            needsRefinement: node.needsRefinement,
+          }),
+          ...(node.suggestedContent && {
+            suggestedContent: node.suggestedContent,
+          }),
+          ...(node.color && { color: node.color }),
+        };
+
+        return {
+          tempId,
+          parentId: node.parentId || null,
+          title: node.title,
+          content: node.content || "",
+          summary: node.summary || null,
+          level: node.level || "normal",
+          x_position: Math.round(Math.cos(angle) * radius),
+          y_position: Math.round(Math.sin(angle) * radius),
+          properties:
+            Object.keys(properties).length > 0 ? properties : undefined,
+        };
+      });
+  }
+
+  async applyTemplate(
+    supabase: SupabaseClient,
+    params: ApplyTemplateParams,
+  ): Promise<ApplyTemplateResult> {
+    const {
+      template,
+      templateId,
+      topic,
+      style,
+      customPrompt,
+      graphId,
+      providerType,
+      model,
+      userId,
+    } = params;
+
+    if (!template && !templateId) {
+      throw new AppError(
+        "必须提供 template 或 templateId 参数",
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+      );
+    }
+
+    const provider = providerType
+      ? await getAIProvider(providerType as AIProviderType)
+      : await getAIProviderForTask("text");
+
+    if (!provider.hasKey) {
+      throw new AppError(
+        "AI provider not configured",
+        503,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    let selectedTemplate = template;
+
+    if (!selectedTemplate && templateId) {
+      const fetchedTemplate = await autoGraphRouteService.getTemplate(
+        supabase,
+        templateId,
+      );
+      selectedTemplate = fetchedTemplate as NonNullable<ApplyTemplateParams["template"]>;
+    }
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabase,
+      "apply_template",
+      {
+        topic,
+        template: selectedTemplate,
+        style,
+        isCustom: style === "custom",
+        customPrompt: customPrompt || "",
+        isAcademic: style === "academic",
+        isPractical: style === "practical",
+        isBeginner: style === "beginner",
+      },
+      userId,
+      graphId,
+    );
+
+    const completion = await performanceMonitor.withAutoGraphTracking(
+      "apply_template",
+      provider.providerType,
+      model || provider.model,
+      async () => {
+        const result = await provider.client.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `主题：${topic}\n\n模板名称：${selectedTemplate!.name}\n模板结构：\n${JSON.stringify(
+                {
+                  nodes: selectedTemplate!.nodes.map(
+                    (n: {
+                      id: string;
+                      title: string;
+                      level: string;
+                      parentId?: string;
+                    }) => ({
+                      id: n.id,
+                      title: n.title,
+                      level: n.level,
+                      parentId: n.parentId,
+                    }),
+                  ),
+                  edges: selectedTemplate!.edges,
+                },
+                null,
+                2,
+              )}\n\n请根据模板结构生成完整的知识图谱内容。`,
+            },
+          ],
+          model: model || provider.model,
+          response_format: { type: "json_object" },
+          max_tokens: 6000,
+        });
+        return {
+          result,
+          usage: result.usage as
+            | { prompt_tokens?: number; completion_tokens?: number }
+            | undefined,
+        };
+      },
+      { graphId, userId },
+    );
+
+    const content = completion.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
+    } catch (e) {
+      logger.error("JSON Parse Error in apply-template:", {
+        content: content?.slice(-200),
+      });
+      throw new AppError(
+        "AI 生成内容解析失败",
+        422,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    logger.info("Template applied successfully", {
+      topic,
+      templateId: selectedTemplate!.id,
+      nodeCount: parsed.nodes?.length || 0,
+      edgeCount: parsed.edges?.length || 0,
+    });
+
+    return {
+      templateId: selectedTemplate!.id,
+      templateName: selectedTemplate!.name,
+      nodes: parsed.nodes || [],
+      edges: parsed.edges || [],
+      layoutSuggestion: selectedTemplate!.layoutSuggestion,
+      metadata: {
+        topic,
+        style,
+        generatedAt: new Date().toISOString(),
+        provider: provider.providerType,
+        model: model || provider.model,
+      },
+    };
   }
 }
 

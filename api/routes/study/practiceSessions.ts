@@ -2,8 +2,10 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
-import { subtaskQuizIntegrationService } from "../../services/scheduler/subtaskQuizIntegration";
+import { subtaskQuizIntegrationService } from "../../services/scheduler";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -35,9 +37,10 @@ router.post(
       );
       res.status(201).json({ success: true, data: session });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       const errorMessage = error instanceof Error ? error.message : "创建练习会话失败";
       logger.error("Start practice session error:", error);
-      res.status(400).json({ error: errorMessage });
+      throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
     }
   },
 );
@@ -57,9 +60,10 @@ router.post(
       );
       res.json({ success: true, data: completionResult });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       const errorMessage = error instanceof Error ? error.message : "完成练习会话失败";
       logger.error("Complete practice session error:", error);
-      res.status(400).json({ error: errorMessage });
+      throw new AppError(errorMessage, 400, ErrorCodes.VALIDATION_ERROR);
     }
   },
 );

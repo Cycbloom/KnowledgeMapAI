@@ -2,13 +2,13 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
-import { ragService } from '../services/ai/ragService';
+import { ragService } from '../services/ai';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
-import { performanceMonitor, enrichMetadata } from '../services/ai/performanceMonitor';
+import { performanceMonitor, enrichMetadata } from '../services/ai';
 import { getSupabaseAdmin } from '../supabase';
-import { getAIProviderForTask } from '../services/ai/factory';
+import { getAIProviderForTask } from '../services/ai';
 
 const router = Router();
 
@@ -152,21 +152,13 @@ router.post('/search', requireAuth, validate(ragSearchSchema), async (req: AuthR
   const { query, graph_id, match_threshold, match_count, use_graph_context, graph_hops } = req.body;
 
   try {
-    let results;
-    if (use_graph_context && graph_id) {
-      results = await ragService.graphAugmentedSearch(query, req.user.id, {
-        graphId: graph_id,
-        matchThreshold: match_threshold,
-        matchCount: match_count,
-        graphHops: graph_hops,
-      });
-    } else {
-      results = await ragService.semanticSearch(query, req.user.id, {
-        graphId: graph_id,
-        matchThreshold: match_threshold,
-        matchCount: match_count,
-      });
-    }
+    const results = await ragService.search(query, req.user.id, {
+      graphId: graph_id,
+      matchThreshold: match_threshold,
+      matchCount: match_count,
+      useGraphContext: use_graph_context,
+      graphHops: graph_hops,
+    });
 
     res.json({ results });
   } catch (error) {

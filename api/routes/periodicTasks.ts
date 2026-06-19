@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { periodicTaskService } from '../services/scheduler/periodicTaskService';
+import { periodicTaskService } from '../services/scheduler';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';

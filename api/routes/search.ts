@@ -1,7 +1,9 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
-import { searchService } from '../services/ai/searchService';
+import { searchService } from '../services/ai';
 import { logger } from '../utils/logger';
+import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '../../shared/types/errorCodes';
 
 const router = Router();
 
@@ -28,7 +30,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     }
   } catch (error) {
     logger.error('Search error:', error);
-    res.status(500).json({ error: 'Search failed' });
+    throw new AppError('Search failed', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

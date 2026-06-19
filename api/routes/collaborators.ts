@@ -1,7 +1,9 @@
 import { Router, type Response } from "express";
 import { requireAuth, optionalAuth, type AuthRequest } from "../middleware/auth";
-import { collaboratorService } from "../services/graph/collaboratorService";
+import { collaboratorService } from "../services/graph";
 import { logger } from "../utils/logger";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -11,13 +13,14 @@ router.get("/:invitationToken/info", optionalAuth, async (req: AuthRequest, res:
     const result = await collaboratorService.getInvitationInfo(req.supabase!, invitationToken);
 
     if (!result.success) {
-      return res.status(404).json({ error: result.error });
+      throw new AppError(result.error ?? "邀请信息不存在", 404, ErrorCodes.NOT_FOUND);
     }
 
     res.json(result.data);
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error("获取邀请信息失败:", error);
-    res.status(500).json({ error: "获取邀请信息失败" });
+    throw new AppError("获取邀请信息失败", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -25,7 +28,7 @@ router.post("/graphs/:graphId/share", requireAuth, async (req: AuthRequest, res:
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "未授权" });
+      throw new AppError("未授权", 401, ErrorCodes.UNAUTHORIZED);
     }
 
     const { graphId } = req.params;
@@ -34,13 +37,14 @@ router.post("/graphs/:graphId/share", requireAuth, async (req: AuthRequest, res:
     const result = await collaboratorService.generateShareLink(req.supabase!, graphId, userId, role);
 
     if (!result.success) {
-      return res.status(400).json({ error: result.error });
+      throw new AppError(result.error ?? "生成分享链接失败", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     res.json(result.data);
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error("生成分享链接失败:", error);
-    res.status(500).json({ error: "生成分享链接失败" });
+    throw new AppError("生成分享链接失败", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -48,20 +52,21 @@ router.post("/:invitationToken/join", requireAuth, async (req: AuthRequest, res:
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "未授权" });
+      throw new AppError("未授权", 401, ErrorCodes.UNAUTHORIZED);
     }
 
     const { invitationToken } = req.params;
     const result = await collaboratorService.joinByShareLink(req.supabase!, invitationToken, userId);
 
     if (!result.success) {
-      return res.status(400).json({ error: result.error });
+      throw new AppError(result.error ?? "加入协作失败", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     res.json(result.data);
   } catch (error) {
+    if (error instanceof AppError) throw error;
     logger.error("加入协作失败:", error);
-    res.status(500).json({ error: "加入协作失败" });
+    throw new AppError("加入协作失败", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

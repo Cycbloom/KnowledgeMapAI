@@ -1,10 +1,8 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
-import { AppError } from "../../middleware/errorHandler";
-import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { logger } from "../../utils/logger";
 import { z } from "zod";
+import { relationshipService } from "../../services/story";
 
 const createRelationshipSchema = z.object({
   source_character_id: z.string().uuid(),
@@ -22,31 +20,9 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
   const { graphId } = req.params;
   const supabase = req.supabase!;
 
-  try {
-    const { data: relationships, error } = await supabase
-      .from("story_character_relationships")
-      .select(
-        `
-        *,
-        source_character:story_characters!source_character_id (id, name, role_type),
-        target_character:story_characters!target_character_id (id, name, role_type)
-      `,
-      )
-      .eq("graph_id", graphId)
-      .order("created_at", { ascending: true });
+  const relationships = await relationshipService.list(supabase, graphId);
 
-    if (error) throw error;
-
-    res.json({ relationships: relationships || [] });
-  } catch (error: unknown) {
-    logger.error("Get relationships error:", error);
-    if (error instanceof AppError) throw error;
-    throw new AppError(
-      "获取角色关系失败",
-      500,
-      ErrorCodes.INTERNAL_ERROR,
-    );
-  }
+  res.json({ relationships });
 });
 
 // POST / - Create a new relationship
@@ -58,50 +34,25 @@ router.post(
     const { graphId } = req.params;
     const supabase = req.supabase!;
 
-    try {
-      const {
-        source_character_id,
-        target_character_id,
-        relationship_type,
-        strength,
-        status,
-        notes,
-      } = req.body;
+    const {
+      source_character_id,
+      target_character_id,
+      relationship_type,
+      strength,
+      status,
+      notes,
+    } = req.body;
 
-      const insertData = {
-        graph_id: graphId,
-        source_character_id,
-        target_character_id,
-        relationship_type,
-        strength: strength ?? 5,
-        status: status ?? "active",
-        notes: notes || null,
-      };
+    const relationship = await relationshipService.create(supabase, graphId, {
+      source_character_id,
+      target_character_id,
+      relationship_type,
+      strength: strength ?? 5,
+      status: status ?? "active",
+      notes: notes || undefined,
+    });
 
-      const { data: relationship, error } = await supabase
-        .from("story_character_relationships")
-        .insert(insertData)
-        .select(
-          `
-          *,
-          source_character:story_characters!source_character_id (id, name, role_type),
-          target_character:story_characters!target_character_id (id, name, role_type)
-        `,
-        )
-        .single();
-
-      if (error) throw error;
-
-      res.status(201).json(relationship);
-    } catch (error: unknown) {
-      logger.error("Create relationship error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "创建角色关系失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    res.status(201).json(relationship);
   },
 );
 
@@ -113,25 +64,9 @@ router.delete(
     const { graphId, id } = req.params;
     const supabase = req.supabase!;
 
-    try {
-      const { error } = await supabase
-        .from("story_character_relationships")
-        .delete()
-        .eq("id", id)
-        .eq("graph_id", graphId);
+    await relationshipService.delete(supabase, graphId, id);
 
-      if (error) throw error;
-
-      res.json({ message: "角色关系已删除" });
-    } catch (error: unknown) {
-      logger.error("Delete relationship error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "删除角色关系失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    res.json({ message: "角色关系已删除" });
   },
 );
 

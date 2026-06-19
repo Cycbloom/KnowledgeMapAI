@@ -4,7 +4,7 @@ import { validate } from '../../middleware/validate';
 import { ttsSchema, ttsVoicesSchema } from '../../schemas/index';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { AppError } from '../../middleware/errorHandler';
-import { getAIProviderForTask } from '../../services/ai/factory';
+import { getAIProviderForTask } from '../../services/ai';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -22,7 +22,7 @@ router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (_req: A
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('TTS Voices Error:', error);
-    res.status(500).json({ error: err.message || '获取语音列表失败' });
+    throw new AppError(err.message || '获取语音列表失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

@@ -1,6 +1,8 @@
 import { Router } from 'express';
-import { performanceMonitor } from '../../services/ai/performanceMonitor';
+import { performanceMonitor } from '../../services/ai';
 import type { GetPerformanceLogsQuery } from '@shared/types';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 const router = Router();
 
@@ -33,7 +35,7 @@ router.get('/historical-logs', async (req, res) => {
     const result = await performanceMonitor.getHistoricalLogs(query);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch historical logs' });
+    throw new AppError('Failed to fetch historical logs', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -42,7 +44,7 @@ router.get('/database-stats', async (_req, res) => {
     const stats = await performanceMonitor.getDatabaseStats();
     res.json(stats);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch database stats' });
+    throw new AppError('Failed to fetch database stats', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

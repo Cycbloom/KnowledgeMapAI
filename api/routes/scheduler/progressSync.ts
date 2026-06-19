@@ -4,6 +4,8 @@ import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { progressSyncService } from "../../services/scheduler";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -40,9 +42,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { taskId, durationMinutes } = req.body;
@@ -59,7 +59,7 @@ router.post(
       logger.error("Sync study duration error:", error);
       const message =
         error instanceof Error ? error.message : "同步学习时长失败";
-      res.status(500).json({ error: message });
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   }
 );
@@ -71,9 +71,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { taskId, completionQuality } = req.body;
@@ -90,7 +88,7 @@ router.post(
       logger.error("Sync task completion error:", error);
       const message =
         error instanceof Error ? error.message : "同步任务完成失败";
-      res.status(500).json({ error: message });
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   }
 );
@@ -102,9 +100,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { taskId } = req.params;
@@ -121,7 +117,7 @@ router.get(
       logger.error("Get task progress summary error:", error);
       const message =
         error instanceof Error ? error.message : "获取任务进度摘要失败";
-      res.status(500).json({ error: message });
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   }
 );
@@ -133,9 +129,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { items } = req.body;
@@ -172,7 +166,7 @@ router.post(
       logger.error("Batch sync study duration error:", error);
       const message =
         error instanceof Error ? error.message : "批量同步学习时长失败";
-      res.status(500).json({ error: message });
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   }
 );

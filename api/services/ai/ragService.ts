@@ -846,6 +846,41 @@ export class RAGService {
 
     return { gaps, suggestions };
   }
+
+  async search(
+    query: string,
+    userId: string,
+    options: {
+      graphId?: string;
+      matchThreshold?: number;
+      matchCount?: number;
+      useGraphContext?: boolean;
+      graphHops?: number;
+    } = {},
+  ): Promise<RAGSearchResult[]> {
+    const {
+      graphId,
+      matchThreshold,
+      matchCount,
+      useGraphContext,
+      graphHops,
+    } = options;
+
+    if (useGraphContext && graphId) {
+      return this.graphAugmentedSearch(query, userId, {
+        graphId,
+        matchThreshold,
+        matchCount,
+        graphHops,
+      });
+    }
+
+    return this.semanticSearch(query, userId, {
+      graphId,
+      matchThreshold,
+      matchCount,
+    });
+  }
 }
 
 export const ragService = new RAGService();

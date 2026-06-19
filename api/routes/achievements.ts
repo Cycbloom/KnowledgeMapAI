@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { achievementService } from '../services/achievementService';
-import { achievementEngine } from '../services/achievements/achievementEngine';
+import { achievementEngine } from '../services/achievements';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';

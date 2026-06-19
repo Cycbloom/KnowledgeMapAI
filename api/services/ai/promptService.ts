@@ -2,6 +2,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { TemplateEngine } from "../../utils/templateEngine";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";
+import { getAIProviderForTask } from "./factory";
+import { getSupabaseAdmin } from "../../supabase";
 
 export type PromptScope = "system" | "user" | "graph";
 
@@ -248,6 +250,18 @@ Please respond with a valid JSON object.`,
 - 确保没有循环依赖（A是B的父，B又是A的父）
 - 一个子概念通常只有一个直接父概念
 - 优先选择最直接的父子关系`,
+
+  optimize_prompt: `You are an expert Prompt Engineer. Your task is to optimize the given prompt template for an LLM.
+        
+Goals:
+1. Improve clarity and precision.
+2. Maintain all existing Handlebars variables (e.g., {{variable}}). DO NOT remove or rename them.
+3. Maintain the original intent and output format.
+4. Apply best practices (Persona, Context, Task, Constraints).
+5. If an instruction is provided, follow it to modify the prompt.
+
+Output:
+Return ONLY the optimized prompt text. Do not include explanations or markdown fences unless part of the prompt.`,
 };
 
 // Fixed output schemas (Hidden from user editing)
@@ -901,6 +915,12 @@ Important:
 - Confidence >= 0.7 is considered high confidence
 - Ensure no circular dependencies
 - A child concept typically has only one direct parent`,
+
+  optimize_prompt: `
+Return a JSON object with:
+{
+  "optimizedPrompt": "The improved prompt text"
+}`,
 };
 
 export interface PromptListOptions {
@@ -1277,6 +1297,42 @@ export class PromptService {
     await cacheService.del(
       CacheKeys.PROMPT_TEMPLATE(code, userId || "system", graphId || "none"),
     );
+  }
+
+  async optimizeWithAI(
+    templateContent: string,
+    instruction?: string,
+  ): Promise<string> {
+    const provider = await getAIProviderForTask("text");
+
+    if (!provider.hasKey) {
+      throw new Error("AI服务未配置");
+    }
+
+    const systemPrompt = await this.getRenderedPrompt(
+      getSupabaseAdmin(),
+      "optimize_prompt",
+      { template_content: templateContent, instruction: instruction || "" },
+    );
+
+    const messages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string;
+    }> = [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: `Original Prompt:\n${templateContent}\n\n${instruction ? `User Instruction: ${instruction}` : ""}`,
+      },
+    ];
+
+    const completion = await provider.client.chat.completions.create({
+      messages,
+      model: provider.model,
+      temperature: 0.7,
+    });
+
+    return completion.choices[0].message.content || "";
   }
 }
 

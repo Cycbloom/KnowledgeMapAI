@@ -361,6 +361,23 @@ export class GraphNodeService {
 
     return graphNodeIds.length;
   }
+
+  async softDeleteGraphNode(
+    supabase: SupabaseClient,
+    graphNodeId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const { data, error } = await supabase.rpc("soft_delete_graph_node", {
+      p_graph_node_id: graphNodeId,
+      p_user_id: userId,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return !!data;
+  }
 }
 
 export const graphNodeService = new GraphNodeService();

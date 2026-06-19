@@ -5,39 +5,11 @@ import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import {
   learningPathService,
-  buildProgressMap,
-  buildDependencyMaps,
-  generateAIPath,
-  generateRulePath,
-  buildTodayPlan,
-  calculateWeeklyProgress,
-} from "../services/study/learningPathService";
-import type { LearningPath, LearningPathStage } from "../services/study/learningPathService";
-import { graphService } from "../services/graph/index";
+} from "../services/study";
 import { logger } from "../utils/logger";
 import { z } from "zod";
 
 const router = Router();
-
-interface LearningPathResult {
-  id?: string;
-  graphId: string;
-  graphTitle: string;
-  totalNodes: number;
-  completedNodes: number;
-  estimatedTotalTime: number;
-  stages: LearningPathStage[];
-  todayPlan: LearningPathStage[];
-  predictions: {
-    completionDate: string;
-    weeklyProgress: number[];
-    recommendedDailyTime: number;
-  };
-  suggestions: string[];
-  aiGenerated: boolean;
-  targetGoal?: string;
-  savedPath?: LearningPath;
-}
 
 const uuidParamSchema = z.object({
   id: z.string().uuid("无效的学习路径ID"),
@@ -459,150 +431,24 @@ router.post(
       save_path,
       path_title,
     } = req.body;
-    const supabase = req.supabase!;
 
     try {
-      const { nodes, edges } = await graphService.getGraphNodes(
-        supabase,
+      const learningPath = await learningPathService.generateAndSavePath(
+        req.supabase!,
         req.user.id,
         graph_id,
-      );
-
-      if (nodes.length === 0) {
-        throw new AppError("图谱中没有节点", 400, ErrorCodes.VALIDATION_ERROR);
-      }
-
-      const { data: graphMeta } = await supabase
-        .from("knowledge_graphs")
-        .select("title, description")
-        .eq("id", graph_id)
-        .single();
-
-      const progressMap = await buildProgressMap(supabase, req.user.id, nodes);
-      const { parentMap, childMap } = buildDependencyMaps(nodes, edges);
-
-      let stages: LearningPathStage[];
-      let suggestions: string[];
-      let aiGenerated = false;
-
-      if (target_goal) {
-        const aiResult = await generateAIPath(
-          supabase,
-          req.user.id,
-          graph_id,
-          nodes,
-          edges,
-          progressMap,
-          parentMap,
-          childMap,
+        {
           target_goal,
+          target_knowledge_point_id,
           learning_style,
           daily_time_minutes,
           current_knowledge,
-          graphMeta?.title || "",
-          providerType,
+          provider: providerType,
           model,
-        );
-        stages = aiResult.stages;
-        suggestions = aiResult.suggestions;
-        aiGenerated = true;
-      } else {
-        const ruleResult = generateRulePath(
-          nodes,
-          edges,
-          progressMap,
-          parentMap,
-          childMap,
-          target_knowledge_point_id,
-          daily_time_minutes,
-        );
-        stages = ruleResult.stages;
-        suggestions = ruleResult.suggestions;
-      }
-
-      const todayPlan = buildTodayPlan(stages, daily_time_minutes);
-      const totalEstimatedTime = stages.reduce(
-        (sum, s) => sum + s.estimatedTime,
-        0,
-      );
-      const completedCount = stages.filter((s) => s.isCompleted).length;
-      const estimatedDays = Math.ceil(totalEstimatedTime / daily_time_minutes);
-      const completionDate = new Date();
-      completionDate.setDate(completionDate.getDate() + estimatedDays);
-
-      const weeklyProgress = calculateWeeklyProgress(
-        daily_time_minutes,
-        totalEstimatedTime,
-      );
-
-      const learningPath: LearningPathResult = {
-        graphId: graph_id,
-        graphTitle: graphMeta?.title || "未命名图谱",
-        totalNodes: nodes.length,
-        completedNodes: completedCount,
-        estimatedTotalTime: totalEstimatedTime,
-        stages,
-        todayPlan,
-        predictions: {
-          completionDate: completionDate.toISOString(),
-          weeklyProgress,
-          recommendedDailyTime: Math.min(
-            60,
-            Math.ceil(totalEstimatedTime / 14),
-          ),
+          save_path,
+          path_title,
         },
-        suggestions,
-        aiGenerated,
-        targetGoal: target_goal,
-      };
-
-      if (save_path) {
-        const validStages = stages.filter((stage) => {
-          const isUuid =
-            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-              stage.nodeId,
-            );
-          return isUuid;
-        });
-
-        if (validStages.length === 0) {
-          throw new AppError(
-            "AI 生成的学习路径无法匹配到图谱中的知识点，请重试",
-            400,
-            ErrorCodes.VALIDATION_ERROR,
-          );
-        }
-
-        const uuidPattern =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-        const savedPath = await learningPathService.createLearningPath(
-          supabase,
-          req.user.id,
-          {
-            title: path_title || `${graphMeta?.title || "图谱"}学习路径`,
-            goal: target_goal,
-            source_graph_id: graph_id,
-            total_estimated_time: totalEstimatedTime,
-            ai_generated: aiGenerated,
-            daily_minutes_target: daily_time_minutes,
-            nodes: validStages.map((stage, index) => ({
-              knowledge_point_id: stage.nodeId,
-              order_index: index,
-              title: stage.nodeTitle,
-              description: stage.reason,
-              estimated_time: stage.estimatedTime,
-              is_milestone: stage.priority === "high",
-              prerequisites: stage.prerequisites.filter((id) =>
-                uuidPattern.test(id),
-              ),
-            })),
-          },
-        );
-
-        learningPath.id = savedPath.id;
-        learningPath.savedPath = savedPath;
-      }
+      );
 
       res.json(learningPath);
     } catch (error) {

@@ -1,0 +1,9 @@
+- [x] `api/services/literature/literatureApplyService.ts` 已创建，包含 applyLiterature 方法
+- [x] `api/services/graph/domainExpansionService.ts` 已创建，包含 expandDomain 和 batchCreateDomainGraphs 方法
+- [x] `api/services/common/backupService.ts` 已扩展，包含 cascadeDeleteGraph 和 restoreBackupData 方法
+- [x] `api/routes/literature.ts` POST /apply 改为调用 literatureApplyService，移除约 814 行内联逻辑
+- [x] `api/routes/graphs/expansion.ts` POST /domain/expand 和 /domain/batch-create 改为调用 domainExpansionService，移除约 600 行内联逻辑
+- [x] `api/routes/backup.ts` POST /restore/:id 和 POST /import 改为调用 backupService，移除 restoreBackupData 函数和重复的级联删除代码
+- [x] 服务导出已更新（graph/index.ts 和 literature/index.ts）
+- [x] `npm run check` 通过，无类型错误
+- [x] `npm run lint` 通过，无 lint 错误

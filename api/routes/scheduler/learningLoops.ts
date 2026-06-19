@@ -2,7 +2,9 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { z } from "zod";
 import { logger } from "../../utils/logger";
-import { learningLoopOrchestrator } from "../../services/scheduler/core/learningLoopOrchestrator";
+import { learningLoopOrchestrator } from "../../services/scheduler/core";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -26,12 +28,12 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const parsed = startLoopSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid request data", details: parsed.error.errors });
+      throw new AppError("Invalid request data", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { knowledge_point_id, graph_id } = parsed.data;
@@ -46,7 +48,7 @@ router.post(
       res.status(201).json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to start loop:", error);
-      res.status(500).json({ error: "Failed to start learning loop" });
+      throw new AppError("Failed to start learning loop", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -57,12 +59,12 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const parsed = startWithTaskSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid request data", details: parsed.error.errors });
+      throw new AppError("Invalid request data", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { knowledge_point_id, graph_id } = parsed.data;
@@ -77,7 +79,7 @@ router.post(
       res.status(201).json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to start learning with task:", error);
-      res.status(500).json({ error: "Failed to start learning with task" });
+      throw new AppError("Failed to start learning with task", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -88,7 +90,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -101,13 +103,13 @@ router.post(
       );
 
       if (!loop) {
-        return res.status(404).json({ error: "Learning loop not found" });
+        throw new AppError("Learning loop not found", 404, ErrorCodes.NOT_FOUND);
       }
 
       res.json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to advance loop:", error);
-      res.status(500).json({ error: "Failed to advance learning loop" });
+      throw new AppError("Failed to advance learning loop", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -118,12 +120,12 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const parsed = activeLoopQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid query parameters", details: parsed.error.errors });
+      throw new AppError("Invalid query parameters", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const { knowledge_point_id } = parsed.data;
@@ -137,7 +139,7 @@ router.get(
       res.json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to get active loop:", error);
-      res.status(500).json({ error: "Failed to get active learning loop" });
+      throw new AppError("Failed to get active learning loop", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

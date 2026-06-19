@@ -93,6 +93,20 @@ export class AIActionService {
     if (error) throw error;
   }
 
+  async getGraphOwner(
+    supabase: SupabaseClient,
+    graphId: string,
+  ): Promise<{ user_id: string } | null> {
+    const { data, error } = await supabase
+      .from("graphs")
+      .select("user_id")
+      .eq("id", graphId)
+      .single();
+
+    if (error || !data) return null;
+    return data as { user_id: string };
+  }
+
   async executeAction(
     actionId: string, 
     nodeId: string, 

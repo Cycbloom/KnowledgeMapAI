@@ -2,8 +2,9 @@ import { Router } from "express";
 import { kernel } from "../app";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { logger } from "../utils/logger";
-import { PluginRegistry } from "../services/kernel/registry/PluginRegistry";
-import { PluginStoreService } from "../services/kernel/PluginStoreService";
+import { PluginRegistry, PluginStoreService } from "../services/kernel";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 const pluginRegistry = new PluginRegistry();
@@ -20,8 +21,7 @@ router.get("/registry", requireAuth, (req, res) => {
 router.get("/registry/:name", requireAuth, (req, res) => {
   const plugin = pluginRegistry.get(req.params.name);
   if (!plugin) {
-    res.status(404).json({ success: false, error: "Plugin not found in registry" });
-    return;
+    throw new AppError("Plugin not found in registry", 404, ErrorCodes.NOT_FOUND);
   }
   res.json({ success: true, data: plugin });
 });
@@ -30,14 +30,12 @@ router.post("/registry/:name/install", requireAuth, async (req: AuthRequest, res
   const { name } = req.params;
   const userId = req.user?.id;
   if (!userId) {
-    res.status(401).json({ success: false, error: "Unauthorized" });
-    return;
+    throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
   }
 
   const registryEntry = pluginRegistry.get(name);
   if (!registryEntry) {
-    res.status(404).json({ success: false, error: "Plugin not found in registry" });
-    return;
+    throw new AppError("Plugin not found in registry", 404, ErrorCodes.NOT_FOUND);
   }
 
   const storeService = new PluginStoreService(kernel);
@@ -49,8 +47,7 @@ router.post("/registry/:name/uninstall", requireAuth, async (req: AuthRequest, r
   const { name } = req.params;
   const userId = req.user?.id;
   if (!userId) {
-    res.status(401).json({ success: false, error: "Unauthorized" });
-    return;
+    throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
   }
 
   const storeService = new PluginStoreService(kernel);
@@ -62,14 +59,12 @@ router.post("/registry/:name/update", requireAuth, async (req: AuthRequest, res)
   const { name } = req.params;
   const userId = req.user?.id;
   if (!userId) {
-    res.status(401).json({ success: false, error: "Unauthorized" });
-    return;
+    throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
   }
 
   const registryEntry = pluginRegistry.get(name);
   if (!registryEntry) {
-    res.status(404).json({ success: false, error: "Plugin not found in registry" });
-    return;
+    throw new AppError("Plugin not found in registry", 404, ErrorCodes.NOT_FOUND);
   }
 
   const storeService = new PluginStoreService(kernel);
@@ -82,13 +77,11 @@ router.post("/registry/:name/rate", requireAuth, async (req: AuthRequest, res) =
   const { rating, review } = req.body;
   const userId = req.user?.id;
   if (!userId) {
-    res.status(401).json({ success: false, error: "Unauthorized" });
-    return;
+    throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
   }
 
   if (!rating || rating < 1 || rating > 5) {
-    res.status(400).json({ success: false, error: "Rating must be between 1 and 5" });
-    return;
+    throw new AppError("Rating must be between 1 and 5", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
   const storeService = new PluginStoreService(kernel);
@@ -99,8 +92,7 @@ router.post("/registry/:name/rate", requireAuth, async (req: AuthRequest, res) =
 router.get("/updates", requireAuth, async (req: AuthRequest, res) => {
   const userId = req.user?.id;
   if (!userId) {
-    res.status(401).json({ success: false, error: "Unauthorized" });
-    return;
+    throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
   }
 
   const storeService = new PluginStoreService(kernel);
@@ -120,8 +112,7 @@ router.get("/updates", requireAuth, async (req: AuthRequest, res) => {
 router.get("/", requireAuth, async (req: AuthRequest, res) => {
   const userId = req.user?.id;
   if (!userId) {
-    res.status(401).json({ success: false, error: "Unauthorized" });
-    return;
+    throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
   }
 
   const storeService = new PluginStoreService(kernel);
@@ -156,8 +147,7 @@ router.post("/:name/activate", requireAuth, async (req, res) => {
   const entry = kernel.getPlugin(name);
 
   if (!entry) {
-    res.status(404).json({ success: false, error: `Plugin "${name}" not found` });
-    return;
+    throw new AppError(`Plugin "${name}" not found`, 404, ErrorCodes.NOT_FOUND);
   }
 
   if (entry.state === "active") {
@@ -169,9 +159,10 @@ router.post("/:name/activate", requireAuth, async (req, res) => {
     await kernel.activatePlugin(name);
     res.json({ success: true, data: { name, state: "active" } });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     const message = error instanceof Error ? error.message : "Unknown error";
     logger.error(`[Plugins] Failed to activate "${name}": ${message}`);
-    res.status(500).json({ success: false, error: message });
+    throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -180,8 +171,7 @@ router.post("/:name/deactivate", requireAuth, async (req, res) => {
   const entry = kernel.getPlugin(name);
 
   if (!entry) {
-    res.status(404).json({ success: false, error: `Plugin "${name}" not found` });
-    return;
+    throw new AppError(`Plugin "${name}" not found`, 404, ErrorCodes.NOT_FOUND);
   }
 
   if (entry.state !== "active") {
@@ -193,9 +183,10 @@ router.post("/:name/deactivate", requireAuth, async (req, res) => {
     await kernel.deactivatePlugin(name);
     res.json({ success: true, data: { name, state: "inactive" } });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     const message = error instanceof Error ? error.message : "Unknown error";
     logger.error(`[Plugins] Failed to deactivate "${name}": ${message}`);
-    res.status(500).json({ success: false, error: message });
+    throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -204,8 +195,7 @@ router.get("/:name/config", requireAuth, (req, res) => {
   const entry = kernel.getPlugin(name);
 
   if (!entry) {
-    res.status(404).json({ success: false, error: `Plugin "${name}" not found` });
-    return;
+    throw new AppError(`Plugin "${name}" not found`, 404, ErrorCodes.NOT_FOUND);
   }
 
   const config = kernel.getPluginConfig(name);
@@ -217,8 +207,7 @@ router.patch("/:name/config", requireAuth, (req, res) => {
   const entry = kernel.getPlugin(name);
 
   if (!entry) {
-    res.status(404).json({ success: false, error: `Plugin "${name}" not found` });
-    return;
+    throw new AppError(`Plugin "${name}" not found`, 404, ErrorCodes.NOT_FOUND);
   }
 
   try {
@@ -226,8 +215,9 @@ router.patch("/:name/config", requireAuth, (req, res) => {
     const config = kernel.getPluginConfig(name);
     res.json({ success: true, data: config });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     const message = error instanceof Error ? error.message : "Unknown error";
-    res.status(400).json({ success: false, error: message });
+    throw new AppError(message, 400, ErrorCodes.VALIDATION_ERROR);
   }
 });
 

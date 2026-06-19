@@ -75,3 +75,16 @@ export {
   contextWindowManager,
   ContextWindowManager,
 } from "./contextWindowManager";
+export { aiConfigRouteService } from "./aiConfigRouteService";
+export { performanceMonitor } from "./performanceMonitor";
+export type { EnrichedMetadata } from "./performanceMonitor";
+export { enrichMetadata } from "./performanceMonitor";
+export { pricingService } from "./pricingService";
+export { getAIProvider } from "./factory";
+export { getAIProviderForTask } from "./factory";
+export { getEnvConfig, getProviderConfig, getDefaultProvider, getProviderForTask } from "./config";
+export { literatureMetadataService, LiteratureMetadataService } from "./literatureMetadataService";
+export type { LiteratureMetadata, LiteratureType, ExtractMetadataOptions } from "./literatureMetadataService";
+export { annotationService, AnnotationService } from "./annotationService";
+export type { Term } from "./annotationService";
+export { documentParsingService, DocumentParsingService } from "./documentParsingService";

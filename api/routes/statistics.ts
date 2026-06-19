@@ -1,7 +1,6 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
-import { ErrorCodes } from '../../shared/types/errorCodes';
-import { AppError } from '../middleware/errorHandler';
+import { studyService } from "../services/study";
 
 const router = Router();
 
@@ -9,13 +8,9 @@ const router = Router();
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const userId = req.user.id;
   const now = new Date();
-  
-  // Optimize: Use RPC for server-side aggregation
-  const { data: stats, error } = await req.supabase!.rpc('get_user_study_stats', {
-    p_user_id: userId
-  });
 
-  if (error) throw new AppError(error.message || '获取统计数据失败', 500, ErrorCodes.INTERNAL_ERROR);
+  // Optimize: Use RPC for server-side aggregation
+  const stats = await studyService.getUserStudyStats(req.supabase!, userId);
 
   // --- Process Distribution ---
   const stateCounts: Record<string, number> = {

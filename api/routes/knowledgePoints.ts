@@ -3,15 +3,15 @@ import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
-import { aiService } from "../services/ai/aiService";
+import { aiService } from "../services/ai";
 import {
   knowledgePointService,
   knowledgePointVersionService,
-} from "../services/graph/index";
-import { authService } from "../services/core/authService";
+} from "../services/graph";
 import {
   conceptAggregationService,
-} from "../services/graph/conceptAggregationService";
+} from "../services/graph";
+import { requireKnowledgePointOwnership, requireAdmin } from "../middleware/ownership";
 import { logger } from "../utils/logger";
 import { z } from "zod";
 
@@ -174,22 +174,13 @@ router.post(
 router.put(
   "/:id",
   requireAuth,
+  requireKnowledgePointOwnership,
   validate(updateKnowledgePointSchema),
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
 
     try {
-      const isOwner = await knowledgePointService.checkOwnership(
-        req.supabase!,
-        id,
-        req.user.id,
-      );
-
-      if (!isOwner) {
-        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
-      }
-
       const data = await knowledgePointService.update(
         req.supabase!,
         id,
@@ -306,14 +297,9 @@ router.post(
 router.get(
   "/admin/knowledge-points/pending",
   requireAuth,
+  requireAdmin,
   async (req: AuthRequest, res: Response) => {
     const { limit = 20, offset = 0 } = req.query;
-
-    const userProfile = await authService.getProfile(req.user.id);
-
-    if (!userProfile || userProfile.role !== "admin") {
-      throw new AppError("需要管理员权限", 403, ErrorCodes.FORBIDDEN);
-    }
 
     try {
       const result = await knowledgePointService.listPending(req.supabase!, {
@@ -331,14 +317,9 @@ router.get(
 router.post(
   "/admin/knowledge-points/suggestions/:id/approve",
   requireAuth,
+  requireAdmin,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-
-    const userProfile = await authService.getProfile(req.user.id);
-
-    if (!userProfile || userProfile.role !== "admin") {
-      throw new AppError("需要管理员权限", 403, ErrorCodes.FORBIDDEN);
-    }
 
     try {
       const data = await knowledgePointService.approvePublic(
@@ -368,16 +349,11 @@ router.post(
 router.post(
   "/admin/knowledge-points/suggestions/:id/reject",
   requireAuth,
+  requireAdmin,
   validate(rejectSuggestionSchema),
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { reason } = req.body;
-
-    const userProfile = await authService.getProfile(req.user.id);
-
-    if (!userProfile || userProfile.role !== "admin") {
-      throw new AppError("需要管理员权限", 403, ErrorCodes.FORBIDDEN);
-    }
 
     try {
       await knowledgePointService.rejectPublic(
@@ -574,21 +550,12 @@ router.get(
 router.post(
   "/:id/versions/:versionNumber/rollback",
   requireAuth,
+  requireKnowledgePointOwnership,
   validate(rollbackSchema),
   async (req: AuthRequest, res: Response) => {
     const { id, versionNumber } = req.params;
 
     try {
-      const isOwner = await knowledgePointService.checkOwnership(
-        req.supabase!,
-        id,
-        req.user.id,
-      );
-
-      if (!isOwner) {
-        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
-      }
-
       const result = await knowledgePointVersionService.rollback(
         req.supabase!,
         id,
@@ -618,22 +585,13 @@ router.post(
 router.post(
   "/:id/versions",
   requireAuth,
+  requireKnowledgePointOwnership,
   validate(createManualVersionSchema),
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { change_summary } = req.body;
 
     try {
-      const isOwner = await knowledgePointService.checkOwnership(
-        req.supabase!,
-        id,
-        req.user.id,
-      );
-
-      if (!isOwner) {
-        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
-      }
-
       const version = await knowledgePointVersionService.createManualVersion(
         req.supabase!,
         id,
@@ -660,22 +618,13 @@ router.post(
 router.put(
   "/:id/aliases",
   requireAuth,
+  requireKnowledgePointOwnership,
   validate(updateAliasesSchema),
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { aliases } = req.body;
 
     try {
-      const isOwner = await knowledgePointService.checkOwnership(
-        req.supabase!,
-        id,
-        req.user.id,
-      );
-
-      if (!isOwner) {
-        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
-      }
-
       logger.info("Updating knowledge point aliases", {
         knowledgePointId: id,
         aliasesCount: aliases.length,

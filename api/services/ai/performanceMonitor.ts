@@ -1,4 +1,5 @@
 import type {
+  AIProviderType,
   AIPerformanceLog,
   AIPerformanceStats,
   GetPerformanceLogsQuery,
@@ -444,6 +445,99 @@ class PerformanceMonitor {
     })();
 
     return count;
+  }
+
+  async withAutoGraphTracking<T>(
+    operation: string,
+    providerType: AIProviderType,
+    model: string,
+    fn: () => Promise<{
+      result: T;
+      usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        prompt_tokens_details?: {
+          cached_tokens?: number;
+          audio_tokens?: number;
+        };
+        completion_tokens_details?: {
+          reasoning_tokens?: number;
+          audio_tokens?: number;
+        };
+      };
+    }>,
+    metadata?: {
+      graphId?: string;
+      graphTitle?: string;
+      userId?: string;
+      userName?: string;
+      topic?: string;
+      nodeTitle?: string;
+      nodeId?: string;
+      nodeLevel?: string;
+      style?: string;
+    },
+    sessionId?: string,
+  ): Promise<T> {
+    const startTime = Date.now();
+    let success = true;
+    let errorMessage: string | undefined;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let cachedInputTokens = 0;
+    let uncachedInputTokens = 0;
+    let reasoningTokens = 0;
+
+    try {
+      const { result, usage } = await fn();
+      inputTokens = usage?.prompt_tokens || 0;
+      outputTokens = usage?.completion_tokens || 0;
+
+      cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
+      uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
+      reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
+
+      return result;
+    } catch (error: unknown) {
+      success = false;
+      const err = error as Error;
+      errorMessage = err.message;
+      throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      const totalTokens = inputTokens + outputTokens;
+      const cacheHitRate =
+        inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
+
+      const costBreakdown = pricingService.calculateDetailedCost(
+        providerType,
+        model,
+        inputTokens,
+        outputTokens,
+        cachedInputTokens,
+      );
+
+      this.recordLog({
+        operation,
+        provider: providerType,
+        model,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        estimatedCost: costBreakdown.totalCost,
+        duration,
+        success,
+        errorMessage,
+        metadata,
+        sessionId,
+
+        cachedInputTokens,
+        uncachedInputTokens,
+        reasoningTokens,
+        cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
+        costBreakdown,
+      });
+    }
   }
 
   async getDatabaseStats(): Promise<{

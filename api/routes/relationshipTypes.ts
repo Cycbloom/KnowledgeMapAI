@@ -2,7 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { uuidParamsSchema, createRelationshipTypeSchema, updateRelationshipTypeSchema } from '../schemas/index';
-import { relationshipTypeService } from '../services/graph/index';
+import { relationshipTypeService } from '../services/graph';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { AppError } from '../middleware/errorHandler';
 

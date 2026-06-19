@@ -9,12 +9,13 @@ import {
   suggestNextTopicSchema,
 } from "../../schemas/index";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { aiService } from "../../services/ai/aiService";
-import { getMockResponse } from "../../services/ai/mock";
-import { getAIProviderForTask, getAIProvider } from "../../services/ai/factory";
+import { AppError } from "../../middleware/errorHandler";
+import { aiService } from "../../services/ai";
+import { getMockResponse } from "../../services/ai";
+import { getAIProviderForTask, getAIProvider } from "../../services/ai";
 import { logger } from "../../utils/logger";
-import { graphService } from "../../services/graph/index";
-import { promptService } from "../../services/ai/promptService";
+import { graphService } from "../../services/graph";
+import { promptService } from "../../services/ai";
 import { getSupabaseAdmin } from "../../supabase";
 import {
   setSSEHeaders,
@@ -25,7 +26,7 @@ import {
 import {
   performanceMonitor,
   enrichMetadata,
-} from "../../services/ai/performanceMonitor";
+} from "../../services/ai";
 
 const router = Router();
 
@@ -73,71 +74,10 @@ router.post(
         graph_id,
       );
 
-      let contextText = "";
-      const MAX_CONTEXT_LENGTH = 15000;
-
-      const validNodes = nodes.filter(
-        (n): n is NonNullable<typeof n> => n !== null,
-      );
-
-      if (context_node_ids && context_node_ids.length > 0) {
-        const selectedNodes = validNodes.filter((n) =>
-          context_node_ids.includes(n.id),
-        );
-        const nodesText = selectedNodes
-          .map((n) => `[Node] ${n.title}: ${n.content || "(No content)"}`)
-          .join("\n");
-
-        const relatedEdges = edges.filter(
-          (e) =>
-            context_node_ids.includes(e.source_knowledge_point_id) &&
-            context_node_ids.includes(e.target_knowledge_point_id),
-        );
-
-        const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
-
-        const edgesText = relatedEdges
-          .map((e) => {
-            const source =
-              nodeTitleMap.get(e.source_knowledge_point_id) || "Unknown";
-            const target =
-              nodeTitleMap.get(e.target_knowledge_point_id) || "Unknown";
-            return `[Edge] ${source} -> ${target} (${e.relationship || "related"})`;
-          })
-          .join("\n");
-
-        contextText = `Selected Nodes:\n${nodesText}\n\nRelationships:\n${edgesText}`;
-      } else {
-        const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
-
-        if (validNodes.length > 100) {
-          const nodesText = validNodes.map((n) => `- ${n.title}`).join("\n");
-          contextText = `Graph Overview (Nodes Only):\n${nodesText}`;
-        } else {
-          const nodesText = validNodes
-            .map((n) => `[Node] ${n.title}: ${n.content || "(No content)"}`)
-            .join("\n");
-          const edgesText = edges
-            .map((e) => {
-              const source =
-                nodeTitleMap.get(e.source_knowledge_point_id) || "Unknown";
-              const target =
-                nodeTitleMap.get(e.target_knowledge_point_id) || "Unknown";
-              return `[Edge] ${source} -> ${target} (${e.relationship || "related"})`;
-            })
-            .join("\n");
-
-          contextText = `All Nodes:\n${nodesText}\n\nAll Relationships:\n${edgesText}`;
-        }
-      }
-
-      if (contextText.length > MAX_CONTEXT_LENGTH) {
-        contextText = `${contextText.substring(0, MAX_CONTEXT_LENGTH)}...(truncated)`;
-        logger.warn("Graph context truncated due to length", {
-          graph_id,
-          length: contextText.length,
-        });
-      }
+      const contextText = aiService.buildGraphContext(nodes, edges, {
+        contextNodeIds: context_node_ids,
+        graphId: graph_id,
+      });
 
       const systemPrompt = await promptService.getRenderedPrompt(
         getSupabaseAdmin(),
@@ -259,7 +199,7 @@ router.post(
     }
 
     try {
-      const context: {
+      let context: {
         mode: string;
         graphId?: string;
         existingNodes?: string[];
@@ -274,22 +214,12 @@ router.post(
           req.user.id,
           graph_id,
         );
-        const validNodes = nodes.filter(
-          (n): n is NonNullable<typeof n> => n !== null,
+        context = aiService.buildTutorContext(
+          nodes,
+          context_node_ids?.[0],
+          mode,
+          graph_id,
         );
-        context.graphId = graph_id;
-        context.existingNodes = validNodes.map((n) => n.title);
-
-        if (context_node_ids && context_node_ids.length > 0) {
-          const currentNode = validNodes.find(
-            (n) => n.id === context_node_ids[0],
-          );
-          if (currentNode) {
-            context.currentNodeId = currentNode.id;
-            context.currentNodeTitle = currentNode.title;
-            context.currentNodeContent = currentNode.content;
-          }
-        }
       }
 
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -310,31 +240,25 @@ router.post(
       });
 
       const startTime = Date.now();
+      const systemPrompt = await promptService.getRenderedPrompt(
+        getSupabaseAdmin(),
+        "tutor_chat",
+        {
+          isGuided: mode === "guided",
+          currentNodeId: context.currentNodeId,
+          currentNodeTitle: context.currentNodeTitle,
+          currentNodeContent: context.currentNodeContent,
+          existingNodes: context.existingNodes
+            ? context.existingNodes.slice(0, 20).join(", ")
+            : undefined,
+        },
+      );
+
       const stream = await provider.client.chat.completions.create({
         messages: [
           {
             role: "system",
-            content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
-
-${
-  mode === "guided"
-    ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step through the knowledge graph. Ask questions to assess understanding before moving to the next topic."
-    : "Free Mode: Allow open-ended discussion. Answer questions freely and explore topics based on user interest. Extract key concepts from the conversation that could be added to the knowledge graph."
-}
-
-Current Context:
-${context.currentNodeId ? `\nCurrent Node:\n- Title: ${context.currentNodeTitle}\n- Content: ${context.currentNodeContent || "(No content)"}` : ""}
-${context.existingNodes ? `\nExisting Nodes in Graph:\n${context.existingNodes.slice(0, 20).join(", ")}` : ""}
-
-Instructions:
-1. Be conversational and engaging
-2. Use markdown formatting for better readability
-3. When explaining concepts, provide examples
-4. In free mode, identify key concepts that could be new nodes in the knowledge graph
-5. In guided mode, follow the learning path and check understanding
-6. Respond in the same language as the user (default to Chinese)
-7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$
-8. IMPORTANT: Directly output your answer content. Do NOT include any conversational filler, preamble, or transitional phrases such as "根据您提供的...", "以下是...", "好的，我来...", "Let me...", etc. Start immediately with the actual response content.`,
+            content: systemPrompt,
           },
           ...messages,
         ],
@@ -424,7 +348,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Extract Concepts Error:", error);
-      res.status(500).json({ error: err.message || "AI 概念提取失败" });
+      throw new AppError(err.message || "AI 概念提取失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -467,7 +391,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Suggest Next Topic Error:", error);
-      res.status(500).json({ error: err.message || "AI 主题建议失败" });
+      throw new AppError(err.message || "AI 主题建议失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

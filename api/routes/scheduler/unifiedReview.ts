@@ -1,6 +1,8 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
-import { spacedRepetitionBridge } from "../../services/study/spacedRepetitionBridge";
+import { spacedRepetitionBridge } from "../../services/study";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -10,7 +12,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const items = await spacedRepetitionBridge.getUnifiedReviewQueue(
@@ -28,7 +30,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -43,7 +45,7 @@ router.post(
     );
 
     if (!result) {
-      return res.status(500).json({ error: "复习处理失败" });
+      throw new AppError("复习处理失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     res.json({ success: true, data: result });

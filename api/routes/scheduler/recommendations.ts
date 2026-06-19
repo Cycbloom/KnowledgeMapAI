@@ -2,9 +2,11 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
-import { aiService } from "../../services/ai/index";
-import { taskRecommendationService } from "../../services/scheduler/taskRecommendationService";
+import { aiService } from "../../services/ai";
+import { taskRecommendationService } from "../../services/scheduler";
 import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -20,7 +22,7 @@ router.post(
       const { title, context } = req.body;
 
       if (!title || typeof title !== "string") {
-        return res.status(400).json({ error: "请提供任务标题" });
+        throw new AppError("请提供任务标题", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const result = await aiService.generateTaskDetails(title, {
@@ -31,7 +33,7 @@ router.post(
       res.json({ success: true, data: result });
     } catch (error) {
       const err = error as Error;
-      res.status(500).json({ error: err.message || "AI 生成任务详情失败" });
+      throw new AppError(err.message || "AI 生成任务详情失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -42,9 +44,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     try {
@@ -59,7 +59,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Get recommendations error:", err);
-      res.status(500).json({ error: err.message || "获取任务推荐失败" });
+      throw new AppError(err.message || "获取任务推荐失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -70,9 +70,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     try {
@@ -86,7 +84,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Get smart suggestions error:", err);
-      res.status(500).json({ error: err.message || "获取智能建议失败" });
+      throw new AppError(err.message || "获取智能建议失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -99,7 +97,7 @@ router.post(
       const { title, description } = req.body;
 
       if (!title || typeof title !== "string") {
-        return res.status(400).json({ error: "请提供任务标题" });
+        throw new AppError("请提供任务标题", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const result = taskRecommendationService.analyzePriorityFromText(
@@ -110,7 +108,7 @@ router.post(
       res.json({ success: true, data: result });
     } catch (error) {
       const err = error as Error;
-      res.status(500).json({ error: err.message || "分析优先级失败" });
+      throw new AppError(err.message || "分析优先级失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -121,9 +119,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const days = req.query.days ? Number(req.query.days) : 30;
@@ -140,7 +136,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Get efficiency data error:", err);
-      res.status(500).json({ error: err.message || "获取效率数据失败" });
+      throw new AppError(err.message || "获取效率数据失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -151,9 +147,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     try {
@@ -167,7 +161,7 @@ router.get(
       res.json({ success: true, data: recommendation });
     } catch (error) {
       logger.error("Get smart recommendation error:", error);
-      res.status(500).json({ error: "获取智能推荐失败" });
+      throw new AppError("获取智能推荐失败", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -179,23 +173,19 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: task, error } = await supabase
-      .from("user_tasks")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .single();
+    const task = await taskRecommendationService.getTaskById(
+      supabase,
+      id,
+      req.user.id,
+    );
 
-    if (error || !task) {
-      return res.status(404).json({ error: "任务不存在" });
+    if (!task) {
+      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
     }
 
     const dynamicPriority =
@@ -212,9 +202,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;

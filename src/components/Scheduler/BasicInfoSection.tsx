@@ -36,7 +36,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
       {task.context && (
         <div>
           <label className="text-sm text-gray-500 dark:text-gray-400">上下文</label>
-          <p className="mt-1 text-gray-700 dark:text-gray-300">{task.context}</p>
+          <p className="mt-1 text-gray-700 dark:text-gray-300">{typeof task.context === 'string' ? task.context : JSON.stringify(task.context)}</p>
         </div>
       )}
 

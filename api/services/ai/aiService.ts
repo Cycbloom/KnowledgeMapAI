@@ -5,6 +5,34 @@ import { cardGenerationService } from "./cardGenerationService";
 import { knowledgeExpansionService } from "./knowledgeExpansionService";
 import { contentGenerationService } from "./contentGenerationService";
 import { analysisService } from "./analysisService";
+import { logger } from "../../utils/logger";
+
+interface GraphNode {
+  id: string;
+  title: string;
+  content?: string | null;
+}
+
+interface GraphEdge {
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+  relationship?: string | null;
+}
+
+interface BuildGraphContextOptions {
+  contextNodeIds?: string[];
+  maxContextLength?: number;
+  graphId?: string;
+}
+
+interface TutorContext {
+  mode: string;
+  graphId?: string;
+  existingNodes?: string[];
+  currentNodeId?: string;
+  currentNodeTitle?: string;
+  currentNodeContent?: string;
+}
 
 // Re-export types from 子服务，保持外部 API 不变
 export type { CardDifficulty, GenerateCardsOptions } from "./cardGenerationService";
@@ -140,6 +168,116 @@ export class AIService {
     },
   ) {
     return contentGenerationService.generateTaskDetails(title, options);
+  }
+
+  // === 图谱上下文构建 ===
+
+  buildGraphContext(
+    nodes: (GraphNode | null)[],
+    edges: GraphEdge[],
+    options: BuildGraphContextOptions = {},
+  ): string {
+    const {
+      contextNodeIds,
+      maxContextLength = 15000,
+      graphId,
+    } = options;
+
+    const validNodes = nodes.filter(
+      (n): n is NonNullable<typeof n> => n !== null,
+    );
+
+    let contextText = "";
+
+    if (contextNodeIds && contextNodeIds.length > 0) {
+      const selectedNodes = validNodes.filter((n) =>
+        contextNodeIds.includes(n.id),
+      );
+      const nodesText = selectedNodes
+        .map((n) => `[Node] ${n.title}: ${n.content || "(No content)"}`)
+        .join("\n");
+
+      const relatedEdges = edges.filter(
+        (e) =>
+          contextNodeIds.includes(e.source_knowledge_point_id) &&
+          contextNodeIds.includes(e.target_knowledge_point_id),
+      );
+
+      const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
+
+      const edgesText = relatedEdges
+        .map((e) => {
+          const source =
+            nodeTitleMap.get(e.source_knowledge_point_id) || "Unknown";
+          const target =
+            nodeTitleMap.get(e.target_knowledge_point_id) || "Unknown";
+          return `[Edge] ${source} -> ${target} (${e.relationship || "related"})`;
+        })
+        .join("\n");
+
+      contextText = `Selected Nodes:\n${nodesText}\n\nRelationships:\n${edgesText}`;
+    } else {
+      const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
+
+      if (validNodes.length > 100) {
+        const nodesText = validNodes.map((n) => `- ${n.title}`).join("\n");
+        contextText = `Graph Overview (Nodes Only):\n${nodesText}`;
+      } else {
+        const nodesText = validNodes
+          .map((n) => `[Node] ${n.title}: ${n.content || "(No content)"}`)
+          .join("\n");
+        const edgesText = edges
+          .map((e) => {
+            const source =
+              nodeTitleMap.get(e.source_knowledge_point_id) || "Unknown";
+            const target =
+              nodeTitleMap.get(e.target_knowledge_point_id) || "Unknown";
+            return `[Edge] ${source} -> ${target} (${e.relationship || "related"})`;
+          })
+          .join("\n");
+
+        contextText = `All Nodes:\n${nodesText}\n\nAll Relationships:\n${edgesText}`;
+      }
+    }
+
+    if (contextText.length > maxContextLength) {
+      contextText = `${contextText.substring(0, maxContextLength)}...(truncated)`;
+      logger.warn("Graph context truncated due to length", {
+        graph_id: graphId,
+        length: contextText.length,
+      });
+    }
+
+    return contextText;
+  }
+
+  buildTutorContext(
+    nodes: (GraphNode | null)[],
+    currentNodeId?: string,
+    mode: string = "free",
+    graphId?: string,
+  ): TutorContext {
+    const validNodes = nodes.filter(
+      (n): n is NonNullable<typeof n> => n !== null,
+    );
+
+    const context: TutorContext = { mode };
+
+    if (graphId) {
+      context.graphId = graphId;
+      context.existingNodes = validNodes.map((n) => n.title);
+
+      if (currentNodeId) {
+        const currentNode = validNodes.find((n) => n.id === currentNodeId);
+        if (currentNode) {
+          context.currentNodeId = currentNode.id;
+          context.currentNodeTitle = currentNode.title;
+          context.currentNodeContent = currentNode.content ?? undefined;
+        }
+      }
+    }
+
+    return context;
   }
 
   // === 分析与提取 (AnalysisService) ===

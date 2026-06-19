@@ -2,10 +2,11 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { z } from "zod";
-import { AgentService, SKILLS } from "../services/agent";
+import { AgentService, SKILLS, agentRouteService } from "../services/agent";
 import { allTools } from "../services/agent/tools";
 import { logger } from "../utils/logger";
-import { isIndexValue, buildIndexMap } from "../../shared/utils/indexMapping";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const createSessionSchema = z.object({
   skill_id: z.string().optional(),
@@ -61,7 +62,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
 
     const { skill_id, graph_ids, custom_prompt } = req.body;
@@ -92,7 +93,7 @@ router.get(
     const session = agentService.getSession(id);
 
     if (!session) {
-      return res.status(404).json({ error: "Session not found" });
+      throw new AppError("Session not found", 404, ErrorCodes.NOT_FOUND);
     }
 
     res.json({ session });
@@ -106,7 +107,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
 
     const { id } = req.params;
@@ -138,7 +139,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
 
     const { id } = req.params;
@@ -152,7 +153,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to execute autonomous session", error);
-      res.status(500).json({ error: err.message });
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -171,7 +172,7 @@ router.get("/tools", requireAuth, async (_req: AuthRequest, res: Response) => {
     res.json({ tools });
   } catch (error) {
     logger.error("Failed to get tools", error);
-    res.status(500).json({ error: "Failed to get tools" });
+    throw new AppError("Failed to get tools", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -182,104 +183,23 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
 
     const { recommendations, graphIndex } = req.body;
 
     try {
-      let created = 0;
-      const errors: string[] = [];
-
-      const { data: userGraphs } = await req
-        .supabase!.from("knowledge_graphs")
-        .select("id, title")
-        .eq("user_id", userId)
-        .is("deleted_at", null);
-
-      const graphIdByIndex = buildIndexMap(userGraphs || []);
-      const graphIdByTitle = new Map<string, string>();
-      (userGraphs || []).forEach((g) => {
-        graphIdByTitle.set(g.title, g.id);
-      });
-
-      if (graphIndex) {
-        Object.entries(graphIndex).forEach(([idx, title]) => {
-          const id = graphIdByTitle.get(title as string);
-          if (id) {
-            graphIdByIndex.set(parseInt(idx, 10), id);
-          }
-        });
-      }
-
-      const resolveGraphId = (
-        idxOrId: number | string,
-        title: string,
-      ): string | null => {
-        if (typeof idxOrId === "string" && idxOrId.includes("-")) {
-          return idxOrId;
-        }
-        if (isIndexValue(idxOrId)) {
-          const idx =
-            typeof idxOrId === "number" ? idxOrId : parseInt(idxOrId, 10);
-          return graphIdByIndex.get(idx) || null;
-        }
-        return graphIdByTitle.get(title) || null;
-      };
-
-      for (const rec of recommendations) {
-        const sourceGraphId = resolveGraphId(
-          rec.source_graph_idx ?? rec.source_graph_id,
-          rec.source_graph_title,
-        );
-        const targetGraphId = resolveGraphId(
-          rec.target_graph_idx ?? rec.target_graph_id,
-          rec.target_graph_title,
-        );
-
-        if (!sourceGraphId || !targetGraphId) {
-          errors.push(
-            `图谱不存在或无权限: ${rec.source_graph_title} -> ${rec.target_graph_title}`,
-          );
-          continue;
-        }
-
-        const { error: insertError } = await req
-          .supabase!.from("graph_relations")
-          .upsert(
-            {
-              source_graph_id: sourceGraphId,
-              target_graph_id: targetGraphId,
-              relation_type: rec.relation_type,
-              context: rec.reason,
-              source: "ai_suggested",
-              confidence: rec.confidence,
-            },
-            {
-              onConflict: "source_graph_id,target_graph_id,relation_type",
-            },
-          );
-
-        if (insertError) {
-          errors.push(
-            `创建关系失败: ${rec.source_graph_title} -> ${rec.target_graph_title}: ${insertError.message}`,
-          );
-        } else {
-          created++;
-        }
-      }
-
-      logger.info("Applied recommendations", {
+      const result = await agentRouteService.applyRecommendations(
+        req.supabase!,
         userId,
-        total: recommendations.length,
-        created,
-        errors: errors.length,
-      });
+        recommendations,
+        graphIndex,
+      );
 
       res.json({
         success: true,
-        created,
-        errors: errors.length > 0 ? errors : undefined,
+        created: result.created,
+        errors: result.errors,
       });
     } catch (error) {
       const err = error as Error;
@@ -308,20 +228,20 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
     const { id, actionId } = req.params;
     const agentService = new AgentService(req.supabase!);
     try {
       const result = await agentService.confirmAction(id, actionId);
       if (!result.success) {
-        return res.status(400).json({ error: result.error });
+        throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
       }
       res.json({ success: true, result: result.result });
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to confirm action", error);
-      res.status(500).json({ error: err.message });
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -332,20 +252,20 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
     const { id, actionId } = req.params;
     const agentService = new AgentService(req.supabase!);
     try {
       const result = agentService.rejectAction(id, actionId);
       if (!result.success) {
-        return res.status(400).json({ error: result.error });
+        throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
       }
       res.json({ success: true });
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to reject action", error);
-      res.status(500).json({ error: err.message });
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -357,7 +277,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
     const { id } = req.params;
     const { action_ids } = req.body;
@@ -368,7 +288,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to batch confirm actions", error);
-      res.status(500).json({ error: err.message });
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -380,7 +300,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
     }
     const { id } = req.params;
     const { action_ids } = req.body;
@@ -391,7 +311,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to batch reject actions", error);
-      res.status(500).json({ error: err.message });
+      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

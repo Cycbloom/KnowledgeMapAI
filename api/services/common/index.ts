@@ -24,4 +24,11 @@ export type {
   DistributionItem,
   DashboardStats,
 } from "./dashboardService";
+export { notificationService } from "./notificationService";
+export type {
+  ListNotificationsOptions,
+  CreateNotificationData,
+  UpdateNotificationSettingsData,
+} from "./notificationService";
+export { systemMonitorService } from "./systemMonitorService";
 

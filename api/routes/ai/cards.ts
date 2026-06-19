@@ -11,11 +11,11 @@ import {
 } from '../../schemas/index';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { AppError } from '../../middleware/errorHandler';
-import { aiService } from '../../services/ai/aiService';
+import { aiService } from '../../services/ai';
 import { asyncTaskService } from '../../services/asyncTaskService';
-import { graphNodeService } from '../../services/graph/index';
+import { graphNodeService } from '../../services/graph';
+import { studyRouteService } from '../../services/study';
 import { logger } from '../../utils/logger';
-import { getSupabaseAdmin } from '../../supabase';
 
 const router = Router();
 
@@ -53,110 +53,22 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
   const { node_ids, config, provider, model } = req.body;
 
   try {
-    const results: { nodeId: string; success: boolean; count: number; error?: string }[] = [];
-    
-    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(getSupabaseAdmin(), node_ids);
+    const { results, summary } = await studyRouteService.syncGenerateCardsForNodes(
+      req.user.id,
+      node_ids,
+      { ...config, provider, model },
+    );
 
-    if (!graphNodes || graphNodes.length === 0) {
+    if (results.length === 0) {
       res.json({ success: true, results: [], message: 'No nodes found' });
       return;
     }
 
-    const types = config?.types || ['qa', 'choice'];
-    const count = config?.count || 3;
-
-    for (const gn of graphNodes) {
-      try {
-        const aiResult = await aiService.generateCards(
-          gn.title || '',
-          gn.content || '',
-          {
-            types,
-            count,
-            provider,
-            model,
-            userId: req.user.id,
-            graphId: gn.graph_id,
-          }
-        );
-
-        const cards = (aiResult.cards || []) as Array<{
-          question: string;
-          answer: string;
-          explanation?: string;
-          type?: string;
-          options?: unknown;
-        }>;
-        
-        if (cards.length > 0) {
-          const cardsToInsert = cards.map((card) => ({
-            user_id: req.user.id,
-            knowledge_point_id: gn.knowledge_point_id,
-            graph_id: gn.graph_id,
-            question: card.question,
-            answer: card.answer,
-            explanation: card.explanation || null,
-            card_type: card.type ?? 'qa',
-            options: card.options ? JSON.stringify(card.options) : null,
-            next_review: new Date().toISOString(),
-            difficulty: 1,
-            fsrs_state: "New",
-            fsrs_stability: 0,
-            fsrs_difficulty: 0,
-            fsrs_elapsed_days: 0,
-            fsrs_scheduled_days: 0,
-            fsrs_retrievability: 0,
-          }));
-
-          const { error: insertError } = await getSupabaseAdmin()
-            .from('study_cards')
-            .insert(cardsToInsert);
-
-          if (insertError) {
-            logger.error(`Failed to insert cards for node ${gn.knowledge_point_id}:`, insertError);
-            results.push({
-              nodeId: gn.knowledge_point_id,
-              success: false,
-              count: 0,
-              error: insertError.message,
-            });
-          } else {
-            results.push({
-              nodeId: gn.knowledge_point_id,
-              success: true,
-              count: cards.length,
-            });
-          }
-        } else {
-          results.push({
-            nodeId: gn.knowledge_point_id,
-            success: true,
-            count: 0,
-          });
-        }
-      } catch (err) {
-        logger.error(`Failed to generate cards for node ${gn.knowledge_point_id}:`, err);
-        results.push({
-          nodeId: gn.knowledge_point_id,
-          success: false,
-          count: 0,
-          error: (err as Error).message || 'Unknown error',
-        });
-      }
-    }
-
-    const successCount = results.filter(r => r.success).length;
-    const totalCards = results.reduce((sum, r) => sum + r.count, 0);
-
     res.json({
       success: true,
       results,
-      summary: {
-        total: results.length,
-        successCount,
-        totalCards,
-      },
-      message: `Successfully generated ${totalCards} cards for ${successCount}/${results.length} nodes`,
+      summary,
+      message: `Successfully generated ${summary.totalCards} cards for ${summary.successCount}/${summary.total} nodes`,
     });
 
   } catch (error: unknown) {
@@ -252,7 +164,7 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('AI Expand Error:', error);
-    res.status(500).json({ error: err.message || 'AI 扩展失败' });
+    throw new AppError(err.message || 'AI 扩展失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -271,7 +183,7 @@ router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('AI Branch Suggestions Error:', error);
-    res.status(500).json({ error: err.message || 'AI 分支建议生成失败' });
+    throw new AppError(err.message || 'AI 分支建议生成失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -310,7 +222,7 @@ router.post('/cross-graph-connections', requireAuth, async (req: AuthRequest, re
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('AI Cross Graph Connections Error:', error);
-    res.status(500).json({ error: err.message || 'AI 跨图谱连接分析失败' });
+    throw new AppError(err.message || 'AI 跨图谱连接分析失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

@@ -2,14 +2,17 @@ import { Router, type Response } from "express";
 import OpenAI from "openai";
 import type { AIProviderType } from "@shared/types";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
-import { appSettingsService } from "../../services/core/appSettingsService";
-import { getEnvConfig } from "../../services/ai/config";
+import { appSettingsService } from "../../services/core";
+import { aiConfigRouteService } from "../../services/ai";
+import { getEnvConfig } from "../../services/ai";
 import { logger } from "../../utils/logger";
 import {
   getSupabaseAdmin,
   reinitializeSupabaseClients,
   getCurrentSupabaseConfig,
 } from "../../supabase";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -137,7 +140,7 @@ router.get(
       res.json({ providers });
     } catch (error) {
       logger.error("Failed to get provider configs:", error);
-      res.status(500).json({ error: "Failed to get provider configs" });
+      throw new AppError("Failed to get provider configs", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -160,25 +163,18 @@ router.put(
       };
 
       if (!providers || typeof providers !== "object") {
-        res.status(400).json({ error: "providers object is required" });
-        return;
+        throw new AppError("providers object is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       for (const [provider, config] of Object.entries(providers)) {
         if (config.apiKey !== undefined && config.apiKey === "") {
-          res.status(400).json({
-            error: `apiKey for ${provider} must be non-empty if provided`,
-          });
-          return;
+          throw new AppError(`apiKey for ${provider} must be non-empty if provided`, 400, ErrorCodes.VALIDATION_ERROR);
         }
         if (config.baseURL !== undefined) {
           try {
             new URL(config.baseURL);
           } catch {
-            res
-              .status(400)
-              .json({ error: `baseURL for ${provider} is not a valid URL` });
-            return;
+            throw new AppError(`baseURL for ${provider} is not a valid URL`, 400, ErrorCodes.VALIDATION_ERROR);
           }
         }
       }
@@ -204,7 +200,7 @@ router.put(
       res.json({ success: true });
     } catch (error) {
       logger.error("Failed to update provider configs:", error);
-      res.status(500).json({ error: "Failed to update provider configs" });
+      throw new AppError("Failed to update provider configs", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -222,8 +218,7 @@ router.post(
       };
 
       if (!provider) {
-        res.status(400).json({ error: "provider is required" });
-        return;
+        throw new AppError("provider is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       let testApiKey = apiKey;
@@ -350,17 +345,9 @@ router.get(
       const url = config.url || "";
       const isLocal = url.includes("127.0.0.1") || url.includes("localhost");
       const mode = isLocal ? "local" : "cloud";
-      let connected = false;
 
-      try {
-        const { error } = await getSupabaseAdmin()
-          .from("app_settings")
-          .select("key")
-          .limit(1);
-        connected = !error;
-      } catch {
-        connected = false;
-      }
+      const result = await aiConfigRouteService.testDatabaseConnection(getSupabaseAdmin());
+      const connected = result.connected;
 
       res.json({
         configured: !!url,
@@ -370,7 +357,7 @@ router.get(
       });
     } catch (error) {
       logger.error("Failed to get database config:", error);
-      res.status(500).json({ error: "Failed to get database config" });
+      throw new AppError("Failed to get database config", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -388,25 +375,21 @@ router.put(
       };
 
       if (!url) {
-        res.status(400).json({ error: "url is required" });
-        return;
+        throw new AppError("url is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       try {
         new URL(url);
       } catch {
-        res.status(400).json({ error: "url is not a valid URL" });
-        return;
+        throw new AppError("url is not a valid URL", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       if (!serviceRoleKey) {
-        res.status(400).json({ error: "serviceRoleKey is required" });
-        return;
+        throw new AppError("serviceRoleKey is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       if (!anonKey) {
-        res.status(400).json({ error: "anonKey is required" });
-        return;
+        throw new AppError("anonKey is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       await appSettingsService.updateSetting("database_config", {
@@ -430,24 +413,13 @@ router.put(
         return;
       }
 
-      try {
-        const { error } = await getSupabaseAdmin()
-          .from("app_settings")
-          .select("key")
-          .limit(1);
+      const admin = getSupabaseAdmin();
+      const testResult = await aiConfigRouteService.testDatabaseConnectionWithConfig(admin);
 
-        if (error) {
-          res.json({
-            success: false,
-            message: `Database reinitialized but connection test failed: ${error.message}`,
-          });
-          return;
-        }
-      } catch (testError) {
-        const err = testError as Error;
+      if (!testResult.connected) {
         res.json({
           success: false,
-          message: `Database reinitialized but connection test failed: ${err.message}`,
+          message: `Database reinitialized but connection test failed: ${testResult.error || "Unknown error"}`,
         });
         return;
       }
@@ -473,7 +445,7 @@ router.put(
       });
     } catch (error) {
       logger.error("Failed to update database config:", error);
-      res.status(500).json({ error: "Failed to update database config" });
+      throw new AppError("Failed to update database config", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -519,7 +491,7 @@ router.get(
       });
     } catch (error) {
       logger.error("Failed to get main AI config:", error);
-      res.status(500).json({ error: "Failed to get main AI config" });
+      throw new AppError("Failed to get main AI config", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -532,8 +504,7 @@ router.put("/main-ai", requireAuth, async (req: AuthRequest, res: Response) => {
     };
 
     if (!provider) {
-      res.status(400).json({ error: "provider is required" });
-      return;
+      throw new AppError("provider is required", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const sysConfig =
@@ -553,7 +524,7 @@ router.put("/main-ai", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     logger.error("Failed to update main AI config:", error);
-    res.status(500).json({ error: "Failed to update main AI config" });
+    throw new AppError("Failed to update main AI config", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -602,7 +573,7 @@ router.get(
       });
     } catch (error) {
       logger.error("Failed to get embedding config:", error);
-      res.status(500).json({ error: "Failed to get embedding config" });
+      throw new AppError("Failed to get embedding config", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -635,8 +606,7 @@ router.put(
       }
 
       if (!provider) {
-        res.status(400).json({ error: "provider is required" });
-        return;
+        throw new AppError("provider is required", 400, ErrorCodes.VALIDATION_ERROR);
       }
 
       const sysConfig =
@@ -656,7 +626,7 @@ router.put(
       res.json({ success: true });
     } catch (error) {
       logger.error("Failed to update embedding config:", error);
-      res.status(500).json({ error: "Failed to update embedding config" });
+      throw new AppError("Failed to update embedding config", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { aiService } from "../ai/aiService";
 import { logger } from "../../utils/logger";
+import { cacheService, CacheKeys } from "../common/cacheService";
 import type {
   NodeLevel,
   ConceptSource,
@@ -1335,6 +1336,7 @@ ${conceptList}
       targetId: string;
       sourceIds: string[];
     }>,
+    userId?: string,
   ): Promise<BatchMergeResult> {
     const result: BatchMergeResult = {
       mergedGroups: 0,
@@ -1506,6 +1508,11 @@ ${conceptList}
       `Batch merge complete: ${result.mergedGroups} groups, ${result.totalMergedCount} merged, ${result.aliasesAdded} aliases, ${result.edgesUpdated} edges, ${result.errors.length} errors`,
     );
 
+    if (userId) {
+      await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
+      await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
+    }
+
     return result;
   }
 
@@ -1574,6 +1581,25 @@ ${conceptList}
     );
   }
 
+  async updateNodeParent(
+    supabase: SupabaseClient,
+    graphId: string,
+    childKnowledgePointId: string,
+    parentKnowledgePointId: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from("graph_nodes")
+      .update({ parent_id: parentKnowledgePointId })
+      .eq("knowledge_point_id", childKnowledgePointId)
+      .eq("graph_id", graphId)
+      .is("deleted_at", null);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  }
+
   async removeAlias(
     supabase: SupabaseClient,
     knowledgePointId: string,
@@ -1623,6 +1649,79 @@ ${conceptList}
     }
 
     logger.info(`Removed alias "${alias}" from ${knowledgePointId}`);
+  }
+
+  async batchUpdateHierarchy(
+    supabase: SupabaseClient,
+    graphId: string,
+    userId: string,
+    relations: Array<{ parentId: string; childId: string }>,
+  ): Promise<{
+    appliedCount: number;
+    failedCount: number;
+    errors?: Array<{ parentId: string; childId: string; error: string }>;
+  }> {
+    let appliedCount = 0;
+    const errors: Array<{
+      parentId: string;
+      childId: string;
+      error: string;
+    }> = [];
+
+    for (const relation of relations) {
+      try {
+        const result = await this.updateNodeParent(
+          supabase,
+          graphId,
+          relation.childId,
+          relation.parentId,
+        );
+
+        if (!result.success) {
+          errors.push({
+            parentId: relation.parentId,
+            childId: relation.childId,
+            error: result.error || "Unknown error",
+          });
+          logger.warn("Failed to apply hierarchy relation", {
+            parentId: relation.parentId,
+            childId: relation.childId,
+            error: result.error,
+          });
+        } else {
+          appliedCount++;
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        errors.push({
+          parentId: relation.parentId,
+          childId: relation.childId,
+          error: errorMessage,
+        });
+      }
+    }
+
+    await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
+    await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
+
+    logger.info("Hierarchy relations applied", {
+      graphId,
+      appliedCount,
+      failedCount: errors.length,
+      userId,
+    });
+
+    if (errors.length > 0) {
+      logger.warn("Some hierarchy relations failed to apply", {
+        errors,
+      });
+    }
+
+    return {
+      appliedCount,
+      failedCount: errors.length,
+      errors: errors.length > 0 ? errors : undefined,
+    };
   }
 }
 

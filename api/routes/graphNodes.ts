@@ -3,12 +3,12 @@ import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
-import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { cacheService, CacheKeys } from "../services/common";
 import {
   graphNodeService,
   graphService,
   knowledgePointService,
-} from "../services/graph/index";
+} from "../services/graph";
 import { z } from "zod";
 
 const router = Router();
@@ -149,16 +149,13 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
 
-    const { data, error } = await req.supabase!.rpc("soft_delete_graph_node", {
-      p_graph_node_id: id,
-      p_user_id: req.user.id,
-    });
+    const success = await graphNodeService.softDeleteGraphNode(
+      req.supabase!,
+      id,
+      req.user.id,
+    );
 
-    if (error) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
-    }
-
-    if (!data) {
+    if (!success) {
       throw new AppError(
         "Graph node not found or unauthorized",
         404,

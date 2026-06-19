@@ -5,9 +5,11 @@ import {
 } from "../../utils/pagination";
 import type {
   UserTask,
+  UserTaskStatus,
   TaskExecution,
   TaskSettings,
   CreateTaskData,
+  CreateUserTaskData,
   UserTaskFilters,
 } from "../../../shared/types/index";
 import { AppError } from "../../middleware/errorHandler";
@@ -16,9 +18,11 @@ import { logger } from "../../utils/logger";
 
 export type {
   UserTask,
+  UserTaskStatus,
   TaskExecution,
   TaskSettings,
   CreateTaskData,
+  CreateUserTaskData,
   UserTaskFilters,
 };
 
@@ -54,6 +58,48 @@ export class TaskService {
         knowledge_point_id: taskData.knowledge_point_id,
         priority: taskData.priority ?? 0,
         status: "pending",
+      })
+      .select()
+      .single();
+
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_CREATION_FAILED, { details: { originalError: error.message } });
+    return data as UserTask;
+  }
+
+  async createTaskFull(
+    client: SupabaseClient,
+    userId: string,
+    taskData: CreateUserTaskData,
+  ): Promise<UserTask> {
+    const queueLevel = taskData.queue_level ?? 0;
+
+    const { count } = await client
+      .from("user_tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("queue_level", queueLevel)
+      .is("deleted_at", null);
+
+    const { data, error } = await client
+      .from("user_tasks")
+      .insert({
+        user_id: userId,
+        title: taskData.title,
+        description: taskData.description,
+        queue_level: queueLevel,
+        position: count ?? 0,
+        estimated_duration: taskData.estimated_duration,
+        deadline: taskData.deadline,
+        tags: taskData.tags ?? [],
+        knowledge_point_id: taskData.knowledge_point_id,
+        priority: taskData.priority ?? 0,
+        status: "pending",
+        task_type: taskData.task_type ?? "one_time",
+        total_duration: taskData.total_duration,
+        progress_mode: taskData.progress_mode ?? "average",
+        progress_percentage: 0,
+        context: taskData.context,
+        parent_task_id: taskData.parent_task_id,
       })
       .select()
       .single();
@@ -121,6 +167,25 @@ export class TaskService {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     }
     return data as UserTask | null;
+  }
+
+  async getTaskStatus(
+    client: SupabaseClient,
+    taskId: string,
+    userId: string,
+  ): Promise<UserTaskStatus | null> {
+    const { data, error } = await client
+      .from("user_tasks")
+      .select("status")
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
+    }
+    return (data?.status as UserTaskStatus) ?? null;
   }
 
   async getTasks(
@@ -551,6 +616,231 @@ export class TaskService {
 
     if (updateError) return null;
     return updated as TaskExecution;
+  }
+
+  async listTasksWithStats(
+    client: SupabaseClient,
+    userId: string,
+    filters: {
+      status?: string;
+      queue_level?: number;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<{ tasks: Array<Record<string, unknown>>; total: number }> {
+    const limit = filters.limit ?? 50;
+    const offset = filters.offset ?? 0;
+
+    let query = client
+      .from("user_tasks")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("queue_level", { ascending: true })
+      .order("position", { ascending: true });
+
+    if (filters.status) {
+      query = query.eq("status", filters.status);
+    }
+    if (filters.queue_level !== undefined) {
+      query = query.eq("queue_level", filters.queue_level);
+    }
+
+    const { data: tasks, error, count } = await query.range(
+      offset,
+      offset + limit - 1,
+    );
+
+    if (error) {
+      throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, {
+        details: { originalError: error.message },
+      });
+    }
+
+    if (tasks && tasks.length > 0) {
+      const taskIds = tasks.map((t) => t.id);
+      const { data: subtaskStats } = await client
+        .from("task_subtasks")
+        .select("task_id, status")
+        .in("task_id", taskIds);
+
+      const subtaskCounts = new Map<
+        string,
+        { total: number; completed: number }
+      >();
+      if (subtaskStats) {
+        for (const st of subtaskStats) {
+          const existing = subtaskCounts.get(st.task_id) || {
+            total: 0,
+            completed: 0,
+          };
+          existing.total++;
+          if (st.status === "completed") {
+            existing.completed++;
+          }
+          subtaskCounts.set(st.task_id, existing);
+        }
+      }
+
+      for (const task of tasks) {
+        const stats = subtaskCounts.get(task.id);
+        const taskRecord = task as Record<string, unknown>;
+        taskRecord.subtask_count = stats?.total || 0;
+        taskRecord.subtask_completed = stats?.completed || 0;
+        taskRecord.has_subtasks = (stats?.total || 0) > 0;
+      }
+    }
+
+    return { tasks: (tasks ?? []) as Array<Record<string, unknown>>, total: count ?? 0 };
+  }
+
+  async getTaskDetail(
+    client: SupabaseClient,
+    userId: string,
+    taskId: string,
+  ): Promise<Record<string, unknown> | null> {
+    const { data: task, error: taskError } = await client
+      .from("user_tasks")
+      .select("*")
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .single();
+
+    if (taskError || !task) {
+      return null;
+    }
+
+    const { data: dependencies } = await client
+      .from("task_dependencies")
+      .select(
+        "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:user_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
+      )
+      .eq("task_id", taskId);
+
+    const { data: dependents } = await client
+      .from("task_dependencies")
+      .select(
+        "id, task_id, depends_on_task_id, dependency_type, created_at, task:user_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
+      )
+      .eq("depends_on_task_id", taskId);
+
+    const { data: progressPlans } = await client
+      .from("task_progress_plans")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("plan_date", { ascending: true });
+
+    const { data: executions } = await client
+      .from("task_executions")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("started_at", { ascending: false })
+      .limit(20);
+
+    const { data: subtasks } = await client
+      .from("task_subtasks")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("position", { ascending: true });
+
+    const estimatedDuration = task.estimated_duration as number | null;
+    const requiredTimeSlots = estimatedDuration
+      ? Math.ceil(estimatedDuration / 25)
+      : undefined;
+
+    const subtaskCount = subtasks?.length || 0;
+    const subtaskCompleted =
+      subtasks?.filter((s) => s.status === "completed").length || 0;
+
+    return {
+      ...task,
+      dependencies: dependencies || [],
+      dependents: dependents || [],
+      progress_plans: progressPlans || [],
+      executions: executions || [],
+      subtasks: subtasks || [],
+      required_time_slots: requiredTimeSlots,
+      subtask_count: subtaskCount,
+      subtask_completed: subtaskCompleted,
+      has_subtasks: subtaskCount > 0,
+    };
+  }
+
+  async listQueuesWithStats(
+    client: SupabaseClient,
+    userId: string,
+    options: {
+      includeCompleted?: boolean;
+      includeCancelled?: boolean;
+    },
+  ): Promise<{
+    q0: Array<Record<string, unknown>>;
+    q1: Array<Record<string, unknown>>;
+    q2: Array<Record<string, unknown>>;
+  }> {
+    const statusFilter: string[] = ["pending", "in_progress", "paused"];
+    if (options.includeCompleted) {
+      statusFilter.push("completed");
+    }
+    if (options.includeCancelled) {
+      statusFilter.push("cancelled");
+    }
+
+    const { data: tasks, error } = await client
+      .from("user_tasks")
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .in("status", statusFilter)
+      .order("queue_level", { ascending: true })
+      .order("position", { ascending: true });
+
+    if (error) {
+      throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, {
+        details: { originalError: error.message },
+      });
+    }
+
+    if (tasks && tasks.length > 0) {
+      const taskIds = tasks.map((t) => t.id);
+      const { data: subtaskStats } = await client
+        .from("task_subtasks")
+        .select("task_id, status")
+        .in("task_id", taskIds);
+
+      const subtaskCounts = new Map<
+        string,
+        { total: number; completed: number }
+      >();
+      if (subtaskStats) {
+        for (const st of subtaskStats) {
+          const existing = subtaskCounts.get(st.task_id) || {
+            total: 0,
+            completed: 0,
+          };
+          existing.total++;
+          if (st.status === "completed") {
+            existing.completed++;
+          }
+          subtaskCounts.set(st.task_id, existing);
+        }
+      }
+
+      for (const task of tasks) {
+        const stats = subtaskCounts.get(task.id);
+        const taskRecord = task as Record<string, unknown>;
+        taskRecord.subtask_count = stats?.total || 0;
+        taskRecord.subtask_completed = stats?.completed || 0;
+        taskRecord.has_subtasks = (stats?.total || 0) > 0;
+      }
+    }
+
+    return {
+      q0: (tasks?.filter((t) => t.queue_level === 0) ?? []) as Array<Record<string, unknown>>,
+      q1: (tasks?.filter((t) => t.queue_level === 1) ?? []) as Array<Record<string, unknown>>,
+      q2: (tasks?.filter((t) => t.queue_level === 2) ?? []) as Array<Record<string, unknown>>,
+    };
   }
 }
 

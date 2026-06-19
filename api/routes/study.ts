@@ -6,12 +6,10 @@ import {
   createCardsBatchSchema,
   updateCardProgressSchema,
 } from "../schemas/index";
-import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { cacheService, CacheKeys } from "../services/common";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { AppError } from "../middleware/errorHandler";
-import { studyService } from "../services/study/studyService";
-import { appEventBus } from "../services/core/eventBus";
-import type { ReviewCompletedPayload } from "../../shared/types/events";
+import { studyService, studyRouteService, StudyRouteService } from "../services/study";
 import type { StudyCard } from "../../shared/types/common";
 import { logger } from "../utils/logger";
 
@@ -87,32 +85,19 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
  *         description: List of study cards
  */
 router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
-  const {
-    graph_id,
-    knowledge_point_id,
-    knowledge_point_ids,
-    due,
-    refresh,
-  } = req.query;
-  const dueOnly = due === "true" || due === "1";
+  const { graphId, knowledgePointId, knowledgePointIds, dueOnly, refresh } =
+    StudyRouteService.parseCardQueryParams(req.query as Record<string, unknown>);
 
-  if (graph_id && refresh === "true") {
-    await cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
+  if (graphId && refresh) {
+    await cacheService.del(CacheKeys.STUDY_CARDS(graphId));
   }
-
-  let knowledgePointIdList: string[] | undefined;
-  if (knowledge_point_ids) {
-    knowledgePointIdList = (knowledge_point_ids as string).split(",");
-  }
-
-  const kpId = knowledge_point_id as string | undefined;
 
   try {
     const cards = await studyService.getCards(req.supabase!, {
       userId: req.user.id,
-      graphId: graph_id as string,
-      knowledgePointId: kpId,
-      knowledgePointIds: knowledgePointIdList,
+      graphId,
+      knowledgePointId,
+      knowledgePointIds,
       dueOnly,
     });
 
@@ -178,28 +163,19 @@ router.post(
       options,
     } = req.body;
 
-    const { data: graphNode } = await req
-      .supabase!.from("graph_nodes")
-      .select("graph_id")
-      .eq("knowledge_point_id", knowledge_point_id)
-      .is("deleted_at", null)
-      .single();
-
-    if (!graphNode) {
-      throw new AppError("未找到所属节点", 404, ErrorCodes.NODE_NOT_FOUND);
-    }
-
     try {
-      const card = await studyService.createCard(req.supabase!, {
-        userId: req.user.id,
-        knowledgePointId: knowledge_point_id,
-        sourceGraphId: graphNode.graph_id,
-        question,
-        answer,
-        explanation,
-        cardType: card_type,
-        options,
-      });
+      const card = await studyRouteService.createCardWithGraphNode(
+        req.supabase!,
+        req.user.id,
+        {
+          knowledge_point_id,
+          question,
+          answer,
+          explanation,
+          card_type,
+          options,
+        },
+      );
 
       res.status(201).json(card);
     } catch (error) {
@@ -265,35 +241,11 @@ router.post(
     const { cards } = req.body;
     const typedCards = cards as CardBatchItem[];
 
-    const knowledgePointIds = [
-      ...new Set(typedCards.map((c) => c.knowledge_point_id)),
-    ];
-
-    const { data: graphNodes } = await req
-      .supabase!.from("graph_nodes")
-      .select("knowledge_point_id, graph_id")
-      .in("knowledge_point_id", knowledgePointIds)
-      .is("deleted_at", null);
-
-    const nodeGraphMap = new Map(
-      graphNodes?.map((gn) => [gn.knowledge_point_id, gn.graph_id]),
-    );
-
-    const cardsData = typedCards.map((card) => ({
-      knowledgePointId: card.knowledge_point_id,
-      sourceGraphId: nodeGraphMap.get(card.knowledge_point_id),
-      question: card.question,
-      answer: card.answer,
-      explanation: card.explanation,
-      cardType: card.card_type || card.type,
-      options: card.options,
-    }));
-
     try {
-      const createdCards = await studyService.createCardsBatch(
+      const createdCards = await studyRouteService.createCardsBatchWithGraphNodes(
         req.supabase!,
-        cardsData,
         req.user.id,
+        typedCards,
       );
       res.status(201).json(createdCards);
     } catch (error) {
@@ -356,21 +308,6 @@ router.put(
         req.user.id,
       );
 
-      appEventBus
-        .publish<ReviewCompletedPayload>(
-          "review_completed",
-          {
-            reviewTaskId: id,
-            knowledgePointId: result.card?.knowledge_point_id ?? "",
-            qualityScore: quality,
-            nextReviewDate: result.scheduledCard?.due?.toISOString() ?? new Date().toISOString(),
-            algorithm: "fsrs",
-          },
-          req.user.id,
-          "study_route",
-        )
-        .catch((err) => logger.error("review_completed event publish failed:", err));
-
       res.json(result.card);
     } catch (error) {
       const err = error as Error;
@@ -410,22 +347,13 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const { graph_id } = req.query;
 
-    const { data, error } = await req
-      .supabase!.from("study_progress")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .eq("graph_id", graph_id)
-      .single();
+    const data = await studyRouteService.getProgress(
+      req.supabase!,
+      req.user.id,
+      graph_id as string,
+    );
 
-    if (error && error.code !== "PGRST116") {
-      throw new AppError(
-        error.message || "获取学习进度失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
-
-    res.json(data || { message: "No progress recorded yet" });
+    res.json(data);
   },
 );
 

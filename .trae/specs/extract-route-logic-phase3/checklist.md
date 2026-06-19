@@ -1,0 +1,14 @@
+- [x] `api/services/scheduler/taskService.ts` 已扩展，包含 listTasksWithStats、getTaskDetail、listQueuesWithStats 方法
+- [x] `api/services/scheduler/progressPlanService.ts` 已创建，包含 5 个分配算法 + createProgressPlan、updateProgress、listProgressPlans、updateProgressPlan 方法
+- [x] `api/services/scheduler/scheduleService.ts` 已创建，包含 calculateNextRunAt + createSchedule、updateSchedule、runSchedule、listSchedules、deleteSchedule 方法
+- [x] `api/services/scheduler/templateService.ts` 已创建，包含 applyTemplate、duplicateTemplate、setDefaultTemplate、getTemplateCategories + 标准 CRUD 方法
+- [x] `api/services/story/structureService.ts` 已创建，包含 buildTree + initializeFromTemplate + 标准 CRUD 方法
+- [x] `api/services/story/index.ts` 已创建，导出 structureService
+- [x] `api/routes/scheduler/tasks.ts` 列表/详情/进度/移动/队列路由改为调用 taskService，移除重复的子任务统计逻辑
+- [x] `api/routes/scheduler/progress.ts` 所有路由改为调用 progressPlanService，移除 ~115 行分配算法函数（426→140行）
+- [x] `api/routes/scheduler/schedules.ts` 所有路由改为调用 scheduleService，移除 calculateNextRunAt 函数（369→120行）
+- [x] `api/routes/scheduler/templates.ts` 所有路由改为调用 templateService，移除模板变量替换逻辑（484→278行）
+- [x] `api/routes/story/structures.ts` 所有路由改为调用 structureService，移除 buildTree 函数和模板初始化编排逻辑（326→119行）
+- [x] 服务导出已更新（scheduler/index.ts 和 story/index.ts）
+- [x] `npm run check` 通过，无类型错误
+- [x] `npm run lint` 通过，无 lint 错误

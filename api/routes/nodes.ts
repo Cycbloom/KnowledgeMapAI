@@ -10,151 +10,22 @@ import {
   batchUpdatePositionsSchema,
   batchUpdateNodesSchema,
 } from "../schemas/index";
-import { cacheService } from "../services/common/cacheService";
-import { AppError } from "../middleware/errorHandler";
-import { ErrorCodes } from "../../shared/types/errorCodes";
-import { BackboneModule } from "../../shared/types/graph";
-import { aiService } from "../services/ai/aiService";
-import { logger } from "../utils/logger";
-import {
-  knowledgePointService,
-  graphNodeService,
-  edgeService,
-} from "../services/graph/index";
-import { graphVersionService } from "../services/graph/graphVersionService";
-import { buildNodeFromGraphNode } from "../utils/nodeHelpers";
-import { appEventBus } from "../services/core/eventBus";
-import type { NodeCreatedPayload, EdgeCreatedPayload } from "../../shared/types/events";
+import { nodesService } from "../services/graph";
+import { knowledgePointService } from "../services/graph";
 
 const router = Router();
-
-const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
 router.post(
   "/nodes",
   requireAuth,
   validate(createNodeSchema),
   async (req: AuthRequest, res: Response) => {
-    const {
-      graph_id,
-      title,
-      content,
-      summary,
-      x_position,
-      y_position,
-      properties,
-      level,
-      is_accepted,
-      learning_material,
-      knowledge_point_id: existingKpId,
-      reuse_existing = true,
-    } = req.body;
-
-    const { data: graph } = await req
-      .supabase!.from("knowledge_graphs")
-      .select("id, user_id")
-      .eq("id", graph_id)
-      .single();
-
-    if (!graph) {
-      throw new AppError("未经授权访问图谱", 403, ErrorCodes.FORBIDDEN);
-    }
-
-    let knowledgePointId = existingKpId;
-    let reusedKnowledgePoint = false;
-
-    if (!knowledgePointId && reuse_existing) {
-      try {
-        if (title) {
-          const embedding = await aiService.generateEmbedding(title);
-
-          if (embedding) {
-            const similarKps = await knowledgePointService.searchSimilar(
-              req.supabase!,
-              embedding,
-              req.user.id,
-              REUSE_SIMILARITY_THRESHOLD,
-              1,
-            );
-
-            if (similarKps && similarKps.length > 0) {
-              knowledgePointId = similarKps[0].id;
-              reusedKnowledgePoint = true;
-              logger.info(
-                `Reusing existing knowledge point: ${knowledgePointId} for title: ${title}`,
-              );
-            }
-          }
-        }
-      } catch (error) {
-        logger.warn("Failed to search for similar knowledge points:", error);
-      }
-    }
-
-    if (!knowledgePointId) {
-      const newKp = await knowledgePointService.create(req.supabase!, {
-        title,
-        content: content || "",
-        summary,
-        learning_material: learning_material || "",
-        properties: properties || {},
-        visibility: "private",
-        owner_id: req.user.id,
-      });
-
-      knowledgePointId = newKp.id;
-    }
-
-    try {
-      const graphNode = await graphNodeService.addToGraph(req.supabase!, {
-        graph_id,
-        knowledge_point_id: knowledgePointId,
-        x_position,
-        y_position,
-        level,
-        is_accepted,
-      });
-
-      // graphNode 已经是扁平化的 Node 对象，不需要再调用 buildNodeFromGraphNode
-      const result = graphNode;
-      if (result && reusedKnowledgePoint) {
-        (result as { _reused?: boolean })._reused = true;
-      }
-
-      await cacheService.invalidateGraphCache(req.user.id, graph_id);
-      await cacheService.invalidateUserGraphsCache(req.user.id);
-
-      appEventBus
-        .publish<NodeCreatedPayload>(
-          "node_created",
-          {
-            nodeId: result.id,
-            graphId: graph_id,
-            userId: req.user.id,
-            title: result.title,
-          },
-          req.user.id,
-          "graph_node_service",
-        )
-        .catch((err) => logger.error("node_created event publish failed:", err));
-
-      res.status(201).json(result);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "";
-      if (message.includes("已存在于当前图谱中")) {
-        throw new AppError(
-          "该知识点已存在于当前图谱中",
-          400,
-          ErrorCodes.VALIDATION_ERROR,
-        );
-      }
-      logger.error("Create graph node error:", error);
-      throw new AppError(
-        message || "创建图谱节点失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    const result = await nodesService.createNode(
+      req.supabase!,
+      req.user.id,
+      req.body,
+    );
+    res.status(201).json(result);
   },
 );
 
@@ -163,50 +34,8 @@ router.get(
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-
-    const { data: graphNode, error } = await req
-      .supabase!.from("graph_nodes")
-      .select(
-        `
-      id,
-      graph_id,
-      knowledge_point_id,
-      x_position,
-      y_position,
-      level,
-      is_accepted,
-      deleted_at,
-      created_at,
-      updated_at,
-      knowledge_points (
-        id,
-        title,
-        content,
-        summary,
-        learning_material,
-        properties,
-        visibility,
-        owner_id,
-        created_at,
-        updated_at,
-        keywords
-      )
-    `,
-      )
-      .eq("knowledge_point_id", id)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (error) {
-      logger.error("Get node error:", error);
-      throw new AppError("获取节点失败", 500, ErrorCodes.INTERNAL_ERROR);
-    }
-
-    if (!graphNode) {
-      throw new AppError("节点不存在", 404, ErrorCodes.NODE_NOT_FOUND);
-    }
-
-    res.json(buildNodeFromGraphNode(graphNode));
+    const data = await nodesService.getNode(req.supabase!, req.user.id, id);
+    res.json(data);
   },
 );
 
@@ -216,179 +45,13 @@ router.put(
   validate(updateNodeSchema),
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const updates = req.body;
-
-    const { data: existingNode, error: findError } = await req
-      .supabase!.from("graph_nodes")
-      .select(
-        `
+    const data = await nodesService.updateNode(
+      req.supabase!,
+      req.user.id,
       id,
-      graph_id,
-      knowledge_point_id,
-      x_position,
-      y_position,
-      level,
-      is_accepted,
-      knowledge_points (
-        id,
-        title,
-        content,
-        summary,
-        learning_material,
-        properties,
-        visibility,
-        owner_id,
-        keywords
-      )
-    `,
-      )
-      .eq("knowledge_point_id", id)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (findError) {
-      logger.error("Find node error:", findError);
-    }
-
-    if (!existingNode) {
-      throw new AppError(
-        "Node not found or unauthorized",
-        404,
-        ErrorCodes.NODE_NOT_FOUND,
-      );
-    }
-
-    interface KnowledgePointData {
-      id: string;
-      title?: string;
-      properties?: {
-        backboneModule?: string;
-      };
-    }
-
-    const kpArray = existingNode.knowledge_points as KnowledgePointData[] | null;
-    const kp = kpArray?.[0];
-    const isBackboneNode =
-      kp?.properties?.backboneModule &&
-      Object.values(BackboneModule).includes(kp.properties.backboneModule as BackboneModule);
-
-    if (
-      isBackboneNode &&
-      updates.title !== undefined &&
-      updates.title !== kp?.title
-    ) {
-      throw new AppError("骨干节点标题不可修改", 403, ErrorCodes.FORBIDDEN);
-    }
-
-    const kpUpdates: {
-      title?: string;
-      content?: string;
-      summary?: string;
-      learning_material?: string;
-      properties?: Record<string, unknown>;
-      visibility?: "private" | "public";
-      keywords?: string[];
-    } = {};
-    const gnUpdates: {
-      x_position?: number;
-      y_position?: number;
-      level?: string;
-      is_accepted?: boolean;
-    } = {};
-
-    if (updates.title !== undefined) kpUpdates.title = updates.title;
-    if (updates.content !== undefined) kpUpdates.content = updates.content;
-    if (updates.summary !== undefined) kpUpdates.summary = updates.summary;
-    if (updates.learning_material !== undefined)
-      kpUpdates.learning_material = updates.learning_material;
-    if (updates.properties !== undefined)
-      kpUpdates.properties = updates.properties;
-    if (updates.visibility !== undefined)
-      kpUpdates.visibility = updates.visibility;
-    if (updates.keywords !== undefined) kpUpdates.keywords = updates.keywords;
-
-    if (updates.x_position !== undefined)
-      gnUpdates.x_position = updates.x_position;
-    if (updates.y_position !== undefined)
-      gnUpdates.y_position = updates.y_position;
-    if (updates.level !== undefined) gnUpdates.level = updates.level;
-    if (updates.is_accepted !== undefined)
-      gnUpdates.is_accepted = updates.is_accepted;
-
-    if (Object.keys(kpUpdates).length > 0) {
-      try {
-        await knowledgePointService.update(
-          req.supabase!,
-          existingNode.knowledge_point_id,
-          kpUpdates,
-        );
-      } catch (error: unknown) {
-        logger.error("Update knowledge point error:", error);
-        const message =
-          error instanceof Error ? error.message : "更新知识点失败";
-        throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
-      }
-    }
-
-    if (Object.keys(gnUpdates).length > 0) {
-      const { error: gnError } = await req
-        .supabase!.from("graph_nodes")
-        .update(gnUpdates)
-        .eq("id", existingNode.id);
-
-      if (gnError) {
-        logger.error("Update graph node error:", gnError);
-        throw new AppError(
-          gnError.message || "更新图谱节点失败",
-          500,
-          ErrorCodes.INTERNAL_ERROR,
-        );
-      }
-    }
-
-    const { data: updatedNode, error: refetchError } = await req
-      .supabase!.from("graph_nodes")
-      .select(
-        `
-      id,
-      graph_id,
-      knowledge_point_id,
-      x_position,
-      y_position,
-      level,
-      is_accepted,
-      created_at,
-      updated_at,
-      knowledge_points (
-        id,
-        title,
-        content,
-        summary,
-        learning_material,
-        properties,
-        visibility,
-        owner_id,
-        created_at,
-        updated_at,
-        keywords
-      )
-    `,
-      )
-      .eq("id", existingNode.id)
-      .single();
-
-    if (refetchError || !updatedNode) {
-      throw new AppError(
-        "获取更新后的节点失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
-
-    await cacheService.invalidateGraphCache(req.user.id, existingNode.graph_id);
-    await cacheService.invalidateStudyCache(existingNode.graph_id);
-
-    res.json(buildNodeFromGraphNode(updatedNode));
+      req.body,
+    );
+    res.json(data);
   },
 );
 
@@ -398,81 +61,13 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const limit = parseInt(req.query.limit as string) || 5;
-
-    try {
-      const { data: graphNode, error: nodeError } = await req
-        .supabase!.from("graph_nodes")
-        .select(
-          `
-        id,
-        knowledge_point_id,
-        knowledge_points (
-          id,
-          title,
-          content,
-          embedding
-        )
-      `,
-        )
-        .eq("knowledge_point_id", id)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (nodeError) {
-        logger.error("Find node for related error:", nodeError);
-      }
-
-      if (!graphNode) {
-        throw new AppError("节点不存在", 404, ErrorCodes.NODE_NOT_FOUND);
-      }
-
-      interface KnowledgePointWithEmbedding {
-        id: string;
-        title?: string;
-        embedding?: number[] | null;
-      }
-
-      const kpArray = graphNode.knowledge_points as KnowledgePointWithEmbedding[] | null;
-      const kp = kpArray?.[0];
-      let embedding: number[] | undefined;
-      if (kp?.embedding) {
-        embedding = kp.embedding;
-      }
-
-      if (!embedding && kp?.title) {
-        const generatedEmbedding = await aiService.generateEmbedding(kp.title);
-
-        if (generatedEmbedding) {
-          embedding = generatedEmbedding;
-          await req
-            .supabase!.from("knowledge_points")
-            .update({ embedding: generatedEmbedding })
-            .eq("id", kp.id);
-        }
-      }
-
-      if (!embedding) {
-        return res.json([]);
-      }
-
-      const relatedKps = await knowledgePointService.searchSimilar(
-        req.supabase!,
-        embedding,
-        req.user.id,
-        0.5,
-        limit + 1,
-      );
-
-      const results = (relatedKps || [])
-        .filter((kp: { id: string }) => kp.id !== id)
-        .slice(0, limit);
-
-      res.json(results);
-    } catch (error: unknown) {
-      logger.error("Related nodes error:", error);
-      if (error instanceof AppError) throw error;
-      res.status(500).json({ error: "Failed to fetch related nodes" });
-    }
+    const data = await nodesService.getRelatedNodes(
+      req.supabase!,
+      req.user.id,
+      id,
+      limit,
+    );
+    res.json(data);
   },
 );
 
@@ -484,78 +79,13 @@ router.delete(
     const { id } = req.params;
     const hardDeleteParam = req.query.hard_delete;
     const hardDelete = hardDeleteParam === "true" || hardDeleteParam === "1";
-
-    const { data: graphNode, error: findError } = await req
-      .supabase!.from("graph_nodes")
-      .select(
-        `
+    const result = await nodesService.deleteNode(
+      req.supabase!,
+      req.user.id,
       id,
-      graph_id,
-      knowledge_point_id,
-      knowledge_points (
-        id,
-        owner_id
-      )
-    `,
-      )
-      .eq("knowledge_point_id", id)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (findError) {
-      logger.error("Find node for delete error:", findError);
-    }
-
-    if (!graphNode) {
-      throw new AppError(
-        "Node not found or unauthorized",
-        404,
-        ErrorCodes.NODE_NOT_FOUND,
-      );
-    }
-
-    if (hardDelete) {
-      const result = await knowledgePointService.delete(
-        req.supabase!,
-        id,
-        req.user.id,
-      );
-
-      if (!result?.success) {
-        throw new AppError("删除失败", 400, ErrorCodes.VALIDATION_ERROR);
-      }
-
-      await cacheService.invalidateGraphCache(req.user.id, graphNode.graph_id);
-
-      return res.json({
-        message: "知识点已彻底删除",
-        affected_graphs: result.affected_graphs,
-        deleted_graph_nodes: result.deleted_graph_nodes,
-        deleted_edges: result.deleted_edges,
-        deleted_cards: result.deleted_cards,
-      });
-    }
-
-    const { error: softDeleteError } = await req.supabase!.rpc(
-      "soft_delete_graph_node",
-      {
-        p_graph_node_id: graphNode.id,
-        p_user_id: req.user.id,
-      },
+      hardDelete,
     );
-
-    if (softDeleteError) {
-      logger.error("Soft delete graph node error:", softDeleteError);
-      throw new AppError(
-        softDeleteError.message || "删除节点失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
-
-    await cacheService.invalidateGraphCache(req.user.id, graphNode.graph_id);
-
-    res.json({ message: "节点已从当前图谱移除" });
+    res.json(result);
   },
 );
 
@@ -565,47 +95,12 @@ router.post(
   validate(batchDeleteNodesSchema),
   async (req: AuthRequest, res: Response) => {
     const { node_ids } = req.body;
-
-    const { data: graphNodes, error: findError } = await req
-      .supabase!.from("graph_nodes")
-      .select("id, graph_id, knowledge_point_id")
-      .in("knowledge_point_id", node_ids)
-      .is("deleted_at", null);
-
-    if (findError) {
-      logger.error("Find nodes for batch delete error:", findError);
-    }
-
-    if (!graphNodes || graphNodes.length === 0) {
-      return res.json({ message: "未找到匹配的节点", count: 0 });
-    }
-
-    if (node_ids.length >= 3) {
-      const graphId = graphNodes[0]?.graph_id;
-      if (graphId) {
-        await graphVersionService.autoSnapshot(
-          req.supabase!,
-          graphId,
-          'pre_batch_delete',
-          req.user.id
-        ).catch(err => logger.error('Auto snapshot error:', err));
-      }
-    }
-
-    const graphNodeIds = graphNodes.map((gn) => gn.id);
-    const graphId = graphNodes[0]?.graph_id ?? '';
-    const deletedCount = await graphNodeService.batchDelete(req.supabase!, graphNodeIds, graphId);
-
-    const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
-    for (const gid of graphIds) {
-      await cacheService.invalidateGraphCache(req.user.id, gid);
-    }
-    await cacheService.invalidateUserGraphsCache(req.user.id);
-
-    res.json({
-      message: `成功删除 ${deletedCount} 个节点`,
-      count: deletedCount,
-    });
+    const result = await nodesService.batchDeleteNodes(
+      req.supabase!,
+      req.user.id,
+      node_ids,
+    );
+    res.json(result);
   },
 );
 
@@ -615,55 +110,12 @@ router.post(
   validate(batchUpdatePositionsSchema),
   async (req: AuthRequest, res: Response) => {
     const { positions } = req.body;
-
-    const { data: graphNodes, error: findError } = await req
-      .supabase!.from("graph_nodes")
-      .select("id, graph_id, knowledge_point_id")
-      .in(
-        "knowledge_point_id",
-        positions.map((p: { id: string }) => p.id),
-      )
-      .is("deleted_at", null);
-
-    if (findError) {
-      logger.error("Find nodes for batch position update error:", findError);
-    }
-
-    if (!graphNodes || graphNodes.length === 0) {
-      return res.json({ message: "未找到匹配的节点", count: 0 });
-    }
-
-    const kpIdToGnId = new Map(
-      graphNodes.map((gn) => [gn.knowledge_point_id, gn.id]),
+    const result = await nodesService.batchUpdatePositions(
+      req.supabase!,
+      req.user.id,
+      positions,
     );
-
-    const updatePromises = positions
-      .filter((pos: { id: string }) => kpIdToGnId.has(pos.id))
-      .map((pos: { id: string; x_position: number; y_position: number }) =>
-        req
-          .supabase!.from("graph_nodes")
-          .update({
-            x_position: pos.x_position,
-            y_position: pos.y_position,
-          })
-          .eq("id", kpIdToGnId.get(pos.id)),
-      );
-
-    const results = await Promise.all(updatePromises);
-    const errors = results.filter((r) => r.error);
-    if (errors.length > 0) {
-      logger.error("Batch position update errors:", errors);
-    }
-
-    const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
-    for (const gid of graphIds) {
-      await cacheService.invalidateGraphCache(req.user.id, gid);
-    }
-
-    res.json({
-      message: `成功更新 ${positions.length} 个节点位置`,
-      count: positions.length,
-    });
+    res.json(result);
   },
 );
 
@@ -673,155 +125,12 @@ router.post(
   validate(batchUpdateNodesSchema),
   async (req: AuthRequest, res: Response) => {
     const { nodes } = req.body;
-
-    const nodeIds = nodes.map((n: { id: string }) => n.id);
-    const { data: graphNodes, error: findError } = await req
-      .supabase!.from("graph_nodes")
-      .select(
-        `
-        id,
-        graph_id,
-        knowledge_point_id,
-        knowledge_points (
-          id,
-          title,
-          content,
-          learning_material,
-          properties
-        )
-      `,
-      )
-      .in("knowledge_point_id", nodeIds)
-      .is("deleted_at", null);
-
-    if (findError) {
-      logger.error("Find nodes for batch update error:", findError);
-    }
-
-    if (!graphNodes || graphNodes.length === 0) {
-      return res.json({ message: "未找到匹配的节点", count: 0 });
-    }
-
-    const kpIdToGnMap = new Map(
-      graphNodes.map((gn) => {
-        const kp = Array.isArray(gn.knowledge_points)
-          ? gn.knowledge_points[0]
-          : gn.knowledge_points;
-        return [kp?.id, gn];
-      }),
+    const result = await nodesService.batchUpdateNodes(
+      req.supabase!,
+      req.user.id,
+      nodes,
     );
-
-    let skippedCount = 0;
-    const updateResults: Array<{
-      id: string;
-      updated: boolean;
-      reason?: string;
-    }> = [];
-
-    for (const nodeUpdate of nodes) {
-      const graphNode = kpIdToGnMap.get(nodeUpdate.id);
-      if (!graphNode) continue;
-
-      interface KnowledgePointWithProperties {
-        id: string;
-        title?: string;
-        properties?: {
-          backboneModule?: string;
-        };
-      }
-
-      const kpArray = graphNode.knowledge_points as KnowledgePointWithProperties[] | null;
-      const kp = kpArray?.[0];
-      const isBackboneNode =
-        kp?.properties?.backboneModule &&
-        Object.values(BackboneModule).includes(kp.properties.backboneModule as BackboneModule);
-
-      const kpUpdates: {
-        title?: string;
-        content?: string;
-        summary?: string;
-        learning_material?: string;
-        properties?: Record<string, unknown>;
-      } = {};
-      const gnUpdates: {
-        x_position?: number;
-        y_position?: number;
-        level?: string;
-        is_accepted?: boolean;
-      } = {};
-
-      if (nodeUpdate.title !== undefined) {
-        if (isBackboneNode && nodeUpdate.title !== kp?.title) {
-          skippedCount++;
-          updateResults.push({
-            id: nodeUpdate.id,
-            updated: false,
-            reason: "骨干节点标题不可修改",
-          });
-          continue;
-        }
-        kpUpdates.title = nodeUpdate.title;
-      }
-
-      if (nodeUpdate.content !== undefined)
-        kpUpdates.content = nodeUpdate.content;
-      if (nodeUpdate.summary !== undefined)
-        kpUpdates.summary = nodeUpdate.summary;
-      if (nodeUpdate.learning_material !== undefined)
-        kpUpdates.learning_material = nodeUpdate.learning_material;
-      if (nodeUpdate.properties !== undefined)
-        kpUpdates.properties = nodeUpdate.properties;
-
-      if (nodeUpdate.x_position !== undefined)
-        gnUpdates.x_position = nodeUpdate.x_position;
-      if (nodeUpdate.y_position !== undefined)
-        gnUpdates.y_position = nodeUpdate.y_position;
-      if (nodeUpdate.level !== undefined) gnUpdates.level = nodeUpdate.level;
-      if (nodeUpdate.is_accepted !== undefined)
-        gnUpdates.is_accepted = nodeUpdate.is_accepted;
-
-      try {
-        if (Object.keys(kpUpdates).length > 0) {
-          await knowledgePointService.update(
-            req.supabase!,
-            graphNode.knowledge_point_id,
-            kpUpdates,
-          );
-        }
-
-        if (Object.keys(gnUpdates).length > 0) {
-          await req
-            .supabase!.from("graph_nodes")
-            .update(gnUpdates)
-            .eq("id", graphNode.id);
-        }
-
-        updateResults.push({ id: nodeUpdate.id, updated: true });
-      } catch (error: unknown) {
-        logger.error("Batch update node error:", error);
-        updateResults.push({
-          id: nodeUpdate.id,
-          updated: false,
-          reason: error instanceof Error ? error.message : "更新失败",
-        });
-      }
-    }
-
-    const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
-    for (const gid of graphIds) {
-      await cacheService.invalidateGraphCache(req.user.id, gid);
-    }
-
-    const successCount = updateResults.filter((r) => r.updated).length;
-    const failedCount = updateResults.filter((r) => !r.updated).length;
-
-    res.json({
-      message: `成功更新 ${successCount} 个节点${skippedCount > 0 ? `，已跳过 ${skippedCount} 个骨干节点的标题修改` : ""}`,
-      count: successCount,
-      skipped: skippedCount,
-      failed: failedCount,
-      results: updateResults,
-    });
+    res.json(result);
   },
 );
 
@@ -830,13 +139,11 @@ router.get(
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-
     const data = await knowledgePointService.getGraphs(
       req.supabase!,
       id,
       req.user.id,
     );
-
     res.json(data || []);
   },
 );
@@ -846,69 +153,12 @@ router.post(
   requireAuth,
   validate(createEdgeSchema),
   async (req: AuthRequest, res: Response) => {
-    const {
-      graph_id,
-      source_knowledge_point_id,
-      target_knowledge_point_id,
-      relationship_type,
-    } = req.body;
-
-    try {
-      const edge = await edgeService.create(req.supabase!, {
-        graph_id,
-        source_knowledge_point_id,
-        target_knowledge_point_id,
-        relationship_type: relationship_type || "contains",
-      });
-
-      await cacheService.invalidateGraphCache(req.user.id, graph_id);
-
-      appEventBus
-        .publish<EdgeCreatedPayload>(
-          "edge_created",
-          {
-            edgeId: edge.id,
-            graphId: graph_id,
-            userId: req.user.id,
-            sourceNodeId: edge.source_knowledge_point_id,
-            targetNodeId: edge.target_knowledge_point_id,
-          },
-          req.user.id,
-          "edge_route",
-        )
-        .catch((err) => logger.error("edge_created event publish failed:", err));
-
-      res.status(201).json({
-        id: edge.id,
-        graph_id: edge.graph_id,
-        source_knowledge_point_id: edge.source_knowledge_point_id,
-        target_knowledge_point_id: edge.target_knowledge_point_id,
-        relationship_type: edge.relationship_type,
-        weight: edge.weight,
-        created_at: edge.created_at,
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "";
-      if (message.includes("源知识点不在当前图谱中")) {
-        throw new AppError(
-          "Source node not found or unauthorized",
-          404,
-          ErrorCodes.NODE_NOT_FOUND,
-        );
-      }
-      if (message.includes("目标知识点不在当前图谱中")) {
-        throw new AppError(
-          "Target node not found or unauthorized",
-          404,
-          ErrorCodes.NODE_NOT_FOUND,
-        );
-      }
-      throw new AppError(
-        message || "创建边失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    const edge = await nodesService.createEdge(
+      req.supabase!,
+      req.user.id,
+      req.body,
+    );
+    res.status(201).json(edge);
   },
 );
 
@@ -918,34 +168,7 @@ router.delete(
   validate({ params: uuidParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-
-    const { data: edge, error } = await req
-      .supabase!.from("edges")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id)
-      .select("graph_id")
-      .single();
-
-    if (error)
-      throw new AppError(
-        error.message || "删除边失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-
-    if (!edge) {
-      throw new AppError(
-        "Edge not found or unauthorized",
-        404,
-        ErrorCodes.RESOURCE_NOT_FOUND,
-      );
-    }
-
-    const graphId = edge.graph_id;
-    if (graphId) {
-      await cacheService.invalidateGraphCache(req.user.id, graphId);
-    }
-
+    await nodesService.deleteEdge(req.supabase!, req.user.id, id);
     res.json({ message: "Edge deleted" });
   },
 );

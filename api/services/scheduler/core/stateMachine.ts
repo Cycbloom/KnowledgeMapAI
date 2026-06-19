@@ -7,6 +7,7 @@ import type {
   TaskPausedPayload,
   TaskResumedPayload,
   TaskCompletedPayload,
+  AppEventType,
 } from "../../../../shared/types/scheduler";
 
 interface TransitionResult {
@@ -28,7 +29,7 @@ type TransitionSideEffect = (
 interface TransitionConfig {
   to: UserTaskStatus;
   sideEffect?: TransitionSideEffect;
-  eventType?: string;
+  eventType?: AppEventType;
   eventPayloadBuilder?: (
     taskId: string,
     userId: string,
@@ -306,7 +307,7 @@ class TaskStateMachine {
           sideEffectResult,
         );
         await appEventBus.publish(
-          transitionConfig.eventType as any,
+          transitionConfig.eventType,
           payload,
           userId,
           source ?? "task_state_machine",

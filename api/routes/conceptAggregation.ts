@@ -9,13 +9,11 @@ import { ErrorCodes } from "../../shared/types/errorCodes";
 import {
   conceptAnalysisService,
   type AnalysisResult,
-} from "../services/graph/conceptAnalysisService";
+} from "../services/graph";
 import {
   conceptAggregationService,
-  type AggregationResult,
-} from "../services/graph/conceptAggregationService";
+} from "../services/graph";
 import { logger } from "../utils/logger";
-import { cacheService, CacheKeys } from "../services/common/cacheService";
 import { setSSEHeaders } from "./ai/utils";
 import { z } from "zod";
 
@@ -237,7 +235,6 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const { graphId } = req.params;
     const { groups } = req.body;
-    const supabase = req.supabase!;
 
     try {
       logger.info("Starting concept merge operation", {
@@ -250,32 +247,16 @@ router.post(
         userId: req.user.id,
       });
 
-      let totalMergedCount = 0;
-      const allUpgradedNodes: AggregationResult["upgradedNodes"] = [];
-
-      for (const _group of groups) {
-        const mergeResult: AggregationResult =
-          await conceptAggregationService.aggregateConcepts(supabase, graphId, {
-            threshold: 0.85,
-          });
-
-        totalMergedCount += mergeResult.mergedCount;
-        allUpgradedNodes.push(...mergeResult.upgradedNodes);
-      }
-
-      await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graphId));
-      await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
-
-      logger.info("Concept merge operation completed", {
+      const result = await conceptAggregationService.batchMerge(
+        req.supabase!,
         graphId,
-        mergedCount: totalMergedCount,
-        upgradedNodesCount: allUpgradedNodes.length,
-        userId: req.user.id,
-      });
+        groups,
+        req.user.id,
+      );
 
       res.json({
-        mergedCount: totalMergedCount,
-        upgradedNodes: allUpgradedNodes,
+        mergedCount: result.totalMergedCount,
+        upgradedNodes: result.mergedGroups,
       });
     } catch (error: unknown) {
       const err = error as Error;
@@ -304,7 +285,6 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const { graphId } = req.params;
     const { relations } = req.body;
-    const supabase = req.supabase!;
 
     try {
       logger.info("Applying hierarchy relations", {
@@ -313,67 +293,14 @@ router.post(
         userId: req.user.id,
       });
 
-      let appliedCount = 0;
-      const errors: Array<{
-        parentId: string;
-        childId: string;
-        error: string;
-      }> = [];
-
-      for (const relation of relations) {
-        try {
-          const { error: updateError } = await supabase
-            .from("graph_nodes")
-            .update({ parent_id: relation.parentId })
-            .eq("knowledge_point_id", relation.childId)
-            .eq("graph_id", graphId)
-            .is("deleted_at", null);
-
-          if (updateError) {
-            errors.push({
-              parentId: relation.parentId,
-              childId: relation.childId,
-              error: updateError.message,
-            });
-            logger.warn("Failed to apply hierarchy relation", {
-              parentId: relation.parentId,
-              childId: relation.childId,
-              error: updateError.message,
-            });
-          } else {
-            appliedCount++;
-          }
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          errors.push({
-            parentId: relation.parentId,
-            childId: relation.childId,
-            error: errorMessage,
-          });
-        }
-      }
-
-      await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graphId));
-      await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));
-
-      logger.info("Hierarchy relations applied", {
+      const result = await conceptAggregationService.batchUpdateHierarchy(
+        req.supabase!,
         graphId,
-        appliedCount,
-        failedCount: errors.length,
-        userId: req.user.id,
-      });
+        req.user.id,
+        relations,
+      );
 
-      if (errors.length > 0) {
-        logger.warn("Some hierarchy relations failed to apply", {
-          errors,
-        });
-      }
-
-      res.json({
-        appliedCount,
-        failedCount: errors.length,
-        errors: errors.length > 0 ? errors : undefined,
-      });
+      res.json(result);
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Failed to apply hierarchy relations", {

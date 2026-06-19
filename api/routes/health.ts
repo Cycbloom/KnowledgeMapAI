@@ -3,8 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { logger } from '../utils/logger';
-import { healthService } from '../services/core/healthService';
-import { getSupabaseAdmin } from '../supabase';
+import { healthService } from "../services/core";
 
 const router = Router();
 
@@ -73,17 +72,8 @@ router.get('/system', async (_req, res) => {
   const startTime = Date.now();
   const checks: Record<string, { status: 'ok' | 'error'; latency?: number; message?: string }> = {};
 
-  const dbStart = Date.now();
-  try {
-    const { error } = await getSupabaseAdmin().from('users').select('id').limit(1);
-    if (error) {
-      checks.database = { status: 'error', message: error.message };
-    } else {
-      checks.database = { status: 'ok', latency: Date.now() - dbStart };
-    }
-  } catch (e) {
-    checks.database = { status: 'error', message: String(e) };
-  }
+  const dbCheck = await healthService.checkDatabaseHealth();
+  checks.database = dbCheck;
 
   checks.memory = {
     status: 'ok',

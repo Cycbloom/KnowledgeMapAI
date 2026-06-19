@@ -1,5 +1,6 @@
 export { Kernel } from "./Kernel";
 export { PluginStoreService } from "./PluginStoreService";
+export { PluginRegistry } from "./registry/PluginRegistry";
 export { DependencyResolver } from "./DependencyResolver";
 export { ExtensionPoint } from "./ExtensionPoint";
 export {

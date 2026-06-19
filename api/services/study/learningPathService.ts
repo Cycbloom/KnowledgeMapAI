@@ -4,6 +4,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
+import { graphService } from "../graph/index";
 import type { NodeLevel } from "@shared/types/graph";
 import type { StudyCardRow } from "@shared/types/database";
 
@@ -183,6 +184,26 @@ export interface LearningPathStage {
   isCompleted: boolean;
   masteryLevel: number;
   nextReviewDate: string | null;
+}
+
+export interface LearningPathResult {
+  id?: string;
+  graphId: string;
+  graphTitle: string;
+  totalNodes: number;
+  completedNodes: number;
+  estimatedTotalTime: number;
+  stages: LearningPathStage[];
+  todayPlan: LearningPathStage[];
+  predictions: {
+    completionDate: string;
+    weeklyProgress: number[];
+    recommendedDailyTime: number;
+  };
+  suggestions: string[];
+  aiGenerated: boolean;
+  targetGoal?: string;
+  savedPath?: LearningPath;
 }
 
 export async function buildProgressMap(
@@ -2865,6 +2886,188 @@ export class LearningPathService {
     });
 
     return result;
+  }
+
+  async getGraphMeta(
+    supabase: SupabaseClient,
+    graphId: string,
+  ): Promise<{ title: string; description: string | null } | null> {
+    const { data } = await supabase
+      .from("knowledge_graphs")
+      .select("title, description")
+      .eq("id", graphId)
+      .single();
+
+    return data as { title: string; description: string | null } | null;
+  }
+
+  async generateAndSavePath(
+    supabase: SupabaseClient,
+    userId: string,
+    graphId: string,
+    options: {
+      target_goal?: string;
+      target_knowledge_point_id?: string;
+      learning_style: string;
+      daily_time_minutes: number;
+      current_knowledge?: string;
+      provider?: string;
+      model?: string;
+      save_path?: boolean;
+      path_title?: string;
+    },
+  ): Promise<LearningPathResult> {
+    const {
+      target_goal,
+      target_knowledge_point_id,
+      learning_style,
+      daily_time_minutes,
+      current_knowledge,
+      provider: providerType,
+      model,
+      save_path,
+      path_title,
+    } = options;
+
+    const { nodes, edges } = await graphService.getGraphNodes(
+      supabase,
+      userId,
+      graphId,
+    );
+
+    if (nodes.length === 0) {
+      throw new AppError("图谱中没有节点", 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    const graphMeta = await this.getGraphMeta(supabase, graphId);
+
+    const progressMap = await buildProgressMap(supabase, userId, nodes);
+    const { parentMap, childMap } = buildDependencyMaps(nodes, edges);
+
+    let stages: LearningPathStage[];
+    let suggestions: string[];
+    let aiGenerated = false;
+
+    if (target_goal) {
+      const aiResult = await generateAIPath(
+        supabase,
+        userId,
+        graphId,
+        nodes,
+        edges,
+        progressMap,
+        parentMap,
+        childMap,
+        target_goal,
+        learning_style,
+        daily_time_minutes,
+        current_knowledge,
+        graphMeta?.title || "",
+        providerType,
+        model,
+      );
+      stages = aiResult.stages;
+      suggestions = aiResult.suggestions;
+      aiGenerated = true;
+    } else {
+      const ruleResult = generateRulePath(
+        nodes,
+        edges,
+        progressMap,
+        parentMap,
+        childMap,
+        target_knowledge_point_id,
+        daily_time_minutes,
+      );
+      stages = ruleResult.stages;
+      suggestions = ruleResult.suggestions;
+    }
+
+    const todayPlan = buildTodayPlan(stages, daily_time_minutes);
+    const totalEstimatedTime = stages.reduce(
+      (sum, s) => sum + s.estimatedTime,
+      0,
+    );
+    const completedCount = stages.filter((s) => s.isCompleted).length;
+    const estimatedDays = Math.ceil(totalEstimatedTime / daily_time_minutes);
+    const completionDate = new Date();
+    completionDate.setDate(completionDate.getDate() + estimatedDays);
+
+    const weeklyProgress = calculateWeeklyProgress(
+      daily_time_minutes,
+      totalEstimatedTime,
+    );
+
+    const learningPath: LearningPathResult = {
+      graphId,
+      graphTitle: graphMeta?.title || "未命名图谱",
+      totalNodes: nodes.length,
+      completedNodes: completedCount,
+      estimatedTotalTime: totalEstimatedTime,
+      stages,
+      todayPlan,
+      predictions: {
+        completionDate: completionDate.toISOString(),
+        weeklyProgress,
+        recommendedDailyTime: Math.min(
+          60,
+          Math.ceil(totalEstimatedTime / 14),
+        ),
+      },
+      suggestions,
+      aiGenerated,
+      targetGoal: target_goal,
+    };
+
+    if (save_path) {
+      const validStages = stages.filter((stage) => {
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            stage.nodeId,
+          );
+        return isUuid;
+      });
+
+      if (validStages.length === 0) {
+        throw new AppError(
+          "AI 生成的学习路径无法匹配到图谱中的知识点，请重试",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
+      }
+
+      const uuidPattern =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      const savedPath = await this.createLearningPath(
+        supabase,
+        userId,
+        {
+          title: path_title || `${graphMeta?.title || "图谱"}学习路径`,
+          goal: target_goal,
+          source_graph_id: graphId,
+          total_estimated_time: totalEstimatedTime,
+          ai_generated: aiGenerated,
+          daily_minutes_target: daily_time_minutes,
+          nodes: validStages.map((stage, index) => ({
+            knowledge_point_id: stage.nodeId,
+            order_index: index,
+            title: stage.nodeTitle,
+            description: stage.reason,
+            estimated_time: stage.estimatedTime,
+            is_milestone: stage.priority === "high",
+            prerequisites: stage.prerequisites.filter((id) =>
+              uuidPattern.test(id),
+            ),
+          })),
+        },
+      );
+
+      learningPath.id = savedPath.id;
+      learningPath.savedPath = savedPath;
+    }
+
+    return learningPath;
   }
 }
 

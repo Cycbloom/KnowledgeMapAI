@@ -66,7 +66,7 @@ export interface UserTask {
   progress_mode?: ProgressMode;
   progress_percentage?: number;
   parent_task_id?: string;
-  context?: string;
+  context?: Record<string, unknown> | string;
   dependencies?: TaskDependency[];
   subtask_count?: number;
   subtask_completed?: number;
@@ -75,6 +75,8 @@ export interface UserTask {
   scheduled_start?: string;
   scheduled_end?: string;
   subtasks?: TaskSubtask[];
+  nextSubtask?: { id: string; title: string; learning_state: string; mastery_level: number; position: number; estimated_duration?: number } | null;
+  subtaskProgress?: { total: number; completed: number } | null;
 }
 
 export interface SystemTask {

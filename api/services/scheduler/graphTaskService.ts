@@ -276,7 +276,7 @@ export class GraphTaskService {
 
     for (const task of graphTasks) {
       try {
-        const graphId = (task.context as any)?.graph_id;
+        const graphId = (typeof task.context === 'object' ? task.context : null)?.graph_id as string | undefined;
         if (graphId) {
           await this.updateTaskForGraph(supabase, task.id, graphId);
         }

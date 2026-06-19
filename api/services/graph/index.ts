@@ -12,7 +12,7 @@ export { knowledgePointVersionService, KnowledgePointVersionService } from './kn
 export type { ListVersionsOptions, PaginatedVersionsResult } from './knowledgePointVersionService';
 export { relationshipTypeService, RelationshipTypeService } from './relationshipTypeService';
 export { autoGraphService, AutoGraphService } from './autoGraphService';
-export type { AINodeData, CreateEdgeData, ProcessAINodesResult } from './autoGraphService';
+export type { AINodeData, CreateEdgeData, ProcessAINodesResult, InitGraphParams, InitGraphResult, ExpandNodeParams, ExpandNodeResult, CalculateNodePositionsResult, ApplyTemplateParams, ApplyTemplateResult } from './autoGraphService';
 export { relationDiscoveryService, RelationDiscoveryService } from './relationDiscoveryService';
 export type { DiscoveredRelation, CrossDomainInsight, DiscoveryResult, IntelligentSuggestion, CreateRelationFromDiscoveryData } from './relationDiscoveryService';
 export { networkAnalysisService } from "./networkAnalysisService";
@@ -30,3 +30,16 @@ export type {
   AliasSuggestion,
   HierarchyAnalysisSuggestion,
 } from "./conceptAnalysisService";
+export { domainExpansionService } from './domainExpansionService';
+export { graphCrudService, GraphCrudService } from './graphCrudService';
+export { graphRelationsRouteService, GraphRelationsRouteService } from './graphRelationsRouteService';
+export { templateRouteService } from './templateRouteService';
+export { analysisRouteService } from './analysisRouteService';
+export { autoGraphRouteService } from './autoGraphRouteService';
+export { dataService, DataService } from './dataService';
+export { nodesService, NodesService } from './nodesService';
+export { regionService } from './regionService';
+export { graphExpansionService } from './graphExpansionService';
+export type { CustomRegion, CreateRegionData, UpdateRegionData } from './regionService';
+export { collaboratorService, CollaboratorService } from './collaboratorService';
+export type { CollaboratorServiceResult } from './collaboratorService';

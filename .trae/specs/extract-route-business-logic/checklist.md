@@ -1,11 +1,13 @@
-- [x] `api/services/graph/domainService.ts` 已创建，包含 listDomainsTree、getDomain、createDomain、updateDomain、deleteDomain、reorderDomains、generateColor、recommendDomains 方法
-- [x] `api/services/graph/graphDomainService.ts` 已创建，包含 migrateGraphDomainIfNeeded、getGraphDomains、updateGraphDomains、listGraphsByDomains 方法
-- [x] `api/services/graph/index.ts` 已添加 domainService 和 graphDomainService 导出
-- [x] `api/routes/domains.ts` 所有路由处理器仅调用 service，无直接 `.from()` 调用
-- [x] `api/routes/domains.ts` 已移除 buildTree、detectCycle、ensureUncategorizedDomain 函数和 DomainRecord/DomainTreeNode 接口
-- [x] `api/routes/graphs/crud.ts` 已移除 migrateGraphDomainIfNeeded、getGraphDomains、updateGraphDomains 辅助函数
-- [x] `api/routes/graphs/crud.ts` GET / 路由使用 graphDomainService.listGraphsByDomains()
-- [x] `api/routes/graphs/crud.ts` GET /:id 路由使用 graphDomainService.migrateGraphDomainIfNeeded() 和 getGraphDomains()
-- [x] `api/routes/graphs/crud.ts` POST / 和 PUT /:id 路由使用 graphDomainService.updateGraphDomains()
+- [x] `promptService.optimizeWithAI()` 方法已实现，使用 `getRenderedPrompt("optimize_prompt", ...)` 构建系统提示
+- [x] `api/routes/prompts.ts` 的 `/optimize` 路由已简化为委托调用
+- [x] `ragService.search()` 方法已实现，封装搜索分支逻辑
+- [x] `api/routes/rag.ts` 的 `/search` 路由已简化为委托调用
+- [x] `studyRouteService.parseCardQueryParams()` 方法已实现
+- [x] `api/routes/study.ts` 的 GET `/cards` 路由已使用 `parseCardQueryParams`
+- [x] `studyService.updateProgress()` 内部已发布 `review_completed` 事件
+- [x] `api/routes/study.ts` 的 PUT `/cards/:id/progress` 路由已移除事件发布代码
+- [x] `backupService.importBackup()` 方法已实现
+- [x] `backupService.exportAndRecord()` 方法已实现
+- [x] `api/routes/backup.ts` 的 `/import` 和 `/export` 路由已简化
 - [x] `npm run check` 通过，无类型错误
 - [x] `npm run lint` 通过，无 lint 错误

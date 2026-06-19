@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "../../supabase";
 
 export interface OverviewData {
   totalGraphs: number;
@@ -553,6 +554,26 @@ export class HealthService {
       .sort((a, b) => a.date.localeCompare(b.date));
 
     return activity;
+  }
+
+  async checkDatabaseHealth(): Promise<{
+    status: "ok" | "error";
+    latency?: number;
+    message?: string;
+  }> {
+    const start = Date.now();
+    try {
+      const { error } = await getSupabaseAdmin()
+        .from("users")
+        .select("id")
+        .limit(1);
+      if (error) {
+        return { status: "error", message: error.message };
+      }
+      return { status: "ok", latency: Date.now() - start };
+    } catch (e) {
+      return { status: "error", message: String(e) };
+    }
   }
 }
 

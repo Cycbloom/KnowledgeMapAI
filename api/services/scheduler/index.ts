@@ -1,3 +1,7 @@
+export { taskStatService } from "./taskStatService";
+export { taskExecutionService } from "./taskExecutionService";
+export { taskSettingService } from "./taskSettingService";
+
 export { taskService, TaskService } from "./taskService";
 export { executionService, ExecutionService } from "./executionService";
 export { focusService, FocusService } from "./focusService";
@@ -21,6 +25,15 @@ export {
 } from "./progressSyncService";
 export { efficiencyService, EfficiencyService } from "./efficiencyService";
 export { reviewTaskService, ReviewTaskService } from "./reviewTaskService";
+export { progressPlanService } from "./progressPlanService";
+export { scheduleService } from "./scheduleService";
+export { templateService } from "./templateService";
+export { subtaskService, SubtaskService } from "./subtaskService";
+export { taskDependencyService } from "./taskDependencyService";
+export { taskKnowledgePointService } from "./taskKnowledgePointService";
+export { taskLinkService, TaskLinkService } from "./taskLinkService";
+export { timeSlotService } from "./timeSlotService";
+export { calendarService } from "./calendarService";
 
 export type {
   UserTask,
@@ -130,3 +143,10 @@ export {
   DEFAULT_SCHEDULER_WEIGHTS,
   DEFAULT_TASK_TYPE_TIME_MAP,
 } from "./adaptiveSchedulerService";
+export { activityService } from "./activityService";
+export type { ActivityType, UserActivity, RecordActivityData, DailyActivityStats } from "./activityService";
+export { autoTaskGenerator } from "./autoTaskGenerator";
+export type { AutoTaskResult } from "./autoTaskGenerator";
+export { smartTaskLinker } from "./smartTaskLinker";
+export type { LinkedTaskResult, GraphTaskInfo } from "./smartTaskLinker";
+export { systemTaskService, SystemTaskService } from "./systemTaskService";

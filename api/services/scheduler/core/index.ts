@@ -4,3 +4,5 @@ export { schedulerSubscribers, SchedulerSubscribers } from "./subscribers";
 export { schedulerCronService, SchedulerCronService } from "./cronService";
 export { schedulerDecisionEngine, SchedulerDecisionEngine } from "./decisionEngine";
 export type { DecisionTaskRecommendation, DecisionFactor, DecisionContext } from "./decisionEngine";
+export { learningLoopOrchestrator } from "./learningLoopOrchestrator";
+export type { LearningLoop, LoopStage } from "./learningLoopOrchestrator";

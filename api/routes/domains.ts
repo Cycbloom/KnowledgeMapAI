@@ -5,7 +5,7 @@ import {
 } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { z } from "zod";
-import { domainService } from "../services/graph/domainService";
+import { domainService } from "../services/graph";
 
 const createDomainSchema = z.object({
   name: z.string().min(2, "名称至少需要2个字符").max(200, "名称最多200个字符"),

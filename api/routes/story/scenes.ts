@@ -1,10 +1,8 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
-import { AppError } from "../../middleware/errorHandler";
-import { ErrorCodes } from "../../../shared/types/errorCodes";
-import { logger } from "../../utils/logger";
 import { z } from "zod";
+import { sceneService } from "../../services/story";
 
 const createSceneDetailSchema = z.object({
   structure_id: z.string().uuid(),
@@ -39,61 +37,9 @@ router.get(
     const { graphId, structureId } = req.params;
     const supabase = req.supabase!;
 
-    try {
-      const { data: scene, error } = await supabase
-        .from("story_scene_details")
-        .select(
-          `
-          *,
-          story_characters!pov_character_id (
-            id,
-            name,
-            role_type
-          )
-        `,
-        )
-        .eq("graph_id", graphId)
-        .eq("structure_id", structureId)
-        .maybeSingle();
+    const result = await sceneService.get(supabase, graphId, structureId);
 
-      if (error) throw error;
-
-      if (!scene) {
-        return res.json({ scene: null });
-      }
-
-      const { data: appearances } = await supabase
-        .from("story_appearances")
-        .select(
-          `
-          id,
-          character_id,
-          role_in_scene,
-          notes,
-          story_characters!character_id (
-            id,
-            name,
-            role_type
-          )
-        `,
-        )
-        .eq("scene_detail_id", scene.id);
-
-      res.json({
-        scene: {
-          ...scene,
-          appearances: appearances || [],
-        },
-      });
-    } catch (error: unknown) {
-      logger.error("Get scene detail error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "获取场景详情失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    res.json(result);
   },
 );
 
@@ -105,48 +51,29 @@ router.post(
     const { graphId } = req.params;
     const supabase = req.supabase!;
 
-    try {
-      const {
-        structure_id,
-        pov_character_id,
-        synopsis,
-        content,
-        location_name,
-        time_setting,
-        writing_status,
-        word_count,
-      } = req.body;
+    const {
+      structure_id,
+      pov_character_id,
+      synopsis,
+      content,
+      location_name,
+      time_setting,
+      writing_status,
+      word_count,
+    } = req.body;
 
-      const insertData = {
-        graph_id: graphId,
-        structure_id,
-        pov_character_id: pov_character_id || null,
-        synopsis: synopsis || null,
-        content: content || null,
-        location_name: location_name || null,
-        time_setting: time_setting || null,
-        writing_status: writing_status || "draft",
-        word_count: word_count || 0,
-      };
+    const scene = await sceneService.create(supabase, graphId, {
+      structure_id,
+      pov_character_id: pov_character_id || undefined,
+      synopsis: synopsis || undefined,
+      content: content || undefined,
+      location_name: location_name || undefined,
+      time_setting: time_setting || undefined,
+      writing_status: writing_status || "draft",
+      word_count: word_count || 0,
+    });
 
-      const { data: scene, error } = await supabase
-        .from("story_scene_details")
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      res.status(201).json(scene);
-    } catch (error: unknown) {
-      logger.error("Create scene detail error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "创建场景详情失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    res.status(201).json(scene);
   },
 );
 
@@ -158,36 +85,9 @@ router.put(
     const { graphId, id } = req.params;
     const supabase = req.supabase!;
 
-    try {
-      const updateData = {
-        ...req.body,
-        updated_at: new Date().toISOString(),
-      };
+    const scene = await sceneService.update(supabase, graphId, id, req.body);
 
-      const { data: scene, error } = await supabase
-        .from("story_scene_details")
-        .update(updateData)
-        .eq("id", id)
-        .eq("graph_id", graphId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (!scene) {
-        throw new AppError("场景详情不存在", 404, ErrorCodes.NOT_FOUND);
-      }
-
-      res.json(scene);
-    } catch (error: unknown) {
-      logger.error("Update scene detail error:", error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "更新场景详情失败",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
-    }
+    res.json(scene);
   },
 );
 

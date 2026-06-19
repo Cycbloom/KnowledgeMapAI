@@ -8,9 +8,10 @@ import {
   moveTaskSchema,
   reorderTasksSchema,
 } from "../../schemas/index";
-import { logger } from "../../utils/logger";
-import { taskStateMachine } from "../../services/scheduler/core/stateMachine";
-import { taskService } from "../../services/scheduler/taskService";
+import { taskStateMachine } from "../../services/scheduler/core";
+import { taskService } from "../../services/scheduler";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -34,74 +35,13 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
-    const {
-      title,
-      description,
-      queue_level,
-      estimated_duration,
-      deadline,
-      tags,
-      knowledge_point_id,
-      priority,
-      task_type,
-      total_duration,
-      progress_mode,
-      context,
-      parent_task_id,
-    } = req.body;
-
-    const { count } = await supabase
-      .from("user_tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", req.user.id)
-      .eq("queue_level", queue_level ?? 0)
-      .is("deleted_at", null);
-
-    const { data: task, error } = await supabase
-      .from("user_tasks")
-      .insert({
-        user_id: req.user.id,
-        title,
-        description,
-        queue_level: queue_level ?? 0,
-        position: count ?? 0,
-        estimated_duration,
-        deadline,
-        tags: tags ?? [],
-        knowledge_point_id,
-        priority: priority ?? 0,
-        status: "pending",
-        task_type: task_type ?? "one_time",
-        total_duration,
-        progress_mode: progress_mode ?? "average",
-        progress_percentage: 0,
-        context,
-        parent_task_id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("Create task error:", error);
-      return res.status(500).json({ error: "创建任务失败" });
-    }
-
+    const task = await taskService.createTaskFull(supabase, req.user.id, req.body);
     res.status(201).json({ success: true, data: task });
   },
 );
-
-interface UserTaskWithSubtasks {
-  id: string;
-  subtask_count?: number;
-  subtask_completed?: number;
-  has_subtasks?: boolean;
-  [key: string]: unknown;
-}
 
 router.get(
   "/tasks",
@@ -110,75 +50,16 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { status, queue_level, limit, offset } =
       req.query as unknown as z.infer<typeof getTasksQuerySchema>;
 
-    let query = supabase
-      .from("user_tasks")
-      .select("*", { count: "exact" })
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .order("queue_level", { ascending: true })
-      .order("position", { ascending: true });
-
-    if (status) {
-      query = query.eq("status", status);
-    }
-    if (queue_level !== undefined) {
-      query = query.eq("queue_level", queue_level);
-    }
-
-    const {
-      data: tasks,
-      error,
-      count,
-    } = await query.range(offset, offset + limit - 1);
-
-    if (error) {
-      logger.error("Get tasks error:", error);
-      return res.status(500).json({ error: "获取任务列表失败" });
-    }
-
-    if (tasks && tasks.length > 0) {
-      const taskIds = tasks.map((t) => t.id);
-      const { data: subtaskStats } = await supabase
-        .from("task_subtasks")
-        .select("task_id, status")
-        .in("task_id", taskIds);
-
-      const subtaskCounts = new Map<
-        string,
-        { total: number; completed: number }
-      >();
-      if (subtaskStats) {
-        for (const st of subtaskStats) {
-          const existing = subtaskCounts.get(st.task_id) || {
-            total: 0,
-            completed: 0,
-          };
-          existing.total++;
-          if (st.status === "completed") {
-            existing.completed++;
-          }
-          subtaskCounts.set(st.task_id, existing);
-        }
-      }
-
-      for (const task of tasks) {
-        const stats = subtaskCounts.get(task.id);
-        const taskWithSubtasks = task as UserTaskWithSubtasks;
-        taskWithSubtasks.subtask_count = stats?.total || 0;
-        taskWithSubtasks.subtask_completed = stats?.completed || 0;
-        taskWithSubtasks.has_subtasks = (stats?.total || 0) > 0;
-      }
-    }
-
-    res.json({ success: true, data: tasks, total: count });
+    const { tasks: tasksData, total } = await taskService.listTasksWithStats(
+      supabase, req.user.id, { status, queue_level, limit, offset }
+    );
+    res.json({ success: true, data: tasksData, total });
   },
 );
 
@@ -189,27 +70,11 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { queue_level, task_ids } = req.body;
-
-    const updates = task_ids.map((taskId: string, index: number) => ({
-      id: taskId,
-      position: index,
-      queue_level,
-    }));
-
-    for (const update of updates) {
-      await supabase
-        .from("user_tasks")
-        .update({ position: update.position, queue_level: update.queue_level })
-        .eq("id", update.id)
-        .eq("user_id", req.user.id);
-    }
-
+    await taskService.reorderTasks(supabase, req.user.id, queue_level, task_ids);
     res.json({ success: true });
   },
 );
@@ -221,23 +86,14 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: task, error } = await supabase
-      .from("user_tasks")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .single();
-
-    if (error || !task) {
-      return res.status(404).json({ error: "任务不存在" });
+    const task = await taskService.getTask(supabase, id, req.user.id);
+    if (!task) {
+      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
     }
 
     res.json({ success: true, data: task });
@@ -251,79 +107,15 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: task, error: taskError } = await supabase
-      .from("user_tasks")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .single();
-
-    if (taskError || !task) {
-      return res.status(404).json({ error: "任务不存在" });
+    const taskDetail = await taskService.getTaskDetail(supabase, req.user.id, id);
+    if (!taskDetail) {
+      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
     }
-
-    const { data: dependencies } = await supabase
-      .from("task_dependencies")
-      .select(
-        "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:user_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
-      )
-      .eq("task_id", id);
-
-    const { data: dependents } = await supabase
-      .from("task_dependencies")
-      .select(
-        "id, task_id, depends_on_task_id, dependency_type, created_at, task:user_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
-      )
-      .eq("depends_on_task_id", id);
-
-    const { data: progressPlans } = await supabase
-      .from("task_progress_plans")
-      .select("*")
-      .eq("task_id", id)
-      .order("plan_date", { ascending: true });
-
-    const { data: executions } = await supabase
-      .from("task_executions")
-      .select("*")
-      .eq("task_id", id)
-      .order("started_at", { ascending: false })
-      .limit(20);
-
-    const { data: subtasks } = await supabase
-      .from("task_subtasks")
-      .select("*")
-      .eq("task_id", id)
-      .order("position", { ascending: true });
-
-    const requiredTimeSlots = task.estimated_duration
-      ? Math.ceil(task.estimated_duration / 25)
-      : undefined;
-
-    const subtaskCount = subtasks?.length || 0;
-    const subtaskCompleted =
-      subtasks?.filter((s) => s.status === "completed").length || 0;
-
-    const taskDetail = {
-      ...task,
-      dependencies: dependencies || [],
-      dependents: dependents || [],
-      progress_plans: progressPlans || [],
-      executions: executions || [],
-      subtasks: subtasks || [],
-      required_time_slots: requiredTimeSlots,
-      subtask_count: subtaskCount,
-      subtask_completed: subtaskCompleted,
-      has_subtasks: subtaskCount > 0,
-    };
-
     res.json({ success: true, data: taskDetail });
   },
 );
@@ -335,27 +127,13 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
     const updateData = req.body;
 
-    const { data: task, error } = await supabase
-      .from("user_tasks")
-      .update(updateData)
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .select()
-      .single();
-
-    if (error || !task) {
-      return res.status(404).json({ error: "任务不存在或更新失败" });
-    }
-
+    const task = await taskService.updateTask(supabase, id, req.user.id, updateData);
     res.json({ success: true, data: task });
   },
 );
@@ -367,23 +145,12 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { error } = await supabase
-      .from("user_tasks")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id)
-      .eq("user_id", req.user.id);
-
-    if (error) {
-      return res.status(500).json({ error: "删除任务失败" });
-    }
-
+    await taskService.deleteTask(supabase, id, req.user.id);
     res.json({ success: true });
   },
 );
@@ -395,35 +162,26 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: currentTask } = await supabase
-      .from("user_tasks")
-      .select("status")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .single();
-
-    if (!currentTask) {
-      return res.status(404).json({ error: "任务不存在" });
+    const currentStatus = await taskService.getTaskStatus(supabase, id, req.user.id);
+    if (!currentStatus) {
+      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
     }
 
     const result = await taskStateMachine.transition(
       supabase,
       id,
       req.user.id,
-      currentTask.status,
+      currentStatus,
       "in_progress",
     );
 
     if (!result.success) {
-      return res.status(400).json({ error: result.error });
+      throw new AppError(result.error || "状态转换失败", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     res.json({
@@ -440,35 +198,26 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: currentTask } = await supabase
-      .from("user_tasks")
-      .select("status")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .single();
-
-    if (!currentTask) {
-      return res.status(404).json({ error: "任务不存在" });
+    const currentStatus = await taskService.getTaskStatus(supabase, id, req.user.id);
+    if (!currentStatus) {
+      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
     }
 
     const result = await taskStateMachine.transition(
       supabase,
       id,
       req.user.id,
-      currentTask.status,
+      currentStatus,
       "paused",
     );
 
     if (!result.success) {
-      return res.status(400).json({ error: result.error });
+      throw new AppError(result.error || "状态转换失败", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     res.json({
@@ -485,37 +234,28 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
     const { actual_duration } = req.body;
 
-    const { data: currentTask } = await supabase
-      .from("user_tasks")
-      .select("status")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .single();
-
-    if (!currentTask) {
-      return res.status(404).json({ error: "任务不存在" });
+    const currentStatus = await taskService.getTaskStatus(supabase, id, req.user.id);
+    if (!currentStatus) {
+      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
     }
 
     const result = await taskStateMachine.transition(
       supabase,
       id,
       req.user.id,
-      currentTask.status,
+      currentStatus,
       "completed",
       { actual_duration: actual_duration ?? undefined },
     );
 
     if (!result.success) {
-      return res.status(400).json({ error: result.error });
+      throw new AppError(result.error || "状态转换失败", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     res.json({ success: true, data: result.task });
@@ -525,73 +265,15 @@ router.post(
 router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
+    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
   }
 
   const includeCompleted = req.query.include_completed === "true";
   const includeCancelled = req.query.include_cancelled === "true";
 
-  let statusFilter: string[] = ["pending", "in_progress", "paused"];
-  if (includeCompleted) {
-    statusFilter.push("completed");
-  }
-  if (includeCancelled) {
-    statusFilter.push("cancelled");
-  }
-
-  const { data: tasks, error } = await supabase
-    .from("user_tasks")
-    .select("*")
-    .eq("user_id", req.user.id)
-    .is("deleted_at", null)
-    .in("status", statusFilter)
-    .order("queue_level", { ascending: true })
-    .order("position", { ascending: true });
-
-  if (error) {
-    return res.status(500).json({ error: "获取队列失败" });
-  }
-
-  if (tasks && tasks.length > 0) {
-    const taskIds = tasks.map((t) => t.id);
-    const { data: subtaskStats } = await supabase
-      .from("task_subtasks")
-      .select("task_id, status")
-      .in("task_id", taskIds);
-
-    const subtaskCounts = new Map<
-      string,
-      { total: number; completed: number }
-    >();
-    if (subtaskStats) {
-      for (const st of subtaskStats) {
-        const existing = subtaskCounts.get(st.task_id) || {
-          total: 0,
-          completed: 0,
-        };
-        existing.total++;
-        if (st.status === "completed") {
-          existing.completed++;
-        }
-        subtaskCounts.set(st.task_id, existing);
-      }
-    }
-
-    for (const task of tasks) {
-      const stats = subtaskCounts.get(task.id);
-      const taskWithSubtasks = task as UserTaskWithSubtasks;
-      taskWithSubtasks.subtask_count = stats?.total || 0;
-      taskWithSubtasks.subtask_completed = stats?.completed || 0;
-      taskWithSubtasks.has_subtasks = (stats?.total || 0) > 0;
-    }
-  }
-
-  const queues = {
-    q0: tasks?.filter((t) => t.queue_level === 0) ?? [],
-    q1: tasks?.filter((t) => t.queue_level === 1) ?? [],
-    q2: tasks?.filter((t) => t.queue_level === 2) ?? [],
-  };
-
+  const queues = await taskService.listQueuesWithStats(
+    supabase, req.user.id, { includeCompleted, includeCancelled }
+  );
   res.json({ success: true, data: queues });
 });
 
@@ -602,37 +284,15 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
     const { target_queue } = req.body;
 
-    const { count } = await supabase
-      .from("user_tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", req.user.id)
-      .eq("queue_level", target_queue)
-      .is("deleted_at", null);
-
-    const { data: task, error } = await supabase
-      .from("user_tasks")
-      .update({
-        queue_level: target_queue,
-        position: count ?? 0,
-      })
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .select()
-      .single();
-
-    if (error || !task) {
-      return res.status(404).json({ error: "任务不存在或移动失败" });
-    }
-
+    const task = await taskService.moveTaskToQueue(
+      supabase, id, req.user.id, target_queue
+    );
     res.json({ success: true, data: task });
   },
 );
@@ -644,48 +304,15 @@ router.patch(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id: taskId } = req.params;
     const { progress_percentage, actual_duration_add } = req.body;
 
-    const updateData: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    };
-
-    if (progress_percentage !== undefined) {
-      updateData.progress_percentage = Math.min(100, Math.max(0, progress_percentage));
-    }
-
-    if (actual_duration_add !== undefined) {
-      const { data: currentTask } = await supabase
-        .from("user_tasks")
-        .select("actual_duration")
-        .eq("id", taskId)
-        .eq("user_id", req.user.id)
-        .single();
-
-      const currentDuration = (currentTask?.actual_duration as number) || 0;
-      updateData.actual_duration = currentDuration + actual_duration_add;
-    }
-
-    const { data: task, error } = await supabase
-      .from("user_tasks")
-      .update(updateData)
-      .eq("id", taskId)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .select()
-      .single();
-
-    if (error || !task) {
-      logger.error("Update task progress error:", error);
-      return res.status(404).json({ error: "任务不存在或更新失败" });
-    }
-
+    const task = await taskService.updateTaskProgress(
+      supabase, req.user.id, taskId, { progress_percentage, actual_duration_add }
+    );
     res.json({ success: true, data: task });
   },
 );
@@ -697,9 +324,7 @@ router.patch(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const userId = req.user.id;
@@ -707,7 +332,7 @@ router.patch(
     const { duration_seconds } = req.body;
 
     if (!duration_seconds || typeof duration_seconds !== "number" || duration_seconds <= 0) {
-      return res.status(400).json({ success: false, error: "duration_seconds must be a positive number" });
+      throw new AppError("duration_seconds must be a positive number", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const execution = await taskService.updateExecutionAfterTimeSlice(

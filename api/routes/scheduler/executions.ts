@@ -2,6 +2,9 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
+import { taskExecutionService } from "../../services/scheduler";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -22,34 +25,16 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: task } = await supabase
-      .from("user_tasks")
-      .select("id")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .is("deleted_at", null)
-      .single();
-
-    if (!task) {
-      return res.status(404).json({ error: "任务不存在" });
-    }
-
-    const { data: executions, error } = await supabase
-      .from("task_executions")
-      .select("*")
-      .eq("task_id", id)
-      .order("started_at", { ascending: false });
-
-    if (error) {
-      return res.status(500).json({ error: "获取执行记录失败" });
-    }
+    const executions = await taskExecutionService.listByTask(
+      supabase,
+      req.user.id,
+      id,
+    );
 
     res.json({ success: true, data: executions });
   },
@@ -62,36 +47,20 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { task_id, limit, offset } = req.query as unknown as z.infer<
       typeof getExecutionsQuerySchema
     >;
 
-    let query = supabase
-      .from("task_executions")
-      .select("*, user_tasks(title, queue_level)", { count: "exact" })
-      .eq("user_id", req.user.id)
-      .order("started_at", { ascending: false });
+    const result = await taskExecutionService.list(supabase, req.user.id, {
+      task_id,
+      limit,
+      offset,
+    });
 
-    if (task_id) {
-      query = query.eq("task_id", task_id);
-    }
-
-    const {
-      data: executions,
-      error,
-      count,
-    } = await query.range(offset, offset + limit - 1);
-
-    if (error) {
-      return res.status(500).json({ error: "获取执行历史失败" });
-    }
-
-    res.json({ success: true, data: executions, total: count });
+    res.json({ success: true, data: result.data, total: result.total });
   },
 );
 
@@ -102,23 +71,16 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: execution, error } = await supabase
-      .from("task_executions")
-      .select("*, user_tasks(title, description, queue_level)")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .single();
-
-    if (error || !execution) {
-      return res.status(404).json({ error: "执行记录不存在" });
-    }
+    const execution = await taskExecutionService.get(
+      supabase,
+      req.user.id,
+      id,
+    );
 
     res.json({ success: true, data: execution });
   },

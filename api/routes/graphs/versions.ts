@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { uuidParamsSchema, createSnapshotSchema, rollbackSchema, createBranchSchema, mergeSchema, diffQuerySchema, eventsQuerySchema, snapshotsQuerySchema } from "../../schemas/index";
-import { graphVersionService } from "../../services/graph/index";
+import { graphVersionService } from "../../services/graph";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { VersionGraphEventType } from "../../../shared/types/graphVersion";

@@ -2,9 +2,11 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { z } from "zod";
 import { logger } from "../../utils/logger";
-import { activityService } from "../../services/scheduler/activityService";
-import { autoTaskGenerator } from "../../services/scheduler/autoTaskGenerator";
-import { smartTaskLinker } from "../../services/scheduler/smartTaskLinker";
+import { activityService } from "../../services/scheduler";
+import { autoTaskGenerator } from "../../services/scheduler";
+import { smartTaskLinker } from "../../services/scheduler";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -40,14 +42,12 @@ const autoGenerateSchema = z.object({
 router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
+    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
   }
 
   const parsed = recordActivitySchema.safeParse(req.body);
   if (!parsed.success) {
-    return res
-      .status(400)
-      .json({ error: "Invalid request data", details: parsed.error.errors });
+    throw new AppError("Invalid request data", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
   try {
@@ -59,14 +59,14 @@ router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
     res.status(201).json({ success: true, data: activity });
   } catch (error) {
     logger.error("[Activities] Failed to record activity:", error);
-    res.status(500).json({ error: "Failed to record activity" });
+    throw new AppError("Failed to record activity", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
 router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
+    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
   }
 
   try {
@@ -91,7 +91,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: result.data, total: result.total });
   } catch (error) {
     logger.error("[Activities] Failed to get activities:", error);
-    res.status(500).json({ error: "Failed to get activities" });
+    throw new AppError("Failed to get activities", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -101,17 +101,13 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { date } = req.params;
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(date)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid date format, expected YYYY-MM-DD" });
+      throw new AppError("Invalid date format, expected YYYY-MM-DD", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     try {
@@ -123,7 +119,7 @@ router.get(
       res.json({ success: true, data: activities });
     } catch (error) {
       logger.error("[Activities] Failed to get daily activities:", error);
-      res.status(500).json({ error: "Failed to get daily activities" });
+      throw new AppError("Failed to get daily activities", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -131,14 +127,12 @@ router.get(
 router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
+    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
   }
 
   const { start_date, end_date } = req.query;
   if (!start_date || !end_date) {
-    return res
-      .status(400)
-      .json({ error: "start_date and end_date query parameters are required" });
+    throw new AppError("start_date and end_date query parameters are required", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -146,9 +140,7 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
     !dateRegex.test(start_date as string) ||
     !dateRegex.test(end_date as string)
   ) {
-    return res
-      .status(400)
-      .json({ error: "Invalid date format, expected YYYY-MM-DD" });
+    throw new AppError("Invalid date format, expected YYYY-MM-DD", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
   try {
@@ -161,21 +153,19 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: stats });
   } catch (error) {
     logger.error("[Activities] Failed to get activity stats:", error);
-    res.status(500).json({ error: "Failed to get activity stats" });
+    throw new AppError("Failed to get activity stats", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
 router.put("/:id/end", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
+    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
   }
 
   const parsed = endActivitySchema.safeParse(req.body);
   if (!parsed.success) {
-    return res
-      .status(400)
-      .json({ error: "Invalid request data", details: parsed.error.errors });
+    throw new AppError("Invalid request data", 400, ErrorCodes.VALIDATION_ERROR);
   }
 
   try {
@@ -189,7 +179,7 @@ router.put("/:id/end", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: activity });
   } catch (error) {
     logger.error("[Activities] Failed to end activity:", error);
-    res.status(500).json({ error: "Failed to end activity" });
+    throw new AppError("Failed to end activity", 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -199,16 +189,12 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const parsed = autoGenerateSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ error: "Invalid request data", details: parsed.error.errors });
+      throw new AppError("Invalid request data", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     const {
@@ -246,10 +232,11 @@ router.post(
 
         case "path_node":
           if (!path_node_id || !parent_task_id) {
-            return res.status(400).json({
-              error:
-                "path_node_id and parent_task_id are required for path_node type",
-            });
+            throw new AppError(
+              "path_node_id and parent_task_id are required for path_node type",
+              400,
+              ErrorCodes.VALIDATION_ERROR,
+            );
           }
           result = await autoTaskGenerator.generatePathNodeTask(
             supabase,
@@ -264,7 +251,7 @@ router.post(
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       logger.error("[AutoGenerate] Failed to generate task:", error);
-      res.status(500).json({ error: "Failed to auto-generate task" });
+      throw new AppError("Failed to auto-generate task", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -275,17 +262,13 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { graph_id, knowledge_point_id, title } = req.query;
 
     if (!graph_id && !knowledge_point_id) {
-      return res
-        .status(400)
-        .json({ error: "graph_id or knowledge_point_id is required" });
+      throw new AppError("graph_id or knowledge_point_id is required", 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     try {
@@ -309,7 +292,7 @@ router.get(
       res.json({ success: true, data: result });
     } catch (error) {
       logger.error("[Activities] Failed to link task:", error);
-      res.status(500).json({ error: "Failed to link task" });
+      throw new AppError("Failed to link task", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );

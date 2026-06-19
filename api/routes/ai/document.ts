@@ -1,28 +1,24 @@
 import { Router, type Response } from "express";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { textToGraphSchema, urlToTextSchema } from "../../schemas/index";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
-import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
-import { cacheService, CacheKeys } from "../../services/common/cacheService";
-import { aiService } from "../../services/ai/aiService";
+import { aiService } from "../../services/ai";
 import {
   getAIProviderForTask,
   getAIProvider,
-} from "../../services/ai/factory";
-import { edgeService } from "../../services/graph/index";
+} from "../../services/ai";
 import { logger } from "../../utils/logger";
-import { promptService } from "../../services/ai/promptService";
+import { promptService } from "../../services/ai";
 import { getSupabaseAdmin } from "../../supabase";
 import { scrapeUrl } from "../../utils/scraper";
 import { upload } from "./utils";
-import { performanceMonitor, enrichMetadata } from "../../services/ai/performanceMonitor";
-import { pricingService } from "../../services/ai/pricingService";
+import { performanceMonitor, enrichMetadata } from "../../services/ai";
+import { pricingService } from "../../services/ai";
+import { autoGraphService } from "../../services/graph";
+import { documentParsingService } from "../../services/ai";
 
 const router = Router();
 
@@ -60,14 +56,6 @@ router.post(
       }
 
       try {
-        const nodeMap = new Map<string, string>();
-        const createdNodes: {
-          id: string;
-          title: string;
-          content?: string;
-          knowledge_point_id?: string;
-        }[] = [];
-
         const validNodes = nodes.filter(
           (node: { title?: string }) => node.title && node.title.trim() !== "",
         );
@@ -81,61 +69,17 @@ router.post(
           });
         }
 
-        for (const node of validNodes) {
-          const result = await createKnowledgePointWithGraphNode(
-            req.supabase!,
-            req.user.id,
-            {
-              graph_id,
-              title: node.title,
-              content: node.content || "",
-              x_position: Math.round((Math.random() - 0.5) * 50),
-              y_position: Math.round((Math.random() - 0.5) * 50),
-              level: node.level || "leaf",
-              properties: { ...node.properties, source: "ai-text-to-graph" },
-            },
-          );
-
-          if (result) {
-            if (node.id)
-              nodeMap.set(node.id, result.knowledge_point_id || result.id);
-            createdNodes.push({
-              id: result.id,
-              title: node.title,
-              content: node.content,
-              knowledge_point_id: result.knowledge_point_id,
-            });
-          }
-        }
-
-        let edgeCount = 0;
-        if (edges && Array.isArray(edges)) {
-          for (const edge of edges) {
-            const sourceKPId = nodeMap.get(edge.source);
-            const targetKPId = nodeMap.get(edge.target);
-
-            if (sourceKPId && targetKPId) {
-              try {
-                await edgeService.create(req.supabase!, {
-                  graph_id,
-                  source_knowledge_point_id: sourceKPId,
-                  target_knowledge_point_id: targetKPId,
-                  relationship_type: edge.relationship_type || edge.relationship || "contains",
-                });
-                edgeCount++;
-              } catch (err) {
-                logger.warn("Failed to create edge:", err);
-              }
-            }
-          }
-        }
-
-        cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
-        cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+        const { nodeCount, edgeCount } = await autoGraphService.saveTextToGraph(
+          req.supabase!,
+          req.user.id,
+          graph_id,
+          nodes,
+          edges,
+        );
 
         return res.json({
           success: true,
-          nodeCount: createdNodes.length,
+          nodeCount,
           edgeCount,
         });
       } catch (error: unknown) {
@@ -313,52 +257,7 @@ router.post(
     }
 
     try {
-      let text = "";
-      if (file.mimetype === "application/pdf") {
-        try {
-          const originalName = Buffer.from(
-            file.originalname,
-            "latin1",
-          ).toString("utf8");
-
-          let data;
-          if (typeof pdfParse === "function") {
-            data = await pdfParse(file.buffer);
-          } else if (pdfParse.PDFParse) {
-            const parser = new pdfParse.PDFParse({ data: file.buffer });
-            const result = await parser.getText();
-            data = {
-              text: result.text,
-              numpages: result.numpages || 0,
-              info: result.info,
-            };
-          } else {
-            throw new Error("Unsupported pdf-parse version/structure");
-          }
-
-          text = data.text;
-
-          logger.info("PDF Extraction Result", {
-            fileName: originalName,
-            pageCount: data.numpages,
-            textLength: text?.length || 0,
-          });
-        } catch (pdfErr: unknown) {
-          const err = pdfErr as Error;
-          logger.error("PDF Parse detailed error:", pdfErr);
-          throw new AppError(
-            `PDF parsing failed: ${err.message}`,
-            500,
-            ErrorCodes.INTERNAL_ERROR,
-          );
-        }
-      } else {
-        text = file.buffer.toString("utf-8");
-        logger.info("Text/MD Extraction Result", {
-          fileName: file.originalname,
-          textLength: text.length,
-        });
-      }
+      const text = await documentParsingService.parseDocument(file);
 
       if (!text || text.trim().length < 20) {
         throw new AppError(
@@ -439,9 +338,11 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Document-to-Graph Error:", error);
-      res
-        .status(500)
-        .json({ error: err.message || "Document processing failed" });
+      throw new AppError(
+        err.message || "Document processing failed",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
     }
   },
 );
@@ -477,7 +378,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Image-to-Graph Error:", error);
-      res.status(500).json({ error: err.message || "Image processing failed" });
+      throw new AppError(err.message || "Image processing failed", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -495,9 +396,11 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("URL Scraping Error:", error);
-      res
-        .status(500)
-        .json({ error: err.message || "Failed to fetch URL content" });
+      throw new AppError(
+        err.message || "Failed to fetch URL content",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
     }
   },
 );

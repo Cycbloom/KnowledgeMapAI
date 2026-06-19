@@ -391,13 +391,15 @@ export class TaskRecommendationService {
 
     const { data: tasks, error } = await client
       .from("user_tasks")
-      .select(`
+      .select(
+        `
         *,
         knowledge_graphs!left(
           id,
           deleted_at
         )
-      `)
+      `,
+      )
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
       .is("deleted_at", null)
@@ -408,9 +410,9 @@ export class TaskRecommendationService {
     }
 
     // 过滤掉关联了已删除图谱的任务
-    const validTasks = tasks.filter(task => {
+    const validTasks = tasks.filter((task) => {
       // 非图谱学习任务，直接保留
-      if (task.task_type !== 'graph_learning') {
+      if (task.task_type !== "graph_learning") {
         return true;
       }
 
@@ -797,27 +799,37 @@ export class TaskRecommendationService {
       // 查询该任务的子任务信息
       const { data: subtasks } = await client
         .from("task_subtasks")
-        .select("id, title, status, learning_state, mastery_level, position, estimated_duration")
+        .select(
+          "id, title, status, learning_state, mastery_level, position, estimated_duration",
+        )
         .eq("task_id", recommendedTask.task.id)
         .order("position", { ascending: true });
 
-      const pendingSubtasks = subtasks?.filter((s) => s.status !== "completed") || [];
-      const completedSubtasks = subtasks?.filter((s) => s.status === "completed") || [];
+      const pendingSubtasks =
+        subtasks?.filter((s) => s.status !== "completed") || [];
+      const completedSubtasks =
+        subtasks?.filter((s) => s.status === "completed") || [];
 
       // 附加到 task 对象上
-      (recommendedTask.task as any).nextSubtask = pendingSubtasks.length > 0 ? {
-        id: pendingSubtasks[0].id,
-        title: pendingSubtasks[0].title,
-        learning_state: pendingSubtasks[0].learning_state,
-        mastery_level: pendingSubtasks[0].mastery_level,
-        position: pendingSubtasks[0].position,
-        estimated_duration: pendingSubtasks[0].estimated_duration,
-      } : null;
+      recommendedTask.task.nextSubtask =
+        pendingSubtasks.length > 0
+          ? {
+              id: pendingSubtasks[0].id,
+              title: pendingSubtasks[0].title,
+              learning_state: pendingSubtasks[0].learning_state,
+              mastery_level: pendingSubtasks[0].mastery_level,
+              position: pendingSubtasks[0].position,
+              estimated_duration: pendingSubtasks[0].estimated_duration,
+            }
+          : null;
 
-      (recommendedTask.task as any).subtaskProgress = subtasks && subtasks.length > 0 ? {
-        total: subtasks.length,
-        completed: completedSubtasks.length,
-      } : null;
+      recommendedTask.task.subtaskProgress =
+        subtasks && subtasks.length > 0
+          ? {
+              total: subtasks.length,
+              completed: completedSubtasks.length,
+            }
+          : null;
 
       reasons.push(
         ...this.generateRecommendationReasons(
@@ -995,6 +1007,23 @@ export class TaskRecommendationService {
       score: Math.min(100, Math.max(0, totalScore)),
       factors,
     };
+  }
+
+  async getTaskById(
+    client: SupabaseClient,
+    taskId: string,
+    userId: string,
+  ): Promise<UserTask | null> {
+    const { data: task, error } = await client
+      .from("user_tasks")
+      .select("*")
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .single();
+
+    if (error || !task) return null;
+    return task as UserTask;
   }
 }
 

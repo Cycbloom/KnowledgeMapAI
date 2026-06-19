@@ -6,6 +6,8 @@ import {
   getCurrentSupabaseConfig,
 } from "../supabase";
 import { logger } from "../utils/logger";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -31,7 +33,7 @@ router.get(
         return;
       }
       logger.error("Failed to get database status:", error);
-      res.status(500).json({ error: "Failed to get database status" });
+      throw new AppError("Failed to get database status", 500, ErrorCodes.INTERNAL_ERROR);
     }
   },
 );
@@ -76,11 +78,11 @@ router.post(
       const { confirm } = req.body as { confirm?: boolean };
 
       if (!confirm) {
-        res.status(400).json({
-          error:
-            "This operation will drop all tables. Set 'confirm: true' in the request body to proceed.",
-        });
-        return;
+        throw new AppError(
+          "This operation will drop all tables. Set 'confirm: true' in the request body to proceed.",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
       }
 
       const config = getCurrentSupabaseConfig();

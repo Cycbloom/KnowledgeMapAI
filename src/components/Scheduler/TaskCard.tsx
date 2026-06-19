@@ -126,8 +126,14 @@ const getTaskTypeBadge = (taskType?: string) => {
   );
 };
 
-const parseLearningPathContext = (context?: string): { pathId?: string; pathTitle?: string } => {
+const parseLearningPathContext = (context?: Record<string, unknown> | string): { pathId?: string; pathTitle?: string } => {
   if (!context) return {};
+  if (typeof context === 'object') {
+    if (context.type === "learning_path") {
+      return { pathId: context.path_id as string | undefined, pathTitle: context.path_title as string | undefined };
+    }
+    return {};
+  }
   try {
     const parsed = JSON.parse(context);
     if (parsed.type === "learning_path") {

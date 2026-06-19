@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
-import { graphService } from "../services/graph/index";
+import { graphService } from "../services/graph";
 import { z } from "zod";
 
 const router = Router();

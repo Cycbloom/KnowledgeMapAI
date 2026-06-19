@@ -13,15 +13,16 @@ class GraphTaskEventHandler {
   initialize(): void {
     logger.info("[GraphTaskEventHandler] Initializing graph task event handlers");
 
-    appEventBus.subscribe("node_created", this.handleNodeCreated.bind(this) as any);
-    appEventBus.subscribe("node_deleted", this.handleNodeDeleted.bind(this) as any);
-    appEventBus.subscribe("graph_created", this.handleGraphCreated.bind(this) as any);
+    appEventBus.subscribe("node_created", this.handleNodeCreated.bind(this));
+    appEventBus.subscribe("node_deleted", this.handleNodeDeleted.bind(this));
+    appEventBus.subscribe("graph_created", this.handleGraphCreated.bind(this));
 
     logger.info("[GraphTaskEventHandler] Event handlers registered");
   }
 
-  private async handleNodeCreated(event: AppEvent<NodeCreatedPayload>): Promise<void> {
-    const { graphId, userId } = event.payload;
+  private async handleNodeCreated(event: AppEvent): Promise<void> {
+    const payload = event.payload as NodeCreatedPayload;
+    const { graphId, userId } = payload;
 
     logger.info("[GraphTaskEventHandler] Node created, syncing task:", {
       graphId,
@@ -38,8 +39,9 @@ class GraphTaskEventHandler {
     }
   }
 
-  private async handleNodeDeleted(event: AppEvent<NodeDeletedPayload>): Promise<void> {
-    const { graphId, userId } = event.payload;
+  private async handleNodeDeleted(event: AppEvent): Promise<void> {
+    const payload = event.payload as NodeDeletedPayload;
+    const { graphId, userId } = payload;
 
     logger.info("[GraphTaskEventHandler] Node deleted, syncing task:", {
       graphId,
@@ -56,8 +58,9 @@ class GraphTaskEventHandler {
     }
   }
 
-  private async handleGraphCreated(event: AppEvent<GraphCreatedPayload>): Promise<void> {
-    const { graphId, userId } = event.payload;
+  private async handleGraphCreated(event: AppEvent): Promise<void> {
+    const payload = event.payload as GraphCreatedPayload;
+    const { graphId, userId } = payload;
 
     logger.info("[GraphTaskEventHandler] Graph created, checking if task creation is needed:", {
       graphId,

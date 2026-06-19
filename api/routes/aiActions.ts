@@ -1,7 +1,7 @@
 import express from "express";
 import { requireAuth } from "../middleware/auth";
 import { getSupabaseAdmin } from "../supabase";
-import { aiActionService } from "../services/ai/aiActionService";
+import { aiActionService } from "../services/ai";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 
@@ -38,13 +38,9 @@ router.post("/", requireAuth, async (req, res) => {
       );
 
     // Check if user owns graph
-    const { data: graph, error } = await getSupabaseAdmin()
-      .from("graphs")
-      .select("user_id")
-      .eq("id", action.graph_id)
-      .single();
+    const graph = await aiActionService.getGraphOwner(getSupabaseAdmin(), action.graph_id);
 
-    if (error || !graph) {
+    if (!graph) {
       throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 

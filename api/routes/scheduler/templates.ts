@@ -2,7 +2,9 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
-import { logger } from "../../utils/logger";
+import { templateService } from "../../services/scheduler";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const router = Router();
 
@@ -64,41 +66,20 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { category, search, limit, offset } = req.query as unknown as z.infer<
       typeof getTemplatesQuerySchema
     >;
 
-    let query = supabase
-      .from("task_templates")
-      .select("*", { count: "exact" })
-      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
-      .order("is_system", { ascending: true })
-      .order("category", { ascending: true })
-      .order("name", { ascending: true })
-      .range(offset, offset + limit - 1);
-
-    if (category) {
-      query = query.eq("category", category);
+    try {
+      const result = await templateService.listTemplates(supabase, req.user.id, { category, search, limit, offset });
+      res.json({ success: true, data: result.templates, total: result.total });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "获取模板列表失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
     }
-    if (search) {
-      query = query.or(
-        `name.ilike.%${search}%,title_template.ilike.%${search}%`,
-      );
-    }
-
-    const { data: templates, error, count } = await query;
-
-    if (error) {
-      logger.error("Get templates error:", error);
-      return res.status(500).json({ error: "获取模板列表失败" });
-    }
-
-    res.json({ success: true, data: templates, total: count });
   },
 );
 
@@ -108,39 +89,16 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
-    const { data: templates, error } = await supabase
-      .from("task_templates")
-      .select("category")
-      .or(`user_id.eq.${req.user.id},is_system.eq.true`);
-
-    if (error) {
-      return res.status(500).json({ error: "获取分类失败" });
+    try {
+      const categories = await templateService.getTemplateCategories(supabase, req.user.id);
+      res.json({ success: true, data: categories });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "获取分类失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
     }
-
-    const categories = [
-      { value: "study", label: "学习", icon: "📚", color: "blue" },
-      { value: "work", label: "工作", icon: "💼", color: "purple" },
-      { value: "life", label: "生活", icon: "🏠", color: "green" },
-      { value: "health", label: "健康", icon: "💪", color: "red" },
-      { value: "custom", label: "自定义", icon: "⭐", color: "amber" },
-    ];
-
-    const categoryCounts: Record<string, number> = {};
-    for (const t of templates || []) {
-      categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
-    }
-
-    const result = categories.map((cat) => ({
-      ...cat,
-      count: categoryCounts[cat.value] || 0,
-    }));
-
-    res.json({ success: true, data: result });
   },
 );
 
@@ -151,25 +109,18 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: template, error } = await supabase
-      .from("task_templates")
-      .select("*")
-      .eq("id", id)
-      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
-      .single();
-
-    if (error || !template) {
-      return res.status(404).json({ error: "模板不存在" });
+    try {
+      const template = await templateService.getTemplate(supabase, req.user.id, id);
+      res.json({ success: true, data: template });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "模板不存在", err.statusCode || 404, ErrorCodes.NOT_FOUND);
     }
-
-    res.json({ success: true, data: template });
   },
 );
 
@@ -180,47 +131,16 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
-    const {
-      name,
-      description,
-      category,
-      title_template,
-      description_template,
-      estimated_duration,
-      tags,
-      priority,
-      is_default,
-    } = req.body;
-
-    const { data: template, error } = await supabase
-      .from("task_templates")
-      .insert({
-        user_id: req.user.id,
-        name,
-        description,
-        category: category ?? "custom",
-        title_template,
-        description_template,
-        estimated_duration: estimated_duration ?? 25,
-        tags: tags ?? [],
-        priority: priority ?? 2,
-        is_default: is_default ?? false,
-        is_system: false,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("Create template error:", error);
-      return res.status(500).json({ error: "创建模板失败" });
+    try {
+      const template = await templateService.createTemplate(supabase, req.user.id, req.body);
+      res.status(201).json({ success: true, data: template });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "创建模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
     }
-
-    res.status(201).json({ success: true, data: template });
   },
 );
 
@@ -231,31 +151,18 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
-    const updateData = req.body;
 
-    const { data: template, error } = await supabase
-      .from("task_templates")
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .eq("is_system", false)
-      .select()
-      .single();
-
-    if (error || !template) {
-      return res.status(404).json({ error: "模板不存在或无法更新" });
+    try {
+      const template = await templateService.updateTemplate(supabase, req.user.id, id, req.body);
+      res.json({ success: true, data: template });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "模板不存在或无法更新", err.statusCode || 404, ErrorCodes.NOT_FOUND);
     }
-
-    res.json({ success: true, data: template });
   },
 );
 
@@ -266,25 +173,18 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { error } = await supabase
-      .from("task_templates")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .eq("is_system", false);
-
-    if (error) {
-      return res.status(500).json({ error: "删除模板失败" });
+    try {
+      await templateService.deleteTemplate(supabase, req.user.id, id);
+      res.json({ success: true });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "删除模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
     }
-
-    res.json({ success: true });
   },
 );
 
@@ -295,89 +195,21 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
-    const { placeholders, queue_level, knowledge_point_id, deadline } =
-      req.body;
+    const { placeholders, queue_level, knowledge_point_id, deadline } = req.body;
 
-    const { data: template, error: templateError } = await supabase
-      .from("task_templates")
-      .select("*")
-      .eq("id", id)
-      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
-      .single();
-
-    if (templateError || !template) {
-      return res.status(404).json({ error: "模板不存在" });
+    try {
+      const task = await templateService.applyTemplate(supabase, req.user.id, id, {
+        placeholders, queue_level, knowledge_point_id, deadline,
+      });
+      res.status(201).json({ success: true, data: task });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "从模板创建任务失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
     }
-
-    let title = template.title_template;
-    let description = template.description_template;
-
-    if (placeholders) {
-      for (const [key, value] of Object.entries(placeholders)) {
-        const placeholder = `{{${key}}}`;
-        title = title.replace(new RegExp(placeholder, "g"), value as string);
-        if (description) {
-          description = description.replace(
-            new RegExp(placeholder, "g"),
-            value as string,
-          );
-        }
-      }
-    }
-
-    const unresolvedPlaceholders = title.match(/\{\{[^}]+\}\}/g);
-    if (unresolvedPlaceholders) {
-      for (const placeholder of unresolvedPlaceholders) {
-        const key = placeholder.slice(2, -2);
-        title = title.replace(placeholder, key);
-        if (description) {
-          description = description.replace(placeholder, key);
-        }
-      }
-    }
-
-    const { count } = await supabase
-      .from("user_tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", req.user.id)
-      .eq("queue_level", queue_level ?? 0)
-      .is("deleted_at", null);
-
-    const { data: task, error: taskError } = await supabase
-      .from("user_tasks")
-      .insert({
-        user_id: req.user.id,
-        title,
-        description,
-        queue_level: queue_level ?? 0,
-        position: count ?? 0,
-        estimated_duration: template.estimated_duration,
-        tags: template.tags,
-        priority: template.priority,
-        knowledge_point_id,
-        deadline,
-        status: "pending",
-      })
-      .select()
-      .single();
-
-    if (taskError) {
-      logger.error("Create task from template error:", taskError);
-      return res.status(500).json({ error: "从模板创建任务失败" });
-    }
-
-    await supabase
-      .from("task_templates")
-      .update({ usage_count: template.usage_count + 1 })
-      .eq("id", id);
-
-    res.status(201).json({ success: true, data: task });
   },
 );
 
@@ -388,49 +220,19 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
     const { name } = req.body;
 
-    const { data: original, error: fetchError } = await supabase
-      .from("task_templates")
-      .select("*")
-      .eq("id", id)
-      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
-      .single();
-
-    if (fetchError || !original) {
-      return res.status(404).json({ error: "模板不存在" });
+    try {
+      const template = await templateService.duplicateTemplate(supabase, req.user.id, id, name);
+      res.status(201).json({ success: true, data: template });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "复制模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
     }
-
-    const { data: template, error } = await supabase
-      .from("task_templates")
-      .insert({
-        user_id: req.user.id,
-        name: name || `${original.name} (副本)`,
-        description: original.description,
-        category: original.category,
-        title_template: original.title_template,
-        description_template: original.description_template,
-        estimated_duration: original.estimated_duration,
-        tags: original.tags,
-        priority: original.priority,
-        is_default: false,
-        is_system: false,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("Duplicate template error:", error);
-      return res.status(500).json({ error: "复制模板失败" });
-    }
-
-    res.status(201).json({ success: true, data: template });
   },
 );
 
@@ -441,43 +243,18 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
+      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
-    const { data: template, error: fetchError } = await supabase
-      .from("task_templates")
-      .select("category")
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .single();
-
-    if (fetchError || !template) {
-      return res.status(404).json({ error: "模板不存在" });
+    try {
+      const template = await templateService.setDefaultTemplate(supabase, req.user.id, id);
+      res.json({ success: true, data: template });
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      throw new AppError(err.message || "设置默认模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
     }
-
-    await supabase
-      .from("task_templates")
-      .update({ is_default: false })
-      .eq("user_id", req.user.id)
-      .eq("category", template.category);
-
-    const { data: updated, error } = await supabase
-      .from("task_templates")
-      .update({ is_default: true })
-      .eq("id", id)
-      .eq("user_id", req.user.id)
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(500).json({ error: "设置默认模板失败" });
-    }
-
-    res.json({ success: true, data: updated });
   },
 );
 

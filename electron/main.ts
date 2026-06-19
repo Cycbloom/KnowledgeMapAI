@@ -12,6 +12,48 @@ import { SyncEngine } from "./sync/syncEngine";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// IPC channel whitelist for security validation
+const IPC_HANDLE_CHANNELS = new Set([
+  "app:getVersion",
+  "app:getPlatform",
+  "app:quit",
+  "window:minimize",
+  "window:maximize",
+  "window:close",
+  "api:getPort",
+  "update:check",
+  "update:install",
+  "config:read",
+  "config:write",
+  "db:query",
+  "db:batch",
+  "db:getStatus",
+  "sync:getStatus",
+  "sync:trigger",
+  "sync:pause",
+  "sync:resume",
+  "sync:setAuthToken",
+  "sync:fullSync",
+  "shell:openExternal",
+]);
+
+// Wrap ipcMain.handle to validate channels against whitelist
+const originalHandle = ipcMain.handle.bind(ipcMain);
+ipcMain.handle = (channel: string, handler: (...args: any[]) => any) => {
+  return originalHandle(channel, (...args: any[]) => {
+    if (!IPC_HANDLE_CHANNELS.has(channel)) {
+      console.warn(`[Security] Rejected IPC handle call to unregistered channel: ${channel}`);
+      throw new Error(`IPC channel not allowed: ${channel}`);
+    }
+    return handler(...args);
+  });
+};
+
+// Note: ipcMain.on wrapper is intentionally omitted because all current IPC
+// communication uses ipcMain.handle (request-response). Main→Renderer events
+// use webContents.send() which is not interceptable via ipcMain wrappers.
+// If ipcMain.on is needed in the future, add a similar whitelist wrapper.
+
 function loadEnvVariables() {
   try {
     let envPath;
@@ -404,9 +446,19 @@ ipcMain.handle("window:close", () => {
   mainWindow?.close();
 });
 
-ipcMain.on("shell:openExternal", (_event, url: string) => {
-  if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
-    shell.openExternal(url);
+ipcMain.handle("shell:openExternal", async (_event, url: string) => {
+  if (typeof url !== "string") {
+    return { success: false, error: "Invalid URL type" };
+  }
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return { success: false, error: "Only http:// and https:// URLs are allowed" };
+  }
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 });
 

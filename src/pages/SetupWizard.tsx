@@ -234,8 +234,8 @@ export const SetupWizard = () => {
   };
 
   const openExternal = (url: string) => {
-    if (isElectron() && window.electronAPI?.ipc) {
-      window.electronAPI.ipc.send("shell:openExternal", url);
+    if (isElectron() && window.electronAPI?.shell) {
+      window.electronAPI.shell.openExternal(url);
     } else {
       window.open(url, "_blank", "noopener,noreferrer");
     }

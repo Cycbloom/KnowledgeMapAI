@@ -68,21 +68,8 @@ const electronAPI = {
         ipcRenderer.removeListener("update:downloaded", subscription);
     },
   },
-  ipc: {
-    on: (channel: string, callback: (...args: unknown[]) => void) => {
-      const subscription = (
-        _event: Electron.IpcRendererEvent,
-        ...args: unknown[]
-      ) => callback(...args);
-      ipcRenderer.on(channel, subscription);
-      return () => ipcRenderer.removeListener(channel, subscription);
-    },
-    send: (channel: string, ...args: unknown[]) => {
-      ipcRenderer.send(channel, ...args);
-    },
-    invoke: (channel: string, ...args: unknown[]) => {
-      return ipcRenderer.invoke(channel, ...args);
-    },
+  shell: {
+    openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
   },
   api: {
     getPort: () => ipcRenderer.invoke("api:getPort"),

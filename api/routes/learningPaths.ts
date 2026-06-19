@@ -5,6 +5,7 @@ import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import {
   learningPathService,
+  learningPathRouteService,
 } from "../services/study";
 import { logger } from "../utils/logger";
 import { z } from "zod";
@@ -125,6 +126,27 @@ const listQuerySchema = z.object({
   status: z.enum(["active", "completed", "paused", "archived"]).optional(),
 });
 
+const generatePreviewPathSchema = z.object({
+  graph_id: z.string().uuid(),
+  target_goal: z.string().min(5).max(500).optional(),
+  target_knowledge_point_id: z.string().uuid().optional(),
+  learning_style: z
+    .enum(["sequential", "exploratory", "focused", "custom"])
+    .default("sequential"),
+  daily_time_minutes: z.number().min(5).max(240).default(30),
+  current_knowledge: z.string().max(1000).optional(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+});
+
+const graphIdParamSchema = z.object({
+  graphId: z.string().uuid("无效的图谱ID"),
+});
+
+const getQuestionsSchema = z.object({
+  graph_id: z.string().uuid(),
+});
+
 const plansQuerySchema = z.object({
   start_date: z
     .string()
@@ -162,6 +184,21 @@ router.post(
       req.body,
     );
     res.status(201).json(data);
+  },
+);
+
+router.get(
+  "/progress/:graphId",
+  requireAuth,
+  validate({ params: graphIdParamSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graphId } = req.params;
+    const progress = await learningPathRouteService.getProgress(
+      req.supabase!,
+      req.user.id,
+      graphId,
+    );
+    res.json(progress);
   },
 );
 
@@ -411,6 +448,55 @@ router.put(
     );
 
     res.json(data);
+  },
+);
+
+router.post(
+  "/generate-preview",
+  requireAuth,
+  validate({ body: generatePreviewPathSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const {
+      graph_id,
+      target_goal,
+      target_knowledge_point_id,
+      learning_style,
+      daily_time_minutes,
+      current_knowledge,
+      provider: providerType,
+      model,
+    } = req.body;
+
+    const learningPath = await learningPathRouteService.generatePath(
+      req.supabase!,
+      req.user.id,
+      {
+        graph_id,
+        target_goal,
+        target_knowledge_point_id,
+        learning_style,
+        daily_time_minutes,
+        current_knowledge,
+        provider: providerType,
+        model,
+      },
+    );
+    res.json(learningPath);
+  },
+);
+
+router.post(
+  "/questions",
+  requireAuth,
+  validate({ body: getQuestionsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_id } = req.body;
+    const result = await learningPathRouteService.generateQuestions(
+      req.supabase!,
+      req.user.id,
+      { graph_id },
+    );
+    res.json(result);
   },
 );
 

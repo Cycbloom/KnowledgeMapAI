@@ -179,7 +179,7 @@ export const learningPathsApi = {
 
 export const learningPathApi = {
   getQuestions: (data: { graph_id: string }) =>
-    request("/learning-path/questions", {
+    request("/learning-paths/questions", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -194,11 +194,11 @@ export const learningPathApi = {
     provider?: string;
     model?: string;
   }) =>
-    request("/learning-path/generate", {
+    request("/learning-paths/generate-preview", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   getProgress: (graphId: string) =>
-    request(`/learning-path/progress/${graphId}`),
+    request(`/learning-paths/progress/${graphId}`),
 };

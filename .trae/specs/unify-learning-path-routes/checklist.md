@@ -1,0 +1,10 @@
+- [x] learningPaths.ts 中已添加 POST /generate-preview 端点（使用 learningPathRouteService.generatePath）
+- [x] learningPaths.ts 中已添加 GET /progress/:graphId 端点（使用 learningPathRouteService.getProgress）
+- [x] learningPaths.ts 中已添加 POST /questions 端点（使用 learningPathRouteService.generateQuestions）
+- [x] app.ts 中已移除 /api/learning-path 路由挂载和 import
+- [x] 前端 learningPathApi 请求路径已从 /learning-path/ 更新为 /learning-paths/
+- [x] learningPathApi.generate 路径已更新为 /learning-paths/generate-preview
+- [x] learningPathApi.getQuestions 路径已更新为 /learning-paths/questions
+- [x] learningPathApi.getProgress 路径已更新为 /learning-paths/progress/:graphId
+- [x] api/routes/learningPath.ts 文件已删除
+- [x] 类型检查和 lint 均通过

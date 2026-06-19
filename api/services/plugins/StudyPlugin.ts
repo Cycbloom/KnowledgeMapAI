@@ -7,7 +7,6 @@ import {
   spacedRepetitionBridge,
 } from "../study/";
 import studyRoutes from "../../routes/study";
-import learningPathRoutes from "../../routes/learningPath";
 import learningPathsRoutes from "../../routes/learningPaths";
 import quizSetRoutes from "../../routes/quizSets";
 
@@ -25,7 +24,6 @@ export const StudyPlugin = {
     kernel.registerService("spacedRepetitionBridge", spacedRepetitionBridge);
 
     kernel.registerRoutes("/study", studyRoutes);
-    kernel.registerRoutes("/learning-path", learningPathRoutes);
     kernel.registerRoutes("/learning-paths", learningPathsRoutes);
     kernel.registerRoutes("/quiz-sets", quizSetRoutes);
   },

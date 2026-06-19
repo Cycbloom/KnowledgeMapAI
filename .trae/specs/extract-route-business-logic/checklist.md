@@ -1,0 +1,11 @@
+- [x] `api/services/graph/domainService.ts` 已创建，包含 listDomainsTree、getDomain、createDomain、updateDomain、deleteDomain、reorderDomains、generateColor、recommendDomains 方法
+- [x] `api/services/graph/graphDomainService.ts` 已创建，包含 migrateGraphDomainIfNeeded、getGraphDomains、updateGraphDomains、listGraphsByDomains 方法
+- [x] `api/services/graph/index.ts` 已添加 domainService 和 graphDomainService 导出
+- [x] `api/routes/domains.ts` 所有路由处理器仅调用 service，无直接 `.from()` 调用
+- [x] `api/routes/domains.ts` 已移除 buildTree、detectCycle、ensureUncategorizedDomain 函数和 DomainRecord/DomainTreeNode 接口
+- [x] `api/routes/graphs/crud.ts` 已移除 migrateGraphDomainIfNeeded、getGraphDomains、updateGraphDomains 辅助函数
+- [x] `api/routes/graphs/crud.ts` GET / 路由使用 graphDomainService.listGraphsByDomains()
+- [x] `api/routes/graphs/crud.ts` GET /:id 路由使用 graphDomainService.migrateGraphDomainIfNeeded() 和 getGraphDomains()
+- [x] `api/routes/graphs/crud.ts` POST / 和 PUT /:id 路由使用 graphDomainService.updateGraphDomains()
+- [x] `npm run check` 通过，无类型错误
+- [x] `npm run lint` 通过，无 lint 错误

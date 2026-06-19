@@ -19,6 +19,8 @@ export { networkAnalysisService } from "./networkAnalysisService";
 export type { NetworkAnalysisResult } from "@shared/types/graph";
 export { conceptAggregationService, ConceptAggregationService } from "./conceptAggregationService";
 export type { SimilarityResult, AggregationResult, ConceptWithEmbedding } from "./conceptAggregationService";
+export { graphDomainService } from './graphDomainService';
+export { domainService } from './domainService';
 export { conceptAnalysisService, ConceptAnalysisService } from "./conceptAnalysisService";
 export type {
   AnalysisOptions,

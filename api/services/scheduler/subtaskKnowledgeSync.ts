@@ -443,7 +443,7 @@ export class SubtaskKnowledgeSyncService {
       .single();
 
     if (error || !knowledgePoint) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         details: {
           resource: "knowledge_point",
           id: knowledgePointId,

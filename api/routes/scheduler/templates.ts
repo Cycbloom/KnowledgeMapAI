@@ -66,7 +66,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { category, search, limit, offset } = req.query as unknown as z.infer<
@@ -78,7 +78,7 @@ router.get(
       res.json({ success: true, data: result.templates, total: result.total });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "获取模板列表失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取模板列表失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -89,7 +89,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -97,7 +97,7 @@ router.get(
       res.json({ success: true, data: categories });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "获取分类失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取分类失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -109,7 +109,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -119,7 +119,7 @@ router.get(
       res.json({ success: true, data: template });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "模板不存在", err.statusCode || 404, ErrorCodes.NOT_FOUND);
+      throw new AppError(err.message || "模板不存在", err.statusCode || 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
   },
 );
@@ -131,7 +131,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -139,7 +139,7 @@ router.post(
       res.status(201).json({ success: true, data: template });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "创建模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "创建模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -151,7 +151,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -161,7 +161,7 @@ router.put(
       res.json({ success: true, data: template });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "模板不存在或无法更新", err.statusCode || 404, ErrorCodes.NOT_FOUND);
+      throw new AppError(err.message || "模板不存在或无法更新", err.statusCode || 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
   },
 );
@@ -173,7 +173,7 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -183,7 +183,7 @@ router.delete(
       res.json({ success: true });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "删除模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "删除模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -195,7 +195,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -208,7 +208,7 @@ router.post(
       res.status(201).json({ success: true, data: task });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "从模板创建任务失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "从模板创建任务失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -220,7 +220,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -231,7 +231,7 @@ router.post(
       res.status(201).json({ success: true, data: template });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "复制模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "复制模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -243,7 +243,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -253,7 +253,7 @@ router.put(
       res.json({ success: true, data: template });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "设置默认模板失败", err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "设置默认模板失败", err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

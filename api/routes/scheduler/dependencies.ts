@@ -23,7 +23,7 @@ function handleError(error: unknown): never {
     message === "任务不存在" || message === "一个或多个任务不存在"
       ? 404
       : 400;
-  throw new AppError(message, status, status === 404 ? ErrorCodes.NOT_FOUND : ErrorCodes.VALIDATION_ERROR);
+  throw new AppError(message, status, status === 404 ? ErrorCodes.RESOURCE_NOT_FOUND : ErrorCodes.VALIDATION_ERROR);
 }
 
 router.post(
@@ -32,7 +32,7 @@ router.post(
   validate({ params: uuidParamsSchema, body: createTaskDependencySchema }),
   async (req: AuthRequest, res: Response) => {
     if (!req.supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
     try {
       const { id } = req.params;
@@ -56,7 +56,7 @@ router.delete(
   validate({ params: taskDependencyParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     if (!req.supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
     try {
       const { id, dependencyId } = req.params;
@@ -79,7 +79,7 @@ router.get(
   validate({ params: uuidParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     if (!req.supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
     try {
       const { id } = req.params;
@@ -101,7 +101,7 @@ router.get(
   validate({ params: uuidParamsSchema }),
   async (req: AuthRequest, res: Response) => {
     if (!req.supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
     try {
       const { id } = req.params;

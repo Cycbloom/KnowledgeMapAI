@@ -36,7 +36,7 @@ class RelationshipService {
     } catch (error: unknown) {
       logger.error("Get relationships error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("获取角色关系失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取角色关系失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -74,7 +74,7 @@ class RelationshipService {
     } catch (error: unknown) {
       logger.error("Create relationship error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("创建角色关系失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("创建角色关系失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -94,7 +94,7 @@ class RelationshipService {
     } catch (error: unknown) {
       logger.error("Delete relationship error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("删除角色关系失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("删除角色关系失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

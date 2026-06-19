@@ -25,7 +25,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Get Prompts Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -36,7 +36,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase!;
 
   if (!code || !scope || !template_content) {
-    throw new AppError(ErrorCodes.MISSING_REQUIRED_FIELDS);
+    throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
   }
 
   if (scope === 'system') {
@@ -61,7 +61,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Save Prompt Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -77,7 +77,7 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Delete Prompt Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -96,7 +96,7 @@ router.post('/optimize', requireAuth, async (req: AuthRequest, res: Response) =>
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Optimize Prompt Error:', error);
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

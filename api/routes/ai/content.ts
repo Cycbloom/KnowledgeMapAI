@@ -48,7 +48,7 @@ router.post(
       throw new AppError(
         "AI provider not configured",
         503,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -122,7 +122,7 @@ ${content}`;
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Annotate Terms Error:", error);
-      throw new AppError(err.message || "Annotation failed", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "Annotation failed", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -140,7 +140,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Podcast Script Generation Error:", error);
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -227,7 +227,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
-      throw new AppError(err.message || "AI 生成失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "AI 生成失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -253,7 +253,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Learning Material Error:", error);
-      throw new AppError(err.message || "AI 生成学习内容失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "AI 生成学习内容失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -355,7 +355,7 @@ router.post(
       sendStreamError(
         res,
         err.message || "AI 生成失败",
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

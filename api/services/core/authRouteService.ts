@@ -72,7 +72,7 @@ class AuthRouteService {
     }
 
     if (!data.user) {
-      throw new AppError('创建用户失败，请稍后重试', 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError('创建用户失败，请稍后重试', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return {

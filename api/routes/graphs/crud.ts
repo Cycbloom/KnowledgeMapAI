@@ -161,7 +161,7 @@ router.get(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "获取智能建议失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -182,7 +182,7 @@ router.get(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "模块缺口分析失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -203,7 +203,7 @@ router.get(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "模块重叠分析失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -220,7 +220,7 @@ router.get(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "研究进度获取失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -238,7 +238,7 @@ router.get(
       res.json(data);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "文献库获取失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -253,7 +253,7 @@ router.get(
 
     const data = await graphService.getGraph(req.supabase!, id, userId);
     if (!data) {
-      throw new AppError("未找到该图谱", 404, ErrorCodes.GRAPH_NOT_FOUND);
+      throw new AppError("未找到该图谱", 404, ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
 
     if (userId && req.supabase) {

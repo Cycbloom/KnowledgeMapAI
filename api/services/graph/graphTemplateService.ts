@@ -302,11 +302,11 @@ export class GraphTemplateService {
     }
 
     if (template.is_system) {
-      throw new AppError(ErrorCodes.FORBIDDEN);
+      throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (template.user_id !== userId) {
-      throw new AppError(ErrorCodes.FORBIDDEN);
+      throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const currentTags = template.tags || [];
@@ -346,11 +346,11 @@ export class GraphTemplateService {
     }
 
     if (template.is_system) {
-      throw new AppError(ErrorCodes.FORBIDDEN);
+      throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (template.user_id !== userId) {
-      throw new AppError(ErrorCodes.FORBIDDEN);
+      throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const currentTags = template.tags || [];

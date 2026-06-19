@@ -148,7 +148,7 @@ router.post(
     const supabase = req.supabase;
 
     if (!supabase) {
-      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+      throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED, {
         message: "Unauthorized: No Supabase client",
       });
     }
@@ -196,7 +196,7 @@ router.post(
       throw new AppError(
         err.message || "文献元数据提取失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -222,7 +222,7 @@ router.post(
     const supabase = req.supabase;
 
     if (!supabase) {
-      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+      throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED, {
         message: "Unauthorized: No Supabase client",
       });
     }
@@ -258,7 +258,7 @@ router.post(
       throw new AppError(
         "AI provider not configured",
         503,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -439,7 +439,7 @@ router.post(
       throw new AppError(
         err.message || "文献概念提取失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -475,7 +475,7 @@ router.post(
       throw new AppError(
         err.message || "文献概念应用失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

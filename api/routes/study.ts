@@ -42,7 +42,7 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
     throw new AppError(
       err.message || "获取学习统计失败",
       500,
-      ErrorCodes.INTERNAL_ERROR,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
     );
   }
 });
@@ -108,7 +108,7 @@ router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
     throw new AppError(
       err.message || "获取学习卡片失败",
       500,
-      ErrorCodes.INTERNAL_ERROR,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
     );
   }
 });
@@ -184,7 +184,7 @@ router.post(
       throw new AppError(
         err.message || "创建学习卡片失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -254,7 +254,7 @@ router.post(
       throw new AppError(
         err.message || "创建学习卡片失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -313,12 +313,12 @@ router.put(
       const err = error as Error;
       logger.error("Error updating card progress:", error);
       if (err.message === "Card not found") {
-        throw new AppError("未找到卡片", 404, ErrorCodes.CARD_NOT_FOUND);
+        throw new AppError("未找到卡片", 404, ErrorCodes.RESOURCE_CARD_NOT_FOUND);
       }
       throw new AppError(
         err.message || "更新卡片进度失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

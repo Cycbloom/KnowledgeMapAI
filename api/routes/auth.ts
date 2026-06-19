@@ -70,7 +70,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     }
     
     const message = error instanceof Error ? error.message : '内部服务器错误';
-    throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

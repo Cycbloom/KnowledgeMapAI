@@ -33,7 +33,7 @@ router.post(
       res.json({ success: true, data: result });
     } catch (error) {
       const err = error as Error;
-      throw new AppError(err.message || "AI 生成任务详情失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "AI 生成任务详情失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -44,7 +44,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -59,7 +59,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Get recommendations error:", err);
-      throw new AppError(err.message || "获取任务推荐失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取任务推荐失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -70,7 +70,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -84,7 +84,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Get smart suggestions error:", err);
-      throw new AppError(err.message || "获取智能建议失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取智能建议失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -108,7 +108,7 @@ router.post(
       res.json({ success: true, data: result });
     } catch (error) {
       const err = error as Error;
-      throw new AppError(err.message || "分析优先级失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "分析优先级失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -119,7 +119,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const days = req.query.days ? Number(req.query.days) : 30;
@@ -136,7 +136,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Get efficiency data error:", err);
-      throw new AppError(err.message || "获取效率数据失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取效率数据失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -147,7 +147,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -161,7 +161,7 @@ router.get(
       res.json({ success: true, data: recommendation });
     } catch (error) {
       logger.error("Get smart recommendation error:", error);
-      throw new AppError("获取智能推荐失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取智能推荐失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -173,7 +173,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -185,7 +185,7 @@ router.get(
     );
 
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const dynamicPriority =
@@ -202,7 +202,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;

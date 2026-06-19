@@ -25,7 +25,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -47,7 +47,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { task_id, limit, offset } = req.query as unknown as z.infer<
@@ -71,7 +71,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;

@@ -47,7 +47,7 @@ class QuizSetsService {
 
       if (error) {
         logger.error("Error fetching quiz sets:", error);
-        throw new AppError("获取测验集合失败", 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("获取测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return data || [];
@@ -58,7 +58,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "获取测验集合失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -109,7 +109,7 @@ class QuizSetsService {
 
       if (cardsError) {
         logger.error("Error fetching quiz set cards:", cardsError);
-        throw new AppError("获取测验卡片失败", 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("获取测验卡片失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const cards = (quizSetCards || []).map((qsc: Record<string, unknown>) => {
@@ -131,7 +131,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "获取测验集合失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -160,7 +160,7 @@ class QuizSetsService {
 
       if (error) {
         logger.error("Error creating quiz set:", error);
-        throw new AppError("创建测验集合失败", 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("创建测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return result;
@@ -171,7 +171,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "创建测验集合失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -216,7 +216,7 @@ class QuizSetsService {
 
       if (error) {
         logger.error("Error updating quiz set:", error);
-        throw new AppError("更新测验集合失败", 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("更新测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return result;
@@ -227,7 +227,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "更新测验集合失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -263,7 +263,7 @@ class QuizSetsService {
         throw new AppError(
           "删除测验卡片关联失败",
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
 
@@ -274,7 +274,7 @@ class QuizSetsService {
 
       if (error) {
         logger.error("Error deleting quiz set:", error);
-        throw new AppError("删除测验集合失败", 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("删除测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return { success: true, message: "测验集合已删除" };
@@ -285,7 +285,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "删除测验集合失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -347,7 +347,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "生成测验失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -411,7 +411,7 @@ class QuizSetsService {
         throw new AppError(
           "未找到关联的知识点",
           404,
-          ErrorCodes.NODE_NOT_FOUND,
+          ErrorCodes.RESOURCE_NODE_NOT_FOUND,
         );
       }
 
@@ -436,7 +436,7 @@ class QuizSetsService {
 
       const newCards = aiResult.cards || [];
       if (newCards.length === 0) {
-        throw new AppError("AI 未能生成新卡片", 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("AI 未能生成新卡片", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const newCardData = newCards[0] as {
@@ -481,7 +481,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "重新生成卡片失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -546,7 +546,7 @@ class QuizSetsService {
         throw new AppError(
           "添加卡片到测验集合失败",
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
 
@@ -569,7 +569,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "添加卡片到测验集合失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -607,7 +607,7 @@ class QuizSetsService {
         throw new AppError(
           "从测验集合移除卡片失败",
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
 
@@ -630,7 +630,7 @@ class QuizSetsService {
       throw new AppError(
         err.message || "从测验集合移除卡片失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }

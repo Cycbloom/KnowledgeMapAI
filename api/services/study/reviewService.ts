@@ -93,7 +93,7 @@ export class ReviewService {
       );
     }
     if (!review) {
-      throw new AppError('复习记录不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('复习记录不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     return review as TaskReview;
   }

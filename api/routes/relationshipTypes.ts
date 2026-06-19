@@ -42,7 +42,7 @@ router.get(
     const type = await relationshipTypeService.getById(req.supabase!, id);
 
     if (!type) {
-      throw new AppError('关系类型不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('关系类型不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json({ data: type });

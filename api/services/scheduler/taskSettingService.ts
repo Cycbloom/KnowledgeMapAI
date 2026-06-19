@@ -21,7 +21,7 @@ class TaskSettingService {
       .maybeSingle();
 
     if (error) {
-      throw new AppError("获取设置失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取设置失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!settings) {
@@ -32,7 +32,7 @@ class TaskSettingService {
         .single();
 
       if (createError) {
-        throw new AppError("创建设置失败", 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("创建设置失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       return newSettings;
@@ -62,7 +62,7 @@ class TaskSettingService {
       .single();
 
     if (error) {
-      throw new AppError("更新设置失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("更新设置失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return settings;
@@ -85,11 +85,11 @@ class TaskSettingService {
 
     if (error) {
       logger.error("Update notes error:", error);
-      throw new AppError("更新笔记失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("更新笔记失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return task;

@@ -92,7 +92,7 @@ router.get(
       );
       res.json(data);
     } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -121,7 +121,7 @@ router.get(
       res.json(data);
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -140,7 +140,7 @@ router.get(
       );
       res.json(data);
     } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -166,7 +166,7 @@ router.post(
 
       res.status(201).json(data);
     } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -189,7 +189,7 @@ router.put(
       res.json(data);
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -238,7 +238,7 @@ router.delete(
       );
       res.json(data);
     } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -257,7 +257,7 @@ router.get(
 
       res.json(result);
     } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -287,9 +287,9 @@ router.post(
         );
       }
       if (err.message === "Permission denied") {
-        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
+        throw new AppError("没有权限执行此操作", 403, ErrorCodes.AUTH_FORBIDDEN);
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -309,7 +309,7 @@ router.get(
 
       res.json(result);
     } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -341,7 +341,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -375,7 +375,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -460,7 +460,7 @@ router.get(
       res.json(result);
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -500,7 +500,7 @@ router.get(
       res.json(version);
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -542,7 +542,7 @@ router.get(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -577,7 +577,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -610,7 +610,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -669,7 +669,7 @@ router.put(
       throw new AppError(
         err.message || "更新别名失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

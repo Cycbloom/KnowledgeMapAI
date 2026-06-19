@@ -12,7 +12,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -23,9 +23,9 @@ router.get(
       res.send(content);
     } catch (error) {
       if (error instanceof Error && error.message === "Failed to fetch tasks") {
-        throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError(error.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
-      throw new AppError("Failed to export calendar", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to export calendar", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 );
@@ -37,7 +37,7 @@ router.get(
     const supabase = (req as any).supabase;
 
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -50,12 +50,12 @@ router.get(
       res.send(content);
     } catch (error) {
       if (error instanceof Error && error.message === "User not found") {
-        throw new AppError(error.message, 404, ErrorCodes.NOT_FOUND);
+        throw new AppError(error.message, 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
       if (error instanceof Error && error.message === "Failed to fetch tasks") {
-        throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError(error.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
-      throw new AppError("Failed to generate calendar feed", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to generate calendar feed", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 );
@@ -66,7 +66,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { start, end } = req.query;
@@ -82,9 +82,9 @@ router.get(
       res.json({ success: true, data: events });
     } catch (error) {
       if (error instanceof Error && error.message === "Failed to fetch events") {
-        throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError(error.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
-      throw new AppError("Failed to fetch calendar events", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to fetch calendar events", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 );

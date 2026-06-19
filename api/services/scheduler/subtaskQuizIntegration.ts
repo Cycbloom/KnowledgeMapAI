@@ -221,7 +221,7 @@ export class SubtaskQuizIntegrationService {
       );
 
       if (generatedCards.length === 0) {
-        throw new AppError(ErrorCodes.NOT_FOUND, {
+        throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
           message:
             "No practice cards available and failed to generate new ones",
         });
@@ -293,7 +293,7 @@ export class SubtaskQuizIntegrationService {
       .single();
 
     if (sessionError || !session) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "No active practice session found",
       });
     }
@@ -446,7 +446,7 @@ export class SubtaskQuizIntegrationService {
       .filter(Boolean);
 
     if (cards.length === 0) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "No cards available in quiz set",
       });
     }
@@ -517,7 +517,7 @@ export class SubtaskQuizIntegrationService {
       .single();
 
     if (sessionError || !session) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "No active quiz session found",
       });
     }
@@ -930,7 +930,7 @@ export class SubtaskQuizIntegrationService {
       .single();
 
     if (error || !subtask) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "Subtask not found",
         details: { subtaskId },
       });
@@ -959,7 +959,7 @@ export class SubtaskQuizIntegrationService {
       .single();
 
     if (error || !kp) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "Knowledge point not found",
         details: { knowledgePointId },
       });
@@ -1022,7 +1022,7 @@ export class SubtaskQuizIntegrationService {
       }
     }
 
-    throw new AppError(ErrorCodes.NOT_FOUND, {
+    throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
       message: "Could not determine user for knowledge point",
     });
   }

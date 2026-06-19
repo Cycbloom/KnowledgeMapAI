@@ -25,11 +25,11 @@ router.get(
       const message = error instanceof Error ? error.message : String(error);
 
       if (message.includes("401") || message.includes("Unauthorized")) {
-        throw new AppError("Personal Access Token is invalid or expired", 401, ErrorCodes.UNAUTHORIZED);
+        throw new AppError("Personal Access Token is invalid or expired", 401, ErrorCodes.AUTH_UNAUTHORIZED);
       }
 
       logger.error("Failed to list organizations:", error);
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -52,11 +52,11 @@ router.get(
       const message = error instanceof Error ? error.message : String(error);
 
       if (message.includes("401") || message.includes("Unauthorized")) {
-        throw new AppError("Personal Access Token is invalid or expired", 401, ErrorCodes.UNAUTHORIZED);
+        throw new AppError("Personal Access Token is invalid or expired", 401, ErrorCodes.AUTH_UNAUTHORIZED);
       }
 
       logger.error("Failed to list regions:", error);
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -92,7 +92,7 @@ router.post(
       try {
         await supabaseManagementApi.waitForProjectReady(accessToken, project.ref);
       } catch {
-        throw new AppError("Project creation timed out", 408, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError("Project creation timed out", 408, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       const credentials = await supabaseManagementApi.getProjectCredentials(
@@ -106,7 +106,7 @@ router.post(
       if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       logger.error("Failed to create project:", error);
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -144,7 +144,7 @@ router.post(
       if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       logger.error("Failed to quick setup:", error);
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

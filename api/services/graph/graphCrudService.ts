@@ -395,7 +395,7 @@ export class GraphCrudService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError("图谱不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const currentSettings = (graph.settings as Record<string, unknown>) || {};
@@ -413,7 +413,7 @@ export class GraphCrudService {
       .single();
 
     if (updateError) {
-      throw new AppError("更新视图模式失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("更新视图模式失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return updatedGraph;

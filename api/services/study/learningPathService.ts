@@ -997,7 +997,7 @@ export class LearningPathService {
     }
 
     if (!data) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return (await this.getLearningPath(
@@ -1021,7 +1021,7 @@ export class LearningPathService {
       .single();
 
     if (checkError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (hardDelete) {
@@ -1063,7 +1063,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: node, error } = await supabase
@@ -1108,7 +1108,7 @@ export class LearningPathService {
       .single();
 
     if (nodeError || !node) {
-      throw new AppError("节点不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("节点不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: path, error: pathError } = await supabase
@@ -1119,7 +1119,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在或无权访问", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("学习路径不存在或无权访问", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const now = new Date().toISOString();
@@ -1201,7 +1201,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const updates = nodeOrders.map((item) =>
@@ -1239,7 +1239,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { error } = await supabase
@@ -1415,7 +1415,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data, error } = await supabase
@@ -1519,7 +1519,7 @@ export class LearningPathService {
       .single();
 
     if (checkError || !plan) {
-      throw new AppError("计划不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("计划不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const updateData: Record<string, unknown> = {
@@ -1607,7 +1607,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const targetDate = new Date(input.target_date);
@@ -1679,7 +1679,7 @@ export class LearningPathService {
     const path = await this.getLearningPath(supabase, pathId, userId);
 
     if (!path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (!path.target_date) {
@@ -1885,7 +1885,7 @@ export class LearningPathService {
     const path = await this.getLearningPath(supabase, pathId, userId);
 
     if (!path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const nodes = path.nodes || [];
@@ -2023,7 +2023,7 @@ export class LearningPathService {
     const path = await this.getLearningPath(supabase, pathId, userId);
 
     if (!path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const nodes = path.nodes || [];
@@ -2200,7 +2200,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { count } = await supabase
@@ -2242,7 +2242,7 @@ export class LearningPathService {
 
     if (taskError) {
       logger.error("createLearningPathMainTask error:", taskError);
-      throw new AppError("创建主任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("创建主任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return task.id;
@@ -2273,14 +2273,14 @@ export class LearningPathService {
       .single();
 
     if (nodeError || !node) {
-      throw new AppError("节点不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("节点不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const pathData = Array.isArray(node.learning_paths)
       ? node.learning_paths[0]
       : node.learning_paths;
     if (!pathData || pathData.user_id !== userId) {
-      throw new AppError("无权访问此节点", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("无权访问此节点", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { data: subtask, error: subtaskError } = await supabase
@@ -2300,7 +2300,7 @@ export class LearningPathService {
 
     if (subtaskError) {
       logger.error("convertNodeToSubtask error:", subtaskError);
-      throw new AppError("创建子任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("创建子任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return subtask.id;
@@ -2334,14 +2334,14 @@ export class LearningPathService {
       .single();
 
     if (nodeError || !node) {
-      throw new AppError("节点不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("节点不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const pathData = Array.isArray(node.learning_paths)
       ? node.learning_paths[0]
       : node.learning_paths;
     if (!pathData || pathData.user_id !== userId) {
-      throw new AppError("无权访问此节点", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("无权访问此节点", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { count } = await supabase
@@ -2372,7 +2372,7 @@ export class LearningPathService {
 
     if (taskError) {
       logger.error("convertNodeToTask error:", taskError);
-      throw new AppError("创建任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("创建任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     await supabase.from("task_knowledge_points").insert({
@@ -2407,7 +2407,7 @@ export class LearningPathService {
       .single();
 
     if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: nodes, error: nodesError } = await supabase
@@ -2696,7 +2696,7 @@ export class LearningPathService {
       .single();
 
     if (taskError || !task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (task.status !== "completed") {

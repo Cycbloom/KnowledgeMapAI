@@ -23,7 +23,7 @@ export async function requireKnowledgePointOwnership(
   );
 
   if (!isOwner) {
-    throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
+    throw new AppError("没有权限执行此操作", 403, ErrorCodes.AUTH_FORBIDDEN);
   }
 
   next();
@@ -37,7 +37,7 @@ export async function requireAdmin(
   const userProfile = await authService.getProfile(req.user.id);
 
   if (!userProfile || userProfile.role !== "admin") {
-    throw new AppError("需要管理员权限", 403, ErrorCodes.FORBIDDEN);
+    throw new AppError("需要管理员权限", 403, ErrorCodes.AUTH_FORBIDDEN);
   }
 
   next();

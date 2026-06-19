@@ -13,14 +13,14 @@ router.get("/:invitationToken/info", optionalAuth, async (req: AuthRequest, res:
     const result = await collaboratorService.getInvitationInfo(req.supabase!, invitationToken);
 
     if (!result.success) {
-      throw new AppError(result.error ?? "邀请信息不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError(result.error ?? "邀请信息不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json(result.data);
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error("获取邀请信息失败:", error);
-    throw new AppError("获取邀请信息失败", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("获取邀请信息失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -28,7 +28,7 @@ router.post("/graphs/:graphId/share", requireAuth, async (req: AuthRequest, res:
   try {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("未授权", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("未授权", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
     const { graphId } = req.params;
@@ -44,7 +44,7 @@ router.post("/graphs/:graphId/share", requireAuth, async (req: AuthRequest, res:
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error("生成分享链接失败:", error);
-    throw new AppError("生成分享链接失败", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("生成分享链接失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -52,7 +52,7 @@ router.post("/:invitationToken/join", requireAuth, async (req: AuthRequest, res:
   try {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("未授权", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("未授权", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
     const { invitationToken } = req.params;
@@ -66,7 +66,7 @@ router.post("/:invitationToken/join", requireAuth, async (req: AuthRequest, res:
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error("加入协作失败:", error);
-    throw new AppError("加入协作失败", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("加入协作失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

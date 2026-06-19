@@ -88,7 +88,7 @@ export class StudyRouteService {
       .single();
 
     if (!graphNode) {
-      throw new AppError("未找到所属节点", 404, ErrorCodes.NODE_NOT_FOUND);
+      throw new AppError("未找到所属节点", 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     try {
@@ -110,7 +110,7 @@ export class StudyRouteService {
       throw new AppError(
         err.message || "创建学习卡片失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -157,7 +157,7 @@ export class StudyRouteService {
       throw new AppError(
         err.message || "创建学习卡片失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -178,7 +178,7 @@ export class StudyRouteService {
       throw new AppError(
         error.message || "获取学习进度失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 

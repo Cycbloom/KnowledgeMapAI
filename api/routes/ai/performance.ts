@@ -35,7 +35,7 @@ router.get('/historical-logs', async (req, res) => {
     const result = await performanceMonitor.getHistoricalLogs(query);
     res.json(result);
   } catch (error) {
-    throw new AppError('Failed to fetch historical logs', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to fetch historical logs', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -44,7 +44,7 @@ router.get('/database-stats', async (_req, res) => {
     const stats = await performanceMonitor.getDatabaseStats();
     res.json(stats);
   } catch (error) {
-    throw new AppError('Failed to fetch database stats', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to fetch database stats', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

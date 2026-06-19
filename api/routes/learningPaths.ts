@@ -215,7 +215,7 @@ router.get(
     );
 
     if (!data) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json(data);
@@ -415,7 +415,7 @@ router.get(
     );
 
     if (!data) {
-      throw new AppError("未找到该日期的计划", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("未找到该日期的计划", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json(data);
@@ -437,7 +437,7 @@ router.put(
     );
 
     if (!existingPlan) {
-      throw new AppError("未找到该日期的计划", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("未找到该日期的计划", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const data = await learningPathService.updatePlanStatus(
@@ -543,7 +543,7 @@ router.post(
       throw new AppError(
         (error as Error).message || "学习路径生成失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -587,7 +587,7 @@ router.post(
       throw new AppError(
         (error as Error).message || "自动排程失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

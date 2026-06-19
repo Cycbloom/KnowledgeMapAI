@@ -28,7 +28,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const parsed = startLoopSchema.safeParse(req.body);
@@ -48,7 +48,7 @@ router.post(
       res.status(201).json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to start loop:", error);
-      throw new AppError("Failed to start learning loop", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to start learning loop", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -59,7 +59,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const parsed = startWithTaskSchema.safeParse(req.body);
@@ -79,7 +79,7 @@ router.post(
       res.status(201).json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to start learning with task:", error);
-      throw new AppError("Failed to start learning with task", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to start learning with task", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -90,7 +90,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -103,13 +103,13 @@ router.post(
       );
 
       if (!loop) {
-        throw new AppError("Learning loop not found", 404, ErrorCodes.NOT_FOUND);
+        throw new AppError("Learning loop not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       res.json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to advance loop:", error);
-      throw new AppError("Failed to advance learning loop", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to advance learning loop", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -120,7 +120,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const parsed = activeLoopQuerySchema.safeParse(req.query);
@@ -139,7 +139,7 @@ router.get(
       res.json({ success: true, data: loop });
     } catch (error) {
       logger.error("[LearningLoops] Failed to get active loop:", error);
-      throw new AppError("Failed to get active learning loop", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to get active learning loop", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

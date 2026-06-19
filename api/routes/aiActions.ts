@@ -45,7 +45,7 @@ router.post("/", requireAuth, async (req, res) => {
     }
 
     if (graph.user_id !== userId) {
-      throw new AppError("没有权限为此图谱创建操作", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("没有权限为此图谱创建操作", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     action.user_id = userId; // Assign creator
@@ -68,7 +68,7 @@ router.put("/:id", requireAuth, async (req, res) => {
   if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
 
   if (existing.scope !== "system" && existing.user_id !== userId) {
-    throw new AppError(ErrorCodes.NOT_AUTHORIZED);
+    throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
   }
 
   const updated = await aiActionService.updateAction(
@@ -89,7 +89,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
   if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
 
   if (existing.scope !== "system" && existing.user_id !== userId) {
-    throw new AppError(ErrorCodes.NOT_AUTHORIZED);
+    throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
   }
 
   await aiActionService.deleteAction(getSupabaseAdmin(), id);

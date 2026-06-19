@@ -77,12 +77,12 @@ export const csrfProtection = (
   const headerToken = req.headers[CSRF_HEADER] as string | undefined;
 
   if (!cookieToken || !headerToken) {
-    next(new AppError("CSRF token missing", 403, ErrorCodes.FORBIDDEN));
+    next(new AppError("CSRF token missing", 403, ErrorCodes.AUTH_FORBIDDEN));
     return;
   }
 
   if (cookieToken !== headerToken) {
-    next(new AppError("Invalid CSRF token", 403, ErrorCodes.FORBIDDEN));
+    next(new AppError("Invalid CSRF token", 403, ErrorCodes.AUTH_FORBIDDEN));
     return;
   }
 

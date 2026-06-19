@@ -23,7 +23,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -40,7 +40,7 @@ router.post(
       res.status(201).json({ success: true, data: plans });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message || "生成进度计划失败", err.statusCode || 400, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "生成进度计划失败", err.statusCode || 400, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -52,7 +52,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -68,7 +68,7 @@ router.put(
       res.json({ success: true, data: plan });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -80,7 +80,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -94,7 +94,7 @@ router.get(
       res.json({ success: true, data: result });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -106,7 +106,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -122,7 +122,7 @@ router.post(
       res.json({ success: true, data: result });
     } catch (error) {
       const err = error as Error & { statusCode?: number };
-      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, err.statusCode || 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

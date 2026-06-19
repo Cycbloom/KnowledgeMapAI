@@ -89,7 +89,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const relations = await graphRelationService.getRelations(supabase, graphId);
@@ -195,7 +195,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const duplicateCheck = await checkDuplicateGraphTopic(
@@ -229,7 +229,7 @@ export class GraphRelationsRouteService {
         .single();
 
       if (createError || !newGraph) {
-        throw new AppError('创建图谱失败', 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError('创建图谱失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       targetGraphId = newGraph.id;
@@ -291,7 +291,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const results: BatchCreateResultItem[] = [];
@@ -409,11 +409,11 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph || !targetGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (sourceGraph.user_id !== userId) {
-      throw new AppError('无权操作此图谱', 403, ErrorCodes.FORBIDDEN);
+      throw new AppError('无权操作此图谱', 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const exists = await graphRelationService.checkRelationExists(
@@ -448,7 +448,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!relation) {
-      throw new AppError('关系不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('关系不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: sourceGraph } = await supabase
@@ -458,7 +458,7 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph || sourceGraph.user_id !== userId) {
-      throw new AppError('无权删除此关系', 403, ErrorCodes.FORBIDDEN);
+      throw new AppError('无权删除此关系', 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     await graphRelationService.deleteRelation(supabase, relationId);
@@ -485,11 +485,11 @@ export class GraphRelationsRouteService {
       .single();
 
     if (!sourceGraph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (sourceGraph.user_id !== userId) {
-      throw new AppError('无权操作此图谱', 403, ErrorCodes.FORBIDDEN);
+      throw new AppError('无权操作此图谱', 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const task = await asyncTaskService.createTask(

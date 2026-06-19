@@ -173,7 +173,7 @@ class ScheduleService {
       .single();
 
     if (fetchError || !existingSchedule) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "周期配置不存在",
       });
     }
@@ -262,7 +262,7 @@ class ScheduleService {
       .single();
 
     if (scheduleError || !schedule) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "周期配置不存在",
       });
     }

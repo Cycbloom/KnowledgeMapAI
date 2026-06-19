@@ -143,7 +143,7 @@ export const domainService = {
 
     if (error) {
       logger.error("获取领域列表失败", { error: error.message, userId });
-      throw new AppError("获取领域列表失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取领域列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     let tree = buildTree(domains as DomainRecord[]);
@@ -186,14 +186,14 @@ export const domainService = {
       .single();
 
     if (error || !domain) {
-      throw new AppError("领域不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const isOwner = domain.user_id === userId;
     const isSystem = domain.is_system;
 
     if (!isOwner && !isSystem) {
-      throw new AppError("无权访问该领域", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("无权访问该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { count: graphCount } = await supabase
@@ -238,7 +238,7 @@ export const domainService = {
         .single();
 
       if (parentError || !parentDomain) {
-        throw new AppError("父领域不存在", 404, ErrorCodes.NOT_FOUND);
+        throw new AppError("父领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       if (parentDomain.deleted_at) {
@@ -249,7 +249,7 @@ export const domainService = {
         parentDomain.user_id === userId || parentDomain.is_system;
 
       if (!isParentAccessible) {
-        throw new AppError("无权在该父领域下创建子领域", 403, ErrorCodes.FORBIDDEN);
+        throw new AppError("无权在该父领域下创建子领域", 403, ErrorCodes.AUTH_FORBIDDEN);
       }
     }
 
@@ -277,7 +277,7 @@ export const domainService = {
         );
       }
       logger.error("创建领域失败", { error: error.message, userId, name });
-      throw new AppError("创建领域失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("创建领域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("创建领域成功", { domainId: newDomain.id, userId, name });
@@ -308,15 +308,15 @@ export const domainService = {
       .single();
 
     if (fetchError || !existing) {
-      throw new AppError("领域不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (existing.user_id !== userId) {
-      throw new AppError("只有领域所有者才能修改该领域", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("只有领域所有者才能修改该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (existing.is_system) {
-      throw new AppError("系统预置领域不可修改", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("系统预置领域不可修改", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (updates.parent_id !== undefined) {
@@ -332,7 +332,7 @@ export const domainService = {
           .single();
 
         if (parentError || !parentDomain) {
-          throw new AppError("父领域不存在", 404, ErrorCodes.NOT_FOUND);
+          throw new AppError("父领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
         }
 
         if (parentDomain.deleted_at) {
@@ -357,7 +357,7 @@ export const domainService = {
         );
       }
       logger.error("更新领域失败", { error: error.message, domainId: id, userId });
-      throw new AppError("更新领域失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("更新领域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("更新领域成功", { domainId: id, userId });
@@ -378,15 +378,15 @@ export const domainService = {
       .single();
 
     if (fetchError || !existing) {
-      throw new AppError("领域不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("领域不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (existing.user_id !== userId) {
-      throw new AppError("只有领域所有者才能删除该领域", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("只有领域所有者才能删除该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     if (existing.is_system) {
-      throw new AppError("系统预置领域不可删除", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("系统预置领域不可删除", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const { error } = await supabase
@@ -396,7 +396,7 @@ export const domainService = {
 
     if (error) {
       logger.error("删除领域失败", { error: error.message, domainId: id, userId });
-      throw new AppError("删除领域失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("删除领域失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     logger.info("删除领域成功（软删除）", { domainId: id, userId });
@@ -417,14 +417,14 @@ export const domainService = {
 
     if (error) {
       logger.error("查询领域信息失败", { error: error.message, userId });
-      throw new AppError("查询领域信息失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("查询领域信息失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!domains || domains.length !== domainIds.length) {
       const foundIds = new Set(domains?.map((d) => d.id) ?? []);
       const missingIds = domainIds.filter((id) => !foundIds.has(id));
       logger.warn("部分领域不存在或已被删除", { missingIds, userId });
-      throw new AppError("部分领域不存在或已被删除", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("部分领域不存在或已被删除", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     for (const domain of domains) {
@@ -433,7 +433,7 @@ export const domainService = {
 
       if (!isOwner && !isSystem) {
         logger.warn("用户尝试重排序无权访问的领域", { domainId: domain.id, userId });
-        throw new AppError("无权操作该领域", 403, ErrorCodes.FORBIDDEN);
+        throw new AppError("无权操作该领域", 403, ErrorCodes.AUTH_FORBIDDEN);
       }
     }
 
@@ -578,7 +578,7 @@ ${description ? `领域描述：${description}` : ""}
 
     if (error) {
       logger.error("获取领域列表失败", { error: error.message, userId });
-      throw new AppError("获取领域列表失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取领域列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!domains || domains.length === 0) {

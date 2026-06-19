@@ -1004,7 +1004,7 @@ export class AutoGraphService {
       throw new AppError(
         "AI provider not configured",
         503,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -1093,7 +1093,7 @@ export class AutoGraphService {
       throw new AppError(
         "AI 生成内容解析失败",
         422,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -1135,7 +1135,7 @@ export class AutoGraphService {
       throw new AppError(
         "AI provider not configured",
         503,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -1226,7 +1226,7 @@ export class AutoGraphService {
       throw new AppError(
         "AI 生成内容解析失败",
         422,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -1310,7 +1310,7 @@ export class AutoGraphService {
       throw new AppError(
         "AI provider not configured",
         503,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -1398,7 +1398,7 @@ export class AutoGraphService {
       throw new AppError(
         "AI 生成内容解析失败",
         422,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 

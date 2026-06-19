@@ -34,10 +34,10 @@ router.post(
         throw new AppError(
           "Some graphs not found or unauthorized",
           403,
-          ErrorCodes.FORBIDDEN,
+          ErrorCodes.AUTH_FORBIDDEN,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

@@ -96,7 +96,7 @@ export class NodesService {
       .single();
 
     if (!graph) {
-      throw new AppError('未经授权访问图谱', 403, ErrorCodes.FORBIDDEN);
+      throw new AppError('未经授权访问图谱', 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     let knowledgePointId = existingKpId;
@@ -190,7 +190,7 @@ export class NodesService {
       throw new AppError(
         message || '创建图谱节点失败',
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -235,11 +235,11 @@ export class NodesService {
 
     if (error) {
       logger.error('Get node error:', error);
-      throw new AppError('获取节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError('获取节点失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!graphNode) {
-      throw new AppError('节点不存在', 404, ErrorCodes.NODE_NOT_FOUND);
+      throw new AppError('节点不存在', 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     return buildNodeFromGraphNode(graphNode);
@@ -287,7 +287,7 @@ export class NodesService {
       throw new AppError(
         'Node not found or unauthorized',
         404,
-        ErrorCodes.NODE_NOT_FOUND,
+        ErrorCodes.RESOURCE_NODE_NOT_FOUND,
       );
     }
 
@@ -310,7 +310,7 @@ export class NodesService {
       updates.title !== undefined &&
       updates.title !== kp?.title
     ) {
-      throw new AppError('骨干节点标题不可修改', 403, ErrorCodes.FORBIDDEN);
+      throw new AppError('骨干节点标题不可修改', 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const kpUpdates: {
@@ -359,7 +359,7 @@ export class NodesService {
         logger.error('Update knowledge point error:', error);
         const message =
           error instanceof Error ? error.message : '更新知识点失败';
-        throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
     }
 
@@ -374,7 +374,7 @@ export class NodesService {
         throw new AppError(
           gnError.message || '更新图谱节点失败',
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
     }
@@ -414,7 +414,7 @@ export class NodesService {
       throw new AppError(
         '获取更新后的节点失败',
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -455,7 +455,7 @@ export class NodesService {
       throw new AppError(
         'Node not found or unauthorized',
         404,
-        ErrorCodes.NODE_NOT_FOUND,
+        ErrorCodes.RESOURCE_NODE_NOT_FOUND,
       );
     }
 
@@ -494,7 +494,7 @@ export class NodesService {
       throw new AppError(
         softDeleteError.message || '删除节点失败',
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -789,7 +789,7 @@ export class NodesService {
     }
 
     if (!graphNode) {
-      throw new AppError('节点不存在', 404, ErrorCodes.NODE_NOT_FOUND);
+      throw new AppError('节点不存在', 404, ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     interface KnowledgePointWithEmbedding {
@@ -888,20 +888,20 @@ export class NodesService {
         throw new AppError(
           'Source node not found or unauthorized',
           404,
-          ErrorCodes.NODE_NOT_FOUND,
+          ErrorCodes.RESOURCE_NODE_NOT_FOUND,
         );
       }
       if (message.includes('目标知识点不在当前图谱中')) {
         throw new AppError(
           'Target node not found or unauthorized',
           404,
-          ErrorCodes.NODE_NOT_FOUND,
+          ErrorCodes.RESOURCE_NODE_NOT_FOUND,
         );
       }
       throw new AppError(
         message || '创建边失败',
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -922,7 +922,7 @@ export class NodesService {
       throw new AppError(
         error.message || '删除边失败',
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
 
     if (!edge) {

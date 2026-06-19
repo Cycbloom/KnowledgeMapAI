@@ -30,7 +30,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     }
   } catch (error) {
     logger.error('Search error:', error);
-    throw new AppError('Search failed', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Search failed', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

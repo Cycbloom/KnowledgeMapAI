@@ -127,7 +127,7 @@ router.post(
       throw new AppError(
         err.message || "概念聚合分析失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -222,7 +222,7 @@ router.get(
       throw new AppError(
         err.message || "获取概念聚合结果失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -272,7 +272,7 @@ router.post(
       throw new AppError(
         err.message || "概念合并操作失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -315,7 +315,7 @@ router.post(
       throw new AppError(
         err.message || "应用层级关系失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

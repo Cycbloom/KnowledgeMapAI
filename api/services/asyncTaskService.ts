@@ -245,7 +245,7 @@ export class AsyncTaskService {
       .eq("user_id", userId)
       .single();
 
-    if (fetchError || !task) throw new AppError(ErrorCodes.NOT_FOUND, { message: "Task not found" });
+    if (fetchError || !task) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, { message: "Task not found" });
 
     const { data, error } = await client
       .from("system_tasks")

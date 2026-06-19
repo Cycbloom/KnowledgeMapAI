@@ -28,7 +28,7 @@ export class AuthService {
 
     if (error) {
       logger.error('Failed to fetch user profile:', error);
-      throw new AppError('获取用户资料失败', 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError('获取用户资料失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return data as UserProfile;
@@ -54,7 +54,7 @@ export class AuthService {
 
     if (error) {
       logger.error('Failed to update user profile:', error);
-      throw new AppError(error.message || '更新个人资料失败', 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(error.message || '更新个人资料失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return data as UserProfile;

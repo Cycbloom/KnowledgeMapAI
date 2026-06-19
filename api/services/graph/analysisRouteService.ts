@@ -226,7 +226,7 @@ ${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知�
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '领域分析失败';
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

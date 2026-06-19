@@ -139,7 +139,7 @@ export class SystemTaskService {
       .single();
 
     if (fetchError) {
-      throw new AppError(ErrorCodes.TASK_NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND, {
         details: { originalError: fetchError.message },
       });
     }
@@ -209,7 +209,7 @@ export class SystemTaskService {
       .single();
 
     if (fetchError) {
-      throw new AppError(ErrorCodes.TASK_NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND, {
         details: { originalError: fetchError.message },
       });
     }
@@ -250,7 +250,7 @@ export class SystemTaskService {
       .single();
 
     if (fetchError) {
-      throw new AppError(ErrorCodes.TASK_NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND, {
         details: { originalError: fetchError.message },
       });
     }
@@ -303,7 +303,7 @@ export class SystemTaskService {
       .single();
 
     if (fetchError) {
-      throw new AppError(ErrorCodes.TASK_NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND, {
         details: { originalError: fetchError.message },
       });
     }

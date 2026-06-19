@@ -35,7 +35,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
       dataService.generatePdfReport(graph, nodes, edges, options || {}, res);
     } catch (_e) {
       if (!res.headersSent) {
-        throw new AppError('PDF generation failed', 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError('PDF generation failed', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
     }
     return;
@@ -57,7 +57,7 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
     res.status(201).json({ graph });
   } catch (error) {
     if (error instanceof AppError) throw error;
-    throw new AppError((error as Error).message || 'Import failed', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || 'Import failed', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

@@ -35,7 +35,7 @@ export class AutoGraphRouteService {
       throw new AppError(
         '模板不存在或无权访问',
         404,
-        ErrorCodes.NOT_FOUND,
+        ErrorCodes.RESOURCE_NOT_FOUND,
       );
     }
 
@@ -71,7 +71,7 @@ export class AutoGraphRouteService {
       throw new AppError(
         err.message || '获取嵌入状态失败',
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }

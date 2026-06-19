@@ -23,7 +23,7 @@ class GraphExpansionService {
       .is('deleted_at', null);
 
     if (graphsError || !graphs || graphs.length === 0) {
-      throw new AppError('未找到有效的图谱', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('未找到有效的图谱', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const results: Array<{
@@ -100,7 +100,7 @@ class GraphExpansionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: existingNodes } = await supabase
@@ -165,7 +165,7 @@ class GraphExpansionService {
       .single();
 
     if (!graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const validationContext = context || `图谱主题：${graph.title}`;
@@ -212,7 +212,7 @@ class GraphExpansionService {
       .single();
 
     if (graphError || !graph) {
-      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (graph.template_type !== 'topic_research') {
@@ -243,7 +243,7 @@ class GraphExpansionService {
         graphId,
         error: nodesError.message,
       });
-      throw new AppError('查询节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError('查询节点失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const details: Array<{

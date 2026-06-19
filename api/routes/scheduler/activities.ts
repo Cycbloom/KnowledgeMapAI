@@ -42,7 +42,7 @@ const autoGenerateSchema = z.object({
 router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
   const parsed = recordActivitySchema.safeParse(req.body);
@@ -59,14 +59,14 @@ router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
     res.status(201).json({ success: true, data: activity });
   } catch (error) {
     logger.error("[Activities] Failed to record activity:", error);
-    throw new AppError("Failed to record activity", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to record activity", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
 router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
   try {
@@ -91,7 +91,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: result.data, total: result.total });
   } catch (error) {
     logger.error("[Activities] Failed to get activities:", error);
-    throw new AppError("Failed to get activities", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to get activities", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -101,7 +101,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { date } = req.params;
@@ -119,7 +119,7 @@ router.get(
       res.json({ success: true, data: activities });
     } catch (error) {
       logger.error("[Activities] Failed to get daily activities:", error);
-      throw new AppError("Failed to get daily activities", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to get daily activities", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -127,7 +127,7 @@ router.get(
 router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
   const { start_date, end_date } = req.query;
@@ -153,14 +153,14 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: stats });
   } catch (error) {
     logger.error("[Activities] Failed to get activity stats:", error);
-    throw new AppError("Failed to get activity stats", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to get activity stats", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
 router.put("/:id/end", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
   const parsed = endActivitySchema.safeParse(req.body);
@@ -179,7 +179,7 @@ router.put("/:id/end", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: activity });
   } catch (error) {
     logger.error("[Activities] Failed to end activity:", error);
-    throw new AppError("Failed to end activity", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to end activity", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -189,7 +189,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const parsed = autoGenerateSchema.safeParse(req.body);
@@ -251,7 +251,7 @@ router.post(
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       logger.error("[AutoGenerate] Failed to generate task:", error);
-      throw new AppError("Failed to auto-generate task", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to auto-generate task", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -262,7 +262,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { graph_id, knowledge_point_id, title } = req.query;
@@ -292,7 +292,7 @@ router.get(
       res.json({ success: true, data: result });
     } catch (error) {
       logger.error("[Activities] Failed to link task:", error);
-      throw new AppError("Failed to link task", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to link task", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

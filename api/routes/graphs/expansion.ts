@@ -144,7 +144,7 @@ router.post(
       res.json(result);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "领域扩展失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -170,7 +170,7 @@ router.post(
       res.json(result);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "批量创建图谱失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -197,7 +197,7 @@ router.post(
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : "批量初始化失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -224,7 +224,7 @@ router.post(
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : "初始化图谱失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -252,7 +252,7 @@ router.post(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "图谱关系发现失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -293,7 +293,7 @@ router.post(
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "创建关系失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -327,7 +327,7 @@ router.post(
       const message =
         error instanceof Error ? error.message : "跨学科洞察分析失败";
       logger.error("Cross-domain insights failed", error);
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -362,7 +362,7 @@ router.post(
       const message =
         error instanceof Error ? error.message : "学习路径建议生成失败";
       logger.error("Learning path suggestions failed", error);
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -396,7 +396,7 @@ router.post(
       const message =
         error instanceof Error ? error.message : "知识缺口分析失败";
       logger.error("Knowledge gaps analysis failed", error);
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -426,7 +426,7 @@ router.post(
       if (error instanceof AppError) throw error;
       const message =
         error instanceof Error ? error.message : "骨干节点验证失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -452,7 +452,7 @@ router.post(
       if (error instanceof AppError) throw error;
       const message =
         error instanceof Error ? error.message : "修复骨干模块失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -465,7 +465,7 @@ router.get(
     const supabase = req.supabase;
 
     if (!supabase) {
-      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+      throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED, {
         message: "Unauthorized: No Supabase client",
       });
     }
@@ -487,7 +487,7 @@ router.get(
       throw new AppError(
         err.message || "网络分析失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -501,7 +501,7 @@ router.get(
     const supabase = req.supabase;
 
     if (!supabase) {
-      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+      throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED, {
         message: "Unauthorized: No Supabase client",
       });
     }
@@ -527,7 +527,7 @@ router.get(
       throw new AppError(
         err.message || "骨干模块建议分析失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

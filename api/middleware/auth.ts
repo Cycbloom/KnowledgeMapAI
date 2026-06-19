@@ -22,7 +22,7 @@ const parseTokenError = (error: { message?: string }): TokenError => {
     return {
       message: 'Token has expired',
       status: 401,
-      code: ErrorCodes.TOKEN_EXPIRED,
+      code: ErrorCodes.AUTH_TOKEN_EXPIRED,
     };
   }
 
@@ -30,7 +30,7 @@ const parseTokenError = (error: { message?: string }): TokenError => {
     return {
       message: 'Invalid token format',
       status: 401,
-      code: ErrorCodes.INVALID_TOKEN,
+      code: ErrorCodes.AUTH_TOKEN_INVALID,
     };
   }
 
@@ -38,14 +38,14 @@ const parseTokenError = (error: { message?: string }): TokenError => {
     return {
       message: 'Token has been revoked',
       status: 401,
-      code: ErrorCodes.TOKEN_REVOKED,
+      code: ErrorCodes.AUTH_TOKEN_REVOKED,
     };
   }
 
   return {
     message: 'Token verification failed',
     status: 401,
-    code: ErrorCodes.INVALID_TOKEN,
+    code: ErrorCodes.AUTH_TOKEN_INVALID,
   };
 };
 
@@ -64,7 +64,7 @@ export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFu
   const token = parts[1];
 
   if (!token) {
-    throw new AppError('Token missing', 401, ErrorCodes.TOKEN_MISSING);
+    throw new AppError('Token missing', 401, ErrorCodes.AUTH_TOKEN_MISSING);
   }
 
   const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
@@ -75,7 +75,7 @@ export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFu
   }
 
   if (!user) {
-    throw new AppError('User not found', 401, ErrorCodes.INVALID_TOKEN);
+    throw new AppError('User not found', 401, ErrorCodes.AUTH_TOKEN_INVALID);
   }
 
   req.user = user;
@@ -124,7 +124,7 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
 export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
   await requireAuth(req, res, async () => {
     if (!req.user?.id) {
-      throw new AppError('User not authenticated', 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError('User not authenticated', 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
     const { data: userRecord, error } = await getSupabaseAdmin()
@@ -134,7 +134,7 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
       .single();
 
     if (error || !userRecord) {
-      throw new AppError('Failed to verify user role', 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError('Failed to verify user role', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (userRecord.role === 'admin') {
@@ -146,6 +146,6 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
       return next();
     }
     
-    throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
+    throw new AppError('Admin access required', 403, ErrorCodes.AUTH_FORBIDDEN);
   });
 };

@@ -45,7 +45,7 @@ export class DocumentParsingService {
         throw new AppError(
           `PDF parsing failed: ${err.message}`,
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
     } else {

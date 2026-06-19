@@ -164,7 +164,7 @@ router.post(
     } = req.body;
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+      throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED, {
         message: "Unauthorized: No Supabase client",
       });
     }
@@ -182,7 +182,11 @@ router.post(
 
         const template = result.templates[0];
         if (!template) {
-          throw new AppError("生成模板失败", 500, ErrorCodes.INTERNAL_ERROR);
+          throw new AppError(
+            "生成模板失败",
+            500,
+            ErrorCodes.SYSTEM_INTERNAL_ERROR,
+          );
         }
 
         const rootNode = template.nodes.find((n) => n.level === "root");
@@ -221,7 +225,7 @@ router.post(
         throw new AppError(
           err.message || "专题研究模板生成失败",
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
     }
@@ -255,7 +259,7 @@ router.post(
         throw new AppError(
           err.message || "故事创作模板生成失败",
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
     }
@@ -282,7 +286,7 @@ router.post(
       throw new AppError(
         err.message || "知识图谱初始化失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -334,7 +338,7 @@ router.post(
       throw new AppError(
         err.message || "节点展开失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -353,7 +357,7 @@ router.post(
       throw new AppError(
         "AI provider not configured",
         503,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
 
@@ -404,7 +408,11 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
       try {
         parsed = JSON.parse(content || '{"optimizedPrompt": ""}');
       } catch (e) {
-        throw new AppError("优化结果解析失败", 422, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError(
+          "优化结果解析失败",
+          422,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+        );
       }
 
       res.json({ optimizedPrompt: parsed.optimizedPrompt || "" });
@@ -415,7 +423,7 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
       throw new AppError(
         err.message || "优化失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -483,7 +491,7 @@ router.post(
       throw new AppError(
         err.message || "保存节点失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -508,7 +516,7 @@ router.post("/generate-embeddings", async (req: AuthRequest, res) => {
     throw new AppError(
       err.message || "生成嵌入向量失败",
       500,
-      ErrorCodes.INTERNAL_ERROR,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
     );
   }
 });
@@ -531,7 +539,7 @@ router.get("/embedding-status", async (req: AuthRequest, res) => {
     throw new AppError(
       err.message || "获取嵌入状态失败",
       500,
-      ErrorCodes.INTERNAL_ERROR,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
     );
   }
 });
@@ -594,7 +602,7 @@ router.post(
       throw new AppError(
         err.message || "模板生成失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -652,7 +660,7 @@ router.post(
       throw new AppError(
         err.message || "模板应用失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

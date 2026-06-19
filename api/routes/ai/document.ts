@@ -88,7 +88,7 @@ router.post(
         throw new AppError(
           err.message || "Failed to save graph",
           500,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
     }
@@ -208,7 +208,7 @@ router.post(
         throw new AppError(
           "AI 生成内容过长被截断，请尝试减少文本量或分段生成。",
           422,
-          ErrorCodes.INTERNAL_ERROR,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
         );
       }
 
@@ -224,7 +224,7 @@ router.post(
       throw new AppError(
         err.message || "AI processing failed",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -341,7 +341,7 @@ router.post(
       throw new AppError(
         err.message || "Document processing failed",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -378,7 +378,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Image-to-Graph Error:", error);
-      throw new AppError(err.message || "Image processing failed", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "Image processing failed", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -399,7 +399,7 @@ router.post(
       throw new AppError(
         err.message || "Failed to fetch URL content",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },

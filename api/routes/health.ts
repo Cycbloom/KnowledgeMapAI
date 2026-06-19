@@ -15,7 +15,7 @@ router.get('/overview', requireAuth, async (req: AuthRequest, res: Response) => 
     res.json(overview);
   } catch (error) {
     logger.error('Health Overview Error:', error);
-    throw new AppError((error as Error).message || '获取健康概览失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '获取健康概览失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -27,7 +27,7 @@ router.get('/heatmap', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ heatmap });
   } catch (error) {
     logger.error('Heatmap Error:', error);
-    throw new AppError((error as Error).message || '获取热力图失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '获取热力图失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -39,7 +39,7 @@ router.get('/weak-points', requireAuth, async (req: AuthRequest, res: Response) 
     res.json({ weakPoints });
   } catch (error) {
     logger.error('Weak Points Error:', error);
-    throw new AppError((error as Error).message || '获取薄弱点失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '获取薄弱点失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -52,7 +52,7 @@ router.get('/weekly-activity', requireAuth, async (req: AuthRequest, res: Respon
     res.json({ activity });
   } catch (error) {
     logger.error('Weekly Activity Error:', error);
-    throw new AppError((error as Error).message || '获取活动数据失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '获取活动数据失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -64,7 +64,7 @@ router.get('/predictions', requireAuth, async (req: AuthRequest, res: Response) 
     res.json({ predictions });
   } catch (error) {
     logger.error('Predictions Error:', error);
-    throw new AppError((error as Error).message || '获取预测数据失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || '获取预测数据失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

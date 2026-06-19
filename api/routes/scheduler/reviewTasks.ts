@@ -33,7 +33,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { knowledge_point_id, task_id } = req.body;
@@ -65,7 +65,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { knowledgePointId } = req.params;
@@ -96,7 +96,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { limit } = req.query as unknown as z.infer<
@@ -113,7 +113,7 @@ router.get(
       res.json({ success: true, data: pendingTasks });
     } catch (error) {
       logger.error("Get pending review tasks error:", error);
-      throw new AppError("获取待复习任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取待复习任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -124,7 +124,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -136,7 +136,7 @@ router.get(
       res.json({ success: true, data: stats });
     } catch (error) {
       logger.error("Get review task stats error:", error);
-      throw new AppError("获取复习任务统计失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取复习任务统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -148,7 +148,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { knowledgePointId } = req.params;
@@ -161,13 +161,13 @@ router.get(
       );
 
       if (!reviewTask) {
-        throw new AppError("复习任务不存在", 404, ErrorCodes.NOT_FOUND);
+        throw new AppError("复习任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       res.json({ success: true, data: reviewTask });
     } catch (error) {
       logger.error("Get review task error:", error);
-      throw new AppError("获取复习任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取复习任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -179,7 +179,7 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { knowledgePointId } = req.params;
@@ -194,7 +194,7 @@ router.delete(
       res.json({ success: true });
     } catch (error) {
       logger.error("Delete review task error:", error);
-      throw new AppError("删除复习任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("删除复习任务失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

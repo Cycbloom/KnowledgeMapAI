@@ -89,7 +89,7 @@ router.get(
       res.json(analysis);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "图谱分析失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -115,7 +115,7 @@ router.get(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "获取连接建议失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -142,7 +142,7 @@ router.post(
       res.json(result);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "领域分析失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

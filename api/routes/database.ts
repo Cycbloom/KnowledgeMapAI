@@ -33,7 +33,7 @@ router.get(
         return;
       }
       logger.error("Failed to get database status:", error);
-      throw new AppError("Failed to get database status", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to get database status", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

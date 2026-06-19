@@ -28,7 +28,7 @@ router.get("/export", requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error("Export backup error:", error);
-    throw new AppError((error as Error).message || "导出备份失败", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || "导出备份失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -44,7 +44,7 @@ router.get(
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error("Get snapshots error:", error);
-      throw new AppError((error as Error).message || "获取快照列表失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message || "获取快照列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -75,7 +75,7 @@ router.post(
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error("Create snapshot error:", error);
-      throw new AppError((error as Error).message || "创建快照失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message || "创建快照失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -94,9 +94,9 @@ router.delete(
       if (error instanceof AppError) throw error;
       logger.error("Delete snapshot error:", error);
       if ((error as Error).message === "Snapshot not found") {
-        throw new AppError("快照不存在", 404, ErrorCodes.NOT_FOUND);
+        throw new AppError("快照不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
-      throw new AppError((error as Error).message || "删除快照失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message || "删除快照失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -115,7 +115,7 @@ router.post(
         userId,
       );
       if (!snapshot) {
-        throw new AppError("快照不存在", 404, ErrorCodes.NOT_FOUND);
+        throw new AppError("快照不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       const backupData = await readBackupFile(snapshot.file_path);
@@ -135,7 +135,7 @@ router.post(
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error("Restore snapshot error:", error);
-      throw new AppError((error as Error).message || "恢复快照失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError((error as Error).message || "恢复快照失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -166,7 +166,7 @@ router.post("/import", requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error("Import backup error:", error);
-    throw new AppError((error as Error).message || "导入备份失败", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || "导入备份失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

@@ -11,7 +11,7 @@ const router = Router();
 
 router.get("/:id/snapshots", requireAuth, validate({ params: uuidParamsSchema, query: snapshotsQuerySchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const { page, pageSize } = req.query as unknown as { page: number; pageSize: number };
   const result = await graphVersionService.listSnapshots(supabase, graphId, { page, pageSize });
@@ -20,7 +20,7 @@ router.get("/:id/snapshots", requireAuth, validate({ params: uuidParamsSchema, q
 
 router.post("/:id/snapshots", requireAuth, validate({ params: uuidParamsSchema, body: createSnapshotSchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const userId = req.user?.id;
   const { description } = req.body;
@@ -30,16 +30,16 @@ router.post("/:id/snapshots", requireAuth, validate({ params: uuidParamsSchema, 
 
 router.get("/:id/snapshots/:snapshotId", requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { snapshotId } = req.params;
   const snapshot = await graphVersionService.getSnapshot(supabase, snapshotId);
-  if (!snapshot) throw new AppError(ErrorCodes.NOT_FOUND);
+  if (!snapshot) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
   res.json(snapshot);
 });
 
 router.get("/:id/diff", requireAuth, validate({ params: uuidParamsSchema, query: diffQuerySchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const { sourceSnapshotId, targetSnapshotId } = req.query as { sourceSnapshotId?: string; targetSnapshotId?: string };
 
@@ -56,7 +56,7 @@ router.get("/:id/diff", requireAuth, validate({ params: uuidParamsSchema, query:
 
 router.post("/:id/rollback", requireAuth, validate({ params: uuidParamsSchema, body: rollbackSchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const userId = req.user?.id;
   const { snapshotId } = req.body;
@@ -66,7 +66,7 @@ router.post("/:id/rollback", requireAuth, validate({ params: uuidParamsSchema, b
 
 router.post("/:id/branches", requireAuth, validate({ params: uuidParamsSchema, body: createBranchSchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const userId = req.user?.id;
   const { branchName } = req.body;
@@ -76,7 +76,7 @@ router.post("/:id/branches", requireAuth, validate({ params: uuidParamsSchema, b
 
 router.get("/:id/branches", requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const branches = await graphVersionService.listBranches(supabase, graphId);
   res.json(branches);
@@ -84,7 +84,7 @@ router.get("/:id/branches", requireAuth, validate({ params: uuidParamsSchema }),
 
 router.post("/:id/merge", requireAuth, validate({ params: uuidParamsSchema, body: mergeSchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const userId = req.user?.id;
   const { branchGraphId, selectedChanges, conflictResolutions } = req.body;
@@ -94,7 +94,7 @@ router.post("/:id/merge", requireAuth, validate({ params: uuidParamsSchema, body
 
 router.get("/:id/events", requireAuth, validate({ params: uuidParamsSchema, query: eventsQuerySchema }), async (req: AuthRequest, res) => {
   const supabase = req.supabase;
-  if (!supabase) throw new AppError(ErrorCodes.UNAUTHORIZED);
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
   const { id: graphId } = req.params;
   const { page, pageSize, batchId, eventType } = req.query as unknown as { page: number; pageSize: number; batchId?: string; eventType?: string };
   const result = await graphVersionService.listEvents(supabase, graphId, { page, pageSize, batchId, eventType: eventType as VersionGraphEventType | undefined });

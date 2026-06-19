@@ -51,7 +51,7 @@ router.post(
       throw new AppError(
         "Graph not found or unauthorized",
         403,
-        ErrorCodes.FORBIDDEN,
+        ErrorCodes.AUTH_FORBIDDEN,
       );
     }
 
@@ -77,7 +77,7 @@ router.post(
           ErrorCodes.VALIDATION_ERROR,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -99,7 +99,7 @@ router.post(
       throw new AppError(
         "Graph not found or unauthorized",
         403,
-        ErrorCodes.FORBIDDEN,
+        ErrorCodes.AUTH_FORBIDDEN,
       );
     }
 
@@ -138,7 +138,7 @@ router.post(
           ErrorCodes.VALIDATION_ERROR,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

@@ -168,7 +168,7 @@ class LearningPathRouteService {
       throw new AppError(
         (error as Error).message || "学习路径生成失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -273,7 +273,7 @@ class LearningPathRouteService {
       throw new AppError(
         (error as Error).message || "获取进度失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }
@@ -307,7 +307,7 @@ class LearningPathRouteService {
         .single();
 
       if (!graphMeta) {
-        throw new AppError("图谱不存在", 404, ErrorCodes.NOT_FOUND);
+        throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       const { nodes } = await graphService.getGraphNodes(
@@ -448,7 +448,7 @@ ${graphMeta.description ? `描述：${graphMeta.description}` : ""}
       throw new AppError(
         (error as Error).message || "生成问题失败",
         500,
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   }

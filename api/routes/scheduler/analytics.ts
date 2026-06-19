@@ -24,7 +24,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { period } = req.query as z.infer<typeof getStatsQuerySchema>;
@@ -46,7 +46,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { year, month } = req.query as z.infer<typeof getHeatmapQuerySchema>;
@@ -68,7 +68,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -78,7 +78,7 @@ router.get(
       );
       res.json({ success: true, data: analytics });
     } catch (error) {
-      throw new AppError("获取任务分析数据失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取任务分析数据失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -89,7 +89,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -99,7 +99,7 @@ router.post(
       );
       res.json({ success: true, data: insights });
     } catch (error) {
-      throw new AppError("生成洞察失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("生成洞察失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

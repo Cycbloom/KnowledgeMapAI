@@ -83,7 +83,7 @@ router.get("/system", async (_req, res) => {
     res.json(stats);
   } catch (error) {
     logger.error("Failed to get system stats:", error);
-    throw new AppError("Failed to get system stats", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to get system stats", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -192,7 +192,7 @@ router.get("/logs", async (_req, res) => {
     res.json({ logs, count: logs.length });
   } catch (error) {
     logger.error("Failed to get logs:", error);
-    throw new AppError("Failed to get logs", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to get logs", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -240,7 +240,7 @@ router.get("/dashboard", async (_req, res) => {
     });
   } catch (error) {
     logger.error("Failed to get dashboard data:", error);
-    throw new AppError("Failed to get dashboard data", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to get dashboard data", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

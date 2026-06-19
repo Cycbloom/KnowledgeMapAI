@@ -43,7 +43,7 @@ router.post('/performance', async (req, res): Promise<void> => {
     res.json({ success: true });
   } catch (error) {
     logger.error('Performance report error:', error);
-    throw new AppError('Failed to process performance report', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to process performance report', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -69,7 +69,7 @@ router.post('/errors', async (req, res): Promise<void> => {
     res.json({ success: true, count: errors.length });
   } catch (error) {
     logger.error('Error report processing failed:', error);
-    throw new AppError('Failed to process error report', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to process error report', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -91,7 +91,7 @@ router.get('/stats', async (_req, res): Promise<void> => {
     res.json(stats);
   } catch (error) {
     logger.error('Analytics stats error:', error);
-    throw new AppError('Failed to get analytics stats', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to get analytics stats', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -101,7 +101,7 @@ router.get('/performance/recent', async (_req, res): Promise<void> => {
     res.json({ reports, count: reports.length });
   } catch (error) {
     logger.error('Recent performance error:', error);
-    throw new AppError('Failed to get recent performance data', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to get recent performance data', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -111,7 +111,7 @@ router.get('/errors/recent', async (_req, res): Promise<void> => {
     res.json({ errors, count: errors.length });
   } catch (error) {
     logger.error('Recent errors fetch failed:', error);
-    throw new AppError('Failed to get recent errors', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to get recent errors', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

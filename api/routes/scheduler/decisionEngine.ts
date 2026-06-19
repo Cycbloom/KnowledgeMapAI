@@ -13,7 +13,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const limit = req.query.limit
@@ -32,7 +32,7 @@ router.get(
     } catch (error) {
       const err = error as Error;
       logger.error("Decision engine recommendations error:", err);
-      throw new AppError(err.message || "获取决策引擎推荐失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取决策引擎推荐失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

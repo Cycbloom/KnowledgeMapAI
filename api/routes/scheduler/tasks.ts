@@ -35,7 +35,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const task = await taskService.createTaskFull(supabase, req.user.id, req.body);
@@ -50,7 +50,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { status, queue_level, limit, offset } =
@@ -70,7 +70,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { queue_level, task_ids } = req.body;
@@ -86,14 +86,14 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
     const task = await taskService.getTask(supabase, id, req.user.id);
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json({ success: true, data: task });
@@ -107,14 +107,14 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
     const taskDetail = await taskService.getTaskDetail(supabase, req.user.id, id);
     if (!taskDetail) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     res.json({ success: true, data: taskDetail });
   },
@@ -127,7 +127,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -145,7 +145,7 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -162,14 +162,14 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
     const currentStatus = await taskService.getTaskStatus(supabase, id, req.user.id);
     if (!currentStatus) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const result = await taskStateMachine.transition(
@@ -198,14 +198,14 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
 
     const currentStatus = await taskService.getTaskStatus(supabase, id, req.user.id);
     if (!currentStatus) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const result = await taskStateMachine.transition(
@@ -234,7 +234,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -242,7 +242,7 @@ router.post(
 
     const currentStatus = await taskService.getTaskStatus(supabase, id, req.user.id);
     if (!currentStatus) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const result = await taskStateMachine.transition(
@@ -265,7 +265,7 @@ router.post(
 router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   if (!supabase) {
-    throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 
   const includeCompleted = req.query.include_completed === "true";
@@ -284,7 +284,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -304,7 +304,7 @@ router.patch(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id: taskId } = req.params;
@@ -324,7 +324,7 @@ router.patch(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const userId = req.user.id;

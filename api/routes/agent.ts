@@ -62,7 +62,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
     const { skill_id, graph_ids, custom_prompt } = req.body;
@@ -93,7 +93,7 @@ router.get(
     const session = agentService.getSession(id);
 
     if (!session) {
-      throw new AppError("Session not found", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("Session not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json({ session });
@@ -107,7 +107,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
     const { id } = req.params;
@@ -139,7 +139,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
     const { id } = req.params;
@@ -153,7 +153,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to execute autonomous session", error);
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -172,7 +172,7 @@ router.get("/tools", requireAuth, async (_req: AuthRequest, res: Response) => {
     res.json({ tools });
   } catch (error) {
     logger.error("Failed to get tools", error);
-    throw new AppError("Failed to get tools", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to get tools", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -183,7 +183,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
     const { recommendations, graphIndex } = req.body;
@@ -228,7 +228,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id, actionId } = req.params;
     const agentService = new AgentService(req.supabase!);
@@ -241,7 +241,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to confirm action", error);
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -252,7 +252,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id, actionId } = req.params;
     const agentService = new AgentService(req.supabase!);
@@ -265,7 +265,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to reject action", error);
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -277,7 +277,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id } = req.params;
     const { action_ids } = req.body;
@@ -288,7 +288,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to batch confirm actions", error);
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -300,7 +300,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
-      throw new AppError("Unauthorized", 401, ErrorCodes.UNAUTHORIZED);
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id } = req.params;
     const { action_ids } = req.body;
@@ -311,7 +311,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to batch reject actions", error);
-      throw new AppError(err.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

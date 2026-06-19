@@ -35,7 +35,7 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('AI Error:', error);
-    throw new AppError(err.message || 'AI card generation failed', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || 'AI card generation failed', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -74,7 +74,7 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('Sync Generation Error:', error);
-    throw new AppError(err.message || 'Sync generation failed', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || 'Sync generation failed', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -109,7 +109,7 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('Batch Generation Error:', error);
-    throw new AppError(err.message || 'Batch generation failed', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || 'Batch generation failed', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -144,7 +144,7 @@ router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema)
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('Batch Expand Error:', error);
-    throw new AppError(err.message || 'Batch expand failed', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || 'Batch expand failed', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -164,7 +164,7 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('AI Expand Error:', error);
-    throw new AppError(err.message || 'AI 扩展失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || 'AI 扩展失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -183,7 +183,7 @@ router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('AI Branch Suggestions Error:', error);
-    throw new AppError(err.message || 'AI 分支建议生成失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || 'AI 分支建议生成失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -194,7 +194,7 @@ router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) =>
     const task = await asyncTaskService.getTask(req.supabase!, id, req.user.id);
     
     if (!task) {
-      throw new AppError(ErrorCodes.TASK_NOT_FOUND);
+      throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND);
     }
 
     res.json(task);
@@ -222,7 +222,7 @@ router.post('/cross-graph-connections', requireAuth, async (req: AuthRequest, re
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('AI Cross Graph Connections Error:', error);
-    throw new AppError(err.message || 'AI 跨图谱连接分析失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || 'AI 跨图谱连接分析失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

@@ -22,7 +22,7 @@ router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (_req: A
   } catch (error: unknown) {
     const err = error as Error;
     logger.error('TTS Voices Error:', error);
-    throw new AppError(err.message || '获取语音列表失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || '获取语音列表失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -56,7 +56,7 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
     if (error instanceof AppError) {
       throw error;
     }
-    throw new AppError(err.message || '语音合成失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(err.message || '语音合成失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

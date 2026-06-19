@@ -12,7 +12,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const items = await spacedRepetitionBridge.getUnifiedReviewQueue(
@@ -30,7 +30,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -45,7 +45,7 @@ router.post(
     );
 
     if (!result) {
-      throw new AppError("复习处理失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("复习处理失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     res.json({ success: true, data: result });

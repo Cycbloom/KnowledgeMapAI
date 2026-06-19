@@ -151,7 +151,7 @@ router.post(
       sendStreamError(
         res,
         err.message || "AI 对话失败",
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -307,7 +307,7 @@ router.post(
       sendStreamError(
         res,
         err.message || "AI 助教对话失败",
-        ErrorCodes.INTERNAL_ERROR,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
     }
   },
@@ -348,7 +348,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Extract Concepts Error:", error);
-      throw new AppError(err.message || "AI 概念提取失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "AI 概念提取失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -391,7 +391,7 @@ router.post(
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Suggest Next Topic Error:", error);
-      throw new AppError(err.message || "AI 主题建议失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "AI 主题建议失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

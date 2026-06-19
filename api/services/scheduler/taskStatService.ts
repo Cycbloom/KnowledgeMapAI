@@ -51,7 +51,7 @@ class TaskStatService {
       .gte("completed_at", startDate.toISOString());
 
     if (tasksError) {
-      throw new AppError("获取统计失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { data: executions, error: execError } = await supabase
@@ -61,7 +61,7 @@ class TaskStatService {
       .gte("started_at", startDate.toISOString());
 
     if (execError) {
-      throw new AppError("获取执行统计失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取执行统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const totalTasks = completedTasks?.length ?? 0;
@@ -106,7 +106,7 @@ class TaskStatService {
       .lte("started_at", endDate.toISOString());
 
     if (error) {
-      throw new AppError("获取热力图数据失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取热力图数据失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const heatmapData: Record<

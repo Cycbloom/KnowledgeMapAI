@@ -18,7 +18,7 @@ router.post('/rules', (req, res) => {
     res.status(201).json({ rule: newRule });
   } catch (error) {
     logger.error('Failed to add alert rule:', error);
-    throw new AppError('Failed to add alert rule', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to add alert rule', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -29,14 +29,14 @@ router.put('/rules/:id', (req, res) => {
     const rule = alertManager.updateRule(id, updates);
     
     if (!rule) {
-      throw new AppError('Rule not found', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('Rule not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     
     res.json({ rule });
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Failed to update alert rule:', error);
-    throw new AppError('Failed to update alert rule', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to update alert rule', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -46,14 +46,14 @@ router.delete('/rules/:id', (req, res) => {
     const deleted = alertManager.deleteRule(id);
     
     if (!deleted) {
-      throw new AppError('Rule not found', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('Rule not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     
     res.json({ success: true });
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Failed to delete alert rule:', error);
-    throw new AppError('Failed to delete alert rule', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to delete alert rule', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -76,14 +76,14 @@ router.post('/:id/acknowledge', (req, res) => {
     const alert = alertManager.acknowledgeAlert(id, acknowledgedBy || 'system');
     
     if (!alert) {
-      throw new AppError('Alert not found', 404, ErrorCodes.NOT_FOUND);
+      throw new AppError('Alert not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
     
     res.json({ alert });
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Failed to acknowledge alert:', error);
-    throw new AppError('Failed to acknowledge alert', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to acknowledge alert', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -100,7 +100,7 @@ router.post('/check', (req, res) => {
   } catch (error) {
     if (error instanceof AppError) throw error;
     logger.error('Failed to check metric:', error);
-    throw new AppError('Failed to check metric', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to check metric', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

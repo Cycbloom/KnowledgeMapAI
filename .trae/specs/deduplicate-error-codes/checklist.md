@@ -1,0 +1,11 @@
+- [x] 4 个死代码错误码已从 ErrorCodes、ErrorCodeMessages、ErrorCodeStatus 中删除
+- [x] 5 个无前缀认证错误码已替换为 AUTH_ 前缀版本，后端引用已更新
+- [x] 5 个无前缀资源错误码已替换为 RESOURCE_ 前缀版本，后端引用已更新
+- [x] NOT_FOUND 已全部替换为 RESOURCE_NOT_FOUND（36 个文件）
+- [x] INTERNAL_ERROR 已全部替换为 SYSTEM_INTERNAL_ERROR（83 个文件）
+- [x] FORBIDDEN 已全部替换为 AUTH_FORBIDDEN（12 个文件）
+- [x] MISSING_REQUIRED_FIELDS、NOT_AUTHORIZED、PERMISSION_DENIED 已替换为对应保留码
+- [x] i18n 翻译文件已更新（zh-CN.json、en-US.json）
+- [x] 已删除的错误码在项目中无残留引用
+- [x] `npm run check` 类型检查通过
+- [x] `npm run lint` 代码检查通过

@@ -113,7 +113,7 @@ class DomainExpansionService {
       }
 
       if (sourceGraphs.length === 0) {
-        throw new AppError('未找到选中的图谱或领域', 404, ErrorCodes.NOT_FOUND);
+        throw new AppError('未找到选中的图谱或领域', 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       const { data: existingGraphs } = await supabase
@@ -292,7 +292,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '领域扩展失败';
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -393,7 +393,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
 
       if (queryError) {
         logger.error('Failed to query existing graphs:', queryError);
-        throw new AppError('查询现有图谱失败', 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError('查询现有图谱失败', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       if (allExistingGraphs) {
@@ -642,7 +642,7 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : '批量创建图谱失败';
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

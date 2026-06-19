@@ -44,7 +44,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -57,7 +57,7 @@ router.post(
     } catch (error) {
       const err = error as Error;
       logger.error("Create focus session error:", err);
-      throw new AppError(err.message || "创建专注会话失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "创建专注会话失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -69,7 +69,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { id } = req.params;
@@ -85,7 +85,7 @@ router.put(
       res.json({ success: true, data: session });
     } catch (error) {
       const err = error as Error;
-      throw new AppError(err.message || "更新专注会话失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "更新专注会话失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -97,7 +97,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { from_date, to_date, task_id, is_break, limit } =
@@ -118,7 +118,7 @@ router.get(
       res.json({ success: true, data: sessions });
     } catch (error) {
       const err = error as Error;
-      throw new AppError(err.message || "获取专注会话失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取专注会话失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -129,7 +129,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -137,7 +137,7 @@ router.get(
       res.json({ success: true, data: stats });
     } catch (error) {
       const err = error as Error;
-      throw new AppError(err.message || "获取专注统计失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取专注统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -149,7 +149,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     const { year, month } = req.query as z.infer<
@@ -166,7 +166,7 @@ router.get(
       res.json({ success: true, data: stats });
     } catch (error) {
       const err = error as Error;
-      throw new AppError(err.message || "获取月统计失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取月统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -177,7 +177,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      throw new AppError("Database connection not available", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Database connection not available", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     try {
@@ -188,7 +188,7 @@ router.get(
       res.json({ success: true, data: todayStats });
     } catch (error) {
       const err = error as Error;
-      throw new AppError(err.message || "获取今日专注统计失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(err.message || "获取今日专注统计失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

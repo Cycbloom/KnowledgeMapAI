@@ -18,7 +18,7 @@ export class TaskLinkService {
       .single();
 
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: links, error } = await supabase
@@ -29,7 +29,7 @@ export class TaskLinkService {
 
     if (error) {
       logger.error("Get links error:", error);
-      throw new AppError("获取链接列表失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取链接列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return links;
@@ -57,7 +57,7 @@ export class TaskLinkService {
       .single();
 
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { count } = await supabase
@@ -82,7 +82,7 @@ export class TaskLinkService {
 
     if (error) {
       logger.error("Create link error:", error);
-      throw new AppError("创建链接失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("创建链接失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     return link;
@@ -109,7 +109,7 @@ export class TaskLinkService {
       .single();
 
     if (!task) {
-      throw new AppError("任务不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("任务不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const { data: link, error } = await supabase
@@ -122,11 +122,11 @@ export class TaskLinkService {
 
     if (error) {
       logger.error("Update link error:", error);
-      throw new AppError("更新链接失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("更新链接失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
 
     if (!link) {
-      throw new AppError("链接不存在", 404, ErrorCodes.NOT_FOUND);
+      throw new AppError("链接不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return link;
@@ -146,7 +146,7 @@ export class TaskLinkService {
 
     if (error) {
       logger.error("Delete link error:", error);
-      throw new AppError("删除链接失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("删除链接失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

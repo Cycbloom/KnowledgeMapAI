@@ -50,7 +50,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json(task);
   } catch (error) {
     logger.error('Create Task Error:', error);
-    throw new AppError('Failed to create task', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to create task', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -64,7 +64,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ tasks, total });
   } catch (error) {
     logger.error('Get Tasks Error:', error);
-    throw new AppError('Failed to fetch tasks', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to fetch tasks', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -74,7 +74,7 @@ router.post('/:id/retry', requireAuth, async (req: AuthRequest, res: Response) =
     res.json(task);
   } catch (error) {
     logger.error('Retry Task Error:', error);
-    throw new AppError((error as Error).message || 'Failed to retry task', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message || 'Failed to retry task', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -84,7 +84,7 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     logger.error('Delete Task Error:', error);
-    throw new AppError('Failed to delete task', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError('Failed to delete task', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

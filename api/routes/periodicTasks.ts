@@ -12,7 +12,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const tasks = await periodicTaskService.getPeriodicTasks(userId);
     res.json(tasks);
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -28,7 +28,7 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
     const completedTasks = await periodicTaskService.updatePeriodicTaskProgress(userId, taskType, value);
     res.json({ completedTasks });
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -38,7 +38,7 @@ router.get('/pass', requireAuth, async (req: Request, res: Response) => {
     const progress = await periodicTaskService.getPassProgress(userId);
     res.json(progress);
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -54,7 +54,7 @@ router.post('/pass/claim', requireAuth, async (req: Request, res: Response) => {
     const result = await periodicTaskService.claimPassReward(userId, passId, level);
     res.json(result);
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -64,7 +64,7 @@ router.post('/streak/check', requireAuth, async (req: Request, res: Response) =>
     const result = await periodicTaskService.checkDailyTaskStreak(userId);
     res.json(result);
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

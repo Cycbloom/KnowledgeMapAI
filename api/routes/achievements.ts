@@ -13,7 +13,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const achievements = await achievementService.getAchievements(userId);
     res.json(achievements);
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -29,7 +29,7 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
     await achievementEngine.calibrateAllProgress(userId);
     res.json({ success: true });
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -39,7 +39,7 @@ router.get('/daily-tasks', requireAuth, async (req: Request, res: Response) => {
     const tasks = await achievementService.getDailyTasks(userId);
     res.json(tasks);
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -50,7 +50,7 @@ router.post('/daily-tasks/check-in', requireAuth, async (req: Request, res: Resp
     await achievementService.updateDailyTask(userId, 'login', 1);
     res.json({ success: true });
   } catch (error) {
-    throw new AppError((error as Error).message, 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 

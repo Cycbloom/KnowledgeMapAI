@@ -140,7 +140,7 @@ router.get(
       res.json({ providers });
     } catch (error) {
       logger.error("Failed to get provider configs:", error);
-      throw new AppError("Failed to get provider configs", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to get provider configs", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -200,7 +200,7 @@ router.put(
       res.json({ success: true });
     } catch (error) {
       logger.error("Failed to update provider configs:", error);
-      throw new AppError("Failed to update provider configs", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to update provider configs", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -357,7 +357,7 @@ router.get(
       });
     } catch (error) {
       logger.error("Failed to get database config:", error);
-      throw new AppError("Failed to get database config", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to get database config", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -445,7 +445,7 @@ router.put(
       });
     } catch (error) {
       logger.error("Failed to update database config:", error);
-      throw new AppError("Failed to update database config", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to update database config", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -491,7 +491,7 @@ router.get(
       });
     } catch (error) {
       logger.error("Failed to get main AI config:", error);
-      throw new AppError("Failed to get main AI config", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to get main AI config", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -524,7 +524,7 @@ router.put("/main-ai", requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     logger.error("Failed to update main AI config:", error);
-    throw new AppError("Failed to update main AI config", 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError("Failed to update main AI config", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
   }
 });
 
@@ -573,7 +573,7 @@ router.get(
       });
     } catch (error) {
       logger.error("Failed to get embedding config:", error);
-      throw new AppError("Failed to get embedding config", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to get embedding config", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );
@@ -626,7 +626,7 @@ router.put(
       res.json({ success: true });
     } catch (error) {
       logger.error("Failed to update embedding config:", error);
-      throw new AppError("Failed to update embedding config", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("Failed to update embedding config", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   },
 );

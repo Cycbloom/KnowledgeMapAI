@@ -142,7 +142,7 @@ class ProgressPlanService {
       .single();
 
     if (taskError || !task) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "任务不存在",
         context: { userId, taskId },
       });
@@ -236,7 +236,7 @@ class ProgressPlanService {
       .single();
 
     if (taskError || !task) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "任务不存在",
         context: { userId, taskId },
       });
@@ -266,7 +266,7 @@ class ProgressPlanService {
       .single();
 
     if (error || !plan) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "进度计划不存在或更新失败",
         context: { userId, taskId, plan_date },
       });
@@ -289,7 +289,7 @@ class ProgressPlanService {
       .single();
 
     if (taskError || !task) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "任务不存在",
         context: { userId, taskId },
       });
@@ -342,7 +342,7 @@ class ProgressPlanService {
       .single();
 
     if (taskError || !task) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "任务不存在",
         context: { userId, taskId },
       });
@@ -356,7 +356,7 @@ class ProgressPlanService {
       .single();
 
     if (planError || !plan) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
         message: "该日期没有进度计划",
         context: { userId, taskId, progressDate },
       });

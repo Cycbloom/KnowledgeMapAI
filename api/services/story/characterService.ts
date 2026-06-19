@@ -68,7 +68,7 @@ class CharacterService {
     } catch (error: unknown) {
       logger.error("Get story characters error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("获取角色列表失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("获取角色列表失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -95,7 +95,7 @@ class CharacterService {
     } catch (error: unknown) {
       logger.error("Create story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("创建角色失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("创建角色失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -122,14 +122,14 @@ class CharacterService {
       if (error) throw error;
 
       if (!character) {
-        throw new AppError("角色不存在", 404, ErrorCodes.NOT_FOUND);
+        throw new AppError("角色不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
       return character as Record<string, unknown>;
     } catch (error: unknown) {
       logger.error("Update story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("更新角色失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("更新角色失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 
@@ -149,7 +149,7 @@ class CharacterService {
     } catch (error: unknown) {
       logger.error("Delete story character error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError("删除角色失败", 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError("删除角色失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
   }
 }

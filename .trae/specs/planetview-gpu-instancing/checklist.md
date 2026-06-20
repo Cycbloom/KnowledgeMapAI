@@ -1,0 +1,10 @@
+- [x] useFrame 中不再调用 setState，节点缩放通过 ref 直接操作 Three.js 对象
+- [x] 所有节点共享 1 个 SphereGeometry，内存占用从 N×50KB 降为 1×50KB
+- [x] 视锥体裁剪生效：摄像机聚焦局部时仅渲染可见节点和边
+- [x] Text 距离 LOD 三级生效：近距标题+标签、中距仅标题、远距无文字
+- [x] 边线距离 LOD 生效：近距贝塞尔、远距直线、超远距不渲染
+- [x] 所有球体通过 1 个 InstancedMesh 渲染，球体 Draw Call 从 N 降为 1
+- [x] InstancedMesh 交互正常：点击节点触发 onNodeClick，hover 节点高亮+显示悬浮提示
+- [x] 选中节点高亮通过 instanceColor 更新，视觉与优化前一致
+- [x] 50 节点场景 Draw Call < 10，100 节点场景维持 60fps
+- [x] 节点增减时 InstancedMesh 正确重建，不出现渲染异常

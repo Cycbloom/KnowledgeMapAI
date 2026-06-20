@@ -182,11 +182,7 @@ router.post(
 
         const template = result.templates[0];
         if (!template) {
-          throw new AppError(
-            "生成模板失败",
-            500,
-            ErrorCodes.SYSTEM_INTERNAL_ERROR,
-          );
+          throw new AppError("生成模板失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
         }
 
         const rootNode = template.nodes.find((n) => n.level === "root");
@@ -408,11 +404,7 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
       try {
         parsed = JSON.parse(content || '{"optimizedPrompt": ""}');
       } catch (e) {
-        throw new AppError(
-          "优化结果解析失败",
-          422,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
-        );
+        throw new AppError("优化结果解析失败", 422, ErrorCodes.SYSTEM_INTERNAL_ERROR);
       }
 
       res.json({ optimizedPrompt: parsed.optimizedPrompt || "" });

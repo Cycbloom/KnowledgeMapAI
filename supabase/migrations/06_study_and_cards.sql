@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS study_cards (
   fsrs_scheduled_days DOUBLE PRECISION DEFAULT 0,
   fsrs_retrievability DOUBLE PRECISION DEFAULT 0,
   fsrs_last_review TIMESTAMPTZ,
+  last_rating INTEGER CHECK (last_rating BETWEEN 1 AND 4),
   quiz_set_id UUID REFERENCES quiz_sets(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -57,6 +58,7 @@ COMMENT ON COLUMN study_cards.fsrs_elapsed_days IS 'FSRS 距上次复习天数';
 COMMENT ON COLUMN study_cards.fsrs_scheduled_days IS 'FSRS 计划间隔天数';
 COMMENT ON COLUMN study_cards.fsrs_retrievability IS 'FSRS 可检索性（记忆概率）';
 COMMENT ON COLUMN study_cards.fsrs_last_review IS 'FSRS 上次复习时间';
+COMMENT ON COLUMN study_cards.last_rating IS '最近一次复习评分：1=Again, 2=Hard, 3=Good, 4=Easy';
 COMMENT ON COLUMN study_cards.source_graph_id IS '卡片来源图谱ID';
 
 -- Quiz set cards table

@@ -2,13 +2,13 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import {
   fsrs,
   createEmptyCard,
-  Rating,
   State,
   default_w,
   checkParameters,
   migrateParameters,
   generatorParameters,
   type Card,
+  type Grade,
 } from "ts-fsrs";
 import { logger } from "../../utils/logger";
 
@@ -18,8 +18,8 @@ const MIN_REVIEW_COUNT = 100;
 // 优化迭代次数
 const MAX_ITERATIONS = 50;
 
-// 学习率
-const LEARNING_RATE = 0.01;
+// 数值微分的微扰量
+const EPSILON = 1e-4;
 
 export interface FsrsParameterSource {
   source: "default" | "custom" | "optimized";
@@ -105,15 +105,19 @@ export class FsrsParameterService {
     supabase: SupabaseClient,
     userId: string,
   ): Promise<void> {
+    const { data } = await supabase
+      .from("users")
+      .select("settings")
+      .eq("id", userId)
+      .single();
+
+    const currentSettings = (data?.settings as Record<string, unknown>) ?? {};
+    const { fsrs_parameters, fsrs_parameter_source, fsrs_last_optimized_at, ...restSettings } = currentSettings as Record<string, unknown>;
+    void fsrs_parameters; void fsrs_parameter_source; void fsrs_last_optimized_at;
+
     const { error } = await supabase
       .from("users")
-      .update({
-        settings: {
-          fsrs_parameters: null,
-          fsrs_parameter_source: null,
-          fsrs_last_optimized_at: null,
-        },
-      })
+      .update({ settings: restSettings })
       .eq("id", userId);
 
     if (error) {
@@ -198,7 +202,7 @@ export class FsrsParameterService {
   ): Promise<ReviewRecord[]> {
     const { data, error } = await supabase
       .from("study_cards")
-      .select("fsrs_state, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, review_count")
+      .select("fsrs_state, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, review_count, last_rating")
       .eq("user_id", userId)
       .gt("review_count", 0);
 
@@ -208,12 +212,12 @@ export class FsrsParameterService {
     }
 
     // 从有复习记录的卡片中提取训练数据
-    // 注意：study_cards 表没有直接存储 rating 历史，我们用当前状态反推
-    // 通过 fsrs_state、stability、difficulty、scheduled_days 等参数重建训练数据
+    // 只使用有真实评分记录的样本，过滤掉 last_rating 为 null 的记录
+    // 避免所有样本使用默认 rating=3 导致优化偏差
     return (data ?? [])
-      .filter((card) => card.fsrs_stability > 0 && card.review_count > 0)
+      .filter((card) => card.fsrs_stability > 0 && card.review_count > 0 && card.last_rating != null)
       .map((card) => ({
-        rating: 3, // 默认 Good（无法获取历史 rating，使用最常见值）
+        rating: card.last_rating,
         elapsed_days: card.fsrs_elapsed_days ?? 1,
         scheduled_days: card.fsrs_scheduled_days ?? 1,
         state: card.fsrs_state ?? "Review",
@@ -224,54 +228,36 @@ export class FsrsParameterService {
 
   /**
    * 轻量级参数优化算法
-   * 使用简化的梯度下降：调整 w 参数使预测的 scheduled_days 更接近实际
+   * 使用数值微分（有限差分法）计算每个参数的独立梯度：
+   * ∂L/∂w[i] ≈ (L(w + ε·e_i) - L(w)) / ε
    */
   private runOptimization(initialW: number[], reviews: ReviewRecord[]): number[] {
     let w = [...initialW];
+    const learningRate = 0.01;
 
     for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+      const baseLoss = this.computeLoss(w, reviews);
       const gradients = new Array(w.length).fill(0);
 
-      for (const review of reviews) {
-        // 使用 FSRS 算法预测间隔
-        try {
-          const params = generatorParameters({ w });
-          const f = fsrs(params);
-          const card = createEmptyCard();
-          // 模拟从当前状态复习
-          const simulatedCard: Card = {
-            ...card,
-            stability: review.stability,
-            difficulty: review.difficulty,
-            state: State.Review,
-            reps: 1,
-            elapsed_days: review.elapsed_days,
-            scheduled_days: review.scheduled_days,
-            lapses: 0,
-            learning_steps: 0,
-          };
+      // 对每个参数独立计算梯度
+      for (let i = 0; i < w.length; i++) {
+        const wPerturbed = [...w];
+        wPerturbed[i] += EPSILON;
 
-          const result = f.next(simulatedCard, new Date(), Rating.Good);
-          const predictedInterval = result.card.scheduled_days;
-          const actualInterval = review.scheduled_days;
-
-          // 计算误差
-          const error = predictedInterval - actualInterval;
-
-          // 简化梯度：对 w 的每个参数施加微扰
-          for (let i = 0; i < w.length; i++) {
-            gradients[i] += error * 0.001; // 缩放因子
-          }
-        } catch {
-          // 跳过无法计算的样本
-          continue;
-        }
+        const perturbedLoss = this.computeLoss(wPerturbed, reviews);
+        gradients[i] = (perturbedLoss - baseLoss) / EPSILON;
       }
 
+      // 梯度裁剪：防止梯度爆炸
+      const gradNorm = Math.sqrt(gradients.reduce((sum, g) => sum + g * g, 0));
+      const maxGradNorm = 10.0;
+      const clippedGradients = gradNorm > maxGradNorm
+        ? gradients.map((g) => g * (maxGradNorm / gradNorm))
+        : gradients;
+
       // 更新参数
-      const sampleCount = reviews.length || 1;
       for (let i = 0; i < w.length; i++) {
-        w[i] -= LEARNING_RATE * gradients[i] / sampleCount;
+        w[i] -= learningRate * clippedGradients[i];
       }
 
       // 钳制参数到合法范围
@@ -286,9 +272,9 @@ export class FsrsParameterService {
   }
 
   /**
-   * 计算预测误差（均方根误差 RMSE）
+   * 计算给定参数下的损失函数（对数间隔的均方误差）
    */
-  private calculatePredictionError(w: number[], reviews: ReviewRecord[]): number {
+  private computeLoss(w: number[], reviews: ReviewRecord[]): number {
     let totalError = 0;
     let count = 0;
 
@@ -310,7 +296,8 @@ export class FsrsParameterService {
             learning_steps: 0,
           };
 
-          const result = f.next(simulatedCard, new Date(), Rating.Good);
+          const ratingValue = review.rating as Grade;
+          const result = f.next(simulatedCard, new Date(), ratingValue);
           const predicted = result.card.scheduled_days;
           const actual = review.scheduled_days;
 
@@ -327,7 +314,15 @@ export class FsrsParameterService {
       return Infinity;
     }
 
-    return count > 0 ? Math.sqrt(totalError / count) : Infinity;
+    return count > 0 ? totalError / count : Infinity;
+  }
+
+  /**
+   * 计算预测误差（均方根误差 RMSE）
+   */
+  private calculatePredictionError(w: number[], reviews: ReviewRecord[]): number {
+    const loss = this.computeLoss(w, reviews);
+    return loss === Infinity ? Infinity : Math.sqrt(loss);
   }
 
   /**

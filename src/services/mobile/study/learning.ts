@@ -423,31 +423,27 @@ export const mobileStudyApi: IStudyApi = {
     }
 
     const { data, error } = await client
-      .from("user_fsrs_parameters")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .from("users")
+      .select("settings")
+      .eq("id", user.id)
+      .single();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    if (!data) {
-      return {
-        source: "default" as const,
-        w: [],
-        request_retention: 0.9,
-        maximum_interval: 36500,
-        last_optimized_at: null,
-      };
-    }
+    const settings = (data?.settings as Record<string, unknown>) ?? {};
+    const storedW = settings.fsrs_parameters as number[] | undefined;
+    const source: "default" | "custom" | "optimized" = storedW
+      ? (settings.fsrs_parameter_source as "default" | "custom" | "optimized") ?? "custom"
+      : "default";
 
     return {
-      source: (data.source || "custom") as "default" | "custom" | "optimized",
-      w: data.w || [],
-      request_retention: data.request_retention || 0.9,
-      maximum_interval: data.maximum_interval || 36500,
-      last_optimized_at: data.last_optimized_at || null,
+      source,
+      w: storedW ?? [],
+      request_retention: (settings.request_retention as number) ?? 0.9,
+      maximum_interval: (settings.maximum_interval as number) ?? 36500,
+      last_optimized_at: (settings.fsrs_last_optimized_at as string) ?? null,
     };
   },
 
@@ -465,13 +461,23 @@ export const mobileStudyApi: IStudyApi = {
       throw new Error("User not authenticated");
     }
 
+    const { data: userData } = await client
+      .from("users")
+      .select("settings")
+      .eq("id", user.id)
+      .single();
+
+    const currentSettings = (userData?.settings as Record<string, unknown>) ?? {};
+    const updatedSettings = {
+      ...currentSettings,
+      fsrs_parameters: w,
+      fsrs_parameter_source: "custom",
+    };
+
     const { error } = await client
-      .from("user_fsrs_parameters")
-      .upsert({
-        user_id: user.id,
-        w,
-        source: "custom",
-      });
+      .from("users")
+      .update({ settings: updatedSettings })
+      .eq("id", user.id);
 
     if (error) {
       throw new Error(error.message);
@@ -494,10 +500,20 @@ export const mobileStudyApi: IStudyApi = {
       throw new Error("User not authenticated");
     }
 
+    const { data } = await client
+      .from("users")
+      .select("settings")
+      .eq("id", user.id)
+      .single();
+
+    const currentSettings = (data?.settings as Record<string, unknown>) ?? {};
+    const { fsrs_parameters, fsrs_parameter_source, fsrs_last_optimized_at, ...restSettings } = currentSettings as Record<string, unknown>;
+    void fsrs_parameters; void fsrs_parameter_source; void fsrs_last_optimized_at;
+
     const { error } = await client
-      .from("user_fsrs_parameters")
-      .delete()
-      .eq("user_id", user.id);
+      .from("users")
+      .update({ settings: restSettings })
+      .eq("id", user.id);
 
     if (error) {
       throw new Error(error.message);

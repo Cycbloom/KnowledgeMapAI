@@ -358,6 +358,7 @@ export class StudyService {
         fsrs_elapsed_days: scheduledCard.elapsed_days,
         fsrs_scheduled_days: scheduledCard.scheduled_days,
         fsrs_last_review: now.toISOString(),
+        last_rating: rating,
       })
       .eq("id", cardId)
       .select()

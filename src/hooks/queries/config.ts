@@ -28,6 +28,7 @@ export const queryKeys = {
   graphs: ["graphs"] as const,
   graph: (id: string) => ["graph", id] as const,
   graphData: (id: string) => ["graphData", id] as const,
+  graphDataWithEmbedding: (id: string) => ["graphDataWithEmbedding", id] as const,
   graphNodeStatus: (id: string) => ["graphNodeStatus", id] as const,
   studyCards: (params?: {
     graph_id?: string;

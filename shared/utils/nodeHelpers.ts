@@ -31,6 +31,32 @@ export const GRAPH_NODES_SELECT = `
   )
 `;
 
+export const GRAPH_NODES_SELECT_WITH_EMBEDDING = `
+  id,
+  graph_id,
+  knowledge_point_id,
+  x_position,
+  y_position,
+  level,
+  is_accepted,
+  created_at,
+  updated_at,
+  knowledge_points (
+    id,
+    title,
+    content,
+    summary,
+    learning_material,
+    properties,
+    visibility,
+    owner_id,
+    created_at,
+    updated_at,
+    keywords,
+    embedding
+  )
+`;
+
 export function getKnowledgePoint(
   kp: KnowledgePoint | KnowledgePoint[] | null,
 ): KnowledgePoint | null {
@@ -68,7 +94,7 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     properties: kp.properties || {},
     visibility: kp.visibility || "private",
     owner_id: kp.owner_id || "",
-    embedding: kp.embedding,
+    embedding: typeof kp.embedding === 'string' ? JSON.parse(kp.embedding) : kp.embedding,
   } as Node;
 }
 

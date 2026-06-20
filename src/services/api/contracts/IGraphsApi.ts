@@ -60,7 +60,7 @@ export interface IGraphsApi {
 
   get(id: string): Promise<Graph>;
 
-  getNodes(id: string): Promise<{ nodes: Node[]; edges: Edge[] }>;
+  getNodes(id: string, includeEmbedding?: boolean): Promise<{ nodes: Node[]; edges: Edge[] }>;
 
   getNodeStatus(id: string): Promise<Record<string, NodeStatus>>;
 

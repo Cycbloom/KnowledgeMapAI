@@ -40,7 +40,7 @@ import {
   useVisibleEdges,
   useVisibleNodeSet,
 } from "../shared/hooks/useVirtualization";
-import { createMindMapLayout, type LayoutResult } from "../../../utils/mindmapLayout";
+import { createMindMapLayout, createSemanticLayout, type LayoutResult } from "../../../utils/mindmapLayout";
 import { useGraphWorker } from "../../../hooks/common/useWorker";
 import { THEME_COLORS } from "../../../config/learningStatusColors";
 import { DECAY_CONFIG } from "../../../config/graphConfig";
@@ -113,6 +113,9 @@ interface MindMapCanvasProps {
   isNarrativeMode?: boolean;
   narrativeRevealedNodeIds?: Set<string>;
   narrativeCurrentNodeId?: string | null;
+  // Semantic layout mode
+  layoutMode?: "force" | "semantic";
+  embeddings?: Map<string, number[]>;
 }
 
 export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
@@ -169,6 +172,8 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       isNarrativeMode = false,
       narrativeRevealedNodeIds = new Set(),
       narrativeCurrentNodeId = null,
+      layoutMode: _layoutMode = "force",
+      embeddings,
     },
     ref,
   ) => {
@@ -227,9 +232,10 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
     // 异步布局状态
     const [layout, setLayout] = useState<LayoutResult | null>(null);
     const [isLayoutCalculating, setIsLayoutCalculating] = useState(false);
+    const [semanticLayoutUnavailable, setSemanticLayoutUnavailable] = useState(false);
 
     // Worker hook
-    const { calculateMindMapLayout } = useGraphWorker();
+    const { calculateMindMapLayout, calculateSemanticLayout } = useGraphWorker();
 
     // 防抖 + 异步布局计算
     useEffect(() => {
@@ -238,43 +244,89 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         return;
       }
 
+      const isSemanticMode = _layoutMode === "semantic" && embeddings && embeddings.size > 0;
+
+      if (_layoutMode === "semantic" && (!embeddings || embeddings.size === 0)) {
+        setSemanticLayoutUnavailable(true);
+      } else {
+        setSemanticLayoutUnavailable(false);
+      }
+
       const timer = setTimeout(async () => {
         setIsLayoutCalculating(true);
         try {
-          const result = await calculateMindMapLayout(
-            nodes as any,
-            edges as any,
-            {
+          if (isSemanticMode) {
+            // Semantic layout: convert Map to Record for Worker serialization
+            const embeddingsRecord: Record<string, number[]> = {};
+            embeddings!.forEach((value, key) => {
+              embeddingsRecord[key] = value;
+            });
+
+            const result = await calculateSemanticLayout(
+              nodes as any,
+              edges as any,
+              embeddingsRecord,
+              {
+                width: containerSize.width,
+                height: containerSize.height,
+              }
+            );
+            if (result) {
+              setLayout(result as any);
+            } else {
+              // Fallback: Worker 不可用时降级为主线程同步计算
+              console.warn('[MindMapCanvas] Worker semantic layout failed, falling back to main thread');
+              const fallbackResult = createSemanticLayout(nodes, edges, embeddings!, {
+                width: containerSize.width,
+                height: containerSize.height,
+              });
+              setLayout(fallbackResult as any);
+            }
+          } else {
+            // Force-directed layout (default)
+            const result = await calculateMindMapLayout(
+              nodes as any,
+              edges as any,
+              {
+                width: containerSize.width,
+                height: containerSize.height,
+              }
+            );
+            if (result) {
+              setLayout(result as any);
+            } else {
+              // Fallback: Worker 不可用时降级为主线程同步计算
+              console.warn('[MindMapCanvas] Worker layout failed, falling back to main thread');
+              const fallbackResult = createMindMapLayout(nodes, edges, {
+                width: containerSize.width,
+                height: containerSize.height,
+              });
+              setLayout(fallbackResult as any);
+            }
+          }
+        } catch (error) {
+          // 错误时也降级到主线程
+          console.warn('[MindMapCanvas] Worker layout error, falling back to main thread', error);
+          if (isSemanticMode) {
+            const fallbackResult = createSemanticLayout(nodes, edges, embeddings!, {
               width: containerSize.width,
               height: containerSize.height,
-            }
-          );
-          if (result) {
-            setLayout(result as any);
+            });
+            setLayout(fallbackResult as any);
           } else {
-            // Fallback: Worker 不可用时降级为主线程同步计算
-            console.warn('[MindMapCanvas] Worker layout failed, falling back to main thread');
             const fallbackResult = createMindMapLayout(nodes, edges, {
               width: containerSize.width,
               height: containerSize.height,
             });
             setLayout(fallbackResult as any);
           }
-        } catch (error) {
-          // 错误时也降级到主线程
-          console.warn('[MindMapCanvas] Worker layout error, falling back to main thread', error);
-          const fallbackResult = createMindMapLayout(nodes, edges, {
-            width: containerSize.width,
-            height: containerSize.height,
-          });
-          setLayout(fallbackResult as any);
         } finally {
           setIsLayoutCalculating(false);
         }
       }, 300); // 300ms 防抖
 
       return () => clearTimeout(timer);
-    }, [nodes, edges, containerSize, calculateMindMapLayout]);
+    }, [nodes, edges, containerSize, calculateMindMapLayout, calculateSemanticLayout, _layoutMode, embeddings]);
 
     const layoutNodes = useMemo(() => layout?.nodes ?? [], [layout]);
     const layoutLinks = useMemo(() => layout?.links ?? [], [layout]);
@@ -630,7 +682,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                   <div className="w-40 h-3 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
                 </div>
                 <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  {t('graphEditor.mindMap.loading')}
+                  {_layoutMode === "semantic"
+                    ? t('graphEditor.mindMap.semanticLoading', '正在计算语义布局...')
+                    : t('graphEditor.mindMap.loading')}
                 </p>
               </>
             ) : (
@@ -657,6 +711,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         ref={containerRef}
         className="relative w-full h-full overflow-hidden"
       >
+        {semanticLayoutUnavailable && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200">
+            {t('graphEditor.mindMap.semanticUnavailable', '暂无语义数据，已回退到力导向布局。请先生成知识点嵌入向量。')}
+          </div>
+        )}
         <svg
           ref={svgRef}
           width="100%"

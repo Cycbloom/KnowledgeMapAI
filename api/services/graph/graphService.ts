@@ -3,6 +3,7 @@ import { cacheService, CacheKeys, CacheTTL } from "../common/cacheService";
 import {
   buildNodeFromGraphNode,
   GRAPH_NODES_SELECT,
+  GRAPH_NODES_SELECT_WITH_EMBEDDING,
 } from "../../utils/nodeHelpers";
 import { softDelete } from "../../utils/softDelete";
 import { logger } from "../../utils/logger";
@@ -1111,7 +1112,61 @@ export class GraphService {
     supabase: SupabaseClient,
     userId: string | null,
     graphId: string,
+    options?: { includeEmbedding?: boolean },
   ) {
+    const { includeEmbedding } = options ?? {};
+
+    // When embedding is requested, skip cache to avoid storing large vector data
+    if (includeEmbedding) {
+      const { data: graphNodes, error: gnError } = await supabase
+        .from("graph_nodes")
+        .select(GRAPH_NODES_SELECT_WITH_EMBEDDING)
+        .eq("graph_id", graphId)
+        .is("deleted_at", null);
+
+      if (gnError) {
+        logger.error("getGraphNodes error:", gnError);
+        throw gnError;
+      }
+
+      const nodes = (graphNodes || [])
+        .map((gn: any) => {
+          const node = buildNodeFromGraphNode(gn);
+          if (!node) return null;
+          return {
+            id: node.id,
+            graph_id: node.graph_id,
+            graph_node_id: gn.id,
+            title: node.title,
+            content: node.content,
+            summary: node.summary,
+            x_position: node.x_position,
+            y_position: node.y_position,
+            level: node.level,
+            properties: node.properties,
+            learning_material: node.learning_material,
+            is_accepted: node.is_accepted,
+            knowledge_point_id: node.knowledge_point_id,
+            visibility: node.visibility,
+            owner_id: node.owner_id,
+            created_at: node.created_at,
+            updated_at: node.updated_at,
+            embedding: node.embedding,
+          };
+        })
+        .filter(Boolean);
+
+      const { data: edges, error: edgesError } = await supabase
+        .from("edges")
+        .select("*")
+        .eq("graph_id", graphId)
+        .is("deleted_at", null);
+
+      if (edgesError) throw edgesError;
+
+      return { nodes, edges: edges || [] };
+    }
+
     const cacheKey = userId
       ? CacheKeys.GRAPH_NODES(userId, graphId)
       : `graph_nodes_${graphId}`;
@@ -1131,13 +1186,13 @@ export class GraphService {
         }
 
         const nodes = (graphNodes || [])
-          .map((gn) => {
+          .map((gn: any) => {
             const node = buildNodeFromGraphNode(gn);
             if (!node) return null;
             return {
               id: node.id,
               graph_id: node.graph_id,
-              graph_node_id: node.id,
+              graph_node_id: gn.id,
               title: node.title,
               content: node.content,
               summary: node.summary,

@@ -2,6 +2,7 @@ import { Node, Edge, LayoutNode, LayoutLink, NodeLevel } from '../types';
 import * as d3 from 'd3-force';
 import type { SimulationNodeDatum } from 'd3-force';
 import { getLevel } from '../lib/graphUtils';
+import { UMAP } from 'umap-js';
 
 export interface LayoutResult {
   nodes: LayoutNode[];
@@ -172,4 +173,106 @@ const getLevelRadius = (level: NodeLevel): number => {
 export const getLinkNodeId = (node: string | LayoutNode): string => {
   if (typeof node === 'string') return node;
   return node.id;
+};
+
+export interface SemanticLayoutOptions {
+  width: number;
+  height: number;
+  nNeighbors?: number;
+  minDist?: number;
+  nEpochs?: number;
+}
+
+export const createSemanticLayout = (
+  nodes: Node[],
+  edges: Edge[],
+  embeddings: Map<string, number[]>,
+  options: SemanticLayoutOptions,
+): LayoutResult => {
+  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200 } = options;
+
+  const nodesWithEmbedding = nodes.filter(n => embeddings.has(n.id) && embeddings.get(n.id)!.length > 0);
+  const nodesWithoutEmbedding = nodes.filter(n => !embeddings.has(n.id) || embeddings.get(n.id)!.length === 0);
+
+  let semanticPositions: Map<string, { x: number; y: number }> = new Map();
+
+  if (nodesWithEmbedding.length >= 3) {
+    const embeddingMatrix: number[][] = nodesWithEmbedding.map(n => embeddings.get(n.id)!);
+    const effectiveNNeighbors = nNeighbors || Math.min(15, nodesWithEmbedding.length - 1);
+
+    const umap = new UMAP({
+      nComponents: 2,
+      nNeighbors: effectiveNNeighbors,
+      minDist,
+      nEpochs,
+    });
+
+    const embedding2d: number[][] = umap.fit(embeddingMatrix);
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const point of embedding2d) {
+      minX = Math.min(minX, point[0]);
+      maxX = Math.max(maxX, point[0]);
+      minY = Math.min(minY, point[1]);
+      maxY = Math.max(maxY, point[1]);
+    }
+
+    const rangeX = maxX - minX || 1;
+    const rangeY = maxY - minY || 1;
+    const padding = 100;
+    const availableWidth = width - padding * 2;
+    const availableHeight = height - padding * 2;
+
+    const scale = Math.min(availableWidth / rangeX, availableHeight / rangeY);
+
+    nodesWithEmbedding.forEach((node, i) => {
+      const scaledX = (embedding2d[i][0] - minX) * scale;
+      const scaledY = (embedding2d[i][1] - minY) * scale;
+      const offsetX = (availableWidth - rangeX * scale) / 2;
+      const offsetY = (availableHeight - rangeY * scale) / 2;
+      semanticPositions.set(node.id, {
+        x: padding + offsetX + scaledX,
+        y: padding + offsetY + scaledY,
+      });
+    });
+  }
+
+  let fallbackPositions: Map<string, { x: number; y: number }> = new Map();
+  if (nodesWithoutEmbedding.length > 0) {
+    const fallbackLayout = createMindMapLayout(nodesWithoutEmbedding, edges, {
+      width,
+      height,
+    });
+    fallbackLayout.nodes.forEach(n => {
+      fallbackPositions.set(n.id, { x: n.x, y: n.y });
+    });
+  }
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const layoutNodes: LayoutNode[] = nodes.map(node => {
+    const pos = semanticPositions.get(node.id) || fallbackPositions.get(node.id) || {
+      x: width / 2 + (Math.random() - 0.5) * 100,
+      y: height / 2 + (Math.random() - 0.5) * 100,
+    };
+    return {
+      ...node,
+      x: pos.x,
+      y: pos.y,
+      vx: 0,
+      vy: 0,
+    };
+  });
+
+  const layoutLinks: LayoutLink[] = edges
+    .filter(edge => nodeIds.has(edge.source_knowledge_point_id) && nodeIds.has(edge.target_knowledge_point_id))
+    .map(edge => ({
+      ...edge,
+      source: edge.source_knowledge_point_id,
+      target: edge.target_knowledge_point_id,
+    }));
+
+  return {
+    nodes: layoutNodes,
+    links: layoutLinks,
+  };
 };

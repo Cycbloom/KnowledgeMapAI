@@ -61,7 +61,10 @@ export const graphsApi: IGraphsApi = {
 
   get: (id: string) => request(`/graphs/${id}`),
 
-  getNodes: (id: string) => request(`/graphs/${id}/nodes`),
+  getNodes: (id: string, includeEmbedding?: boolean) => {
+    const params = includeEmbedding ? "?includeEmbedding=true" : "";
+    return request(`/graphs/${id}/nodes${params}`);
+  },
 
   getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
 

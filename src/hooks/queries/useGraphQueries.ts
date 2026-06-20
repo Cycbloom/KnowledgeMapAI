@@ -68,6 +68,21 @@ export const useGraphData = (id: string) => {
   });
 };
 
+export const useGraphDataWithEmbedding = (graphId: string) => {
+  return useQuery({
+    queryKey: queryKeys.graphDataWithEmbedding(graphId),
+    queryFn: async () => {
+      const data = await api.graphs.getNodes(graphId, true);
+      return {
+        nodes: (data.nodes || []) as Node[],
+        edges: (data.edges || []) as Edge[],
+      };
+    },
+    enabled: !!graphId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export const useGraphNodeStatus = (id: string) => {
   return useQuery({
     queryKey: queryKeys.graphNodeStatus(id),

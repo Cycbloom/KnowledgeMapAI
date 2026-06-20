@@ -28,7 +28,10 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id || null;
-    const data = await graphService.getGraphNodes(req.supabase!, userId, id);
+    const includeEmbedding = req.query.includeEmbedding === "true";
+    const data = await graphService.getGraphNodes(req.supabase!, userId, id, {
+      includeEmbedding,
+    });
 
     // Update last_used_at when user opens their own graph
     if (userId) {

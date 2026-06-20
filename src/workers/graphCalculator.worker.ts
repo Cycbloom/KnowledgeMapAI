@@ -1,6 +1,7 @@
 import { expose } from 'comlink';
 import * as d3 from 'd3-force';
 import type { SimulationNodeDatum } from 'd3-force';
+import { UMAP } from 'umap-js';
 
 interface Node {
   id: string;
@@ -436,12 +437,148 @@ const calculateMindMapLayout = (
   };
 };
 
+// ============ Semantic Layout Types ============
+
+interface SemanticLayoutNode {
+  id: string;
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+  level?: MindMapNodeLevel;
+  properties?: Record<string, unknown>;
+}
+
+interface SemanticLayoutOptions {
+  width: number;
+  height: number;
+  nNeighbors?: number;
+  minDist?: number;
+  nEpochs?: number;
+}
+
+interface SemanticLayoutResult {
+  nodes: SemanticLayoutNode[];
+  links: Array<MindMapLayoutEdge & { source: string; target: string }>;
+}
+
+// ============ Semantic Layout Implementation ============
+
+const calculateSemanticLayout = (
+  nodes: SemanticLayoutNode[],
+  edges: MindMapLayoutEdge[],
+  embeddings: Record<string, number[]>,
+  options: SemanticLayoutOptions,
+): SemanticLayoutResult => {
+  const { width, height, nNeighbors, minDist = 0.1, nEpochs = 200 } = options;
+
+  const nodesWithEmbedding = nodes.filter(
+    n => embeddings[n.id] && embeddings[n.id].length > 0,
+  );
+  const nodesWithoutEmbedding = nodes.filter(
+    n => !embeddings[n.id] || embeddings[n.id].length === 0,
+  );
+
+  const semanticPositions = new Map<string, { x: number; y: number }>();
+
+  if (nodesWithEmbedding.length >= 3) {
+    const embeddingMatrix = nodesWithEmbedding.map(n => embeddings[n.id]);
+    const effectiveNNeighbors =
+      nNeighbors || Math.min(15, nodesWithEmbedding.length - 1);
+
+    const umap = new UMAP({
+      nComponents: 2,
+      nNeighbors: effectiveNNeighbors,
+      minDist,
+      nEpochs,
+    });
+
+    const embedding2d: number[][] = umap.fit(embeddingMatrix);
+
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
+    for (const point of embedding2d) {
+      minX = Math.min(minX, point[0]);
+      maxX = Math.max(maxX, point[0]);
+      minY = Math.min(minY, point[1]);
+      maxY = Math.max(maxY, point[1]);
+    }
+
+    const rangeX = maxX - minX || 1;
+    const rangeY = maxY - minY || 1;
+    const padding = 100;
+    const availableWidth = width - padding * 2;
+    const availableHeight = height - padding * 2;
+
+    const scale = Math.min(availableWidth / rangeX, availableHeight / rangeY);
+
+    nodesWithEmbedding.forEach((node, i) => {
+      const scaledX = (embedding2d[i][0] - minX) * scale;
+      const scaledY = (embedding2d[i][1] - minY) * scale;
+      const offsetX = (availableWidth - rangeX * scale) / 2;
+      const offsetY = (availableHeight - rangeY * scale) / 2;
+      semanticPositions.set(node.id, {
+        x: padding + offsetX + scaledX,
+        y: padding + offsetY + scaledY,
+      });
+    });
+  }
+
+  const fallbackPositions = new Map<string, { x: number; y: number }>();
+  if (nodesWithoutEmbedding.length > 0) {
+    const fallbackLayout = calculateMindMapLayout(nodesWithoutEmbedding, edges, {
+      width,
+      height,
+    });
+    fallbackLayout.nodes.forEach(n => {
+      fallbackPositions.set(n.id, { x: n.x ?? 0, y: n.y ?? 0 });
+    });
+  }
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const layoutNodes: SemanticLayoutNode[] = nodes.map(node => {
+    const pos =
+      semanticPositions.get(node.id) ||
+      fallbackPositions.get(node.id) || {
+        x: width / 2 + (Math.random() - 0.5) * 100,
+        y: height / 2 + (Math.random() - 0.5) * 100,
+      };
+    return {
+      ...node,
+      x: pos.x,
+      y: pos.y,
+      vx: 0,
+      vy: 0,
+    };
+  });
+
+  const layoutLinks: SemanticLayoutResult['links'] = edges
+    .filter(
+      edge =>
+        nodeIds.has(edge.source_knowledge_point_id) &&
+        nodeIds.has(edge.target_knowledge_point_id),
+    )
+    .map(edge => ({
+      ...edge,
+      source: edge.source_knowledge_point_id,
+      target: edge.target_knowledge_point_id,
+    }));
+
+  return {
+    nodes: layoutNodes,
+    links: layoutLinks,
+  };
+};
+
 const graphWorker = {
   calculateForceDirectedLayout,
   calculateNodeImportance,
   filterNodes,
   sortNodes,
   calculateMindMapLayout,
+  calculateSemanticLayout,
 };
 
 export type GraphWorker = typeof graphWorker;

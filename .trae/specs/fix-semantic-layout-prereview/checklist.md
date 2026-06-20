@@ -1,0 +1,5 @@
+- [x] GraphToolbar 桌面端下拉菜单包含 semantic 模式选项
+- [x] mindmapLayout.ts createSemanticLayout 归一化逻辑正确（不混合两种缩放方法）
+- [x] graphCalculator.worker.ts calculateSemanticLayout 归一化逻辑与主线程一致
+- [x] MindMapCanvas.tsx 语义布局不可用提示使用 i18n t() 函数
+- [x] npm run lint 和 npx tsc --noEmit 通过

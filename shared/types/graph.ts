@@ -20,7 +20,8 @@ export type GraphViewMode =
   | "timeline"
   | "tree"
   | "planet"
-  | "quadrant";
+  | "quadrant"
+  | "semantic";
 
 export type GraphColorMode = "level" | "status" | "heatmap" | "decay";
 

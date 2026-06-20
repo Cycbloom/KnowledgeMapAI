@@ -109,6 +109,33 @@ interface GraphWorkerApi {
     }>;
     links: Array<Record<string, unknown> & { source: string; target: string }>;
   }>;
+  calculateSemanticLayout: (
+    nodes: Array<{
+      id: string;
+      x?: number;
+      y?: number;
+      level?: string;
+      properties?: Record<string, unknown>;
+    }>,
+    edges: Array<Record<string, unknown>>,
+    embeddings: Record<string, number[]>,
+    options: {
+      width: number;
+      height: number;
+      nNeighbors?: number;
+      minDist?: number;
+      nEpochs?: number;
+    }
+  ) => Promise<{
+    nodes: Array<{
+      id: string;
+      x: number;
+      y: number;
+      level?: string;
+      properties?: Record<string, unknown>;
+    }>;
+    links: Array<Record<string, unknown> & { source: string; target: string }>;
+  } | null>;
 }
 
 export const useGraphWorker = () => {
@@ -187,12 +214,35 @@ export const useGraphWorker = () => {
     return proxyRef.current.calculateMindMapLayout(nodes, edges, options);
   }, []);
 
+  const calculateSemanticLayout = useCallback(async (
+    nodes: Array<{
+      id: string;
+      x?: number;
+      y?: number;
+      level?: string;
+      properties?: Record<string, unknown>;
+    }>,
+    edges: Array<Record<string, unknown>>,
+    embeddings: Record<string, number[]>,
+    options: {
+      width: number;
+      height: number;
+      nNeighbors?: number;
+      minDist?: number;
+      nEpochs?: number;
+    }
+  ) => {
+    if (!proxyRef.current) return null;
+    return proxyRef.current.calculateSemanticLayout(nodes, edges, embeddings, options);
+  }, []);
+
   return {
     calculateLayout,
     calculateImportance,
     filterNodes,
     sortNodes,
     calculateMindMapLayout,
+    calculateSemanticLayout,
   };
 };
 

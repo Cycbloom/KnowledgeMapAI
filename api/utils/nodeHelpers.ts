@@ -1,9 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Node, KnowledgePoint, GraphNode } from "@shared/types";
 import { logger } from "./logger";
-import { GRAPH_NODES_SELECT } from "../../shared/utils/nodeHelpers";
+import { GRAPH_NODES_SELECT, GRAPH_NODES_SELECT_WITH_EMBEDDING } from "../../shared/utils/nodeHelpers";
 
-export { GRAPH_NODES_SELECT };
+export { GRAPH_NODES_SELECT, GRAPH_NODES_SELECT_WITH_EMBEDDING };
 
 export type GraphNodeRaw = Omit<GraphNode, "knowledge_point_id"> & {
   knowledge_point_id: string;

@@ -42,6 +42,7 @@ import {
 import {
   useGraph,
   useGraphData,
+  useGraphDataWithEmbedding,
   useGraphNodeStatus,
   useAIStatus,
 } from "../hooks/queries";
@@ -491,6 +492,21 @@ export const GraphEditor = () => {
     togglePlay: narrativeTogglePlay,
     setPlaySpeed: setNarrativePlaySpeed,
   } = state;
+
+  const { data: embeddingData } = useGraphDataWithEmbedding(
+    viewMode === "semantic" && id ? id : ""
+  );
+
+  const embeddingsMap = useMemo(() => {
+    if (!embeddingData?.nodes) return undefined;
+    const map = new Map<string, number[]>();
+    for (const node of embeddingData.nodes) {
+      if (node.embedding && Array.isArray(node.embedding) && node.embedding.length > 0) {
+        map.set(node.id, node.embedding);
+      }
+    }
+    return map.size > 0 ? map : undefined;
+  }, [embeddingData?.nodes]);
 
   const handleSelectParentFromGraph = useCallback(
     (nodeId: string) => {
@@ -1244,7 +1260,7 @@ export const GraphEditor = () => {
         )}
 
         <div className="h-full w-full bg-white dark:bg-slate-900 relative">
-          {viewMode === "mindmap" && (
+          {(viewMode === "mindmap" || viewMode === "semantic") && (
             <ErrorBoundary>
               <MindMapCanvas
                 ref={graphRef}
@@ -1365,6 +1381,8 @@ export const GraphEditor = () => {
                   ? narrativePath[narrativeCurrentStep - 1] ?? null
                   : null
               }
+              layoutMode={viewMode === "semantic" ? "semantic" : "force"}
+              embeddings={viewMode === "semantic" ? embeddingsMap : undefined}
             />
               </ErrorBoundary>
           )}

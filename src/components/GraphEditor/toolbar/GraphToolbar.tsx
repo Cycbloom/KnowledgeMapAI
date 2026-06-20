@@ -47,6 +47,7 @@ import {
   EyeOff,
   FileText,
   LayoutGrid,
+  Map as MapIcon,
   GitMerge,
   History,
 } from "lucide-react";
@@ -522,6 +523,16 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             onClose();
           },
           active: viewMode === "planet",
+          color: "text-primary-600",
+        },
+        {
+          icon: MapIcon,
+          label: t("graphEditor.toolbar.semantic"),
+          onClick: () => {
+            setViewMode("semantic");
+            onClose();
+          },
+          active: viewMode === "semantic",
           color: "text-primary-600",
         },
         {
@@ -1353,6 +1364,11 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                 mode: "planet" as const,
                 label: t("graphEditor.toolbar.knowledgePlanet"),
                 icon: Globe,
+              },
+              {
+                mode: "semantic" as const,
+                label: t("graphEditor.toolbar.semantic"),
+                icon: MapIcon,
               },
               {
                 mode: "quadrant" as const,

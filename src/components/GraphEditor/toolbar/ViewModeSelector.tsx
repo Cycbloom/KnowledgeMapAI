@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Network, Clock, GitBranch, Globe, LayoutGrid } from "lucide-react";
+import { Network, Clock, GitBranch, Globe, LayoutGrid, Map as MapIcon } from "lucide-react";
 import { GraphViewMode } from "../../../types";
 import { useTheme } from "../../../hooks";
 
@@ -45,6 +45,12 @@ const ViewModeSelector: React.FC<ViewModeSelectorProps> = ({
       labelKey: "graphEditor.toolbar.knowledgePlanet",
       icon: Globe,
       descriptionKey: "graphEditor.toolbar.planetDesc",
+    },
+    {
+      mode: "semantic",
+      labelKey: "graphEditor.toolbar.semantic",
+      icon: MapIcon,
+      descriptionKey: "graphEditor.toolbar.semanticDesc",
     },
     {
       mode: "quadrant",

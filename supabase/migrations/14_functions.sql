@@ -97,11 +97,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Match knowledge points function for semantic search
+-- p_user_id defaults to NULL: when NULL, only public knowledge points are returned
 CREATE OR REPLACE FUNCTION match_knowledge_points (
   query_embedding vector(1024),
-  match_threshold float,
-  match_count int,
-  p_user_id uuid
+  match_threshold float DEFAULT 0.85,
+  match_count int DEFAULT 10,
+  p_user_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
@@ -119,7 +120,7 @@ BEGIN
     kp.content,
     1 - (kp.embedding <=> query_embedding) as similarity
   FROM knowledge_points kp
-  WHERE (kp.visibility = 'public' OR kp.owner_id = p_user_id)
+  WHERE (kp.visibility = 'public' OR (p_user_id IS NOT NULL AND kp.owner_id = p_user_id))
     AND kp.embedding IS NOT NULL
     AND 1 - (kp.embedding <=> query_embedding) > match_threshold
   ORDER BY kp.embedding <=> query_embedding

@@ -397,6 +397,7 @@ export class ConceptAggregationService {
       limit?: number;
       graphId?: string;
     } = {},
+    userId?: string,
   ): Promise<SimilarityResult[]> {
     const threshold = options.threshold ?? SIMILARITY_THRESHOLD;
     const limit = options.limit ?? 10;
@@ -421,6 +422,7 @@ export class ConceptAggregationService {
         query_embedding: embedding,
         match_threshold: threshold,
         match_count: limit + 1,
+        p_user_id: userId ?? undefined,
       });
 
       if (error) {

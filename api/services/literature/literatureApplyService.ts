@@ -373,6 +373,7 @@ class LiteratureApplyService {
                 query_embedding: embedding,
                 match_threshold: MERGE_THRESHOLD,
                 match_count: 5,
+                p_user_id: userId,
               });
 
             if (!rpcError && similarResults && Array.isArray(similarResults)) {

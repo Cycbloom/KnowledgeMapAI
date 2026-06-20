@@ -1,0 +1,12 @@
+- [x] 14_functions.sql 中 match_knowledge_points 函数已增加参数默认值（match_threshold DEFAULT 0.85, match_count DEFAULT 10, p_user_id DEFAULT NULL）
+- [x] 14_functions.sql 中 WHERE 子句正确处理 p_user_id 为 NULL 的情况（仅返回 visibility='public'）
+- [x] 21_pgvector_search.sql 中不安全的 3 参数版 match_knowledge_points 函数已删除
+- [x] 21_pgvector_search.sql 中对应的 COMMENT 和 GRANT 语句已删除
+- [x] 21_pgvector_search.sql 中 IVFFlat 索引创建逻辑保留不动
+- [x] 16_grants.sql 中 GRANT 语句指向正确的 4 参数版函数签名
+- [x] autoGraphService.ts 中 match_knowledge_points 调用已补充 p_user_id 参数
+- [x] conceptAggregationService.ts 中 match_knowledge_points 调用已补充 p_user_id 参数
+- [x] literatureApplyService.ts 中 match_knowledge_points 调用已补充 p_user_id 参数
+- [x] 所有后端调用均传递了当前用户 ID，不存在无 p_user_id 的 match_knowledge_points 调用
+- [x] npm run check 类型检查通过
+- [x] npm run lint 代码规范检查通过

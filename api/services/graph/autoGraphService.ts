@@ -248,7 +248,7 @@ export class AutoGraphService {
     const failedNodes: string[] = [];
 
     const { nodesToCreate, reusedKpIds, mergedCount } =
-      await this.deduplicateNodes(supabase, graphId, validNodes);
+      await this.deduplicateNodes(supabase, graphId, validNodes, userId);
 
     if (mergedCount > 0) {
       logger.info(`Dedup: ${mergedCount} nodes merged with existing concepts`);
@@ -485,6 +485,7 @@ export class AutoGraphService {
     supabase: SupabaseClient,
     graphId: string,
     nodes: AINodeData[],
+    userId: string,
   ): Promise<{
     nodesToCreate: AINodeData[];
     reusedKpIds: Map<string, string>;
@@ -556,6 +557,7 @@ export class AutoGraphService {
               query_embedding: node.embedding,
               match_threshold: MERGE_THRESHOLD,
               match_count: 3,
+              p_user_id: userId,
             },
           );
 

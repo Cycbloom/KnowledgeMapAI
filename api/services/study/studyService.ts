@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { fsrs, Card, Rating, State, createEmptyCard } from "ts-fsrs";
+import { fsrs, Card, Rating, State, createEmptyCard, migrateParameters } from "ts-fsrs";
+import type { FSRSParameters } from "ts-fsrs";
 import type { StudyCard } from "@/types";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";
@@ -117,12 +118,20 @@ const getFSRS = async (userId: string, supabase: SupabaseClient, studyMode?: Stu
       .eq("id", userId)
       .single();
 
-    const params: Record<string, number> = {};
+    const params: Partial<FSRSParameters> = {};
     if (data?.settings?.request_retention) {
       params.request_retention = Number(data.settings.request_retention);
     }
     if (data?.settings?.maximum_interval) {
       params.maximum_interval = Number(data.settings.maximum_interval);
+    }
+
+    // 加载用户个性化 FSRS w 参数
+    if (Array.isArray(data?.settings?.fsrs_parameters)) {
+      const wParams = data.settings.fsrs_parameters as number[];
+      // 自动迁移旧版参数（17/19 → 21）
+      const migratedW = migrateParameters(wParams);
+      params.w = migratedW;
     }
 
     if (studyMode) {
@@ -132,6 +141,9 @@ const getFSRS = async (userId: string, supabase: SupabaseClient, studyMode?: Stu
       }
       if (preset.fsrsOverride.maximum_interval !== undefined) {
         params.maximum_interval = preset.fsrsOverride.maximum_interval;
+      }
+      if (preset.fsrsOverride.w !== undefined) {
+        params.w = preset.fsrsOverride.w;
       }
     }
 

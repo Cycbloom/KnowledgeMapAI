@@ -10,6 +10,7 @@ import { cacheService, CacheKeys } from "../services/common";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { AppError } from "../middleware/errorHandler";
 import { studyService, studyRouteService, StudyRouteService } from "../services/study";
+import { fsrsParameterService } from "../services/study/fsrsParameterService";
 import type { StudyCard } from "../../shared/types/common";
 import { logger } from "../utils/logger";
 
@@ -356,5 +357,84 @@ router.get(
     res.json(data);
   },
 );
+
+router.get("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const params = await fsrsParameterService.getParameters(
+      req.supabase!,
+      req.user.id,
+    );
+    res.json(params);
+  } catch (error) {
+    const err = error as Error;
+    logger.error("Error fetching FSRS parameters:", error);
+    throw new AppError(
+      err.message || "获取 FSRS 参数失败",
+      500,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
+    );
+  }
+});
+
+router.put("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Response) => {
+  const { w } = req.body as { w: number[] };
+
+  if (!Array.isArray(w) || w.length === 0) {
+    throw new AppError("w 参数必须是非空数组", 400, ErrorCodes.VALIDATION_INVALID_PARAMS);
+  }
+
+  try {
+    const params = await fsrsParameterService.setParameters(
+      req.supabase!,
+      req.user.id,
+      w,
+    );
+    res.json(params);
+  } catch (error) {
+    const err = error as Error;
+    logger.error("Error setting FSRS parameters:", error);
+    throw new AppError(
+      err.message || "设置 FSRS 参数失败",
+      500,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
+    );
+  }
+});
+
+router.delete("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    await fsrsParameterService.resetParameters(
+      req.supabase!,
+      req.user.id,
+    );
+    res.json({ success: true, message: "已重置为默认参数" });
+  } catch (error) {
+    const err = error as Error;
+    logger.error("Error resetting FSRS parameters:", error);
+    throw new AppError(
+      err.message || "重置 FSRS 参数失败",
+      500,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
+    );
+  }
+});
+
+router.post("/fsrs-parameters/optimize", requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await fsrsParameterService.optimizeParameters(
+      req.supabase!,
+      req.user.id,
+    );
+    res.json(result);
+  } catch (error) {
+    const err = error as Error;
+    logger.error("Error optimizing FSRS parameters:", error);
+    throw new AppError(
+      err.message || "优化 FSRS 参数失败",
+      500,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
+    );
+  }
+});
 
 export default router;

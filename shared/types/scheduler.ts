@@ -779,6 +779,7 @@ export interface StudyWorkflowConfig {
 export interface FsrsParamOverride {
   request_retention?: number;
   maximum_interval?: number;
+  w?: number[];
 }
 
 export interface StudyModePreset {

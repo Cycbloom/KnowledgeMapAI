@@ -401,4 +401,117 @@ export const mobileStudyApi: IStudyApi = {
       averageDifficulty: count > 0 ? Math.round((totalDifficulty / count) * 100) / 100 : 0,
     };
   },
+
+  getFsrsParameters: async () => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new Error("Supabase client not initialized");
+    }
+
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    if (!user) {
+      return {
+        source: "default" as const,
+        w: [],
+        request_retention: 0.9,
+        maximum_interval: 36500,
+        last_optimized_at: null,
+      };
+    }
+
+    const { data, error } = await client
+      .from("user_fsrs_parameters")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return {
+        source: "default" as const,
+        w: [],
+        request_retention: 0.9,
+        maximum_interval: 36500,
+        last_optimized_at: null,
+      };
+    }
+
+    return {
+      source: (data.source || "custom") as "default" | "custom" | "optimized",
+      w: data.w || [],
+      request_retention: data.request_retention || 0.9,
+      maximum_interval: data.maximum_interval || 36500,
+      last_optimized_at: data.last_optimized_at || null,
+    };
+  },
+
+  setFsrsParameters: async (w: number[]) => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new Error("Supabase client not initialized");
+    }
+
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await client
+      .from("user_fsrs_parameters")
+      .upsert({
+        user_id: user.id,
+        w,
+        source: "custom",
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { success: true };
+  },
+
+  resetFsrsParameters: async () => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new Error("Supabase client not initialized");
+    }
+
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await client
+      .from("user_fsrs_parameters")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { success: true };
+  },
+
+  optimizeFsrsParameters: async () => {
+    return {
+      success: false,
+      improvement: 0,
+      reviewCount: 0,
+      message: "移动端暂不支持参数优化，请在桌面端使用",
+    };
+  },
 };

@@ -68,6 +68,24 @@ export const studyApi: IStudyApi = {
     const query = params.toString();
     return request(`/study/stats${query ? `?${query}` : ""}`);
   },
+
+  getFsrsParameters: () => request("/study/fsrs-parameters"),
+
+  setFsrsParameters: (w: number[]) =>
+    request("/study/fsrs-parameters", {
+      method: "PUT",
+      body: JSON.stringify({ w }),
+    }),
+
+  resetFsrsParameters: () =>
+    request("/study/fsrs-parameters", {
+      method: "DELETE",
+    }),
+
+  optimizeFsrsParameters: () =>
+    request("/study/fsrs-parameters/optimize", {
+      method: "POST",
+    }),
 };
 
 export const dashboardApi: IDashboardApi = {

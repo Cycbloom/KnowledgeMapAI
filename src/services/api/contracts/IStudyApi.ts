@@ -25,4 +25,23 @@ export interface IStudyApi {
   getCardGroups(knowledgePointId: string): Promise<CardGroup[]>;
 
   getStats(graphId?: string): Promise<StudyStats>;
+
+  getFsrsParameters(): Promise<{
+    source: "default" | "custom" | "optimized";
+    w: number[];
+    request_retention: number;
+    maximum_interval: number;
+    last_optimized_at: string | null;
+  }>;
+
+  setFsrsParameters(w: number[]): Promise<unknown>;
+
+  resetFsrsParameters(): Promise<unknown>;
+
+  optimizeFsrsParameters(): Promise<{
+    success: boolean;
+    improvement: number;
+    reviewCount: number;
+    message: string;
+  }>;
 }

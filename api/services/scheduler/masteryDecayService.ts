@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { forgetting_curve, computeDecayFactor, default_w } from "ts-fsrs";
 import { logger } from "../../utils/logger";
 import { DEFAULT_DECAY_CONFIG as SHARED_DECAY_CONFIG } from "../../../shared/constants/masteryThresholds";
 
@@ -75,10 +76,10 @@ export class MasteryDecayService {
       return Math.max(0, Math.min(1, masteryLevel));
     }
 
-    // 使用 FSRS retrievability 作为衰减后的掌握度
-    // retrievability = e^(-elapsed_days / stability)，表示当前能回忆起来的概率
+    // 使用 FSRS-6 幂律遗忘曲线计算 retrievability
+    // R(t,S) = (1 + FACTOR * t / (9*S))^DECAY
     if (fsrsStability && fsrsStability > 0) {
-      const retrievability = Math.pow(Math.E, -daysSinceLastStudy / fsrsStability);
+      const retrievability = forgetting_curve(default_w, daysSinceLastStudy, fsrsStability);
       return Math.max(this.config.minMastery, Math.round(retrievability * 100) / 100);
     }
 
@@ -379,7 +380,7 @@ export class MasteryDecayService {
 
   calculateRetentionRate(daysSinceStudy: number, easeFactor: number, fsrsStability?: number): number {
     if (fsrsStability && fsrsStability > 0) {
-      return Math.pow(Math.E, -daysSinceStudy / fsrsStability);
+      return forgetting_curve(default_w, daysSinceStudy, fsrsStability);
     }
     return Math.pow(
       Math.E,
@@ -399,12 +400,16 @@ export class MasteryDecayService {
       return 0;
     }
 
-    const decayConstant = (fsrsStability && fsrsStability > 0)
-      ? fsrsStability
-      : easeFactor * this.config.decayBaseFactor;
+    if (fsrsStability && fsrsStability > 0) {
+      // FSRS-6 幂律遗忘曲线: R = (1 + FACTOR * t / (9*S))^DECAY
+      // 反推: t = ((R^(1/DECAY) - 1) / FACTOR) * 9 * S
+      const { decay, factor } = computeDecayFactor(default_w);
+      const daysUntilThreshold = ((Math.pow(reviewThreshold, 1 / decay) - 1) / factor) * 9 * fsrsStability;
+      return Math.max(0, Math.round(daysUntilThreshold));
+    }
 
-    // 当有 FSRS 数据时，mastery = retrievability = e^(-days/S)
-    // 所以 threshold = e^(-days/S) => days = -S * ln(threshold)
+    // 无 FSRS 数据时，使用 easeFactor 估算
+    const decayConstant = easeFactor * this.config.decayBaseFactor;
     const daysUntilThreshold = -decayConstant * Math.log(reviewThreshold);
 
     return Math.max(0, Math.round(daysUntilThreshold));

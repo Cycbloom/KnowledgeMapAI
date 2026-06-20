@@ -49,7 +49,7 @@ class SpacedRepetitionBridge {
   ): Promise<UnifiedReviewItem[]> {
     const { data: cards, error } = await supabase
       .from("study_cards")
-      .select("id, knowledge_point_id, next_review, fsrs_state, fsrs_difficulty, fsrs_stability")
+      .select("id, knowledge_point_id, next_review, fsrs_state, fsrs_difficulty, fsrs_stability, fsrs_retrievability")
       .eq("user_id", userId);
 
     if (error) {
@@ -73,7 +73,7 @@ class SpacedRepetitionBridge {
         else if (nextDate <= todayEnd) urgency = "today";
         else if (nextDate <= tomorrowEnd) urgency = "upcoming";
 
-        const masteryLevel = card.fsrs_stability ? Math.min(1, card.fsrs_stability / 30) : 0;
+        const masteryLevel = card.fsrs_retrievability ?? 0;
 
         return {
           id: card.id,

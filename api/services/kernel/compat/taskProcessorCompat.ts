@@ -3,19 +3,13 @@ import type { TaskProcessor } from "../../taskProcessors/index";
 import { logger } from "../../../utils/logger";
 
 const processorMap = new Map<string, TaskProcessor>();
-let kernelInstance: Kernel | null = null;
 
-export function initTaskProcessorCompat(kernel: Kernel): void {
-  kernelInstance = kernel;
+export function initTaskProcessorCompat(_kernel: Kernel): void {
   logger.info("[TaskProcessorCompat] Initialized with Kernel");
 }
 
 export function registerProcessor(type: string, processor: TaskProcessor): void {
   processorMap.set(type, processor);
-
-  if (kernelInstance) {
-    kernelInstance.registerExtension("taskProcessor", { type, processor });
-  }
 }
 
 export function getProcessor(type: string): TaskProcessor | undefined {

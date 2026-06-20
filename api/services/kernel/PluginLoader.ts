@@ -2,8 +2,7 @@ import fs from "fs";
 import path from "path";
 import { logger } from "../../utils/logger";
 import type { Kernel } from "./Kernel";
-import type { Plugin, PluginManifest } from "./types";
-import { validateManifest } from "./manifest";
+import type { Plugin } from "./types";
 import { getSupabaseAdmin } from "../../supabase";
 
 export class PluginLoader {
@@ -34,7 +33,7 @@ export class PluginLoader {
     let failed = 0;
 
     for (const record of data) {
-      const result = await this.loadPluginFromDisk(record.plugin_name, record.manifest as PluginManifest);
+      const result = await this.loadPluginFromDisk(record.plugin_name, record.manifest as Record<string, unknown>);
       if (result.success) {
         loaded++;
       } else {
@@ -47,10 +46,15 @@ export class PluginLoader {
     return { loaded, failed };
   }
 
-  async loadPluginFromDisk(pluginName: string, manifest: PluginManifest): Promise<{ success: boolean; error?: string }> {
-    const validation = validateManifest(manifest);
-    if (!validation.success) {
-      return { success: false, error: `Invalid manifest: ${validation.errors?.join(", ")}` };
+  async loadPluginFromDisk(pluginName: string, manifest: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
+    if (
+      typeof manifest !== "object" ||
+      manifest === null ||
+      !("name" in manifest) ||
+      !("version" in manifest) ||
+      !("main" in manifest)
+    ) {
+      return { success: false, error: "Invalid manifest: missing required fields (name, version, main)" };
     }
 
     const pluginDir = path.join(this.pluginsDir, pluginName);
@@ -58,7 +62,7 @@ export class PluginLoader {
       return { success: false, error: `Plugin directory not found: ${pluginDir}` };
     }
 
-    const mainPath = path.resolve(pluginDir, manifest.main);
+    const mainPath = path.resolve(pluginDir, manifest.main as string);
     if (!fs.existsSync(mainPath)) {
       return { success: false, error: `Entry file not found: ${mainPath}` };
     }
@@ -72,7 +76,10 @@ export class PluginLoader {
       }
 
       const plugin: Plugin = {
-        ...manifest,
+        name: manifest.name as string,
+        version: manifest.version as string,
+        description: (manifest.description as string) ?? "",
+        dependencies: (manifest.dependencies as string[]) ?? undefined,
         onInstall: pluginExport.onInstall,
         onActivate: pluginExport.onActivate,
         onDeactivate: pluginExport.onDeactivate,

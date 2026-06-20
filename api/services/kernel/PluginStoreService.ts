@@ -2,12 +2,17 @@ import fs from "fs";
 import path from "path";
 import { logger } from "../../utils/logger";
 import type { Kernel } from "./Kernel";
-import type { PluginManifest } from "./types";
-import { validateManifest } from "./manifest";
-import { validatePermissions } from "./permissions";
 import { getSupabaseAdmin } from "../../supabase";
 
 const PLUGINS_DIR = path.join(process.cwd(), "plugins");
+
+interface PluginManifestData {
+  name: string;
+  version: string;
+  description?: string;
+  main: string;
+  dependencies?: string[];
+}
 
 export class PluginStoreService {
   private kernel: Kernel;
@@ -30,24 +35,13 @@ export class PluginStoreService {
   async install(
     pluginName: string,
     userId: string,
-    manifest: PluginManifest,
+    manifest: PluginManifestData,
   ): Promise<{ success: boolean; error?: string }> {
-    const validation = validateManifest(manifest);
-    if (!validation.success) {
+    if (!manifest.name || !manifest.version || !manifest.main) {
       return {
         success: false,
-        error: `Invalid manifest: ${validation.errors?.join(", ")}`,
+        error: "Invalid manifest: missing required fields (name, version, main)",
       };
-    }
-
-    if (manifest.permissions) {
-      const permCheck = validatePermissions(manifest.permissions);
-      if (!permCheck.valid) {
-        return {
-          success: false,
-          error: `Invalid permissions: ${permCheck.invalid.join(", ")}`,
-        };
-      }
     }
 
     const pluginDir = path.join(PLUGINS_DIR, pluginName);
@@ -134,13 +128,12 @@ export class PluginStoreService {
   async update(
     pluginName: string,
     userId: string,
-    newManifest: PluginManifest,
+    newManifest: PluginManifestData,
   ): Promise<{ success: boolean; error?: string }> {
-    const validation = validateManifest(newManifest);
-    if (!validation.success) {
+    if (!newManifest.name || !newManifest.version || !newManifest.main) {
       return {
         success: false,
-        error: `Invalid manifest: ${validation.errors?.join(", ")}`,
+        error: "Invalid manifest: missing required fields (name, version, main)",
       };
     }
 
@@ -194,7 +187,7 @@ export class PluginStoreService {
       plugin_name: string;
       version: string;
       state: string;
-      manifest: PluginManifest;
+      manifest: PluginManifestData;
     }>
   > {
     const { data, error } = await getSupabaseAdmin()

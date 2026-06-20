@@ -1,14 +1,7 @@
-import './supabase';
 import app, { kernel } from './app';
 import { logger } from './utils/logger';
 import { checkEnvOnStartup } from './utils/envValidator';
 import { performanceMonitor } from './services/ai/performanceMonitor';
-import { corePlugin } from './services/plugins/CorePlugin';
-import { graphPlugin } from './services/plugins/GraphPlugin';
-import { AIPlugin as aiPlugin } from './services/plugins/AIPlugin';
-import { StudyPlugin as studyPlugin } from './services/plugins/StudyPlugin';
-import { SchedulerPlugin as schedulerPlugin } from './services/plugins/SchedulerPlugin';
-import { AgentPlugin as agentPlugin } from './services/plugins/AgentPlugin';
 import { PluginLoader } from './services/kernel/PluginLoader';
 import { PluginStoreService } from './services/kernel/PluginStoreService';
 import type { Server } from 'http';
@@ -66,23 +59,9 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
-  // ===== Phase 2: Kernel Plugin Registration (blocking) =====
-  logger.info('[Phase 2/5] Kernel plugin registration...');
-  try {
-    kernel.registerPlugin(corePlugin);
-    kernel.registerPlugin(graphPlugin);
-    kernel.registerPlugin(aiPlugin);
-    kernel.registerPlugin(studyPlugin);
-    kernel.registerPlugin(schedulerPlugin);
-    kernel.registerPlugin(agentPlugin);
-    addHealth({ service: 'Kernel Plugin Registration', phase: '2', status: 'success' });
-    logger.info('[Phase 2/5] All 6 built-in plugins registered');
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    addHealth({ service: 'Kernel Plugin Registration', phase: '2', status: 'failed', details: message });
-    logger.error('[Phase 2/5] Plugin registration failed, shutting down:', error);
-    process.exit(1);
-  }
+  // ===== Phase 2: Plugin Registration (done in app.ts at module load time) =====
+  logger.info('[Phase 2/5] Plugin registration (already done in app.ts)');
+  addHealth({ service: 'Kernel Plugin Registration', phase: '2', status: 'success' });
 
   // ===== Phase 3: Server Listen (blocking) =====
   logger.info('[Phase 3/5] Starting HTTP server...');

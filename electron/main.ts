@@ -101,6 +101,7 @@ function loadEnvVariables() {
 loadEnvVariables();
 
 let apiApp: any = null;
+let apiKernel: any = null;
 let dbManager: DatabaseManager | null = null;
 let syncEngine: SyncEngine | null = null;
 
@@ -109,14 +110,17 @@ async function loadApiApp() {
     try {
       const module = await import(path.join(process.resourcesPath, "api", "app.js"));
       apiApp = module.default || module;
+      apiKernel = module.kernel || null;
     } catch (error) {
       try {
         const module = await import(path.join(__dirname, "api", "app.js"));
         apiApp = module.default || module;
+        apiKernel = module.kernel || null;
       } catch (error2) {
         try {
           const module = await import("../api/app.js");
           apiApp = module.default || module;
+          apiKernel = module.kernel || null;
         } catch (error3) {
           console.error("[Main] 所有 API 应用加载路径都失败:", error, error2, error3);
           throw error3;
@@ -126,6 +130,7 @@ async function loadApiApp() {
   } else {
     const module = await import("../api/app.js");
     apiApp = module.default || module;
+    apiKernel = module.kernel || null;
   }
   console.log("[Main] API 应用加载成功");
 
@@ -376,6 +381,15 @@ app.whenReady().then(async () => {
       if (syncEngine) {
         syncEngine.setApiPort(port);
       }
+      // Activate all plugins after server starts
+      if (apiKernel) {
+        try {
+          await apiKernel.activateAll();
+          console.log("[Main] 所有插件已激活");
+        } catch (error) {
+          console.error("[Main] 插件激活失败:", error);
+        }
+      }
     } catch (error) {
       console.error("[Main] 启动 API 服务器失败:", error);
     }
@@ -403,6 +417,14 @@ app.on("window-all-closed", () => {
 });
 
 app.on("will-quit", async () => {
+  if (apiKernel) {
+    try {
+      await apiKernel.deactivateAll();
+      console.log('[Main] 所有插件已停用');
+    } catch (error) {
+      console.error('[Main] 插件停用失败:', error);
+    }
+  }
   if (syncEngine) {
     syncEngine.stop();
     console.log('[Main] 同步引擎已停止');

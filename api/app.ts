@@ -8,7 +8,14 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import cookieParser from "cookie-parser";
+import "./supabase";
 import { Kernel } from "./services/kernel/Kernel";
+import { corePlugin } from "./services/plugins/CorePlugin";
+import { graphPlugin } from "./services/plugins/GraphPlugin";
+import { AIPlugin as aiPlugin } from "./services/plugins/AIPlugin";
+import { StudyPlugin as studyPlugin } from "./services/plugins/StudyPlugin";
+import { SchedulerPlugin as schedulerPlugin } from "./services/plugins/SchedulerPlugin";
+import { AgentPlugin as agentPlugin } from "./services/plugins/AgentPlugin";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 import { graphTaskEventHandler } from "./services/scheduler/graphTaskEventHandler";
@@ -24,7 +31,16 @@ const app: express.Application = express();
 
 const kernel = new Kernel();
 
-function applyKernelRoutes(app: express.Application, kernel: Kernel): void {
+// Register all built-in plugins at module load time.
+// This ensures routes are available regardless of entry point (server.ts or electron/main.ts).
+kernel.registerPlugin(corePlugin);
+kernel.registerPlugin(graphPlugin);
+kernel.registerPlugin(aiPlugin);
+kernel.registerPlugin(studyPlugin);
+kernel.registerPlugin(schedulerPlugin);
+kernel.registerPlugin(agentPlugin);
+
+export function applyKernelRoutes(app: express.Application, kernel: Kernel): void {
   const routes = kernel.getRegisteredRoutes();
   const rateLimiterMap: Record<string, express.RequestHandler> = {
     auth: rateLimiters.auth,
@@ -129,7 +145,9 @@ app.use(slowRequestLogger(2000));
 app.get("/api/csrf-token", getCsrfToken);
 
 /**
- * API Routes - All routes are registered through the Kernel plugin system
+ * API Routes - All routes are registered through the Kernel plugin system.
+ * applyKernelRoutes is called after middleware setup to ensure all middleware
+ * applies to plugin routes.
  */
 applyKernelRoutes(app, kernel);
 

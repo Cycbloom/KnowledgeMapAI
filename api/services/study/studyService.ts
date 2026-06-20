@@ -10,6 +10,7 @@ import { getStudyModePreset } from "../../../shared/constants/studyModePresets";
 import { MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
 import { appEventBus } from "../core";
 import type { ReviewCompletedPayload } from "../../../shared/types/events";
+import { masteryCalculationService } from "./masteryCalculationService";
 
 interface GetCardsOptions {
   userId: string;
@@ -82,11 +83,13 @@ export async function handlePreviewMode(
   await supabase
     .from("knowledge_points")
     .update({
-      mastery_level: 0.1,
       last_study_at: now,
       updated_at: now,
     })
     .eq("id", knowledgePointId);
+
+  // 基于 FSRS retrievability 重新计算 mastery_level
+  await masteryCalculationService.updateKnowledgePointMastery(supabase, knowledgePointId);
 }
 
 export function selectStrategyForNode(
@@ -331,7 +334,7 @@ export class StudyService {
       scheduling_cards as unknown as Record<Rating, { card: Card }>
     )[rating].card;
 
-    const { data: updatedCard, error: updateError } = await supabase
+    const { data: updatedCardData, error: updateError } = await supabase
       .from("study_cards")
       .update({
         last_reviewed: now.toISOString(),
@@ -355,6 +358,15 @@ export class StudyService {
 
     if (card.graph_id) {
       await cacheService.del(CacheKeys.STUDY_CARDS(card.graph_id));
+    }
+
+    // 基于 FSRS retrievability 重新计算知识点 mastery_level
+    const updatedCard = updatedCardData as StudyCard;
+    if (updatedCard?.knowledge_point_id) {
+      masteryCalculationService.updateKnowledgePointMastery(
+        supabase,
+        updatedCard.knowledge_point_id,
+      ).catch((err) => logger.error("Failed to update mastery_level after review:", err));
     }
 
     appEventBus

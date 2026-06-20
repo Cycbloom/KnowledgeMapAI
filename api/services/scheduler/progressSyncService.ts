@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { masteryCalculationService } from "../study/masteryCalculationService";
 
 export interface SyncStudyDurationParams {
   taskId: string;
@@ -47,9 +48,7 @@ export interface TaskKnowledgePointRelation {
   created_at: string;
 }
 
-const MASTERY_INCREMENT_BASE = 0.05;
-const MASTERY_MAX = 1.0;
-const MASTERY_MIN = 0.0;
+const _MASTERY_INCREMENT_BASE = 0.05;
 
 export class ProgressSyncService {
   async syncStudyDuration(
@@ -265,10 +264,13 @@ export class ProgressSyncService {
       lastStudyAt: string;
     }> = [];
 
+    const knowledgePointIds = allocations.map(a => a.knowledgePointId);
+
+    // 批量更新学习时长
     for (const allocation of allocations) {
       const { data: kp, error: kpError } = await client
         .from("knowledge_points")
-        .select("mastery_level, total_study_duration")
+        .select("total_study_duration")
         .eq("id", allocation.knowledgePointId)
         .single();
 
@@ -279,24 +281,13 @@ export class ProgressSyncService {
         continue;
       }
 
-      const currentMastery = kp.mastery_level ?? 0;
       const currentDuration = kp.total_study_duration ?? 0;
-
-      const masteryIncrement = this.calculateMasteryIncrement(
-        allocation.durationAllocated,
-        allocation.isPrimary
-      );
-      const newMastery = Math.min(
-        MASTERY_MAX,
-        Math.max(MASTERY_MIN, currentMastery + masteryIncrement)
-      );
       const newDuration = currentDuration + Math.round(allocation.durationAllocated);
       const now = new Date().toISOString();
 
       const { error: updateError } = await client
         .from("knowledge_points")
         .update({
-          mastery_level: newMastery,
           total_study_duration: newDuration,
           last_study_at: now,
           updated_at: now,
@@ -310,12 +301,28 @@ export class ProgressSyncService {
         });
         continue;
       }
+    }
+
+    // 基于 FSRS retrievability 批量重新计算 mastery_level
+    const masteryMap = await masteryCalculationService.batchUpdateMasteryLevels(
+      client,
+      knowledgePointIds,
+    );
+
+    // 构建返回结果
+    for (const allocation of allocations) {
+      const masteryLevel = masteryMap.get(allocation.knowledgePointId) ?? 0;
+      const { data: kp } = await client
+        .from("knowledge_points")
+        .select("total_study_duration, last_study_at")
+        .eq("id", allocation.knowledgePointId)
+        .single();
 
       results.push({
         id: allocation.knowledgePointId,
-        masteryLevel: newMastery,
-        totalStudyDuration: newDuration,
-        lastStudyAt: now,
+        masteryLevel,
+        totalStudyDuration: kp?.total_study_duration ?? 0,
+        lastStudyAt: kp?.last_study_at ?? new Date().toISOString(),
       });
     }
 
@@ -325,7 +332,7 @@ export class ProgressSyncService {
   private async updateKnowledgePointsMastery(
     client: SupabaseClient,
     relations: TaskKnowledgePointRelation[],
-    qualityMultiplier: number
+    _qualityMultiplier: number
   ): Promise<Array<{
     id: string;
     masteryLevel: number;
@@ -339,91 +346,88 @@ export class ProgressSyncService {
       lastStudyAt: string;
     }> = [];
 
+    const knowledgePointIds = relations.map(r => r.knowledge_point_id);
+    const now = new Date().toISOString();
+
+    // 更新 last_study_at
     for (const relation of relations) {
-      const { data: kp, error: kpError } = await client
-        .from("knowledge_points")
-        .select("mastery_level, total_study_duration")
-        .eq("id", relation.knowledge_point_id)
-        .single();
-
-      if (kpError || !kp) {
-        logger.warn('Knowledge point not found for mastery update', {
-          knowledgePointId: relation.knowledge_point_id,
-        });
-        continue;
-      }
-
-      const currentMastery = kp.mastery_level ?? 0;
-      const currentDuration = kp.total_study_duration ?? 0;
-
-      const masteryIncrement = this.calculateCompletionMasteryIncrement(
-        currentMastery,
-        relation.is_primary,
-        relation.relevance_score,
-        qualityMultiplier
-      );
-      const newMastery = Math.min(
-        MASTERY_MAX,
-        Math.max(MASTERY_MIN, currentMastery + masteryIncrement)
-      );
-      const now = new Date().toISOString();
-
       const { error: updateError } = await client
         .from("knowledge_points")
         .update({
-          mastery_level: newMastery,
           last_study_at: now,
           updated_at: now,
         })
         .eq("id", relation.knowledge_point_id);
 
       if (updateError) {
-        logger.error('Failed to update knowledge point mastery', {
+        logger.error('Failed to update knowledge point last_study_at', {
           knowledgePointId: relation.knowledge_point_id,
           error: updateError.message,
         });
-        continue;
       }
+    }
+
+    // 基于 FSRS retrievability 批量重新计算 mastery_level
+    const masteryMap = await masteryCalculationService.batchUpdateMasteryLevels(
+      client,
+      knowledgePointIds,
+    );
+
+    for (const relation of relations) {
+      const masteryLevel = masteryMap.get(relation.knowledge_point_id) ?? 0;
+      const { data: kp } = await client
+        .from("knowledge_points")
+        .select("total_study_duration, last_study_at")
+        .eq("id", relation.knowledge_point_id)
+        .single();
 
       results.push({
         id: relation.knowledge_point_id,
-        masteryLevel: newMastery,
-        totalStudyDuration: currentDuration,
-        lastStudyAt: now,
+        masteryLevel,
+        totalStudyDuration: kp?.total_study_duration ?? 0,
+        lastStudyAt: kp?.last_study_at ?? now,
       });
     }
 
     return results;
   }
 
+  /** @deprecated 使用 masteryCalculationService 替代 */
+  // @ts-expect-error kept for backward compatibility
   private calculateMasteryIncrement(
     durationMinutes: number,
     isPrimary: boolean
   ): number {
-    const baseIncrement = MASTERY_INCREMENT_BASE * (durationMinutes / 30);
+    const MASTERY_MAX = 1.0;
+    const MASTERY_MIN = 0.0;
+    const baseIncrement = _MASTERY_INCREMENT_BASE * (durationMinutes / 30);
     const primaryBonus = isPrimary ? 1.5 : 1.0;
-    return baseIncrement * primaryBonus;
+    return Math.min(MASTERY_MAX, Math.max(MASTERY_MIN, baseIncrement * primaryBonus));
   }
 
+  /** @deprecated 使用 masteryCalculationService 替代 */
+  // @ts-expect-error kept for backward compatibility
   private calculateCompletionMasteryIncrement(
     currentMastery: number,
     isPrimary: boolean,
     relevanceScore: number,
     qualityMultiplier: number
   ): number {
+    const MASTERY_MAX = 1.0;
+    const MASTERY_MIN = 0.0;
     const diminishingFactor = 1 - currentMastery * 0.5;
     const primaryBonus = isPrimary ? 1.5 : 1.0;
     const relevanceFactor = relevanceScore / 100;
 
     const increment =
-      MASTERY_INCREMENT_BASE *
+      _MASTERY_INCREMENT_BASE *
       2 *
       diminishingFactor *
       primaryBonus *
       relevanceFactor *
       qualityMultiplier;
 
-    return increment;
+    return Math.min(MASTERY_MAX, Math.max(MASTERY_MIN, increment));
   }
 
   private getQualityMultiplier(quality: number): number {

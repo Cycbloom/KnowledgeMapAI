@@ -14,4 +14,5 @@ export {
 export { learningPathRouteService } from "./learningPathRouteService";
 export { spacedRepetitionBridge } from "./spacedRepetitionBridge";
 export { studyRouteService, StudyRouteService } from "./studyRouteService";
+export { masteryCalculationService } from "./masteryCalculationService";
 export { embeddingService } from "../ai/index";

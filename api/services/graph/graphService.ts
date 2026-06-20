@@ -1261,31 +1261,45 @@ export class GraphService {
 
     // Group cards by knowledge_point_id and aggregate FSRS data
     type CardPick = Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count'>;
-    const cardGroups = new Map<string, { cards: CardPick[]; stabilitySum: number; retrievabilitySum: number; reviewCountSum: number; count: number }>();
+    const cardGroups = new Map<string, { cards: CardPick[]; stabilitySum: number; weightedRetrievabilitySum: number; reviewCountSum: number }>();
 
     (cards || []).forEach((card: CardPick) => {
       const kpId = card.knowledge_point_id;
       if (!cardGroups.has(kpId)) {
-        cardGroups.set(kpId, { cards: [], stabilitySum: 0, retrievabilitySum: 0, reviewCountSum: 0, count: 0 });
+        cardGroups.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
       }
       const group = cardGroups.get(kpId)!;
       group.cards.push(card);
-      group.stabilitySum += card.fsrs_stability ?? 0;
-      group.retrievabilitySum += card.fsrs_retrievability ?? 0;
+      const stability = card.fsrs_stability ?? 0;
+      const retrievability = card.fsrs_retrievability ?? 0;
+
+      // 使用 stability 加权，与 masteryCalculationService 一致
+      if (stability > 0) {
+        group.stabilitySum += stability;
+        group.weightedRetrievabilitySum += retrievability * stability;
+      } else {
+        group.stabilitySum += 1; // 新卡片等权
+        group.weightedRetrievabilitySum += retrievability;
+      }
       group.reviewCountSum += card.review_count || 0;
-      group.count += 1;
     });
 
     cardGroups.forEach((group, kpId) => {
-      const card = group.cards[0]; // Use first card for non-aggregated fields
+      const card = group.cards[0];
       const nextReview = card.next_review ? new Date(card.next_review) : null;
       const isDue = nextReview && nextReview <= now;
       const isDueToday =
         nextReview &&
         nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
-      const avgStability = group.stabilitySum / group.count;
+
+      // stability 加权平均 retrievability，与 masteryCalculationService 一致
+      const weightedRetrievability = group.stabilitySum > 0
+        ? group.weightedRetrievabilitySum / group.stabilitySum
+        : 0;
+      const avgStability = group.cards.length > 0
+        ? group.cards.reduce((sum, c) => sum + (c.fsrs_stability ?? 0), 0) / group.cards.length
+        : 0;
       const isMastered = avgStability > 21;
-      const avgRetrievability = group.retrievabilitySum / group.count;
 
       statusMap[kpId] = {
         mastered: isMastered,
@@ -1295,7 +1309,7 @@ export class GraphService {
         due: !!isDue,
         due_today: !!isDueToday,
         fsrs_stability: avgStability,
-        fsrs_retrievability: avgRetrievability,
+        fsrs_retrievability: weightedRetrievability,
       };
     });
 

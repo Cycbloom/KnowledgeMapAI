@@ -69,29 +69,27 @@ export class MasteryDecayService {
     easeFactor: number,
     fsrsStability?: number,
   ): number {
-    const validatedMastery = Math.max(0, Math.min(1, masteryLevel));
-
     const daysSinceLastStudy = daysBetween(lastStudyAt, new Date());
 
     if (daysSinceLastStudy <= 0) {
-      return validatedMastery;
+      return Math.max(0, Math.min(1, masteryLevel));
     }
 
-    let retentionRate: number;
-
+    // 使用 FSRS retrievability 作为衰减后的掌握度
+    // retrievability = e^(-elapsed_days / stability)，表示当前能回忆起来的概率
     if (fsrsStability && fsrsStability > 0) {
-      retentionRate = Math.pow(Math.E, -daysSinceLastStudy / fsrsStability);
-    } else {
-      const validatedEaseFactor = Math.max(MIN_EASE_FACTOR, easeFactor);
-      retentionRate = Math.pow(
-        Math.E,
-        -daysSinceLastStudy / (validatedEaseFactor * this.config.decayBaseFactor),
-      );
+      const retrievability = Math.pow(Math.E, -daysSinceLastStudy / fsrsStability);
+      return Math.max(this.config.minMastery, Math.round(retrievability * 100) / 100);
     }
 
-    const newMastery = validatedMastery * retentionRate;
+    // 无 FSRS 数据时，使用 easeFactor 估算
+    const validatedEaseFactor = Math.max(MIN_EASE_FACTOR, easeFactor);
+    const estimatedRetrievability = Math.pow(
+      Math.E,
+      -daysSinceLastStudy / (validatedEaseFactor * this.config.decayBaseFactor),
+    );
 
-    return Math.max(this.config.minMastery, Math.round(newMastery * 100) / 100);
+    return Math.max(this.config.minMastery, Math.round(estimatedRetrievability * 100) / 100);
   }
 
   async batchDecayCalculation(
@@ -404,8 +402,10 @@ export class MasteryDecayService {
     const decayConstant = (fsrsStability && fsrsStability > 0)
       ? fsrsStability
       : easeFactor * this.config.decayBaseFactor;
-    const daysUntilThreshold =
-      -decayConstant * Math.log(reviewThreshold / currentMastery);
+
+    // 当有 FSRS 数据时，mastery = retrievability = e^(-days/S)
+    // 所以 threshold = e^(-days/S) => days = -S * ln(threshold)
+    const daysUntilThreshold = -decayConstant * Math.log(reviewThreshold);
 
     return Math.max(0, Math.round(daysUntilThreshold));
   }

@@ -3,8 +3,9 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { LearningState } from "../../../shared/types/scheduler";
-import { MASTERY_STATE_MAPPING, MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
+import { MASTERY_THRESHOLDS } from "../../../shared/constants/masteryThresholds";
 import { appEventBus } from "../core/eventBus";
+import { masteryCalculationService } from "../study/masteryCalculationService";
 
 export interface SyncResult {
   success: boolean;
@@ -45,9 +46,6 @@ export interface SubtaskWithKnowledgePoint {
     reason?: string;
   }>;
 }
-
-const MASTERY_MAX = 1.0;
-const MASTERY_MIN = 0.0;
 
 export class SubtaskKnowledgeSyncService {
   async syncSubtaskStateToKnowledgePoint(
@@ -107,22 +105,22 @@ export class SubtaskKnowledgeSyncService {
     }
 
     const oldMastery = knowledgePoint.mastery_level ?? 0;
-    const adjustedMastery = this.calculateKnowledgePointMastery(
-      newState,
-      newMasteryLevel,
-      oldMastery,
-    );
-
     const now = new Date().toISOString();
 
+    // 更新 last_study_at
     const { error: updateKpError } = await supabase
       .from("knowledge_points")
       .update({
-        mastery_level: adjustedMastery,
         last_study_at: now,
         updated_at: now,
       })
       .eq("id", knowledgePointId);
+
+    // 基于 FSRS retrievability 重新计算 mastery_level
+    const adjustedMastery = await masteryCalculationService.updateKnowledgePointMastery(
+      supabase,
+      knowledgePointId,
+    );
 
     if (updateKpError) {
       return {
@@ -526,22 +524,8 @@ export class SubtaskKnowledgeSyncService {
     return triggeredSubtaskIds;
   }
 
-  private calculateKnowledgePointMastery(
-    learningState: LearningState,
-    subtaskMastery: number,
-    currentKpMastery: number,
-  ): number {
-    const stateConfig = MASTERY_STATE_MAPPING[learningState];
-    const stateMidpoint = (stateConfig.min + stateConfig.max) / 2;
-
-    const weight = 0.3;
-    const weightedMastery =
-      currentKpMastery * (1 - weight) + stateMidpoint * weight;
-
-    const adjustedMastery = weightedMastery + (subtaskMastery - 0.5) * 0.1;
-
-    return Math.min(MASTERY_MAX, Math.max(MASTERY_MIN, adjustedMastery));
-  }
+  // calculateKnowledgePointMastery 已被 masteryCalculationService 替代
+  // 原启发式加权逻辑已移除，保留此注释供参考
 
   private determineLearningState(masteryLevel: number): LearningState {
     if (masteryLevel < MASTERY_THRESHOLDS.LEARNING_REVIEW) {

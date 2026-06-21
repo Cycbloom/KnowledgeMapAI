@@ -3,10 +3,14 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Stars, Line, Billboard, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
-import { Node, Edge, ColorScheme, GraphColorMode, type Node as GraphNode } from '../types';
+import { Node, Edge, ColorScheme, GraphColorMode, NodeLevel, type Node as GraphNode } from '../types';
 import { create3DForceLayout, LayoutNode3D, LayoutLink3D } from './layout/forceLayout3D';
 import { useTheme } from '../hooks';
 import { truncateText } from '../utils/textUtils';
+import {
+  getLevelColors, getStatusColors, getHeatmapColors, getDecayColors,
+  calculateNodeHeat, getLearningStatus
+} from '../config/learningStatusColors';
 
 interface PlanetViewProps {
   nodes: Node[];
@@ -17,37 +21,14 @@ interface PlanetViewProps {
   height?: number;
   colorScheme?: ColorScheme;
   coloringMode?: GraphColorMode;
+  nodeStatus?: Record<string, any>;
+  focusedNodeId?: string | null;
 }
 
 const NODE_COLORS = Object.freeze({
-  root: new THREE.Color('#FFD700'),
-  core: new THREE.Color('#FF8C00'),
-  normal: new THREE.Color('#4A90D9'),
-  leaf: new THREE.Color('#00CED1'),
   selected: new THREE.Color('#FF69B4'),
   hover: new THREE.Color('#98FB98')
 });
-
-type NodeType = 'root' | 'core' | 'normal' | 'leaf';
-
-function getNodeType(node: LayoutNode3D, layoutLinks: LayoutLink3D[]): NodeType {
-  const hasChildren = layoutLinks.some(link => link.source === node.id);
-  const hasParent = layoutLinks.some(link => link.target === node.id);
-
-  if (!hasParent) return 'root';
-  if (hasChildren && node.level === 1) return 'core';
-  if (hasChildren) return 'normal';
-  return 'leaf';
-}
-
-/** 预计算节点类型映射，避免每帧重复调用 getNodeType（O(N*M) → O(1) 查找） */
-function buildNodeTypeMap(nodes: LayoutNode3D[], links: LayoutLink3D[]): Map<string, NodeType> {
-  const map = new Map<string, NodeType>();
-  for (const node of nodes) {
-    map.set(node.id, getNodeType(node, links));
-  }
-  return map;
-}
 
 interface PlanetNodeProps {
   node: LayoutNode3D;
@@ -246,7 +227,10 @@ function Scene({
   hoveredNodeId,
   onNodeClick,
   onNodeHover,
-  colorScheme: _colorScheme,
+  colorScheme,
+  coloringMode,
+  nodeStatus,
+  focusedNodeId,
   isDark
 }: {
   layoutNodes: LayoutNode3D[];
@@ -256,6 +240,9 @@ function Scene({
   onNodeClick: (node: LayoutNode3D) => void;
   onNodeHover: (id: string | null) => void;
   colorScheme: ColorScheme;
+  coloringMode: GraphColorMode;
+  nodeStatus?: Record<string, any>;
+  focusedNodeId?: string | null;
   isDark: boolean;
 }) {
   const controlsRef = useRef<any>(null);
@@ -266,16 +253,49 @@ function Scene({
 
   // 共享材质：所有 instance 复用同一份
   const sharedMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    roughness: 0.2,
-    metalness: 0.8,
-    emissiveIntensity: 0.4,
+    roughness: 0.5,
+    metalness: 0.15,
   }), []);
 
-  // 预计算节点类型映射，避免每帧 O(N*M) 重复计算
-  const nodeTypeMap = useMemo(
-    () => buildNodeTypeMap(layoutNodes, layoutLinks),
-    [layoutNodes, layoutLinks]
-  );
+  // 获取节点颜色：根据着色模式计算
+  const getNodeColor = useCallback((nodeId: string, level: number): THREE.Color => {
+    const nodeLevel = (level === 0 ? 'root' : level === 1 ? 'core' : level === 2 ? 'sub' : level === 3 ? 'normal' : 'leaf') as NodeLevel;
+
+    if (coloringMode === 'level') {
+      const colors = getLevelColors(nodeLevel, isDark);
+      return new THREE.Color(colors.primary);
+    }
+
+    if (coloringMode === 'heatmap') {
+      if (!nodeStatus) {
+        const colors = getLevelColors(nodeLevel, isDark);
+        return new THREE.Color(colors.primary);
+      }
+      const heatValue = calculateNodeHeat(nodeStatus[nodeId]);
+      const colors = getHeatmapColors(heatValue, isDark);
+      return new THREE.Color(colors.primary);
+    }
+
+    if (coloringMode === 'decay') {
+      if (!nodeStatus) {
+        const colors = getLevelColors(nodeLevel, isDark);
+        return new THREE.Color(colors.primary);
+      }
+      const retrievability = nodeStatus[nodeId]?.fsrs_retrievability;
+      const decayValue = retrievability != null ? retrievability : -1;
+      const colors = getDecayColors(decayValue, isDark);
+      return new THREE.Color(colors.primary);
+    }
+
+    // status mode (default)
+    if (!nodeStatus) {
+      const colors = getLevelColors(nodeLevel, isDark);
+      return new THREE.Color(colors.primary);
+    }
+    const status = getLearningStatus(nodeStatus[nodeId]);
+    const colors = getStatusColors(status, isDark, colorScheme);
+    return new THREE.Color(colors.primary);
+  }, [coloringMode, colorScheme, nodeStatus, isDark]);
 
   const nodeMap = useMemo(() => {
     const map = new Map<string, LayoutNode3D>();
@@ -333,7 +353,6 @@ function Scene({
 
     for (let i = 0; i < count; i++) {
       const node = visibleNodes[i];
-      const type = nodeTypeMap.get(node.id) ?? 'normal';
       const baseSize = 3 + (node.importance / 5) * 5;
 
       // 设置位置和缩放
@@ -342,7 +361,7 @@ function Scene({
       mesh.setMatrixAt(i, tempMatrix);
 
       // 设置颜色
-      tempColor.copy(NODE_COLORS[type]);
+      tempColor.copy(getNodeColor(node.id, node.level));
       mesh.setColorAt(i, tempColor);
     }
 
@@ -353,10 +372,62 @@ function Scene({
     mesh.computeBoundingSphere();
 
     return mesh;
-  }, [visibleNodes, nodeTypeMap, sharedSphereGeo, sharedMaterial]);
+  }, [visibleNodes, getNodeColor, sharedSphereGeo, sharedMaterial]);
+
+  // 居中动画相关
+  const animationTargetRef = useRef<THREE.Vector3 | null>(null);
+  const animationProgressRef = useRef(0);
+  const isAnimatingRef = useRef(false);
+  const ANIMATION_DURATION = 800; // ms
+  const animationStartCameraPosRef = useRef<THREE.Vector3 | null>(null);
+  const animationStartTargetPosRef = useRef<THREE.Vector3 | null>(null);
+
+  useEffect(() => {
+    if (!focusedNodeId) return;
+    const targetNode = layoutNodes.find(n => n.id === focusedNodeId);
+    if (!targetNode) return;
+
+    // Set animation target: camera should look at the node position
+    animationTargetRef.current = new THREE.Vector3(targetNode.x, targetNode.z, targetNode.y);
+    animationProgressRef.current = 0;
+    isAnimatingRef.current = true;
+  }, [focusedNodeId, layoutNodes]);
 
   // 视锥体裁剪 + InstancedMesh 批量更新
-  useFrame(({ camera: cam }) => {
+  useFrame(({ camera: cam }, delta) => {
+    // 居中动画
+    if (isAnimatingRef.current && animationTargetRef.current) {
+      const deltaMs = delta * 1000;
+      animationProgressRef.current = Math.min(1, animationProgressRef.current + deltaMs / ANIMATION_DURATION);
+
+      // Ease out cubic
+      const t = animationProgressRef.current;
+      const easedT = 1 - Math.pow(1 - t, 3);
+
+      const target = animationTargetRef.current;
+      const offset = new THREE.Vector3(80, 60, 80);
+      const desiredCameraPos = target.clone().add(offset);
+
+      // Store start positions on first frame
+      if (!animationStartCameraPosRef.current) {
+        animationStartCameraPosRef.current = camera.position.clone();
+        animationStartTargetPosRef.current = controlsRef.current ? controlsRef.current.target.clone() : new THREE.Vector3();
+      }
+
+      camera.position.lerpVectors(animationStartCameraPosRef.current, desiredCameraPos, easedT);
+
+      if (controlsRef.current) {
+        controlsRef.current.target.lerpVectors(animationStartTargetPosRef.current!, target, easedT);
+        controlsRef.current.update();
+      }
+
+      if (t >= 1) {
+        isAnimatingRef.current = false;
+        animationStartCameraPosRef.current = null;
+        animationStartTargetPosRef.current = null;
+      }
+    }
+
     // 球体自转角度递增
     rotationAngleRef.current += 0.003;
 
@@ -418,7 +489,6 @@ function Scene({
     for (let i = 0; i < count; i++) {
       const node = visibleNodes[i];
       const baseSize = 3 + (node.importance / 5) * 5;
-      const type = nodeTypeMap.get(node.id) ?? 'normal';
 
       // 计算距离和缩放
       tempPosition.set(node.x, node.z, node.y);
@@ -438,7 +508,7 @@ function Scene({
       } else if (node.id === hoveredNodeId) {
         tempColor.copy(NODE_COLORS.hover);
       } else {
-        tempColor.copy(NODE_COLORS[type]);
+        tempColor.copy(getNodeColor(node.id, node.level));
       }
       mesh.setColorAt(i, tempColor);
     }
@@ -536,7 +606,7 @@ function Scene({
 
   return (
     <>
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.8} />
       <pointLight position={[200, 200, 200]} intensity={1.2} />
       <pointLight position={[-200, -100, -200]} intensity={0.6} color="#6366f1" />
 
@@ -632,7 +702,9 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
   width = 800,
   height = 600,
   colorScheme = 'default',
-  coloringMode: _coloringMode
+  coloringMode = 'level',
+  nodeStatus,
+  focusedNodeId
 }) => {
   const { isDark } = useTheme();
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -680,6 +752,9 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
             onNodeClick={handleNodeClick}
             onNodeHover={handleNodeHover}
             colorScheme={colorScheme}
+            coloringMode={coloringMode}
+            nodeStatus={nodeStatus}
+            focusedNodeId={focusedNodeId}
             isDark={isDark}
           />
         </Suspense>

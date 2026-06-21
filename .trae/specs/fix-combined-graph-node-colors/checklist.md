@@ -1,0 +1,5 @@
+- [x] API 路由 getNodeStatus 未认证时返回空对象 `{}` 而非空数组 `[]`
+- [x] useBatchGraphStatus 返回的 data 对象使用 useMemo 缓存
+- [x] CombinedGraphView mergedNodeStatus 正确处理空数组情况
+- [x] MindMapNode 颜色计算有防御性兜底，colors.primary 始终有值
+- [x] 类型检查通过（`npm run check` 无新增错误）

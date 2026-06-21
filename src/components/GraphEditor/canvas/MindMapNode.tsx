@@ -24,6 +24,7 @@ import {
   getLearningStatus,
   getStatusColors,
   getLevelColors,
+  LEVEL_COLORS,
   getHeatmapColors,
   calculateNodeHeat,
   getDecayColors,
@@ -212,19 +213,23 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = useMemo(() => {
+    let result: typeof LEVEL_COLORS.normal;
     if (coloringMode === "level") {
-      return getLevelColors(level, isDark);
-    }
-    if (coloringMode === "heatmap") {
+      result = getLevelColors(level, isDark);
+    } else if (coloringMode === "heatmap") {
       const heatValue = calculateNodeHeat(nodeStatus?.[node.id]);
-      return getHeatmapColors(heatValue, isDark);
-    }
-    if (coloringMode === "decay") {
+      result = getHeatmapColors(heatValue, isDark);
+    } else if (coloringMode === "decay") {
       const retrievability = nodeStatus?.[node.id]?.fsrs_retrievability;
       const decayValue = retrievability != null ? retrievability : -1;
-      return getDecayColors(decayValue, isDark);
+      result = getDecayColors(decayValue, isDark);
+    } else {
+      result = getStatusColors(status, isDark, colorScheme);
     }
-    return getStatusColors(status, isDark, colorScheme);
+    if (!result.primary) {
+      result = LEVEL_COLORS.normal;
+    }
+    return result;
   }, [coloringMode, level, status, isDark, colorScheme, nodeStatus, node.id]);
 
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);

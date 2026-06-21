@@ -1,8 +1,9 @@
-﻿import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useCombinedGraphAIOperations } from '../hooks/graphAI';
+import { useBatchGraphStatus } from '../hooks/queries/useGraphQueries';
 import { MindMapCanvas } from '../components/GraphEditor/canvas/MindMapCanvas';
 import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
 import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';
@@ -24,6 +25,16 @@ export const CombinedGraphView: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(340);
   const [coloringMode, setColoringMode] = useState<GraphColorMode>('level');
+
+  const { data: graphStatusData } = useBatchGraphStatus([id1 || '', id2 || '']);
+
+  const mergedNodeStatus = useMemo(() => {
+    const status1 = graphStatusData?.[id1 || ''];
+    const status2 = graphStatusData?.[id2 || ''];
+    const s1 = (Array.isArray(status1) ? {} : status1) as Record<string, any> | undefined;
+    const s2 = (Array.isArray(status2) ? {} : status2) as Record<string, any> | undefined;
+    return { ...(s1 || {}), ...(s2 || {}) };
+  }, [graphStatusData, id1, id2]);
   
   const { data: graph1Data, isLoading: isLoading1, error: error1 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id1],
@@ -201,7 +212,13 @@ export const CombinedGraphView: React.FC = () => {
   }, []);
 
   const handleToggleColoringMode = useCallback(() => {
-    setColoringMode(prev => prev === 'level' ? 'status' : 'level');
+    const nextMode: Record<GraphColorMode, GraphColorMode> = {
+      level: 'status',
+      status: 'heatmap',
+      heatmap: 'decay',
+      decay: 'level',
+    };
+    setColoringMode(prev => nextMode[prev] || 'level');
   }, []);
 
   const handleExportImage = useCallback(() => {
@@ -305,6 +322,7 @@ export const CombinedGraphView: React.FC = () => {
               selectedNodeId={selectedNode?.id || null}
               onNodeClick={handleNodeClick}
               coloringMode={coloringMode}
+              nodeStatus={mergedNodeStatus}
               isRightPanelOpen={isSidebarOpen}
               rightPanelWidth={sidebarWidth}
             />

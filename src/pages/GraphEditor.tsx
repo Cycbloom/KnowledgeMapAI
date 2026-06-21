@@ -1569,6 +1569,8 @@ export const GraphEditor = () => {
                 onNodeClick={handleNodeClick}
                 colorScheme={colorScheme}
                 coloringMode={coloringMode}
+                nodeStatus={nodeStatus}
+                focusedNodeId={focusedNodeId}
               />
             </Suspense>
           )}

@@ -1,4 +1,5 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { api } from "../../services/api/adapter";
 import { Node, Edge } from "../../types";
 import { queryKeys, defaultQueryConfig, staticQueryConfig, realtimeQueryConfig } from "./config";
@@ -108,12 +109,17 @@ export const useBatchGraphStatus = (
   const isLoading = queries.some((q) => q.isLoading);
   const isPending = queries.some((q) => q.isPending);
 
-  const data = graphIds.reduce(
-    (acc, id, index) => {
-      acc[id] = queries[index].data;
-      return acc;
-    },
-    {} as Record<string, unknown>,
+  const data = useMemo(
+    () =>
+      graphIds.reduce(
+        (acc, id, index) => {
+          acc[id] = queries[index].data;
+          return acc;
+        },
+        {} as Record<string, unknown>,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    queries.map((q) => q.data),
   );
 
   return {

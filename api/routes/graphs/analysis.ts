@@ -54,7 +54,7 @@ router.get(
     const userId = req.user?.id || null;
     const data = userId
       ? await graphService.getGraphNodeStatus(req.supabase!, userId, id)
-      : [];
+      : {};
     res.json(data);
   },
 );

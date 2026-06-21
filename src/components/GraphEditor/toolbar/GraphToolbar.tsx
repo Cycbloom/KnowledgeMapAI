@@ -971,6 +971,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     disabled,
     children,
     keepOpenOnChildClick,
+    keepDropdownOpen,
     subMenuOpen,
     onSubMenuToggle,
   }: {
@@ -983,6 +984,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     disabled?: boolean;
     children?: React.ReactNode;
     keepOpenOnChildClick?: boolean;
+    keepDropdownOpen?: boolean;
     subMenuOpen?: boolean;
     onSubMenuToggle?: () => void;
   }) => {
@@ -1019,7 +1021,9 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
               handleToggle?.();
             } else if (!children) {
               onClick?.();
-              setOpenDropdown(null);
+              if (!keepDropdownOpen) {
+                setOpenDropdown(null);
+              }
             }
           }}
           className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all ${
@@ -1485,6 +1489,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         />
 
         <MenuItem
+          keepDropdownOpen
           onClick={() => {
             const nextMode: Record<string, GraphColorMode> = {
               level: "status",

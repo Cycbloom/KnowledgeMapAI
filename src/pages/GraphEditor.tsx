@@ -501,8 +501,13 @@ export const GraphEditor = () => {
     if (!embeddingData?.nodes) return undefined;
     const map = new Map<string, number[]>();
     for (const node of embeddingData.nodes) {
-      if (node.embedding && Array.isArray(node.embedding) && node.embedding.length > 0) {
-        map.set(node.id, node.embedding);
+      let emb = node.embedding;
+      // 容错：后端可能返回 pgvector 字符串格式
+      if (typeof emb === 'string') {
+        try { emb = JSON.parse(emb); } catch { emb = null; }
+      }
+      if (emb && Array.isArray(emb) && emb.length > 0) {
+        map.set(node.id, emb);
       }
     }
     return map.size > 0 ? map : undefined;

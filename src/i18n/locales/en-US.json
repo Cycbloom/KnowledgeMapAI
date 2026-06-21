@@ -2438,6 +2438,13 @@
       "treeView": "Tree View",
       "knowledgePlanet": "Knowledge Planet",
       "quadrant": "Quadrant",
+      "semantic": "Semantic",
+      "semanticDesc": "Group by content similarity",
+      "mindmapDesc": "Force-directed layout",
+      "timelineDesc": "Chronological order",
+      "treeViewDesc": "Hierarchical tree",
+      "planetDesc": "Orbital layout",
+      "quadrantDesc": "Four-quadrant grid",
       "switchView": "Switch View",
       "sidebarOutline": "Sidebar Outline",
       "searchNodes": "Search Nodes",
@@ -2515,7 +2522,8 @@
       "statusDue": "Due",
       "statusLocked": "Locked",
       "statusNew": "New",
-      "reviewCount": "{{count}} reviews"
+      "reviewCount": "{{count}} reviews",
+      "semanticUnavailable": "Nodes in this graph lack semantic vector data, switched to standard layout. Ensure knowledge points have generated vector data via AI features."
     },
     "narrative": {
       "play": "Play",

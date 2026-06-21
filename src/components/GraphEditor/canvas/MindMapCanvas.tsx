@@ -712,8 +712,8 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         className="relative w-full h-full overflow-hidden"
       >
         {semanticLayoutUnavailable && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200">
-            {t('graphEditor.mindMap.semanticUnavailable', '暂无语义数据，已回退到力导向布局。请先生成知识点嵌入向量。')}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg text-sm text-amber-800 dark:text-amber-200">
+            {t('graphEditor.mindMap.semanticUnavailable', '当前图谱节点缺少语义向量数据，已切换为常规布局。请确保知识点已通过 AI 功能生成向量数据。')}
           </div>
         )}
         <svg

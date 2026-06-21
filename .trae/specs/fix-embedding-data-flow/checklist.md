@@ -1,0 +1,3 @@
+- [x] 后端 `api/utils/nodeHelpers.ts` buildNodeFromGraphNode 对 embedding 执行字符串解析（与 shared 版本一致）
+- [x] 前端 `src/pages/GraphEditor.tsx` embeddingsMap 构建对字符串格式 embedding 做容错处理
+- [x] npm run lint 和类型检查通过

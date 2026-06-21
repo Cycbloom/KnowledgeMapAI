@@ -2742,6 +2742,13 @@
       "treeView": "树形视图",
       "knowledgePlanet": "知识星球",
       "quadrant": "象限",
+      "semantic": "语义聚类",
+      "semanticDesc": "按内容相似度自动分组",
+      "mindmapDesc": "力导向自由布局",
+      "timelineDesc": "按时间顺序排列",
+      "treeViewDesc": "层级树状结构",
+      "planetDesc": "星球环绕布局",
+      "quadrantDesc": "四象限分类",
       "switchView": "切换视图",
       "sidebarOutline": "侧边栏大纲",
       "searchNodes": "搜索节点",
@@ -2819,7 +2826,8 @@
       "statusDue": "待复习",
       "statusLocked": "未解锁",
       "statusNew": "新节点",
-      "reviewCount": "复习 {{count}} 次"
+      "reviewCount": "复习 {{count}} 次",
+      "semanticUnavailable": "当前图谱节点缺少语义向量数据，已切换为常规布局。请确保知识点已通过 AI 功能生成向量数据。"
     },
     "narrative": {
       "play": "播放",

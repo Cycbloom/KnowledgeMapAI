@@ -48,7 +48,7 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     properties: kp.properties || {},
     visibility: kp.visibility || "private",
     owner_id: kp.owner_id || "",
-    embedding: kp.embedding,
+    embedding: typeof kp.embedding === 'string' ? JSON.parse(kp.embedding) : kp.embedding,
   } as Node;
 }
 

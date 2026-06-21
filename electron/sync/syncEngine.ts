@@ -124,6 +124,9 @@ export class SyncEngine {
       // Phase 2: Push to cloud
       await this.pushToCloud();
 
+      // Clean up old synced operations
+      this.cleanupOldOperations();
+
       this.notifyStatusChanged();
     } catch (error) {
       this.syncError = (error as Error).message;
@@ -192,40 +195,65 @@ export class SyncEngine {
   // Push local changes to cloud
   private async pushToCloud(): Promise<void> {
     try {
-      const operations: Array<{ table: string; action: string; id: string; data?: Record<string, unknown>; clientUpdatedAt: string }> = [];
+      // Get pending operations from sync_operations table
+      const pendingOps = this.dbManager.getPendingOperations();
 
-      // Collect all pending push records
-      for (const [tableName, tableDef] of Object.entries(TABLES)) {
-        if (!tableDef.syncEnabled) continue;
+      if (pendingOps.length === 0) return;
 
-        const pendingRecords = this.dbManager.getPendingPush(tableName);
-        for (const record of pendingRecords) {
-          const data = { ...record } as Record<string, unknown>;
-          // Remove sync tracking columns before pushing
-          delete data.sync_status;
-          delete data.local_updated_at;
+      // Merge operations for the same record: combine partial updates into complete data
+      const mergedOpsMap = new Map<string, typeof pendingOps[0]>();
+      for (const op of pendingOps) {
+        const key = `${op.table_name}:${op.record_id}`;
+        const existing = mergedOpsMap.get(key);
 
-          // Determine action based on whether this is a soft delete
-          let action = 'update';
-          if (tableDef.hasDeletedAt && data.deleted_at) {
-            action = 'delete';
-          } else if (data.created_at === data.updated_at || !data.updated_at) {
-            // Heuristic: if created_at equals updated_at, it's likely a create
-            // This is imperfect; a better approach would track the original action
-            action = 'update'; // Default to update for safety
-          }
+        if (!existing) {
+          mergedOpsMap.set(key, op);
+          continue;
+        }
 
-          operations.push({
-            table: tableName,
-            action,
-            id: data.id as string,
-            data,
-            clientUpdatedAt: (data.local_updated_at as string) || (data.updated_at as string) || new Date().toISOString(),
+        // Merge based on operation sequence
+        if (existing.action === 'create' && op.action === 'update') {
+          // Merge update fields into create data to preserve complete record
+          mergedOpsMap.set(key, {
+            ...existing,
+            data: { ...(existing.data ?? {}), ...(op.data ?? {}) },
+            created_at: op.created_at,
           });
+        } else if (existing.action === 'update' && op.action === 'update') {
+          // Merge consecutive updates: later fields override earlier ones
+          mergedOpsMap.set(key, {
+            ...existing,
+            data: { ...(existing.data ?? {}), ...(op.data ?? {}) },
+            created_at: op.created_at,
+          });
+        } else if (op.action === 'delete') {
+          // Delete overrides everything; if preceded by create, server never saw it so skip entirely
+          if (existing.action === 'create') {
+            mergedOpsMap.delete(key);
+          } else {
+            mergedOpsMap.set(key, op);
+          }
+        } else {
+          // Default: keep the latest operation (e.g., create -> create shouldn't happen but handle gracefully)
+          mergedOpsMap.set(key, op);
         }
       }
+      const mergedOps = Array.from(mergedOpsMap.values());
 
-      if (operations.length === 0) return;
+      // Build operations array for the push API
+      const operations: Array<{
+        table: string;
+        action: 'create' | 'update' | 'delete';
+        id: string;
+        data?: Record<string, unknown>;
+        clientUpdatedAt: string;
+      }> = mergedOps.map(op => ({
+        table: op.table_name,
+        action: op.action as 'create' | 'update' | 'delete',
+        id: op.record_id,
+        data: op.data ?? undefined,
+        clientUpdatedAt: op.created_at,
+      }));
 
       // Push in batches
       const port = this.apiPort;
@@ -233,6 +261,10 @@ export class SyncEngine {
 
       for (let i = 0; i < operations.length; i += this.config.batchSize) {
         const batch = operations.slice(i, i + this.config.batchSize);
+        const batchOpIds = batch.map(op => {
+          const key = `${op.table}:${op.id}`;
+          return mergedOpsMap.get(key)!.id;
+        });
 
         const response = await fetch(`http://localhost:${port}/api/sync/push`, {
           method: 'POST',
@@ -247,46 +279,53 @@ export class SyncEngine {
           throw new Error(`Push failed: ${response.status} ${response.statusText}`);
         }
 
-        const result = (await response.json()) as { results: Array<{ id: string; success: boolean; conflict?: boolean; serverData?: unknown; error?: string }> };
+        const result = (await response.json()) as {
+          results: Array<{
+            id: string;
+            success: boolean;
+            conflict?: boolean;
+            serverData?: unknown;
+            error?: string;
+          }>;
+        };
         const results = result.results;
 
         // Process results
-        const syncedIds: string[] = [];
+        const syncedOpIds: string[] = [];
+        const syncedRecordIds: Array<{ table: string; id: string }> = [];
+
         for (const pushResult of results) {
+          const op = batch.find(o => o.id === pushResult.id);
+          if (!op) continue;
+
           if (pushResult.success) {
-            syncedIds.push(pushResult.id);
+            syncedOpIds.push(batchOpIds[batch.indexOf(op)]!);
+            syncedRecordIds.push({ table: op.table, id: op.id });
           } else if (pushResult.conflict) {
-            // Find the table for this record
-            const op = batch.find(o => o.id === pushResult.id);
-            if (op) {
-              // Get local data for conflict record
-              const localRecord = this.dbManager.findById(op.table, op.id);
-              this.dbManager.addSyncConflict(op.table, op.id, localRecord, pushResult.serverData);
-              // Cloud wins: update local with server data
-              if (pushResult.serverData) {
-                this.dbManager.upsert(op.table, {
-                  ...(pushResult.serverData as Record<string, unknown>),
-                  sync_status: 'synced',
-                });
-              }
-              syncedIds.push(pushResult.id);
+            // Conflict: cloud wins, update local with server data
+            const localRecord = this.dbManager.findById(op.table, op.id);
+            this.dbManager.addSyncConflict(op.table, op.id, localRecord, pushResult.serverData);
+            if (pushResult.serverData) {
+              this.dbManager.upsert(op.table, {
+                ...(pushResult.serverData as Record<string, unknown>),
+                sync_status: 'synced',
+              });
             }
+            // Mark operation as synced since we've resolved it (cloud wins)
+            syncedOpIds.push(batchOpIds[batch.indexOf(op)]!);
+            syncedRecordIds.push({ table: op.table, id: op.id });
           }
         }
 
-        // Mark synced records
-        for (const id of syncedIds) {
-          // We need to find which table this ID belongs to
-          // For simplicity, try to mark in all tables that had this operation
-          for (const op of batch) {
-            if (op.id === id) {
-              try {
-                this.dbManager.markAsSynced(op.table, [id]);
-              } catch {
-                // Ignore if table doesn't exist
-              }
-              break;
-            }
+        // Mark operations as synced
+        this.dbManager.markOperationsSynced(syncedOpIds);
+
+        // Mark records as synced
+        for (const { table, id } of syncedRecordIds) {
+          try {
+            this.dbManager.markAsSynced(table, [id]);
+          } catch {
+            // Record may have been hard-deleted, ignore
           }
         }
       }
@@ -371,6 +410,18 @@ export class SyncEngine {
   private notifyStatusChanged(): void {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send('sync:statusChanged', this.getStatus());
+    }
+  }
+
+  // Clean up old synced operations to prevent unbounded growth
+  private cleanupOldOperations(): void {
+    try {
+      const deletedCount = this.dbManager.cleanupSyncedOperations(7); // Clean up operations older than 7 days
+      if (deletedCount > 0) {
+        console.log(`[SyncEngine] 清理了 ${deletedCount} 条旧操作日志`);
+      }
+    } catch (error) {
+      console.error('[SyncEngine] 清理操作日志失败:', error);
     }
   }
 }

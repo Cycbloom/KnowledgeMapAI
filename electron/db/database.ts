@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { TABLES, type TableDef, type ColumnDef } from './schema';
 import { getInitialMigration } from './migrations/001_initial';
 
@@ -27,6 +28,13 @@ export class DatabaseManager {
     this.db.pragma('journal_mode = WAL');
     // Enable foreign keys
     this.db.pragma('foreign_keys = ON');
+
+    // Performance optimization pragmas
+    this.db.pragma('synchronous = NORMAL');   // WAL+NORMAL is safe, much faster than FULL
+    this.db.pragma('cache_size = -64000');    // 64MB cache (negative = KB)
+    this.db.pragma('temp_store = MEMORY');    // Temp tables in memory
+    this.db.pragma('mmap_size = 67108864');   // 64MB memory-mapped I/O
+    this.db.pragma('busy_timeout = 5000');    // 5s wait on lock contention
 
     // Run migrations
     this.runMigrations();
@@ -127,9 +135,10 @@ export class DatabaseManager {
     this.ensureReady();
     const tableDef = this.getTableDef(tableName);
 
-    // Add sync_status and local_updated_at
+    // Add sync_status and local_updated_at; generate id if not provided
     const enrichedData = {
       ...data,
+      id: data.id ?? crypto.randomUUID(),
       sync_status: 'pending_push',
       local_updated_at: new Date().toISOString(),
     };
@@ -141,6 +150,9 @@ export class DatabaseManager {
     const sql = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
     this.db!.prepare(sql).run(...values);
 
+    // Log operation for sync tracking
+    this.logOperation(tableName, (enrichedData as Record<string, unknown>).id as string, 'create', undefined, enrichedData);
+
     // Return the created record
     const id = (enrichedData as Record<string, unknown>).id as string;
     return this.findById<T>(tableName, id)!;
@@ -150,6 +162,9 @@ export class DatabaseManager {
   update<T = Record<string, unknown>>(tableName: string, id: string, data: Record<string, unknown>): T {
     this.ensureReady();
     const tableDef = this.getTableDef(tableName);
+
+    // Get old record for change tracking
+    const oldRecord = this.findById(tableName, id) as Record<string, unknown> | null;
 
     // Add sync_status and local_updated_at
     const enrichedData = {
@@ -165,23 +180,53 @@ export class DatabaseManager {
     const sql = `UPDATE ${tableName} SET ${setClauses.join(', ')} WHERE id = ?`;
     this.db!.prepare(sql).run(...values, id);
 
+    // Calculate changed fields
+    const changedFields = oldRecord
+      ? Object.keys(data).filter(key => {
+          const oldVal = oldRecord[key];
+          const newVal = enrichedData[key];
+          return JSON.stringify(oldVal) !== JSON.stringify(newVal);
+        })
+      : Object.keys(data);
+
+    // Log operation for sync tracking
+    this.logOperation(tableName, id, 'update', changedFields, enrichedData);
+
     return this.findById<T>(tableName, id)!;
   }
 
   // Delete a record (hard delete)
   delete(tableName: string, id: string): boolean {
     this.ensureReady();
+
+    // Snapshot record before deletion for sync
+    const snapshot = this.findById(tableName, id) as Record<string, unknown> | null;
+
     const result = this.db!.prepare(`DELETE FROM ${tableName} WHERE id = ?`).run(id);
+
+    // Log delete operation for sync tracking
+    if (result.changes > 0) {
+      this.logOperation(tableName, id, 'delete', undefined, snapshot ?? undefined);
+    }
+
     return result.changes > 0;
   }
 
   // Soft delete (set deleted_at)
   softDelete(tableName: string, id: string): boolean {
     this.ensureReady();
+    // Snapshot record before soft delete for sync
+    const snapshot = this.findById(tableName, id) as Record<string, unknown> | null;
     const now = new Date().toISOString();
     const result = this.db!.prepare(
       `UPDATE ${tableName} SET deleted_at = ?, sync_status = 'pending_push', local_updated_at = ? WHERE id = ?`
     ).run(now, now, id);
+
+    // Log soft delete operation for sync tracking
+    if (result.changes > 0) {
+      this.logOperation(tableName, id, 'delete', undefined, snapshot ?? undefined);
+    }
+
     return result.changes > 0;
   }
 
@@ -235,6 +280,32 @@ export class DatabaseManager {
     this.db!.prepare(sql).run(...values);
 
     return this.findById<T>(tableName, (enrichedData as Record<string, unknown>).id as string)!;
+  }
+
+  // ============ Operation Logging ============
+
+  // Log an operation to sync_operations table for accurate sync tracking
+  private logOperation(
+    tableName: string,
+    recordId: string,
+    action: 'create' | 'update' | 'delete',
+    changedFields?: string[],
+    data?: Record<string, unknown>,
+  ): void {
+    this.ensureReady();
+    const id = crypto.randomUUID();
+    this.db!.prepare(
+      `INSERT INTO sync_operations (id, table_name, record_id, action, changed_fields, data, created_at, synced)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
+    ).run(
+      id,
+      tableName,
+      recordId,
+      action,
+      changedFields ? JSON.stringify(changedFields) : null,
+      data ? JSON.stringify(data) : null,
+      new Date().toISOString(),
+    );
   }
 
   // ============ Sync-specific Methods ============
@@ -306,6 +377,52 @@ export class DatabaseManager {
       }
     }
     return result;
+  }
+
+  // Get pending operations for sync
+  getPendingOperations(limit?: number): Array<{
+    id: string;
+    table_name: string;
+    record_id: string;
+    action: string;
+    changed_fields: string[] | null;
+    data: Record<string, unknown> | null;
+    created_at: string;
+  }> {
+    this.ensureReady();
+    const sql = limit
+      ? 'SELECT * FROM sync_operations WHERE synced = 0 ORDER BY created_at ASC LIMIT ?'
+      : 'SELECT * FROM sync_operations WHERE synced = 0 ORDER BY created_at ASC';
+    const rows = (limit ? this.db!.prepare(sql).all(limit) : this.db!.prepare(sql).all()) as Record<string, unknown>[];
+
+    return rows.map(row => ({
+      id: row.id as string,
+      table_name: row.table_name as string,
+      record_id: row.record_id as string,
+      action: row.action as string,
+      changed_fields: row.changed_fields ? JSON.parse(row.changed_fields as string) : null,
+      data: row.data ? JSON.parse(row.data as string) : null,
+      created_at: row.created_at as string,
+    }));
+  }
+
+  // Mark operations as synced after successful push
+  markOperationsSynced(ids: string[]): void {
+    this.ensureReady();
+    if (ids.length === 0) return;
+    const placeholders = ids.map(() => '?').join(', ');
+    this.db!.prepare(`UPDATE sync_operations SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
+  }
+
+  // Clean up old synced operations
+  cleanupSyncedOperations(olderThanDays: number): number {
+    this.ensureReady();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+    const result = this.db!.prepare(
+      'DELETE FROM sync_operations WHERE synced = 1 AND created_at < ?'
+    ).run(cutoffDate.toISOString());
+    return result.changes;
   }
 
   // ============ Serialization Helpers ============

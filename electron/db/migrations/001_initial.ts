@@ -158,6 +158,7 @@ export function getInitialMigration(): string[] {
     // System tables - no FK dependencies
     "sync_metadata",
     "sync_conflicts",
+    "sync_operations",
     "schema_version",
   ];
 

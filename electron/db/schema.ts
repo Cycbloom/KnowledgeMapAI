@@ -1773,6 +1773,26 @@ const syncConflictsTable: TableDef = {
   syncEnabled: false,
 };
 
+const syncOperationsTable: TableDef = {
+  name: 'sync_operations',
+  columns: [
+    idColumn(),
+    { name: 'table_name', type: 'TEXT', pgType: 'VARCHAR', nullable: false, defaultValue: null },
+    { name: 'record_id', type: 'TEXT', pgType: 'UUID', nullable: false, defaultValue: null },
+    { name: 'action', type: 'TEXT', pgType: 'VARCHAR', nullable: false, defaultValue: null },
+    { name: 'changed_fields', type: 'TEXT', pgType: 'JSONB', nullable: true, defaultValue: null, isJsonb: true },
+    { name: 'data', type: 'TEXT', pgType: 'JSONB', nullable: true, defaultValue: null, isJsonb: true },
+    timestampColumn('created_at', false),
+    booleanColumn('synced', '0'),
+  ],
+  primaryKey: ['id'],
+  indexes: [
+    { name: 'idx_sync_ops_synced', columns: ['synced', 'created_at'] },
+    { name: 'idx_sync_ops_table_record', columns: ['table_name', 'record_id'] },
+  ],
+  syncEnabled: false,
+};
+
 const schemaVersionTable: TableDef = {
   name: 'schema_version',
   columns: [
@@ -1868,5 +1888,6 @@ export const TABLES: Record<string, TableDef> = {
   // System tables
   sync_metadata: syncMetadataTable,
   sync_conflicts: syncConflictsTable,
+  sync_operations: syncOperationsTable,
   schema_version: schemaVersionTable,
 };

@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { aiService } from '../services/ai/aiService';
+import { cacheService, CacheKeys, CacheTTL, computeTextHash } from '../services/common/cacheService';
 import { logger } from './logger';
 
 export interface SimilaritySearchOptions {
@@ -24,30 +25,39 @@ export async function searchSimilarKnowledgePoints(
 ): Promise<SimilarKnowledgePoint[]> {
   const { threshold = 0.85, limit = 10 } = options;
 
-  try {
-    const embedding = await aiService.generateEmbedding(text);
-    if (!embedding) {
-      logger.warn('Failed to generate embedding for similarity search');
-      return [];
-    }
+  const cacheKey = CacheKeys.SEARCH_SIMILAR(computeTextHash(text), userId);
 
-    const { data, error } = await supabase.rpc('search_similar_knowledge_points', {
-      p_query_embedding: embedding,
-      p_user_id: userId,
-      p_match_threshold: threshold,
-      p_match_count: limit,
-    });
+  return cacheService.getOrSet(
+    cacheKey,
+    async () => {
+      try {
+        const embedding = await aiService.generateEmbedding(text);
+        if (!embedding) {
+          logger.warn('Failed to generate embedding for similarity search');
+          return [];
+        }
 
-    if (error) {
-      logger.error('Similarity search error:', error);
-      return [];
-    }
+        const { data, error } = await supabase.rpc('search_similar_knowledge_points', {
+          p_query_embedding: embedding,
+          p_user_id: userId,
+          p_match_threshold: threshold,
+          p_match_count: limit,
+        });
 
-    return (data || []) as SimilarKnowledgePoint[];
-  } catch (error) {
-    logger.error('Similarity search failed:', error);
-    return [];
-  }
+        if (error) {
+          logger.error('Similarity search error:', error);
+          return [];
+        }
+
+        return (data || []) as SimilarKnowledgePoint[];
+      } catch (error) {
+        logger.error('Similarity search failed:', error);
+        return [];
+      }
+    },
+    CacheTTL.SEARCH,
+    ['search']
+  );
 }
 
 export async function checkAndReuseKnowledgePoint(
@@ -93,34 +103,43 @@ export async function searchSimilarGraphs(
 ): Promise<{ similarGraphs: SimilarGraph[]; embedding?: number[] }> {
   const { threshold = 0.85, limit = 10, excludeGraphId } = options;
 
-  try {
-    const embedding = await aiService.generateEmbedding(topic);
-    if (!embedding) {
-      logger.warn('Failed to generate embedding for graph topic similarity search');
-      return { similarGraphs: [] };
-    }
+  const cacheKey = CacheKeys.SEARCH_SIMILAR(computeTextHash(topic), userId);
 
-    const { data, error } = await supabase.rpc('search_similar_graphs', {
-      p_query_embedding: embedding,
-      p_user_id: userId,
-      p_match_threshold: threshold,
-      p_match_count: limit,
-      p_exclude_graph_id: excludeGraphId || null,
-    });
+  return cacheService.getOrSet(
+    cacheKey,
+    async () => {
+      try {
+        const embedding = await aiService.generateEmbedding(topic);
+        if (!embedding) {
+          logger.warn('Failed to generate embedding for graph topic similarity search');
+          return { similarGraphs: [] };
+        }
 
-    if (error) {
-      logger.error('Graph similarity search error:', error);
-      return { similarGraphs: [], embedding };
-    }
+        const { data, error } = await supabase.rpc('search_similar_graphs', {
+          p_query_embedding: embedding,
+          p_user_id: userId,
+          p_match_threshold: threshold,
+          p_match_count: limit,
+          p_exclude_graph_id: excludeGraphId || null,
+        });
 
-    return { 
-      similarGraphs: (data || []) as SimilarGraph[], 
-      embedding 
-    };
-  } catch (error) {
-    logger.error('Graph similarity search failed:', error);
-    return { similarGraphs: [] };
-  }
+        if (error) {
+          logger.error('Graph similarity search error:', error);
+          return { similarGraphs: [], embedding };
+        }
+
+        return {
+          similarGraphs: (data || []) as SimilarGraph[],
+          embedding
+        };
+      } catch (error) {
+        logger.error('Graph similarity search failed:', error);
+        return { similarGraphs: [] };
+      }
+    },
+    CacheTTL.SEARCH,
+    ['search']
+  );
 }
 
 export async function checkDuplicateGraphTopic(

@@ -23,7 +23,12 @@ class CacheInvalidationSubscriber {
 
   private handleGraphCreated = async (event: AppEvent): Promise<void> => {
     const payload = event.payload as GraphCreatedPayload;
-    const keys = [CacheKeys.USER_GRAPHS(payload.userId)];
+    const keys = [
+      CacheKeys.USER_GRAPHS(payload.userId),
+      CacheKeys.GRAPH_MAP(payload.userId),
+      CacheKeys.GRAPH_TAGS(payload.userId),
+      CacheKeys.GRAPH_DOMAINS(payload.userId),
+    ];
     await cacheService.del(keys);
     logger.debug(`[CacheInvalidation] graph_created: invalidated ${keys.length} keys for user ${payload.userId}`);
   };
@@ -34,6 +39,8 @@ class CacheInvalidationSubscriber {
       CacheKeys.USER_GRAPHS(payload.userId),
       CacheKeys.GRAPH(payload.graphId),
       CacheKeys.GRAPH_NODES(payload.userId, payload.graphId),
+      CacheKeys.GRAPH_NODE_STATUS(payload.userId, payload.graphId),
+      CacheKeys.GRAPH_MAP(payload.userId),
     ];
     await cacheService.del(keys);
     logger.debug(`[CacheInvalidation] graph_updated: invalidated ${keys.length} keys for graph ${payload.graphId}`);
@@ -54,43 +61,38 @@ class CacheInvalidationSubscriber {
 
   private handleNodeCreated = async (event: AppEvent): Promise<void> => {
     const payload = event.payload as NodeCreatedPayload;
-    const keys = [CacheKeys.GRAPH_NODES(payload.userId, payload.graphId)];
-    await cacheService.del(keys);
-    logger.debug(`[CacheInvalidation] node_created: invalidated ${keys.length} keys for graph ${payload.graphId}`);
+    await cacheService.invalidateStructureCache(payload.userId, payload.graphId);
+    logger.debug(`[CacheInvalidation] node_created: invalidated structure cache for graph ${payload.graphId}`);
   };
 
   private handleNodeUpdated = async (event: AppEvent): Promise<void> => {
     const payload = event.payload as NodeUpdatedPayload;
-    const keys = [
-      CacheKeys.GRAPH_NODES(payload.userId, payload.graphId),
-      CacheKeys.KNOWLEDGE_POINT(payload.nodeId),
-    ];
-    await cacheService.del(keys);
-    logger.debug(`[CacheInvalidation] node_updated: invalidated ${keys.length} keys for node ${payload.nodeId}`);
+    await Promise.all([
+      cacheService.invalidateStructureCache(payload.userId, payload.graphId),
+      cacheService.del([CacheKeys.KNOWLEDGE_POINT(payload.nodeId)]),
+    ]);
+    logger.debug(`[CacheInvalidation] node_updated: invalidated structure cache + knowledge point for node ${payload.nodeId}`);
   };
 
   private handleNodeDeleted = async (event: AppEvent): Promise<void> => {
     const payload = event.payload as NodeDeletedPayload;
-    const keys = [
-      CacheKeys.GRAPH_NODES(payload.userId, payload.graphId),
-      CacheKeys.KNOWLEDGE_POINT(payload.nodeId),
-    ];
-    await cacheService.del(keys);
-    logger.debug(`[CacheInvalidation] node_deleted: invalidated ${keys.length} keys for node ${payload.nodeId}`);
+    await Promise.all([
+      cacheService.invalidateStructureCache(payload.userId, payload.graphId),
+      cacheService.del([CacheKeys.KNOWLEDGE_POINT(payload.nodeId)]),
+    ]);
+    logger.debug(`[CacheInvalidation] node_deleted: invalidated structure cache + knowledge point for node ${payload.nodeId}`);
   };
 
   private handleEdgeCreated = async (event: AppEvent): Promise<void> => {
     const payload = event.payload as EdgeCreatedPayload;
-    const keys = [CacheKeys.GRAPH_NODES(payload.userId, payload.graphId)];
-    await cacheService.del(keys);
-    logger.debug(`[CacheInvalidation] edge_created: invalidated ${keys.length} keys for graph ${payload.graphId}`);
+    await cacheService.invalidateStructureCache(payload.userId, payload.graphId);
+    logger.debug(`[CacheInvalidation] edge_created: invalidated structure cache for graph ${payload.graphId}`);
   };
 
   private handleEdgeDeleted = async (event: AppEvent): Promise<void> => {
     const payload = event.payload as EdgeDeletedPayload;
-    const keys = [CacheKeys.GRAPH_NODES(payload.userId, payload.graphId)];
-    await cacheService.del(keys);
-    logger.debug(`[CacheInvalidation] edge_deleted: invalidated ${keys.length} keys for graph ${payload.graphId}`);
+    await cacheService.invalidateStructureCache(payload.userId, payload.graphId);
+    logger.debug(`[CacheInvalidation] edge_deleted: invalidated structure cache for graph ${payload.graphId}`);
   };
 
   private handleGraphRollback = async (event: AppEvent): Promise<void> => {
@@ -102,9 +104,16 @@ class CacheInvalidationSubscriber {
       CacheKeys.LEARNING_PATH(payload.graphId),
       CacheKeys.STUDY_CARDS(payload.graphId),
       CacheKeys.GRAPH_COLLABORATORS(payload.graphId),
+      CacheKeys.GRAPH_NODE_STATUS(payload.userId, payload.graphId),
+      CacheKeys.GRAPH_MAP(payload.userId),
+      CacheKeys.GRAPH_TAGS(payload.userId),
+      CacheKeys.GRAPH_DOMAINS(payload.userId),
     ];
-    await cacheService.del(keys);
-    logger.debug(`[CacheInvalidation] graph_rollback: invalidated ${keys.length} keys for graph ${payload.graphId}`);
+    await Promise.all([
+      cacheService.del(keys),
+      cacheService.delByPrefix(`graph_literature_${payload.graphId}`),
+    ]);
+    logger.debug(`[CacheInvalidation] graph_rollback: invalidated ${keys.length} keys + literature prefix for graph ${payload.graphId}`);
   };
 
   private handleAITaskCompleted = async (event: AppEvent): Promise<void> => {
@@ -114,6 +123,7 @@ class CacheInvalidationSubscriber {
     const keys = [
       CacheKeys.GRAPH_NODES(payload.userId, payload.graphId),
       CacheKeys.GRAPH(payload.graphId),
+      CacheKeys.GRAPH_NODE_STATUS(payload.userId, payload.graphId),
     ];
 
     if (payload.taskType === "generate_questions") {

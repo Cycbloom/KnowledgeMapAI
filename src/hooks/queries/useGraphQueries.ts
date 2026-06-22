@@ -2,7 +2,7 @@ import { useQuery, useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { api } from "../../services/api/adapter";
 import { Node, Edge } from "../../types";
-import { queryKeys, defaultQueryConfig, staticQueryConfig, realtimeQueryConfig } from "./config";
+import { queryKeys, defaultQueryConfig, staticQueryConfig, GC_TIME } from "./config";
 
 export const useDashboardStats = () => {
   return useQuery({
@@ -89,7 +89,9 @@ export const useGraphNodeStatus = (id: string) => {
     queryKey: queryKeys.graphNodeStatus(id),
     queryFn: () => api.graphs.getNodeStatus(id),
     enabled: !!id,
-    ...realtimeQueryConfig,
+    staleTime: 30_000,
+    gcTime: GC_TIME,
+    retry: 1,
   });
 };
 
@@ -102,7 +104,9 @@ export const useBatchGraphStatus = (
       queryKey: queryKeys.graphNodeStatus(id),
       queryFn: () => api.graphs.getNodeStatus(id),
       enabled: enabled && !!id,
-      ...realtimeQueryConfig,
+      staleTime: 30_000,
+      gcTime: GC_TIME,
+      retry: 1,
     })),
   });
 

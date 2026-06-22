@@ -4,7 +4,7 @@ import { searchSimilarKnowledgePoints } from '../../utils/similaritySearch';
 import { PaginationOptions, getPaginationParams } from '../../utils/pagination';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
-import { cacheService, CacheKeys } from '../common/cacheService';
+import { cacheService, CacheKeys, CacheTTL, computeTextHash } from '../common/cacheService';
 import type { KnowledgePoint, KnowledgePointVisibility } from '../../../shared/types/index';
 
 export type { KnowledgePoint, KnowledgePointVisibility };
@@ -205,19 +205,29 @@ export class KnowledgePointService {
     threshold: number = 0.85,
     limit: number = 10
   ): Promise<SimilarKnowledgePointResult[]> {
-    const { data, error } = await supabase.rpc('search_similar_knowledge_points', {
-      p_query_embedding: embedding,
-      p_user_id: userId,
-      p_match_threshold: threshold,
-      p_match_count: limit,
-    });
+    const embeddingHash = computeTextHash(embedding.map(v => v.toFixed(6)).join(','));
+    const cacheKey = CacheKeys.SEARCH_SIMILAR(embeddingHash, userId);
 
-    if (error) {
-      logger.error('Search similar knowledge points error:', error);
-      throw error;
-    }
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await supabase.rpc('search_similar_knowledge_points', {
+          p_query_embedding: embedding,
+          p_user_id: userId,
+          p_match_threshold: threshold,
+          p_match_count: limit,
+        });
 
-    return (data || []) as SimilarKnowledgePointResult[];
+        if (error) {
+          logger.error('Search similar knowledge points error:', error);
+          throw error;
+        }
+
+        return (data || []) as SimilarKnowledgePointResult[];
+      },
+      CacheTTL.SEARCH,
+      ['search']
+    );
   }
 
   async listAccessible(

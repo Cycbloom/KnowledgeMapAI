@@ -1241,79 +1241,86 @@ export class GraphService {
     userId: string,
     graphId: string,
   ) {
-    const { data: cards, error } = await supabase
-      .from("study_cards")
-      .select(
-        "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
-      )
-      .eq("user_id", userId)
-      .eq("graph_id", graphId);
+    return cacheService.getOrSet(
+      CacheKeys.GRAPH_NODE_STATUS(userId, graphId),
+      async () => {
+        const { data: cards, error } = await supabase
+          .from("study_cards")
+          .select(
+            "knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
+          )
+          .eq("user_id", userId)
+          .eq("graph_id", graphId);
 
-    if (error) {
-      logger.error("getGraphNodeStatus error:", error);
-      return {};
-    }
+        if (error) {
+          logger.error("getGraphNodeStatus error:", error);
+          return {};
+        }
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const statusMap: Record<string, NodeStatus> = {};
+        const statusMap: Record<string, NodeStatus> = {};
 
-    // Group cards by knowledge_point_id and aggregate FSRS data
-    type CardPick = Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count'>;
-    const cardGroups = new Map<string, { cards: CardPick[]; stabilitySum: number; weightedRetrievabilitySum: number; reviewCountSum: number }>();
+        // Group cards by knowledge_point_id and aggregate FSRS data
+        type CardPick = Pick<StudyCardRow, 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count'>;
+        const cardGroups = new Map<string, { cards: CardPick[]; stabilitySum: number; weightedRetrievabilitySum: number; reviewCountSum: number }>();
 
-    (cards || []).forEach((card: CardPick) => {
-      const kpId = card.knowledge_point_id;
-      if (!cardGroups.has(kpId)) {
-        cardGroups.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
-      }
-      const group = cardGroups.get(kpId)!;
-      group.cards.push(card);
-      const stability = card.fsrs_stability ?? 0;
-      const retrievability = card.fsrs_retrievability ?? 0;
+        (cards || []).forEach((card: CardPick) => {
+          const kpId = card.knowledge_point_id;
+          if (!cardGroups.has(kpId)) {
+            cardGroups.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
+          }
+          const group = cardGroups.get(kpId)!;
+          group.cards.push(card);
+          const stability = card.fsrs_stability ?? 0;
+          const retrievability = card.fsrs_retrievability ?? 0;
 
-      // 使用 stability 加权，与 masteryCalculationService 一致
-      if (stability > 0) {
-        group.stabilitySum += stability;
-        group.weightedRetrievabilitySum += retrievability * stability;
-      } else {
-        group.stabilitySum += 1; // 新卡片等权
-        group.weightedRetrievabilitySum += retrievability;
-      }
-      group.reviewCountSum += card.review_count || 0;
-    });
+          // 使用 stability 加权，与 masteryCalculationService 一致
+          if (stability > 0) {
+            group.stabilitySum += stability;
+            group.weightedRetrievabilitySum += retrievability * stability;
+          } else {
+            group.stabilitySum += 1; // 新卡片等权
+            group.weightedRetrievabilitySum += retrievability;
+          }
+          group.reviewCountSum += card.review_count || 0;
+        });
 
-    cardGroups.forEach((group, kpId) => {
-      const card = group.cards[0];
-      const nextReview = card.next_review ? new Date(card.next_review) : null;
-      const isDue = nextReview && nextReview <= now;
-      const isDueToday =
-        nextReview &&
-        nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
+        cardGroups.forEach((group, kpId) => {
+          const card = group.cards[0];
+          const nextReview = card.next_review ? new Date(card.next_review) : null;
+          const isDue = nextReview && nextReview <= now;
+          const isDueToday =
+            nextReview &&
+            nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-      // stability 加权平均 retrievability，与 masteryCalculationService 一致
-      const weightedRetrievability = group.stabilitySum > 0
-        ? group.weightedRetrievabilitySum / group.stabilitySum
-        : 0;
-      const avgStability = group.cards.length > 0
-        ? group.cards.reduce((sum, c) => sum + (c.fsrs_stability ?? 0), 0) / group.cards.length
-        : 0;
-      const isMastered = avgStability > 21;
+          // stability 加权平均 retrievability，与 masteryCalculationService 一致
+          const weightedRetrievability = group.stabilitySum > 0
+            ? group.weightedRetrievabilitySum / group.stabilitySum
+            : 0;
+          const avgStability = group.cards.length > 0
+            ? group.cards.reduce((sum, c) => sum + (c.fsrs_stability ?? 0), 0) / group.cards.length
+            : 0;
+          const isMastered = avgStability > 21;
 
-      statusMap[kpId] = {
-        mastered: isMastered,
-        locked: false,
-        review_count: group.reviewCountSum,
-        next_review: card.next_review ?? undefined,
-        due: !!isDue,
-        due_today: !!isDueToday,
-        fsrs_stability: avgStability,
-        fsrs_retrievability: weightedRetrievability,
-      };
-    });
+          statusMap[kpId] = {
+            mastered: isMastered,
+            locked: false,
+            review_count: group.reviewCountSum,
+            next_review: card.next_review ?? undefined,
+            due: !!isDue,
+            due_today: !!isDueToday,
+            fsrs_stability: avgStability,
+            fsrs_retrievability: weightedRetrievability,
+          };
+        });
 
-    return statusMap;
+        return statusMap;
+      },
+      CacheTTL.NODE_STATUS,
+      [`graph:${graphId}`, 'status'],
+    );
   }
 
   /**

@@ -1,116 +1,138 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { cacheService, CacheKeys, CacheTTL } from "../common/cacheService";
 
 export class GraphCrudService {
   async getGraphMap(supabase: SupabaseClient, userId: string) {
-    const { data: graphs } = await supabase
-      .from("knowledge_graphs")
-      .select("id, title, description, created_at, is_public, domain")
-      .eq("user_id", userId)
-      .is("deleted_at", null)
-      .order("last_used_at", { ascending: false });
+    return cacheService.getOrSet(
+      CacheKeys.GRAPH_MAP(userId),
+      async () => {
+        const { data: graphs } = await supabase
+          .from("knowledge_graphs")
+          .select("id, title, description, created_at, is_public, domain")
+          .eq("user_id", userId)
+          .is("deleted_at", null)
+          .order("last_used_at", { ascending: false });
 
-    const graphIds = (graphs || []).map((g) => g.id);
+        const graphIds = (graphs || []).map((g) => g.id);
 
-    const [nodeCountsResult, relationsResult] = await Promise.all([
-      supabase
-        .from("graph_nodes")
-        .select("graph_id")
-        .in("graph_id", graphIds)
-        .is("deleted_at", null),
-      supabase
-        .from("graph_relations")
-        .select(
-          "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at",
-        )
-        .or(
-          `source_graph_id.in.(${graphIds.join(
-            ",",
-          )}),target_graph_id.in.(${graphIds.join(",")})`,
-        ),
-    ]);
+        const [nodeCountsResult, relationsResult] = await Promise.all([
+          supabase
+            .from("graph_nodes")
+            .select("graph_id")
+            .in("graph_id", graphIds)
+            .is("deleted_at", null),
+          supabase
+            .from("graph_relations")
+            .select(
+              "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at",
+            )
+            .or(
+              `source_graph_id.in.(${graphIds.join(
+                ",",
+              )}),target_graph_id.in.(${graphIds.join(",")})`,
+            ),
+        ]);
 
-    const nodeCountMap = new Map<string, number>();
-    (nodeCountsResult.data || []).forEach((n) => {
-      nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
-    });
+        const nodeCountMap = new Map<string, number>();
+        (nodeCountsResult.data || []).forEach((n) => {
+          nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
+        });
 
-    const graphsWithCounts = (graphs || []).map((g) => ({
-      ...g,
-      node_count: nodeCountMap.get(g.id) || 0,
-    }));
+        const graphsWithCounts = (graphs || []).map((g) => ({
+          ...g,
+          node_count: nodeCountMap.get(g.id) || 0,
+        }));
 
-    return {
-      graphs: graphsWithCounts,
-      relations: relationsResult.data || [],
-    };
+        return {
+          graphs: graphsWithCounts,
+          relations: relationsResult.data || [],
+        };
+      },
+      CacheTTL.DYNAMIC,
+      [`user:${userId}`, 'graphMap'],
+    );
   }
 
   async getTags(supabase: SupabaseClient, userId: string) {
-    const { data: graphs } = await supabase
-      .from("knowledge_graphs")
-      .select("id")
-      .eq("user_id", userId)
-      .is("deleted_at", null);
+    return cacheService.getOrSet(
+      CacheKeys.GRAPH_TAGS(userId),
+      async () => {
+        const { data: graphs } = await supabase
+          .from("knowledge_graphs")
+          .select("id")
+          .eq("user_id", userId)
+          .is("deleted_at", null);
 
-    const graphIds = (graphs || []).map((g) => g.id);
+        const graphIds = (graphs || []).map((g) => g.id);
 
-    if (graphIds.length === 0) {
-      return { tags: [] };
-    }
+        if (graphIds.length === 0) {
+          return { tags: [] };
+        }
 
-    const { data: graphNodes } = await supabase
-      .from("graph_nodes")
-      .select(
-        `
-        graph_id,
-        knowledge_points (
-          properties
-        )
-      `,
-      )
-      .in("graph_id", graphIds)
-      .is("deleted_at", null);
+        const { data: graphNodes } = await supabase
+          .from("graph_nodes")
+          .select(
+            `
+          graph_id,
+          knowledge_points (
+            properties
+          )
+        `,
+          )
+          .in("graph_id", graphIds)
+          .is("deleted_at", null);
 
-    const tagMap = new Map<string, number>();
+        const tagMap = new Map<string, number>();
 
-    (graphNodes || []).forEach((gn) => {
-      const kp = gn.knowledge_points as { properties?: { tags?: string[] } } | { properties?: { tags?: string[] } }[] | null;
-      const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
-      const tags = props?.tags || [];
-      tags.forEach((tag: string) => {
-        tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
-      });
-    });
+        (graphNodes || []).forEach((gn) => {
+          const kp = gn.knowledge_points as { properties?: { tags?: string[] } } | { properties?: { tags?: string[] } }[] | null;
+          const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+          const tags = props?.tags || [];
+          tags.forEach((tag: string) => {
+            tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+          });
+        });
 
-    const tags = Array.from(tagMap.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+        const tags = Array.from(tagMap.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count);
 
-    return { tags };
+        return { tags };
+      },
+      CacheTTL.DYNAMIC,
+      [`user:${userId}`, 'tags'],
+    );
   }
 
   async getDomains(supabase: SupabaseClient, userId: string) {
-    const { data: graphs } = await supabase
-      .from("knowledge_graphs")
-      .select("domain")
-      .eq("user_id", userId)
-      .is("deleted_at", null)
-      .not("domain", "is", null);
+    return cacheService.getOrSet(
+      CacheKeys.GRAPH_DOMAINS(userId),
+      async () => {
+        const { data: graphs } = await supabase
+          .from("knowledge_graphs")
+          .select("domain")
+          .eq("user_id", userId)
+          .is("deleted_at", null)
+          .not("domain", "is", null);
 
-    const domainMap = new Map<string, number>();
-    (graphs || []).forEach((g) => {
-      if (g.domain) {
-        domainMap.set(g.domain, (domainMap.get(g.domain) || 0) + 1);
-      }
-    });
+        const domainMap = new Map<string, number>();
+        (graphs || []).forEach((g) => {
+          if (g.domain) {
+            domainMap.set(g.domain, (domainMap.get(g.domain) || 0) + 1);
+          }
+        });
 
-    const domains = Array.from(domainMap.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+        const domains = Array.from(domainMap.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count);
 
-    return { domains };
+        return { domains };
+      },
+      CacheTTL.DYNAMIC,
+      [`user:${userId}`, 'domains'],
+    );
   }
 
   async analyzeMap(supabase: SupabaseClient, userId: string) {
@@ -295,89 +317,96 @@ export class GraphCrudService {
     graphId: string,
     moduleFilter?: string,
   ) {
-    const { data: graphNodes, error: gnError } = await supabase
-      .from("graph_nodes")
-      .select(
-        `
-        knowledge_points (
-          id,
-          title,
-          properties
-        )
-      `,
-      )
-      .eq("graph_id", graphId)
-      .is("deleted_at", null);
+    return cacheService.getOrSet(
+      CacheKeys.GRAPH_LITERATURE(graphId, moduleFilter),
+      async () => {
+        const { data: graphNodes, error: gnError } = await supabase
+          .from("graph_nodes")
+          .select(
+            `
+          knowledge_points (
+            id,
+            title,
+            properties
+          )
+        `,
+          )
+          .eq("graph_id", graphId)
+          .is("deleted_at", null);
 
-    if (gnError) throw gnError;
+        if (gnError) throw gnError;
 
-    const literatureMap = new Map<
-      string,
-      {
-        title: string;
-        authors: string[];
-        year: number;
-        type: string;
-        url: string;
-        conceptCount: number;
-        modules: string[];
-      }
-    >();
-
-    for (const gn of graphNodes || []) {
-      const kp = gn.knowledge_points as {
-        id?: string;
-        title?: string;
-        properties?: {
-          sources?: Array<{
-            title?: string;
-            authors?: string[];
-            year?: number;
-            type?: string;
-            url?: string;
-          }>;
-          backboneModule?: string;
-        };
-      } | undefined;
-      if (!kp) continue;
-      const props = kp.properties || {};
-      const sources = props.sources || [];
-      const backboneModule = props.backboneModule as string | undefined;
-
-      for (const source of sources) {
-        if (!source.title) continue;
-        const key = source.title + (source.url || "");
-        const existing = literatureMap.get(key);
-        if (existing) {
-          existing.conceptCount++;
-          if (backboneModule && !existing.modules.includes(backboneModule)) {
-            existing.modules.push(backboneModule);
+        const literatureMap = new Map<
+          string,
+          {
+            title: string;
+            authors: string[];
+            year: number;
+            type: string;
+            url: string;
+            conceptCount: number;
+            modules: string[];
           }
-        } else {
-          literatureMap.set(key, {
-            title: source.title,
-            authors: source.authors || [],
-            year: source.year || 0,
-            type: source.type || "document",
-            url: source.url || "",
-            conceptCount: 1,
-            modules: backboneModule ? [backboneModule] : [],
-          });
+        >();
+
+        for (const gn of graphNodes || []) {
+          const kp = gn.knowledge_points as {
+            id?: string;
+            title?: string;
+            properties?: {
+              sources?: Array<{
+                title?: string;
+                authors?: string[];
+                year?: number;
+                type?: string;
+                url?: string;
+              }>;
+              backboneModule?: string;
+            };
+          } | undefined;
+          if (!kp) continue;
+          const props = kp.properties || {};
+          const sources = props.sources || [];
+          const backboneModule = props.backboneModule as string | undefined;
+
+          for (const source of sources) {
+            if (!source.title) continue;
+            const key = source.title + (source.url || "");
+            const existing = literatureMap.get(key);
+            if (existing) {
+              existing.conceptCount++;
+              if (backboneModule && !existing.modules.includes(backboneModule)) {
+                existing.modules.push(backboneModule);
+              }
+            } else {
+              literatureMap.set(key, {
+                title: source.title,
+                authors: source.authors || [],
+                year: source.year || 0,
+                type: source.type || "document",
+                url: source.url || "",
+                conceptCount: 1,
+                modules: backboneModule ? [backboneModule] : [],
+              });
+            }
+          }
         }
-      }
-    }
 
-    let literature = Array.from(literatureMap.values());
+        let literature = Array.from(literatureMap.values());
 
-    if (moduleFilter) {
-      literature = literature.filter((l) => l.modules.includes(moduleFilter));
-    }
+        if (moduleFilter) {
+          literature = literature.filter((l) => l.modules.includes(moduleFilter));
+        }
 
-    literature.sort(
-      (a, b) => b.year - a.year || b.conceptCount - a.conceptCount,
+        literature.sort(
+          (a, b) => b.year - a.year || b.conceptCount - a.conceptCount,
+        );
+
+        return { literature, totalCount: literature.length };
+      },
+      CacheTTL.DYNAMIC,
+      [`graph:${graphId}`, 'literature'],
     );
-
-    return { literature, totalCount: literature.length };
   }
 
   async updateViewMode(

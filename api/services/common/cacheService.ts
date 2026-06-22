@@ -25,6 +25,12 @@ export const CacheKeys = {
   USER_RECENT_GRAPHS: (userId: string) => `user_recent_graphs_${userId}`,
   GRAPH_COLLABORATORS: (graphId: string) => `graph_collaborators_${graphId}`,
   CONCEPT_ANALYSIS: (graphId: string, jobId: string) => `concept_analysis_${graphId}_${jobId}`,
+  GRAPH_NODE_STATUS: (userId: string, graphId: string) => `graph_node_status_${userId}_${graphId}`,
+  GRAPH_MAP: (userId: string) => `graph_map_${userId}`,
+  GRAPH_TAGS: (userId: string) => `graph_tags_${userId}`,
+  GRAPH_DOMAINS: (userId: string) => `graph_domains_${userId}`,
+  GRAPH_LITERATURE: (graphId: string, moduleFilter?: string) => `graph_literature_${graphId}${moduleFilter ? `_${moduleFilter}` : ''}`,
+  SEARCH_SIMILAR: (textHash: string, userId: string) => `search_similar_${textHash}_${userId}`,
 };
 
 export const CacheTTL = {
@@ -42,6 +48,8 @@ export const CacheTTL = {
   STUDY_DATA: 120,
   AI_RESULTS: 1800,
   LEARNING_PATH: 600,
+  NODE_STATUS: 60,
+  SEARCH: 300,
 };
 
 const DEFAULT_TTL = CacheTTL.DYNAMIC;
@@ -389,6 +397,35 @@ export const cacheService = {
     logger.info(`[Cache] Invalidated user session cache for user ${userId}`);
   },
 
+  /**
+   * 仅失效学习状态缓存（学习复习后调用）
+   */
+  invalidateStatusCache: async (userId: string, graphId: string): Promise<void> => {
+    const keys = [CacheKeys.GRAPH_NODE_STATUS(userId, graphId)];
+    const deleted = await cacheService.del(keys);
+    logger.debug(`[Cache] Invalidated status cache for user ${userId}, graph ${graphId}: ${deleted} keys deleted`);
+  },
+
+  /**
+   * 失效结构相关缓存（增删节点/边后调用）
+   * 包括：GRAPH_NODES + GRAPH_NODE_STATUS + GRAPH_MAP + GRAPH_TAGS + GRAPH_DOMAINS + GRAPH_LITERATURE
+   */
+  invalidateStructureCache: async (userId: string, graphId: string): Promise<void> => {
+    const keys = [
+      CacheKeys.GRAPH_NODES(userId, graphId),
+      CacheKeys.GRAPH_NODE_STATUS(userId, graphId),
+      CacheKeys.GRAPH_MAP(userId),
+      CacheKeys.GRAPH_TAGS(userId),
+      CacheKeys.GRAPH_DOMAINS(userId),
+    ];
+    // GRAPH_LITERATURE 需要按前缀删除（因为 moduleFilter 不同）
+    await Promise.all([
+      cacheService.del(keys),
+      cacheService.delByPrefix(`graph_literature_${graphId}`),
+    ]);
+    logger.debug(`[Cache] Invalidated structure cache for user ${userId}, graph ${graphId}`);
+  },
+
   getCacheHealth: async (): Promise<{
     totalKeys: number;
     hitRate: number;
@@ -408,3 +445,16 @@ export const cacheService = {
     };
   },
 };
+
+/**
+ * 计算文本的简单 hash，用于 searchSimilar 缓存键
+ */
+export function computeTextHash(text: string): string {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    const char = text.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}

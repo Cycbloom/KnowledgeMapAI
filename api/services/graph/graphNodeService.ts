@@ -255,18 +255,55 @@ export class GraphNodeService {
       graphNodes.map(gn => [gn.knowledge_point_id, gn.id])
     );
 
-    const updatePromises = positions
-      .filter(pos => kpIdToGnId.has(pos.id))
-      .map(pos =>
-        supabase
-          .from('graph_nodes')
-          .update({
-            x_position: pos.x_position,
-            y_position: pos.y_position,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', kpIdToGnId.get(pos.id))
-      );
+    const validPositions = positions.filter(pos => kpIdToGnId.has(pos.id));
+
+    // 优先使用 RPC 批量更新
+    try {
+      const rpcResult = await supabase.rpc('batch_update_positions', {
+        p_ids: validPositions.map(pos => kpIdToGnId.get(pos.id)),
+        p_x_positions: validPositions.map(pos => pos.x_position),
+        p_y_positions: validPositions.map(pos => pos.y_position),
+      });
+
+      if (!rpcResult.error) {
+        const batchId = crypto.randomUUID();
+        for (const pos of validPositions) {
+          const gnId = kpIdToGnId.get(pos.id);
+          if (gnId) {
+            await graphVersionService.recordEvent(
+              supabase,
+              graphNodes[0]?.graph_id,
+              'node_updated',
+              {
+                graphNodeId: gnId,
+                knowledgePointId: pos.id,
+                changes: { x_position: pos.x_position, y_position: pos.y_position },
+              },
+              null,
+              batchId,
+            ).catch(err => logger.error('Record node_updated event error:', err));
+          }
+        }
+
+        return validPositions.length;
+      }
+
+      logger.warn('batch_update_positions RPC failed, falling back:', rpcResult.error.message);
+    } catch (rpcError) {
+      logger.warn('batch_update_positions RPC error, falling back:', rpcError);
+    }
+
+    // 降级路径：逐条更新
+    const updatePromises = validPositions.map(pos =>
+      supabase
+        .from('graph_nodes')
+        .update({
+          x_position: pos.x_position,
+          y_position: pos.y_position,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', kpIdToGnId.get(pos.id))
+    );
 
     const results = await Promise.all(updatePromises);
     const errors = results.filter(r => r.error);
@@ -275,7 +312,7 @@ export class GraphNodeService {
     }
 
     const batchId = crypto.randomUUID();
-    for (const pos of positions) {
+    for (const pos of validPositions) {
       const gnId = kpIdToGnId.get(pos.id);
       if (gnId) {
         await graphVersionService.recordEvent(
@@ -293,7 +330,7 @@ export class GraphNodeService {
       }
     }
 
-    return positions.length;
+    return validPositions.length;
   }
 
   async updateLevel(supabase: SupabaseClient, graphNodeId: string, level: NodeLevel): Promise<GraphNode> {

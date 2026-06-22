@@ -2,108 +2,145 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { cacheService, CacheKeys, CacheTTL } from "../common/cacheService";
+import { logger } from "../../utils/logger";
 
 export class GraphCrudService {
   async getGraphMap(supabase: SupabaseClient, userId: string) {
     return cacheService.getOrSet(
       CacheKeys.GRAPH_MAP(userId),
       async () => {
-        const { data: graphs } = await supabase
-          .from("knowledge_graphs")
-          .select("id, title, description, created_at, is_public, domain")
-          .eq("user_id", userId)
-          .is("deleted_at", null)
-          .order("last_used_at", { ascending: false });
+        try {
+          const { data, error } = await supabase.rpc('get_graph_map_data', {
+            p_user_id: userId,
+          });
 
-        const graphIds = (graphs || []).map((g) => g.id);
+          if (!error && data) {
+            return data as { graphs: Array<Record<string, unknown>>; relations: Array<Record<string, unknown>> };
+          }
 
-        const [nodeCountsResult, relationsResult] = await Promise.all([
-          supabase
-            .from("graph_nodes")
-            .select("graph_id")
-            .in("graph_id", graphIds)
-            .is("deleted_at", null),
-          supabase
-            .from("graph_relations")
-            .select(
-              "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at",
-            )
-            .or(
-              `source_graph_id.in.(${graphIds.join(
-                ",",
-              )}),target_graph_id.in.(${graphIds.join(",")})`,
-            ),
-        ]);
+          logger.warn('get_graph_map_data RPC failed, falling back:', error?.message);
+        } catch (err) {
+          logger.warn('get_graph_map_data RPC error, falling back:', err);
+        }
 
-        const nodeCountMap = new Map<string, number>();
-        (nodeCountsResult.data || []).forEach((n) => {
-          nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
-        });
-
-        const graphsWithCounts = (graphs || []).map((g) => ({
-          ...g,
-          node_count: nodeCountMap.get(g.id) || 0,
-        }));
-
-        return {
-          graphs: graphsWithCounts,
-          relations: relationsResult.data || [],
-        };
+        return this.getGraphMapFallback(supabase, userId);
       },
       CacheTTL.DYNAMIC,
       [`user:${userId}`, 'graphMap'],
     );
   }
 
+  private async getGraphMapFallback(supabase: SupabaseClient, userId: string) {
+    const { data: graphs } = await supabase
+      .from("knowledge_graphs")
+      .select("id, title, description, created_at, is_public, domain")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("last_used_at", { ascending: false });
+
+    const graphIds = (graphs || []).map((g) => g.id);
+
+    const [nodeCountsResult, relationsResult] = await Promise.all([
+      supabase
+        .from("graph_nodes")
+        .select("graph_id")
+        .in("graph_id", graphIds)
+        .is("deleted_at", null),
+      supabase
+        .from("graph_relations")
+        .select(
+          "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at",
+        )
+        .or(
+          `source_graph_id.in.(${graphIds.join(
+            ",",
+          )}),target_graph_id.in.(${graphIds.join(",")})`,
+        ),
+    ]);
+
+    const nodeCountMap = new Map<string, number>();
+    (nodeCountsResult.data || []).forEach((n) => {
+      nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
+    });
+
+    const graphsWithCounts = (graphs || []).map((g) => ({
+      ...g,
+      node_count: nodeCountMap.get(g.id) || 0,
+    }));
+
+    return {
+      graphs: graphsWithCounts,
+      relations: relationsResult.data || [],
+    };
+  }
+
   async getTags(supabase: SupabaseClient, userId: string) {
     return cacheService.getOrSet(
       CacheKeys.GRAPH_TAGS(userId),
       async () => {
-        const { data: graphs } = await supabase
-          .from("knowledge_graphs")
-          .select("id")
-          .eq("user_id", userId)
-          .is("deleted_at", null);
+        try {
+          const { data, error } = await supabase.rpc('get_user_graph_tags', {
+            p_user_id: userId,
+          });
 
-        const graphIds = (graphs || []).map((g) => g.id);
+          if (!error && data) {
+            return { tags: data as Array<{ name: string; count: number }> };
+          }
 
-        if (graphIds.length === 0) {
-          return { tags: [] };
+          logger.warn('get_user_graph_tags RPC failed, falling back:', error?.message);
+        } catch (err) {
+          logger.warn('get_user_graph_tags RPC error, falling back:', err);
         }
 
-        const { data: graphNodes } = await supabase
-          .from("graph_nodes")
-          .select(
-            `
+        return this.getTagsFallback(supabase, userId);
+      },
+      CacheTTL.DYNAMIC,
+      [`user:${userId}`, 'tags'],
+    );
+  }
+
+  private async getTagsFallback(supabase: SupabaseClient, userId: string) {
+    const { data: graphs } = await supabase
+      .from("knowledge_graphs")
+      .select("id")
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+
+    const graphIds = (graphs || []).map((g) => g.id);
+
+    if (graphIds.length === 0) {
+      return { tags: [] };
+    }
+
+    const { data: graphNodes } = await supabase
+      .from("graph_nodes")
+      .select(
+        `
           graph_id,
           knowledge_points (
             properties
           )
         `,
-          )
-          .in("graph_id", graphIds)
-          .is("deleted_at", null);
+      )
+      .in("graph_id", graphIds)
+      .is("deleted_at", null);
 
-        const tagMap = new Map<string, number>();
+    const tagMap = new Map<string, number>();
 
-        (graphNodes || []).forEach((gn) => {
-          const kp = gn.knowledge_points as { properties?: { tags?: string[] } } | { properties?: { tags?: string[] } }[] | null;
-          const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
-          const tags = props?.tags || [];
-          tags.forEach((tag: string) => {
-            tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
-          });
-        });
+    (graphNodes || []).forEach((gn) => {
+      const kp = gn.knowledge_points as { properties?: { tags?: string[] } } | { properties?: { tags?: string[] } }[] | null;
+      const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+      const tags = props?.tags || [];
+      tags.forEach((tag: string) => {
+        tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+      });
+    });
 
-        const tags = Array.from(tagMap.entries())
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count);
+    const tags = Array.from(tagMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
 
-        return { tags };
-      },
-      CacheTTL.DYNAMIC,
-      [`user:${userId}`, 'tags'],
-    );
+    return { tags };
   }
 
   async getDomains(supabase: SupabaseClient, userId: string) {
@@ -260,48 +297,48 @@ export class GraphCrudService {
       return { modules: [], totalNodes: 0, totalLiterature: 0 };
     }
 
-    const { data: graphNodes, error: gnError } = await supabase
-      .from("graph_nodes")
-      .select(
-        `
-        id,
-        knowledge_points (
-          id,
-          properties
-        )
-      `,
-      )
-      .eq("graph_id", graphId)
-      .is("deleted_at", null);
+    // 按模块分别查询，使用 SQL JSONB 条件在数据库层过滤
+    const moduleStats = await Promise.all(
+      modules.map(async (mod: { module_type: string; title: string; icon: string; color: string }) => {
+        const { data: moduleNodes, error: gnError } = await supabase
+          .from("graph_nodes")
+          .select(
+            `
+            id,
+            knowledge_points (
+              id,
+              properties
+            )
+          `,
+          )
+          .eq("graph_id", graphId)
+          .is("deleted_at", null)
+          .eq("knowledge_points.properties->>backboneModule", mod.module_type);
 
-    if (gnError) throw gnError;
+        if (gnError) {
+          logger.error("Get module nodes error:", gnError);
+        }
 
-    const moduleStats = modules.map((mod: { module_type: string; title: string; icon: string; color: string }) => {
-      const moduleNodes = (graphNodes || []).filter((gn) => {
-        const kp = gn.knowledge_points as Array<{ properties?: { backboneModule?: string } }> | { properties?: { backboneModule?: string } } | null;
-        const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
-        return props?.backboneModule === mod.module_type;
-      });
-
-      const sources = new Set<string>();
-      moduleNodes.forEach((gn) => {
-        const kp = gn.knowledge_points as Array<{ properties?: { sources?: Array<{ title?: string }> } }> | { properties?: { sources?: Array<{ title?: string }> } } | null;
-        const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
-        const nodeSources = props?.sources || [];
-        nodeSources.forEach((s: { title?: string }) => {
-          if (s.title) sources.add(s.title);
+        const sources = new Set<string>();
+        (moduleNodes || []).forEach((gn) => {
+          const kp = gn.knowledge_points as Array<{ properties?: { sources?: Array<{ title?: string }> } }> | { properties?: { sources?: Array<{ title?: string }> } } | null;
+          const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+          const nodeSources = props?.sources || [];
+          nodeSources.forEach((s: { title?: string }) => {
+            if (s.title) sources.add(s.title);
+          });
         });
-      });
 
-      return {
-        module_type: mod.module_type,
-        title: mod.title,
-        icon: mod.icon,
-        color: mod.color,
-        nodeCount: moduleNodes.length,
-        literatureCount: sources.size,
-      };
-    });
+        return {
+          module_type: mod.module_type,
+          title: mod.title,
+          icon: mod.icon,
+          color: mod.color,
+          nodeCount: (moduleNodes || []).length,
+          literatureCount: sources.size,
+        };
+      }),
+    );
 
     const totalNodes = moduleStats.reduce((sum, m) => sum + m.nodeCount, 0);
     const totalLiterature = moduleStats.reduce(

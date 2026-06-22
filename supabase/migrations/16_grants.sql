@@ -94,7 +94,7 @@ GRANT SELECT ON path_node_tasks TO anon;
 -- Grant execute permissions on business functions
 GRANT EXECUTE ON FUNCTION get_user_graphs_with_counts(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_trashed_graphs(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION batch_update_positions(JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION batch_update_positions(UUID[], INTEGER[], INTEGER[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION match_knowledge_points(vector(1024), float, int, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION match_knowledge_points_by_graph(vector(1024), float, int, uuid, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION match_document_chunks(vector(1024), float, int, uuid, uuid) TO authenticated;
@@ -108,3 +108,7 @@ GRANT EXECUTE ON FUNCTION get_user_study_stats(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION check_duplicate_graph_topic(VARCHAR(255), UUID, FLOAT, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION is_graph_collaborator(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION graph_traverse_neighbors(uuid, uuid[], int, text[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION create_edge(UUID, UUID, UUID, VARCHAR, FLOAT, VARCHAR, VARCHAR, VARCHAR, BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_graph_tags(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_graph_map_data(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION find_missing_connections(UUID, INT) TO authenticated;

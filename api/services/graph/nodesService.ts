@@ -753,17 +753,43 @@ export class NodesService {
       graphNodes.map((gn) => [gn.knowledge_point_id, gn.id]),
     );
 
-    const updatePromises = positions
-      .filter((pos) => kpIdToGnId.has(pos.id))
-      .map((pos) =>
-        supabase
-          .from('graph_nodes')
-          .update({
-            x_position: pos.x_position,
-            y_position: pos.y_position,
-          })
-          .eq('id', kpIdToGnId.get(pos.id)),
-      );
+    const validPositions = positions.filter((pos) => kpIdToGnId.has(pos.id));
+
+    // 优先使用 RPC 批量更新
+    try {
+      const rpcResult = await supabase.rpc('batch_update_positions', {
+        p_ids: validPositions.map((pos) => kpIdToGnId.get(pos.id)),
+        p_x_positions: validPositions.map((pos) => pos.x_position),
+        p_y_positions: validPositions.map((pos) => pos.y_position),
+      });
+
+      if (!rpcResult.error) {
+        const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
+        for (const gid of graphIds) {
+          await cacheService.invalidateGraphCache(userId, gid);
+        }
+
+        return {
+          message: `成功更新 ${validPositions.length} 个节点位置`,
+          count: validPositions.length,
+        };
+      }
+
+      logger.warn('batch_update_positions RPC failed, falling back:', rpcResult.error.message);
+    } catch (rpcError) {
+      logger.warn('batch_update_positions RPC error, falling back:', rpcError);
+    }
+
+    // 降级路径：逐条更新
+    const updatePromises = validPositions.map((pos) =>
+      supabase
+        .from('graph_nodes')
+        .update({
+          x_position: pos.x_position,
+          y_position: pos.y_position,
+        })
+        .eq('id', kpIdToGnId.get(pos.id)),
+    );
 
     const results = await Promise.all(updatePromises);
     const errors = results.filter((r) => r.error);
@@ -777,8 +803,8 @@ export class NodesService {
     }
 
     return {
-      message: `成功更新 ${positions.length} 个节点位置`,
-      count: positions.length,
+      message: `成功更新 ${validPositions.length} 个节点位置`,
+      count: validPositions.length,
     };
   }
 
@@ -965,32 +991,48 @@ export class NodesService {
             updateResults.push({ id: item.nodeUpdateId, updated: true });
           }
         } catch (txError) {
-          logger.warn('batchUpdateNodes transaction failed, falling back to non-transactional update:', txError);
-          // 降级路径：逐个更新
-          for (const item of pendingUpdates) {
+          logger.warn('batchUpdateNodes transaction failed, falling back to batch update:', txError);
+          // 降级路径：批量更新
+          const kpUpdates = pendingUpdates.filter(item => Object.keys(item.kpUpdates).length > 0);
+          const gnUpdates = pendingUpdates.filter(item => Object.keys(item.gnUpdates).length > 0);
+
+          // 批量更新 knowledge_points
+          for (const item of kpUpdates) {
             try {
-              if (Object.keys(item.kpUpdates).length > 0) {
-                await knowledgePointService.update(
-                  supabase,
-                  item.knowledgePointId,
-                  item.kpUpdates,
-                );
-              }
-
-              if (Object.keys(item.gnUpdates).length > 0) {
-                await supabase
-                  .from('graph_nodes')
-                  .update(item.gnUpdates)
-                  .eq('id', item.graphNodeId);
-              }
-
+              await knowledgePointService.update(
+                supabase,
+                item.knowledgePointId,
+                item.kpUpdates,
+              );
               updateResults.push({ id: item.nodeUpdateId, updated: true });
             } catch (error: unknown) {
-              logger.error('Batch update node error:', error);
+              logger.error('Batch update knowledge_point error:', error);
               updateResults.push({
                 id: item.nodeUpdateId,
                 updated: false,
-                reason: error instanceof Error ? error.message : '更新失败',
+                reason: error instanceof Error ? error.message : '知识点更新失败',
+              });
+            }
+          }
+
+          // 批量更新 graph_nodes
+          for (const item of gnUpdates) {
+            try {
+              await supabase
+                .from('graph_nodes')
+                .update(item.gnUpdates)
+                .eq('id', item.graphNodeId);
+
+              // 避免重复添加（如果 kp 更新已添加）
+              if (!kpUpdates.some(kp => kp.nodeUpdateId === item.nodeUpdateId)) {
+                updateResults.push({ id: item.nodeUpdateId, updated: true });
+              }
+            } catch (error: unknown) {
+              logger.error('Batch update graph_node error:', error);
+              updateResults.push({
+                id: item.nodeUpdateId,
+                updated: false,
+                reason: error instanceof Error ? error.message : '图谱节点更新失败',
               });
             }
           }
@@ -998,30 +1040,46 @@ export class NodesService {
       } else {
         // transactionExecutor 不可用，使用降级路径
         logger.warn('transactionExecutor not available, using non-transactional batchUpdateNodes');
-        for (const item of pendingUpdates) {
+        const kpUpdates = pendingUpdates.filter(item => Object.keys(item.kpUpdates).length > 0);
+        const gnUpdates = pendingUpdates.filter(item => Object.keys(item.gnUpdates).length > 0);
+
+        // 批量更新 knowledge_points
+        for (const item of kpUpdates) {
           try {
-            if (Object.keys(item.kpUpdates).length > 0) {
-              await knowledgePointService.update(
-                supabase,
-                item.knowledgePointId,
-                item.kpUpdates,
-              );
-            }
-
-            if (Object.keys(item.gnUpdates).length > 0) {
-              await supabase
-                .from('graph_nodes')
-                .update(item.gnUpdates)
-                .eq('id', item.graphNodeId);
-            }
-
+            await knowledgePointService.update(
+              supabase,
+              item.knowledgePointId,
+              item.kpUpdates,
+            );
             updateResults.push({ id: item.nodeUpdateId, updated: true });
           } catch (error: unknown) {
-            logger.error('Batch update node error:', error);
+            logger.error('Batch update knowledge_point error:', error);
             updateResults.push({
               id: item.nodeUpdateId,
               updated: false,
-              reason: error instanceof Error ? error.message : '更新失败',
+              reason: error instanceof Error ? error.message : '知识点更新失败',
+            });
+          }
+        }
+
+        // 批量更新 graph_nodes
+        for (const item of gnUpdates) {
+          try {
+            await supabase
+              .from('graph_nodes')
+              .update(item.gnUpdates)
+              .eq('id', item.graphNodeId);
+
+            // 避免重复添加（如果 kp 更新已添加）
+            if (!kpUpdates.some(kp => kp.nodeUpdateId === item.nodeUpdateId)) {
+              updateResults.push({ id: item.nodeUpdateId, updated: true });
+            }
+          } catch (error: unknown) {
+            logger.error('Batch update graph_node error:', error);
+            updateResults.push({
+              id: item.nodeUpdateId,
+              updated: false,
+              reason: error instanceof Error ? error.message : '图谱节点更新失败',
             });
           }
         }

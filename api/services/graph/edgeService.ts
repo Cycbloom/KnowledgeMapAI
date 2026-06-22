@@ -29,11 +29,11 @@ interface UpdateEdgeData {
 
 export class EdgeService {
   async create(supabase: SupabaseClient, data: CreateEdgeData): Promise<Edge> {
-    const { 
-      graph_id, 
-      source_knowledge_point_id, 
-      target_knowledge_point_id, 
-      relationship_type, 
+    const {
+      graph_id,
+      source_knowledge_point_id,
+      target_knowledge_point_id,
+      relationship_type,
       weight,
       custom_label,
       custom_color,
@@ -41,6 +41,58 @@ export class EdgeService {
       show_arrow
     } = data;
 
+    // 优先使用 RPC 原子操作
+    try {
+      const { data: rpcResult, error: rpcError } = await supabase.rpc('create_edge', {
+        p_graph_id: graph_id,
+        p_source_knowledge_point_id: source_knowledge_point_id,
+        p_target_knowledge_point_id: target_knowledge_point_id,
+        p_relationship_type: relationship_type || 'contains',
+        p_weight: weight || 1,
+        p_custom_label: custom_label || null,
+        p_custom_color: custom_color || null,
+        p_custom_line_style: custom_line_style || null,
+        p_show_arrow: show_arrow ?? null,
+      });
+
+      if (!rpcError && rpcResult) {
+        const status = rpcResult.status as string;
+
+        if (status === 'error') {
+          const code = rpcResult.code as string;
+          throw new AppError(
+            code === 'SOURCE_NOT_FOUND' || code === 'TARGET_NOT_FOUND'
+              ? ErrorCodes.RESOURCE_NODE_NOT_FOUND
+              : ErrorCodes.DATABASE_QUERY_ERROR
+          );
+        }
+
+        const edge = rpcResult.edge as Record<string, unknown>;
+
+        // 记录版本事件
+        await graphVersionService.recordEvent(
+          supabase,
+          graph_id,
+          'edge_created',
+          {
+            edgeId: edge.id,
+            sourceKnowledgePointId: source_knowledge_point_id,
+            targetKnowledgePointId: target_knowledge_point_id,
+            relationshipType: relationship_type || 'contains',
+          },
+          null,
+        ).catch(err => logger.error('Record edge_created event error:', err));
+
+        return this.mapEdge(edge);
+      }
+
+      logger.warn('create_edge RPC failed, falling back:', rpcError?.message);
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      logger.warn('create_edge RPC error, falling back:', err);
+    }
+
+    // 降级路径：原有逐条查询逻辑
     const { data: sourceGn, error: sourceError } = await supabase
       .from('graph_nodes')
       .select('id')

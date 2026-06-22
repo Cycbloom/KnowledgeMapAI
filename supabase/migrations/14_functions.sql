@@ -315,22 +315,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE;
 
--- Batch update node positions
+-- Batch update node positions (optimized with unnest)
 CREATE OR REPLACE FUNCTION batch_update_positions(
-  p_positions JSONB
+  p_ids UUID[],
+  p_x_positions INTEGER[],
+  p_y_positions INTEGER[]
 ) RETURNS void AS $$
-DECLARE
-  pos JSONB;
 BEGIN
-  FOR pos IN SELECT * FROM jsonb_array_elements(p_positions)
-  LOOP
-    UPDATE graph_nodes
-    SET
-      x_position = (pos->>'x')::INTEGER,
-      y_position = (pos->>'y')::INTEGER,
-      updated_at = NOW()
-    WHERE id = (pos->>'id')::UUID;
-  END LOOP;
+  UPDATE graph_nodes AS gn
+  SET
+    x_position = vals.x,
+    y_position = vals.y,
+    updated_at = NOW()
+  FROM (
+    SELECT
+      unnest(p_ids) AS id,
+      unnest(p_x_positions) AS x,
+      unnest(p_y_positions) AS y
+  ) AS vals
+  WHERE gn.id = vals.id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -1286,5 +1289,308 @@ BEGIN
   END LOOP;
 
   RETURN v_count;
+END;
+$$;
+
+-- ============================================================
+-- Edge Creation Function (atomic validation + insert/restore)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION create_edge(
+  p_graph_id UUID,
+  p_source_knowledge_point_id UUID,
+  p_target_knowledge_point_id UUID,
+  p_relationship_type VARCHAR DEFAULT 'contains',
+  p_weight FLOAT DEFAULT 1,
+  p_custom_label VARCHAR DEFAULT NULL,
+  p_custom_color VARCHAR DEFAULT NULL,
+  p_custom_line_style VARCHAR DEFAULT NULL,
+  p_show_arrow BOOLEAN DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_source_gn_id UUID;
+  v_target_gn_id UUID;
+  v_existing_edge_id UUID;
+  v_existing_deleted_at TIMESTAMPTZ;
+  v_new_edge_id UUID;
+  v_result JSONB;
+BEGIN
+  -- 1. 验证源节点存在于当前图谱
+  SELECT id INTO v_source_gn_id
+  FROM graph_nodes
+  WHERE knowledge_point_id = p_source_knowledge_point_id
+    AND graph_id = p_graph_id
+    AND deleted_at IS NULL;
+
+  IF v_source_gn_id IS NULL THEN
+    RETURN jsonb_build_object('status', 'error', 'code', 'SOURCE_NOT_FOUND');
+  END IF;
+
+  -- 2. 验证目标节点存在于当前图谱
+  SELECT id INTO v_target_gn_id
+  FROM graph_nodes
+  WHERE knowledge_point_id = p_target_knowledge_point_id
+    AND graph_id = p_graph_id
+    AND deleted_at IS NULL;
+
+  IF v_target_gn_id IS NULL THEN
+    RETURN jsonb_build_object('status', 'error', 'code', 'TARGET_NOT_FOUND');
+  END IF;
+
+  -- 3. 检查是否已存在同方向边（包括已软删除的）
+  SELECT id, deleted_at INTO v_existing_edge_id, v_existing_deleted_at
+  FROM edges
+  WHERE source_knowledge_point_id = p_source_knowledge_point_id
+    AND target_knowledge_point_id = p_target_knowledge_point_id
+    AND graph_id = p_graph_id
+  LIMIT 1;
+
+  IF v_existing_edge_id IS NOT NULL THEN
+    IF v_existing_deleted_at IS NOT NULL THEN
+      -- 4a. 已存在已软删除的边 -> 恢复
+      UPDATE edges
+      SET deleted_at = NULL,
+          relationship_type = p_relationship_type,
+          weight = p_weight,
+          custom_label = p_custom_label,
+          custom_color = p_custom_color,
+          custom_line_style = p_custom_line_style,
+          show_arrow = p_show_arrow,
+          updated_at = NOW()
+      WHERE id = v_existing_edge_id
+      RETURNING jsonb_build_object(
+        'id', id,
+        'graph_id', graph_id,
+        'source_knowledge_point_id', source_knowledge_point_id,
+        'target_knowledge_point_id', target_knowledge_point_id,
+        'relationship_type', relationship_type,
+        'weight', weight,
+        'custom_label', custom_label,
+        'custom_color', custom_color,
+        'custom_line_style', custom_line_style,
+        'show_arrow', show_arrow,
+        'deleted_at', deleted_at,
+        'created_at', created_at
+      ) INTO v_result;
+
+      RETURN jsonb_build_object('status', 'restored', 'edge', v_result);
+    ELSE
+      -- 4b. 已存在未删除的边 -> 返回现有边
+      SELECT jsonb_build_object(
+        'id', id,
+        'graph_id', graph_id,
+        'source_knowledge_point_id', source_knowledge_point_id,
+        'target_knowledge_point_id', target_knowledge_point_id,
+        'relationship_type', relationship_type,
+        'weight', weight,
+        'custom_label', custom_label,
+        'custom_color', custom_color,
+        'custom_line_style', custom_line_style,
+        'show_arrow', show_arrow,
+        'deleted_at', deleted_at,
+        'created_at', created_at
+      ) INTO v_result
+      FROM edges
+      WHERE id = v_existing_edge_id;
+
+      RETURN jsonb_build_object('status', 'exists', 'edge', v_result);
+    END IF;
+  END IF;
+
+  -- 5. 不存在边 -> 创建新边
+  INSERT INTO edges (
+    graph_id,
+    source_knowledge_point_id,
+    target_knowledge_point_id,
+    relationship_type,
+    weight,
+    custom_label,
+    custom_color,
+    custom_line_style,
+    show_arrow
+  ) VALUES (
+    p_graph_id,
+    p_source_knowledge_point_id,
+    p_target_knowledge_point_id,
+    p_relationship_type,
+    p_weight,
+    p_custom_label,
+    p_custom_color,
+    p_custom_line_style,
+    p_show_arrow
+  )
+  RETURNING jsonb_build_object(
+    'id', id,
+    'graph_id', graph_id,
+    'source_knowledge_point_id', source_knowledge_point_id,
+    'target_knowledge_point_id', target_knowledge_point_id,
+    'relationship_type', relationship_type,
+    'weight', weight,
+    'custom_label', custom_label,
+    'custom_color', custom_color,
+    'custom_line_style', custom_line_style,
+    'show_arrow', show_arrow,
+    'deleted_at', deleted_at,
+    'created_at', created_at
+  ) INTO v_result;
+
+  RETURN jsonb_build_object('status', 'created', 'edge', v_result);
+END;
+$$;
+
+-- ============================================================
+-- Tag Aggregation Function
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION get_user_graph_tags(p_user_id UUID)
+RETURNS TABLE (
+  name VARCHAR,
+  count BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    tag.value::VARCHAR AS name,
+    COUNT(*) AS count
+  FROM graph_nodes gn
+  JOIN knowledge_graphs kg ON gn.graph_id = kg.id
+  JOIN knowledge_points kp ON gn.knowledge_point_id = kp.id
+  CROSS JOIN jsonb_array_elements_text(COALESCE(kp.properties->'tags', '[]'::jsonb)) AS tag(value)
+  WHERE kg.user_id = p_user_id
+    AND kg.deleted_at IS NULL
+    AND gn.deleted_at IS NULL
+  GROUP BY tag.value
+  ORDER BY count DESC;
+END;
+$$;
+
+-- ============================================================
+-- Graph Map Data Aggregation Function
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION get_graph_map_data(p_user_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+  v_graphs JSONB;
+  v_relations JSONB;
+BEGIN
+  SELECT COALESCE(jsonb_agg(
+    jsonb_build_object(
+      'id', g.id,
+      'title', g.title,
+      'description', g.description,
+      'created_at', g.created_at,
+      'is_public', g.is_public,
+      'domain', g.domain,
+      'node_count', COALESCE(n.cnt, 0)
+    )
+  ), '[]'::jsonb) INTO v_graphs
+  FROM knowledge_graphs g
+  LEFT JOIN (
+    SELECT graph_id, COUNT(*) AS cnt
+    FROM graph_nodes
+    WHERE deleted_at IS NULL
+    GROUP BY graph_id
+  ) n ON n.graph_id = g.id
+  WHERE g.user_id = p_user_id
+    AND g.deleted_at IS NULL
+  ORDER BY g.last_used_at DESC NULLS LAST;
+
+  SELECT COALESCE(jsonb_agg(
+    jsonb_build_object(
+      'id', r.id,
+      'source_graph_id', r.source_graph_id,
+      'target_graph_id', r.target_graph_id,
+      'relation_type', r.relation_type,
+      'context', r.context,
+      'metadata', r.metadata,
+      'created_at', r.created_at
+    )
+  ), '[]'::jsonb) INTO v_relations
+  FROM graph_relations r
+  WHERE r.source_graph_id IN (
+    SELECT id FROM knowledge_graphs WHERE user_id = p_user_id AND deleted_at IS NULL
+  ) OR r.target_graph_id IN (
+    SELECT id FROM knowledge_graphs WHERE user_id = p_user_id AND deleted_at IS NULL
+  );
+
+  RETURN jsonb_build_object(
+    'graphs', v_graphs,
+    'relations', v_relations
+  );
+END;
+$$;
+
+-- ============================================================
+-- Find Missing Connections Function
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION find_missing_connections(
+  p_graph_id UUID,
+  p_max_suggestions INT DEFAULT 10
+)
+RETURNS TABLE (
+  source_id UUID,
+  target_id UUID,
+  source_level VARCHAR,
+  target_level VARCHAR,
+  score INTEGER
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    n1.knowledge_point_id AS source_id,
+    n2.knowledge_point_id AS target_id,
+    n1.level AS source_level,
+    n2.level AS target_level,
+    ABS(
+      CASE n1.level
+        WHEN 'root' THEN 0
+        WHEN 'core' THEN 1
+        WHEN 'sub' THEN 2
+        WHEN 'normal' THEN 3
+        WHEN 'leaf' THEN 4
+        ELSE 3
+      END -
+      CASE n2.level
+        WHEN 'root' THEN 0
+        WHEN 'core' THEN 1
+        WHEN 'sub' THEN 2
+        WHEN 'normal' THEN 3
+        WHEN 'leaf' THEN 4
+        ELSE 3
+      END
+    ) AS score
+  FROM graph_nodes n1
+  JOIN graph_nodes n2 ON n1.graph_id = n2.graph_id
+    AND n1.knowledge_point_id < n2.knowledge_point_id
+  WHERE n1.graph_id = p_graph_id
+    AND n1.deleted_at IS NULL
+    AND n2.deleted_at IS NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM edges e
+      WHERE e.graph_id = p_graph_id
+        AND e.deleted_at IS NULL
+        AND (
+          (e.source_knowledge_point_id = n1.knowledge_point_id AND e.target_knowledge_point_id = n2.knowledge_point_id)
+          OR
+          (e.source_knowledge_point_id = n2.knowledge_point_id AND e.target_knowledge_point_id = n1.knowledge_point_id)
+        )
+    )
+  ORDER BY score ASC
+  LIMIT p_max_suggestions;
 END;
 $$;

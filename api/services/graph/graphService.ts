@@ -1463,6 +1463,33 @@ export class GraphService {
     graphId: string,
     maxSuggestions: number,
   ) {
+    // 优先使用 RPC 在数据库层完成
+    try {
+      const { data, error } = await supabase.rpc('find_missing_connections', {
+        p_graph_id: graphId,
+        p_max_suggestions: maxSuggestions,
+      });
+
+      if (!error && data) {
+        return (data as Array<{
+          source_id: string;
+          target_id: string;
+          source_level: string;
+          target_level: string;
+          score: number;
+        }>).map((item) => ({
+          source: item.source_id,
+          target: item.target_id,
+          score: item.score,
+        }));
+      }
+
+      logger.warn('find_missing_connections RPC failed, falling back:', error?.message);
+    } catch (err) {
+      logger.warn('find_missing_connections RPC error, falling back:', err);
+    }
+
+    // 降级路径：原有应用层逻辑
     const { nodes, edges } = await this.getGraphNodes(
       supabase,
       userId,

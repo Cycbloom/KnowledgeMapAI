@@ -865,6 +865,7 @@ export interface GraphCollaborator {
   invitation_token: string;
   invited_at: string;
   accepted_at?: string;
+  invitation_expires_at?: string;
   created_at: string;
   updated_at: string;
   user?: {

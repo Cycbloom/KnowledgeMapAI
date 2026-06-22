@@ -3,6 +3,7 @@ import { X, Globe, Lock, Copy, Check, ExternalLink, Users, UserPlus, Link as Lin
 import { api } from '../../../services/api';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import type { CollaboratorRole, CollaboratorWithUser } from '@shared/types';
+import { useStore } from '../../../store/useStore';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -10,15 +11,18 @@ interface ShareModalProps {
   graphId: string;
   isPublic: boolean;
   onPublicChange: (isPublic: boolean) => void;
+  ownerId?: string;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  graphId, 
+export const ShareModal: React.FC<ShareModalProps> = ({
+  isOpen,
+  onClose,
+  graphId,
   isPublic: initialIsPublic,
-  onPublicChange 
+  onPublicChange,
+  ownerId
 }) => {
+  const { user } = useStore();
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -30,7 +34,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [inviteLoading, setInviteLoading] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
 
-  const isOwner = true;
+  const isOwner = !!(ownerId && user?.id && ownerId === user.id);
 
   useEffect(() => {
     if (isOpen && graphId && activeTab === 'collaborate') {

@@ -251,6 +251,10 @@ export class CollaboratorService {
       return { success: false, error: "此邀请不属于当前用户" };
     }
 
+    if (invitation.invitation_expires_at && new Date(invitation.invitation_expires_at) < new Date()) {
+      return { success: false, error: "邀请链接已过期" };
+    }
+
     if (invitation.accepted_at) {
       return { success: false, error: "此邀请已被接受" };
     }
@@ -372,6 +376,7 @@ export class CollaboratorService {
         role: role,
         invited_by: userId,
         invitation_token: invitationToken,
+        invitation_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       });
 
     if (error) {
@@ -383,6 +388,8 @@ export class CollaboratorService {
     }
 
     const shareUrl = `/collaboration/${invitationToken}`;
+
+    await this.cleanupExpiredInvitations(supabase);
 
     return {
       success: true,
@@ -407,6 +414,10 @@ export class CollaboratorService {
 
     if (inviteError || !invitation) {
       return { success: false, error: "分享链接无效或已过期" };
+    }
+
+    if (invitation.invitation_expires_at && new Date(invitation.invitation_expires_at) < new Date()) {
+      return { success: false, error: "分享链接已过期" };
     }
 
     const { data: existing } = await supabase
@@ -440,16 +451,13 @@ export class CollaboratorService {
   }
 
   async cleanupExpiredInvitations(supabase: SupabaseClient): Promise<void> {
-    const expirationDays = 7;
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() - expirationDays);
-
     await supabase
       .from("graph_collaborators")
       .delete()
       .is("user_id", null)
       .is("accepted_at", null)
-      .lt("invited_at", expirationDate.toISOString());
+      .not("invitation_expires_at", "is", null)
+      .lt("invitation_expires_at", new Date().toISOString());
   }
 
   async getInvitationInfo(
@@ -472,6 +480,10 @@ export class CollaboratorService {
 
     if (error || !invitation) {
       return { success: false, error: "邀请不存在或已过期" };
+    }
+
+    if (invitation.invitation_expires_at && new Date(invitation.invitation_expires_at) < new Date()) {
+      return { success: false, error: "邀请链接已过期" };
     }
 
     return {

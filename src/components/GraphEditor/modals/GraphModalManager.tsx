@@ -158,6 +158,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         onClose={() => setIsShareModalOpen(false)}
         graphId={id || ""}
         isPublic={graphMeta?.is_public || false}
+        ownerId={graphMeta?.user_id}
         onPublicChange={(newStatus) => {
           if (graphMeta) {
             queryClient.setQueryData(queryKeys.graph(id || ""), {

@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS graph_collaborators (
   invitation_token UUID DEFAULT gen_random_uuid(),
   invited_at TIMESTAMPTZ DEFAULT NOW(),
   accepted_at TIMESTAMPTZ,
+  invitation_expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(graph_id, user_id)
@@ -57,6 +58,7 @@ COMMENT ON COLUMN graph_collaborators.role IS '协作者角色：owner(所有者
 COMMENT ON COLUMN graph_collaborators.invited_by IS '邀请人ID，引用 auth.users(id)';
 COMMENT ON COLUMN graph_collaborators.invitation_token IS '邀请令牌，用于分享链接';
 COMMENT ON COLUMN graph_collaborators.accepted_at IS '接受邀请的时间，null表示待接受';
+COMMENT ON COLUMN graph_collaborators.invitation_expires_at IS '邀请令牌过期时间，NULL表示邮箱邀请无过期限制';
 
 CREATE TABLE IF NOT EXISTS graph_relations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -21,6 +21,7 @@ export const ragApi = {
     session_id?: string;
     use_graph_context?: boolean;
     graph_hops?: number;
+    search_mode?: 'semantic' | 'keyword' | 'hybrid';
   }) => {
     const config = getAIConfig('text');
     const payload = { ...data, language: data.language || getAILanguage() };
@@ -41,6 +42,7 @@ export const ragApi = {
       session_id?: string;
       use_graph_context?: boolean;
       graph_hops?: number;
+      search_mode?: 'semantic' | 'keyword' | 'hybrid';
     }, 
     onChunk: (content: string) => void,
     onSources?: (sources: Source[]) => void
@@ -106,6 +108,7 @@ export const ragApi = {
     match_count?: number;
     use_graph_context?: boolean;
     graph_hops?: number;
+    search_mode?: 'semantic' | 'keyword' | 'hybrid';
   }) => request('/rag/search', { method: 'POST', body: JSON.stringify(data) }),
   
   analyzeGaps: (graphId: string) => request('/rag/analyze-gaps', { 

@@ -10,6 +10,7 @@ export interface IRagApi {
     session_id?: string;
     use_graph_context?: boolean;
     graph_hops?: number;
+    search_mode?: "semantic" | "keyword" | "hybrid";
   }): Promise<unknown>;
 
   chatStream(
@@ -24,6 +25,7 @@ export interface IRagApi {
       session_id?: string;
       use_graph_context?: boolean;
       graph_hops?: number;
+      search_mode?: "semantic" | "keyword" | "hybrid";
     },
     onChunk: (content: string) => void,
     onSources?: (sources: Array<{ id: string; title: string; content: string; similarity: number }>) => void,
@@ -36,6 +38,7 @@ export interface IRagApi {
     match_count?: number;
     use_graph_context?: boolean;
     graph_hops?: number;
+    search_mode?: "semantic" | "keyword" | "hybrid";
   }): Promise<unknown>;
 
   analyzeGaps(graphId: string): Promise<unknown>;

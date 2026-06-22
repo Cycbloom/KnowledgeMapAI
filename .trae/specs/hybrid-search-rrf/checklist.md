@@ -1,0 +1,12 @@
+- [x] RRF 融合排序工具函数 `reciprocalRankFusion` 已实现，支持多路融合、去重、空路处理
+- [x] RRF 单元测试通过，覆盖两路融合、三路融合、空路、去重场景
+- [x] `RAGService.keywordSearch` 方法可正确返回关键词匹配的知识点，支持 graphId 过滤
+- [x] `RAGService.hybridSearch` 方法并行执行向量+关键词+图遍历三路检索，RRF 融合排序正确
+- [x] `graphAugmentedSearch` 使用 RRF 融合排序替代简单拼接，种子节点与扩展节点融合排序正确
+- [x] `ragService.buildContext` 根据 `searchMode` 参数选择检索方式，默认 `hybrid`
+- [x] RAG 路由 `/rag/chat`、`/rag/chat/stream`、`/rag/search` 支持 `search_mode` 参数
+- [x] 前端 `ragApi` 正确传递 `search_mode` 参数
+- [x] RAG 聊天面板包含检索模式选择（语义/关键词/混合），默认混合
+- [x] 向后兼容：`search_mode: "semantic"` 时行为与优化前一致（graphAugmentedSearch 传 useRrf: false 保留原始拼接逻辑）
+- [x] 类型检查通过：`npm run check`（唯一错误为预存的 GraphEditor.tsx:507，与本次修改无关）
+- [x] 代码检查通过：`npm run lint`

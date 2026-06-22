@@ -40,6 +40,8 @@ interface ChatInputProps {
   onEditQuote?: (id: string, newText: string) => void;
   useGraphContext?: boolean;
   onToggleGraphContext?: () => void;
+  searchMode?: 'semantic' | 'keyword' | 'hybrid';
+  onSearchModeChange?: (mode: 'semantic' | 'keyword' | 'hybrid') => void;
   onClearChat?: () => void;
   showQuoteTip?: boolean;
   onDismissQuoteTip?: () => void;
@@ -64,6 +66,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onEditQuote,
   useGraphContext = false,
   onToggleGraphContext,
+  searchMode = 'hybrid',
+  onSearchModeChange,
   onClearChat,
   showQuoteTip = false,
   onDismissQuoteTip,
@@ -318,8 +322,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </AnimatePresence>
         </div>
       )}
-      {(onToggleGraphContext || onClearChat) && (
-        <div className="mb-2 flex items-center gap-2">
+      {(onToggleGraphContext || onSearchModeChange || onClearChat) && (
+        <div className="mb-2 flex items-center gap-2 flex-wrap">
           {onToggleGraphContext && (
             <button
               onClick={onToggleGraphContext}
@@ -336,6 +340,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <Network size={13} />
               {t("aiChat.graphContext")}
             </button>
+          )}
+          {onSearchModeChange && (
+            <div className={`flex items-center gap-0.5 rounded-md p-0.5 ${isDark ? "bg-slate-800" : "bg-gray-100"}`}>
+              {([
+                { value: 'semantic' as const, label: t("aiChat.searchModeSemantic") },
+                { value: 'keyword' as const, label: t("aiChat.searchModeKeyword") },
+                { value: 'hybrid' as const, label: t("aiChat.searchModeHybrid") },
+              ]).map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => onSearchModeChange(option.value)}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    searchMode === option.value
+                      ? isDark
+                        ? "bg-primary-600 text-white"
+                        : "bg-primary-500 text-white"
+                      : isDark
+                        ? "text-slate-400 hover:text-slate-300"
+                        : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           )}
           {onClearChat && (
             <button

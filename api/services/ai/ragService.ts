@@ -11,6 +11,7 @@ import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
 import { contextWindowManager } from "./contextWindowManager";
 import { promptService } from "./promptService";
+import { reciprocalRankFusion, type RankedItem } from "../../utils/rrf";
 
 interface GraphNodeWithKnowledge {
   knowledge_point_id: string;
@@ -231,7 +232,148 @@ export class RAGService {
     }
   }
 
-  async graphAugmentedSearch(
+  /**
+   * 转义 ilike 模式中的特殊字符（%_\）
+   */
+  private escapePattern(pattern: string): string {
+    return pattern.replace(/[%_\\]/g, "\\$&");
+  }
+
+  /**
+   * 转义 PostgREST 过滤器值中的特殊字符（" 和 \）
+   * PostgREST 使用双引号包裹值来避免语法歧义，需转义值内的双引号和反斜杠
+   */
+  private escapePostgrestValue(value: string): string {
+    return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  }
+
+  /**
+   * 关键词检索：基于 ilike 模糊匹配在 knowledge_points 表中搜索
+   */
+  async keywordSearch(
+    query: string,
+    userId: string,
+    options: {
+      graphId?: string;
+      matchCount?: number;
+    } = {},
+  ): Promise<RAGSearchResult[]> {
+    const { graphId, matchCount = 10 } = options;
+
+    try {
+      const supabase = getSupabaseAdmin();
+      const escapedQuery = this.escapePattern(query);
+      const pattern = `%${escapedQuery}%`;
+      const safePattern = this.escapePostgrestValue(pattern);
+
+      // 在 knowledge_points 表中搜索，条件为 title 或 content 模糊匹配
+      // 使用双引号包裹值避免 PostgREST 过滤器语法注入
+      const { data: knowledgePoints, error: kpError } = await supabase
+        .from("knowledge_points")
+        .select("id, title, content")
+        .eq("owner_id", userId)
+        .or(`title.ilike."${safePattern}",content.ilike."${safePattern}"`);
+
+      if (kpError) {
+        logger.error("关键词检索 knowledge_points 失败", { error: kpError });
+        return [];
+      }
+
+      if (!knowledgePoints || knowledgePoints.length === 0) {
+        return [];
+      }
+
+      // 计算匹配评分：title 匹配权重 0.9，content 匹配权重 0.6，两者都匹配取最大值
+      const scoredResults = knowledgePoints.map((kp) => {
+        const titleMatch = kp.title
+          .toLowerCase()
+          .includes(query.toLowerCase());
+        const contentMatch = kp.content
+          ? kp.content.toLowerCase().includes(query.toLowerCase())
+          : false;
+
+        let similarity = 0;
+        if (titleMatch && contentMatch) {
+          similarity = Math.max(0.9, 0.6);
+        } else if (titleMatch) {
+          similarity = 0.9;
+        } else if (contentMatch) {
+          similarity = 0.6;
+        }
+
+        return {
+          id: kp.id,
+          title: kp.title,
+          content: kp.content || "",
+          similarity,
+        };
+      });
+
+      // 如果指定了 graphId，通过 graph_nodes 表关联过滤
+      if (graphId) {
+        const kpIds = scoredResults.map((r) => r.id);
+        const { data: graphNodes, error: gnError } = await supabase
+          .from("graph_nodes")
+          .select("knowledge_point_id")
+          .eq("graph_id", graphId)
+          .in("knowledge_point_id", kpIds)
+          .is("deleted_at", null);
+
+        if (gnError) {
+          logger.error("关键词检索 graph_nodes 过滤失败", { error: gnError });
+          return [];
+        }
+
+        const validKpIds = new Set(
+          (graphNodes || []).map(
+            (gn: { knowledge_point_id: string }) => gn.knowledge_point_id,
+          ),
+        );
+
+        return scoredResults
+          .filter((r) => validKpIds.has(r.id))
+          .map((r) => ({ ...r, graphId }))
+          .sort((a, b) => b.similarity - a.similarity)
+          .slice(0, matchCount);
+      }
+
+      // 未指定 graphId 时，查询每个知识点所属的图谱
+      const kpIds = scoredResults.map((r) => r.id);
+      const { data: graphNodes } = await supabase
+        .from("graph_nodes")
+        .select("knowledge_point_id, graph_id")
+        .in("knowledge_point_id", kpIds)
+        .is("deleted_at", null);
+
+      const kpToGraphId = new Map<string, string>();
+      if (graphNodes) {
+        for (const gn of graphNodes as {
+          knowledge_point_id: string;
+          graph_id: string;
+        }[]) {
+          if (!kpToGraphId.has(gn.knowledge_point_id)) {
+            kpToGraphId.set(gn.knowledge_point_id, gn.graph_id);
+          }
+        }
+      }
+
+      return scoredResults
+        .map((r) => ({
+          ...r,
+          graphId: kpToGraphId.get(r.id) || "",
+        }))
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, matchCount);
+    } catch (err) {
+      logger.error("关键词检索错误", { err });
+      return [];
+    }
+  }
+
+  /**
+   * 混合检索：并行执行向量检索 + 关键词检索 + 图遍历，使用 RRF 融合排序
+   */
+  async hybridSearch(
     query: string,
     userId: string,
     options: {
@@ -244,10 +386,202 @@ export class RAGService {
   ): Promise<GraphRAGSearchResult[]> {
     const {
       graphId,
+      matchThreshold = 0.5,
+      matchCount = 10,
+      graphHops,
+      relationshipTypes,
+    } = options;
+
+    // 并行执行向量检索和关键词检索
+    const [semanticResults, keywordResults] = await Promise.all([
+      this.semanticSearch(query, userId, {
+        graphId,
+        matchThreshold,
+        matchCount,
+      }),
+      this.keywordSearch(query, userId, {
+        graphId,
+        matchCount,
+      }),
+    ]);
+
+    // 构建原始数据映射，用于后续还原 hopDistance、relationshipPath、relationshipType
+    const originalDataMap = new Map<
+      string,
+      {
+        hopDistance: number;
+        relationshipPath: string;
+        relationshipType: string;
+        graphId: string;
+        title: string;
+        content: string;
+        similarity: number;
+      }
+    >();
+
+    // 向量检索路：按 similarity 降序排列，score = similarity
+    const semanticRanked: RankedItem<{
+      hopDistance: number;
+      relationshipPath: string;
+      relationshipType: string;
+      graphId: string;
+      title: string;
+      content: string;
+      similarity: number;
+    }>[] = semanticResults
+      .sort((a, b) => b.similarity - a.similarity)
+      .map((r) => {
+        const data = {
+          hopDistance: 0,
+          relationshipPath: "",
+          relationshipType: "",
+          graphId: r.graphId,
+          title: r.title,
+          content: r.content,
+          similarity: r.similarity,
+        };
+        originalDataMap.set(r.id, data);
+        return { id: r.id, score: r.similarity, data };
+      });
+
+    // 关键词检索路：按 similarity 降序排列，score = similarity
+    const keywordRanked: RankedItem<{
+      hopDistance: number;
+      relationshipPath: string;
+      relationshipType: string;
+      graphId: string;
+      title: string;
+      content: string;
+      similarity: number;
+    }>[] = keywordResults
+      .sort((a, b) => b.similarity - a.similarity)
+      .map((r) => {
+        const existing = originalDataMap.get(r.id);
+        const data = {
+          hopDistance: existing?.hopDistance ?? 0,
+          relationshipPath: existing?.relationshipPath ?? "",
+          relationshipType: existing?.relationshipType ?? "",
+          graphId: r.graphId,
+          title: r.title,
+          content: r.content,
+          similarity: r.similarity,
+        };
+        // 关键词检索的结果可能没有图谱关联信息，不覆盖已有的
+        if (!originalDataMap.has(r.id)) {
+          originalDataMap.set(r.id, data);
+        }
+        return { id: r.id, score: r.similarity, data };
+      });
+
+    const rankedLists: RankedItem<{
+      hopDistance: number;
+      relationshipPath: string;
+      relationshipType: string;
+      graphId: string;
+      title: string;
+      content: string;
+      similarity: number;
+    }>[][] = [semanticRanked, keywordRanked];
+
+    // 当 graphId 指定且 graphTraversal 已配置时，额外并行执行图遍历
+    if (graphId && this.graphTraversal) {
+      try {
+        const supabase = getSupabaseAdmin();
+        // 合并向量检索和关键词检索的 ID 作为图遍历的种子节点
+        const seedIds = [
+          ...new Set([
+            ...semanticResults.map((r) => r.id),
+            ...keywordResults.map((r) => r.id),
+          ]),
+        ];
+
+        if (seedIds.length > 0) {
+          const traversalResults = await this.graphTraversal(
+            supabase,
+            graphId,
+            seedIds,
+            graphHops ?? 1,
+            relationshipTypes,
+          );
+
+          // 图遍历路：按 hopDistance 升序排列，score = 1 / (1 + hopDistance)
+          const traversalRanked: RankedItem<{
+            hopDistance: number;
+            relationshipPath: string;
+            relationshipType: string;
+            graphId: string;
+            title: string;
+            content: string;
+            similarity: number;
+          }>[] = traversalResults
+            .sort((a, b) => a.hopDistance - b.hopDistance)
+            .map((node) => {
+              const data = {
+                hopDistance: node.hopDistance,
+                relationshipPath: node.relationshipPath,
+                relationshipType: node.relationshipType,
+                graphId,
+                title: node.title,
+                content: node.content,
+                similarity: 0,
+              };
+              if (!originalDataMap.has(node.knowledgePointId)) {
+                originalDataMap.set(node.knowledgePointId, data);
+              }
+              return {
+                id: node.knowledgePointId,
+                score: 1 / (1 + node.hopDistance),
+                data,
+              };
+            });
+
+          rankedLists.push(traversalRanked);
+        }
+      } catch (err) {
+        logger.error("混合检索图遍历失败", { err });
+      }
+    }
+
+    // 使用 RRF 融合排序
+    const fusedResults = reciprocalRankFusion(rankedLists);
+
+    // 将融合结果转换回 GraphRAGSearchResult 格式
+    return fusedResults.slice(0, matchCount).map((item) => {
+      const original = originalDataMap.get(item.id);
+      return {
+        id: item.id,
+        title: item.data.title,
+        content: item.data.content,
+        similarity: item.data.similarity,
+        graphId: item.data.graphId,
+        hopDistance: original?.hopDistance ?? item.data.hopDistance,
+        relationshipPath:
+          original?.relationshipPath ?? item.data.relationshipPath,
+        relationshipType:
+          original?.relationshipType ?? item.data.relationshipType,
+      };
+    });
+  }
+
+  async graphAugmentedSearch(
+    query: string,
+    userId: string,
+    options: {
+      graphId?: string;
+      matchThreshold?: number;
+      matchCount?: number;
+      graphHops?: number;
+      relationshipTypes?: string[];
+      useRrf?: boolean;
+    } = {},
+  ): Promise<GraphRAGSearchResult[]> {
+    const {
+      graphId,
       matchThreshold,
       matchCount,
       graphHops,
       relationshipTypes,
+      useRrf = true,
     } = options;
 
     const searchResults = await this.semanticSearch(query, userId, {
@@ -291,8 +625,61 @@ export class RAGService {
         (node) => !seedIdSet.has(node.knowledgePointId),
       );
 
-      const expandedResults: GraphRAGSearchResult[] = filteredExpanded.map(
-        (node) => ({
+      // 种子节点作为向量检索路参与 RRF（按 similarity 降序）
+      const seedRanked: RankedItem<GraphRAGSearchResult>[] = searchResults
+        .sort((a, b) => b.similarity - a.similarity)
+        .map((r) => ({
+          id: r.id,
+          score: r.similarity,
+          data: {
+            ...r,
+            hopDistance: 0,
+            relationshipPath: "",
+            relationshipType: "",
+          },
+        }));
+
+      // 扩展节点作为图遍历路参与 RRF（按 hopDistance 升序，score = 1 / (1 + hopDistance)）
+      const expandedRanked: RankedItem<GraphRAGSearchResult>[] = filteredExpanded
+        .sort((a, b) => a.hopDistance - b.hopDistance)
+        .map((node) => ({
+          id: node.knowledgePointId,
+          score: 1 / (1 + node.hopDistance),
+          data: {
+            id: node.knowledgePointId,
+            title: node.title,
+            content: node.content,
+            similarity: 0,
+            graphId,
+            hopDistance: node.hopDistance,
+            relationshipPath: node.relationshipPath,
+            relationshipType: node.relationshipType,
+          },
+        }));
+
+      // 使用 RRF 融合排序或原始拼接
+      if (useRrf) {
+        const fusedResults = reciprocalRankFusion([seedRanked, expandedRanked]);
+        return fusedResults.map((item) => item.data);
+      }
+
+      // 向后兼容：原始拼接逻辑（种子节点在前，扩展节点在后）
+      const seedResults: GraphRAGSearchResult[] = searchResults
+        .sort((a, b) => b.similarity - a.similarity)
+        .map((r) => ({
+          ...r,
+          hopDistance: 0,
+          relationshipPath: "",
+          relationshipType: "",
+        }));
+      const expandedResults: GraphRAGSearchResult[] = filteredExpanded
+        .sort((a, b) => {
+          if (a.hopDistance !== b.hopDistance) {
+            return a.hopDistance - b.hopDistance;
+          }
+          return a.relationshipPath.localeCompare(b.relationshipPath);
+        })
+        .map((node) => ({
           id: node.knowledgePointId,
           title: node.title,
           content: node.content,
@@ -301,23 +688,7 @@ export class RAGService {
           hopDistance: node.hopDistance,
           relationshipPath: node.relationshipPath,
           relationshipType: node.relationshipType,
-        }),
-      );
-
-      const seedResults: GraphRAGSearchResult[] = searchResults.map((r) => ({
-        ...r,
-        hopDistance: 0,
-        relationshipPath: "",
-        relationshipType: "",
-      }));
-
-      seedResults.sort((a, b) => b.similarity - a.similarity);
-      expandedResults.sort((a, b) => {
-        if (a.hopDistance !== b.hopDistance) {
-          return a.hopDistance - b.hopDistance;
-        }
-        return a.relationshipPath.localeCompare(b.relationshipPath);
-      });
+        }));
 
       return [...seedResults, ...expandedResults];
     } catch (err) {
@@ -340,6 +711,7 @@ export class RAGService {
       maxContextLength?: number;
       useGraphContext?: boolean;
       graphHops?: number;
+      searchMode?: "semantic" | "keyword" | "hybrid";
     } = {},
   ): Promise<{ context: string; sources: RAGSearchResult[] }> {
     const {
@@ -348,7 +720,11 @@ export class RAGService {
       maxContextLength = 8000,
       useGraphContext,
       graphHops,
+      searchMode,
     } = options;
+
+    // 默认使用 hybrid 模式
+    const effectiveSearchMode = searchMode ?? "hybrid";
 
     let searchResults: RAGSearchResult[];
     let graphSources:
@@ -362,32 +738,74 @@ export class RAGService {
         }[]
       | undefined;
 
-    if (useGraphContext && graphId) {
-      const graphResults = await this.graphAugmentedSearch(query, userId, {
+    if (effectiveSearchMode === "semantic") {
+      // 语义检索模式：保持原有逻辑（向后兼容）
+      if (useGraphContext && graphId) {
+        const graphResults = await this.graphAugmentedSearch(query, userId, {
+          graphId,
+          matchThreshold: 0.3,
+          matchCount: 10,
+          graphHops,
+          useRrf: false, // semantic 模式保持原始拼接逻辑，确保向后兼容
+        });
+
+        const seedResults = graphResults.filter((r) => r.hopDistance === 0);
+        const expandedResults = graphResults.filter((r) => r.hopDistance > 0);
+
+        searchResults = seedResults;
+        graphSources = expandedResults.map((r) => ({
+          id: r.id,
+          title: r.title,
+          content: r.content,
+          hopDistance: r.hopDistance,
+          relationshipPath: r.relationshipPath,
+          relationshipType: r.relationshipType,
+        }));
+      } else {
+        searchResults = await this.semanticSearch(query, userId, {
+          graphId,
+          matchThreshold: 0.3,
+          matchCount: 10,
+        });
+      }
+    } else if (effectiveSearchMode === "keyword") {
+      // 关键词检索模式
+      searchResults = await this.keywordSearch(query, userId, {
         graphId,
-        matchThreshold: 0.3,
         matchCount: 10,
-        graphHops,
       });
-
-      const seedResults = graphResults.filter((r) => r.hopDistance === 0);
-      const expandedResults = graphResults.filter((r) => r.hopDistance > 0);
-
-      searchResults = seedResults;
-      graphSources = expandedResults.map((r) => ({
-        id: r.id,
-        title: r.title,
-        content: r.content,
-        hopDistance: r.hopDistance,
-        relationshipPath: r.relationshipPath,
-        relationshipType: r.relationshipType,
-      }));
     } else {
-      searchResults = await this.semanticSearch(query, userId, {
-        graphId,
-        matchThreshold: 0.3,
-        matchCount: 10,
-      });
+      // 混合检索模式（hybrid，默认）
+      if (useGraphContext && graphId) {
+        // 有图谱上下文时，使用 hybridSearch 获取结果，分离种子节点和扩展节点
+        const hybridResults = await this.hybridSearch(query, userId, {
+          graphId,
+          matchThreshold: 0.3,
+          matchCount: 10,
+          graphHops,
+        });
+
+        const seedResults = hybridResults.filter((r) => r.hopDistance === 0);
+        const expandedResults = hybridResults.filter((r) => r.hopDistance > 0);
+
+        searchResults = seedResults;
+        graphSources = expandedResults.map((r) => ({
+          id: r.id,
+          title: r.title,
+          content: r.content,
+          hopDistance: r.hopDistance,
+          relationshipPath: r.relationshipPath,
+          relationshipType: r.relationshipType,
+        }));
+      } else {
+        // 无图谱上下文时，使用 hybridSearch，graphSources 为 undefined
+        const hybridResults = await this.hybridSearch(query, userId, {
+          graphId,
+          matchThreshold: 0.3,
+          matchCount: 10,
+        });
+        searchResults = hybridResults;
+      }
     }
 
     let currentNodeContext: string | undefined;
@@ -472,6 +890,7 @@ export class RAGService {
       sessionId?: string;
       useGraphContext?: boolean;
       graphHops?: number;
+      searchMode?: "semantic" | "keyword" | "hybrid";
     } = {},
   ): Promise<RAGResponse> {
     const {
@@ -482,6 +901,7 @@ export class RAGService {
       language,
       useGraphContext,
       graphHops,
+      searchMode,
     } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
@@ -489,6 +909,7 @@ export class RAGService {
       currentNodeId,
       useGraphContext,
       graphHops,
+      searchMode,
     });
 
     const aiProvider = await getAIProviderForTask("text");
@@ -661,6 +1082,7 @@ export class RAGService {
       sessionId?: string;
       useGraphContext?: boolean;
       graphHops?: number;
+      searchMode?: "semantic" | "keyword" | "hybrid";
     } = {},
   ): Promise<RAGSearchResult[]> {
     const {
@@ -671,6 +1093,7 @@ export class RAGService {
       language,
       useGraphContext,
       graphHops,
+      searchMode,
     } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
@@ -678,6 +1101,7 @@ export class RAGService {
       currentNodeId,
       useGraphContext,
       graphHops,
+      searchMode,
     });
 
     const aiProvider = await getAIProviderForTask("text");
@@ -886,6 +1310,7 @@ export class RAGService {
       matchCount?: number;
       useGraphContext?: boolean;
       graphHops?: number;
+      searchMode?: "semantic" | "keyword" | "hybrid";
     } = {},
   ): Promise<RAGSearchResult[]> {
     const {
@@ -894,21 +1319,42 @@ export class RAGService {
       matchCount,
       useGraphContext,
       graphHops,
+      searchMode,
     } = options;
 
-    if (useGraphContext && graphId) {
-      return this.graphAugmentedSearch(query, userId, {
+    // 默认使用 hybrid 模式
+    const effectiveSearchMode = searchMode ?? "hybrid";
+
+    if (effectiveSearchMode === "semantic") {
+      if (useGraphContext && graphId) {
+        return this.graphAugmentedSearch(query, userId, {
+          graphId,
+          matchThreshold,
+          matchCount,
+          graphHops,
+          useRrf: false, // semantic 模式保持原始拼接逻辑，确保向后兼容
+        });
+      }
+      return this.semanticSearch(query, userId, {
         graphId,
         matchThreshold,
         matchCount,
-        graphHops,
       });
     }
 
-    return this.semanticSearch(query, userId, {
+    if (effectiveSearchMode === "keyword") {
+      return this.keywordSearch(query, userId, {
+        graphId,
+        matchCount,
+      });
+    }
+
+    // hybrid 模式
+    return this.hybridSearch(query, userId, {
       graphId,
       matchThreshold,
       matchCount,
+      graphHops,
     });
   }
 }

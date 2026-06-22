@@ -128,6 +128,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [useGraphContext, setUseGraphContext] = useState(false);
+  const [searchMode, setSearchMode] = useState<'semantic' | 'keyword' | 'hybrid'>('hybrid');
   const [quotes, setQuotes] = useState<QuoteReference[]>([]);
   const [showQuoteTip, setShowQuoteTip] = useState(
     () => localStorage.getItem("ai-chat-quote-used") !== "true",
@@ -310,6 +311,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
             session_id: chatState.sessionId,
             use_graph_context: useGraphContext,
             graph_hops: useGraphContext ? 2 : undefined,
+            search_mode: searchMode,
           },
           (chunk: string) => {
             fullResponse += chunk;
@@ -836,6 +838,8 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
           onEditQuote={editQuote}
           useGraphContext={useGraphContext}
           onToggleGraphContext={() => setUseGraphContext(!useGraphContext)}
+          searchMode={searchMode}
+          onSearchModeChange={setSearchMode}
           onClearChat={() => chatState.clearMessages()}
           showQuoteTip={showQuoteTip}
           onDismissQuoteTip={dismissQuoteTip}

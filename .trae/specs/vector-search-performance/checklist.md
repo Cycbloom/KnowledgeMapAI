@@ -1,0 +1,9 @@
+- [x] CacheKeys 中新增 EMBEDDING 键定义，用于缓存 embedding 生成结果
+- [x] embeddingOps.generateEmbedding 使用 cacheService.getOrSet 包装，TTL 300s
+- [x] knowledgePointService.update 后失效对应标题的 embedding 缓存
+- [x] nodesService.createNode 创建新 KP 时将 embedding 一并写入数据库（异步回填）
+- [x] nodesService.createNode 中 embedding 生成和相似度检查改为异步非阻塞
+- [x] 异步 embedding 回填成功后 knowledge_point.embedding 不为 null
+- [x] 21_pgvector_search.sql 中移除冗余 IVFFlat 索引创建代码
+- [x] 数据库中 knowledge_points 和 knowledge_graphs 仅有 HNSW 索引，无冗余 IVFFlat
+- [x] 类型检查通过（npm run check — 无新增错误）

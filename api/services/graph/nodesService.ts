@@ -100,35 +100,6 @@ export class NodesService {
     }
 
     let knowledgePointId = existingKpId;
-    let reusedKnowledgePoint = false;
-
-    if (!knowledgePointId && reuse_existing) {
-      try {
-        if (title) {
-          const embedding = await aiService.generateEmbedding(title);
-
-          if (embedding) {
-            const similarKps = await knowledgePointService.searchSimilar(
-              supabase,
-              embedding,
-              userId,
-              REUSE_SIMILARITY_THRESHOLD,
-              1,
-            );
-
-            if (similarKps && similarKps.length > 0) {
-              knowledgePointId = similarKps[0].id;
-              reusedKnowledgePoint = true;
-              logger.info(
-                `Reusing existing knowledge point: ${knowledgePointId} for title: ${title}`,
-              );
-            }
-          }
-        }
-      } catch (error) {
-        logger.warn('Failed to search for similar knowledge points:', error);
-      }
-    }
 
     if (!knowledgePointId) {
       const newKp = await knowledgePointService.create(supabase, {
@@ -155,9 +126,6 @@ export class NodesService {
       });
 
       const result = graphNode;
-      if (result && reusedKnowledgePoint) {
-        (result as { _reused?: boolean })._reused = true;
-      }
 
       await cacheService.invalidateGraphCache(userId, graph_id);
       await cacheService.invalidateUserGraphsCache(userId);
@@ -176,6 +144,13 @@ export class NodesService {
         )
         .catch((err) => logger.error('node_created event publish failed:', err));
 
+      // 异步处理 embedding（不阻塞返回）
+      if (!existingKpId && title) {
+        this.processEmbeddingAsync(supabase, userId, knowledgePointId, title, reuse_existing).catch((err) => {
+          logger.warn('Async embedding processing failed:', err);
+        });
+      }
+
       return result;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '';
@@ -192,6 +167,43 @@ export class NodesService {
         500,
         ErrorCodes.SYSTEM_INTERNAL_ERROR,
       );
+    }
+  }
+
+  private async processEmbeddingAsync(
+    supabase: SupabaseClient,
+    userId: string,
+    knowledgePointId: string,
+    title: string,
+    reuseExisting: boolean,
+  ): Promise<void> {
+    try {
+      const embedding = await aiService.generateEmbedding(title);
+      if (!embedding) return;
+
+      // 回填 embedding 到 knowledge_point
+      await supabase
+        .from('knowledge_points')
+        .update({ embedding })
+        .eq('id', knowledgePointId);
+
+      // 如果启用了复用检查，执行相似度搜索（仅日志记录）
+      if (reuseExisting) {
+        const similarKps = await knowledgePointService.searchSimilar(
+          supabase,
+          embedding,
+          userId,
+          REUSE_SIMILARITY_THRESHOLD,
+          1,
+        );
+        if (similarKps && similarKps.length > 0) {
+          logger.info(
+            `Async similarity check found existing KP: ${similarKps[0].id} for title: ${title}`,
+          );
+        }
+      }
+    } catch (error) {
+      logger.warn('processEmbeddingAsync failed:', error);
     }
   }
 

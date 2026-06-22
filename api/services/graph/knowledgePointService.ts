@@ -150,6 +150,13 @@ export class KnowledgePointService {
     id: string,
     data: UpdateKnowledgePointData
   ): Promise<KnowledgePoint> {
+    // 更新前获取原标题，用于失效旧 embedding 缓存
+    let oldTitle: string | undefined;
+    if (data.title !== undefined) {
+      const existingKp = await this.get(supabase, id);
+      oldTitle = existingKp?.title;
+    }
+
     const updates: Record<string, unknown> = {
       ...data,
       updated_at: new Date().toISOString(),
@@ -168,6 +175,20 @@ export class KnowledgePointService {
     }
 
     await cacheService.del(CacheKeys.KNOWLEDGE_POINT(id));
+
+    // 失效 embedding 缓存（标题变更时需同时清理新旧标题的缓存）
+    if (data.title !== undefined) {
+      // 删除新标题的缓存
+      if (data.title) {
+        const newTitleHash = computeTextHash(data.title);
+        await cacheService.del(CacheKeys.EMBEDDING(newTitleHash));
+      }
+      // 删除原标题的缓存（标题变更后旧缓存不再有效）
+      if (oldTitle && oldTitle !== data.title) {
+        const oldTitleHash = computeTextHash(oldTitle);
+        await cacheService.del(CacheKeys.EMBEDDING(oldTitleHash));
+      }
+    }
 
     return updatedKp as KnowledgePoint;
   }

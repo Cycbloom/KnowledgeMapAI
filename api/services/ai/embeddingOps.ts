@@ -2,59 +2,71 @@ import { getAIProviderForTask } from "./factory";
 import { getProviderForTask } from "./config";
 import { withEmbeddingMonitoring } from "./aiMonitor";
 import { logger } from "../../utils/logger";
+import { cacheService, CacheKeys, CacheTTL, computeTextHash } from "../common/cacheService";
 
 export class EmbeddingOps {
   async generateEmbedding(text: string): Promise<number[] | null> {
-    const embeddingProvider = await getProviderForTask("embedding");
+    // 使用缓存避免重复生成
+    const textHash = computeTextHash(text);
+    const cacheKey = CacheKeys.EMBEDDING(textHash);
 
-    if (!embeddingProvider) {
-      logger.warn("No embedding provider available");
-      return null;
-    }
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const embeddingProvider = await getProviderForTask("embedding");
 
-    const provider = await getAIProviderForTask("embedding");
+        if (!embeddingProvider) {
+          logger.warn("No embedding provider available");
+          return null;
+        }
 
-    if (!provider.hasKey) {
-      logger.warn("Embedding provider has no API key configured");
-      return null;
-    }
+        const provider = await getAIProviderForTask("embedding");
 
-    try {
-      if (provider.createEmbedding) {
-        return await withEmbeddingMonitoring(
-          {
-            operation: "generate_embedding",
-            provider: provider.providerType,
-            model: provider.embeddingModel || provider.model,
-          },
-          async () => ({
-            result: await provider.createEmbedding!(text),
-            tokenCount: text.length,
-          }),
-        );
-      }
+        if (!provider.hasKey) {
+          logger.warn("Embedding provider has no API key configured");
+          return null;
+        }
 
-      return await withEmbeddingMonitoring(
-        {
-          operation: "generate_embedding",
-          provider: provider.providerType,
-          model: provider.embeddingModel || provider.model,
-        },
-        async () => {
-          const response = await provider.client.embeddings.create({
-            model: provider.embeddingModel || provider.model,
-            input: text,
-          });
-          return {
-            result: response.data[0].embedding as number[],
-            tokenCount: text.length,
-          };
-        },
-      );
-    } catch (error) {
-      logger.error("Failed to generate embedding:", error);
-      return null;
-    }
+        try {
+          if (provider.createEmbedding) {
+            return await withEmbeddingMonitoring(
+              {
+                operation: "generate_embedding",
+                provider: provider.providerType,
+                model: provider.embeddingModel || provider.model,
+              },
+              async () => ({
+                result: await provider.createEmbedding!(text),
+                tokenCount: text.length,
+              }),
+            );
+          }
+
+          return await withEmbeddingMonitoring(
+            {
+              operation: "generate_embedding",
+              provider: provider.providerType,
+              model: provider.embeddingModel || provider.model,
+            },
+            async () => {
+              const response = await provider.client.embeddings.create({
+                model: provider.embeddingModel || provider.model,
+                input: text,
+              });
+              return {
+                result: response.data[0].embedding as number[],
+                tokenCount: text.length,
+              };
+            },
+          );
+        } catch (error) {
+          logger.error("Failed to generate embedding:", error);
+          return null;
+        }
+      },
+      CacheTTL.SEARCH,
+      ['embedding']
+    ) as Promise<number[] | null>;
   }
 
   async generateEmbeddingsBatch(texts: string[]): Promise<(number[] | null)[]> {

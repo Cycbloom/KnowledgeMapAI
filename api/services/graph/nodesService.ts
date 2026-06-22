@@ -3,13 +3,14 @@ import { cacheService } from '../common/cacheService';
 import { aiService } from '../ai/aiService';
 import { knowledgePointService, graphNodeService, edgeService } from './index';
 import { graphVersionService } from './graphVersionService';
-import { buildNodeFromGraphNode } from '../../utils/nodeHelpers';
+import { buildNodeFromGraphNode, createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
 import { appEventBus } from '../core/eventBus';
 import type { NodeCreatedPayload, EdgeCreatedPayload } from '../../../shared/types/events';
 import { BackboneModule, type NodeLevel } from '../../../shared/types/graph';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { transactionExecutor } from '../../database/transactionExecutor';
 
 const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
@@ -100,7 +101,35 @@ export class NodesService {
     }
 
     let knowledgePointId = existingKpId;
+    let graphNodeId: string | undefined;
 
+    // 当不需要复用且没有已有知识点时，使用 RPC 原子性创建
+    if (!knowledgePointId && !reuse_existing) {
+      const result = await createKnowledgePointWithGraphNode(supabase, userId, {
+        graph_id,
+        title: title || '',
+        content: content || '',
+        summary,
+        learning_material,
+        x_position,
+        y_position,
+        level,
+        properties,
+      });
+
+      if (!result) {
+        throw new AppError(
+          '创建知识点节点失败',
+          500,
+          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+        );
+      }
+
+      knowledgePointId = result.knowledge_point_id;
+      graphNodeId = result.graph_node_id;
+    }
+
+    // 复用路径或已有知识点：仅创建 knowledge_point（如需要）+ graph_node
     if (!knowledgePointId) {
       const newKp = await knowledgePointService.create(supabase, {
         title: title || '',
@@ -116,16 +145,69 @@ export class NodesService {
     }
 
     try {
-      const graphNode = await graphNodeService.addToGraph(supabase, {
-        graph_id,
-        knowledge_point_id: knowledgePointId,
-        x_position,
-        y_position,
-        level: level as NodeLevel | undefined,
-        is_accepted,
-      });
+      let result: NonNullable<ReturnType<typeof buildNodeFromGraphNode>>;
 
-      const result = graphNode;
+      if (graphNodeId) {
+        // 已通过 RPC 创建了 graph_node，直接查询返回
+        const { data: gn, error: gnError } = await supabase
+          .from('graph_nodes')
+          .select(
+            `
+          id,
+          graph_id,
+          knowledge_point_id,
+          x_position,
+          y_position,
+          level,
+          is_accepted,
+          deleted_at,
+          created_at,
+          updated_at,
+          knowledge_points (
+            id,
+            title,
+            content,
+            summary,
+            learning_material,
+            properties,
+            visibility,
+            owner_id,
+            created_at,
+            updated_at,
+            keywords
+          )
+        `,
+          )
+          .eq('id', graphNodeId)
+          .single();
+
+        if (gnError || !gn) {
+          throw new AppError(
+            '获取创建的图谱节点失败',
+            500,
+            ErrorCodes.SYSTEM_INTERNAL_ERROR,
+          );
+        }
+        const built = buildNodeFromGraphNode(gn);
+        if (!built) {
+          throw new AppError(
+            '构建节点数据失败',
+            500,
+            ErrorCodes.SYSTEM_INTERNAL_ERROR,
+          );
+        }
+        result = built;
+      } else {
+        const graphNode = await graphNodeService.addToGraph(supabase, {
+          graph_id,
+          knowledge_point_id: knowledgePointId,
+          x_position,
+          y_position,
+          level: level as NodeLevel | undefined,
+          is_accepted,
+        });
+        result = graphNode;
+      }
 
       await cacheService.invalidateGraphCache(userId, graph_id);
       await cacheService.invalidateUserGraphsCache(userId);
@@ -360,34 +442,117 @@ export class NodesService {
     if (updates.is_accepted !== undefined)
       gnUpdates.is_accepted = updates.is_accepted;
 
-    if (Object.keys(kpUpdates).length > 0) {
-      try {
-        await knowledgePointService.update(
-          supabase,
-          existingNode.knowledge_point_id,
-          kpUpdates,
-        );
-      } catch (error: unknown) {
-        logger.error('Update knowledge point error:', error);
-        const message =
-          error instanceof Error ? error.message : '更新知识点失败';
-        throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-      }
-    }
+    if (Object.keys(kpUpdates).length > 0 || Object.keys(gnUpdates).length > 0) {
+      if (transactionExecutor.isAvailable()) {
+        try {
+          await transactionExecutor.executeInTransaction(async (client) => {
+            if (Object.keys(kpUpdates).length > 0) {
+              const kpSetClauses: string[] = [];
+              const kpParams: unknown[] = [];
+              let paramIdx = 1;
+              for (const [key, value] of Object.entries(kpUpdates)) {
+                kpSetClauses.push(`${key} = $${paramIdx}`);
+                kpParams.push(value);
+                paramIdx++;
+              }
+              kpSetClauses.push(`updated_at = $${paramIdx}`);
+              kpParams.push(new Date().toISOString());
+              paramIdx++;
+              kpParams.push(existingNode.knowledge_point_id);
 
-    if (Object.keys(gnUpdates).length > 0) {
-      const { error: gnError } = await supabase
-        .from('graph_nodes')
-        .update(gnUpdates)
-        .eq('id', existingNode.id);
+              await client.query(
+                `UPDATE knowledge_points SET ${kpSetClauses.join(', ')} WHERE id = $${paramIdx}`,
+                kpParams,
+              );
+            }
 
-      if (gnError) {
-        logger.error('Update graph node error:', gnError);
-        throw new AppError(
-          gnError.message || '更新图谱节点失败',
-          500,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
-        );
+            if (Object.keys(gnUpdates).length > 0) {
+              const gnSetClauses: string[] = [];
+              const gnParams: unknown[] = [];
+              let paramIdx = 1;
+              for (const [key, value] of Object.entries(gnUpdates)) {
+                gnSetClauses.push(`${key} = $${paramIdx}`);
+                gnParams.push(value);
+                paramIdx++;
+              }
+              gnSetClauses.push(`updated_at = $${paramIdx}`);
+              gnParams.push(new Date().toISOString());
+              paramIdx++;
+              gnParams.push(existingNode.id);
+
+              await client.query(
+                `UPDATE graph_nodes SET ${gnSetClauses.join(', ')} WHERE id = $${paramIdx}`,
+                gnParams,
+              );
+            }
+          });
+        } catch (txError) {
+          logger.warn('updateNode transaction failed, falling back to non-transactional update:', txError);
+          // 降级路径：保留原有逻辑
+          if (Object.keys(kpUpdates).length > 0) {
+            try {
+              await knowledgePointService.update(
+                supabase,
+                existingNode.knowledge_point_id,
+                kpUpdates,
+              );
+            } catch (error: unknown) {
+              logger.error('Update knowledge point error:', error);
+              const message =
+                error instanceof Error ? error.message : '更新知识点失败';
+              throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+            }
+          }
+
+          if (Object.keys(gnUpdates).length > 0) {
+            const { error: gnError } = await supabase
+              .from('graph_nodes')
+              .update(gnUpdates)
+              .eq('id', existingNode.id);
+
+            if (gnError) {
+              logger.error('Update graph node error:', gnError);
+              throw new AppError(
+                gnError.message || '更新图谱节点失败',
+                500,
+                ErrorCodes.SYSTEM_INTERNAL_ERROR,
+              );
+            }
+          }
+        }
+      } else {
+        // transactionExecutor 不可用，使用降级路径
+        logger.warn('transactionExecutor not available, using non-transactional updateNode');
+        if (Object.keys(kpUpdates).length > 0) {
+          try {
+            await knowledgePointService.update(
+              supabase,
+              existingNode.knowledge_point_id,
+              kpUpdates,
+            );
+          } catch (error: unknown) {
+            logger.error('Update knowledge point error:', error);
+            const message =
+              error instanceof Error ? error.message : '更新知识点失败';
+            throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+          }
+        }
+
+        if (Object.keys(gnUpdates).length > 0) {
+          const { error: gnError } = await supabase
+            .from('graph_nodes')
+            .update(gnUpdates)
+            .eq('id', existingNode.id);
+
+          if (gnError) {
+            logger.error('Update graph node error:', gnError);
+            throw new AppError(
+              gnError.message || '更新图谱节点失败',
+              500,
+              ErrorCodes.SYSTEM_INTERNAL_ERROR,
+            );
+          }
+        }
       }
     }
 
@@ -666,6 +831,15 @@ export class NodesService {
       reason?: string;
     }> = [];
 
+    // 收集所有需要更新的数据（验证逻辑在事务外）
+    const pendingUpdates: Array<{
+      nodeUpdateId: string;
+      graphNodeId: string;
+      knowledgePointId: string;
+      kpUpdates: Record<string, unknown>;
+      gnUpdates: Record<string, unknown>;
+    }> = [];
+
     for (const nodeUpdate of nodes) {
       const graphNode = kpIdToGnMap.get(nodeUpdate.id);
       if (!graphNode) continue;
@@ -728,30 +902,129 @@ export class NodesService {
       if (nodeUpdate.is_accepted !== undefined)
         gnUpdates.is_accepted = nodeUpdate.is_accepted;
 
-      try {
-        if (Object.keys(kpUpdates).length > 0) {
-          await knowledgePointService.update(
-            supabase,
-            graphNode.knowledge_point_id,
-            kpUpdates,
-          );
-        }
-
-        if (Object.keys(gnUpdates).length > 0) {
-          await supabase
-            .from('graph_nodes')
-            .update(gnUpdates)
-            .eq('id', graphNode.id);
-        }
-
-        updateResults.push({ id: nodeUpdate.id, updated: true });
-      } catch (error: unknown) {
-        logger.error('Batch update node error:', error);
-        updateResults.push({
-          id: nodeUpdate.id,
-          updated: false,
-          reason: error instanceof Error ? error.message : '更新失败',
+      if (Object.keys(kpUpdates).length > 0 || Object.keys(gnUpdates).length > 0) {
+        pendingUpdates.push({
+          nodeUpdateId: nodeUpdate.id,
+          graphNodeId: graphNode.id,
+          knowledgePointId: graphNode.knowledge_point_id,
+          kpUpdates,
+          gnUpdates,
         });
+      }
+    }
+
+    // 使用事务执行所有更新
+    if (pendingUpdates.length > 0) {
+      if (transactionExecutor.isAvailable()) {
+        try {
+          await transactionExecutor.executeInTransaction(async (client) => {
+            for (const item of pendingUpdates) {
+              if (Object.keys(item.kpUpdates).length > 0) {
+                const kpSetClauses: string[] = [];
+                const kpParams: unknown[] = [];
+                let paramIdx = 1;
+                for (const [key, value] of Object.entries(item.kpUpdates)) {
+                  kpSetClauses.push(`${key} = $${paramIdx}`);
+                  kpParams.push(value);
+                  paramIdx++;
+                }
+                kpSetClauses.push(`updated_at = $${paramIdx}`);
+                kpParams.push(new Date().toISOString());
+                paramIdx++;
+                kpParams.push(item.knowledgePointId);
+
+                await client.query(
+                  `UPDATE knowledge_points SET ${kpSetClauses.join(', ')} WHERE id = $${paramIdx}`,
+                  kpParams,
+                );
+              }
+
+              if (Object.keys(item.gnUpdates).length > 0) {
+                const gnSetClauses: string[] = [];
+                const gnParams: unknown[] = [];
+                let paramIdx = 1;
+                for (const [key, value] of Object.entries(item.gnUpdates)) {
+                  gnSetClauses.push(`${key} = $${paramIdx}`);
+                  gnParams.push(value);
+                  paramIdx++;
+                }
+                gnSetClauses.push(`updated_at = $${paramIdx}`);
+                gnParams.push(new Date().toISOString());
+                paramIdx++;
+                gnParams.push(item.graphNodeId);
+
+                await client.query(
+                  `UPDATE graph_nodes SET ${gnSetClauses.join(', ')} WHERE id = $${paramIdx}`,
+                  gnParams,
+                );
+              }
+            }
+          });
+
+          for (const item of pendingUpdates) {
+            updateResults.push({ id: item.nodeUpdateId, updated: true });
+          }
+        } catch (txError) {
+          logger.warn('batchUpdateNodes transaction failed, falling back to non-transactional update:', txError);
+          // 降级路径：逐个更新
+          for (const item of pendingUpdates) {
+            try {
+              if (Object.keys(item.kpUpdates).length > 0) {
+                await knowledgePointService.update(
+                  supabase,
+                  item.knowledgePointId,
+                  item.kpUpdates,
+                );
+              }
+
+              if (Object.keys(item.gnUpdates).length > 0) {
+                await supabase
+                  .from('graph_nodes')
+                  .update(item.gnUpdates)
+                  .eq('id', item.graphNodeId);
+              }
+
+              updateResults.push({ id: item.nodeUpdateId, updated: true });
+            } catch (error: unknown) {
+              logger.error('Batch update node error:', error);
+              updateResults.push({
+                id: item.nodeUpdateId,
+                updated: false,
+                reason: error instanceof Error ? error.message : '更新失败',
+              });
+            }
+          }
+        }
+      } else {
+        // transactionExecutor 不可用，使用降级路径
+        logger.warn('transactionExecutor not available, using non-transactional batchUpdateNodes');
+        for (const item of pendingUpdates) {
+          try {
+            if (Object.keys(item.kpUpdates).length > 0) {
+              await knowledgePointService.update(
+                supabase,
+                item.knowledgePointId,
+                item.kpUpdates,
+              );
+            }
+
+            if (Object.keys(item.gnUpdates).length > 0) {
+              await supabase
+                .from('graph_nodes')
+                .update(item.gnUpdates)
+                .eq('id', item.graphNodeId);
+            }
+
+            updateResults.push({ id: item.nodeUpdateId, updated: true });
+          } catch (error: unknown) {
+            logger.error('Batch update node error:', error);
+            updateResults.push({
+              id: item.nodeUpdateId,
+              updated: false,
+              reason: error instanceof Error ? error.message : '更新失败',
+            });
+          }
+        }
       }
     }
 

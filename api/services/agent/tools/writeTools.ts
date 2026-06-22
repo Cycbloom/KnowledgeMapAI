@@ -1,4 +1,7 @@
 import type { AgentTool, ToolContext } from "../types";
+import { createKnowledgePointWithGraphNode } from "../../../utils/nodeHelpers";
+import { AppError } from "../../../middleware/errorHandler";
+import { ErrorCodes } from "../../../../shared/types/errorCodes";
 
 const createNodeTool: AgentTool = {
   name: "create_node",
@@ -51,25 +54,22 @@ const createNodeTool: AgentTool = {
       throw new Error("Graph not found or access denied");
     }
 
-    const { data: kp, error: kpError } = await supabase
-      .from("knowledge_points")
-      .insert({ owner_id: userId, title, content })
-      .select("id")
-      .single();
+    const result = await createKnowledgePointWithGraphNode(supabase, userId, {
+      graph_id: graphId,
+      title,
+      content,
+      level,
+    });
 
-    if (kpError) {
-      throw new Error(`Failed to create knowledge point: ${kpError.message}`);
+    if (!result) {
+      throw new AppError(
+        "创建知识点节点失败",
+        500,
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
     }
 
-    const { error: gnError } = await supabase
-      .from("graph_nodes")
-      .insert({ graph_id: graphId, knowledge_point_id: kp.id, level });
-
-    if (gnError) {
-      throw new Error(`Failed to create graph node: ${gnError.message}`);
-    }
-
-    return { success: true, node: { id: kp.id, title, level }, graph_id: graphId };
+    return { success: true, node: { id: result.knowledge_point_id, title, level }, graph_id: graphId };
   },
 };
 

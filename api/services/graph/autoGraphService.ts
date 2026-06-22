@@ -19,6 +19,7 @@ import { autoGraphRouteService } from "./autoGraphRouteService";
 import { scrapeUrl } from "../../utils/scraper";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { transactionExecutor } from "../../database/transactionExecutor";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 200;
@@ -245,7 +246,6 @@ export class AutoGraphService {
       { graphNodeId: string; knowledgePointId: string }
     >();
     const graphNodeIds: string[] = [];
-    const failedNodes: string[] = [];
 
     const { nodesToCreate, reusedKpIds, mergedCount } =
       await this.deduplicateNodes(supabase, graphId, validNodes, userId);
@@ -271,6 +271,25 @@ export class AutoGraphService {
         graphNodeIds.push(existingGN.id);
       }
     }
+
+    if (transactionExecutor.isAvailable()) {
+      return this.processAINodesWithTransaction(
+        supabase,
+        userId,
+        graphId,
+        validNodes,
+        nodesToCreate,
+        nodeMap,
+        graphNodeIds,
+        mergedCount,
+      );
+    }
+
+    logger.warn(
+      "transactionExecutor not available, falling back to non-transactional processing for processAINodes",
+    );
+
+    const failedNodes: string[] = [];
 
     logger.info("Creating knowledge points in batches (without embedding)...");
     const { knowledgePoints, embeddingsGenerated } =
@@ -457,6 +476,295 @@ export class AutoGraphService {
           );
           logger.info(
             `Created embedding generation task for ${validKnowledgePointIds.length} knowledge points`,
+          );
+        } catch (error) {
+          logger.error("Failed to create embedding generation task:", error);
+        }
+      }
+    }
+
+    const nodeMappingRecord: Record<
+      string,
+      { graphNodeId: string; knowledgePointId: string }
+    > = {};
+    for (const [tempId, info] of nodeMap) {
+      nodeMappingRecord[tempId] = info;
+    }
+
+    return {
+      nodeCount: graphNodeIds.length,
+      edgeCount,
+      graphNodeIds,
+      nodeMapping: nodeMappingRecord,
+      mergedCount,
+    };
+  }
+
+  private async processAINodesWithTransaction(
+    supabase: SupabaseClient,
+    userId: string,
+    graphId: string,
+    validNodes: AINodeData[],
+    nodesToCreate: AINodeData[],
+    nodeMap: Map<string, { graphNodeId: string; knowledgePointId: string }>,
+    graphNodeIds: string[],
+    mergedCount: number,
+  ): Promise<ProcessAINodesResult> {
+    const knowledgePointIds: string[] = [];
+
+    const { edgeCount } = await transactionExecutor.executeInTransaction(
+      async (client) => {
+        // 1. Insert knowledge_points
+        logger.info(
+          "Creating knowledge points in transaction (without embedding)...",
+        );
+        for (const nodeData of nodesToCreate) {
+          const embeddingValue = nodeData.embedding
+            ? `[${nodeData.embedding.join(",")}]`
+            : null;
+
+          const kpResult = await client.query(
+            `INSERT INTO knowledge_points (title, content, summary, properties, embedding, visibility, owner_id)
+             VALUES ($1, $2, $3, $4, $5::vector, 'private', $6) RETURNING id`,
+            [
+              nodeData.title,
+              nodeData.content || "",
+              nodeData.summary || null,
+              JSON.stringify({
+                source: "ai-generated",
+                generated_at: new Date().toISOString(),
+                ...(nodeData.properties || {}),
+              }),
+              embeddingValue,
+              userId,
+            ],
+          );
+
+          const kpId = kpResult.rows[0]?.id;
+          if (!kpId) {
+            throw new AppError(
+              `Failed to create knowledge point for: ${nodeData.title}`,
+              500,
+              ErrorCodes.SYSTEM_INTERNAL_ERROR,
+            );
+          }
+          knowledgePointIds.push(kpId);
+        }
+
+        // 2. Insert graph_nodes
+        logger.info("Creating graph nodes in transaction...");
+        for (let i = 0; i < nodesToCreate.length; i++) {
+          const nodeData = nodesToCreate[i];
+          const kpId = knowledgePointIds[i];
+
+          const gnResult = await client.query(
+            `INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted)
+             VALUES ($1, $2, $3, $4, $5, true) RETURNING id`,
+            [
+              graphId,
+              kpId,
+              nodeData.x_position,
+              nodeData.y_position,
+              validLevels.includes(nodeData.level) ? nodeData.level : "normal",
+            ],
+          );
+
+          const graphNodeId = gnResult.rows[0]?.id;
+          if (!graphNodeId) {
+            throw new AppError(
+              `Failed to create graph node for: ${nodeData.title}`,
+              500,
+              ErrorCodes.SYSTEM_INTERNAL_ERROR,
+            );
+          }
+
+          nodeMap.set(nodeData.tempId, { graphNodeId, knowledgePointId: kpId });
+          graphNodeIds.push(graphNodeId);
+        }
+
+        // 3. Build edges list and insert
+        const edgesToCreate: CreateEdgeData[] = [];
+        for (const nodeData of validNodes) {
+          if (nodeData.parentId) {
+            let parentInfo = nodeMap.get(nodeData.parentId);
+            const childInfo = nodeMap.get(nodeData.tempId);
+
+            if (!parentInfo && childInfo) {
+              const { rows: existingParent } = await client.query(
+                `SELECT knowledge_point_id FROM graph_nodes WHERE id = $1 AND graph_id = $2 AND deleted_at IS NULL`,
+                [nodeData.parentId, graphId],
+              );
+
+              if (existingParent.length > 0) {
+                parentInfo = {
+                  graphNodeId: nodeData.parentId,
+                  knowledgePointId: existingParent[0].knowledge_point_id,
+                };
+                logger.info(`Found parent node in database (transaction)`, {
+                  parentId: nodeData.parentId,
+                  knowledgePointId: existingParent[0].knowledge_point_id,
+                  childTempId: nodeData.tempId,
+                });
+              } else {
+                logger.warn(`Parent node not found in database (transaction)`, {
+                  parentId: nodeData.parentId,
+                  childTempId: nodeData.tempId,
+                });
+              }
+            }
+
+            if (parentInfo && childInfo) {
+              edgesToCreate.push({
+                graph_id: graphId,
+                source_knowledge_point_id: parentInfo.knowledgePointId,
+                target_knowledge_point_id: childInfo.knowledgePointId,
+                relationship_type: nodeData.relationshipType || "contains",
+              });
+            } else {
+              logger.warn(`Could not create edge for node (transaction)`, {
+                tempId: nodeData.tempId,
+                parentId: nodeData.parentId,
+                hasParentInfo: !!parentInfo,
+                hasChildInfo: !!childInfo,
+              });
+            }
+          }
+        }
+
+        logger.info("Edges to create (transaction)", {
+          count: edgesToCreate.length,
+        });
+
+        // 4. Deduplicate edges against existing ones
+        let dedupedEdges = edgesToCreate;
+        if (edgesToCreate.length > 0) {
+          const { rows: existingEdges } = await client.query(
+            `SELECT source_knowledge_point_id, target_knowledge_point_id FROM edges WHERE graph_id = $1 AND deleted_at IS NULL`,
+            [graphId],
+          );
+
+          const existingPairs = new Set<string>();
+          for (const e of existingEdges) {
+            existingPairs.add(
+              `${e.source_knowledge_point_id}::${e.target_knowledge_point_id}`,
+            );
+          }
+
+          dedupedEdges = edgesToCreate.filter((e) => {
+            const key = `${e.source_knowledge_point_id}::${e.target_knowledge_point_id}`;
+            return !existingPairs.has(key);
+          });
+
+          const duplicateCount = edgesToCreate.length - dedupedEdges.length;
+          if (duplicateCount > 0) {
+            logger.info(
+              `Edge dedup (transaction): ${duplicateCount} edges already exist, skipped`,
+            );
+          }
+        }
+
+        // 5. Insert edges in batch
+        let insertedEdgeCount = 0;
+        if (dedupedEdges.length > 0) {
+          const edgesValues: string[] = [];
+          const edgesParams: unknown[] = [];
+          let paramIdx = 1;
+
+          for (const e of dedupedEdges) {
+            edgesValues.push(
+              `($${paramIdx}, $${paramIdx + 1}, $${paramIdx + 2}, $${paramIdx + 3})`,
+            );
+            edgesParams.push(
+              e.graph_id,
+              e.source_knowledge_point_id,
+              e.target_knowledge_point_id,
+              e.relationship_type || "contains",
+            );
+            paramIdx += 4;
+          }
+
+          await client.query(
+            `INSERT INTO edges (graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type)
+             VALUES ${edgesValues.join(", ")}`,
+            edgesParams,
+          );
+          insertedEdgeCount = dedupedEdges.length;
+        }
+
+        // Also count previously existing edges as "successful"
+        return {
+          edgeCount:
+            insertedEdgeCount + (edgesToCreate.length - dedupedEdges.length),
+        };
+      },
+    );
+
+    logger.info(
+      `Completed (transaction): ${graphNodeIds.length} nodes (${mergedCount} merged, ${graphNodeIds.length - mergedCount} new), ${edgeCount} edges`,
+    );
+
+    // Post-transaction: generate embeddings for knowledge points without them
+    const kpsNeedingEmbeddings: Array<{ id: string; text: string }> = [];
+    for (let i = 0; i < nodesToCreate.length; i++) {
+      if (knowledgePointIds[i] && !nodesToCreate[i].embedding) {
+        const node = nodesToCreate[i];
+        const text = node.content
+          ? `${node.title}: ${node.content.slice(0, 500)}`
+          : node.title;
+        kpsNeedingEmbeddings.push({ id: knowledgePointIds[i], text });
+      }
+    }
+
+    let embeddingsGenerated = true;
+    if (kpsNeedingEmbeddings.length > 0) {
+      try {
+        const texts = kpsNeedingEmbeddings.map((kp) => kp.text);
+        const embeddings = await aiService.generateEmbeddingsBatch(texts);
+
+        let updatedCount = 0;
+        for (let i = 0; i < kpsNeedingEmbeddings.length; i++) {
+          if (embeddings[i]) {
+            const { error: updateError } = await supabase
+              .from("knowledge_points")
+              .update({ embedding: embeddings[i] })
+              .eq("id", kpsNeedingEmbeddings[i].id);
+
+            if (!updateError) {
+              updatedCount++;
+            }
+          }
+        }
+
+        logger.info(
+          `Generated embeddings (post-transaction): ${updatedCount}/${kpsNeedingEmbeddings.length}`,
+        );
+
+        if (updatedCount !== kpsNeedingEmbeddings.length) {
+          embeddingsGenerated = false;
+          logger.warn(
+            `Only ${updatedCount}/${kpsNeedingEmbeddings.length} embeddings generated`,
+          );
+        }
+      } catch (embedError) {
+        embeddingsGenerated = false;
+        logger.warn(
+          "Synchronous embedding generation failed (post-transaction):",
+          embedError,
+        );
+      }
+    }
+
+    if (!embeddingsGenerated) {
+      if (knowledgePointIds.length > 0) {
+        try {
+          await asyncTaskService.createTask(
+            userId,
+            "embedding_generation",
+            { knowledgePointIds },
+            `嵌入生成 - ${knowledgePointIds.length}个知识点`,
+          );
+          logger.info(
+            `Created embedding generation task for ${knowledgePointIds.length} knowledge points`,
           );
         } catch (error) {
           logger.error("Failed to create embedding generation task:", error);

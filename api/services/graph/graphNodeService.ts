@@ -7,6 +7,7 @@ import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { graphVersionService } from './graphVersionService';
+import { transactionExecutor } from '../../database/transactionExecutor';
 
 interface AddToGraphData {
   graph_id: string;
@@ -95,28 +96,90 @@ export class GraphNodeService {
     } catch (rpcError) {
       logger.warn('RPC remove_node_with_edges failed, falling back to sequential operations', { error: rpcError });
 
-      const { data: gn } = await supabase
-        .from('graph_nodes')
-        .select('knowledge_point_id')
-        .eq('id', graphNodeId)
-        .single();
+      // Transactional fallback
+      if (transactionExecutor.isAvailable()) {
+        try {
+          knowledgePointId = await transactionExecutor.executeInTransaction(async (client) => {
+            const { rows } = await client.query(
+              `SELECT knowledge_point_id FROM graph_nodes WHERE id = $1`,
+              [graphNodeId],
+            );
 
-      if (gn) {
-        knowledgePointId = gn.knowledge_point_id;
-        const { error: edgesError } = await supabase
-          .from('edges')
-          .update({ deleted_at: new Date().toISOString() })
-          .or(`source_knowledge_point_id.eq.${gn.knowledge_point_id},target_knowledge_point_id.eq.${gn.knowledge_point_id}`)
-          .eq('graph_id', graphId);
+            const kpId = rows[0]?.knowledge_point_id as string | undefined;
 
-        if (edgesError) {
-          logger.error('Remove edges error:', edgesError);
+            if (kpId) {
+              await client.query(
+                `UPDATE edges SET deleted_at = $1 WHERE graph_id = $2 AND (source_knowledge_point_id = $3 OR target_knowledge_point_id = $3)`,
+                [new Date().toISOString(), graphId, kpId],
+              );
+            }
+
+            const { rowCount } = await client.query(
+              `UPDATE graph_nodes SET deleted_at = $1 WHERE id = $2`,
+              [new Date().toISOString(), graphNodeId],
+            );
+
+            if (!rowCount) {
+              throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+            }
+
+            return kpId;
+          });
+        } catch (txError) {
+          logger.warn('Transaction failed in removeFromGraph fallback, falling back to non-transactional operations', { error: txError });
+          knowledgePointId = undefined;
+
+          // Non-transactional fallback
+          const { data: gn } = await supabase
+            .from('graph_nodes')
+            .select('knowledge_point_id')
+            .eq('id', graphNodeId)
+            .single();
+
+          if (gn) {
+            knowledgePointId = gn.knowledge_point_id;
+            const { error: edgesError } = await supabase
+              .from('edges')
+              .update({ deleted_at: new Date().toISOString() })
+              .or(`source_knowledge_point_id.eq.${gn.knowledge_point_id},target_knowledge_point_id.eq.${gn.knowledge_point_id}`)
+              .eq('graph_id', graphId);
+
+            if (edgesError) {
+              logger.error('Remove edges error:', edgesError);
+            }
+          }
+
+          const result = await softDelete(supabase, 'graph_nodes', graphNodeId);
+          if (!result.success) {
+            throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+          }
         }
-      }
+      } else {
+        logger.warn('TransactionExecutor not available, using non-transactional fallback for removeFromGraph');
 
-      const result = await softDelete(supabase, 'graph_nodes', graphNodeId);
-      if (!result.success) {
-        throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+        const { data: gn } = await supabase
+          .from('graph_nodes')
+          .select('knowledge_point_id')
+          .eq('id', graphNodeId)
+          .single();
+
+        if (gn) {
+          knowledgePointId = gn.knowledge_point_id;
+          const { error: edgesError } = await supabase
+            .from('edges')
+            .update({ deleted_at: new Date().toISOString() })
+            .or(`source_knowledge_point_id.eq.${gn.knowledge_point_id},target_knowledge_point_id.eq.${gn.knowledge_point_id}`)
+            .eq('graph_id', graphId);
+
+          if (edgesError) {
+            logger.error('Remove edges error:', edgesError);
+          }
+        }
+
+        const result = await softDelete(supabase, 'graph_nodes', graphNodeId);
+        if (!result.success) {
+          throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+        }
       }
     }
 
@@ -316,30 +379,91 @@ export class GraphNodeService {
     } catch (rpcError) {
       logger.warn('RPC batch_remove_nodes_with_edges failed, falling back to sequential operations', { error: rpcError });
 
-      const { data: nodes } = await supabase
-        .from('graph_nodes')
-        .select('id, knowledge_point_id')
-        .in('id', graphNodeIds);
+      // Transactional fallback
+      if (transactionExecutor.isAvailable()) {
+        try {
+          graphNodes = await transactionExecutor.executeInTransaction(async (client) => {
+            const { rows: nodes } = await client.query(
+              `SELECT id, knowledge_point_id FROM graph_nodes WHERE id = ANY($1)`,
+              [graphNodeIds],
+            );
 
-      graphNodes = nodes;
+            const knowledgePointIds = nodes
+              .map((n: { knowledge_point_id: string | null }) => n.knowledge_point_id)
+              .filter((id): id is string => !!id);
 
-      const knowledgePointIds = nodes?.map(gn => gn.knowledge_point_id).filter(Boolean) || [];
+            if (knowledgePointIds.length > 0) {
+              await client.query(
+                `UPDATE edges SET deleted_at = $1 WHERE graph_id = $2 AND (source_knowledge_point_id = ANY($3) OR target_knowledge_point_id = ANY($3))`,
+                [new Date().toISOString(), graphId, knowledgePointIds],
+              );
+            }
 
-      if (knowledgePointIds.length > 0) {
-        const { error: edgesError } = await supabase
-          .from('edges')
-          .update({ deleted_at: new Date().toISOString() })
-          .or(`source_knowledge_point_id.in.(${knowledgePointIds.join(',')}),target_knowledge_point_id.in.(${knowledgePointIds.join(',')})`)
-          .eq('graph_id', graphId);
+            await client.query(
+              `UPDATE graph_nodes SET deleted_at = $1 WHERE id = ANY($2)`,
+              [new Date().toISOString(), graphNodeIds],
+            );
 
-        if (edgesError) {
-          logger.error('Batch delete edges error:', edgesError);
+            return nodes as { id: string; knowledge_point_id: string }[];
+          });
+        } catch (txError) {
+          logger.warn('Transaction failed in batchDelete fallback, falling back to non-transactional operations', { error: txError });
+
+          // Non-transactional fallback
+          const { data: nodes } = await supabase
+            .from('graph_nodes')
+            .select('id, knowledge_point_id')
+            .in('id', graphNodeIds);
+
+          graphNodes = nodes as { id: string; knowledge_point_id: string }[] | null;
+
+          const knowledgePointIds = nodes?.map(gn => gn.knowledge_point_id).filter(Boolean) || [];
+
+          if (knowledgePointIds.length > 0) {
+            const { error: edgesError } = await supabase
+              .from('edges')
+              .update({ deleted_at: new Date().toISOString() })
+              .or(`source_knowledge_point_id.in.(${knowledgePointIds.join(',')}),target_knowledge_point_id.in.(${knowledgePointIds.join(',')})`)
+              .eq('graph_id', graphId);
+
+            if (edgesError) {
+              logger.error('Batch delete edges error:', edgesError);
+            }
+          }
+
+          const result = await softDeleteBatch(supabase, 'graph_nodes', graphNodeIds);
+          if (!result.success) {
+            throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+          }
         }
-      }
+      } else {
+        logger.warn('TransactionExecutor not available, using non-transactional fallback for batchDelete');
 
-      const result = await softDeleteBatch(supabase, 'graph_nodes', graphNodeIds);
-      if (!result.success) {
-        throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+        const { data: nodes } = await supabase
+          .from('graph_nodes')
+          .select('id, knowledge_point_id')
+          .in('id', graphNodeIds);
+
+        graphNodes = nodes as { id: string; knowledge_point_id: string }[] | null;
+
+        const knowledgePointIds = nodes?.map(gn => gn.knowledge_point_id).filter(Boolean) || [];
+
+        if (knowledgePointIds.length > 0) {
+          const { error: edgesError } = await supabase
+            .from('edges')
+            .update({ deleted_at: new Date().toISOString() })
+            .or(`source_knowledge_point_id.in.(${knowledgePointIds.join(',')}),target_knowledge_point_id.in.(${knowledgePointIds.join(',')})`)
+            .eq('graph_id', graphId);
+
+          if (edgesError) {
+            logger.error('Batch delete edges error:', edgesError);
+          }
+        }
+
+        const result = await softDeleteBatch(supabase, 'graph_nodes', graphNodeIds);
+        if (!result.success) {
+          throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
+        }
       }
     }
 

@@ -20,6 +20,7 @@ import type {
 import { cacheService } from '../common/cacheService';
 import { appEventBus } from '../core/eventBus';
 import type { GraphRollbackPayload } from '../../../shared/types/events';
+import { transactionExecutor } from '../../database/transactionExecutor';
 
 const SNAPSHOT_DESCRIPTIONS: Record<string, string> = {
   pre_ai_expand: 'AI 扩展前自动快照',
@@ -255,173 +256,259 @@ export class GraphVersionService {
 
     const targetSnapshot = await this.getSnapshot(supabase, snapshotId);
 
-    const { data: currentNodes, error: nodesError } = await supabase
-      .from('graph_nodes')
-      .select('id')
-      .eq('graph_id', graphId)
-      .is('deleted_at', null);
+    if (transactionExecutor.isAvailable()) {
+      await transactionExecutor.executeInTransaction(async (client) => {
+        // 软删除当前节点
+        const { rows: currentNodes } = await client.query(
+          'SELECT id FROM graph_nodes WHERE graph_id = $1 AND deleted_at IS NULL',
+          [graphId],
+        );
 
-    if (nodesError) {
-      logger.error('Query current nodes for rollback error:', nodesError);
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
-    }
+        if (currentNodes.length > 0) {
+          const currentNodeIds = currentNodes.map((r: { id: string }) => r.id);
+          await client.query(
+            'UPDATE graph_nodes SET deleted_at = NOW() WHERE id = ANY($1)',
+            [currentNodeIds],
+          );
 
-    if (currentNodes && currentNodes.length > 0) {
-      const currentNodeIds = currentNodes.map((n: any) => n.id);
-      const { error: softDeleteNodesError } = await supabase
+          // 软删除当前边
+          await client.query(
+            'UPDATE edges SET deleted_at = NOW() WHERE graph_id = $1 AND deleted_at IS NULL',
+            [graphId],
+          );
+        }
+
+        // 恢复目标快照中的节点
+        for (const node of targetSnapshot.snapshotData.nodes) {
+          const { rows: existingRows } = await client.query(
+            'SELECT id, deleted_at FROM graph_nodes WHERE graph_id = $1 AND knowledge_point_id = $2 LIMIT 1',
+            [graphId, node.knowledgePointId],
+          );
+
+          const existingNode = existingRows[0] as { id: string; deleted_at: string | null } | undefined;
+
+          if (existingNode) {
+            if (existingNode.deleted_at) {
+              await client.query(
+                'UPDATE graph_nodes SET deleted_at = NULL, x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE id = $5',
+                [node.xPosition, node.yPosition, node.level, node.isAccepted, existingNode.id],
+              );
+            } else {
+              await client.query(
+                'UPDATE graph_nodes SET x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE id = $5',
+                [node.xPosition, node.yPosition, node.level, node.isAccepted, existingNode.id],
+              );
+            }
+          } else {
+            await client.query(
+              'INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted) VALUES ($1, $2, $3, $4, $5, $6)',
+              [graphId, node.knowledgePointId, node.xPosition, node.yPosition, node.level, node.isAccepted],
+            );
+          }
+        }
+
+        // 恢复目标快照中的边
+        for (const edge of targetSnapshot.snapshotData.edges) {
+          const { rows: existingRows } = await client.query(
+            'SELECT id, deleted_at FROM edges WHERE graph_id = $1 AND source_knowledge_point_id = $2 AND target_knowledge_point_id = $3 AND relationship_type = $4 LIMIT 1',
+            [graphId, edge.sourceKnowledgePointId, edge.targetKnowledgePointId, edge.relationshipType],
+          );
+
+          const existingEdge = existingRows[0] as { id: string; deleted_at: string | null } | undefined;
+
+          if (existingEdge) {
+            if (existingEdge.deleted_at) {
+              await client.query(
+                'UPDATE edges SET deleted_at = NULL, weight = $1, custom_label = $2, custom_color = $3, custom_line_style = $4, show_arrow = $5 WHERE id = $6',
+                [edge.weight, edge.customLabel, edge.customColor, edge.customLineStyle, edge.showArrow, existingEdge.id],
+              );
+            } else {
+              await client.query(
+                'UPDATE edges SET weight = $1, custom_label = $2, custom_color = $3, custom_line_style = $4, show_arrow = $5 WHERE id = $6',
+                [edge.weight, edge.customLabel, edge.customColor, edge.customLineStyle, edge.showArrow, existingEdge.id],
+              );
+            }
+          } else {
+            await client.query(
+              'INSERT INTO edges (graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+              [graphId, edge.sourceKnowledgePointId, edge.targetKnowledgePointId, edge.relationshipType, edge.weight, edge.customLabel, edge.customColor, edge.customLineStyle, edge.showArrow],
+            );
+          }
+        }
+      });
+    } else {
+      logger.warn('TransactionExecutor unavailable, rollbackToSnapshot executing without transaction guarantee');
+
+      const { data: currentNodes, error: nodesError } = await supabase
         .from('graph_nodes')
-        .update({ deleted_at: new Date().toISOString() })
-        .in('id', currentNodeIds);
-
-      if (softDeleteNodesError) {
-        logger.error('Soft delete nodes for rollback error:', softDeleteNodesError);
-        throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
-      }
-
-      const { error: softDeleteEdgesError } = await supabase
-        .from('edges')
-        .update({ deleted_at: new Date().toISOString() })
+        .select('id')
         .eq('graph_id', graphId)
         .is('deleted_at', null);
 
-      if (softDeleteEdgesError) {
-        logger.error('Soft delete edges for rollback error:', softDeleteEdgesError);
+      if (nodesError) {
+        logger.error('Query current nodes for rollback error:', nodesError);
         throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
       }
-    }
 
-    for (const node of targetSnapshot.snapshotData.nodes) {
-      const { data: existingNode } = await supabase
-        .from('graph_nodes')
-        .select('id, deleted_at')
-        .eq('graph_id', graphId)
-        .eq('knowledge_point_id', node.knowledgePointId)
-        .maybeSingle();
-
-      if (existingNode) {
-        if (existingNode.deleted_at) {
-          const { error: restoreError } = await supabase
-            .from('graph_nodes')
-            .update({
-              deleted_at: null,
-              x_position: node.xPosition,
-              y_position: node.yPosition,
-              level: node.level,
-              is_accepted: node.isAccepted,
-            })
-            .eq('id', existingNode.id);
-
-          if (restoreError) {
-            logger.error('Restore node for rollback error:', restoreError);
-            throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
-          }
-        } else {
-          const { error: updateError } = await supabase
-            .from('graph_nodes')
-            .update({
-              x_position: node.xPosition,
-              y_position: node.yPosition,
-              level: node.level,
-              is_accepted: node.isAccepted,
-            })
-            .eq('id', existingNode.id);
-
-          if (updateError) {
-            logger.error('Update node for rollback error:', updateError);
-            throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
-          }
-        }
-      } else {
-        const { error: createError } = await supabase
+      if (currentNodes && currentNodes.length > 0) {
+        const currentNodeIds = currentNodes.map((n: { id: string }) => n.id);
+        const { error: softDeleteNodesError } = await supabase
           .from('graph_nodes')
-          .insert([{
-            graph_id: graphId,
-            knowledge_point_id: node.knowledgePointId,
-            x_position: node.xPosition,
-            y_position: node.yPosition,
-            level: node.level,
-            is_accepted: node.isAccepted,
-          }]);
+          .update({ deleted_at: new Date().toISOString() })
+          .in('id', currentNodeIds);
 
-        if (createError) {
-          logger.error('Create node for rollback error:', createError);
+        if (softDeleteNodesError) {
+          logger.error('Soft delete nodes for rollback error:', softDeleteNodesError);
+          throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+        }
+
+        const { error: softDeleteEdgesError } = await supabase
+          .from('edges')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('graph_id', graphId)
+          .is('deleted_at', null);
+
+        if (softDeleteEdgesError) {
+          logger.error('Soft delete edges for rollback error:', softDeleteEdgesError);
           throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
         }
       }
-    }
 
-    for (const edge of targetSnapshot.snapshotData.edges) {
-      const { data: existingEdge } = await supabase
-        .from('edges')
-        .select('id, deleted_at')
-        .eq('graph_id', graphId)
-        .eq('source_knowledge_point_id', edge.sourceKnowledgePointId)
-        .eq('target_knowledge_point_id', edge.targetKnowledgePointId)
-        .eq('relationship_type', edge.relationshipType)
-        .maybeSingle();
+      for (const node of targetSnapshot.snapshotData.nodes) {
+        const { data: existingNode } = await supabase
+          .from('graph_nodes')
+          .select('id, deleted_at')
+          .eq('graph_id', graphId)
+          .eq('knowledge_point_id', node.knowledgePointId)
+          .maybeSingle();
 
-      if (existingEdge) {
-        if (existingEdge.deleted_at) {
-          const { error: restoreError } = await supabase
-            .from('edges')
-            .update({
-              deleted_at: null,
-              weight: edge.weight,
-              custom_label: edge.customLabel,
-              custom_color: edge.customColor,
-              custom_line_style: edge.customLineStyle,
-              show_arrow: edge.showArrow,
-            })
-            .eq('id', existingEdge.id);
+        if (existingNode) {
+          if (existingNode.deleted_at) {
+            const { error: restoreError } = await supabase
+              .from('graph_nodes')
+              .update({
+                deleted_at: null,
+                x_position: node.xPosition,
+                y_position: node.yPosition,
+                level: node.level,
+                is_accepted: node.isAccepted,
+              })
+              .eq('id', existingNode.id);
 
-          if (restoreError) {
-            logger.error('Restore edge for rollback error:', restoreError);
-            throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+            if (restoreError) {
+              logger.error('Restore node for rollback error:', restoreError);
+              throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+            }
+          } else {
+            const { error: updateError } = await supabase
+              .from('graph_nodes')
+              .update({
+                x_position: node.xPosition,
+                y_position: node.yPosition,
+                level: node.level,
+                is_accepted: node.isAccepted,
+              })
+              .eq('id', existingNode.id);
+
+            if (updateError) {
+              logger.error('Update node for rollback error:', updateError);
+              throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+            }
           }
         } else {
-          const { error: updateError } = await supabase
+          const { error: createError } = await supabase
+            .from('graph_nodes')
+            .insert([{
+              graph_id: graphId,
+              knowledge_point_id: node.knowledgePointId,
+              x_position: node.xPosition,
+              y_position: node.yPosition,
+              level: node.level,
+              is_accepted: node.isAccepted,
+            }]);
+
+          if (createError) {
+            logger.error('Create node for rollback error:', createError);
+            throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+          }
+        }
+      }
+
+      for (const edge of targetSnapshot.snapshotData.edges) {
+        const { data: existingEdge } = await supabase
+          .from('edges')
+          .select('id, deleted_at')
+          .eq('graph_id', graphId)
+          .eq('source_knowledge_point_id', edge.sourceKnowledgePointId)
+          .eq('target_knowledge_point_id', edge.targetKnowledgePointId)
+          .eq('relationship_type', edge.relationshipType)
+          .maybeSingle();
+
+        if (existingEdge) {
+          if (existingEdge.deleted_at) {
+            const { error: restoreError } = await supabase
+              .from('edges')
+              .update({
+                deleted_at: null,
+                weight: edge.weight,
+                custom_label: edge.customLabel,
+                custom_color: edge.customColor,
+                custom_line_style: edge.customLineStyle,
+                show_arrow: edge.showArrow,
+              })
+              .eq('id', existingEdge.id);
+
+            if (restoreError) {
+              logger.error('Restore edge for rollback error:', restoreError);
+              throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+            }
+          } else {
+            const { error: updateError } = await supabase
+              .from('edges')
+              .update({
+                weight: edge.weight,
+                custom_label: edge.customLabel,
+                custom_color: edge.customColor,
+                custom_line_style: edge.customLineStyle,
+                show_arrow: edge.showArrow,
+              })
+              .eq('id', existingEdge.id);
+
+            if (updateError) {
+              logger.error('Update edge for rollback error:', updateError);
+              throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+            }
+          }
+        } else {
+          const { error: createError } = await supabase
             .from('edges')
-            .update({
+            .insert([{
+              graph_id: graphId,
+              source_knowledge_point_id: edge.sourceKnowledgePointId,
+              target_knowledge_point_id: edge.targetKnowledgePointId,
+              relationship_type: edge.relationshipType,
               weight: edge.weight,
               custom_label: edge.customLabel,
               custom_color: edge.customColor,
               custom_line_style: edge.customLineStyle,
               show_arrow: edge.showArrow,
-            })
-            .eq('id', existingEdge.id);
+            }]);
 
-          if (updateError) {
-            logger.error('Update edge for rollback error:', updateError);
+          if (createError) {
+            logger.error('Create edge for rollback error:', createError);
             throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
           }
-        }
-      } else {
-        const { error: createError } = await supabase
-          .from('edges')
-          .insert([{
-            graph_id: graphId,
-            source_knowledge_point_id: edge.sourceKnowledgePointId,
-            target_knowledge_point_id: edge.targetKnowledgePointId,
-            relationship_type: edge.relationshipType,
-            weight: edge.weight,
-            custom_label: edge.customLabel,
-            custom_color: edge.customColor,
-            custom_line_style: edge.customLineStyle,
-            show_arrow: edge.showArrow,
-          }]);
-
-        if (createError) {
-          logger.error('Create edge for rollback error:', createError);
-          throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
         }
       }
     }
 
+    // 记录事件（事务外）
     await this.recordEvent(supabase, graphId, 'graph_rollback', {
       snapshot_id: snapshotId,
       pre_rollback_snapshot_id: preRollbackSnapshot.id,
     }, operatorId);
 
+    // 缓存失效和事件发布（事务外）
     await cacheService.invalidateAllGraphRelated(operatorId ?? '', graphId);
     await appEventBus.publish(
       "graph_rollback",
@@ -491,105 +578,173 @@ export class GraphVersionService {
       throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
 
-    const { data: newGraph, error: createGraphError } = await supabase
-      .from('knowledge_graphs')
-      .insert([{
-        user_id: originalGraph.user_id,
-        title: `${originalGraph.title} - ${branchName}`,
-        description: originalGraph.description,
-        domain: originalGraph.domain,
-        settings: originalGraph.settings,
-        reference_books: originalGraph.reference_books,
-        external_links: originalGraph.external_links,
-        learning_guide: originalGraph.learning_guide,
-        podcast_script: originalGraph.podcast_script,
-        template_type: originalGraph.template_type,
-        is_branch: true,
-        parent_graph_id: graphId,
-        branch_name: branchName,
-        branch_source_snapshot_id: snapshot.id,
-      }])
-      .select('id')
-      .single();
+    let newGraphId: string;
 
-    if (createGraphError) {
-      logger.error('Create branch graph error:', createGraphError);
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
-    }
+    if (transactionExecutor.isAvailable()) {
+      newGraphId = await transactionExecutor.executeInTransaction(async (client) => {
+        // 创建新图谱
+        const { rows: newGraphRows } = await client.query(
+          `INSERT INTO knowledge_graphs (user_id, title, description, domain, settings, reference_books, external_links, learning_guide, podcast_script, template_type, is_branch, parent_graph_id, branch_name, branch_source_snapshot_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+           RETURNING id`,
+          [
+            originalGraph.user_id,
+            `${originalGraph.title} - ${branchName}`,
+            originalGraph.description,
+            originalGraph.domain,
+            JSON.stringify(originalGraph.settings),
+            originalGraph.reference_books ? JSON.stringify(originalGraph.reference_books) : null,
+            originalGraph.external_links ? JSON.stringify(originalGraph.external_links) : null,
+            originalGraph.learning_guide ? JSON.stringify(originalGraph.learning_guide) : null,
+            originalGraph.podcast_script ? JSON.stringify(originalGraph.podcast_script) : null,
+            originalGraph.template_type,
+            true,
+            graphId,
+            branchName,
+            snapshot.id,
+          ],
+        );
 
-    const { data: sourceNodes, error: nodesError } = await supabase
-      .from('graph_nodes')
-      .select('knowledge_point_id, x_position, y_position, level, is_accepted')
-      .eq('graph_id', graphId)
-      .is('deleted_at', null);
+        const createdGraphId = newGraphRows[0].id as string;
 
-    if (nodesError) {
-      logger.error('Query source nodes for branch error:', nodesError);
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
-    }
+        // 复制节点
+        const { rows: sourceNodes } = await client.query(
+          'SELECT knowledge_point_id, x_position, y_position, level, is_accepted FROM graph_nodes WHERE graph_id = $1 AND deleted_at IS NULL',
+          [graphId],
+        );
 
-    if (sourceNodes && sourceNodes.length > 0) {
-      const nodeInserts = sourceNodes.map((n: any) => ({
-        graph_id: newGraph.id,
-        knowledge_point_id: n.knowledge_point_id,
-        x_position: n.x_position,
-        y_position: n.y_position,
-        level: n.level,
-        is_accepted: n.is_accepted,
-      }));
+        if (sourceNodes.length > 0) {
+          for (const node of sourceNodes) {
+            await client.query(
+              'INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted) VALUES ($1, $2, $3, $4, $5, $6)',
+              [createdGraphId, node.knowledge_point_id, node.x_position, node.y_position, node.level, node.is_accepted],
+            );
+          }
+        }
 
-      const { error: insertNodesError } = await supabase
+        // 复制边
+        const { rows: sourceEdges } = await client.query(
+          'SELECT source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow FROM edges WHERE graph_id = $1 AND deleted_at IS NULL',
+          [graphId],
+        );
+
+        if (sourceEdges.length > 0) {
+          for (const edge of sourceEdges) {
+            await client.query(
+              'INSERT INTO edges (graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+              [createdGraphId, edge.source_knowledge_point_id, edge.target_knowledge_point_id, edge.relationship_type, edge.weight, edge.custom_label, edge.custom_color, edge.custom_line_style, edge.show_arrow],
+            );
+          }
+        }
+
+        return createdGraphId;
+      });
+    } else {
+      logger.warn('TransactionExecutor unavailable, createBranch executing without transaction guarantee');
+
+      const { data: newGraph, error: createGraphError } = await supabase
+        .from('knowledge_graphs')
+        .insert([{
+          user_id: originalGraph.user_id,
+          title: `${originalGraph.title} - ${branchName}`,
+          description: originalGraph.description,
+          domain: originalGraph.domain,
+          settings: originalGraph.settings,
+          reference_books: originalGraph.reference_books,
+          external_links: originalGraph.external_links,
+          learning_guide: originalGraph.learning_guide,
+          podcast_script: originalGraph.podcast_script,
+          template_type: originalGraph.template_type,
+          is_branch: true,
+          parent_graph_id: graphId,
+          branch_name: branchName,
+          branch_source_snapshot_id: snapshot.id,
+        }])
+        .select('id')
+        .single();
+
+      if (createGraphError) {
+        logger.error('Create branch graph error:', createGraphError);
+        throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+      }
+
+      newGraphId = newGraph.id;
+
+      const { data: sourceNodes, error: nodesError } = await supabase
         .from('graph_nodes')
-        .insert(nodeInserts);
+        .select('knowledge_point_id, x_position, y_position, level, is_accepted')
+        .eq('graph_id', graphId)
+        .is('deleted_at', null);
 
-      if (insertNodesError) {
-        logger.error('Copy nodes to branch error:', insertNodesError);
+      if (nodesError) {
+        logger.error('Query source nodes for branch error:', nodesError);
         throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
       }
-    }
 
-    const { data: sourceEdges, error: edgesError } = await supabase
-      .from('edges')
-      .select('source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow')
-      .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      if (sourceNodes && sourceNodes.length > 0) {
+        const nodeInserts = sourceNodes.map((n: { knowledge_point_id: string; x_position: number; y_position: number; level: number; is_accepted: boolean }) => ({
+          graph_id: newGraphId,
+          knowledge_point_id: n.knowledge_point_id,
+          x_position: n.x_position,
+          y_position: n.y_position,
+          level: n.level,
+          is_accepted: n.is_accepted,
+        }));
 
-    if (edgesError) {
-      logger.error('Query source edges for branch error:', edgesError);
-      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
-    }
+        const { error: insertNodesError } = await supabase
+          .from('graph_nodes')
+          .insert(nodeInserts);
 
-    if (sourceEdges && sourceEdges.length > 0) {
-      const edgeInserts = sourceEdges.map((e: any) => ({
-        graph_id: newGraph.id,
-        source_knowledge_point_id: e.source_knowledge_point_id,
-        target_knowledge_point_id: e.target_knowledge_point_id,
-        relationship_type: e.relationship_type,
-        weight: e.weight,
-        custom_label: e.custom_label,
-        custom_color: e.custom_color,
-        custom_line_style: e.custom_line_style,
-        show_arrow: e.show_arrow,
-      }));
+        if (insertNodesError) {
+          logger.error('Copy nodes to branch error:', insertNodesError);
+          throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+        }
+      }
 
-      const { error: insertEdgesError } = await supabase
+      const { data: sourceEdges, error: edgesError } = await supabase
         .from('edges')
-        .insert(edgeInserts);
+        .select('source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow')
+        .eq('graph_id', graphId)
+        .is('deleted_at', null);
 
-      if (insertEdgesError) {
-        logger.error('Copy edges to branch error:', insertEdgesError);
+      if (edgesError) {
+        logger.error('Query source edges for branch error:', edgesError);
         throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+      }
+
+      if (sourceEdges && sourceEdges.length > 0) {
+        const edgeInserts = sourceEdges.map((e: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; weight: number; custom_label: string | null; custom_color: string | null; custom_line_style: string | null; show_arrow: boolean }) => ({
+          graph_id: newGraphId,
+          source_knowledge_point_id: e.source_knowledge_point_id,
+          target_knowledge_point_id: e.target_knowledge_point_id,
+          relationship_type: e.relationship_type,
+          weight: e.weight,
+          custom_label: e.custom_label,
+          custom_color: e.custom_color,
+          custom_line_style: e.custom_line_style,
+          show_arrow: e.show_arrow,
+        }));
+
+        const { error: insertEdgesError } = await supabase
+          .from('edges')
+          .insert(edgeInserts);
+
+        if (insertEdgesError) {
+          logger.error('Copy edges to branch error:', insertEdgesError);
+          throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+        }
       }
     }
 
+    // 记录事件（事务外）
     await this.recordEvent(supabase, graphId, 'graph_branch_created', {
-      branch_graph_id: newGraph.id,
+      branch_graph_id: newGraphId,
       branch_name: branchName,
       snapshot_id: snapshot.id,
     }, operatorId);
 
     return {
-      graphId: newGraph.id,
+      graphId: newGraphId,
       snapshotId: snapshot.id,
     };
   }
@@ -706,6 +861,7 @@ export class GraphVersionService {
     conflictResolutions: Record<string, 'main' | 'branch'>,
     operatorId: string | null,
   ): Promise<ApplyMergeResult> {
+    // 先计算合并结果（supabase 查询）
     const mergeResult = await this.mergeBranch(supabase, mainGraphId, branchGraphId);
     const branchData = await this.buildCurrentSnapshotData(supabase, branchGraphId);
 
@@ -718,178 +874,301 @@ export class GraphVersionService {
     const selectedNodeIds = new Set(selectedChanges.nodeIds);
     const selectedEdgeIds = new Set(selectedChanges.edgeIds);
 
-    for (const node of mergeResult.diff.nodes.added) {
-      if (selectedNodeIds.has(node.knowledgePointId)) {
-        const { data: existingNode } = await supabase
-          .from('graph_nodes')
-          .select('id, deleted_at')
-          .eq('graph_id', mainGraphId)
-          .eq('knowledge_point_id', node.knowledgePointId)
-          .maybeSingle();
+    if (transactionExecutor.isAvailable()) {
+      await transactionExecutor.executeInTransaction(async (client) => {
+        // 应用新增节点
+        for (const node of mergeResult.diff.nodes.added) {
+          if (selectedNodeIds.has(node.knowledgePointId)) {
+            const { rows: existingRows } = await client.query(
+              'SELECT id, deleted_at FROM graph_nodes WHERE graph_id = $1 AND knowledge_point_id = $2 LIMIT 1',
+              [mainGraphId, node.knowledgePointId],
+            );
 
-        if (existingNode) {
-          if (existingNode.deleted_at) {
+            const existingNode = existingRows[0] as { id: string; deleted_at: string | null } | undefined;
+
+            if (existingNode) {
+              if (existingNode.deleted_at) {
+                await client.query(
+                  'UPDATE graph_nodes SET deleted_at = NULL, x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE id = $5',
+                  [node.xPosition, node.yPosition, node.level, node.isAccepted, existingNode.id],
+                );
+              }
+            } else {
+              await client.query(
+                'INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted) VALUES ($1, $2, $3, $4, $5, $6)',
+                [mainGraphId, node.knowledgePointId, node.xPosition, node.yPosition, node.level, node.isAccepted],
+              );
+            }
+            nodesAdded++;
+          }
+        }
+
+        // 应用新增边
+        for (const edge of mergeResult.diff.edges.added) {
+          const edgeKey = this.getEdgeKey(edge);
+          if (selectedEdgeIds.has(edgeKey)) {
+            const { rows: existingRows } = await client.query(
+              'SELECT id, deleted_at FROM edges WHERE graph_id = $1 AND source_knowledge_point_id = $2 AND target_knowledge_point_id = $3 AND relationship_type = $4 LIMIT 1',
+              [mainGraphId, edge.sourceKnowledgePointId, edge.targetKnowledgePointId, edge.relationshipType],
+            );
+
+            const existingEdge = existingRows[0] as { id: string; deleted_at: string | null } | undefined;
+
+            if (existingEdge) {
+              if (existingEdge.deleted_at) {
+                await client.query(
+                  'UPDATE edges SET deleted_at = NULL, weight = $1, custom_label = $2, custom_color = $3, custom_line_style = $4, show_arrow = $5 WHERE id = $6',
+                  [edge.weight, edge.customLabel, edge.customColor, edge.customLineStyle, edge.showArrow, existingEdge.id],
+                );
+              }
+            } else {
+              await client.query(
+                'INSERT INTO edges (graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+                [mainGraphId, edge.sourceKnowledgePointId, edge.targetKnowledgePointId, edge.relationshipType, edge.weight, edge.customLabel, edge.customColor, edge.customLineStyle, edge.showArrow],
+              );
+            }
+            edgesAdded++;
+          }
+        }
+
+        // 应用修改节点
+        for (const nodeDiff of mergeResult.diff.nodes.modified) {
+          if (selectedNodeIds.has(nodeDiff.knowledgePointId)) {
+            const branchNode = branchData.nodes.find(
+              n => n.knowledgePointId === nodeDiff.knowledgePointId,
+            );
+            if (branchNode) {
+              await client.query(
+                'UPDATE graph_nodes SET x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE graph_id = $5 AND knowledge_point_id = $6 AND deleted_at IS NULL',
+                [branchNode.xPosition, branchNode.yPosition, branchNode.level, branchNode.isAccepted, mainGraphId, branchNode.knowledgePointId],
+              );
+            }
+            nodesModified++;
+          }
+        }
+
+        // 应用修改边
+        for (const edgeDiff of mergeResult.diff.edges.modified) {
+          const edgeKey = this.getEdgeKey(edgeDiff.after ?? edgeDiff.before!);
+          if (selectedEdgeIds.has(edgeKey)) {
+            const branchEdge = edgeDiff.after;
+            if (branchEdge) {
+              await client.query(
+                'UPDATE edges SET weight = $1, custom_label = $2, custom_color = $3, custom_line_style = $4, show_arrow = $5 WHERE graph_id = $6 AND source_knowledge_point_id = $7 AND target_knowledge_point_id = $8 AND relationship_type = $9 AND deleted_at IS NULL',
+                [branchEdge.weight, branchEdge.customLabel, branchEdge.customColor, branchEdge.customLineStyle, branchEdge.showArrow, mainGraphId, branchEdge.sourceKnowledgePointId, branchEdge.targetKnowledgePointId, branchEdge.relationshipType],
+              );
+            }
+            edgesModified++;
+          }
+        }
+
+        // 解决冲突
+        for (const conflict of mergeResult.conflicts) {
+          const resolution = conflictResolutions[conflict.entityId];
+          if (!resolution) continue;
+
+          if (conflict.entityType === 'node') {
+            const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
+            if (sourceData && 'knowledgePointId' in sourceData) {
+              const nodeData = sourceData as SnapshotNodeData;
+              await client.query(
+                'UPDATE graph_nodes SET x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE graph_id = $5 AND knowledge_point_id = $6 AND deleted_at IS NULL',
+                [nodeData.xPosition, nodeData.yPosition, nodeData.level, nodeData.isAccepted, mainGraphId, nodeData.knowledgePointId],
+              );
+            }
+          } else if (conflict.entityType === 'edge') {
+            const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
+            if (sourceData && 'sourceKnowledgePointId' in sourceData) {
+              const edgeData = sourceData as SnapshotEdgeData;
+              await client.query(
+                'UPDATE edges SET weight = $1, custom_label = $2, custom_color = $3, custom_line_style = $4, show_arrow = $5 WHERE graph_id = $6 AND source_knowledge_point_id = $7 AND target_knowledge_point_id = $8 AND relationship_type = $9 AND deleted_at IS NULL',
+                [edgeData.weight, edgeData.customLabel, edgeData.customColor, edgeData.customLineStyle, edgeData.showArrow, mainGraphId, edgeData.sourceKnowledgePointId, edgeData.targetKnowledgePointId, edgeData.relationshipType],
+              );
+            }
+          }
+          conflictsResolved++;
+        }
+      });
+
+      // 合并成功后自动创建 post_merge 快照（事务外，使用 supabase）
+      await this.autoSnapshot(supabase, mainGraphId, 'auto', operatorId);
+    } else {
+      logger.warn('TransactionExecutor unavailable, applyMerge executing without transaction guarantee');
+
+      for (const node of mergeResult.diff.nodes.added) {
+        if (selectedNodeIds.has(node.knowledgePointId)) {
+          const { data: existingNode } = await supabase
+            .from('graph_nodes')
+            .select('id, deleted_at')
+            .eq('graph_id', mainGraphId)
+            .eq('knowledge_point_id', node.knowledgePointId)
+            .maybeSingle();
+
+          if (existingNode) {
+            if (existingNode.deleted_at) {
+              await supabase
+                .from('graph_nodes')
+                .update({
+                  deleted_at: null,
+                  x_position: node.xPosition,
+                  y_position: node.yPosition,
+                  level: node.level,
+                  is_accepted: node.isAccepted,
+                })
+                .eq('id', existingNode.id);
+            }
+          } else {
             await supabase
               .from('graph_nodes')
-              .update({
-                deleted_at: null,
+              .insert([{
+                graph_id: mainGraphId,
+                knowledge_point_id: node.knowledgePointId,
                 x_position: node.xPosition,
                 y_position: node.yPosition,
                 level: node.level,
                 is_accepted: node.isAccepted,
-              })
-              .eq('id', existingNode.id);
+              }]);
           }
-        } else {
-          await supabase
-            .from('graph_nodes')
-            .insert([{
-              graph_id: mainGraphId,
-              knowledge_point_id: node.knowledgePointId,
-              x_position: node.xPosition,
-              y_position: node.yPosition,
-              level: node.level,
-              is_accepted: node.isAccepted,
-            }]);
+          nodesAdded++;
         }
-        nodesAdded++;
       }
-    }
 
-    for (const edge of mergeResult.diff.edges.added) {
-      const edgeKey = this.getEdgeKey(edge);
-      if (selectedEdgeIds.has(edgeKey)) {
-        const { data: existingEdge } = await supabase
-          .from('edges')
-          .select('id, deleted_at')
-          .eq('graph_id', mainGraphId)
-          .eq('source_knowledge_point_id', edge.sourceKnowledgePointId)
-          .eq('target_knowledge_point_id', edge.targetKnowledgePointId)
-          .eq('relationship_type', edge.relationshipType)
-          .maybeSingle();
+      for (const edge of mergeResult.diff.edges.added) {
+        const edgeKey = this.getEdgeKey(edge);
+        if (selectedEdgeIds.has(edgeKey)) {
+          const { data: existingEdge } = await supabase
+            .from('edges')
+            .select('id, deleted_at')
+            .eq('graph_id', mainGraphId)
+            .eq('source_knowledge_point_id', edge.sourceKnowledgePointId)
+            .eq('target_knowledge_point_id', edge.targetKnowledgePointId)
+            .eq('relationship_type', edge.relationshipType)
+            .maybeSingle();
 
-        if (existingEdge) {
-          if (existingEdge.deleted_at) {
+          if (existingEdge) {
+            if (existingEdge.deleted_at) {
+              await supabase
+                .from('edges')
+                .update({
+                  deleted_at: null,
+                  weight: edge.weight,
+                  custom_label: edge.customLabel,
+                  custom_color: edge.customColor,
+                  custom_line_style: edge.customLineStyle,
+                  show_arrow: edge.showArrow,
+                })
+                .eq('id', existingEdge.id);
+            }
+          } else {
             await supabase
               .from('edges')
-              .update({
-                deleted_at: null,
+              .insert([{
+                graph_id: mainGraphId,
+                source_knowledge_point_id: edge.sourceKnowledgePointId,
+                target_knowledge_point_id: edge.targetKnowledgePointId,
+                relationship_type: edge.relationshipType,
                 weight: edge.weight,
                 custom_label: edge.customLabel,
                 custom_color: edge.customColor,
                 custom_line_style: edge.customLineStyle,
                 show_arrow: edge.showArrow,
-              })
-              .eq('id', existingEdge.id);
+              }]);
           }
-        } else {
-          await supabase
-            .from('edges')
-            .insert([{
-              graph_id: mainGraphId,
-              source_knowledge_point_id: edge.sourceKnowledgePointId,
-              target_knowledge_point_id: edge.targetKnowledgePointId,
-              relationship_type: edge.relationshipType,
-              weight: edge.weight,
-              custom_label: edge.customLabel,
-              custom_color: edge.customColor,
-              custom_line_style: edge.customLineStyle,
-              show_arrow: edge.showArrow,
-            }]);
+          edgesAdded++;
         }
-        edgesAdded++;
+      }
+
+      for (const nodeDiff of mergeResult.diff.nodes.modified) {
+        if (selectedNodeIds.has(nodeDiff.knowledgePointId)) {
+          const branchNode = branchData.nodes.find(
+            n => n.knowledgePointId === nodeDiff.knowledgePointId,
+          );
+          if (branchNode) {
+            await supabase
+              .from('graph_nodes')
+              .update({
+                x_position: branchNode.xPosition,
+                y_position: branchNode.yPosition,
+                level: branchNode.level,
+                is_accepted: branchNode.isAccepted,
+              })
+              .eq('graph_id', mainGraphId)
+              .eq('knowledge_point_id', branchNode.knowledgePointId)
+              .is('deleted_at', null);
+          }
+          nodesModified++;
+        }
+      }
+
+      for (const edgeDiff of mergeResult.diff.edges.modified) {
+        const edgeKey = this.getEdgeKey(edgeDiff.after ?? edgeDiff.before!);
+        if (selectedEdgeIds.has(edgeKey)) {
+          const branchEdge = edgeDiff.after;
+          if (branchEdge) {
+            await supabase
+              .from('edges')
+              .update({
+                weight: branchEdge.weight,
+                custom_label: branchEdge.customLabel,
+                custom_color: branchEdge.customColor,
+                custom_line_style: branchEdge.customLineStyle,
+                show_arrow: branchEdge.showArrow,
+              })
+              .eq('graph_id', mainGraphId)
+              .eq('source_knowledge_point_id', branchEdge.sourceKnowledgePointId)
+              .eq('target_knowledge_point_id', branchEdge.targetKnowledgePointId)
+              .eq('relationship_type', branchEdge.relationshipType)
+              .is('deleted_at', null);
+          }
+          edgesModified++;
+        }
+      }
+
+      for (const conflict of mergeResult.conflicts) {
+        const resolution = conflictResolutions[conflict.entityId];
+        if (!resolution) continue;
+
+        if (conflict.entityType === 'node') {
+          const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
+          if (sourceData && 'knowledgePointId' in sourceData) {
+            const nodeData = sourceData as SnapshotNodeData;
+            await supabase
+              .from('graph_nodes')
+              .update({
+                x_position: nodeData.xPosition,
+                y_position: nodeData.yPosition,
+                level: nodeData.level,
+                is_accepted: nodeData.isAccepted,
+              })
+              .eq('graph_id', mainGraphId)
+              .eq('knowledge_point_id', nodeData.knowledgePointId)
+              .is('deleted_at', null);
+          }
+        } else if (conflict.entityType === 'edge') {
+          const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
+          if (sourceData && 'sourceKnowledgePointId' in sourceData) {
+            const edgeData = sourceData as SnapshotEdgeData;
+            await supabase
+              .from('edges')
+              .update({
+                weight: edgeData.weight,
+                custom_label: edgeData.customLabel,
+                custom_color: edgeData.customColor,
+                custom_line_style: edgeData.customLineStyle,
+                show_arrow: edgeData.showArrow,
+              })
+              .eq('graph_id', mainGraphId)
+              .eq('source_knowledge_point_id', edgeData.sourceKnowledgePointId)
+              .eq('target_knowledge_point_id', edgeData.targetKnowledgePointId)
+              .eq('relationship_type', edgeData.relationshipType)
+              .is('deleted_at', null);
+          }
+        }
+        conflictsResolved++;
       }
     }
 
-    for (const nodeDiff of mergeResult.diff.nodes.modified) {
-      if (selectedNodeIds.has(nodeDiff.knowledgePointId)) {
-        const branchNode = branchData.nodes.find(
-          n => n.knowledgePointId === nodeDiff.knowledgePointId,
-        );
-        if (branchNode) {
-          await supabase
-            .from('graph_nodes')
-            .update({
-              x_position: branchNode.xPosition,
-              y_position: branchNode.yPosition,
-              level: branchNode.level,
-              is_accepted: branchNode.isAccepted,
-            })
-            .eq('graph_id', mainGraphId)
-            .eq('knowledge_point_id', branchNode.knowledgePointId)
-            .is('deleted_at', null);
-        }
-        nodesModified++;
-      }
-    }
-
-    for (const edgeDiff of mergeResult.diff.edges.modified) {
-      const edgeKey = this.getEdgeKey(edgeDiff.after ?? edgeDiff.before!);
-      if (selectedEdgeIds.has(edgeKey)) {
-        const branchEdge = edgeDiff.after;
-        if (branchEdge) {
-          await supabase
-            .from('edges')
-            .update({
-              weight: branchEdge.weight,
-              custom_label: branchEdge.customLabel,
-              custom_color: branchEdge.customColor,
-              custom_line_style: branchEdge.customLineStyle,
-              show_arrow: branchEdge.showArrow,
-            })
-            .eq('graph_id', mainGraphId)
-            .eq('source_knowledge_point_id', branchEdge.sourceKnowledgePointId)
-            .eq('target_knowledge_point_id', branchEdge.targetKnowledgePointId)
-            .eq('relationship_type', branchEdge.relationshipType)
-            .is('deleted_at', null);
-        }
-        edgesModified++;
-      }
-    }
-
-    for (const conflict of mergeResult.conflicts) {
-      const resolution = conflictResolutions[conflict.entityId];
-      if (!resolution) continue;
-
-      if (conflict.entityType === 'node') {
-        const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
-        if (sourceData && 'knowledgePointId' in sourceData) {
-          const nodeData = sourceData as SnapshotNodeData;
-          await supabase
-            .from('graph_nodes')
-            .update({
-              x_position: nodeData.xPosition,
-              y_position: nodeData.yPosition,
-              level: nodeData.level,
-              is_accepted: nodeData.isAccepted,
-            })
-            .eq('graph_id', mainGraphId)
-            .eq('knowledge_point_id', nodeData.knowledgePointId)
-            .is('deleted_at', null);
-        }
-      } else if (conflict.entityType === 'edge') {
-        const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
-        if (sourceData && 'sourceKnowledgePointId' in sourceData) {
-          const edgeData = sourceData as SnapshotEdgeData;
-          await supabase
-            .from('edges')
-            .update({
-              weight: edgeData.weight,
-              custom_label: edgeData.customLabel,
-              custom_color: edgeData.customColor,
-              custom_line_style: edgeData.customLineStyle,
-              show_arrow: edgeData.showArrow,
-            })
-            .eq('graph_id', mainGraphId)
-            .eq('source_knowledge_point_id', edgeData.sourceKnowledgePointId)
-            .eq('target_knowledge_point_id', edgeData.targetKnowledgePointId)
-            .eq('relationship_type', edgeData.relationshipType)
-            .is('deleted_at', null);
-        }
-      }
-      conflictsResolved++;
-    }
-
+    // 记录事件（事务外）
     await this.recordEvent(supabase, mainGraphId, 'graph_merged', {
       branch_graph_id: branchGraphId,
       nodes_added: nodesAdded,
@@ -898,6 +1177,9 @@ export class GraphVersionService {
       edges_modified: edgesModified,
       conflicts_resolved: conflictsResolved,
     }, operatorId);
+
+    // 缓存失效（事务外）
+    await cacheService.invalidateAllGraphRelated(operatorId ?? '', mainGraphId);
 
     return {
       nodesAdded,

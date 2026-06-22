@@ -27,6 +27,7 @@ import {
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import { graphVersionService } from "./graphVersionService";
+import { transactionExecutor } from "../../database/transactionExecutor";
 import type {
   GraphCreatedPayload,
   GraphUpdatedPayload,
@@ -705,7 +706,58 @@ export class GraphService {
       logger.warn('RPC soft_delete_graph_with_branches failed, falling back to sequential operations', { error: rpcError });
     }
 
-    // Fallback: original sequential implementation
+    // Fallback: transactional sequential implementation
+    if (transactionExecutor.isAvailable()) {
+      try {
+        const branchIds = await transactionExecutor.executeInTransaction(async (client) => {
+          const { rows: branches } = await client.query(
+            `SELECT id FROM knowledge_graphs WHERE parent_graph_id = $1 AND is_branch = true AND deleted_at IS NULL`,
+            [graphId],
+          );
+
+          if (branches.length > 0) {
+            const ids = branches.map((b: { id: string }) => b.id);
+            await client.query(
+              `UPDATE knowledge_graphs SET deleted_at = $1 WHERE id = ANY($2)`,
+              [new Date().toISOString(), ids],
+            );
+            return ids;
+          }
+          return [];
+        });
+
+        for (const branchId of branchIds) {
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: branchId, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
+
+        const result = await softDelete(supabase, "knowledge_graphs", graphId);
+        if (!result.success) {
+          throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
+        }
+
+        await cacheService.invalidateAllGraphRelated(userId, graphId);
+
+        await appEventBus.publish(
+          "graph_deleted",
+          { graphId, userId } as GraphDeletedPayload,
+          userId,
+          "graph_service",
+        );
+
+        return;
+      } catch (txError) {
+        logger.warn('Transaction failed in deleteGraph fallback, falling back to non-transactional operations', { error: txError });
+      }
+    } else {
+      logger.warn('TransactionExecutor not available, using non-transactional fallback for deleteGraph');
+    }
+
+    // Non-transactional fallback
     const { data: branches } = await supabase
       .from("knowledge_graphs")
       .select("id")

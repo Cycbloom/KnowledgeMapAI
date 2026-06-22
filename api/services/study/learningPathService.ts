@@ -5,6 +5,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getAIProviderForTask } from "../ai/factory";
 import { promptService } from "../ai/promptService";
 import { graphService } from "../graph/index";
+import { transactionExecutor } from "../../database/transactionExecutor";
 import type { NodeLevel } from "@shared/types/graph";
 import type { StudyCardRow } from "@shared/types/database";
 
@@ -781,6 +782,74 @@ export class LearningPathService {
     userId: string,
     input: CreateLearningPathInput,
   ): Promise<LearningPath> {
+    // Transactional path
+    if (transactionExecutor.isAvailable()) {
+      try {
+        const pathId = await transactionExecutor.executeInTransaction(async (client) => {
+          const { rows } = await client.query(
+            `INSERT INTO learning_paths (user_id, title, description, goal, target_date, source_graph_id, domain_id, path_type, total_estimated_time, ai_generated, daily_minutes_target, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'active')
+             RETURNING id`,
+            [
+              userId,
+              input.title,
+              input.description || null,
+              input.goal || null,
+              input.target_date || null,
+              input.source_graph_id || null,
+              input.domain_id || null,
+              input.path_type || "single_graph",
+              input.total_estimated_time || 0,
+              input.ai_generated || false,
+              input.daily_minutes_target || 30,
+            ],
+          );
+
+          const newPathId = rows[0].id;
+
+          if (input.nodes && input.nodes.length > 0) {
+            const totalEstimatedTime = input.nodes.reduce(
+              (sum, n) => sum + (n.estimated_time || 30),
+              0,
+            );
+
+            for (const node of input.nodes) {
+              await client.query(
+                `INSERT INTO learning_path_nodes (path_id, knowledge_point_id, graph_id, order_index, title, description, estimated_time, is_milestone, prerequisites, status)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
+                [
+                  newPathId,
+                  node.knowledge_point_id || null,
+                  node.graph_id || null,
+                  node.order_index,
+                  node.title,
+                  node.description || null,
+                  node.estimated_time || 30,
+                  node.is_milestone || false,
+                  node.prerequisites || [],
+                ],
+              );
+            }
+
+            await client.query(
+              `UPDATE learning_paths SET total_estimated_time = $1 WHERE id = $2`,
+              [totalEstimatedTime, newPathId],
+            );
+          }
+
+          return newPathId as string;
+        });
+
+        const result = await this.getLearningPath(supabase, pathId, userId);
+        return result!;
+      } catch (txError) {
+        logger.warn('Transaction failed in createLearningPath, falling back to non-transactional operations', { error: txError });
+      }
+    } else {
+      logger.warn('TransactionExecutor not available, using non-transactional path for createLearningPath');
+    }
+
+    // Non-transactional fallback
     const { data: path, error: pathError } = await supabase
       .from("learning_paths")
       .insert({
@@ -1136,6 +1205,179 @@ export class LearningPathService {
       nodeUpdateData.completed_at = now;
     }
 
+    // Transactional path
+    if (transactionExecutor.isAvailable()) {
+      try {
+        await transactionExecutor.executeInTransaction(async (client) => {
+          // Step 1: UPDATE learning_path_nodes status
+          const setClauses: string[] = ['status = $1', 'updated_at = $2'];
+          const params: unknown[] = [input.status, now];
+          let paramIdx = params.length;
+
+          if (input.status === "in_progress" && !node.started_at) {
+            paramIdx++;
+            setClauses.push(`started_at = $${paramIdx}`);
+            params.push(now);
+          }
+
+          if (input.status === "completed") {
+            paramIdx++;
+            setClauses.push(`completed_at = $${paramIdx}`);
+            params.push(now);
+          }
+
+          paramIdx++;
+          const nodeIdParam = paramIdx;
+          params.push(nodeId);
+
+          await client.query(
+            `UPDATE learning_path_nodes SET ${setClauses.join(', ')} WHERE id = $${nodeIdParam}`,
+            params,
+          );
+
+          // Step 2: UPSERT learning_path_progress
+          const progressSetClauses: string[] = [
+            'status = $1',
+            'updated_at = $2',
+          ];
+          const progressParams: unknown[] = [input.status, now];
+          let progressParamIdx = progressParams.length;
+
+          if (input.notes !== undefined) {
+            progressParamIdx++;
+            progressSetClauses.push(`notes = $${progressParamIdx}`);
+            progressParams.push(input.notes);
+          }
+          if (input.time_spent !== undefined) {
+            progressParamIdx++;
+            progressSetClauses.push(`time_spent = $${progressParamIdx}`);
+            progressParams.push(input.time_spent);
+          }
+          if (input.progress_percentage !== undefined) {
+            progressParamIdx++;
+            progressSetClauses.push(`progress_percentage = $${progressParamIdx}`);
+            progressParams.push(input.progress_percentage);
+          }
+          if (input.status === "in_progress") {
+            progressParamIdx++;
+            progressSetClauses.push(`started_at = $${progressParamIdx}`);
+            progressParams.push(now);
+          }
+          if (input.status === "completed") {
+            progressParamIdx++;
+            progressSetClauses.push(`completed_at = $${progressParamIdx}`);
+            progressParams.push(now);
+            progressParamIdx++;
+            progressSetClauses.push(`progress_percentage = $${progressParamIdx}`);
+            progressParams.push(100);
+          }
+
+          progressParamIdx++;
+          const userIdParam = progressParamIdx;
+          progressParams.push(userId);
+          progressParamIdx++;
+          const pathIdParam = progressParamIdx;
+          progressParams.push(pathId);
+          progressParamIdx++;
+          const nodeIdParam2 = progressParamIdx;
+          progressParams.push(nodeId);
+
+          await client.query(
+            `INSERT INTO learning_path_progress (user_id, path_id, node_id, ${progressSetClauses.map(c => c.split(' = ')[0]).join(', ')})
+             VALUES ($${userIdParam}, $${pathIdParam}, $${nodeIdParam2}, ${progressParams.slice(0, progressSetClauses.length).map((_, i) => `$${i + 1}`).join(', ')})
+             ON CONFLICT (user_id, path_id, node_id) DO UPDATE SET ${progressSetClauses.join(', ')}`,
+            progressParams,
+          );
+
+          // Step 3: Check and UPDATE learning_paths completion status
+          const { rows: nodesResult } = await client.query(
+            `SELECT id, status FROM learning_path_nodes WHERE path_id = $1`,
+            [pathId],
+          );
+
+          const totalNodes = nodesResult.length;
+          const completedNodes = nodesResult.filter((n: { status: string }) => n.status === 'completed').length;
+
+          if (totalNodes > 0 && completedNodes === totalNodes) {
+            await client.query(
+              `UPDATE learning_paths SET status = 'completed', updated_at = $1 WHERE id = $2`,
+              [now, pathId],
+            );
+          }
+        });
+      } catch (txError) {
+        logger.warn('Transaction failed in updateNodeStatus, falling back to non-transactional operations', { error: txError });
+
+        // Non-transactional fallback
+        const { data: updatedNode, error } = await supabase
+          .from("learning_path_nodes")
+          .update(nodeUpdateData)
+          .eq("id", nodeId)
+          .select()
+          .single();
+
+        if (error) {
+          logger.error("updateNodeStatus error:", error);
+          throw error;
+        }
+
+        const progressData: Record<string, unknown> = {
+          user_id: userId,
+          path_id: pathId,
+          node_id: nodeId,
+          status: input.status,
+          updated_at: now,
+        };
+
+        if (input.notes !== undefined) {
+          progressData.notes = input.notes;
+        }
+        if (input.time_spent !== undefined) {
+          progressData.time_spent = input.time_spent;
+        }
+        if (input.progress_percentage !== undefined) {
+          progressData.progress_percentage = input.progress_percentage;
+        }
+
+        if (input.status === "in_progress") {
+          progressData.started_at = now;
+        }
+        if (input.status === "completed") {
+          progressData.completed_at = now;
+          progressData.progress_percentage = 100;
+        }
+
+        const { error: upsertError } = await supabase
+          .from("learning_path_progress")
+          .upsert(progressData, { onConflict: "user_id,path_id,node_id" });
+
+        if (upsertError) {
+          logger.error("updateNodeStatus progress upsert error:", upsertError);
+        }
+
+        await this.checkAndUpdatePathCompletion(supabase, pathId, userId);
+
+        return updatedNode;
+      }
+
+      // After successful transaction, fetch the updated node
+      const { data: updatedNode, error: fetchError } = await supabase
+        .from("learning_path_nodes")
+        .select("*")
+        .eq("id", nodeId)
+        .single();
+
+      if (fetchError) {
+        logger.error("updateNodeStatus fetch error:", fetchError);
+        throw fetchError;
+      }
+
+      return updatedNode as LearningPathNode;
+    }
+
+    logger.warn('TransactionExecutor not available, using non-transactional path for updateNodeStatus');
+
+    // Non-transactional fallback when transactionExecutor is not available
     const { data: updatedNode, error } = await supabase
       .from("learning_path_nodes")
       .update(nodeUpdateData)
@@ -2644,6 +2886,91 @@ export class LearningPathService {
       }
     }
 
+    // Transactional path for task creation
+    if (transactionExecutor.isAvailable()) {
+      try {
+        const result = await transactionExecutor.executeInTransaction(async (client) => {
+          // Create main task
+          const { rows: taskCountRows } = await client.query(
+            `SELECT COUNT(*) as count FROM user_tasks WHERE user_id = $1 AND queue_level = 0 AND deleted_at IS NULL`,
+            [userId],
+          );
+
+          const { rows: nodesForTime } = await client.query(
+            `SELECT estimated_time FROM learning_path_nodes WHERE path_id = $1`,
+            [pathId],
+          );
+
+          const totalEstimatedTime =
+            nodesForTime.reduce((sum: number, n: { estimated_time: number }) => sum + (n.estimated_time || 0), 0) || 0;
+
+          const position = Number(taskCountRows[0]?.count ?? 0);
+
+          const { rows: mainTaskRows } = await client.query(
+            `INSERT INTO user_tasks (user_id, title, description, queue_level, position, estimated_duration, task_type, status, scheduled_start, scheduled_end, context)
+             VALUES ($1, $2, $3, 0, $4, $5, 'learning', 'pending', $6, $7, $8)
+             RETURNING id`,
+            [
+              userId,
+              `[学习路径] ${path.title}`,
+              path.description || path.goal || "学习路径任务",
+              position,
+              totalEstimatedTime,
+              startDate.toISOString(),
+              finalScheduledEnd?.toISOString() ?? null,
+              JSON.stringify({
+                type: "learning_path",
+                path_id: pathId,
+                path_title: path.title,
+              }),
+            ],
+          );
+
+          const mainTaskId = mainTaskRows[0].id as string;
+
+          // Create subtasks
+          const subtaskIds: string[] = [];
+          let subtaskPosition = 0;
+
+          for (const node of sortedNodes) {
+            if (scheduledNodes.has(node.id)) {
+              const { rows: subtaskRows } = await client.query(
+                `INSERT INTO task_subtasks (task_id, title, description, status, priority, position, estimated_duration, learning_path_node_id)
+                 VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7)
+                 RETURNING id`,
+                [
+                  mainTaskId,
+                  node.title,
+                  node.description || null,
+                  node.order_index,
+                  subtaskPosition,
+                  node.estimated_time || 30,
+                  node.id,
+                ],
+              );
+
+              subtaskIds.push(subtaskRows[0].id as string);
+              subtaskPosition++;
+            }
+          }
+
+          return {
+            main_task_id: mainTaskId,
+            subtask_ids: subtaskIds,
+            total_tasks: subtaskIds.length,
+            estimated_days: estimatedDays,
+          };
+        });
+
+        return result;
+      } catch (txError) {
+        logger.warn('Transaction failed in autoSchedulePath, falling back to non-transactional operations', { error: txError });
+      }
+    } else {
+      logger.warn('TransactionExecutor not available, using non-transactional path for autoSchedulePath');
+    }
+
+    // Non-transactional fallback
     const mainTaskId = await this.createLearningPathMainTask(
       supabase,
       pathId,

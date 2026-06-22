@@ -6,6 +6,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyCard } from "../../../shared/types/common";
+import { transactionExecutor } from "../../database/transactionExecutor";
 
 interface CreateQuizSetData {
   title: string;
@@ -253,28 +254,44 @@ class QuizSetsService {
         );
       }
 
-      const { error: deleteCardsError } = await supabase
-        .from("quiz_set_cards")
-        .delete()
-        .eq("quiz_set_id", quizSetId);
-
-      if (deleteCardsError) {
-        logger.error("Error deleting quiz set cards:", deleteCardsError);
-        throw new AppError(
-          "删除测验卡片关联失败",
-          500,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      if (transactionExecutor.isAvailable()) {
+        await transactionExecutor.executeInTransaction(async (client) => {
+          await client.query(
+            `DELETE FROM quiz_set_cards WHERE quiz_set_id = $1`,
+            [quizSetId],
+          );
+          await client.query(`DELETE FROM quiz_sets WHERE id = $1`, [
+            quizSetId,
+          ]);
+        });
+      } else {
+        logger.warn(
+          "transactionExecutor not available, falling back to non-transactional processing for delete",
         );
-      }
 
-      const { error } = await supabase
-        .from("quiz_sets")
-        .delete()
-        .eq("id", quizSetId);
+        const { error: deleteCardsError } = await supabase
+          .from("quiz_set_cards")
+          .delete()
+          .eq("quiz_set_id", quizSetId);
 
-      if (error) {
-        logger.error("Error deleting quiz set:", error);
-        throw new AppError("删除测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        if (deleteCardsError) {
+          logger.error("Error deleting quiz set cards:", deleteCardsError);
+          throw new AppError(
+            "删除测验卡片关联失败",
+            500,
+            ErrorCodes.SYSTEM_INTERNAL_ERROR,
+          );
+        }
+
+        const { error } = await supabase
+          .from("quiz_sets")
+          .delete()
+          .eq("id", quizSetId);
+
+        if (error) {
+          logger.error("Error deleting quiz set:", error);
+          throw new AppError("删除测验集合失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+        }
       }
 
       return { success: true, message: "测验集合已删除" };
@@ -447,6 +464,72 @@ class QuizSetsService {
         card_type?: StudyCard["card_type"];
         options?: string[];
       };
+
+      const cardType =
+        newCardData.type || newCardData.card_type || oldCard.card_type;
+
+      if (transactionExecutor.isAvailable()) {
+        const newCard = await transactionExecutor.executeInTransaction(
+          async (client) => {
+            // 1. Create new study_card
+            const insertResult = await client.query(
+              `INSERT INTO study_cards (user_id, knowledge_point_id, graph_id, source_graph_id, question, answer, explanation, card_type, options, next_review, difficulty, fsrs_state, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_retrievability)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), 1, 'New', 0, 0, 0, 0, 0) RETURNING *`,
+              [
+                userId,
+                oldCard.knowledge_point_id,
+                quizSet.graph_id,
+                quizSet.graph_id,
+                newCardData.question,
+                newCardData.answer,
+                newCardData.explanation || null,
+                cardType || "qa",
+                newCardData.options ? JSON.stringify(newCardData.options) : null,
+              ],
+            );
+
+            const insertedCard = insertResult.rows[0];
+            if (!insertedCard) {
+              throw new AppError(
+                "创建新卡片失败",
+                500,
+                ErrorCodes.SYSTEM_INTERNAL_ERROR,
+              );
+            }
+
+            // 2. Delete old quiz_set_card association
+            await client.query(
+              `DELETE FROM quiz_set_cards WHERE card_id = $1`,
+              [cardId],
+            );
+
+            // 3. Delete old study_card
+            await client.query(`DELETE FROM study_cards WHERE id = $1`, [
+              cardId,
+            ]);
+
+            // 4. Insert new quiz_set_card association
+            await client.query(
+              `INSERT INTO quiz_set_cards (quiz_set_id, card_id, display_order) VALUES ($1, $2, $3)`,
+              [quizSetId, insertedCard.id, displayOrder],
+            );
+
+            return insertedCard;
+          },
+        );
+
+        return {
+          success: true,
+          card: newCard as unknown as Record<string, unknown>,
+          message: "卡片已重新生成",
+        };
+      }
+
+      logger.warn(
+        "transactionExecutor not available, falling back to non-transactional processing for regenerateCard",
+      );
+
+      // Fallback: non-transactional path (original logic)
       const newCard = await studyService.createCard(supabase, {
         userId,
         knowledgePointId: oldCard.knowledge_point_id,
@@ -454,8 +537,7 @@ class QuizSetsService {
         question: newCardData.question,
         answer: newCardData.answer,
         explanation: newCardData.explanation,
-        cardType:
-          newCardData.type || newCardData.card_type || oldCard.card_type,
+        cardType,
         options: newCardData.options,
       });
 
@@ -533,30 +615,47 @@ class QuizSetsService {
 
       const displayOrder = (maxOrder?.display_order || 0) + 1;
 
-      const { error: insertError } = await supabase
-        .from("quiz_set_cards")
-        .insert({
-          quiz_set_id: quizSetId,
-          card_id: cardId,
-          display_order: displayOrder,
+      if (transactionExecutor.isAvailable()) {
+        await transactionExecutor.executeInTransaction(async (client) => {
+          await client.query(
+            `INSERT INTO quiz_set_cards (quiz_set_id, card_id, display_order) VALUES ($1, $2, $3)`,
+            [quizSetId, cardId, displayOrder],
+          );
+          await client.query(
+            `UPDATE quiz_sets SET card_count = card_count + 1, updated_at = NOW() WHERE id = $1`,
+            [quizSetId],
+          );
         });
-
-      if (insertError) {
-        logger.error("Error adding card to quiz set:", insertError);
-        throw new AppError(
-          "添加卡片到测验集合失败",
-          500,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      } else {
+        logger.warn(
+          "transactionExecutor not available, falling back to non-transactional processing for addCard",
         );
-      }
 
-      await supabase
-        .from("quiz_sets")
-        .update({
-          card_count: (quizSet.card_count || 0) + 1,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", quizSetId);
+        const { error: insertError } = await supabase
+          .from("quiz_set_cards")
+          .insert({
+            quiz_set_id: quizSetId,
+            card_id: cardId,
+            display_order: displayOrder,
+          });
+
+        if (insertError) {
+          logger.error("Error adding card to quiz set:", insertError);
+          throw new AppError(
+            "添加卡片到测验集合失败",
+            500,
+            ErrorCodes.SYSTEM_INTERNAL_ERROR,
+          );
+        }
+
+        await supabase
+          .from("quiz_sets")
+          .update({
+            card_count: (quizSet.card_count || 0) + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", quizSetId);
+      }
 
       return {
         success: true,
@@ -596,28 +695,45 @@ class QuizSetsService {
         );
       }
 
-      const { error: deleteError } = await supabase
-        .from("quiz_set_cards")
-        .delete()
-        .eq("quiz_set_id", quizSetId)
-        .eq("card_id", cardId);
-
-      if (deleteError) {
-        logger.error("Error removing card from quiz set:", deleteError);
-        throw new AppError(
-          "从测验集合移除卡片失败",
-          500,
-          ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      if (transactionExecutor.isAvailable()) {
+        await transactionExecutor.executeInTransaction(async (client) => {
+          await client.query(
+            `DELETE FROM quiz_set_cards WHERE quiz_set_id = $1 AND card_id = $2`,
+            [quizSetId, cardId],
+          );
+          await client.query(
+            `UPDATE quiz_sets SET card_count = GREATEST(card_count - 1, 0), updated_at = NOW() WHERE id = $1`,
+            [quizSetId],
+          );
+        });
+      } else {
+        logger.warn(
+          "transactionExecutor not available, falling back to non-transactional processing for removeCard",
         );
-      }
 
-      await supabase
-        .from("quiz_sets")
-        .update({
-          card_count: Math.max(0, (quizSet.card_count || 1) - 1),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", quizSetId);
+        const { error: deleteError } = await supabase
+          .from("quiz_set_cards")
+          .delete()
+          .eq("quiz_set_id", quizSetId)
+          .eq("card_id", cardId);
+
+        if (deleteError) {
+          logger.error("Error removing card from quiz set:", deleteError);
+          throw new AppError(
+            "从测验集合移除卡片失败",
+            500,
+            ErrorCodes.SYSTEM_INTERNAL_ERROR,
+          );
+        }
+
+        await supabase
+          .from("quiz_sets")
+          .update({
+            card_count: Math.max(0, (quizSet.card_count || 1) - 1),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", quizSetId);
+      }
 
       return {
         success: true,

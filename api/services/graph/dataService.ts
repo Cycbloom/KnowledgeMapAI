@@ -333,11 +333,84 @@ export class DataService {
     userId: string,
     content: string,
   ): Promise<Record<string, unknown>> {
+    const { graph_title, nodes, edges } = parseMarkdownToGraph(content);
+
+    if (transactionExecutor.isAvailable()) {
+      const graph = await transactionExecutor.executeInTransaction(async (client) => {
+        // 1. Create Graph
+        const graphResult = await client.query(
+          `INSERT INTO knowledge_graphs (user_id, title) VALUES ($1, $2) RETURNING *`,
+          [userId, graph_title],
+        );
+        const graphRow = graphResult.rows[0];
+        const graphId = graphRow.id;
+
+        const nodeMap = new Map<string, string>();
+
+        // 2. Create knowledge_points and graph_nodes
+        if (nodes && Array.isArray(nodes)) {
+          for (const n of nodes) {
+            const kpResult = await client.query(
+              `INSERT INTO knowledge_points (title, content, summary, properties, visibility, owner_id)
+               VALUES ($1, $2, $3, $4, 'private', $5) RETURNING id`,
+              [n.title, n.content || '', null, JSON.stringify(n.properties || {}), userId],
+            );
+            const kpId = kpResult.rows[0].id;
+
+            await client.query(
+              `INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted)
+               VALUES ($1, $2, $3, $4, $5, true)`,
+              [graphId, kpId, n.x_position || 0, n.y_position || 0, n.level || 'normal'],
+            );
+
+            const oldId = n.id;
+            if (oldId) {
+              nodeMap.set(oldId, kpId);
+            }
+          }
+
+          // 3. Create edges
+          if (edges && Array.isArray(edges) && edges.length > 0) {
+            const edgesValues: string[] = [];
+            const edgesParams: unknown[] = [];
+            let paramIdx = 1;
+
+            for (const e of edges) {
+              const sourceId = nodeMap.get(e.source);
+              const targetId = nodeMap.get(e.target);
+
+              if (sourceId && targetId) {
+                edgesValues.push(`($${paramIdx}, $${paramIdx + 1}, $${paramIdx + 2}, $${paramIdx + 3})`);
+                edgesParams.push(sourceId, targetId, e.relationship || 'contains', graphId);
+                paramIdx += 4;
+              }
+            }
+
+            if (edgesValues.length > 0) {
+              await client.query(
+                `INSERT INTO edges (source_knowledge_point_id, target_knowledge_point_id, relationship_type, graph_id)
+                 VALUES ${edgesValues.join(', ')}`,
+                edgesParams,
+              );
+            }
+          }
+        }
+
+        return graphRow;
+      });
+
+      // Success! Invalidate user graphs cache
+      await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+      return graph;
+    }
+
+    // Fallback: no transaction executor available
+    logger.warn('transactionExecutor not available, using manual rollback for importMarkdown');
     let createdGraphId: string | null = null;
+    const createdKnowledgePointIds: string[] = [];
 
     try {
-      const { graph_title, nodes, edges } = parseMarkdownToGraph(content);
-
       // 1. Create Graph
       const { data: graph, error: graphError } = await supabase
         .from('knowledge_graphs')
@@ -367,6 +440,7 @@ export class DataService {
           );
 
           if (result) {
+            createdKnowledgePointIds.push(result.knowledge_point_id);
             const oldId = n.id;
             if (oldId) {
               nodeMap.set(oldId, result.id);
@@ -418,6 +492,10 @@ export class DataService {
         await supabase.from('graph_nodes').delete().eq('graph_id', createdGraphId);
         // Clean up edges for this graph
         await supabase.from('edges').delete().eq('graph_id', createdGraphId);
+        // Clean up knowledge_points created during import
+        if (createdKnowledgePointIds.length > 0) {
+          await supabase.from('knowledge_points').delete().in('id', createdKnowledgePointIds);
+        }
         // Delete the graph
         await supabase.from('knowledge_graphs').delete().eq('id', createdGraphId);
       }
@@ -438,6 +516,8 @@ export class DataService {
         id?: string;
         title: string;
         content?: string;
+        summary?: string;
+        learning_material?: string;
         x_position?: number;
         y_position?: number;
         level?: string;
@@ -451,7 +531,81 @@ export class DataService {
     },
   ): Promise<Record<string, unknown>> {
     const { graph_title, nodes, edges } = data;
+
+    if (transactionExecutor.isAvailable()) {
+      const graph = await transactionExecutor.executeInTransaction(async (client) => {
+        // 1. Create Graph
+        const graphResult = await client.query(
+          `INSERT INTO knowledge_graphs (user_id, title) VALUES ($1, $2) RETURNING *`,
+          [userId, graph_title],
+        );
+        const graphRow = graphResult.rows[0];
+        const graphId = graphRow.id;
+
+        const nodeMap = new Map<string, string>();
+
+        // 2. Create knowledge_points and graph_nodes
+        if (nodes && Array.isArray(nodes)) {
+          for (const n of nodes) {
+            const kpResult = await client.query(
+              `INSERT INTO knowledge_points (title, content, summary, learning_material, properties, visibility, owner_id)
+               VALUES ($1, $2, $3, $4, $5, 'private', $6) RETURNING id`,
+              [n.title, n.content || '', n.summary || null, n.learning_material || null, JSON.stringify(n.properties || {}), userId],
+            );
+            const kpId = kpResult.rows[0].id;
+
+            await client.query(
+              `INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted)
+               VALUES ($1, $2, $3, $4, $5, true)`,
+              [graphId, kpId, n.x_position || 0, n.y_position || 0, n.level || 'normal'],
+            );
+
+            const oldId = n.id;
+            if (oldId) {
+              nodeMap.set(oldId, kpId);
+            }
+          }
+
+          // 3. Create edges
+          if (edges && Array.isArray(edges) && edges.length > 0) {
+            const edgesValues: string[] = [];
+            const edgesParams: unknown[] = [];
+            let paramIdx = 1;
+
+            for (const e of edges) {
+              const sourceId = nodeMap.get(e.source);
+              const targetId = nodeMap.get(e.target);
+
+              if (sourceId && targetId) {
+                edgesValues.push(`($${paramIdx}, $${paramIdx + 1}, $${paramIdx + 2}, $${paramIdx + 3})`);
+                edgesParams.push(sourceId, targetId, e.relationship || 'contains', graphId);
+                paramIdx += 4;
+              }
+            }
+
+            if (edgesValues.length > 0) {
+              await client.query(
+                `INSERT INTO edges (source_knowledge_point_id, target_knowledge_point_id, relationship_type, graph_id)
+                 VALUES ${edgesValues.join(', ')}`,
+                edgesParams,
+              );
+            }
+          }
+        }
+
+        return graphRow;
+      });
+
+      // Success! Invalidate user graphs cache
+      await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+      return graph;
+    }
+
+    // Fallback: no transaction executor available
+    logger.warn('transactionExecutor not available, using manual rollback for importData');
     let createdGraphId: string | null = null;
+    const createdKnowledgePointIds: string[] = [];
 
     try {
       // 1. Create Graph
@@ -475,6 +629,8 @@ export class DataService {
               graph_id: graph.id,
               title: n.title,
               content: n.content || '',
+              summary: n.summary,
+              learning_material: n.learning_material,
               x_position: n.x_position || 0,
               y_position: n.y_position || 0,
               level: n.level || 'normal',
@@ -483,6 +639,7 @@ export class DataService {
           );
 
           if (result) {
+            createdKnowledgePointIds.push(result.knowledge_point_id);
             const oldId = n.id;
             if (oldId) {
               nodeMap.set(oldId, result.id);
@@ -534,6 +691,10 @@ export class DataService {
         await supabase.from('graph_nodes').delete().eq('graph_id', createdGraphId);
         // Delete edges for this graph
         await supabase.from('edges').delete().eq('graph_id', createdGraphId);
+        // Clean up knowledge_points created during import
+        if (createdKnowledgePointIds.length > 0) {
+          await supabase.from('knowledge_points').delete().in('id', createdKnowledgePointIds);
+        }
         // Delete the graph
         await supabase.from('knowledge_graphs').delete().eq('id', createdGraphId);
       }

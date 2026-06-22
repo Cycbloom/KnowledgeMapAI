@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from '../../supabase';
 import { createKnowledgePointWithGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
 import { performanceMonitor, enrichMetadata } from './performanceMonitor';
 import { pricingService } from './pricingService';
+import { transactionExecutor } from '../../database/transactionExecutor';
 
 export interface AIActionVariables {
   includeParent?: boolean;
@@ -366,31 +367,106 @@ export class AIActionService {
     if (action.target_mode === 'spawn_children') {
         if (parsed.children && Array.isArray(parsed.children)) {
             const createdNodeIds: string[] = [];
-            
-            for (const child of parsed.children) {
-              const result = await createKnowledgePointWithGraphNode(
-                getSupabaseAdmin(),
-                userId,
-                {
-                  graph_id: graphId,
-                  title: child.title,
-                  content: child.content || '',
-                  x_position: 0,
-                  y_position: 0
+
+            if (transactionExecutor.isAvailable()) {
+              try {
+                const createdKpIds = await transactionExecutor.executeInTransaction(async (client) => {
+                  const kpIds: string[] = [];
+
+                  // 批量 INSERT knowledge_points
+                  for (const child of parsed.children) {
+                    const kpResult = await client.query(
+                      `INSERT INTO knowledge_points (title, content, visibility, owner_id, properties)
+                       VALUES ($1, $2, 'private', $3, '{}')
+                       RETURNING id`,
+                      [child.title, child.content || '', userId],
+                    );
+                    if (kpResult.rows?.[0]?.id) {
+                      kpIds.push(kpResult.rows[0].id);
+                    }
+                  }
+
+                  // 批量 INSERT graph_nodes
+                  for (const kpId of kpIds) {
+                    await client.query(
+                      `INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted)
+                       VALUES ($1, $2, 0, 0, 'normal', true)`,
+                      [graphId, kpId],
+                    );
+                  }
+
+                  // 批量 INSERT edges
+                  for (const kpId of kpIds) {
+                    await client.query(
+                      `INSERT INTO edges (graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type)
+                       VALUES ($1, $2, $3, 'generated')`,
+                      [graphId, nodeId, kpId],
+                    );
+                  }
+
+                  return kpIds;
+                });
+
+                createdNodeIds.push(...createdKpIds);
+                return { success: true, data: { createdCount: createdNodeIds.length } };
+              } catch (txError) {
+                logger.warn('spawn_children transaction failed, falling back to non-transactional creation:', txError);
+                // 降级路径：逐个创建
+                for (const child of parsed.children) {
+                  const result = await createKnowledgePointWithGraphNode(
+                    getSupabaseAdmin(),
+                    userId,
+                    {
+                      graph_id: graphId,
+                      title: child.title,
+                      content: child.content || '',
+                      x_position: 0,
+                      y_position: 0,
+                    },
+                  );
+
+                  if (result) {
+                    createdNodeIds.push(result.id);
+
+                    await getSupabaseAdmin()
+                      .from('edges')
+                      .insert({
+                        graph_id: graphId,
+                        source_knowledge_point_id: nodeId,
+                        target_knowledge_point_id: result.id,
+                        relationship_type: 'generated',
+                      });
+                  }
                 }
-              );
-              
-              if (result) {
-                createdNodeIds.push(result.id);
-                
-                await getSupabaseAdmin()
-                  .from('edges')
-                  .insert({
+              }
+            } else {
+              // transactionExecutor 不可用，使用降级路径
+              logger.warn('transactionExecutor not available, using non-transactional spawn_children');
+              for (const child of parsed.children) {
+                const result = await createKnowledgePointWithGraphNode(
+                  getSupabaseAdmin(),
+                  userId,
+                  {
                     graph_id: graphId,
-                    source_knowledge_point_id: nodeId,
-                    target_knowledge_point_id: result.id,
-                    relationship_type: 'generated'
-                  });
+                    title: child.title,
+                    content: child.content || '',
+                    x_position: 0,
+                    y_position: 0,
+                  },
+                );
+
+                if (result) {
+                  createdNodeIds.push(result.id);
+
+                  await getSupabaseAdmin()
+                    .from('edges')
+                    .insert({
+                      graph_id: graphId,
+                      source_knowledge_point_id: nodeId,
+                      target_knowledge_point_id: result.id,
+                      relationship_type: 'generated',
+                    });
+                }
               }
             }
 

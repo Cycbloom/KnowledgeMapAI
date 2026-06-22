@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from '../supabase';
 import { logger } from '../utils/logger';
 import { periodicTaskService } from './scheduler/periodicTaskService';
 import { focusService } from './scheduler/focusService';
+import { transactionExecutor } from '../database/transactionExecutor';
 import type {
   Achievement,
   UserAchievement,
@@ -143,6 +144,60 @@ export class AchievementService {
 
     if (newUnlocks.length === 0) return [];
 
+    // Transactional path
+    if (transactionExecutor.isAvailable()) {
+      try {
+        await transactionExecutor.executeInTransaction(async (client) => {
+          const now = new Date().toISOString();
+
+          // INSERT user_achievements
+          for (const ach of newUnlocks) {
+            await client.query(
+              `INSERT INTO user_achievements (user_id, achievement_id, unlocked_at) VALUES ($1, $2, $3)`,
+              [userId, ach.id, now],
+            );
+          }
+
+          // UPDATE users xp
+          let totalXp = 0;
+          for (const ach of newUnlocks) {
+            totalXp += ach.xp_reward;
+          }
+
+          if (totalXp > 0) {
+            const { rows: userRows } = await client.query(
+              `SELECT xp, level FROM users WHERE id = $1`,
+              [userId],
+            );
+
+            if (userRows.length > 0) {
+              let { xp, level } = userRows[0];
+              xp = (xp || 0) + totalXp;
+
+              let nextLevelThreshold = level * 500;
+              while (xp >= nextLevelThreshold) {
+                xp -= nextLevelThreshold;
+                level++;
+                nextLevelThreshold = level * 500;
+              }
+
+              await client.query(
+                `UPDATE users SET xp = $1, level = $2 WHERE id = $3`,
+                [xp, level, userId],
+              );
+            }
+          }
+        });
+
+        return newUnlocks;
+      } catch (txError) {
+        logger.warn('Transaction failed in checkAndUnlock, falling back to non-transactional operations', { error: txError });
+      }
+    } else {
+      logger.warn('TransactionExecutor not available, using non-transactional path for checkAndUnlock');
+    }
+
+    // Non-transactional fallback
     const unlocksToInsert = newUnlocks.map((ach) => ({
       user_id: userId,
       achievement_id: ach.id,

@@ -1,0 +1,18 @@
+- [x] 共享同步逻辑模块 `shared/sync/` 已创建，包含 operationMerger、conflictDetector、conflictResolver、types
+- [x] Electron SyncEngine 的操作合并逻辑已替换为调用共享模块，行为不变
+- [x] Electron SyncEngine 的冲突处理已替换为调用共享模块，Cloud Wins 行为不变
+- [x] Electron SyncEngine 中 12 处 console.log/error 已替换为 logger 调用
+- [x] 移动端 `applyOperation()` 方法已实现，根据操作类型执行 Supabase 操作
+- [x] 移动端 `getLocalVersion()` 方法已实现，查询 Supabase 返回真实数据
+- [x] 移动端 3 处硬编码 `userId: "user-placeholder"` 已替换为从 Auth session 获取
+- [x] 移动端同步服务已使用共享逻辑模块替代 conflictService 直接调用
+- [x] `deviceDiscoveryService.pollForDevices()` 已实现，通过后端 API 查询在线设备
+- [x] 后端新增 `POST /api/sync/receive` 端点，支持接收远程操作和冲突检测
+- [x] 后端新增 `GET /api/sync/send` 端点，支持返回待推送操作
+- [x] `syncAuthService.generateSharedSecret()` 使用 `crypto.getRandomValues()` 替代 `Math.random()`
+- [x] `syncAuthService.generateSyncToken()` 使用 HMAC-SHA256 替代 `btoa`
+- [x] `syncAuthService.validateSyncToken()` 使用 HMAC-SHA256 验证替代 `atob`
+- [x] `syncTypes.ts` 中 `Record<string, any>` 已修复为 `Record<string, unknown>`
+- [x] 移动端代码中 7 处 `substr()` 已替换为 `substring()` 或 `slice()`
+- [x] 移动端代码中 `console.error` 已替换为 `console.warn`
+- [x] `npm run check` 无类型错误（3 个预先存在的错误不在修改范围内）

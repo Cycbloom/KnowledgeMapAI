@@ -8,7 +8,7 @@ const getPairedDevicesFromStorage = (): PairedDevice[] => {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('Failed to get paired devices from storage:', error);
+    console.warn('Failed to get paired devices from storage:', error);
     return [];
   }
 };
@@ -17,7 +17,7 @@ const savePairedDevicesToStorage = (devices: PairedDevice[]): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(devices));
   } catch (error) {
-    console.error('Failed to save paired devices to storage:', error);
+    console.warn('Failed to save paired devices to storage:', error);
   }
 };
 
@@ -42,7 +42,7 @@ class SyncAuthService {
       const devices = getPairedDevicesFromStorage();
       this.pairedDevices = devices || [];
     } catch (error) {
-      console.error('Failed to load paired devices:', error);
+      console.warn('Failed to load paired devices:', error);
       this.pairedDevices = [];
     }
   }
@@ -51,12 +51,12 @@ class SyncAuthService {
     try {
       savePairedDevicesToStorage(this.pairedDevices);
     } catch (error) {
-      console.error('Failed to save paired devices:', error);
+      console.warn('Failed to save paired devices:', error);
     }
   }
 
   generatePairingCode(): string {
-    const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const expiresAt = Date.now() + 2 * 60 * 1000; // 2 minutes
     
     this.pairingCodes.set(code, { code, expiresAt });
@@ -116,44 +116,49 @@ class SyncAuthService {
     return this.pairedDevices.some(device => device.deviceId === deviceId);
   }
 
-  generateSyncToken(deviceId: string): string | null {
+  async generateSyncToken(deviceId: string): Promise<string | null> {
     const device = this.pairedDevices.find(d => d.deviceId === deviceId);
     if (!device) {
       return null;
     }
     
-    // Generate token using shared secret
     const timestamp = Date.now();
     const data = `${deviceId}:${timestamp}`;
-    // In real implementation, we would use the shared secret to sign the token
-    // For now, we'll use a simple encoding
-    return btoa(`${data}:${device.sharedSecret.substring(0, 8)}`);
+    // 使用 HMAC-SHA256 签名
+    const signature = await this.hmacSign(data, device.sharedSecret);
+    // 格式: base64(data):base64(signature)
+    return `${btoa(data)}.${signature}`;
   }
 
-  validateSyncToken(token: string, deviceId: string): boolean {
+  async validateSyncToken(token: string, deviceId: string): Promise<boolean> {
     try {
-      const decoded = atob(token);
-      const [data, secretPart] = decoded.split(':');
+      const [encodedData, signature] = token.split('.');
+      if (!encodedData || !signature) {
+        return false;
+      }
+      
+      const data = atob(encodedData);
       const [tokenDeviceId, timestamp] = data.split(':');
       
       if (tokenDeviceId !== deviceId) {
         return false;
       }
       
-      // Check if token is expired (10 minutes)
+      // 检查 token 有效期（10 分钟）
       const tokenTime = parseInt(timestamp);
       if (Date.now() - tokenTime > 10 * 60 * 1000) {
         return false;
       }
       
-      // Validate secret part
+      // 使用 HMAC-SHA256 验证签名
       const device = this.pairedDevices.find(d => d.deviceId === deviceId);
-      if (!device || !device.sharedSecret.startsWith(secretPart)) {
+      if (!device) {
         return false;
       }
       
-      return true;
-    } catch (error) {
+      const expectedSignature = await this.hmacSign(data, device.sharedSecret);
+      return signature === expectedSignature;
+    } catch {
       return false;
     }
   }
@@ -166,8 +171,32 @@ class SyncAuthService {
     }
   }
 
+  /**
+   * 使用 HMAC-SHA256 签名数据
+   */
+  private async hmacSign(data: string, key: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(key);
+    const messageData = encoder.encode(data);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
   private generateSharedSecret(): string {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 }
 

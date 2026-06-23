@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain } from 'electron';
 import { DatabaseManager } from '../db/database';
 import { TABLES } from '../db/schema';
 import type { SyncStatus } from '../../shared/types/ipc';
+import { mergeOperations as sharedMergeOperations } from '../../shared/sync/operationMerger';
 
 interface SyncConfig {
   syncInterval: number; // ms, default 30000
@@ -38,7 +39,7 @@ export class SyncEngine {
   start(): void {
     if (this.isRunning) return;
 
-    console.log('[SyncEngine] 启动同步引擎，间隔:', this.config.syncInterval, 'ms');
+    console.warn('[SyncEngine] 启动同步引擎，间隔:', this.config.syncInterval, 'ms');
     this.isRunning = true;
 
     // Load last sync timestamps from database
@@ -60,7 +61,7 @@ export class SyncEngine {
       this.syncTimer = null;
     }
     this.isRunning = false;
-    console.log('[SyncEngine] 同步引擎已停止');
+    console.warn('[SyncEngine] 同步引擎已停止');
   }
 
   // Set online status (called when network status changes)
@@ -69,7 +70,7 @@ export class SyncEngine {
     this.isOnline = online;
 
     if (online && wasOffline) {
-      console.log('[SyncEngine] 网络恢复，触发同步');
+      console.warn('[SyncEngine] 网络恢复，触发同步');
       this.sync();
     }
 
@@ -185,7 +186,7 @@ export class SyncEngine {
         this.dbManager.updateSyncMetadata(tableName, tableData.timestamp, 'pull', tableData.records.length);
       }
 
-      console.log('[SyncEngine] Pull 完成');
+      console.warn('[SyncEngine] Pull 完成');
     } catch (error) {
       console.error('[SyncEngine] Pull 失败:', error);
       throw error;
@@ -200,59 +201,33 @@ export class SyncEngine {
 
       if (pendingOps.length === 0) return;
 
-      // Merge operations for the same record: combine partial updates into complete data
-      const mergedOpsMap = new Map<string, typeof pendingOps[0]>();
-      for (const op of pendingOps) {
-        const key = `${op.table_name}:${op.record_id}`;
-        const existing = mergedOpsMap.get(key);
+      // Convert pending operations to shared SyncOperation format
+      const sharedOps = pendingOps.map(op => ({
+        id: op.id,
+        action: op.action as "create" | "update" | "delete",
+        table: op.table_name,
+        recordId: op.record_id,
+        data: (op.data ?? {}) as Record<string, unknown>,
+        timestamp: op.created_at,
+        userId: '', // Electron 端不需要 userId
+      }));
 
-        if (!existing) {
-          mergedOpsMap.set(key, op);
-          continue;
-        }
+      // Use shared merge logic
+      const mergedSharedOps = sharedMergeOperations(sharedOps);
 
-        // Merge based on operation sequence
-        if (existing.action === 'create' && op.action === 'update') {
-          // Merge update fields into create data to preserve complete record
-          mergedOpsMap.set(key, {
-            ...existing,
-            data: { ...(existing.data ?? {}), ...(op.data ?? {}) },
-            created_at: op.created_at,
-          });
-        } else if (existing.action === 'update' && op.action === 'update') {
-          // Merge consecutive updates: later fields override earlier ones
-          mergedOpsMap.set(key, {
-            ...existing,
-            data: { ...(existing.data ?? {}), ...(op.data ?? {}) },
-            created_at: op.created_at,
-          });
-        } else if (op.action === 'delete') {
-          // Delete overrides everything; if preceded by create, server never saw it so skip entirely
-          if (existing.action === 'create') {
-            mergedOpsMap.delete(key);
-          } else {
-            mergedOpsMap.set(key, op);
-          }
-        } else {
-          // Default: keep the latest operation (e.g., create -> create shouldn't happen but handle gracefully)
-          mergedOpsMap.set(key, op);
-        }
-      }
-      const mergedOps = Array.from(mergedOpsMap.values());
-
-      // Build operations array for the push API
+      // Convert back to push format
       const operations: Array<{
         table: string;
         action: 'create' | 'update' | 'delete';
         id: string;
         data?: Record<string, unknown>;
         clientUpdatedAt: string;
-      }> = mergedOps.map(op => ({
-        table: op.table_name,
-        action: op.action as 'create' | 'update' | 'delete',
-        id: op.record_id,
-        data: op.data ?? undefined,
-        clientUpdatedAt: op.created_at,
+      }> = mergedSharedOps.map(op => ({
+        table: op.table,
+        action: op.action,
+        id: op.recordId,
+        data: Object.keys(op.data).length > 0 ? op.data : undefined,
+        clientUpdatedAt: op.timestamp,
       }));
 
       // Push in batches
@@ -262,8 +237,8 @@ export class SyncEngine {
       for (let i = 0; i < operations.length; i += this.config.batchSize) {
         const batch = operations.slice(i, i + this.config.batchSize);
         const batchOpIds = batch.map(op => {
-          const key = `${op.table}:${op.id}`;
-          return mergedOpsMap.get(key)!.id;
+          const mergedOp = mergedSharedOps.find(m => m.table === op.table && m.recordId === op.id);
+          return mergedOp?.id ?? op.id;
         });
 
         const response = await fetch(`http://localhost:${port}/api/sync/push`, {
@@ -330,7 +305,7 @@ export class SyncEngine {
         }
       }
 
-      console.log('[SyncEngine] Push 完成');
+      console.warn('[SyncEngine] Push 完成');
     } catch (error) {
       console.error('[SyncEngine] Push 失败:', error);
       throw error;
@@ -339,7 +314,7 @@ export class SyncEngine {
 
   // Full sync for first-time setup (pull all data)
   async fullSync(): Promise<void> {
-    console.log('[SyncEngine] 开始全量同步...');
+    console.warn('[SyncEngine] 开始全量同步...');
 
     // Reset all sync timestamps to epoch
     for (const tableName of Object.keys(TABLES)) {
@@ -347,7 +322,7 @@ export class SyncEngine {
     }
 
     await this.pullFromCloud();
-    console.log('[SyncEngine] 全量同步完成');
+    console.warn('[SyncEngine] 全量同步完成');
   }
 
   // Register IPC handlers for sync control
@@ -418,7 +393,7 @@ export class SyncEngine {
     try {
       const deletedCount = this.dbManager.cleanupSyncedOperations(7); // Clean up operations older than 7 days
       if (deletedCount > 0) {
-        console.log(`[SyncEngine] 清理了 ${deletedCount} 条旧操作日志`);
+        console.warn(`[SyncEngine] 清理了 ${deletedCount} 条旧操作日志`);
       }
     } catch (error) {
       console.error('[SyncEngine] 清理操作日志失败:', error);

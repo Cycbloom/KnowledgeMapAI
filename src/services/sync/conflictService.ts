@@ -26,20 +26,8 @@ class ConflictService {
 
   // 自动解决单个冲突
   private autoResolveConflict(conflict: SyncConflict): SyncOperation | null {
-    // 默认策略：使用较新的版本
-    const localTime = new Date(conflict.localVersion.timestamp).getTime();
-    const remoteTime = new Date(conflict.remoteVersion.timestamp).getTime();
-
-    if (remoteTime > localTime) {
-      // 远程版本更新，使用远程版本
-      return conflict.remoteVersion;
-    } else if (localTime > remoteTime) {
-      // 本地版本更新，使用本地版本
-      return conflict.localVersion;
-    } else {
-      // 时间相同，默认使用远程版本
-      return conflict.remoteVersion;
-    }
+    // Cloud Wins: 默认使用远程版本
+    return conflict.remoteVersion;
   }
 
   // 手动解决冲突
@@ -88,7 +76,7 @@ class ConflictService {
     };
 
     return {
-      id: `merged-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `merged-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: "update",
       table: localOp.table,
       record: mergedRecord,

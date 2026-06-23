@@ -1,13 +1,20 @@
+/**
+ * 同步模块统一类型定义
+ * 兼容 Electron 端和移动端的同步需求
+ */
+
+/** 同步操作类型 */
 export interface SyncOperation {
   id: string;
-  type: "create" | "update" | "delete";
+  action: "create" | "update" | "delete";
   table: string;
-  record: Record<string, unknown>;
   recordId: string;
+  data: Record<string, unknown>;
   timestamp: string;
   userId: string;
 }
 
+/** 同步批次 */
 export interface SyncBatch {
   batchId: string;
   timestamp: string;
@@ -16,15 +23,7 @@ export interface SyncBatch {
   userId: string;
 }
 
-export interface SyncStatus {
-  isRunning: boolean;
-  lastSync?: string;
-  lastSyncStatus?: "success" | "error";
-  pendingOperations: number;
-  conflicts: SyncConflict[];
-  devices: SyncDevice[];
-}
-
+/** 同步冲突 */
 export interface SyncConflict {
   id: string;
   table: string;
@@ -35,6 +34,7 @@ export interface SyncConflict {
   resolution?: "local" | "remote" | "merge";
 }
 
+/** 同步设备 */
 export interface SyncDevice {
   id: string;
   name: string;
@@ -43,12 +43,22 @@ export interface SyncDevice {
   status: "online" | "offline";
 }
 
+/** 同步配置 */
 export interface SyncConfig {
   enabled: boolean;
   autoSync: boolean;
-  syncInterval: number; // in minutes
+  syncInterval: number;
   syncMode: "lan" | "cloud";
   lanPort: number;
   deviceName: string;
   deviceId: string;
+}
+
+/** Electron 端 push API 使用的操作格式 */
+export interface PushOperation {
+  table: string;
+  action: "create" | "update" | "delete";
+  id: string;
+  data?: Record<string, unknown>;
+  clientUpdatedAt: string;
 }

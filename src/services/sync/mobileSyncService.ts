@@ -7,12 +7,53 @@ import {
 } from "./syncTypes";
 import { deviceDiscoveryService } from "./deviceDiscoveryService";
 import { syncAuthService, PairedDevice } from "./syncAuthService";
-import { conflictService } from "./conflictService";
 import {
   getOfflineQueue,
   addToOfflineQueue,
   clearOfflineQueue,
 } from "../../utils/offlineStorage";
+import { autoResolveConflicts } from "../../../shared/sync/conflictResolver";
+import type { SyncOperation as SharedSyncOperation, SyncConflict as SharedSyncConflict } from "../../../shared/sync/types";
+import { getSupabaseClient } from "../../lib/supabase";
+
+/** 将移动端 SyncOperation 转换为共享模块 SyncOperation */
+function toSharedOperation(op: SyncOperation): SharedSyncOperation {
+  return {
+    id: op.id,
+    action: op.type,
+    table: op.table,
+    recordId: op.recordId,
+    data: op.record,
+    timestamp: op.timestamp,
+    userId: op.userId,
+  };
+}
+
+/** 将共享模块 SyncOperation 转换为移动端 SyncOperation */
+function fromSharedOperation(op: SharedSyncOperation): SyncOperation {
+  return {
+    id: op.id,
+    type: op.action,
+    table: op.table,
+    record: op.data,
+    recordId: op.recordId,
+    timestamp: op.timestamp,
+    userId: op.userId,
+  };
+}
+
+/** 将移动端 SyncConflict 转换为共享模块 SyncConflict */
+function toSharedConflict(conflict: SyncConflict): SharedSyncConflict {
+  return {
+    id: conflict.id,
+    table: conflict.table,
+    recordId: conflict.recordId,
+    localVersion: toSharedOperation(conflict.localVersion),
+    remoteVersion: toSharedOperation(conflict.remoteVersion),
+    resolved: conflict.resolved,
+    resolution: conflict.resolution,
+  };
+}
 
 export class MobileSyncService {
   private isRunning = false;
@@ -23,16 +64,20 @@ export class MobileSyncService {
   private lastSyncStatus?: "success" | "error";
   private deviceId: string;
   private deviceName: string;
+  private userId: string = "unknown";
 
   constructor() {
-    this.deviceId = `mobile-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    this.deviceName = `Mobile-${Math.random().toString(36).substr(2, 9)}`;
+    this.deviceId = `mobile-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    this.deviceName = `Mobile-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   async start(): Promise<void> {
     if (this.isRunning) {
       return;
     }
+
+    // 获取当前用户 ID
+    await this.refreshUserId();
 
     this.isRunning = true;
     await deviceDiscoveryService.start(this.deviceId, this.deviceName);
@@ -58,6 +103,19 @@ export class MobileSyncService {
     ); // 15 minutes
   }
 
+  /** 刷新当前用户 ID */
+  private async refreshUserId(): Promise<void> {
+    try {
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        this.userId = session?.user?.id ?? "unknown";
+      }
+    } catch {
+      this.userId = "unknown";
+    }
+  }
+
   async sync(): Promise<boolean> {
     if (!this.isRunning) {
       return false;
@@ -76,7 +134,7 @@ export class MobileSyncService {
       this.lastSyncStatus = "success";
       return true;
     } catch (error) {
-      console.error("Mobile sync failed:", error);
+      console.warn("Mobile sync failed:", error);
       this.lastSync = new Date().toISOString();
       this.lastSyncStatus = "error";
       return false;
@@ -93,10 +151,10 @@ export class MobileSyncService {
       id: op.id,
       type: op.type,
       table: op.entityType,
-      record: op.data || {},
+      record: (op.data || {}) as Record<string, unknown>,
       recordId: op.entityId,
       timestamp: new Date(op.timestamp).toISOString(),
-      userId: "user-placeholder",
+      userId: this.userId,
     }));
   }
 
@@ -109,7 +167,7 @@ export class MobileSyncService {
       return;
     }
 
-    const token = syncAuthService.generateSyncToken(device.id);
+    const token = await syncAuthService.generateSyncToken(device.id);
     if (!token) {
       return;
     }
@@ -118,11 +176,11 @@ export class MobileSyncService {
       // Send pending operations to device
       if (this.pendingOperations.length > 0) {
         const batch: SyncBatch = {
-          batchId: `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          batchId: `batch-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           timestamp: new Date().toISOString(),
           operations: this.pendingOperations,
           deviceId: this.deviceId,
-          userId: "user-placeholder", // TODO: Get actual user ID
+          userId: this.userId,
         };
 
         const response = await fetch(
@@ -169,7 +227,7 @@ export class MobileSyncService {
       // Update last sync time
       syncAuthService.updateLastSync(device.id);
     } catch (error) {
-      console.error(`Failed to sync with device ${device.id}:`, error);
+      console.warn(`Failed to sync with device ${device.id}:`, error);
     }
   }
 
@@ -183,7 +241,7 @@ export class MobileSyncService {
         console.error(`Failed to apply operation ${operation.id}:`, error);
         // Create conflict
         const conflict: SyncConflict = {
-          id: `conflict-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `conflict-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           table: operation.table,
           recordId: operation.recordId,
           localVersion: await this.getLocalVersion(
@@ -198,22 +256,78 @@ export class MobileSyncService {
     }
   }
 
-  private async applyOperation(_operation: SyncOperation): Promise<void> {
+  private async applyOperation(operation: SyncOperation): Promise<void> {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error("Supabase client not initialized");
+    }
+
+    switch (operation.type) {
+      case "create": {
+        const { error } = await supabase
+          .from(operation.table)
+          .insert(operation.record);
+        if (error) throw error;
+        break;
+      }
+      case "update": {
+        const { error } = await supabase
+          .from(operation.table)
+          .update(operation.record)
+          .eq("id", operation.recordId);
+        if (error) throw error;
+        break;
+      }
+      case "delete": {
+        // 尝试软删除，如果表没有 deleted_at 列则硬删除
+        const { error: softDeleteError } = await supabase
+          .from(operation.table)
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("id", operation.recordId);
+        if (softDeleteError) {
+          // 软删除失败，尝试硬删除
+          const { error: hardDeleteError } = await supabase
+            .from(operation.table)
+            .delete()
+            .eq("id", operation.recordId);
+          if (hardDeleteError) throw hardDeleteError;
+        }
+        break;
+      }
+    }
   }
 
   private async getLocalVersion(
     table: string,
     recordId: string,
   ): Promise<SyncOperation> {
-    // 模拟获取本地版本，实际实现需要根据具体的存储机制来处理
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return {
+        id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        type: "update",
+        table,
+        record: {},
+        recordId,
+        timestamp: new Date().toISOString(),
+        userId: this.userId,
+      };
+    }
+
+    const { data } = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", recordId)
+      .maybeSingle();
+
     return {
-      id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: "update",
       table,
-      record: {},
+      record: data ? data as Record<string, unknown> : {},
       recordId,
-      timestamp: new Date().toISOString(),
-      userId: "user-placeholder",
+      timestamp: (data as Record<string, unknown>)?.updated_at as string ?? (data as Record<string, unknown>)?.created_at as string ?? new Date().toISOString(),
+      userId: this.userId,
     };
   }
 
@@ -222,15 +336,42 @@ export class MobileSyncService {
       return;
     }
 
-    const resolvedOperations = conflictService.autoResolveConflicts(
-      this.conflicts,
-    );
+    // 转换为共享模块格式并使用共享冲突解决器
+    const sharedConflicts = this.conflicts.map(toSharedConflict);
+    const { resolved, unresolved } = autoResolveConflicts(sharedConflicts);
 
-    for (const op of resolvedOperations) {
+    // 将已解决的操作转换回移动端格式并应用
+    for (const sharedOp of resolved) {
+      const op = fromSharedOperation(sharedOp);
       await this.applyOperation(op);
     }
 
-    this.conflicts = this.conflicts.filter((c) => !c.resolved);
+    // 更新冲突列表：标记已解决的，保留未解决的
+    const resolvedIds = new Set(resolved.map((op) => op.id));
+    this.conflicts = this.conflicts.map((c) => {
+      const sharedC = toSharedConflict(c);
+      if (resolvedIds.has(sharedC.localVersion.id) || resolvedIds.has(sharedC.remoteVersion.id)) {
+        return { ...c, resolved: true, resolution: "remote" as const };
+      }
+      return c;
+    }).filter((c) => !c.resolved);
+
+    // 同时保留共享模块返回的未解决冲突
+    if (unresolved.length > 0) {
+      const existingIds = new Set(this.conflicts.map((c) => c.id));
+      for (const uc of unresolved) {
+        if (!existingIds.has(uc.id)) {
+          this.conflicts.push({
+            id: uc.id,
+            table: uc.table,
+            recordId: uc.recordId,
+            localVersion: fromSharedOperation(uc.localVersion),
+            remoteVersion: fromSharedOperation(uc.remoteVersion),
+            resolved: false,
+          });
+        }
+      }
+    }
   }
 
   async addOperation(operation: SyncOperation): Promise<void> {

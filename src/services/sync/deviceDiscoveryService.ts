@@ -14,9 +14,12 @@ class DeviceDiscoveryService {
   private broadcastInterval: NodeJS.Timeout | null = null;
   private deviceTimeoutIntervals: Map<string, NodeJS.Timeout> = new Map();
   private deviceId: string = '';
+  private deviceName: string = '';
 
   async start(deviceId: string, _deviceName: string): Promise<void> {
     this.deviceId = deviceId;
+    this.deviceName = _deviceName;
+    await this.registerDevice();
     this.startPolling();
   }
 
@@ -38,6 +41,43 @@ class DeviceDiscoveryService {
   }
 
   private async pollForDevices(): Promise<void> {
+    try {
+      // 通过后端 API 查询在线设备
+      const response = await fetch('/api/sync/devices', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const { devices } = await response.json() as { devices: SyncDevice[] };
+        for (const device of devices) {
+          if (device.id !== this.deviceId) {
+            this.updateDevice(device);
+          }
+        }
+      }
+    } catch {
+      // 网络不可用时静默失败
+    }
+  }
+
+  private async registerDevice(): Promise<void> {
+    try {
+      await fetch('/api/sync/devices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          deviceId: this.deviceId,
+          deviceName: this.deviceName,
+        }),
+      });
+    } catch {
+      // 注册失败时静默处理
+    }
   }
 
   // 手动添加设备（用于配对时）

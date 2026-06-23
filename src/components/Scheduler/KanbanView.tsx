@@ -270,11 +270,7 @@ export const KanbanView: React.FC<{
                           >
                             <TaskCard
                               task={task}
-                              onEdit={
-                                onTaskClick
-                                  ? () => onTaskClick(task)
-                                  : undefined
-                              }
+                              onEditTask={onTaskClick}
                             />
                           </Reorder.Item>
                         ))}

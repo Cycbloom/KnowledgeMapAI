@@ -209,7 +209,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                           >
                             <TaskCard
                               task={task}
-                              onEdit={onTaskClick ? () => onTaskClick(task) : undefined}
+                              onEditTask={onTaskClick}
                             />
                           </Reorder.Item>
                         ))}

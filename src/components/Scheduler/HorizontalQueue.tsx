@@ -251,26 +251,12 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                 <React.Fragment key={task.id}>
                   <DraggableTaskCard
                     task={task}
-                    onEdit={onEditTask ? () => onEditTask(task) : undefined}
-                    onDelete={
-                      onDeleteTask ? () => onDeleteTask(task) : undefined
-                    }
-                    onStart={
-                      onStartTask ? () => onStartTask(task) : undefined
-                    }
-                    onPause={
-                      onPauseTask ? () => onPauseTask(task) : undefined
-                    }
-                    onComplete={
-                      onCompleteTask
-                        ? () => onCompleteTask(task)
-                        : undefined
-                    }
-                    onViewDetail={
-                      onViewTaskDetail
-                        ? () => onViewTaskDetail(task)
-                        : undefined
-                    }
+                    onEditTask={onEditTask}
+                    onDeleteTask={onDeleteTask}
+                    onStartTask={onStartTask}
+                    onPauseTask={onPauseTask}
+                    onCompleteTask={onCompleteTask}
+                    onViewTaskDetail={onViewTaskDetail}
                   />
                   {visibleTasks.indexOf(task) < visibleTasks.length - 1 && (
                     <svg

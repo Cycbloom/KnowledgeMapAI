@@ -249,21 +249,11 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                       <TaskCard
                         key={task.id}
                         task={task}
-                        onEdit={onEditTask ? () => onEditTask(task) : undefined}
-                        onDelete={
-                          onDeleteTask ? () => onDeleteTask(task) : undefined
-                        }
-                        onStart={
-                          onStartTask ? () => onStartTask(task) : undefined
-                        }
-                        onPause={
-                          onPauseTask ? () => onPauseTask(task) : undefined
-                        }
-                        onComplete={
-                          onCompleteTask
-                            ? () => onCompleteTask(task)
-                            : undefined
-                        }
+                        onEditTask={onEditTask}
+                        onDeleteTask={onDeleteTask}
+                        onStartTask={onStartTask}
+                        onPauseTask={onPauseTask}
+                        onCompleteTask={onCompleteTask}
                       />
                     ))}
                   </AnimatePresence>

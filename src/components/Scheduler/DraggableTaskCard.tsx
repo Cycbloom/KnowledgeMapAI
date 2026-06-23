@@ -15,12 +15,12 @@ import { UserTask } from "@shared/types";
 
 interface DraggableTaskCardProps {
   task: UserTask;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onStart?: () => void;
-  onPause?: () => void;
-  onComplete?: () => void;
-  onViewDetail?: () => void;
+  onEditTask?: (task: UserTask) => void;
+  onDeleteTask?: (task: UserTask) => void;
+  onStartTask?: (task: UserTask) => void;
+  onPauseTask?: (task: UserTask) => void;
+  onCompleteTask?: (task: UserTask) => void;
+  onViewTaskDetail?: (task: UserTask) => void;
 }
 
 const QUEUE_COLORS = {
@@ -81,14 +81,14 @@ const STATUS_CONFIG = {
   },
 };
 
-export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
+const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
   task,
-  onEdit,
-  onDelete,
-  onStart,
-  onPause,
-  onComplete,
-  onViewDetail,
+  onEditTask,
+  onDeleteTask,
+  onStartTask,
+  onPauseTask,
+  onCompleteTask,
+  onViewTaskDetail,
 }) => {
   const queueStyle =
     QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] ||
@@ -129,15 +129,15 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   };
 
   const hasActions =
-    (task.status === "pending" && onStart) ||
-    (task.status === "paused" && onStart) ||
-    (task.status === "in_progress" && onPause) ||
+    (task.status === "pending" && onStartTask) ||
+    (task.status === "paused" && onStartTask) ||
+    (task.status === "in_progress" && onPauseTask) ||
     ((task.status === "pending" ||
       task.status === "in_progress" ||
       task.status === "paused") &&
-      onComplete) ||
-    onEdit ||
-    onDelete;
+      onCompleteTask) ||
+    onEditTask ||
+    onDeleteTask;
 
   return (
     <div
@@ -211,11 +211,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
               `}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {task.status === "pending" && onStart && (
+          {task.status === "pending" && onStartTask && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onStart();
+                onStartTask(task);
               }}
               className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
               title="开始"
@@ -224,11 +224,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
             </button>
           )}
 
-          {task.status === "paused" && onStart && (
+          {task.status === "paused" && onStartTask && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onStart();
+                onStartTask(task);
               }}
               className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
               title="继续"
@@ -237,11 +237,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
             </button>
           )}
 
-          {task.status === "in_progress" && onPause && (
+          {task.status === "in_progress" && onPauseTask && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onPause();
+                onPauseTask(task);
               }}
               className="p-1 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
               title="暂停"
@@ -253,11 +253,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
           {(task.status === "pending" ||
             task.status === "in_progress" ||
             task.status === "paused") &&
-            onComplete && (
+            onCompleteTask && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onComplete();
+                  onCompleteTask(task);
                 }}
                 className="p-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
                 title="完成"
@@ -266,11 +266,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
               </button>
             )}
 
-          {onViewDetail && (
+          {onViewTaskDetail && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onViewDetail();
+                onViewTaskDetail(task);
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
               title="详情"
@@ -279,11 +279,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
             </button>
           )}
 
-          {onEdit && (
+          {onEditTask && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onEdit();
+                onEditTask(task);
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
               title="编辑"
@@ -292,11 +292,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
             </button>
           )}
 
-          {onDelete && (
+          {onDeleteTask && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete();
+                onDeleteTask(task);
               }}
               className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
               title="删除"
@@ -329,3 +329,13 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
     </div>
   );
 };
+
+const areEqual = (prev: DraggableTaskCardProps, next: DraggableTaskCardProps) => {
+  return (
+    prev.task.id === next.task.id &&
+    prev.task.status === next.task.status &&
+    prev.task.updated_at === next.task.updated_at
+  );
+};
+
+export const DraggableTaskCard = React.memo(DraggableTaskCardInner, areEqual);

@@ -48,6 +48,8 @@ import { useTheme } from "../../../hooks";
 import {
   calculateNodeImportance,
   calculateEdgeStrength,
+  calculateGlobalMaxDegree,
+  calculateGlobalMaxChildren,
 } from "../../../lib/graphUtils";
 import {
   useCanvasTransform,
@@ -55,6 +57,11 @@ import {
   useEdgeManagement,
 } from "./MindMapCanvas/index";
 import { useSemanticZoom } from "../../../hooks/graphEditor/useSemanticZoom";
+
+const EMPTY_STRING_SET = new Set<string>();
+const EMPTY_NUMBER_MAP = new Map<string, number>();
+const EMPTY_STRING_ARRAY: string[] = [];
+const EMPTY_ALTERNATIVE_BRANCHES: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[] = [];
 
 interface MindMapCanvasProps {
   nodes: Node[];
@@ -129,10 +136,10 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       width = 800,
       height = 600,
       sidebarMode: _sidebarMode = "none",
-      focusedNodeIds = new Set(),
-      focusedLinkIds = new Set(),
+      focusedNodeIds = EMPTY_STRING_SET,
+      focusedLinkIds = EMPTY_STRING_SET,
       onCanvasClick,
-      forceShowTextIds = new Set(),
+      forceShowTextIds = EMPTY_STRING_SET,
       focusedNodeId = null,
       colorScheme = "default",
       linkStyle = "curved",
@@ -142,7 +149,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       onSelectBranch,
       onSwitchBranch,
       isExplorationMode = false,
-      historicalAlternativeBranches = [],
+      historicalAlternativeBranches = EMPTY_ALTERNATIVE_BRANCHES,
       templateLayout,
       nodeSizeMode = "fixed",
       edgeWidthMode = "fixed",
@@ -158,7 +165,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       isSelectingParent = false,
       onSelectParent,
       currentNodeId,
-      selectedParentIds = [],
+      selectedParentIds = EMPTY_STRING_ARRAY,
       leftPanelWidth = 0,
       onNavigateToGraphMap,
       onMarkNodeMastered,
@@ -166,11 +173,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       onNodeLongPress,
       isMobilePreviewMode = false,
       onOpenDetail,
-      learningPathNodeIds = new Set(),
-      learningPathOrderMap = new Map(),
+      learningPathNodeIds = EMPTY_STRING_SET,
+      learningPathOrderMap = EMPTY_NUMBER_MAP,
       highlightedPathNodeId = null,
       isNarrativeMode = false,
-      narrativeRevealedNodeIds = new Set(),
+      narrativeRevealedNodeIds = EMPTY_STRING_SET,
       narrativeCurrentNodeId = null,
       layoutMode: _layoutMode = "force",
       embeddings,
@@ -412,37 +419,67 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         const targetId = typeof link.target === 'string' ? link.target : link.target.id;
         return narrativeRevealedNodeIds.has(sourceId) && narrativeRevealedNodeIds.has(targetId);
       });
-    }, [isNarrativeMode, semanticVisibleLinks, narrativeRevealedNodeIds, layoutLinks]);
+    }, [isNarrativeMode, semanticVisibleLinks, narrativeRevealedNodeIds, isNarrativeMode ? layoutLinks : null]);
 
+    // 第一步：决定处理哪些节点（轻量，3 项依赖）
+    const nodesForImportance = useMemo(() => {
+      if (nodeSizeMode === "fixed") return null;
+      return isNarrativeMode ? narrativeFilteredNodes : semanticallyFilteredNodes;
+    }, [nodeSizeMode, isNarrativeMode, narrativeFilteredNodes, semanticallyFilteredNodes]);
+
+    // 预计算全局 maxDegree 和 maxChildren，避免每个节点重复计算
+    const globalMaxDegree = useMemo(() => {
+      if (nodeSizeMode === "fixed") return 1;
+      return calculateGlobalMaxDegree(nodes, edges);
+    }, [nodes, edges, nodeSizeMode]);
+
+    const globalMaxChildren = useMemo(() => {
+      if (nodeSizeMode === "fixed") return 1;
+      return calculateGlobalMaxChildren(nodes, edges);
+    }, [nodes, edges, nodeSizeMode]);
+
+    // 第二步：计算重要性分数（4 项依赖）
     const nodeImportanceMap = useMemo(() => {
-      if (nodeSizeMode === "fixed") return new Map<string, number>();
+      if (!nodesForImportance) return new Map<string, number>();
       const map = new Map<string, number>();
-      const nodesToProcess = isNarrativeMode ? narrativeFilteredNodes : semanticallyFilteredNodes;
-      nodesToProcess.forEach((node) => {
+      nodesForImportance.forEach((node) => {
         const importance = calculateNodeImportance(
           node as Node,
           nodes,
           edges,
           nodeStatus,
+          globalMaxDegree,
+          globalMaxChildren,
         );
         map.set(node.id, importance.score);
       });
       return map;
-    }, [isNarrativeMode, narrativeFilteredNodes, semanticallyFilteredNodes, nodes, edges, nodeStatus, nodeSizeMode]);
+    }, [nodesForImportance, nodes, edges, nodeStatus, globalMaxDegree, globalMaxChildren]);
 
+    // 第一步：决定处理哪些边（3 项依赖）
+    const linksForStrength = useMemo(() => {
+      if (edgeWidthMode === "fixed") return null;
+      return isNarrativeMode ? narrativeFilteredLinks : semanticVisibleLinks;
+    }, [edgeWidthMode, isNarrativeMode, narrativeFilteredLinks, semanticVisibleLinks]);
+
+    // 第二步：预构建 edge 查找 Map（1 项依赖）
+    const edgeLookupMap = useMemo(() => {
+      return new Map(edges.map(e => [e.id, e]));
+    }, [edges]);
+
+    // 第三步：计算边强度（3 项依赖）
     const edgeStrengthMap = useMemo(() => {
-      if (edgeWidthMode === "fixed") return new Map<string, number>();
+      if (!linksForStrength) return new Map<string, number>();
       const map = new Map<string, number>();
-      const linksToProcess = isNarrativeMode ? narrativeFilteredLinks : semanticVisibleLinks;
-      linksToProcess.forEach((link) => {
-        const edge = edges.find((e) => e.id === link.id);
+      linksForStrength.forEach((link) => {
+        const edge = edgeLookupMap.get(link.id);
         if (edge) {
           const strength = calculateEdgeStrength(edge, nodes, edges);
           map.set(link.id, strength.score);
         }
       });
       return map;
-    }, [isNarrativeMode, narrativeFilteredLinks, semanticVisibleLinks, edges, nodes, edgeWidthMode]);
+    }, [linksForStrength, edgeLookupMap, nodes]);
 
     const decayStats = useMemo(() => {
       if (coloringMode !== "decay" || !nodeStatus) return null;
@@ -659,6 +696,8 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       }
     }, [focusedNodeId, layout, containerSize.width, rightPanelWidth, interaction.visualCenterY, animateCamera]);
 
+    const nodeMap = useMemo(() => new Map((layout?.nodes ?? []).map((n) => [n.id, n])), [layout?.nodes]);
+
     if (!layout) {
       return (
         <div className="flex items-center justify-center h-full">
@@ -704,7 +743,6 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
     }
 
     const hasFocusMode = focusedNodeId !== null && focusedNodeIds.size > 0;
-    const nodeMap = new Map(layout.nodes.map((n) => [n.id, n]));
 
     return (
       <div

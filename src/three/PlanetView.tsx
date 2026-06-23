@@ -23,6 +23,7 @@ interface PlanetViewProps {
   coloringMode?: GraphColorMode;
   nodeStatus?: Record<string, any>;
   focusedNodeId?: string | null;
+  enableRotation?: boolean;
 }
 
 const NODE_COLORS = Object.freeze({
@@ -231,7 +232,8 @@ function Scene({
   coloringMode,
   nodeStatus,
   focusedNodeId,
-  isDark
+  isDark,
+  enableRotation
 }: {
   layoutNodes: LayoutNode3D[];
   layoutLinks: LayoutLink3D[];
@@ -244,6 +246,7 @@ function Scene({
   nodeStatus?: Record<string, any>;
   focusedNodeId?: string | null;
   isDark: boolean;
+  enableRotation: boolean;
 }) {
   const controlsRef = useRef<any>(null);
   const { gl, camera } = useThree();
@@ -334,6 +337,12 @@ function Scene({
   // 球体自转全局角度
   const rotationAngleRef = useRef(0);
 
+  // dirtyFlags 机制：标记矩阵和颜色是否需要更新
+  const dirtyFlags = useRef({ matrix: true, color: true });
+
+  // 缓存上一帧相机位置，用于检测相机移动
+  const prevCameraPosRef = useRef(new THREE.Vector3());
+
   // useFrame 中复用的临时对象，避免每帧创建触发 GC
   const tempMatrixRef = useRef(new THREE.Matrix4());
   const tempPositionRef = useRef(new THREE.Vector3());
@@ -393,6 +402,16 @@ function Scene({
     isAnimatingRef.current = true;
   }, [focusedNodeId, layoutNodes]);
 
+  // dirtyFlags 标记：颜色相关依赖变化时标记 colorDirty
+  useEffect(() => { dirtyFlags.current.color = true; }, [selectedNodeId]);
+  useEffect(() => { dirtyFlags.current.color = true; }, [hoveredNodeId]);
+  useEffect(() => { dirtyFlags.current.color = true; }, [coloringMode]);
+  useEffect(() => { dirtyFlags.current.color = true; }, [nodeStatus]);
+
+  // dirtyFlags 标记：矩阵相关依赖变化时标记 matrixDirty
+  useEffect(() => { dirtyFlags.current.matrix = true; }, [visibleNodes]);
+  useEffect(() => { dirtyFlags.current.matrix = true; }, [layoutNodes]);
+
   // 视锥体裁剪 + InstancedMesh 批量更新
   useFrame(({ camera: cam }, delta) => {
     // 居中动画
@@ -429,7 +448,16 @@ function Scene({
     }
 
     // 球体自转角度递增
-    rotationAngleRef.current += 0.003;
+    if (enableRotation) {
+      rotationAngleRef.current += 0.003;
+      dirtyFlags.current.matrix = true;
+    }
+
+    // 检测相机位置变化，标记矩阵需要更新
+    if (!prevCameraPosRef.current.equals(cam.position)) {
+      prevCameraPosRef.current.copy(cam.position);
+      dirtyFlags.current.matrix = true;
+    }
 
     // 视锥体裁剪逻辑
     if (layoutNodes.length > 50) {
@@ -478,44 +506,55 @@ function Scene({
     const mesh = instancedMeshRef.current;
     if (!mesh) return;
 
-    const tempMatrix = tempMatrixRef.current;
-    const tempPosition = tempPositionRef.current;
-    const tempQuaternion = tempQuaternionRef.current;
-    const tempScale = tempScaleRef.current;
-    const tempColor = tempColorRef.current;
-    const tempEuler = tempEulerRef.current;
     const count = visibleNodes.length;
 
-    for (let i = 0; i < count; i++) {
-      const node = visibleNodes[i];
-      const baseSize = 3 + (node.importance / 5) * 5;
+    // 矩阵更新
+    if (dirtyFlags.current.matrix) {
+      const tempMatrix = tempMatrixRef.current;
+      const tempPosition = tempPositionRef.current;
+      const tempQuaternion = tempQuaternionRef.current;
+      const tempScale = tempScaleRef.current;
+      const tempEuler = tempEulerRef.current;
 
-      // 计算距离和缩放
-      tempPosition.set(node.x, node.z, node.y);
-      const distance = cam.position.distanceTo(tempPosition);
-      const scaleFactor = Math.max(0.3, Math.min(2, distance / 200));
+      for (let i = 0; i < count; i++) {
+        const node = visibleNodes[i];
+        const baseSize = 3 + (node.importance / 5) * 5;
 
-      // 更新矩阵：位置 + 旋转 + 缩放
-      tempScale.set(baseSize * scaleFactor, baseSize * scaleFactor, baseSize * scaleFactor);
-      tempEuler.set(0, rotationAngleRef.current, 0);
-      tempQuaternion.setFromEuler(tempEuler);
-      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
-      mesh.setMatrixAt(i, tempMatrix);
+        // 计算距离和缩放
+        tempPosition.set(node.x, node.z, node.y);
+        const distance = cam.position.distanceTo(tempPosition);
+        const scaleFactor = Math.max(0.3, Math.min(2, distance / 200));
 
-      // 更新颜色
-      if (node.id === selectedNodeId) {
-        tempColor.copy(NODE_COLORS.selected);
-      } else if (node.id === hoveredNodeId) {
-        tempColor.copy(NODE_COLORS.hover);
-      } else {
-        tempColor.copy(getNodeColor(node.id, node.level));
+        // 更新矩阵：位置 + 旋转 + 缩放
+        tempScale.set(baseSize * scaleFactor, baseSize * scaleFactor, baseSize * scaleFactor);
+        tempEuler.set(0, rotationAngleRef.current, 0);
+        tempQuaternion.setFromEuler(tempEuler);
+        tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+        mesh.setMatrixAt(i, tempMatrix);
       }
-      mesh.setColorAt(i, tempColor);
+
+      mesh.instanceMatrix.needsUpdate = true;
+      dirtyFlags.current.matrix = false;
     }
 
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) {
-      mesh.instanceColor.needsUpdate = true;
+    // 颜色更新
+    if (dirtyFlags.current.color) {
+      const tempColor = tempColorRef.current;
+
+      for (let i = 0; i < count; i++) {
+        const node = visibleNodes[i];
+        if (node.id === selectedNodeId) {
+          tempColor.copy(NODE_COLORS.selected);
+        } else if (node.id === hoveredNodeId) {
+          tempColor.copy(NODE_COLORS.hover);
+        } else {
+          tempColor.copy(getNodeColor(node.id, node.level));
+        }
+        mesh.setColorAt(i, tempColor);
+      }
+
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      dirtyFlags.current.color = false;
     }
   });
 
@@ -704,7 +743,8 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
   colorScheme = 'default',
   coloringMode = 'level',
   nodeStatus,
-  focusedNodeId
+  focusedNodeId,
+  enableRotation = false
 }) => {
   const { isDark } = useTheme();
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -756,6 +796,7 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
             nodeStatus={nodeStatus}
             focusedNodeId={focusedNodeId}
             isDark={isDark}
+            enableRotation={enableRotation}
           />
         </Suspense>
       </Canvas>

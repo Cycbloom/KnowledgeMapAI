@@ -277,7 +277,7 @@ export const Scheduler: React.FC = () => {
     [allTasks],
   );
 
-  const handleCreateTask = async (data: CreateUserTaskData) => {
+  const handleCreateTask = useCallback(async (data: CreateUserTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
       message.success(t("scheduler.taskCreated"));
@@ -287,9 +287,9 @@ export const Scheduler: React.FC = () => {
         err instanceof Error ? err.message : t("scheduler.createTaskFailed");
       message.error(errorMessage);
     }
-  };
+  }, [createTaskMutation, t]);
 
-  const handleUpdateTask = async (data: CreateUserTaskData) => {
+  const handleUpdateTask = useCallback(async (data: CreateUserTaskData) => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
@@ -301,9 +301,9 @@ export const Scheduler: React.FC = () => {
         err instanceof Error ? err.message : t("scheduler.updateTaskFailed");
       message.error(errorMessage);
     }
-  };
+  }, [editingTask, updateTaskMutation, t]);
 
-  const handleDeleteTask = async (task: UserTask) => {
+  const handleDeleteTask = useCallback(async (task: UserTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskDeleted"));
@@ -312,7 +312,7 @@ export const Scheduler: React.FC = () => {
         err instanceof Error ? err.message : t("scheduler.deleteTaskFailed");
       message.error(errorMessage);
     }
-  };
+  }, [deleteTaskMutation, t]);
 
   const handleMoveTask = async (taskId: string, targetQueue: number) => {
     try {
@@ -358,7 +358,7 @@ export const Scheduler: React.FC = () => {
     }
   }, []);
 
-  const handleStartTask = async (task: UserTask) => {
+  const handleStartTask = useCallback(async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskStarted"));
@@ -376,9 +376,9 @@ export const Scheduler: React.FC = () => {
         err instanceof Error ? err.message : t("scheduler.startTaskFailed");
       message.error(errorMessage);
     }
-  };
+  }, [startTaskMutation, t, fetchAndActivateFirstSubtask]);
 
-  const handlePauseTask = async (task: UserTask) => {
+  const handlePauseTask = useCallback(async (task: UserTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskPaused"));
@@ -387,9 +387,9 @@ export const Scheduler: React.FC = () => {
         err instanceof Error ? err.message : t("scheduler.pauseTaskFailed");
       message.error(errorMessage);
     }
-  };
+  }, [pauseTaskMutation, t]);
 
-  const handleCompleteTask = async (task: UserTask) => {
+  const handleCompleteTask = useCallback(async (task: UserTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskCompleted"));
@@ -398,7 +398,7 @@ export const Scheduler: React.FC = () => {
         err instanceof Error ? err.message : t("scheduler.completeTaskFailed");
       message.error(errorMessage);
     }
-  };
+  }, [completeTaskMutation, t]);
 
   const openAddTaskForm = (queueLevel: number = 2) => {
     setDefaultQueueLevel(queueLevel);
@@ -406,14 +406,14 @@ export const Scheduler: React.FC = () => {
     setShowTaskForm(true);
   };
 
-  const openEditTaskForm = (task: UserTask) => {
+  const openEditTaskForm = useCallback((task: UserTask) => {
     setEditingTask(task);
     setShowTaskForm(true);
-  };
+  }, []);
 
-  const handleViewTaskDetail = (task: UserTask) => {
+  const handleViewTaskDetail = useCallback((task: UserTask) => {
     navigate(`/scheduler/task/${task.id}`);
-  };
+  }, [navigate]);
 
   const formatTotalTime = (minutes: number) => {
     if (minutes === 0) return t("scheduler.minutes", { count: 0 });

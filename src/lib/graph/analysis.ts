@@ -308,42 +308,59 @@ export const findMissingConnections = (
   return suggestions.slice(0, maxSuggestions);
 };
 
+export function calculateGlobalMaxDegree(nodes: Node[], edges: Edge[]): number {
+  return Math.max(1, ...nodes.map(n =>
+    edges.filter(e =>
+      normalizeId(e.source_knowledge_point_id) === normalizeId(n.id) ||
+      normalizeId(e.target_knowledge_point_id) === normalizeId(n.id)
+    ).length
+  ));
+}
+
+export function calculateGlobalMaxChildren(nodes: Node[], edges: Edge[]): number {
+  return Math.max(1, ...nodes.map(n =>
+    edges.filter(e => normalizeId(e.source_knowledge_point_id) === normalizeId(n.id)).length
+  ));
+}
+
 export const calculateNodeImportance = (
   node: Node,
   nodes: Node[],
   edges: Edge[],
-  nodeStatus?: Record<string, { mastered?: boolean }>
+  nodeStatus?: Record<string, { mastered?: boolean }>,
+  maxDegree?: number,
+  maxChildren?: number
 ): NodeImportance => {
   const nodeId = normalizeId(node.id);
-  
-  const degree = edges.filter(e => 
-    normalizeId(e.source_knowledge_point_id) === nodeId || 
+
+  const degree = edges.filter(e =>
+    normalizeId(e.source_knowledge_point_id) === nodeId ||
     normalizeId(e.target_knowledge_point_id) === nodeId
   ).length;
-  
-  const childrenCount = edges.filter(e => 
+
+  const childrenCount = edges.filter(e =>
     normalizeId(e.source_knowledge_point_id) === nodeId
   ).length;
-  
+
   const level = getLevel(node, edges);
   const levelWeight = LEVEL_WEIGHTS[level] || 0.2;
-  
+
   const contentLength = node.content ? Math.min(node.content.length / 2000, 1.0) : 0;
-  
+
   const masteryWeight = nodeStatus?.[node.id]?.mastered ? 0.1 : 0;
-  
-  const maxDegree = Math.max(1, ...nodes.map(n =>
-    edges.filter(e => 
-      normalizeId(e.source_knowledge_point_id) === normalizeId(n.id) || 
+
+  const finalMaxDegree = maxDegree ?? Math.max(1, ...nodes.map(n =>
+    edges.filter(e =>
+      normalizeId(e.source_knowledge_point_id) === normalizeId(n.id) ||
       normalizeId(e.target_knowledge_point_id) === normalizeId(n.id)
     ).length
   ));
-  const normalizedDegree = Math.min(degree / maxDegree, 1.0);
-  
-  const maxChildren = Math.max(1, ...nodes.map(n =>
+  const normalizedDegree = Math.min(degree / finalMaxDegree, 1.0);
+
+  const finalMaxChildren = maxChildren ?? Math.max(1, ...nodes.map(n =>
     edges.filter(e => normalizeId(e.source_knowledge_point_id) === normalizeId(n.id)).length
   ));
-  const normalizedChildren = Math.min(childrenCount / maxChildren, 1.0);
+  const normalizedChildren = Math.min(childrenCount / finalMaxChildren, 1.0);
   
   const score = (
     normalizedDegree * 0.3 +

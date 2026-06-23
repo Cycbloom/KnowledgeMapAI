@@ -122,7 +122,6 @@ export interface CreateSessionOptions {
 
 export interface ExecuteResult {
   session: AgentSession;
-  stream?: ReadableStream<string>;
 }
 
 export type AnalysisGoal =
@@ -247,4 +246,17 @@ export interface NodeRelation {
   }>;
   totalRelations: number;
   depth: number;
+}
+
+export type AgentSSEEventType =
+  | "tool_call_start"
+  | "tool_call_result"
+  | "agent_message"
+  | "awaiting_confirmation"
+  | "session_completed"
+  | "session_failed";
+
+export interface AgentSSEEvent {
+  type: AgentSSEEventType;
+  data: unknown;
 }

@@ -1,4 +1,4 @@
-import { request } from "./client";
+import { request, getHeaders, getApiUrl } from "./client";
 
 export type RelationType =
   | "prerequisite"
@@ -120,6 +120,88 @@ export interface PendingAction {
   executedAt?: string;
 }
 
+export type AgentSSEEventType =
+  | "tool_call_start"
+  | "tool_call_result"
+  | "agent_message"
+  | "awaiting_confirmation"
+  | "session_completed"
+  | "session_failed";
+
+export interface AgentSSEEvent {
+  type: AgentSSEEventType;
+  data: unknown;
+}
+
+export interface ToolCallStartData {
+  toolName: string;
+  args: Record<string, unknown>;
+}
+
+export interface ToolCallResultData {
+  toolName: string;
+  result: unknown;
+}
+
+export interface AgentMessageData {
+  content: string;
+}
+
+export interface AwaitingConfirmationData {
+  pendingActions: PendingAction[];
+}
+
+export interface SessionCompletedData {
+  session: AgentSession;
+}
+
+export interface SessionFailedData {
+  error: string;
+}
+
+async function parseSSEStream(
+  response: Response,
+  onEvent: (event: AgentSSEEvent) => void,
+): Promise<void> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("No response body");
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        try {
+          const event: AgentSSEEvent = JSON.parse(line.slice(6));
+          onEvent(event);
+        } catch {
+          // Skip malformed events
+        }
+      }
+    }
+  }
+
+  // Process remaining buffer
+  if (buffer.startsWith("data: ")) {
+    try {
+      const event: AgentSSEEvent = JSON.parse(buffer.slice(6));
+      onEvent(event);
+    } catch {
+      // Skip malformed events
+    }
+  }
+}
+
 export const agentApi = {
   createSession: (options?: {
     skill_id?: string;
@@ -201,7 +283,7 @@ export const agentApi = {
   confirmAction: (
     sessionId: string,
     actionId: string,
-  ): Promise<{ success: boolean; result?: unknown }> =>
+  ): Promise<{ success: boolean; result?: unknown; needsResume?: boolean }> =>
     request(`/agent/sessions/${sessionId}/actions/${actionId}/confirm`, {
       method: "POST",
     }),
@@ -209,7 +291,7 @@ export const agentApi = {
   rejectAction: (
     sessionId: string,
     actionId: string,
-  ): Promise<{ success: boolean }> =>
+  ): Promise<{ success: boolean; needsResume?: boolean }> =>
     request(`/agent/sessions/${sessionId}/actions/${actionId}/reject`, {
       method: "POST",
     }),
@@ -246,4 +328,88 @@ export const agentApi = {
       method: "POST",
       body: JSON.stringify({ action_ids: actionIds }),
     }),
+
+  executeSessionStream: async (
+    sessionId: string,
+    customPrompt: string | undefined,
+    onEvent: (event: AgentSSEEvent) => void,
+    onError?: (error: Error) => void,
+    onComplete?: () => void,
+  ): Promise<AbortController> => {
+    const controller = new AbortController();
+    const baseUrl = await getApiUrl();
+
+    fetch(`${baseUrl}/agent/sessions/${sessionId}/execute`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(),
+      },
+      body: JSON.stringify({ custom_prompt: customPrompt }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+        await parseSSEStream(response, onEvent);
+        onComplete?.();
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          onError?.(error);
+        }
+      });
+
+    return controller;
+  },
+
+  resumeSessionStream: async (
+    sessionId: string,
+    onEvent: (event: AgentSSEEvent) => void,
+    onError?: (error: Error) => void,
+    onComplete?: () => void,
+  ): Promise<AbortController> => {
+    const controller = new AbortController();
+    const baseUrl = await getApiUrl();
+
+    fetch(`${baseUrl}/agent/sessions/${sessionId}/resume`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(),
+      },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+        await parseSSEStream(response, onEvent);
+        onComplete?.();
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          onError?.(error);
+        }
+      });
+
+    return controller;
+  },
+
+  getSessions: async (): Promise<{ sessions: AgentSession[] }> => {
+    const baseUrl = await getApiUrl();
+    const response = await fetch(`${baseUrl}/agent/sessions`, {
+      headers: getHeaders(),
+    });
+    return response.json();
+  },
+
+  deleteSession: async (sessionId: string): Promise<void> => {
+    const baseUrl = await getApiUrl();
+    await fetch(`${baseUrl}/agent/sessions/${sessionId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+  },
 };

@@ -112,6 +112,19 @@ export interface AnalysisGoal {
   maxIterations?: number;
 }
 
+export type AgentSSEEventType =
+  | "tool_call_start"
+  | "tool_call_result"
+  | "agent_message"
+  | "awaiting_confirmation"
+  | "session_completed"
+  | "session_failed";
+
+export interface AgentSSEEvent {
+  type: AgentSSEEventType;
+  data: unknown;
+}
+
 export interface ExecuteResult {
   success: boolean;
   session: AgentSession;
@@ -165,12 +178,12 @@ export interface IAgentApi {
   confirmAction(
     sessionId: string,
     actionId: string,
-  ): Promise<{ success: boolean; result?: unknown }>;
+  ): Promise<{ success: boolean; result?: unknown; needsResume?: boolean }>;
 
   rejectAction(
     sessionId: string,
     actionId: string,
-  ): Promise<{ success: boolean }>;
+  ): Promise<{ success: boolean; needsResume?: boolean }>;
 
   batchConfirmActions(
     sessionId: string,
@@ -196,4 +209,23 @@ export interface IAgentApi {
       error?: string;
     }>;
   }>;
+
+  executeSessionStream(
+    sessionId: string,
+    customPrompt: string | undefined,
+    onEvent: (event: AgentSSEEvent) => void,
+    onError?: (error: Error) => void,
+    onComplete?: () => void,
+  ): Promise<AbortController>;
+
+  resumeSessionStream(
+    sessionId: string,
+    onEvent: (event: AgentSSEEvent) => void,
+    onError?: (error: Error) => void,
+    onComplete?: () => void,
+  ): Promise<AbortController>;
+
+  getSessions(): Promise<{ sessions: AgentSession[] }>;
+
+  deleteSession(sessionId: string): Promise<void>;
 }

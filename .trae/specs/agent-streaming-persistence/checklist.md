@@ -1,0 +1,27 @@
+- [x] agent_sessions 数据库表已创建，包含 id/user_id/status/skill_id/graph_ids/result/structured_result/created_at/updated_at 字段
+- [x] agent_messages 数据库表已创建，包含 id/session_id/role/content/tool_name/tool_args/tool_result/timestamp 字段
+- [x] agent_tool_calls 数据库表已创建，包含 id/session_id/tool_name/args/result/status/timestamp 字段
+- [x] agent_pending_actions 数据库表已创建，包含 id/session_id/tool_name/args/category/risk_level/description/status/result/created_at/executed_at 字段
+- [x] SessionManager.create() 写入数据库后再更新内存缓存
+- [x] SessionManager.get() 缓存未命中时从数据库加载
+- [x] SessionManager.addMessage() 写入 agent_messages 表
+- [x] SessionManager.addToolCall() 写入 agent_tool_calls 表
+- [x] PendingAction 存储在 agent_pending_actions 表中
+- [x] confirmAction/rejectAction 更新数据库状态
+- [x] executeSession 通过 SSE 推送 tool_call_start 事件
+- [x] executeSession 通过 SSE 推送 tool_call_result 事件
+- [x] executeSession 通过 SSE 推送 agent_message 事件
+- [x] executeSession 遇到写操作时推送 awaiting_confirmation 事件，SSE 流保持连接
+- [x] executeSession 结束时推送 session_completed/session_failed 事件并关闭 SSE 流
+- [x] resumeSession 方法实现：从数据库加载消息历史，重建 LLM 上下文，重新进入 ReAct 循环
+- [x] confirmAction 所有 pending 操作处理完毕后返回 needsResume: true
+- [x] rejectAction 所有 pending 操作处理完毕后返回 needsResume: true
+- [x] parseStructuredResult 使用 response_format 替代正则解析
+- [x] POST /sessions/:id/execute 路由返回 SSE 流（text/event-stream）
+- [x] POST /sessions/:id/resume 路由实现，返回 SSE 流
+- [x] 前端 executeSessionStream 使用 fetch + ReadableStream 接收 SSE 事件
+- [x] 前端 AgentAnalysisPanel 执行阶段实时展示工具调用和中间消息，替代静态 Loader
+- [x] 前端确认操作后自动建立 resume SSE 连接继续接收事件
+- [x] ExecuteResult 接口已移除 stream 字段
+- [x] 类型检查通过（npm run check，无新增错误）
+- [x] 代码检查通过（预存错误与本次修改无关）

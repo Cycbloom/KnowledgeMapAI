@@ -68,7 +68,7 @@ router.post(
     const { skill_id, graph_ids, custom_prompt } = req.body;
 
     const agentService = new AgentService(req.supabase!);
-    const session = agentService.createSession(userId, {
+    const session = await agentService.createSession(userId, {
       skillId: skill_id,
       graphIds: graph_ids,
       customPrompt: custom_prompt,
@@ -85,18 +85,44 @@ router.post(
 );
 
 router.get(
+  "/sessions",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
+    }
+
+    const agentService = new AgentService(req.supabase!);
+    const sessions = await agentService.getSessionsByUserId(userId);
+    res.json({ sessions });
+  },
+);
+
+router.get(
   "/sessions/:id",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const agentService = new AgentService(req.supabase!);
-    const session = agentService.getSession(id);
+    const session = await agentService.getSession(id);
 
     if (!session) {
       throw new AppError("Session not found", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json({ session });
+  },
+);
+
+router.delete(
+  "/sessions/:id",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const agentService = new AgentService(req.supabase!);
+    await agentService.deleteSession(id);
+    res.json({ success: true });
   },
 );
 
@@ -113,21 +139,62 @@ router.post(
     const { id } = req.params;
     const { custom_prompt } = req.body;
 
+    // Set SSE headers
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
     const agentService = new AgentService(req.supabase!);
 
     try {
-      const result = await agentService.executeSession(
-        id,
-        userId,
-        custom_prompt,
-      );
-      res.json(result);
+      await agentService.executeSession(id, userId, res, custom_prompt);
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to execute agent session", error);
-      res
-        .status(500)
-        .json({ error: err.message || "Failed to execute session" });
+      // If headers not sent, send error as JSON; otherwise try SSE
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message || "Failed to execute session" });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: "session_failed", data: { error: err.message } })}\n\n`);
+        res.end();
+      }
+    }
+  },
+);
+
+router.post(
+  "/sessions/:id/resume",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
+    }
+
+    const { id } = req.params;
+
+    // Set SSE headers
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    const agentService = new AgentService(req.supabase!);
+
+    try {
+      await agentService.resumeSession(id, userId, res);
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Failed to resume agent session", error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message || "Failed to resume session" });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: "session_failed", data: { error: err.message } })}\n\n`);
+        res.end();
+      }
     }
   },
 );
@@ -217,7 +284,7 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const agentService = new AgentService(req.supabase!);
-    const pendingActions = agentService.getPendingActions(id);
+    const pendingActions = await agentService.getPendingActions(id);
     res.json({ pendingActions });
   },
 );
@@ -237,7 +304,7 @@ router.post(
       if (!result.success) {
         throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
       }
-      res.json({ success: true, result: result.result });
+      res.json({ success: true, result: result.result, needsResume: result.needsResume });
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to confirm action", error);
@@ -257,11 +324,11 @@ router.post(
     const { id, actionId } = req.params;
     const agentService = new AgentService(req.supabase!);
     try {
-      const result = agentService.rejectAction(id, actionId);
+      const result = await agentService.rejectAction(id, actionId);
       if (!result.success) {
         throw new AppError(result.error ?? "操作失败", 400, ErrorCodes.VALIDATION_ERROR);
       }
-      res.json({ success: true });
+      res.json({ success: true, needsResume: result.needsResume });
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to reject action", error);
@@ -284,7 +351,7 @@ router.post(
     const agentService = new AgentService(req.supabase!);
     try {
       const results = await agentService.batchConfirmActions(id, action_ids);
-      res.json({ success: true, results });
+      res.json({ success: true, results: results.results, needsResume: results.needsResume });
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to batch confirm actions", error);
@@ -306,8 +373,8 @@ router.post(
     const { action_ids } = req.body;
     const agentService = new AgentService(req.supabase!);
     try {
-      const results = agentService.batchRejectActions(id, action_ids);
-      res.json({ success: true, results });
+      const results = await agentService.batchRejectActions(id, action_ids);
+      res.json({ success: true, results: results.results, needsResume: results.needsResume });
     } catch (error) {
       const err = error as Error;
       logger.error("Failed to batch reject actions", error);

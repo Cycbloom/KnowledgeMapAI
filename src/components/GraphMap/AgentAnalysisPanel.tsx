@@ -1,12 +1,19 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Bot, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { X, Bot, Loader2, AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   agentApi,
   type AgentSession,
   type SkillDefinition,
   type PendingAction,
+  type AgentSSEEvent,
+  type ToolCallStartData,
+  type ToolCallResultData,
+  type AgentMessageData,
+  type AwaitingConfirmationData,
+  type SessionCompletedData,
+  type SessionFailedData,
 } from "../../services/api/agent";
 import { ActionConfirmationPanel } from "./ActionConfirmationPanel";
 import { SkillSelector } from "./SkillSelector";
@@ -22,6 +29,14 @@ interface ConfirmState {
   mode: AnalysisMode;
   skill?: SkillDefinition;
   customPrompt: string;
+}
+
+interface SSEEventDisplay {
+  id: string;
+  type: AgentSSEEvent['type'];
+  label: string;
+  detail?: string;
+  status: 'running' | 'completed' | 'failed';
 }
 
 interface AgentAnalysisPanelProps {
@@ -56,6 +71,9 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     mode: 'quick',
     customPrompt: '',
   });
+  const [sseEvents, setSseEvents] = useState<SSEEventDisplay[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const sseEventIdRef = useRef(0);
 
   const effectiveGraphIds = useMemo(() => selectedGraphIds, [selectedGraphIds]);
   const effectiveGraphTitles = useMemo(() => {
@@ -76,6 +94,8 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
       setSelectedSkill(null);
       setSession(null);
       setError(null);
+      setSseEvents([]);
+      sseEventIdRef.current = 0;
     }
   }, [isOpen]);
 
@@ -121,6 +141,96 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     handleSelectSkillForConfirm(skill, 'quick');
   }, [handleSelectSkillForConfirm]);
 
+  const handleSSEEvent = useCallback((event: AgentSSEEvent) => {
+    const eventId = String(++sseEventIdRef.current);
+
+    switch (event.type) {
+      case "tool_call_start": {
+        const data = event.data as ToolCallStartData;
+        setSseEvents(prev => [...prev, {
+          id: eventId,
+          type: event.type,
+          label: `正在调用 ${data.toolName}...`,
+          detail: Object.keys(data.args).length > 0 ? JSON.stringify(data.args) : undefined,
+          status: 'running',
+        }]);
+        break;
+      }
+      case "tool_call_result": {
+        const data = event.data as ToolCallResultData;
+        setSseEvents(prev => {
+          // Mark the matching tool_call_start as completed
+          const lastStartIdx = [...prev].reverse().findIndex(
+            e => e.type === 'tool_call_start' && e.label.includes(data.toolName) && e.status === 'running'
+          );
+          if (lastStartIdx >= 0) {
+            const actualIdx = prev.length - 1 - lastStartIdx;
+            const updated = [...prev];
+            updated[actualIdx] = { ...updated[actualIdx], status: 'completed' };
+            return [...updated, {
+              id: eventId,
+              type: event.type,
+              label: `${data.toolName} 完成`,
+              detail: data.result !== undefined ? String(data.result).slice(0, 200) : undefined,
+              status: 'completed',
+            }];
+          }
+          return [...prev, {
+            id: eventId,
+            type: event.type,
+            label: `${data.toolName} 完成`,
+            detail: data.result !== undefined ? String(data.result).slice(0, 200) : undefined,
+            status: 'completed',
+          }];
+        });
+        break;
+      }
+      case "agent_message": {
+        const data = event.data as AgentMessageData;
+        setSseEvents(prev => [...prev, {
+          id: eventId,
+          type: event.type,
+          label: data.content,
+          status: 'completed',
+        }]);
+        break;
+      }
+      case "awaiting_confirmation": {
+        const data = event.data as AwaitingConfirmationData;
+        setPendingActions(data.pendingActions);
+        setSseEvents(prev => [...prev, {
+          id: eventId,
+          type: event.type,
+          label: '等待确认操作',
+          status: 'running',
+        }]);
+        break;
+      }
+      case "session_completed": {
+        const data = event.data as SessionCompletedData;
+        setSession(data.session);
+        setSseEvents(prev => [...prev, {
+          id: eventId,
+          type: event.type,
+          label: '分析完成',
+          status: 'completed',
+        }]);
+        break;
+      }
+      case "session_failed": {
+        const data = event.data as SessionFailedData;
+        setError(data.error);
+        setSseEvents(prev => [...prev, {
+          id: eventId,
+          type: event.type,
+          label: `分析失败: ${data.error}`,
+          status: 'failed',
+        }]);
+        break;
+      }
+    }
+  }, []);
+
   const handleConfirmAnalysis = useCallback(async () => {
     if (!confirmState.skill && confirmState.mode !== 'custom') return;
 
@@ -134,6 +244,8 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     setStep('execute');
     setIsLoading(true);
     setError(null);
+    setSseEvents([]);
+    sseEventIdRef.current = 0;
 
     try {
       const { session: newSession } = await agentApi.createSession({
@@ -143,23 +255,24 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
       });
       setSession(newSession);
 
-      const result = await agentApi.executeSession(newSession.id);
-      setSession(result.session);
-
-      if (result.session.status === "awaiting_confirmation") {
-        try {
-          const { pendingActions: actions } = await agentApi.getPendingActions(newSession.id);
-          setPendingActions(actions);
-        } catch {
-          // Ignore fetch errors, panel will show empty
-        }
-      }
+      const controller = await agentApi.executeSessionStream(
+        newSession.id,
+        confirmState.mode === 'custom' ? confirmState.customPrompt : undefined,
+        handleSSEEvent,
+        (err) => {
+          setError(err.message);
+          setIsLoading(false);
+        },
+        () => {
+          setIsLoading(false);
+        },
+      );
+      abortControllerRef.current = controller;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
-    } finally {
       setIsLoading(false);
     }
-  }, [confirmState, skills, effectiveGraphIds]);
+  }, [confirmState, skills, effectiveGraphIds, handleSSEEvent]);
 
   const handleCancelConfirm = useCallback(() => {
     setStep('select');
@@ -171,11 +284,15 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
   }, []);
 
   const handleReset = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
     setSelectedSkill(null);
     setSession(null);
     setError(null);
     setDismissedSuggestions(new Set());
     setPendingActions([]);
+    setSseEvents([]);
+    sseEventIdRef.current = 0;
     setStep('select');
     setConfirmState({ mode: 'quick', customPrompt: '' });
   }, []);
@@ -207,13 +324,32 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     setPendingActions([]);
     if (session?.id) {
       try {
-        const { session: updatedSession } = await agentApi.getSession(session.id);
-        setSession(updatedSession);
+        // After confirming/rejecting actions, resume the session via SSE
+        setIsLoading(true);
+        const controller = await agentApi.resumeSessionStream(
+          session.id,
+          handleSSEEvent,
+          (err) => {
+            setError(err.message);
+            setIsLoading(false);
+          },
+          () => {
+            setIsLoading(false);
+          },
+        );
+        abortControllerRef.current = controller;
       } catch {
-        // Ignore fetch errors
+        // Fallback: fetch session state if resume fails
+        try {
+          const { session: updatedSession } = await agentApi.getSession(session.id);
+          setSession(updatedSession);
+        } catch {
+          // Ignore fetch errors
+        }
+        setIsLoading(false);
       }
     }
-  }, [session?.id]);
+  }, [session?.id, handleSSEEvent]);
 
   const activeMergeSuggestions =
     session?.structuredResult?.merge_suggestions?.filter(
@@ -287,10 +423,49 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
                 </div>
               </div>
 
-              {isLoading && !session?.result && (
+              {isLoading && sseEvents.length === 0 && (
                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>{t('graphMap.agentAnalysis.analyzing')}</span>
+                </div>
+              )}
+
+              {sseEvents.length > 0 && (
+                <div className="space-y-1.5 pl-2 border-l-2 border-primary-200 dark:border-primary-800">
+                  {sseEvents.map((evt) => (
+                    <div
+                      key={evt.id}
+                      className={`flex items-start gap-2 p-2 rounded text-xs ${
+                        evt.type === 'agent_message'
+                          ? 'bg-primary-50 dark:bg-primary-900/20'
+                          : evt.type === 'session_failed'
+                            ? 'bg-red-50 dark:bg-red-900/20'
+                            : 'bg-gray-50 dark:bg-slate-800'
+                      }`}
+                    >
+                      {evt.status === 'running' && (
+                        <Loader2 className="w-3 h-3 animate-spin text-primary-500 mt-0.5 shrink-0" />
+                      )}
+                      {evt.status === 'completed' && (
+                        <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 shrink-0" />
+                      )}
+                      {evt.status === 'failed' && (
+                        <AlertCircle className="w-3 h-3 text-red-500 mt-0.5 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-gray-700 dark:text-gray-300">{evt.label}</div>
+                        {evt.detail && (
+                          <div className="text-gray-400 dark:text-gray-500 line-clamp-2 mt-0.5">{evt.detail}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex items-center gap-2 p-2 text-xs text-gray-400 dark:text-gray-500">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>{t('graphMap.agentAnalysis.analyzing')}</span>
+                    </div>
+                  )}
                 </div>
               )}
 

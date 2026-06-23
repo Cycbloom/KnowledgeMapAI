@@ -16,6 +16,7 @@ import type {
   MergeConflict,
   MergeResult,
   PaginatedResult,
+  BranchInfo,
 } from '../../../shared/types/graphVersion';
 import { cacheService } from '../common/cacheService';
 import { appEventBus } from '../core/eventBus';
@@ -46,6 +47,8 @@ interface ApplyMergeResult {
   edgesAdded: number;
   nodesModified: number;
   edgesModified: number;
+  nodesRemoved: number;
+  edgesRemoved: number;
   conflictsResolved: number;
 }
 
@@ -87,7 +90,7 @@ export class GraphVersionService {
   ): Promise<GraphSnapshot> {
     const { data: nodes, error: nodesError } = await supabase
       .from('graph_nodes')
-      .select('id, knowledge_point_id, x_position, y_position, level, is_accepted, knowledge_points(title)')
+      .select('id, knowledge_point_id, x_position, y_position, level, is_accepted, knowledge_points(title, content, summary)')
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
@@ -113,6 +116,12 @@ export class GraphVersionService {
       title: Array.isArray(node.knowledge_points)
         ? (node.knowledge_points[0]?.title ?? '')
         : (node.knowledge_points?.title ?? ''),
+      content: Array.isArray(node.knowledge_points)
+        ? (node.knowledge_points[0]?.content ?? '')
+        : (node.knowledge_points?.content ?? ''),
+      summary: Array.isArray(node.knowledge_points)
+        ? (node.knowledge_points[0]?.summary ?? null)
+        : (node.knowledge_points?.summary ?? null),
       xPosition: node.x_position,
       yPosition: node.y_position,
       level: node.level,
@@ -607,7 +616,41 @@ export class GraphVersionService {
 
         const createdGraphId = newGraphRows[0].id as string;
 
-        // 复制节点
+        // 复制知识点（创建独立副本）
+        const { rows: sourceKps } = await client.query(
+          `SELECT kp.id, kp.title, kp.content, kp.summary, kp.learning_material, kp.keywords, kp.properties, kp.visibility, kp.owner_id, kp.mastery_level
+           FROM knowledge_points kp
+           JOIN graph_nodes gn ON gn.knowledge_point_id = kp.id
+           WHERE gn.graph_id = $1 AND gn.deleted_at IS NULL`,
+          [graphId],
+        );
+
+        const kpIdMap = new Map<string, string>(); // old kp id -> new kp id
+
+        if (sourceKps.length > 0) {
+          for (const kp of sourceKps) {
+            const { rows: newKpRows } = await client.query(
+              `INSERT INTO knowledge_points (title, content, summary, learning_material, keywords, properties, visibility, owner_id, mastery_level, source_knowledge_point_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+               RETURNING id`,
+              [
+                kp.title,
+                kp.content,
+                kp.summary,
+                kp.learning_material,
+                kp.keywords ? JSON.stringify(kp.keywords) : null,
+                kp.properties ? JSON.stringify(kp.properties) : null,
+                kp.visibility,
+                kp.owner_id,
+                kp.mastery_level ?? 0,
+                kp.id, // source_knowledge_point_id 指向原始记录
+              ],
+            );
+            kpIdMap.set(kp.id, newKpRows[0].id as string);
+          }
+        }
+
+        // 复制节点（使用新的 knowledge_point_id）
         const { rows: sourceNodes } = await client.query(
           'SELECT knowledge_point_id, x_position, y_position, level, is_accepted FROM graph_nodes WHERE graph_id = $1 AND deleted_at IS NULL',
           [graphId],
@@ -615,14 +658,15 @@ export class GraphVersionService {
 
         if (sourceNodes.length > 0) {
           for (const node of sourceNodes) {
+            const newKpId = kpIdMap.get(node.knowledge_point_id) ?? node.knowledge_point_id;
             await client.query(
               'INSERT INTO graph_nodes (graph_id, knowledge_point_id, x_position, y_position, level, is_accepted) VALUES ($1, $2, $3, $4, $5, $6)',
-              [createdGraphId, node.knowledge_point_id, node.x_position, node.y_position, node.level, node.is_accepted],
+              [createdGraphId, newKpId, node.x_position, node.y_position, node.level, node.is_accepted],
             );
           }
         }
 
-        // 复制边
+        // 复制边（使用新的 knowledge_point_id）
         const { rows: sourceEdges } = await client.query(
           'SELECT source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow FROM edges WHERE graph_id = $1 AND deleted_at IS NULL',
           [graphId],
@@ -630,9 +674,11 @@ export class GraphVersionService {
 
         if (sourceEdges.length > 0) {
           for (const edge of sourceEdges) {
+            const newSourceKpId = kpIdMap.get(edge.source_knowledge_point_id) ?? edge.source_knowledge_point_id;
+            const newTargetKpId = kpIdMap.get(edge.target_knowledge_point_id) ?? edge.target_knowledge_point_id;
             await client.query(
               'INSERT INTO edges (graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-              [createdGraphId, edge.source_knowledge_point_id, edge.target_knowledge_point_id, edge.relationship_type, edge.weight, edge.custom_label, edge.custom_color, edge.custom_line_style, edge.show_arrow],
+              [createdGraphId, newSourceKpId, newTargetKpId, edge.relationship_type, edge.weight, edge.custom_label, edge.custom_color, edge.custom_line_style, edge.show_arrow],
             );
           }
         }
@@ -670,6 +716,51 @@ export class GraphVersionService {
 
       newGraphId = newGraph.id;
 
+      // 复制知识点（创建独立副本）
+      const { data: sourceKps, error: kpsError } = await supabase
+        .from('graph_nodes')
+        .select('knowledge_point_id, knowledge_points(id, title, content, summary, learning_material, keywords, properties, visibility, owner_id, mastery_level)')
+        .eq('graph_id', graphId)
+        .is('deleted_at', null);
+
+      if (kpsError) {
+        logger.error('Query source knowledge points for branch error:', kpsError);
+        throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+      }
+
+      const kpIdMap = new Map<string, string>(); // old kp id -> new kp id
+
+      if (sourceKps && sourceKps.length > 0) {
+        for (const row of sourceKps) {
+          const kp = Array.isArray(row.knowledge_points) ? row.knowledge_points[0] : row.knowledge_points;
+          if (!kp || kpIdMap.has(kp.id)) continue;
+
+          const { data: newKp, error: createKpError } = await supabase
+            .from('knowledge_points')
+            .insert([{
+              title: kp.title,
+              content: kp.content,
+              summary: kp.summary,
+              learning_material: kp.learning_material,
+              keywords: kp.keywords,
+              properties: kp.properties,
+              visibility: kp.visibility,
+              owner_id: kp.owner_id,
+              mastery_level: kp.mastery_level ?? 0,
+              source_knowledge_point_id: kp.id,
+            }])
+            .select('id')
+            .single();
+
+          if (createKpError) {
+            logger.error('Copy knowledge point to branch error:', createKpError);
+            throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
+          }
+
+          kpIdMap.set(kp.id, newKp.id);
+        }
+      }
+
       const { data: sourceNodes, error: nodesError } = await supabase
         .from('graph_nodes')
         .select('knowledge_point_id, x_position, y_position, level, is_accepted')
@@ -684,7 +775,7 @@ export class GraphVersionService {
       if (sourceNodes && sourceNodes.length > 0) {
         const nodeInserts = sourceNodes.map((n: { knowledge_point_id: string; x_position: number; y_position: number; level: number; is_accepted: boolean }) => ({
           graph_id: newGraphId,
-          knowledge_point_id: n.knowledge_point_id,
+          knowledge_point_id: kpIdMap.get(n.knowledge_point_id) ?? n.knowledge_point_id,
           x_position: n.x_position,
           y_position: n.y_position,
           level: n.level,
@@ -715,8 +806,8 @@ export class GraphVersionService {
       if (sourceEdges && sourceEdges.length > 0) {
         const edgeInserts = sourceEdges.map((e: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; weight: number; custom_label: string | null; custom_color: string | null; custom_line_style: string | null; show_arrow: boolean }) => ({
           graph_id: newGraphId,
-          source_knowledge_point_id: e.source_knowledge_point_id,
-          target_knowledge_point_id: e.target_knowledge_point_id,
+          source_knowledge_point_id: kpIdMap.get(e.source_knowledge_point_id) ?? e.source_knowledge_point_id,
+          target_knowledge_point_id: kpIdMap.get(e.target_knowledge_point_id) ?? e.target_knowledge_point_id,
           relationship_type: e.relationship_type,
           weight: e.weight,
           custom_label: e.custom_label,
@@ -752,10 +843,10 @@ export class GraphVersionService {
   async listBranches(
     supabase: SupabaseClient,
     graphId: string,
-  ): Promise<any[]> {
+  ): Promise<BranchInfo[]> {
     const { data, error } = await supabase
       .from('knowledge_graphs')
-      .select('*')
+      .select('id, title, branch_name, created_at')
       .eq('parent_graph_id', graphId)
       .eq('is_branch', true)
       .is('deleted_at', null);
@@ -765,7 +856,14 @@ export class GraphVersionService {
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
-    return data ?? [];
+    return (data ?? []).map(b => ({
+      id: b.id,
+      title: b.title,
+      branchName: b.branch_name ?? '',
+      createdAt: b.created_at,
+      nodeCount: 0,
+      edgeCount: 0,
+    }));
   }
 
   async mergeBranch(
@@ -776,7 +874,14 @@ export class GraphVersionService {
     const mainData = await this.buildCurrentSnapshotData(supabase, mainGraphId);
     const branchData = await this.buildCurrentSnapshotData(supabase, branchGraphId);
 
-    const diff = this.computeDiff(mainData, branchData);
+    // 构建分支 knowledge_point_id -> 原始 knowledge_point_id 的映射
+    // 分支隔离后，分支的 knowledge_point 有独立的 ID，需要映射回主图 ID 才能正确 diff
+    const branchKpToSourceKp = await this.buildBranchKpMapping(supabase, branchGraphId);
+
+    // 将分支数据的 knowledgePointId 替换为原始 ID，以便与主图和源快照正确比较
+    const mappedBranchData = this.mapBranchSnapshotData(branchData, branchKpToSourceKp);
+
+    const diff = this.computeDiff(mainData, mappedBranchData);
 
     const { data: branchGraph } = await supabase
       .from('knowledge_graphs')
@@ -794,7 +899,7 @@ export class GraphVersionService {
 
     if (sourceData) {
       const mainToSourceDiff = this.computeDiff(sourceData, mainData);
-      const branchToSourceDiff = this.computeDiff(sourceData, branchData);
+      const branchToSourceDiff = this.computeDiff(sourceData, mappedBranchData);
 
       const mainModifiedNodeIds = new Set(
         mainToSourceDiff.nodes.modified.map(n => n.knowledgePointId),
@@ -857,7 +962,7 @@ export class GraphVersionService {
     supabase: SupabaseClient,
     mainGraphId: string,
     branchGraphId: string,
-    selectedChanges: { nodeIds: string[]; edgeIds: string[] },
+    selectedChanges: { nodeIds: string[]; edgeIds: string[]; removedNodeIds?: string[]; removedEdgeIds?: string[] },
     conflictResolutions: Record<string, 'main' | 'branch'>,
     operatorId: string | null,
   ): Promise<ApplyMergeResult> {
@@ -865,14 +970,26 @@ export class GraphVersionService {
     const mergeResult = await this.mergeBranch(supabase, mainGraphId, branchGraphId);
     const branchData = await this.buildCurrentSnapshotData(supabase, branchGraphId);
 
+    // 构建分支 kp id -> 主图 kp id 的映射，用于合并时定位主图中的对应实体
+    const branchKpToSourceKp = await this.buildBranchKpMapping(supabase, branchGraphId);
+    // 反向映射：主图 kp id -> 分支 kp id，用于从 branchData 中查找分支节点
+    const sourceKpToBranchKp = new Map<string, string>();
+    for (const [branchKpId, sourceKpId] of branchKpToSourceKp) {
+      sourceKpToBranchKp.set(sourceKpId, branchKpId);
+    }
+
     let nodesAdded = 0;
     let edgesAdded = 0;
     let nodesModified = 0;
     let edgesModified = 0;
+    let nodesRemoved = 0;
+    let edgesRemoved = 0;
     let conflictsResolved = 0;
 
     const selectedNodeIds = new Set(selectedChanges.nodeIds);
     const selectedEdgeIds = new Set(selectedChanges.edgeIds);
+    const selectedRemovedNodeIds = new Set(selectedChanges.removedNodeIds ?? []);
+    const selectedRemovedEdgeIds = new Set(selectedChanges.removedEdgeIds ?? []);
 
     if (transactionExecutor.isAvailable()) {
       await transactionExecutor.executeInTransaction(async (client) => {
@@ -934,13 +1051,15 @@ export class GraphVersionService {
         // 应用修改节点
         for (const nodeDiff of mergeResult.diff.nodes.modified) {
           if (selectedNodeIds.has(nodeDiff.knowledgePointId)) {
+            // mergeResult 中的 knowledgePointId 是主图的 id，需要映射到分支的 id 来查找 branchData
+            const branchKpId = sourceKpToBranchKp.get(nodeDiff.knowledgePointId) ?? nodeDiff.knowledgePointId;
             const branchNode = branchData.nodes.find(
-              n => n.knowledgePointId === nodeDiff.knowledgePointId,
+              n => n.knowledgePointId === branchKpId,
             );
             if (branchNode) {
               await client.query(
                 'UPDATE graph_nodes SET x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE graph_id = $5 AND knowledge_point_id = $6 AND deleted_at IS NULL',
-                [branchNode.xPosition, branchNode.yPosition, branchNode.level, branchNode.isAccepted, mainGraphId, branchNode.knowledgePointId],
+                [branchNode.xPosition, branchNode.yPosition, branchNode.level, branchNode.isAccepted, mainGraphId, nodeDiff.knowledgePointId],
               );
             }
             nodesModified++;
@@ -962,6 +1081,29 @@ export class GraphVersionService {
           }
         }
 
+        // 应用删除节点
+        for (const node of mergeResult.diff.nodes.removed) {
+          if (selectedRemovedNodeIds.has(node.knowledgePointId)) {
+            await client.query(
+              'UPDATE graph_nodes SET deleted_at = NOW() WHERE graph_id = $1 AND knowledge_point_id = $2 AND deleted_at IS NULL',
+              [mainGraphId, node.knowledgePointId],
+            );
+            nodesRemoved++;
+          }
+        }
+
+        // 应用删除边
+        for (const edge of mergeResult.diff.edges.removed) {
+          const edgeKey = this.getEdgeKey(edge);
+          if (selectedRemovedEdgeIds.has(edgeKey)) {
+            await client.query(
+              'UPDATE edges SET deleted_at = NOW() WHERE graph_id = $1 AND source_knowledge_point_id = $2 AND target_knowledge_point_id = $3 AND relationship_type = $4 AND deleted_at IS NULL',
+              [mainGraphId, edge.sourceKnowledgePointId, edge.targetKnowledgePointId, edge.relationshipType],
+            );
+            edgesRemoved++;
+          }
+        }
+
         // 解决冲突
         for (const conflict of mergeResult.conflicts) {
           const resolution = conflictResolutions[conflict.entityId];
@@ -975,6 +1117,14 @@ export class GraphVersionService {
                 'UPDATE graph_nodes SET x_position = $1, y_position = $2, level = $3, is_accepted = $4 WHERE graph_id = $5 AND knowledge_point_id = $6 AND deleted_at IS NULL',
                 [nodeData.xPosition, nodeData.yPosition, nodeData.level, nodeData.isAccepted, mainGraphId, nodeData.knowledgePointId],
               );
+              // 更新 knowledge_point 内容（如果 content 或 summary 有变更）
+              // TODO: Task 2 完成分支知识点隔离后，需通过 source_knowledge_point_id 映射到主图原始 kp id
+              if (nodeData.content !== undefined || nodeData.summary !== undefined) {
+                await client.query(
+                  'UPDATE knowledge_points SET content = COALESCE($1, content), summary = $2, updated_at = NOW() WHERE id = $3',
+                  [nodeData.content, nodeData.summary, nodeData.knowledgePointId],
+                );
+              }
             }
           } else if (conflict.entityType === 'edge') {
             const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
@@ -1080,8 +1230,9 @@ export class GraphVersionService {
 
       for (const nodeDiff of mergeResult.diff.nodes.modified) {
         if (selectedNodeIds.has(nodeDiff.knowledgePointId)) {
+          const branchKpId = sourceKpToBranchKp.get(nodeDiff.knowledgePointId) ?? nodeDiff.knowledgePointId;
           const branchNode = branchData.nodes.find(
-            n => n.knowledgePointId === nodeDiff.knowledgePointId,
+            n => n.knowledgePointId === branchKpId,
           );
           if (branchNode) {
             await supabase
@@ -1093,8 +1244,20 @@ export class GraphVersionService {
                 is_accepted: branchNode.isAccepted,
               })
               .eq('graph_id', mainGraphId)
-              .eq('knowledge_point_id', branchNode.knowledgePointId)
+              .eq('knowledge_point_id', nodeDiff.knowledgePointId)
               .is('deleted_at', null);
+            // 更新 knowledge_point 内容（如果有变更）
+            // TODO: Task 2 完成分支知识点隔离后，需通过 source_knowledge_point_id 映射到主图原始 kp id
+            if (nodeDiff.changedFields.includes('content') || nodeDiff.changedFields.includes('summary')) {
+              await supabase
+                .from('knowledge_points')
+                .update({
+                  content: branchNode.content,
+                  summary: branchNode.summary,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', branchNode.knowledgePointId);
+            }
           }
           nodesModified++;
         }
@@ -1121,6 +1284,35 @@ export class GraphVersionService {
               .is('deleted_at', null);
           }
           edgesModified++;
+        }
+      }
+
+      // 应用删除节点 (fallback)
+      for (const node of mergeResult.diff.nodes.removed) {
+        if (selectedRemovedNodeIds.has(node.knowledgePointId)) {
+          await supabase
+            .from('graph_nodes')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('graph_id', mainGraphId)
+            .eq('knowledge_point_id', node.knowledgePointId)
+            .is('deleted_at', null);
+          nodesRemoved++;
+        }
+      }
+
+      // 应用删除边 (fallback)
+      for (const edge of mergeResult.diff.edges.removed) {
+        const edgeKey = this.getEdgeKey(edge);
+        if (selectedRemovedEdgeIds.has(edgeKey)) {
+          await supabase
+            .from('edges')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('graph_id', mainGraphId)
+            .eq('source_knowledge_point_id', edge.sourceKnowledgePointId)
+            .eq('target_knowledge_point_id', edge.targetKnowledgePointId)
+            .eq('relationship_type', edge.relationshipType)
+            .is('deleted_at', null);
+          edgesRemoved++;
         }
       }
 
@@ -1166,6 +1358,9 @@ export class GraphVersionService {
         }
         conflictsResolved++;
       }
+
+      // 合并成功后自动创建 post_merge 快照（fallback 路径）
+      await this.autoSnapshot(supabase, mainGraphId, 'auto', operatorId);
     }
 
     // 记录事件（事务外）
@@ -1175,6 +1370,8 @@ export class GraphVersionService {
       edges_added: edgesAdded,
       nodes_modified: nodesModified,
       edges_modified: edgesModified,
+      nodes_removed: nodesRemoved,
+      edges_removed: edgesRemoved,
       conflicts_resolved: conflictsResolved,
     }, operatorId);
 
@@ -1186,7 +1383,59 @@ export class GraphVersionService {
       edgesAdded,
       nodesModified,
       edgesModified,
+      nodesRemoved,
+      edgesRemoved,
       conflictsResolved,
+    };
+  }
+
+  private async buildBranchKpMapping(
+    supabase: SupabaseClient,
+    branchGraphId: string,
+  ): Promise<Map<string, string>> {
+    const mapping = new Map<string, string>();
+
+    const { data, error } = await supabase
+      .from('knowledge_points')
+      .select('id, source_knowledge_point_id')
+      .in('id', (
+        await supabase
+          .from('graph_nodes')
+          .select('knowledge_point_id')
+          .eq('graph_id', branchGraphId)
+          .is('deleted_at', null)
+      ).data?.map((n: { knowledge_point_id: string }) => n.knowledge_point_id) ?? []);
+
+    if (error) {
+      logger.warn('Build branch kp mapping error, using empty mapping:', error);
+      return mapping;
+    }
+
+    for (const kp of (data ?? [])) {
+      if (kp.source_knowledge_point_id) {
+        mapping.set(kp.id, kp.source_knowledge_point_id);
+      }
+    }
+
+    return mapping;
+  }
+
+  private mapBranchSnapshotData(
+    data: SnapshotData,
+    kpMapping: Map<string, string>,
+  ): SnapshotData {
+    if (kpMapping.size === 0) return data;
+
+    return {
+      nodes: data.nodes.map(node => ({
+        ...node,
+        knowledgePointId: kpMapping.get(node.knowledgePointId) ?? node.knowledgePointId,
+      })),
+      edges: data.edges.map(edge => ({
+        ...edge,
+        sourceKnowledgePointId: kpMapping.get(edge.sourceKnowledgePointId) ?? edge.sourceKnowledgePointId,
+        targetKnowledgePointId: kpMapping.get(edge.targetKnowledgePointId) ?? edge.targetKnowledgePointId,
+      })),
     };
   }
 
@@ -1196,7 +1445,7 @@ export class GraphVersionService {
   ): Promise<SnapshotData> {
     const { data: nodes, error: nodesError } = await supabase
       .from('graph_nodes')
-      .select('id, knowledge_point_id, x_position, y_position, level, is_accepted, knowledge_points(title)')
+      .select('id, knowledge_point_id, x_position, y_position, level, is_accepted, knowledge_points(title, content, summary)')
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
@@ -1222,6 +1471,12 @@ export class GraphVersionService {
       title: Array.isArray(node.knowledge_points)
         ? (node.knowledge_points[0]?.title ?? '')
         : (node.knowledge_points?.title ?? ''),
+      content: Array.isArray(node.knowledge_points)
+        ? (node.knowledge_points[0]?.content ?? '')
+        : (node.knowledge_points?.content ?? ''),
+      summary: Array.isArray(node.knowledge_points)
+        ? (node.knowledge_points[0]?.summary ?? null)
+        : (node.knowledge_points?.summary ?? null),
       xPosition: node.x_position,
       yPosition: node.y_position,
       level: node.level,
@@ -1272,6 +1527,8 @@ export class GraphVersionService {
       if (sourceNode.yPosition !== targetNode.yPosition) changedFields.push('yPosition');
       if (sourceNode.level !== targetNode.level) changedFields.push('level');
       if (sourceNode.title !== targetNode.title) changedFields.push('title');
+      if (sourceNode.content !== targetNode.content) changedFields.push('content');
+      if (sourceNode.summary !== targetNode.summary) changedFields.push('summary');
 
       if (changedFields.length > 0) {
         modifiedNodes.push({

@@ -778,11 +778,17 @@ export const createBranchSchema = z.object({
   branchName: z.string().min(1, "分支名称不能为空").max(255, "分支名称最多255个字符"),
 });
 
+export const mergePreviewQuerySchema = z.object({
+  branchGraphId: z.string().uuid("无效的分支图谱ID"),
+});
+
 export const mergeSchema = z.object({
   branchGraphId: z.string().uuid("无效的分支图谱ID"),
   selectedChanges: z.object({
     nodeIds: z.array(z.string().uuid()).optional(),
     edgeIds: z.array(z.string().uuid()).optional(),
+    removedNodeIds: z.array(z.string()).optional(),
+    removedEdgeIds: z.array(z.string()).optional(),
   }).optional(),
   conflictResolutions: z.record(z.enum(['main', 'branch'])).optional(),
 });

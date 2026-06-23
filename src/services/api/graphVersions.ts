@@ -2,6 +2,7 @@ import { request } from "./client";
 import type {
   GraphSnapshot,
   DiffResult,
+  MergeResult,
   GraphEvent,
   PaginatedResult,
 } from "@shared/types/graphVersion";
@@ -75,6 +76,11 @@ export const graphVersionsApi = {
         conflictResolutions,
       }),
     }),
+
+  mergePreview: (graphId: string, branchGraphId: string) =>
+    request<MergeResult>(
+      `/graphs/${graphId}/merge-preview?branchGraphId=${branchGraphId}`,
+    ),
 
   listEvents: (
     graphId: string,

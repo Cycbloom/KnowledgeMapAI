@@ -5,6 +5,7 @@ import {
   defaultQueryConfig,
   realtimeQueryConfig,
 } from "./config";
+import type { MergeResult } from "@shared/types/graphVersion";
 
 export const useSnapshots = (graphId: string, page = 1, pageSize = 20) => {
   return useQuery({
@@ -57,5 +58,17 @@ export const useBranches = (graphId: string) => {
     queryFn: () => api.graphVersions.listBranches(graphId),
     enabled: !!graphId,
     ...defaultQueryConfig,
+  });
+};
+
+export const useMergePreview = (
+  graphId: string,
+  branchGraphId: string,
+) => {
+  return useQuery<MergeResult>({
+    queryKey: queryKeys.graphMergePreview(graphId, branchGraphId),
+    queryFn: () => api.graphVersions.mergePreview(graphId, branchGraphId),
+    enabled: !!graphId && !!branchGraphId,
+    ...realtimeQueryConfig,
   });
 };

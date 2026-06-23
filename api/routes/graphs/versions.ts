@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
-import { uuidParamsSchema, createSnapshotSchema, rollbackSchema, createBranchSchema, mergeSchema, diffQuerySchema, eventsQuerySchema, snapshotsQuerySchema } from "../../schemas/index";
+import { uuidParamsSchema, createSnapshotSchema, rollbackSchema, createBranchSchema, mergeSchema, mergePreviewQuerySchema, diffQuerySchema, eventsQuerySchema, snapshotsQuerySchema } from "../../schemas/index";
 import { graphVersionService } from "../../services/graph";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -80,6 +80,15 @@ router.get("/:id/branches", requireAuth, validate({ params: uuidParamsSchema }),
   const { id: graphId } = req.params;
   const branches = await graphVersionService.listBranches(supabase, graphId);
   res.json(branches);
+});
+
+router.get("/:id/merge-preview", requireAuth, validate({ params: uuidParamsSchema, query: mergePreviewQuerySchema }), async (req: AuthRequest, res) => {
+  const supabase = req.supabase;
+  if (!supabase) throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED);
+  const { id: graphId } = req.params;
+  const { branchGraphId } = req.query as { branchGraphId: string };
+  const result = await graphVersionService.mergeBranch(supabase, graphId, branchGraphId);
+  res.json(result);
 });
 
 router.post("/:id/merge", requireAuth, validate({ params: uuidParamsSchema, body: mergeSchema }), async (req: AuthRequest, res) => {

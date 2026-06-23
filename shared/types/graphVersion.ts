@@ -32,6 +32,8 @@ export interface SnapshotNodeData {
   id: string;
   knowledgePointId: string;
   title: string;
+  content: string;
+  summary: string | null;
   xPosition: number;
   yPosition: number;
   level: string;
@@ -138,8 +140,19 @@ export interface MergeRequest {
   selectedChanges?: {
     nodeIds: string[];
     edgeIds: string[];
+    removedNodeIds: string[];
+    removedEdgeIds: string[];
   };
   conflictResolutions?: Record<string, "main" | "branch">;
+}
+
+export interface BranchInfo {
+  id: string;
+  title: string;
+  branchName: string;
+  createdAt: string;
+  nodeCount: number;
+  edgeCount: number;
 }
 
 export interface PaginatedResult<T> {

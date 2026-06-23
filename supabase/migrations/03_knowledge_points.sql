@@ -30,6 +30,9 @@ COMMENT ON COLUMN knowledge_points.total_study_duration IS '累计学习时长�
 COMMENT ON COLUMN knowledge_points.learning_material IS '学习材料/补充资料';
 COMMENT ON COLUMN knowledge_points.properties IS '自定义属性，JSON格式';
 
+ALTER TABLE knowledge_points ADD COLUMN IF NOT EXISTS source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL;
+COMMENT ON COLUMN knowledge_points.source_knowledge_point_id IS '分支知识点来源ID，记录该知识点是从哪个原始知识点复制而来，仅分支副本有值';
+
 CREATE TABLE IF NOT EXISTS knowledge_point_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,

@@ -1,0 +1,16 @@
+- [x] SnapshotNodeData 类型包含 content 和 summary 字段
+- [x] createSnapshot 和 buildCurrentSnapshotData 查询 knowledge_points 的 content/summary 并映射到 SnapshotNodeData
+- [x] computeDiff 检测 content 和 summary 字段变更，changedFields 包含对应字段名
+- [x] knowledge_points 表增加 source_knowledge_point_id 列
+- [x] createBranch 为每个 knowledge_point 创建独立副本，设置 source_knowledge_point_id
+- [x] 分支中修改 knowledge_point content 不影响主图对应记录
+- [x] listBranches 返回 BranchInfo[] 类型（非 any[]）
+- [x] applyMerge 处理 removed 节点：用户选择时软删除主图对应 graph_node
+- [x] applyMerge 处理 removed 边：用户选择时软删除主图对应 edge
+- [x] applyMerge fallback 路径合并成功后创建 post_merge 快照
+- [x] MergeRequest.selectedChanges 包含 removedNodeIds 和 removedEdgeIds
+- [x] mergeBranch 三路合并检测 content/summary 字段冲突
+- [x] 冲突解决时 content/summary 根据用户选择正确应用
+- [x] DiffDetailPanel 展示 content 和 summary 的 before → after 变更
+- [x] MergeConflictList 渲染实际冲突数据（非空壳）
+- [x] ConflictItem 展示内容冲突的 before/after 值

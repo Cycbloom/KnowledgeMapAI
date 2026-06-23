@@ -23,6 +23,8 @@ export interface SnapshotNodeData {
   id: string;
   knowledgePointId: string;
   title: string;
+  content: string;
+  summary: string | null;
   xPosition: number;
   yPosition: number;
   level: string;
@@ -117,6 +119,19 @@ export interface PaginatedResult<T> {
   pageSize: number;
 }
 
+export interface MergeConflict {
+  entityType: "node" | "edge";
+  entityId: string;
+  knowledgePointId?: string;
+  mainChange: NodeDiff | EdgeDiff;
+  branchChange: NodeDiff | EdgeDiff;
+}
+
+export interface MergeResult {
+  diff: DiffResult;
+  conflicts: MergeConflict[];
+}
+
 export interface IGraphVersionsApi {
   listSnapshots(
     graphId: string,
@@ -154,6 +169,11 @@ export interface IGraphVersionsApi {
     selectedChanges?: { nodeIds?: string[]; edgeIds?: string[] },
     conflictResolutions?: Record<string, "main" | "branch">,
   ): Promise<unknown>;
+
+  mergePreview(
+    graphId: string,
+    branchGraphId: string,
+  ): Promise<MergeResult>;
 
   listEvents(
     graphId: string,

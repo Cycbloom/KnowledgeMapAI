@@ -89,29 +89,53 @@ function NodeDiffRow({ diff }: { diff: NodeDiff }) {
       </button>
       {expanded && diff.changeType === "modified" && (
         <div className="px-8 pb-2 space-y-1">
-          {diff.changedFields.map((field) => (
-            <div
-              key={field}
-              className="flex items-center gap-2 text-xs"
-            >
-              <span className="text-slate-500 dark:text-slate-400 w-16 flex-shrink-0">
-                {field}
-              </span>
-              <span className="text-red-500 line-through truncate max-w-[120px]">
-                {String(
-                  (diff.before as unknown as Record<string, unknown>)?.[field] ??
-                  "",
-                )}
-              </span>
-              <span className="text-slate-400">→</span>
-              <span className="text-green-600 truncate max-w-[120px]">
-                {String(
-                  (diff.after as unknown as Record<string, unknown>)?.[field] ??
-                  "",
-                )}
-              </span>
-            </div>
-          ))}
+          {diff.changedFields.map((field) => {
+            const beforeValue = String(
+              (diff.before as unknown as Record<string, unknown>)?.[field] ??
+              "",
+            );
+            const afterValue = String(
+              (diff.after as unknown as Record<string, unknown>)?.[field] ??
+              "",
+            );
+            const isLongText = field === "content" || field === "summary";
+
+            if (isLongText) {
+              return (
+                <div key={field} className="space-y-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {field === "content" ? "内容" : "摘要"}
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-1.5 bg-red-50 dark:bg-red-900/10 rounded text-red-700 dark:text-red-300 whitespace-pre-wrap break-words max-h-24 overflow-y-auto text-[11px]">
+                      {beforeValue || "(空)"}
+                    </div>
+                    <div className="p-1.5 bg-green-50 dark:bg-green-900/10 rounded text-green-700 dark:text-green-300 whitespace-pre-wrap break-words max-h-24 overflow-y-auto text-[11px]">
+                      {afterValue || "(空)"}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={field}
+                className="flex items-center gap-2 text-xs"
+              >
+                <span className="text-slate-500 dark:text-slate-400 w-16 flex-shrink-0">
+                  {field}
+                </span>
+                <span className="text-red-500 line-through truncate max-w-[120px]">
+                  {beforeValue}
+                </span>
+                <span className="text-slate-400">→</span>
+                <span className="text-green-600 truncate max-w-[120px]">
+                  {afterValue}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
       {expanded && diff.changeType === "added" && diff.after && (

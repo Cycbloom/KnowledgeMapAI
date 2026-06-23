@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
-import { useBranches, useGraphDiff } from "../../../hooks/queries/useGraphVersionQueries";
+import { useBranches, useGraphDiff, useMergePreview } from "../../../hooks/queries/useGraphVersionQueries";
 import { useMergeBranch, useDeleteBranch } from "../../../hooks/mutations/useGraphVersionMutations";
 import type { MergeConflict } from "@shared/types/graphVersion";
 
@@ -443,7 +443,17 @@ interface MergeConflictListProps {
   onResolutionChange: (entityId: string, resolution: "main" | "branch") => void;
 }
 
-const MergeConflictList: React.FC<MergeConflictListProps> = () => {
+const MergeConflictList: React.FC<MergeConflictListProps> = ({
+  graphId,
+  branchGraphId,
+  conflictResolutions,
+  expandedConflicts,
+  onToggleExpand,
+  onResolutionChange,
+}) => {
+  const { data: mergeResult, isLoading } = useMergePreview(graphId, branchGraphId);
+  const conflicts = mergeResult?.conflicts ?? [];
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -452,11 +462,36 @@ const MergeConflictList: React.FC<MergeConflictListProps> = () => {
           冲突检测
         </h4>
       </div>
-      <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
-        <p className="text-xs text-yellow-700 dark:text-yellow-300">
-          合并时将自动检测冲突。如有冲突，请在下方选择保留方式。
-        </p>
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500" />
+          <span className="ml-2 text-xs text-slate-500">检测冲突中...</span>
+        </div>
+      ) : conflicts.length === 0 ? (
+        <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800/50">
+          <p className="text-xs text-green-700 dark:text-green-300">
+            未检测到冲突，可以安全合并。
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
+            <p className="text-xs text-yellow-700 dark:text-yellow-300">
+              检测到 {conflicts.length} 个冲突，请选择保留方式。
+            </p>
+          </div>
+          {conflicts.map((conflict) => (
+            <ConflictItem
+              key={conflict.entityId}
+              conflict={conflict}
+              resolution={conflictResolutions[conflict.entityId]}
+              isExpanded={expandedConflicts.has(conflict.entityId)}
+              onToggleExpand={() => onToggleExpand(conflict.entityId)}
+              onResolutionChange={(resolution) => onResolutionChange(conflict.entityId, resolution)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -476,6 +511,10 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
   onToggleExpand,
   onResolutionChange,
 }) => {
+  const isNodeConflict = conflict.entityType === "node";
+  const mainAfter = conflict.mainChange.after;
+  const branchAfter = conflict.branchChange.after;
+
   return (
     <div className="rounded-lg border border-yellow-200 dark:border-yellow-800/50 bg-yellow-50/50 dark:bg-yellow-900/10 overflow-hidden">
       <div
@@ -489,13 +528,39 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
         )}
         <AlertTriangle size={14} className="text-yellow-500 shrink-0" />
         <span className="text-sm text-slate-700 dark:text-slate-300 flex-1">
-          {conflict.entityType === "node" ? "节点" : "边"}冲突
+          {isNodeConflict ? "节点" : "边"}冲突
           {conflict.knowledgePointId ? ` · ${conflict.knowledgePointId}` : ""}
         </span>
       </div>
 
       {isExpanded && (
         <div className="px-3 pb-3 space-y-2 border-t border-yellow-200 dark:border-yellow-800/50 pt-2">
+          {/* 变更字段展示 */}
+          <div className="space-y-1">
+            {conflict.mainChange.changedFields.length > 0 && (
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                变更字段: {conflict.mainChange.changedFields.join(", ")}
+              </div>
+            )}
+            {isNodeConflict && conflict.mainChange.changedFields.includes("content") && (
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 font-medium">内容变更</span>
+                <div className="grid grid-cols-2 gap-1">
+                  <div className="p-1 bg-blue-50 dark:bg-blue-900/10 rounded text-[10px] text-blue-700 dark:text-blue-300 whitespace-pre-wrap break-words max-h-16 overflow-y-auto">
+                    {(mainAfter && "content" in mainAfter ? String(mainAfter.content) : "") || "(空)"}
+                  </div>
+                  <div className="p-1 bg-purple-50 dark:bg-purple-900/10 rounded text-[10px] text-purple-700 dark:text-purple-300 whitespace-pre-wrap break-words max-h-16 overflow-y-auto">
+                    {(branchAfter && "content" in branchAfter ? String(branchAfter.content) : "") || "(空)"}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-400">
+                  <span className="text-center">主线</span>
+                  <span className="text-center">分支</span>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* 冲突解决选项 */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 cursor-pointer">
               <input

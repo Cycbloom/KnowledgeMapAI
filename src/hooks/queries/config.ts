@@ -61,6 +61,8 @@ export const queryKeys = {
   graphEvents: (graphId: string) => ["graphEvents", graphId] as const,
   graphBranches: (graphId: string) =>
     ["graphBranches", graphId] as const,
+  graphMergePreview: (graphId: string, branchGraphId: string) =>
+    ["graphMergePreview", graphId, branchGraphId] as const,
 };
 
 export type { Node, Edge, Task, NodeLevel };

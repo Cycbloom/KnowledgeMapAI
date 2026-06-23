@@ -10,8 +10,8 @@ import {
   generateRulePath,
   buildTodayPlan,
   calculateWeeklyProgress,
-} from "./learningPathService";
-import type { LearningPathStage } from "./learningPathService";
+} from "./learningPathAlgorithms";
+import type { LearningPathStage } from "./learningPathAlgorithms";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";

@@ -2,7 +2,8 @@ export { studyService } from "./studyService";
 export { studyProgressService } from "./studyProgressService";
 export { reviewService } from "./reviewService";
 export { learningPathService } from "./learningPathService";
-export type { LearningPath, LearningPathStage, LearningPathResult } from "./learningPathService";
+export type { LearningPath, LearningPathResult } from "./learningPathService";
+export type { LearningPathStage } from "./learningPathAlgorithms";
 export {
   buildProgressMap,
   buildDependencyMaps,
@@ -10,7 +11,7 @@ export {
   generateRulePath,
   buildTodayPlan,
   calculateWeeklyProgress,
-} from "./learningPathService";
+} from "./learningPathAlgorithms";
 export { learningPathRouteService } from "./learningPathRouteService";
 export { spacedRepetitionBridge } from "./spacedRepetitionBridge";
 export { studyRouteService, StudyRouteService } from "./studyRouteService";

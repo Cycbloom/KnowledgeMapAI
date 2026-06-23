@@ -22,9 +22,6 @@ export function initializeEventSubscribers(qc: QueryClient): void {
   const unsub4 = frontendEventBus.subscribe("graph_data_changed", (payload) => {
     if (payload?.graphId) {
       queryClient?.invalidateQueries({
-        queryKey: ["graphData", payload.graphId],
-      });
-      queryClient?.invalidateQueries({
         queryKey: ["graphNodeStatus", payload.graphId],
       });
       queryClient?.invalidateQueries({
@@ -33,7 +30,6 @@ export function initializeEventSubscribers(qc: QueryClient): void {
       queryClient?.invalidateQueries({ queryKey: ["graph", payload.graphId] });
       queryClient?.invalidateQueries({ queryKey: ["graphs"] });
     } else {
-      queryClient?.invalidateQueries({ queryKey: ["graphData"] });
       queryClient?.invalidateQueries({ queryKey: ["graphNodeStatus"] });
       queryClient?.invalidateQueries({ queryKey: ["graphLearningPath"] });
       queryClient?.invalidateQueries({ queryKey: ["graphs"] });

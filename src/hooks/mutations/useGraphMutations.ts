@@ -213,6 +213,21 @@ export const useCreateNodeMutation = createOptimisticMutation({
       nodes: [...old.nodes, tempNode],
     };
   },
+  onSuccessUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    data: Node,
+    variables: CreateNodeData,
+  ) => {
+    if (!old) return old;
+    return {
+      ...old,
+      nodes: old.nodes.map((node) =>
+        node.id.startsWith("temp-") && node.title === variables.title
+          ? data
+          : node,
+      ),
+    };
+  },
   onSettled: (_data, _error, variables) => {
     frontendEventBus.publish("graph_data_changed", { graphId: variables.graph_id, changeType: "node_created" });
   },
@@ -238,6 +253,19 @@ export const useUpdateNodeOptimisticMutation = createOptimisticMutation({
       ...old,
       nodes: old.nodes.map((node) =>
         node.id === id ? ({ ...node, ...data } as Node) : node,
+      ),
+    };
+  },
+  onSuccessUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    data: Node,
+    variables: { id: string; data: UpdateNodeData; graphId: string },
+  ) => {
+    if (!old) return old;
+    return {
+      ...old,
+      nodes: old.nodes.map((node) =>
+        node.id === variables.id ? data : node,
       ),
     };
   },
@@ -349,6 +377,28 @@ export const useCreateEdgeMutation = createOptimisticMutation({
     return {
       ...old,
       edges: [...old.edges, tempEdge],
+    };
+  },
+  onSuccessUpdater: (
+    old: { nodes: Node[]; edges: Edge[] } | undefined,
+    data: Edge,
+    variables: {
+      source_knowledge_point_id: string;
+      target_knowledge_point_id: string;
+      relationship_type: string;
+      graphId?: string;
+    },
+  ) => {
+    if (!old) return old;
+    return {
+      ...old,
+      edges: old.edges.map((edge) =>
+        edge.id.startsWith("temp-edge-") &&
+        edge.source_knowledge_point_id === variables.source_knowledge_point_id &&
+        edge.target_knowledge_point_id === variables.target_knowledge_point_id
+          ? data
+          : edge,
+      ),
     };
   },
   onSettled: (_data, _error, variables) => {

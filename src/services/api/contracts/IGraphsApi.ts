@@ -60,9 +60,11 @@ export interface IGraphsApi {
 
   get(id: string): Promise<Graph>;
 
-  getNodes(id: string, includeEmbedding?: boolean): Promise<{ nodes: Node[]; edges: Edge[] }>;
+  getNodes(id: string, includeEmbedding?: boolean, includeStatus?: boolean): Promise<{ nodes: Node[]; edges: Edge[]; nodeStatus?: Record<string, NodeStatus> }>;
 
   getNodeStatus(id: string): Promise<Record<string, NodeStatus>>;
+
+  batchGetNodeStatus(graphIds: string[]): Promise<Record<string, Record<string, NodeStatus>>>;
 
   update(id: string, data: UpdateGraphData): Promise<Graph>;
 

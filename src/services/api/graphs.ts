@@ -61,12 +61,21 @@ export const graphsApi: IGraphsApi = {
 
   get: (id: string) => request(`/graphs/${id}`),
 
-  getNodes: (id: string, includeEmbedding?: boolean) => {
-    const params = includeEmbedding ? "?includeEmbedding=true" : "";
-    return request(`/graphs/${id}/nodes${params}`);
+  getNodes: (id: string, includeEmbedding?: boolean, includeStatus?: boolean) => {
+    const params = new URLSearchParams();
+    if (includeEmbedding) params.set("includeEmbedding", "true");
+    if (includeStatus) params.set("includeStatus", "true");
+    const query = params.toString();
+    return request(`/graphs/${id}/nodes${query ? `?${query}` : ""}`);
   },
 
   getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
+
+  batchGetNodeStatus: (graphIds: string[]) =>
+    request("/graphs/batch-node-status", {
+      method: "POST",
+      body: JSON.stringify({ graph_ids: graphIds }),
+    }),
 
   update: (
     id: string,

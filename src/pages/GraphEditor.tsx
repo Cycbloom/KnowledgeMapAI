@@ -43,7 +43,6 @@ import {
   useGraph,
   useGraphData,
   useGraphDataWithEmbedding,
-  useGraphNodeStatus,
   useAIStatus,
 } from "../hooks/queries";
 import { useGraphMutations } from "../hooks/mutations";
@@ -426,7 +425,7 @@ export const GraphEditor = () => {
 
   const { data: graphMeta } = useGraph(id || "");
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || "");
-  const { data: nodeStatus } = useGraphNodeStatus(id || "");
+  const nodeStatus = graphData?.nodeStatus;
   const { data: aiStatus } = useAIStatus(!!token);
   const aiEnabled = aiStatus?.enabled ?? true;
 

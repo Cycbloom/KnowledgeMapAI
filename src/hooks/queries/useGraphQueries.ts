@@ -1,7 +1,6 @@
-import { useQuery, useQueries } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api/adapter";
-import { Node, Edge } from "../../types";
+import { Node, Edge, NodeStatus } from "../../types";
 import { queryKeys, defaultQueryConfig, staticQueryConfig, GC_TIME } from "./config";
 
 export const useDashboardStats = () => {
@@ -58,10 +57,11 @@ export const useGraphData = (id: string) => {
   return useQuery({
     queryKey: queryKeys.graphData(id),
     queryFn: async () => {
-      const data = await api.graphs.getNodes(id);
+      const data = await api.graphs.getNodes(id, undefined, true);
       return {
         nodes: (data.nodes || []) as Node[],
         edges: (data.edges || []) as Edge[],
+        nodeStatus: (data.nodeStatus || {}) as Record<string, NodeStatus>,
       };
     },
     enabled: !!id,
@@ -73,10 +73,11 @@ export const useGraphDataWithEmbedding = (graphId: string) => {
   return useQuery({
     queryKey: queryKeys.graphDataWithEmbedding(graphId),
     queryFn: async () => {
-      const data = await api.graphs.getNodes(graphId, true);
+      const data = await api.graphs.getNodes(graphId, true, true);
       return {
         nodes: (data.nodes || []) as Node[],
         edges: (data.edges || []) as Edge[],
+        nodeStatus: (data.nodeStatus || {}) as Record<string, NodeStatus>,
       };
     },
     enabled: !!graphId,
@@ -89,7 +90,7 @@ export const useGraphNodeStatus = (id: string) => {
     queryKey: queryKeys.graphNodeStatus(id),
     queryFn: () => api.graphs.getNodeStatus(id),
     enabled: !!id,
-    staleTime: 30_000,
+    staleTime: 60_000,
     gcTime: GC_TIME,
     retry: 1,
   });
@@ -99,39 +100,20 @@ export const useBatchGraphStatus = (
   graphIds: string[],
   enabled: boolean = true,
 ) => {
-  const queries = useQueries({
-    queries: graphIds.map((id) => ({
-      queryKey: queryKeys.graphNodeStatus(id),
-      queryFn: () => api.graphs.getNodeStatus(id),
-      enabled: enabled && !!id,
-      staleTime: 30_000,
-      gcTime: GC_TIME,
-      retry: 1,
-    })),
+  const { data, isLoading, isPending } = useQuery({
+    queryKey: ["batchGraphNodeStatus", ...graphIds.sort()],
+    queryFn: () => api.graphs.batchGetNodeStatus(graphIds),
+    enabled: enabled && graphIds.length > 0,
+    staleTime: 60_000,
+    gcTime: GC_TIME,
+    retry: 1,
   });
 
-  const isLoading = queries.some((q) => q.isLoading);
-  const isPending = queries.some((q) => q.isPending);
-
-  const data = useMemo(
-    () =>
-      graphIds.reduce(
-        (acc, id, index) => {
-          acc[id] = queries[index].data;
-          return acc;
-        },
-        {} as Record<string, unknown>,
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    queries.map((q) => q.data),
-  );
-
   return {
-    data,
-    queries,
+    data: data || {},
     isLoading,
     isPending,
-    isAllSuccess: queries.every((q) => q.isSuccess),
+    isAllSuccess: !!data,
   };
 };
 

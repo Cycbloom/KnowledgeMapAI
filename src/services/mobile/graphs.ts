@@ -100,10 +100,17 @@ export const mobileGraphsApi: IGraphsApi = {
     });
   },
 
-  getNodes: async (id: string) => {
-    const nodes = await mobileNodesApi.getByGraphId(id);
-    const edges = await mobileEdgesApi.getByGraphId(id);
-    return { nodes, edges };
+  getNodes: async (id: string, _includeEmbedding?: boolean, includeStatus?: boolean) => {
+    const [nodes, edges] = await Promise.all([
+      mobileNodesApi.getByGraphId(id),
+      mobileEdgesApi.getByGraphId(id),
+    ]);
+    const result: { nodes: typeof nodes; edges: typeof edges; nodeStatus?: Record<string, NodeStatus> } = { nodes, edges };
+    if (includeStatus) {
+      const statusMap = await mobileGraphsApi.getNodeStatus(id);
+      result.nodeStatus = statusMap;
+    }
+    return result;
   },
 
   getNodeStatus: async (
@@ -170,6 +177,18 @@ export const mobileGraphsApi: IGraphsApi = {
 
       return statusMap;
     });
+  },
+
+  batchGetNodeStatus: async (
+    graphIds: string[],
+  ): Promise<Record<string, Record<string, NodeStatus>>> => {
+    const entries = await Promise.all(
+      graphIds.map(async (graphId) => {
+        const status = await mobileGraphsApi.getNodeStatus(graphId);
+        return [graphId, status] as const;
+      }),
+    );
+    return Object.fromEntries(entries);
   },
 
   create: async (data: CreateGraphData): Promise<Graph> => {

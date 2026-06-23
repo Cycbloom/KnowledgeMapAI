@@ -97,6 +97,8 @@ export interface OptimisticMutationConfig<TData, TVariables, TCache> {
   queryKey: QueryKeyOrGetter<TVariables>;
   /** 乐观更新函数：用旧缓存数据和新变量计算新缓存数据 */
   optimisticUpdater: (old: TCache | undefined, variables: TVariables) => TCache | undefined;
+  /** 成功后用服务端响应更新缓存的函数。如果不提供，则不更新缓存。 */
+  onSuccessUpdater?: (old: TCache | undefined, data: TData, variables: TVariables) => TCache | undefined;
   /** mutation 结束后的回调（无论成功/失败），常用于发布事件或失效缓存 */
   onSettled?: (data: TData | undefined, error: Error | null, variables: TVariables) => void;
 }
@@ -157,6 +159,16 @@ export function createOptimisticMutation<TData, TVariables, TCache>(
       onError: (_err, _variables, context) => {
         if (context?.previousData !== undefined && context?.queryKey) {
           queryClient.setQueryData(context.queryKey, context.previousData);
+        }
+      },
+      onSuccess: (data, variables) => {
+        if (config.onSuccessUpdater) {
+          const queryKey = typeof config.queryKey === "function"
+            ? config.queryKey(variables)
+            : (config.queryKey as QueryKey);
+          queryClient.setQueryData<TCache>(queryKey, (old) =>
+            config.onSuccessUpdater!(old, data, variables),
+          );
         }
       },
       onSettled: (data, error, variables) => {

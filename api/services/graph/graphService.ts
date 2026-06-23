@@ -17,7 +17,7 @@ import { aiService } from "../ai/index";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";
-import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
+import type { CollaboratorRole, GraphWithCollaborators, Node, Edge } from "@shared/types";
 import type { NodeStatus } from "@shared/types/graph";
 import type { StudyCardRow, KnowledgeGraphRow } from "@shared/types/database";
 import {
@@ -78,6 +78,12 @@ interface SharedKnowledgePoint {
   knowledge_point_id: string;
   knowledge_point: KnowledgePointWithProperties | KnowledgePointWithProperties[] | null;
   graph_nodes: GraphNodeForCombined[];
+}
+
+interface GraphNodesResult {
+  nodes: (Node | null)[];
+  edges: Edge[];
+  nodeStatus?: Record<string, NodeStatus>;
 }
 
 /**
@@ -1164,9 +1170,9 @@ export class GraphService {
     supabase: SupabaseClient,
     userId: string | null,
     graphId: string,
-    options?: { includeEmbedding?: boolean },
+    options?: { includeEmbedding?: boolean; includeStatus?: boolean },
   ) {
-    const { includeEmbedding } = options ?? {};
+    const { includeEmbedding, includeStatus } = options ?? {};
 
     // When embedding is requested, skip cache to avoid storing large vector data
     if (includeEmbedding) {
@@ -1216,14 +1222,20 @@ export class GraphService {
 
       if (edgesError) throw edgesError;
 
-      return { nodes, edges: edges || [] };
+      const result: GraphNodesResult = { nodes, edges: edges || [] };
+
+      if (includeStatus && userId) {
+        result.nodeStatus = await this.getGraphNodeStatus(supabase, userId, graphId);
+      }
+
+      return result;
     }
 
     const cacheKey = userId
       ? CacheKeys.GRAPH_NODES(userId, graphId)
       : `graph_nodes_${graphId}`;
 
-    return cacheService.getOrSet(
+    const cachedData = await cacheService.getOrSet(
       cacheKey,
       async () => {
         const { data: graphNodes, error: gnError } = await supabase
@@ -1276,6 +1288,15 @@ export class GraphService {
       CacheTTL.GRAPH_NODES,
       userId ? [`user:${userId}`, `graph:${graphId}`] : [`graph:${graphId}`],
     );
+
+    if (includeStatus && userId) {
+      return {
+        ...cachedData,
+        nodeStatus: await this.getGraphNodeStatus(supabase, userId, graphId),
+      };
+    }
+
+    return cachedData;
   }
 
   /**
@@ -1373,6 +1394,35 @@ export class GraphService {
       CacheTTL.NODE_STATUS,
       [`graph:${graphId}`, 'status'],
     );
+  }
+
+  /**
+   * 批量获取多个图谱的节点学习状态
+   *
+   * 并行获取多个图谱的节点状态，返回按图谱 ID 分组的状态映射。
+   *
+   * @param supabase - Supabase 客户端
+   * @param userId - 用户 ID
+   * @param graphIds - 图谱 ID 数组
+   * @returns 按图谱 ID 分组的节点状态映射
+   */
+  async batchGetGraphNodeStatus(
+    supabase: SupabaseClient,
+    userId: string,
+    graphIds: string[],
+  ): Promise<Record<string, Record<string, NodeStatus>>> {
+    const results = await Promise.all(
+      graphIds.map(async (graphId) => {
+        const status = await this.getGraphNodeStatus(supabase, userId, graphId);
+        return { graphId, status };
+      }),
+    );
+
+    const resultMap: Record<string, Record<string, NodeStatus>> = {};
+    for (const { graphId, status } of results) {
+      resultMap[graphId] = status;
+    }
+    return resultMap;
   }
 
   /**

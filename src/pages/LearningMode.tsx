@@ -46,7 +46,7 @@ import {
   useAILanguage,
   useQuoteShortcut,
 } from "../hooks";
-import { useGraph, useGraphData, useGraphNodeStatus } from "../hooks/queries";
+import { useGraph, useGraphData } from "../hooks/queries";
 import { useTimerStore } from "../store/useTimerStore";
 import {
   isAppError,
@@ -307,7 +307,7 @@ export const LearningMode = () => {
 
   const { data: graphData } = useGraphData(graphId || "");
   const { data: graphMeta } = useGraph(graphId || "");
-  const { data: _nodeStatus } = useGraphNodeStatus(graphId || "");
+  const _nodeStatus = graphData?.nodeStatus;
 
   const handleGenerateCards = async (targetNodeId: string) => {
     setIsGeneratingCards(true);

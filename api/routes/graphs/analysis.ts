@@ -18,6 +18,10 @@ const analyzeDomainSchema = z.object({
   context_domain_id: z.string().uuid().optional(),
 });
 
+const batchNodeStatusSchema = z.object({
+  graph_ids: z.array(z.string().uuid()).min(1).max(20),
+});
+
 const router = Router();
 
 // Get nodes and edges for a graph (Optional Auth)
@@ -29,8 +33,10 @@ router.get(
     const { id } = req.params;
     const userId = req.user?.id || null;
     const includeEmbedding = req.query.includeEmbedding === "true";
+    const includeStatus = req.query.includeStatus === "true";
     const data = await graphService.getGraphNodes(req.supabase!, userId, id, {
       includeEmbedding,
+      includeStatus,
     });
 
     // Update last_used_at when user opens their own graph
@@ -55,6 +61,23 @@ router.get(
     const data = userId
       ? await graphService.getGraphNodeStatus(req.supabase!, userId, id)
       : {};
+    res.json(data);
+  },
+);
+
+// Batch get node status for multiple graphs (Auth Required)
+router.post(
+  "/batch-node-status",
+  requireAuth,
+  validate({ body: batchNodeStatusSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_ids } = req.body;
+    const userId = req.user.id;
+    const data = await graphService.batchGetGraphNodeStatus(
+      req.supabase!,
+      userId,
+      graph_ids,
+    );
     res.json(data);
   },
 );

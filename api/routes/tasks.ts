@@ -10,16 +10,6 @@ import { ErrorCodes } from '../../shared/types/errorCodes';
 const router = Router();
 
 router.get('/events', requireAuth, (req: AuthRequest, res: Response) => {
-  const headers = {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-transform',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no'
-  };
-  
-  res.writeHead(200, headers);
-  res.flushHeaders();
-
   const userId = req.user.id;
   logger.debug(`[SSE] New connection request from user: ${userId}`);
 
@@ -37,7 +27,21 @@ router.get('/events', requireAuth, (req: AuthRequest, res: Response) => {
     clearInterval(keepAliveInterval);
   });
 
-  sseService.addClient(userId, res);
+  const added = sseService.addClient(userId, res);
+  if (!added) {
+    clearInterval(keepAliveInterval);
+    res.status(429).json({ type: 'error', message: 'Too many SSE connections' });
+    return;
+  }
+
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  };
+  res.writeHead(200, headers);
+  res.flushHeaders();
 
   res.write(`data: ${JSON.stringify({ type: 'connected', message: 'SSE connection established' })}\n\n`);
 });

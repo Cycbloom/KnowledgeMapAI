@@ -1,8 +1,0 @@
-- [x] MeshStandardMaterial 的 metalness 降至 0.15，diffuse color 可见
-- [x] MeshStandardMaterial 设置 emissive 为白色，节点有自发光
-- [x] roughness 调整到 0.5，光泽感与颜色可见度平衡
-- [x] emissiveIntensity 调整到 0.15，避免过亮
-- [x] ambientLight intensity 提升到 0.5
-- [x] level 着色模式下不同层级颜色清晰可辨
-- [x] 类型检查通过
-- [x] Lint 检查通过

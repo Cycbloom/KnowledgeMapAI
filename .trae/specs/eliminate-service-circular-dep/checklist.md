@@ -1,6 +1,0 @@
-- [x] `ragService` 不再直接 import `graphTraversalService`
-- [x] `ragService` 通过注入获取图谱遍历能力，功能行为不变
-- [x] `api/services/index.ts` 中 ragService 初始化时正确注入遍历能力
-- [x] graph→ai→graph 传递性循环依赖已消除（可用 `madge` 或手动验证 import 链无环）
-- [x] `api/services/index.ts` 包含依赖方向规则注释
-- [x] `npm run check` 通过

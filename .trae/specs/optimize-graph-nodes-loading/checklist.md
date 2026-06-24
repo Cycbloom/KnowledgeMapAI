@@ -1,4 +1,0 @@
-- [x] includeEmbedding 路径使用独立缓存键和较短 TTL
-- [x] 缓存失效逻辑同时清除 embedding 缓存键（通过 graph:{graphId} 标签）
-- [x] 节点数 > 500 时记录 warn 日志
-- [x] TypeScript 类型检查通过

@@ -1,8 +1,0 @@
-- [x] 全局搜索确认 DatabaseInterface、SupabaseAdapter、getDatabase、initializeDatabase 无外部消费者
-- [x] `api/database/interface.ts` 已删除
-- [x] `api/database/adapters/supabase.ts` 已删除
-- [x] `api/database/adapters/` 目录已清理
-- [x] `api/database/index.ts` 仅导出 transactionExecutor，移除了所有死代码导出
-- [x] `api/routes/data.ts` 的 transactionExecutor 导入路径正确
-- [x] `npm run check` 通过，无类型错误
-- [x] `npm run lint` 通过，无 lint 错误

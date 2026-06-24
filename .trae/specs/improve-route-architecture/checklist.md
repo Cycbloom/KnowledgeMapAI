@@ -1,7 +1,0 @@
-- [x] 11 处 as any 类型断言已全部修复
-- [x] 40 个路由文件错误处理已统一为 AppError 模式
-- [x] 12 个路由文件的非 DB 业务逻辑已提取到服务层
-- [x] `npm run check` 通过
-- [x] `npm run lint` 通过
-- [x] 路由文件中无 `as any`
-- [x] 路由文件中无 `res.status(4xx/5xx).json()` 错误处理模式

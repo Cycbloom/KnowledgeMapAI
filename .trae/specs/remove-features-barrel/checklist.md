@@ -1,3 +1,0 @@
-- [x] `src/components/features/` 目录已被删除
-- [x] 项目构建通过（`npm run check`）
-- [x] 无残留引用指向 `components/features`

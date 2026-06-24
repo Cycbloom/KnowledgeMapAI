@@ -1,8 +1,0 @@
-- [x] ShareModal 中 isOwner 不再硬编码为 true，而是根据当前用户与图谱 owner 判断
-- [x] 非所有者打开 ShareModal 时，邀请协作者和生成分享链接的 UI 被隐藏
-- [x] graph_collaborators 表包含 invitation_expires_at 列
-- [x] generateShareLink 生成的邀请记录包含 7 天后的过期时间
-- [x] acceptInvitation 在 token 过期时拒绝邀请并返回明确错误
-- [x] joinByShareLink 在 token 过期时拒绝加入并返回明确错误
-- [x] getInvitationInfo 在 token 过期时返回过期提示
-- [x] generateShareLink 调用时自动触发过期邀请清理

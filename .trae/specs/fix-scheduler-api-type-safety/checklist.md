@@ -1,8 +1,0 @@
-- [x] ISchedulerApi 不再使用 `Record<string, any>` 类型，改为交叉类型组合
-- [x] 18 个子 API 模块均有独立的 TypeScript 接口定义
-- [x] 每个子接口的方法签名精确匹配实现（参数类型 + 返回类型）
-- [x] `updateProgress` 方法名冲突已修复：tasksApi.updateProgress 可正常调用
-- [x] `schedulesApi.updateProgress` 已重命名为 `updateProgressPlanEntry`
-- [x] 所有 `api.scheduler.*` 调用点在类型检查中无报错
-- [x] `npm run check` 通过无类型错误（仅存预先存在的 3 个无关错误）
-- [x] mobile/scheduler 层同步检查无遗漏冲突（添加类型断言 + TODO 注释）

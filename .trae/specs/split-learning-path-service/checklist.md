@@ -1,8 +1,0 @@
-- [x] learningPathAlgorithms.ts 包含所有 10 个纯函数算法（+ topologicalSortNodes），且可独立导入和测试
-- [x] learningPathTaskIntegration.ts 包含所有 5 个任务系统集成方法，且可独立维护
-- [x] learningPathDailyPlan.ts 包含所有 5 个每日计划方法，且可独立维护
-- [x] learningPathService.ts 通过组合调用拆分模块，保持所有公开 API 不变
-- [x] learningPathService.ts 行数从 3401 行降至 **1858 行**（减少 45%，目标 1500 行。剩余为核心 CRUD+节点管理+进度追踪+编排入口，互相依赖紧密，进一步拆分风险较高）
-- [x] api/services/study/index.ts 正确导出所有新模块
-- [x] npm run check 类型检查通过（无 learningPath 相关错误）
-- [x] npm run lint 代码规范通过（0 errors）

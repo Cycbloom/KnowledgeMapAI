@@ -270,6 +270,9 @@
       "fillBlank": "填空",
       "essay": "简答"
     },
+    "semantic": {
+      "similar": "语义相近 {{percent}}%"
+    },
     "rating": {
       "again": "忘记",
       "hard": "困难",
@@ -818,6 +821,8 @@
     "fsrsConfig": "学习算法配置 (FSRS)",
     "requestRetention": "目标保留率 (Request Retention)",
     "maxReviewInterval": "最大复习间隔 (天)",
+    "semanticScheduling": "语义感知复习",
+    "semanticSchedulingDesc": "在复习排序中自动分散语义相似的知识点，减少记忆干扰",
     "requestRetentionDesc": "设定您希望在复习时记住的概率。值越高，复习越频繁，记忆越牢固。建议范围：0.80 - 0.95。",
     "maxIntervalDesc": "限制卡片复习的最大间隔天数。默认 36500 天（100年）。",
     "saveSuccess": "系统配置已保存",

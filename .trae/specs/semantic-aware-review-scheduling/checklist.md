@@ -1,0 +1,11 @@
+- [x] 语义干扰检测服务实现了余弦相似度计算、干扰对检测、语义分组和语义感知排序四个核心方法
+- [ ] 语义干扰检测服务有单元测试覆盖余弦相似度、干扰对检测、分组和排序算法
+- [x] spacedRepetitionBridge.getUnifiedReviewQueue 在 urgency 分组内使用语义感知排序，无 embedding 时降级到 masteryLevel 排序
+- [x] 排序性能保护生效：N > 100 时仅对前 100 张卡片执行语义排序
+- [x] GET /api/study/semantic-groups 端点返回正确的语义分组和干扰对数据
+- [x] 前端 study API 客户端和 hook 正确封装语义分组 API 调用
+- [x] IStudyApi 契约接口包含 getSemanticGroups 方法签名
+- [x] Quiz 模式不再使用 Math.random() - 0.5 随机打乱，改用语义感知排序（无语义数据时降级到随机打乱）
+- [x] Quiz 卡片在语义相似度 > 0.75 时显示"语义相近"提示标签及相似度百分比
+- [x] 用户设置中 study.semantic_scheduling 开关可控制语义排序的启用/禁用
+- [x] Settings.tsx 学习设置区域包含"语义感知复习"开关 UI

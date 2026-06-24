@@ -11,6 +11,7 @@ import { ErrorCodes } from "../../shared/types/errorCodes";
 import { AppError } from "../middleware/errorHandler";
 import { studyService, studyRouteService, StudyRouteService } from "../services/study";
 import { fsrsParameterService } from "../services/study/fsrsParameterService";
+import { semanticInterferenceService } from "../services/study/semanticInterferenceService";
 import type { StudyCard } from "../../shared/types/common";
 import { logger } from "../utils/logger";
 
@@ -431,6 +432,52 @@ router.post("/fsrs-parameters/optimize", requireAuth, async (req: AuthRequest, r
     logger.error("Error optimizing FSRS parameters:", error);
     throw new AppError(
       err.message || "优化 FSRS 参数失败",
+      500,
+      ErrorCodes.SYSTEM_INTERNAL_ERROR,
+    );
+  }
+});
+
+router.get("/semantic-groups", requireAuth, async (req: AuthRequest, res: Response) => {
+  const { graph_id } = req.query;
+
+  try {
+    // Get due cards for the user
+    let query = req.supabase!
+      .from("study_cards")
+      .select("knowledge_point_id")
+      .eq("user_id", req.user.id);
+
+    if (graph_id) {
+      query = query.eq("graph_id", graph_id as string);
+    }
+
+    query = query.lte("next_review", new Date().toISOString());
+
+    const { data: cards, error } = await query;
+
+    if (error) {
+      throw new AppError("获取语义分组失败", 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    }
+
+    const kpIds = [...new Set((cards ?? []).map((c: { knowledge_point_id: string }) => c.knowledge_point_id))];
+
+    if (kpIds.length === 0) {
+      res.json({ groups: [], interference_pairs: [] });
+      return;
+    }
+
+    const [groups, interferencePairs] = await Promise.all([
+      semanticInterferenceService.getSemanticGroups(req.supabase!, kpIds),
+      semanticInterferenceService.detectInterferencePairs(req.supabase!, kpIds),
+    ]);
+
+    res.json({ groups, interference_pairs: interferencePairs });
+  } catch (error) {
+    const err = error as Error;
+    logger.error("Error fetching semantic groups:", error);
+    throw new AppError(
+      err.message || "获取语义分组失败",
       500,
       ErrorCodes.SYSTEM_INTERNAL_ERROR,
     );

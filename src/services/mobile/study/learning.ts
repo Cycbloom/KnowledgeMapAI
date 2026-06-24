@@ -530,4 +530,8 @@ export const mobileStudyApi: IStudyApi = {
       message: "移动端暂不支持参数优化，请在桌面端使用",
     };
   },
+
+  getSemanticGroups: async (_graphId?: string) => {
+    return { groups: [], interference_pairs: [] };
+  },
 };

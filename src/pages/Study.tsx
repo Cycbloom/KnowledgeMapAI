@@ -1,7 +1,7 @@
 import { useLayoutEffect, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useStudyCards } from "../hooks/queries";
+import { useStudyCards, useSemanticGroups } from "../hooks/queries";
 import { useUpdateCardProgressMutation } from "../hooks/mutations";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
@@ -77,7 +77,22 @@ export const Study = () => {
   const { data: dueCardsData } = useStudyCards(
     scopeParams ? { ...scopeParams, due: true } : { due: true },
   );
+  const { data: semanticGroupsData } = useSemanticGroups(graphId ?? undefined);
   const updateProgressMutation = useUpdateCardProgressMutation();
+
+  useEffect(() => {
+    if (semanticGroupsData && typeof semanticGroupsData === "object" && "interference_pairs" in semanticGroupsData) {
+      const map = new Map<string, Map<string, number>>();
+      const pairs = (semanticGroupsData as { interference_pairs: Array<{ kpId1: string; kpId2: string; similarity: number }> }).interference_pairs;
+      for (const pair of pairs) {
+        if (!map.has(pair.kpId1)) map.set(pair.kpId1, new Map());
+        if (!map.has(pair.kpId2)) map.set(pair.kpId2, new Map());
+        map.get(pair.kpId1)!.set(pair.kpId2, pair.similarity);
+        map.get(pair.kpId2)!.set(pair.kpId1, pair.similarity);
+      }
+      setSemanticSimilarityMap(map);
+    }
+  }, [semanticGroupsData]);
 
   const allCards = useMemo(
     () => (Array.isArray(allCardsData) ? (allCardsData as StudyCard[]) : []),
@@ -122,6 +137,8 @@ export const Study = () => {
 
   // Quiz generation modal state
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [semanticSimilarityMap, setSemanticSimilarityMap] = useState<Map<string, Map<string, number>>>(new Map());
+  const [prevKnowledgePointId, setPrevKnowledgePointId] = useState<string | null>(null);
 
   // Reset state when params change
   useLayoutEffect(() => {
@@ -150,7 +167,7 @@ export const Study = () => {
   useEffect(() => {
     if (mode === "quiz" && allCards.length > 0 && quizCards.length === 0) {
       const next = [...allCards];
-      next.sort(() => Math.random() - 0.5);
+      semanticAwareShuffle(next);
       setQuizCards(next);
       setCurrentCardIndex(0);
       setFinished(false);
@@ -252,8 +269,8 @@ export const Study = () => {
       return;
     }
 
-    // Shuffle
-    next.sort(() => Math.random() - 0.5);
+    // Semantic-aware sorting: maximize distance between semantically similar cards
+    semanticAwareShuffle(next);
     setQuizCards(next);
     setCurrentCardIndex(0);
     setFinished(false);
@@ -296,6 +313,7 @@ export const Study = () => {
         id: quizCards[currentCardIndex].id,
         quality,
       });
+      setPrevKnowledgePointId(quizCards[currentCardIndex].knowledge_point_id);
     } catch (err) {
       console.error(err);
       frontendEventBus.publish("message_show", {
@@ -318,9 +336,14 @@ export const Study = () => {
     setSelectedOption(null);
     setSwipeDirection(null);
     setCardKey((k) => k + 1);
+    setPrevKnowledgePointId(null);
 
-    // Reshuffle current set
-    setQuizCards((prev) => [...prev].sort(() => Math.random() - 0.5));
+    // Reshuffle with semantic awareness
+    setQuizCards((prev) => {
+      const next = [...prev];
+      semanticAwareShuffle(next);
+      return next;
+    });
   };
 
   const handleDragEnd = (_: unknown, info: { velocity: { x: number }; offset: { x: number } }) => {
@@ -371,6 +394,7 @@ export const Study = () => {
       setShowAnswer(false);
       setSelectedOption(null);
       setFinished(false);
+      setPrevKnowledgePointId(null);
       setViewState("dashboard");
     }
   };
@@ -390,6 +414,61 @@ export const Study = () => {
     }
     return [];
   }, [currentCard]);
+
+  // Compute similarity between current card and previous card
+  const similarityWithPrev = useMemo(() => {
+    if (!currentCard?.knowledge_point_id || !prevKnowledgePointId) return null;
+    return semanticSimilarityMap.get(prevKnowledgePointId)?.get(currentCard.knowledge_point_id) ?? null;
+  }, [currentCard?.knowledge_point_id, prevKnowledgePointId, semanticSimilarityMap]);
+
+  // Semantic-aware shuffle: spread semantically similar cards apart
+  const semanticAwareShuffle = (cards: StudyCard[]) => {
+    if (cards.length <= 2 || semanticSimilarityMap.size === 0) {
+      cards.sort(() => Math.random() - 0.5);
+      return;
+    }
+
+    const used = new Set<number>();
+    const result: StudyCard[] = [];
+
+    // Start with a random card
+    const startIdx = Math.floor(Math.random() * cards.length);
+    result.push(cards[startIdx]);
+    used.add(startIdx);
+
+    // Greedy: pick the card most dissimilar to the last one
+    while (result.length < cards.length) {
+      const lastKpId = result[result.length - 1].knowledge_point_id;
+      const simMap = semanticSimilarityMap.get(lastKpId);
+
+      let bestIdx = -1;
+      let bestSimilarity = Infinity;
+
+      for (let i = 0; i < cards.length; i++) {
+        if (used.has(i)) continue;
+        const candidateKpId = cards[i].knowledge_point_id;
+        const sim = simMap?.get(candidateKpId) ?? 0;
+
+        if (sim < bestSimilarity || (sim === bestSimilarity && Math.random() < 0.5)) {
+          bestSimilarity = sim;
+          bestIdx = i;
+        }
+      }
+
+      if (bestIdx === -1) break;
+      result.push(cards[bestIdx]);
+      used.add(bestIdx);
+    }
+
+    // Fill any remaining cards
+    for (let i = 0; i < cards.length; i++) {
+      if (!used.has(i)) result.push(cards[i]);
+    }
+
+    // Replace array contents in-place
+    cards.length = 0;
+    cards.push(...result);
+  };
 
   if (isLoading)
     return (
@@ -1562,6 +1641,20 @@ export const Study = () => {
                           ? t("study.cardType.fillBlank")
                           : t("study.cardType.essay")}
               </div>
+
+              {/* Semantic Similarity Hint */}
+              {similarityWithPrev !== null && similarityWithPrev > 0.75 && (
+                <div
+                  className={`absolute ${isMobile ? "top-3 left-3" : "top-6 left-6"} text-[10px] font-bold px-2.5 py-1 rounded-full z-10 flex items-center gap-1 ${
+                    isDark
+                      ? "bg-amber-900/40 text-amber-400 border border-amber-700/50"
+                      : "bg-amber-50 text-amber-600 border border-amber-200"
+                  }`}
+                >
+                  <AlertTriangle size={10} />
+                  {t("study.semantic.similar", { percent: Math.round(similarityWithPrev * 100) })}
+                </div>
+              )}
 
               <div
                 className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "pr-0" : "pr-1"} space-y-4 md:space-y-8 mt-2 md:mt-4`}

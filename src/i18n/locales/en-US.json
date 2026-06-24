@@ -271,6 +271,9 @@
       "fillBlank": "Fill in Blank",
       "essay": "Essay"
     },
+    "semantic": {
+      "similar": "Similar {{percent}}%"
+    },
     "rating": {
       "again": "Again",
       "hard": "Hard",
@@ -568,6 +571,8 @@
     "fsrsConfig": "Learning Algorithm Configuration (FSRS)",
     "requestRetention": "Target Retention Rate",
     "maxReviewInterval": "Max Review Interval (days)",
+    "semanticScheduling": "Semantic-aware Review",
+    "semanticSchedulingDesc": "Automatically spread semantically similar knowledge points in review order to reduce memory interference",
     "requestRetentionDesc": "Set the probability you want to remember during review. Higher values mean more frequent reviews and stronger memory. Recommended range: 0.80 - 0.95.",
     "maxIntervalDesc": "Limit the maximum interval days for card review. Default is 36500 days (100 years).",
     "saveSuccess": "Settings saved successfully",

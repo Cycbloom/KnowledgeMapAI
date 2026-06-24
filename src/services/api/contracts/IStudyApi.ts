@@ -44,4 +44,17 @@ export interface IStudyApi {
     reviewCount: number;
     message: string;
   }>;
+
+  getSemanticGroups(graphId?: string): Promise<{
+    groups: Array<{
+      groupId: number;
+      memberKpIds: string[];
+      avgSimilarity: number;
+    }>;
+    interference_pairs: Array<{
+      kpId1: string;
+      kpId2: string;
+      similarity: number;
+    }>;
+  }>;
 }

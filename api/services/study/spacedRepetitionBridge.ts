@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { appEventBus } from "../core/eventBus";
 import type { ReviewCompletedPayload } from "../../../shared/types/scheduler";
+import { semanticInterferenceService } from "./semanticInterferenceService";
 
 /**
  * Spaced Repetition Bridge - FSRS-only review queue and processing.
@@ -33,14 +34,74 @@ class SpacedRepetitionBridge {
   ): Promise<UnifiedReviewItem[]> {
     const items = await this.getFSRSReviewQueue(supabase, userId);
 
+    // Check if semantic scheduling is enabled
+    const semanticEnabled = await this.isSemanticSchedulingEnabled(supabase, userId);
+
+    // First sort by urgency
+    const urgencyOrder = { overdue: 0, today: 1, upcoming: 2, future: 3 };
     items.sort((a, b) => {
-      const urgencyOrder = { overdue: 0, today: 1, upcoming: 2, future: 3 };
       const urgencyDiff = urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
       if (urgencyDiff !== 0) return urgencyDiff;
       return a.masteryLevel - b.masteryLevel;
     });
 
-    return items;
+    if (!semanticEnabled) return items;
+
+    // Group by urgency and apply semantic spacing within each group
+    try {
+      const groups = this.groupByUrgency(items);
+      const result: UnifiedReviewItem[] = [];
+
+      for (const urgency of ["overdue", "today", "upcoming", "future"] as const) {
+        const groupItems = groups[urgency];
+        if (groupItems.length <= 1) {
+          result.push(...groupItems);
+          continue;
+        }
+
+        const spacedItems = await semanticInterferenceService.getSemanticSpacedOrder<UnifiedReviewItem>(
+          supabase,
+          groupItems,
+        );
+        result.push(...spacedItems as UnifiedReviewItem[]);
+      }
+
+      return result;
+    } catch (error) {
+      logger.warn("[SRBridge] Semantic sorting failed, falling back to default sort:", error);
+      return items;
+    }
+  }
+
+  private groupByUrgency(items: UnifiedReviewItem[]): Record<string, UnifiedReviewItem[]> {
+    const groups: Record<string, UnifiedReviewItem[]> = {
+      overdue: [],
+      today: [],
+      upcoming: [],
+      future: [],
+    };
+    for (const item of items) {
+      groups[item.urgency].push(item);
+    }
+    return groups;
+  }
+
+  private async isSemanticSchedulingEnabled(
+    supabase: SupabaseClient,
+    userId: string,
+  ): Promise<boolean> {
+    try {
+      const { data } = await supabase
+        .from("users")
+        .select("settings")
+        .eq("id", userId)
+        .single();
+
+      // Default to true if not explicitly set to false
+      return data?.settings?.study?.semantic_scheduling !== false;
+    } catch {
+      return true;
+    }
   }
 
   private async getFSRSReviewQueue(

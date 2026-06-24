@@ -86,6 +86,13 @@ export const studyApi: IStudyApi = {
     request("/study/fsrs-parameters/optimize", {
       method: "POST",
     }),
+
+  getSemanticGroups: (graphId?: string) => {
+    const params = new URLSearchParams();
+    if (graphId) params.set("graph_id", graphId);
+    const query = params.toString();
+    return request(`/study/semantic-groups${query ? `?${query}` : ""}`);
+  },
 };
 
 export const dashboardApi: IDashboardApi = {

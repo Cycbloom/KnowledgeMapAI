@@ -206,6 +206,7 @@ export const Settings = () => {
   const [defaultStudyMode, setDefaultStudyMode] = useState("mixed");
   const [masteryThresholds, setMasteryThresholds] = useState(DEFAULT_MASTERY_THRESHOLDS);
   const [schedulerWeights, setSchedulerWeights] = useState(DEFAULT_SCHEDULER_WEIGHTS);
+  const [semanticScheduling, setSemanticScheduling] = useState(true);
 
   const [fsrsParams, setFsrsParams] = useState<{
     source: "default" | "custom" | "optimized";
@@ -375,6 +376,8 @@ export const Settings = () => {
         setMasteryThresholds(settings.masteryThresholds);
       if (settings.schedulerWeights)
         setSchedulerWeights(settings.schedulerWeights);
+      if (settings.semantic_scheduling !== undefined)
+        setSemanticScheduling(settings.semantic_scheduling);
 
       if (settings.available_models) {
         setAvailableModels((prev) => ({
@@ -742,6 +745,7 @@ export const Settings = () => {
           defaultStudyMode,
           masteryThresholds,
           schedulerWeights,
+          semantic_scheduling: semanticScheduling,
           available_models: availableModels,
         },
       });
@@ -2670,6 +2674,36 @@ export const Settings = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <Brain className="w-4 h-4 text-primary-500" />
+                {t("settings.semanticScheduling")}
+              </h3>
+
+              <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t("settings.semanticScheduling")}
+                  </span>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    {t("settings.semanticSchedulingDesc")}
+                  </p>
+                </div>
+                <div
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                    semanticScheduling ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
+                  }`}
+                  onClick={() => setSemanticScheduling(!semanticScheduling)}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                      semanticScheduling ? "translate-x-5" : "translate-x-0.5"
+                    }`}
+                  />
+                </div>
+              </label>
             </div>
           </div>
         </div>

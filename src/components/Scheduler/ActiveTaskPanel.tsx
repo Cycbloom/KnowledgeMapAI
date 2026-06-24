@@ -226,7 +226,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     } else {
       // 5. 全部完成 → 标记大任务完成
       try {
-        await api.scheduler.updateProgress(task.id, { percentage: 100 });
+        await api.scheduler.updateProgressPlanEntry(task.id, { percentage: 100 });
       } catch (err) {
         console.warn("Failed to mark task completed:", err);
       }

@@ -66,6 +66,7 @@ export type {
 
 export type { UserTaskStats, HeatmapData } from "./analytics";
 
+import type { ISchedulerApi } from "../../contracts/ISchedulerApi";
 import { tasksApi } from "./tasks";
 import { queuesApi } from "./queues";
 import { executionsApi } from "./executions";
@@ -105,3 +106,6 @@ export const schedulerApi = {
   ...orchestratorApi,
   ...systemTasksApi,
 };
+
+// Type assertion to ensure schedulerApi satisfies ISchedulerApi at compile time
+export const _schedulerApiTypeCheck: ISchedulerApi = schedulerApi;

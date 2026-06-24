@@ -470,6 +470,7 @@ export class CollaboratorService {
         `
         graph_id,
         role,
+        invitation_expires_at,
         graph:knowledge_graphs (
           title
         )

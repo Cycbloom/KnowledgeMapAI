@@ -452,7 +452,7 @@ export const GraphEditor = () => {
       let emb = node.embedding;
       // 容错：后端可能返回 pgvector 字符串格式
       if (typeof emb === 'string') {
-        try { emb = JSON.parse(emb); } catch { emb = null; }
+        try { emb = JSON.parse(emb); } catch { emb = undefined; }
       }
       if (emb && Array.isArray(emb) && emb.length > 0) {
         map.set(node.id, emb);

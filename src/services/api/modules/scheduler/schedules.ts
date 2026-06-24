@@ -95,7 +95,7 @@ export const schedulesApi = {
   getProgressPlan: (taskId: string) =>
     request(`/scheduler/tasks/${taskId}/progress-plan`),
 
-  updateProgress: (
+  updateProgressPlanEntry: (
     taskId: string,
     data: {
       date?: string;

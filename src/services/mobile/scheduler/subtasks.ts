@@ -17,16 +17,15 @@ export const getSubtasks = async (taskId: string): Promise<TaskSubtask[]> => {
   });
 };
 
-export const createSubtask = async (data: {
-  task_id: string;
-  title: string;
-  description?: string;
-}): Promise<TaskSubtask> => {
+export const createSubtask = async (
+  taskId: string,
+  data: { title: string; description?: string },
+): Promise<TaskSubtask> => {
   return withClient(async (client) => {
     const { data: result, error } = await client
       .from("task_subtasks")
       .insert({
-        task_id: data.task_id,
+        task_id: taskId,
         title: data.title,
         description: data.description,
         status: "pending",
@@ -43,8 +42,9 @@ export const createSubtask = async (data: {
 };
 
 export const updateSubtask = async (
-  id: string,
-  data: { title?: string; status?: string }
+  _taskId: string,
+  subtaskId: string,
+  data: { title?: string; status?: string },
 ): Promise<TaskSubtask> => {
   return withClient(async (client) => {
     const updateData: Record<string, unknown> = { ...data };
@@ -55,7 +55,7 @@ export const updateSubtask = async (
     const { data: result, error } = await client
       .from("task_subtasks")
       .update(updateData)
-      .eq("id", id)
+      .eq("id", subtaskId)
       .select()
       .single();
 
@@ -67,9 +67,15 @@ export const updateSubtask = async (
   });
 };
 
-export const deleteSubtask = async (id: string): Promise<void> => {
+export const deleteSubtask = async (
+  _taskId: string,
+  subtaskId: string,
+): Promise<void> => {
   return withClient(async (client) => {
-    const { error } = await client.from("task_subtasks").delete().eq("id", id);
+    const { error } = await client
+      .from("task_subtasks")
+      .delete()
+      .eq("id", subtaskId);
 
     if (error) {
       throw new Error(error.message);

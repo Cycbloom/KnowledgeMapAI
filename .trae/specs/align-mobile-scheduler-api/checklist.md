@@ -1,0 +1,6 @@
+- [x] tasks.ts 中 14 个函数名已对齐 ISchedulerTasksApi（create/list/get/getDetail/update/delete/start/pause/complete/demote/move/reorder/generateDetails/checkDependencies）
+- [x] dependencies.ts 中 3 个函数名和签名已对齐 ISchedulerDependenciesApi（getTaskDependencies/addTaskDependency/removeTaskDependency）
+- [x] subtasks.ts 中 3 个函数签名已对齐 ISchedulerSubtasksApi（createSubtask/updateSubtask/deleteSubtask 接受 taskId 作为首参）
+- [x] analytics.ts 中 3 个函数签名已对齐契约（createSchedule/createProgressPlan/createTimeSlot）
+- [x] index.ts 中无适配函数、无 `as never`、无 `as unknown as` 类型转换
+- [x] `npx tsc --noEmit` 通过零新增错误

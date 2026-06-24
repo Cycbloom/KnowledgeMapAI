@@ -2,6 +2,7 @@ import type {
   UserTimeSlot,
   TaskSchedule,
   TaskProgressPlan,
+  ProgressMode,
 } from "@shared/types";
 
 export const getTaskAnalytics = async () => {
@@ -24,7 +25,7 @@ export const getTimeSlots = async (): Promise<UserTimeSlot[]> => {
   return [];
 };
 
-export const createTimeSlot = async (_data: Omit<UserTimeSlot, "id" | "created_at">): Promise<UserTimeSlot> => {
+export const createTimeSlot = async (_data: { day_of_week?: number; start_time: string; end_time: string; is_available?: boolean; label?: string }): Promise<UserTimeSlot> => {
   return {} as UserTimeSlot;
 };
 
@@ -40,7 +41,7 @@ export const getSchedules = async (): Promise<TaskSchedule[]> => {
   return [];
 };
 
-export const createSchedule = async (_data: Omit<TaskSchedule, "id" | "created_at" | "updated_at">): Promise<TaskSchedule> => {
+export const createSchedule = async (_data: { task_template_id: string; schedule_type: "daily" | "weekly" | "custom" | "smart"; schedule_config?: Record<string, unknown>; is_active?: boolean }): Promise<TaskSchedule> => {
   return {} as TaskSchedule;
 };
 
@@ -52,7 +53,7 @@ export const deleteSchedule = async (_id: string): Promise<void> => {
   return;
 };
 
-export const createProgressPlan = async (_taskId: string, _data: Omit<TaskProgressPlan, "id" | "task_id" | "created_at">): Promise<TaskProgressPlan> => {
+export const createProgressPlan = async (_taskId: string, _data: { start_date: string; end_date: string; progress_mode: ProgressMode; custom_allocations?: Array<{ date: string; percentage: number }> }): Promise<TaskProgressPlan> => {
   return {} as TaskProgressPlan;
 };
 

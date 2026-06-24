@@ -21,25 +21,25 @@ function notSupported(methodName: string): (...args: unknown[]) => Promise<never
 }
 
 export const mobileSchedulerApi: ISchedulerApi = {
-  // --- ISchedulerTasksApi (method names aligned with contract) ---
-  create: tasks.createTask,
-  list: tasks.getTasks,
-  get: tasks.getTask,
-  getDetail: tasks.getTaskDetail,
-  update: tasks.updateTask,
-  delete: tasks.deleteTask,
-  start: tasks.startTask,
-  pause: tasks.pauseTask,
-  complete: tasks.completeTask,
-  demote: tasks.demoteTask,
-  move: tasks.moveTask,
-  reorder: tasks.reorderTasks,
-  generateDetails: tasks.generateTaskDetails,
+  // --- ISchedulerTasksApi ---
+  create: tasks.create,
+  list: tasks.list,
+  get: tasks.get,
+  getDetail: tasks.getDetail,
+  update: tasks.update,
+  delete: tasks.deleteTask, // 'delete' is a reserved keyword, cannot be used as export name
+  start: tasks.start,
+  pause: tasks.pause,
+  complete: tasks.complete,
+  demote: tasks.demote,
+  move: tasks.move,
+  reorder: tasks.reorder,
+  generateDetails: tasks.generateDetails,
   updateNotes: tasks.updateNotes,
   getSmartRecommendation: tasks.getSmartRecommendation,
   getEfficiencyProfile: notSupported("getEfficiencyProfile"),
   getDynamicPriority: tasks.getDynamicPriority,
-  checkDependencies: tasks.checkTaskDependencies,
+  checkDependencies: tasks.checkDependencies,
   updateProgress: notSupported("updateProgress"),
   tickExecution: notSupported("tickExecution"),
 
@@ -54,12 +54,10 @@ export const mobileSchedulerApi: ISchedulerApi = {
   getExecutions: executions.getExecutions,
   getTaskExecutions: notSupported("getTaskExecutions"),
 
-  // --- ISchedulerDependenciesApi (adapter: contract uses (taskId, data), mobile uses single data object) ---
-  addTaskDependency: (taskId, data) =>
-    dependencies.createDependency({ task_id: taskId, ...data }),
-  removeTaskDependency: (_taskId, dependencyId) =>
-    dependencies.deleteDependency(dependencyId),
-  getTaskDependencies: dependencies.getDependencies,
+  // --- ISchedulerDependenciesApi ---
+  addTaskDependency: dependencies.addTaskDependency,
+  removeTaskDependency: dependencies.removeTaskDependency,
+  getTaskDependencies: dependencies.getTaskDependencies,
   getTaskDependents: notSupported("getTaskDependents"),
 
   // --- ISchedulerFocusApi ---
@@ -72,33 +70,29 @@ export const mobileSchedulerApi: ISchedulerApi = {
   getMonthlyFocusStats: focus.getMonthlyFocusStats,
   getYearlyHeatmap: analytics.getYearlyHeatmap,
 
-  // --- ISchedulerSchedulesApi (adapter: mobile stubs have different param shapes) ---
-  createSchedule: (data) => analytics.createSchedule(data as never),
+  // --- ISchedulerSchedulesApi ---
+  createSchedule: analytics.createSchedule,
   updateSchedule: analytics.updateSchedule,
   deleteSchedule: analytics.deleteSchedule,
   getSchedules: analytics.getSchedules,
-  createProgressPlan: (taskId, data) =>
-    analytics.createProgressPlan(taskId, data as never),
+  createProgressPlan: analytics.createProgressPlan,
   updateProgressPlan: analytics.updateProgressPlan,
   getProgressPlan: analytics.getProgressPlan,
   updateProgressPlanEntry: notSupported("updateProgressPlanEntry"),
 
-  // --- ISchedulerSettingsApi (adapter: createTimeSlot mobile stub expects different shape) ---
+  // --- ISchedulerSettingsApi ---
   getSettings: settings.getSettings,
   updateSettings: settings.updateSettings,
   getTimeSlots: analytics.getTimeSlots,
-  createTimeSlot: (data) => analytics.createTimeSlot(data as never),
+  createTimeSlot: analytics.createTimeSlot,
   updateTimeSlot: analytics.updateTimeSlot,
   deleteTimeSlot: analytics.deleteTimeSlot,
 
-  // --- ISchedulerSubtasksApi (adapter: contract uses (taskId, subtaskId, data), mobile uses single id) ---
+  // --- ISchedulerSubtasksApi ---
   getSubtasks: subtasks.getSubtasks,
-  createSubtask: (taskId, data) =>
-    subtasks.createSubtask({ task_id: taskId, ...data }),
-  updateSubtask: (_taskId, subtaskId, data) =>
-    subtasks.updateSubtask(subtaskId, data),
-  deleteSubtask: (_taskId, subtaskId) =>
-    subtasks.deleteSubtask(subtaskId),
+  createSubtask: subtasks.createSubtask,
+  updateSubtask: subtasks.updateSubtask,
+  deleteSubtask: subtasks.deleteSubtask,
   transitionSubtask: notSupported("transitionSubtask"),
   updateMastery: notSupported("updateMastery"),
   getValidTransitions: notSupported("getValidTransitions"),

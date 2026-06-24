@@ -17,7 +17,7 @@ import type {
 } from "@shared/types/database";
 import { toUserTask } from "@shared/types/database";
 
-export const createTask = async (data: CreateUserTaskData) => {
+export const create = async (data: CreateUserTaskData) => {
   return withClientAndUser(async (client, userId) => {
     const { data: result, error } = await client
       .from("user_tasks")
@@ -49,7 +49,7 @@ export const createTask = async (data: CreateUserTaskData) => {
   });
 };
 
-export const getTasks = async (filters?: UserTaskFilters): Promise<UserTask[]> => {
+export const list = async (filters?: UserTaskFilters): Promise<UserTask[]> => {
   return withClientOptionalUser(async (client, userId) => {
     if (!userId) {
       return [];
@@ -88,7 +88,7 @@ export const getTasks = async (filters?: UserTaskFilters): Promise<UserTask[]> =
   });
 };
 
-export const getTask = async (id: string): Promise<UserTask> => {
+export const get = async (id: string): Promise<UserTask> => {
   return withClient(async (client) => {
     const { data, error } = await client
       .from("user_tasks")
@@ -115,7 +115,7 @@ interface TaskDependencyWithTask extends TaskDependencyRow {
   }[] | null;
 }
 
-export const getTaskDetail = async (id: string): Promise<UserTaskDetail> => {
+export const getDetail = async (id: string): Promise<UserTaskDetail> => {
   return withClient(async (client) => {
     const { data: task, error: taskError } = await client
       .from("user_tasks")
@@ -247,7 +247,7 @@ export const getTaskDetail = async (id: string): Promise<UserTaskDetail> => {
   });
 };
 
-export const updateTask = async (id: string, data: UpdateUserTaskData): Promise<UserTask> => {
+export const update = async (id: string, data: UpdateUserTaskData): Promise<UserTask> => {
   return withClient(async (client) => {
     const { context, ...restData } = data;
     const updateData: Partial<UserTaskRow> = {
@@ -286,7 +286,7 @@ export const deleteTask = async (id: string): Promise<void> => {
   });
 };
 
-export const startTask = async (id: string): Promise<UserTask> => {
+export const start = async (id: string): Promise<UserTask> => {
   return withClient(async (client) => {
     const { data: result, error } = await client
       .from("user_tasks")
@@ -306,7 +306,7 @@ export const startTask = async (id: string): Promise<UserTask> => {
   });
 };
 
-export const pauseTask = async (id: string): Promise<UserTask> => {
+export const pause = async (id: string): Promise<UserTask> => {
   return withClient(async (client) => {
     const { data: result, error } = await client
       .from("user_tasks")
@@ -326,7 +326,7 @@ export const pauseTask = async (id: string): Promise<UserTask> => {
   });
 };
 
-export const completeTask = async (id: string): Promise<UserTask> => {
+export const complete = async (id: string): Promise<UserTask> => {
   return withClient(async (client) => {
     const { data: result, error } = await client
       .from("user_tasks")
@@ -347,7 +347,7 @@ export const completeTask = async (id: string): Promise<UserTask> => {
   });
 };
 
-export const demoteTask = async (id: string): Promise<UserTask> => {
+export const demote = async (id: string): Promise<UserTask> => {
   return withClient(async (client) => {
     const { data: task } = await client
       .from("user_tasks")
@@ -376,7 +376,7 @@ export const demoteTask = async (id: string): Promise<UserTask> => {
   });
 };
 
-export const moveTask = async (id: string, targetQueue: number | string): Promise<UserTask> => {
+export const move = async (id: string, targetQueue: number | string): Promise<UserTask> => {
   return withClient(async (client) => {
     const targetLevel = typeof targetQueue === "number" ? targetQueue : parseInt(targetQueue, 10);
 
@@ -398,7 +398,7 @@ export const moveTask = async (id: string, targetQueue: number | string): Promis
   });
 };
 
-export const reorderTasks = async (_queueLevel: number, taskIds: string[]): Promise<void> => {
+export const reorder = async (_queueLevel: number, taskIds: string[]): Promise<void> => {
   return withClient(async (client) => {
     for (let i = 0; i < taskIds.length; i++) {
       await client
@@ -409,7 +409,7 @@ export const reorderTasks = async (_queueLevel: number, taskIds: string[]): Prom
   });
 };
 
-export const generateTaskDetails = async (title: string, context?: string) => {
+export const generateDetails = async (title: string, context?: string) => {
   return {
     description: context || `Task: ${title}`,
     tags: [],
@@ -508,7 +508,7 @@ interface DependentTaskRow {
   status: string;
 }
 
-export const checkTaskDependencies = async (taskId: string) => {
+export const checkDependencies = async (taskId: string) => {
   return withClient(async (client) => {
     const { data: dependencies } = await client
       .from("task_dependencies")

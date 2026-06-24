@@ -1,0 +1,6 @@
+- [x] api/utils/nodeHelpers.ts 中 GraphNodeRaw 从 shared 重新导出，无本地重复定义
+- [x] api/utils/nodeHelpers.ts 中 getKnowledgePoint 从 shared 重新导出，无本地重复定义
+- [x] api/utils/nodeHelpers.ts 中 buildNodeFromGraphNode 从 shared 重新导出，无本地重复定义
+- [x] api/utils/nodeHelpers.ts 中 buildNodesFromGraphNodes 从 shared 重新导出，无本地重复定义
+- [x] api/utils/nodeHelpers.ts 保留 4 个 api 独有函数
+- [x] TypeScript 类型检查通过

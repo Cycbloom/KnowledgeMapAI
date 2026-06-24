@@ -93,7 +93,7 @@ router.delete(
     const { id } = req.params;
     await graphTemplateService.deleteTemplate(req.supabase!, id, req.user.id);
 
-    await cacheService.delByPrefix("templates_");
+    await cacheService.delByTags(["template:all"]);
 
     res.json({ message: "模板已删除" });
   },

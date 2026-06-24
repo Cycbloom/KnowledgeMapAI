@@ -1,6 +1,7 @@
 import NodeCache from 'node-cache';
 import { logger } from '../../utils/logger';
 
+const MAX_CACHE_KEYS = 1000;
 const localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 logger.info('📦 In-Memory Cache initialized');
@@ -84,7 +85,17 @@ export const cacheService = {
 
   set: async <T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<boolean> => {
     const effectiveTTL = stochasticTTL(ttl || DEFAULT_TTL);
-    
+
+    // LRU eviction: if at capacity, remove oldest key before adding new one
+    if (localCache.keys().length >= MAX_CACHE_KEYS && !localCache.has(key)) {
+      const allKeys = localCache.keys();
+      if (allKeys.length > 0) {
+        const oldestKey = allKeys[0];
+        await cacheService.del(oldestKey);
+        logger.debug(`[Cache] LRU evicted: ${oldestKey}`);
+      }
+    }
+
     const success = localCache.set(key, value, effectiveTTL);
     
     if (success && tags && tags.length > 0) {
@@ -135,6 +146,7 @@ export const cacheService = {
     return localCache.del(keys);
   },
 
+  /** @deprecated Use delByTags instead for better performance */
   delByPrefix: async (prefix: string): Promise<number> => {
     const keys = localCache.keys();
     const keysToDelete = keys.filter(key => key.startsWith(prefix));
@@ -172,7 +184,7 @@ export const cacheService = {
   
   getOrSet: async <T>(key: string, fetchFn: () => Promise<T>, ttl?: number, tags?: string[]): Promise<T> => {
     const cached = await cacheService.get<T>(key);
-    if (cached) {
+    if (cached !== undefined) {
       return cached;
     }
 
@@ -199,7 +211,7 @@ export const cacheService = {
     const results = await Promise.allSettled(
       keys.map(async ({ key, fetchFn, ttl }) => {
         const cached = await cacheService.get(key);
-        if (!cached) {
+        if (cached === undefined) {
           const data = await fetchFn();
           await cacheService.set(key, data, ttl || DEFAULT_TTL);
           return { key, status: 'warmed' };
@@ -264,7 +276,7 @@ export const cacheService = {
       for (const item of batch) {
         try {
           const cached = await cacheService.get(item.key);
-          if (!cached) {
+          if (cached === undefined) {
             const data = await item.fetchFn();
             await cacheService.set(item.key, data, item.ttl || DEFAULT_TTL);
           }
@@ -419,10 +431,9 @@ export const cacheService = {
       CacheKeys.GRAPH_TAGS(userId),
       CacheKeys.GRAPH_DOMAINS(userId),
     ];
-    // GRAPH_LITERATURE 需要按前缀删除（因为 moduleFilter 不同）
     await Promise.all([
       cacheService.del(keys),
-      cacheService.delByPrefix(`graph_literature_${graphId}`),
+      cacheService.delByTags([`graph:${graphId}`]),
     ]);
     logger.debug(`[Cache] Invalidated structure cache for user ${userId}, graph ${graphId}`);
   },

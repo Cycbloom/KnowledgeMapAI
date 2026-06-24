@@ -135,6 +135,61 @@ describe('Cache Service', () => {
       expect(result2).toBe('value_1');
       expect(fetchFn).toHaveBeenCalledTimes(1);
     });
+
+    it('should cache falsy values (empty array)', async () => {
+      const fetchFn = vi.fn().mockResolvedValue([]);
+      
+      const result1 = await cacheService.getOrSet('falsy_array', fetchFn, 100);
+      const result2 = await cacheService.getOrSet('falsy_array', fetchFn, 100);
+      
+      expect(result1).toEqual([]);
+      expect(result2).toEqual([]);
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should cache falsy values (number 0)', async () => {
+      const fetchFn = vi.fn().mockResolvedValue(0);
+      
+      const result1 = await cacheService.getOrSet('falsy_zero', fetchFn, 100);
+      const result2 = await cacheService.getOrSet('falsy_zero', fetchFn, 100);
+      
+      expect(result1).toBe(0);
+      expect(result2).toBe(0);
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should cache falsy values (false)', async () => {
+      const fetchFn = vi.fn().mockResolvedValue(false);
+      
+      const result1 = await cacheService.getOrSet('falsy_false', fetchFn, 100);
+      const result2 = await cacheService.getOrSet('falsy_false', fetchFn, 100);
+      
+      expect(result1).toBe(false);
+      expect(result2).toBe(false);
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should cache falsy values (null)', async () => {
+      const fetchFn = vi.fn().mockResolvedValue(null);
+      
+      const result1 = await cacheService.getOrSet('falsy_null', fetchFn, 100);
+      const result2 = await cacheService.getOrSet('falsy_null', fetchFn, 100);
+      
+      expect(result1).toBeNull();
+      expect(result2).toBeNull();
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should cache falsy values (empty string)', async () => {
+      const fetchFn = vi.fn().mockResolvedValue('');
+      
+      const result1 = await cacheService.getOrSet('falsy_empty_str', fetchFn, 100);
+      const result2 = await cacheService.getOrSet('falsy_empty_str', fetchFn, 100);
+      
+      expect(result1).toBe('');
+      expect(result2).toBe('');
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('Cache Warmup', () => {
@@ -286,6 +341,29 @@ describe('Cache Service', () => {
       
       expect(health.totalKeys).toBeGreaterThanOrEqual(2);
       expect(health.tagCount).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('Capacity Limit (maxKeys)', () => {
+    it('should evict oldest entries when maxKeys is reached', async () => {
+      // Flush to start clean
+      await cacheService.flush();
+      
+      // Fill cache to maxKeys (1000)
+      for (let i = 0; i < 1000; i++) {
+        await cacheService.set(`maxkey_test_${i}`, `value_${i}`, 300);
+      }
+      
+      const statsBefore = await cacheService.getStats();
+      expect(statsBefore.keys).toBe(1000);
+      
+      // Adding one more should trigger eviction
+      await cacheService.set('maxkey_overflow', 'overflow_value', 300);
+      
+      const statsAfter = await cacheService.getStats();
+      // NodeCache with maxKeys evicts when exceeding, total should still be <= maxKeys
+      expect(statsAfter.keys).toBeLessThanOrEqual(1000);
+      expect(await cacheService.get('maxkey_overflow')).toBe('overflow_value');
     });
   });
 

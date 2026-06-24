@@ -111,7 +111,7 @@ class CacheInvalidationSubscriber {
     ];
     await Promise.all([
       cacheService.del(keys),
-      cacheService.delByPrefix(`graph_literature_${payload.graphId}`),
+      cacheService.delByTags([`graph:${payload.graphId}`]),
     ]);
     logger.debug(`[CacheInvalidation] graph_rollback: invalidated ${keys.length} keys + literature prefix for graph ${payload.graphId}`);
   };

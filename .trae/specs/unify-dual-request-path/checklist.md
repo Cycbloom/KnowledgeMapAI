@@ -1,0 +1,6 @@
+- [x] client.ts 中 `tryLocalQuery` 已移除，`initCsrf` 改为重导出；`getHeaders`/`handleResponse`/`getCookie` 保留（有消费者）
+- [x] Local-First 逻辑已提取为 Axios 适配器 `localFirstAdapter`，注册到 apiClient（仅 Electron 生产环境）
+- [x] CSRF 初始化已集成到 apiClient 创建流程（`initCsrf` 移入 createApiClient.ts，自动调用）
+- [x] `request()` 已简化为 apiClient.request() 的薄包装，无 Local-First 逻辑和手动 header 拼接
+- [x] `npx tsc --noEmit` 通过零新增错误
+- [x] 所有 `request()` 消费者行为不变（18 个 scheduler 模块 + 3 个其他文件）

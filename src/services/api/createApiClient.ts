@@ -12,6 +12,7 @@ import {
   getElectronApiUrl,
 } from "@/config/electronConfig";
 import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
+import { localQuery, isCloudOnlyResource } from "./localClient";
 
 const isMobileClient = (): boolean => {
   return isCapacitorMobile();
@@ -28,6 +29,126 @@ export const getCookie = (name: string): string | null => {
   return null;
 };
 
+let csrfInitialized = false;
+
+const initCsrf = async (): Promise<void> => {
+  if (csrfInitialized) return;
+
+  if (isElectronProduction()) {
+    csrfInitialized = true;
+    return;
+  }
+
+  const existingToken = getCookie("csrf-token");
+  if (existingToken) {
+    csrfInitialized = true;
+    return;
+  }
+
+  try {
+    let csrfUrl: string;
+    if (isElectronProduction()) {
+      const electronApiUrl = await getElectronApiUrl();
+      csrfUrl = `${electronApiUrl}/csrf-token`;
+    } else {
+      csrfUrl = "/api/csrf-token";
+    }
+
+    await fetch(csrfUrl, {
+      credentials: "include",
+    });
+    csrfInitialized = true;
+  } catch (error) {
+    console.warn("Failed to initialize CSRF token", error);
+  }
+};
+
+// Export for backward compatibility (client.ts re-exports it)
+export { initCsrf };
+
+/**
+ * Axios adapter that implements Local-First strategy for Electron production.
+ * Tries IPC → SQLite first; falls back to HTTP if local DB unavailable or resource is cloud-only.
+ */
+function localFirstAdapter(config: InternalAxiosRequestConfig): Promise<any> {
+  const defaultAdapter = axios.getAdapter(axios.defaults.adapter);
+
+  // Only active in Electron production mode
+  if (!isElectronProduction()) {
+    return defaultAdapter(config);
+  }
+
+  const url = config.url ?? "";
+  const method = config.method?.toUpperCase() || "GET";
+
+  // Parse URL to extract resource and optional id
+  const urlObj = new URL(url, "http://localhost");
+  const pathParts = urlObj.pathname.split("/").filter(Boolean);
+  if (pathParts.length === 0) {
+    return defaultAdapter(config);
+  }
+
+  const resource = pathParts[0];
+
+  // Skip cloud-only resources
+  if (isCloudOnlyResource(resource)) {
+    return defaultAdapter(config);
+  }
+
+  const id = pathParts.length > 1 ? pathParts[1] : undefined;
+
+  let ipcMethod: string;
+  let params: Record<string, unknown> = {};
+
+  if (method === "GET") {
+    if (id) {
+      ipcMethod = "findById";
+      params = { id };
+    } else {
+      ipcMethod = "findAll";
+      const filters: Record<string, string> = {};
+      urlObj.searchParams.forEach((value, key) => {
+        filters[key] = value;
+      });
+      if (Object.keys(filters).length > 0) {
+        params = { filters };
+      }
+    }
+  } else if (method === "POST") {
+    ipcMethod = "create";
+    params = { data: config.data };
+  } else if (method === "PUT" || method === "PATCH") {
+    ipcMethod = "update";
+    params = { id, data: config.data };
+  } else if (method === "DELETE") {
+    ipcMethod = "delete";
+    params = { id };
+  } else {
+    return defaultAdapter(config);
+  }
+
+  return localQuery({ resource, method: ipcMethod, params })
+    .then((localResult) => {
+      if (localResult !== null) {
+        // Return a response-like object that the response interceptor can handle
+        // Since the response interceptor does `response.data`, we need to wrap it
+        return {
+          data: localResult,
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config,
+        };
+      }
+      // Fallback to HTTP
+      return defaultAdapter(config);
+    })
+    .catch(() => {
+      // On any local query error, fallback to HTTP
+      return defaultAdapter(config);
+    });
+}
+
 export const createApiClient = (): AxiosInstance => {
   let initialBaseURL = "/api";
 
@@ -39,6 +160,10 @@ export const createApiClient = (): AxiosInstance => {
     baseURL: initialBaseURL,
     withCredentials: true,
   });
+
+  if (isElectronProduction()) {
+    client.defaults.adapter = localFirstAdapter;
+  }
 
   let electronBaseURLInitialized = false;
 
@@ -118,6 +243,8 @@ export const createApiClient = (): AxiosInstance => {
       return Promise.reject(appError);
     },
   );
+
+  initCsrf().catch(() => {});
 
   return client;
 };

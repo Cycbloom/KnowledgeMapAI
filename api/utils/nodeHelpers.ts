@@ -1,19 +1,19 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Node } from "@shared/types";
 import { logger } from "./logger";
+import type { GraphNodeRaw } from "../../shared/utils/nodeHelpers";
 import {
   GRAPH_NODES_SELECT,
   GRAPH_NODES_SELECT_WITH_EMBEDDING,
-  GraphNodeRaw,
   getKnowledgePoint,
   buildNodeFromGraphNode,
   buildNodesFromGraphNodes,
 } from "../../shared/utils/nodeHelpers";
 
+export type { GraphNodeRaw } from "../../shared/utils/nodeHelpers";
 export {
   GRAPH_NODES_SELECT,
   GRAPH_NODES_SELECT_WITH_EMBEDDING,
-  GraphNodeRaw,
   getKnowledgePoint,
   buildNodeFromGraphNode,
   buildNodesFromGraphNodes,
@@ -91,32 +91,36 @@ export async function createKnowledgePointWithGraphNode(
 } | null> {
   // 优先使用 RPC 原子性创建
   const { data: rpcResult, error: rpcError } = await supabase.rpc(
-    'create_knowledge_point_with_node',
+    "create_knowledge_point_with_node",
     {
       p_user_id: userId,
       p_graph_id: data.graph_id,
       p_title: data.title,
-      p_content: data.content || '',
+      p_content: data.content || "",
       p_x_position: data.x_position || 0,
       p_y_position: data.y_position || 0,
-      p_level: data.level || 'normal',
+      p_level: data.level || "normal",
       p_properties: data.properties || {},
     },
   );
 
   if (!rpcError && rpcResult) {
-    const result = rpcResult as { knowledge_point_id: string; graph_node_id: string };
+    const result = rpcResult as {
+      knowledge_point_id: string;
+      graph_node_id: string;
+    };
 
     // RPC 不支持 summary/learning_material，需要补充更新
     if (data.summary || data.learning_material) {
       const updateData: Record<string, string> = {};
       if (data.summary) updateData.summary = data.summary;
-      if (data.learning_material) updateData.learning_material = data.learning_material;
+      if (data.learning_material)
+        updateData.learning_material = data.learning_material;
 
       await supabase
-        .from('knowledge_points')
+        .from("knowledge_points")
         .update(updateData)
-        .eq('id', result.knowledge_point_id);
+        .eq("id", result.knowledge_point_id);
     }
 
     return {
@@ -128,7 +132,7 @@ export async function createKnowledgePointWithGraphNode(
 
   // RPC 失败，降级为分步创建+手动回滚
   logger.warn(
-    'create_knowledge_point_with_node RPC failed, falling back to step-by-step creation:',
+    "create_knowledge_point_with_node RPC failed, falling back to step-by-step creation:",
     rpcError,
   );
 

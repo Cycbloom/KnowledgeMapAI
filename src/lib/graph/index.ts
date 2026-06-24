@@ -1,6 +1,7 @@
 export * from './levelUtils';
 export * from './traversal';
 export * from './analysis';
+export * from './regions';
 
 import type { Node, Edge, NodeLevel } from '../../types';
 

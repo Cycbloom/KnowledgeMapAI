@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Node, Edge, GraphColorMode } from "../../../types";
+import { Node, Edge, GraphColorMode, NodeStatus } from "../../../types";
 import { GraphEditorState, useIsMobile } from "../../../hooks";
 import {
   getFocusedNodes,
@@ -16,15 +16,6 @@ import { VersionHistoryModal } from "../modals/VersionHistoryModal";
 import { CreateRegionDialog } from "../modals/CreateRegionDialog";
 import type { CustomRegion } from "@shared/types/graph";
 import type { BatchGenerateConfig } from "../modals/BatchGenerateDialog";
-
-interface NodeStatus {
-  [nodeId: string]: {
-    masteryLevel?: number;
-    lastReviewDate?: string;
-    nextReviewDate?: string;
-    reviewCount?: number;
-  };
-}
 
 interface GraphStats {
   masteredCount: number;
@@ -56,7 +47,7 @@ interface GraphSidebarManagerProps {
   state: GraphEditorState;
   nodes: Node[];
   edges: Edge[];
-  nodeStatus: NodeStatus;
+  nodeStatus: Record<string, NodeStatus>;
   graphStats: GraphStats;
   nodeOps: NodeOperations;
   aiOps: AIOperations;

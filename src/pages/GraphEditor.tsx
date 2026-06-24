@@ -28,6 +28,10 @@ import {
   useGraphExportOperations,
   useGraphInteraction,
   useExplorationPath,
+  useNodeStatusSets,
+  useGraphEditorPanelState,
+  useFocusNode,
+  useBranchSelection,
 } from "../hooks/graphEditor";
 import { useGraphAIOperations } from "../hooks/graphAI";
 import {
@@ -36,9 +40,9 @@ import {
   useKeyboardShortcuts,
   useGlobalShortcuts,
   useTutorOperations,
-  useConsole,
   useQuoteShortcut,
 } from "../hooks";
+import { computeRegions } from "../lib/graph";
 import {
   useGraph,
   useGraphData,
@@ -47,13 +51,6 @@ import {
 } from "../hooks/queries";
 import { useGraphMutations } from "../hooks/mutations";
 import { MobileNodeActionMenu } from "../components/GraphEditor/mobile/MobileNodeActionMenu";
-import {
-  getFocusedNodes,
-  getFocusedLinks,
-  getDirectChildren,
-  getDirectNeighbors,
-  getDirectNeighborEdges,
-} from "../lib/graphUtils";
 import type {
   Node as GraphNode,
   ColorScheme,
@@ -62,20 +59,12 @@ import type {
   LinkAnimation,
   NodeSizeMode,
   EdgeWidthMode,
-  BranchSuggestion,
   ExtractedConcept,
+  TutorExtractedConcept,
 } from "../types";
 import type {
   CustomRegion,
-  RegionInfo,
-  GraphBackboneModule,
   TemplateLayout,
-} from "@shared/types/graph";
-import {
-  BackboneModule,
-  BACKBONE_MODULE_TITLES,
-  BACKBONE_MODULE_COLORS,
-  BACKBONE_MODULE_ICONS,
 } from "@shared/types/graph";
 import { PresentationControls } from "../components/GraphEditor/toolbar/PresentationControls";
 import { NarrativeControls } from "../components/GraphEditor/canvas/NarrativeControls";
@@ -86,7 +75,6 @@ import {
   CommandItem,
 } from "../components/GraphEditor/shared/CommandPalette";
 import { ErrorBoundary, ShortcutHelpPanel } from "../components/common";
-import { api, AIAction } from "../services/api";
 import { learningPathsApi } from "../services/api/learningPaths";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCommandPalette } from "./GraphEditor/useCommandPalette";
@@ -203,12 +191,6 @@ interface LearningPathNode {
   order_index?: number;
 }
 
-interface CreatedBranchNode {
-  node: GraphNode;
-  suggestion: BranchSuggestion;
-  isAccepted: boolean;
-}
-
 const ViewLoader = () => (
   <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
     <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
@@ -232,15 +214,11 @@ export const GraphEditor = () => {
   );
   const [isMobilePreviewMode, setIsMobilePreviewMode] = useState(true);
 
-  const [isStyleSettingsOpen, setIsStyleSettingsOpen] = useState(false);
+  const panelState = useGraphEditorPanelState({ userId: user?.id || "" });
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
     nodeId: string;
-  } | null>(null);
-  const [actionResult, setActionResult] = useState<{
-    title: string;
-    content: string;
   } | null>(null);
   const [colorScheme, setColorScheme] = useState<ColorScheme>("default");
   const [linkStyle, setLinkStyle] = useState<LinkStyle>("curved");
@@ -248,42 +226,13 @@ export const GraphEditor = () => {
   const [nodeSizeMode, setNodeSizeMode] = useState<NodeSizeMode>("fixed");
   const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>("fixed");
   const [coloringMode, setColoringMode] = useState<GraphColorMode>("level"); // Default to level (structure) as requested
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
-  const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
-  const [ragChatWidth, setRagChatWidth] = useState(420);
 
   useQuoteShortcut({
     onAddQuote: addQuote,
-    isChatOpen: isRAGChatOpen,
-    onOpenChat: () => setIsRAGChatOpen(true),
-  });
-  const [isLiteratureExtractOpen, setIsLiteratureExtractOpen] = useState(false);
-  const [isResearchProgressOpen, setIsResearchProgressOpen] = useState(false);
-  const [isLiteratureLibraryOpen, setIsLiteratureLibraryOpen] = useState(false);
-  const [extractedConcepts, setExtractedConcepts] = useState<any[]>([]);
-  const [isConceptPreviewOpen, setIsConceptPreviewOpen] = useState(false);
-  const [isConceptAggregationOpen, setIsConceptAggregationOpen] = useState(false);
-  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
-  const [selectedDiff, setSelectedDiff] = useState<{
-    sourceSnapshotId: string;
-    targetSnapshotId?: string;
-  } | null>(null);
-
-  const {
-    isOpen: isConsoleOpen,
-    isMinimized: isConsoleMinimized,
-    context: consoleContext,
-    open: openConsole,
-    close: closeConsole,
-    toggleMinimize: toggleConsoleMinimize,
-  } = useConsole({
-    userId: user?.id || "",
-    autoRegisterCommands: true,
+    isChatOpen: panelState.isRAGChatOpen,
+    onOpenChat: () => panelState.setIsRAGChatOpen(true),
   });
   const [isSelectingParentNode, setIsSelectingParentNode] = useState(false);
-  const [isRelationshipTypeSettingsOpen, setIsRelationshipTypeSettingsOpen] =
-    useState(false);
   const [selectedLearningPathId, setSelectedLearningPathId] = useState<
     string | null
   >(null);
@@ -370,9 +319,9 @@ export const GraphEditor = () => {
 
   const handleLiteratureExtractComplete = useCallback((result: { concepts?: ExtractedConcept[] }) => {
     if (result.concepts && result.concepts.length > 0) {
-      setExtractedConcepts(result.concepts);
-      setIsConceptPreviewOpen(true);
-      setIsLiteratureExtractOpen(false);
+      panelState.setExtractedConcepts(result.concepts);
+      panelState.setIsConceptPreviewOpen(true);
+      panelState.setIsLiteratureExtractOpen(false);
     } else {
       message.info("未从文献中提取到概念");
     }
@@ -403,8 +352,8 @@ export const GraphEditor = () => {
         console.error("Failed to apply concepts:", error);
         message.error("添加概念失败");
       } finally {
-        setIsConceptPreviewOpen(false);
-        setExtractedConcepts([]);
+        panelState.setIsConceptPreviewOpen(false);
+        panelState.setExtractedConcepts([]);
       }
     },
     [id, queryClient],
@@ -415,7 +364,7 @@ export const GraphEditor = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
+        panelState.setIsCommandPaletteOpen((prev) => !prev);
       }
     };
 
@@ -425,7 +374,7 @@ export const GraphEditor = () => {
 
   const { data: graphMeta } = useGraph(id || "");
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || "");
-  const nodeStatus = graphData?.nodeStatus;
+  const nodeStatus = graphData?.nodeStatus ?? {};
   const { data: aiStatus } = useAIStatus(!!token);
   const aiEnabled = aiStatus?.enabled ?? true;
 
@@ -539,6 +488,18 @@ export const GraphEditor = () => {
     }
   }, [sidebarMode]);
 
+  // Focus Node Hook
+  const { focusNode, focusNodeWithNode, clearFocus } = useFocusNode({
+    nodes,
+    edges,
+    setSelectedNode,
+    setSelectedNodeIds,
+    setFocusedNodeId,
+    setFocusedNodeIds,
+    setFocusedLinkIds,
+    setForceShowTextIds,
+  });
+
   // Narrative mode handlers
   const handleStartNarrative = useCallback(() => {
     if (!selectedLearningPathId || learningPathNodeIds.size === 0) {
@@ -589,18 +550,7 @@ export const GraphEditor = () => {
       const node = nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
-      setSelectedNode(node);
-      setSelectedNodeIds(new Set([nodeId]));
-      setFocusedNodeId(nodeId);
-
-      const focusedNodes = getFocusedNodes(nodeId, nodes, edges);
-      setFocusedNodeIds(focusedNodes);
-
-      const focusedLinks = getFocusedLinks(focusedNodes, edges);
-      setFocusedLinkIds(focusedLinks);
-
-      const directChildren = getDirectChildren(nodeId, nodes, edges);
-      setForceShowTextIds(new Set([nodeId, ...directChildren]));
+      focusNodeWithNode(node);
 
       if (viewMode !== "mindmap") {
         setViewMode("mindmap");
@@ -608,13 +558,7 @@ export const GraphEditor = () => {
     },
     [
       nodes,
-      edges,
-      setSelectedNode,
-      setSelectedNodeIds,
-      setFocusedNodeId,
-      setFocusedNodeIds,
-      setFocusedLinkIds,
-      setForceShowTextIds,
+      focusNodeWithNode,
       viewMode,
       setViewMode,
     ],
@@ -656,32 +600,17 @@ export const GraphEditor = () => {
     if (state.isPresentationMode && presentationPath.length > 0) {
       const nodeId = presentationPath[state.presentationStep];
       if (nodeId) {
-        setFocusedNodeId(nodeId);
-        const node = nodes.find((n) => n.id === nodeId);
-        if (node) {
-          setSelectedNode(node);
-          // Sync sidebar selection
-          setSelectedNodeIds(new Set([nodeId]));
-
-          // Calculate and sync focused nodes/links for highlighting
-          const focusedNodes = getFocusedNodes(nodeId, nodes, edges);
-          setFocusedNodeIds(focusedNodes);
-          const focusedLinks = getFocusedLinks(focusedNodes, edges);
-          setFocusedLinkIds(focusedLinks);
-        }
+        focusNode(nodeId);
+        // Sync sidebar selection
+        setSelectedNodeIds(new Set([nodeId]));
       }
     }
   }, [
     state.isPresentationMode,
     state.presentationStep,
     presentationPath,
-    nodes,
-    edges,
-    setFocusedNodeId,
-    setSelectedNode,
+    focusNode,
     setSelectedNodeIds,
-    setFocusedNodeIds,
-    setFocusedLinkIds,
   ]);
 
   // Narrative mode: camera follow effect
@@ -721,10 +650,20 @@ export const GraphEditor = () => {
     nodes,
     edges,
     state,
-    mutations: mutations as any,
+    mutations: {
+      aiExpandMutation: mutations.aiExpandMutation,
+      aiGenerateCardsMutation: mutations.aiGenerateCardsMutation,
+      createCardsBatchMutation: mutations.createCardsBatchMutation,
+      createTaskMutation: mutations.createTaskMutation,
+      createNodeMutation: mutations.createNodeMutation,
+      createEdgeMutation: mutations.createEdgeMutation,
+      updateNodeMutation: mutations.updateNodeMutation,
+      recommendConnectionsMutation: mutations.recommendConnectionsMutation,
+    },
     record,
     navigate,
     token,
+    onActionResult: panelState.setActionResult,
   });
 
   const tutorOps = useTutorOperations({
@@ -774,179 +713,29 @@ export const GraphEditor = () => {
   // Exploration Path Hook
   const explorationPathOps = useExplorationPath({ graphId: id });
 
+  // Branch Selection Hook
+  const { selectBranch, switchBranch } = useBranchSelection({
+    id,
+    selectedNode,
+    branchSuggestions,
+    setBranchSuggestions,
+    setHistoricalAlternativeBranches,
+    handleCreateBranch: aiOps.handleCreateBranch,
+    addToPath: explorationPathOps.addToPath,
+    focusNodeWithNode,
+  });
+
   // Computed Values
-  const lockedNodeIds = useMemo(() => {
-    if (!nodeStatus) return new Set<string>();
-    const result = new Set<string>();
-    Object.entries(nodeStatus).forEach(([id, status]: [string, any]) => {
-      if (status.locked) result.add(id);
-    });
-    return result;
-  }, [nodeStatus]);
+  const { graphStats } = useNodeStatusSets(nodeStatus, nodes, edges);
 
-  const masteredNodeIds = useMemo(() => {
-    if (!nodeStatus) return new Set<string>();
-    const result = new Set<string>();
-    Object.entries(nodeStatus).forEach(([id, status]: [string, any]) => {
-      if (status.mastered) result.add(id);
-    });
-    return result;
-  }, [nodeStatus]);
-
-  const dueTodayNodeIds = useMemo(() => {
-    if (!nodeStatus) return new Set<string>();
-    const result = new Set<string>();
-    Object.entries(nodeStatus).forEach(([id, status]: [string, any]) => {
-      if (status.due_today || status.due) result.add(id);
-    });
-    return result;
-  }, [nodeStatus]);
-
-  const graphStats = useMemo(() => {
-    return {
-      nodeCount: nodes.length,
-      edgeCount: edges.length,
-      masteredCount: masteredNodeIds.size,
-      lockedCount: lockedNodeIds.size,
-      dueTodayCount: dueTodayNodeIds.size,
-    };
-  }, [
-    nodes.length,
-    edges.length,
-    masteredNodeIds.size,
-    lockedNodeIds.size,
-    dueTodayNodeIds.size,
-  ]);
-
-  const regions = useMemo<RegionInfo[]>(() => {
-    if (nodes.length === 0) return [];
-
-    const isTopicResearch = graphMeta?.template_type === "topic_research";
-
-    if (isTopicResearch) {
-      const backboneModules = graphMeta?.backbone_modules;
-
-      if (backboneModules && backboneModules.length > 0) {
-        const angleStep = (2 * Math.PI) / backboneModules.length;
-
-        return backboneModules
-          .sort(
-            (a: GraphBackboneModule, b: GraphBackboneModule) =>
-              a.display_order - b.display_order,
-          )
-          .map((module: GraphBackboneModule, index: number) => {
-            const angleStart = index * angleStep;
-            const angleEnd = (index + 1) * angleStep;
-
-            const regionNodes = nodes.filter(
-              (n) => n.properties?.backboneModule === module.module_type,
-            );
-
-            return {
-              id: `region-${module.module_type}`,
-              name: module.title,
-              color:
-                module.color ||
-                BACKBONE_MODULE_COLORS[module.module_type as BackboneModule],
-              icon:
-                module.icon ||
-                BACKBONE_MODULE_ICONS[module.module_type as BackboneModule],
-              angleStart,
-              angleEnd,
-              nodes: regionNodes,
-              isCollapsed: collapsedRegions.includes(
-                `region-${module.module_type}`,
-              ),
-            };
-          });
-      }
-
-      const orderedBackboneModules = [
-        BackboneModule.RESEARCH_BACKGROUND,
-        BackboneModule.LITERATURE_REVIEW,
-        BackboneModule.RESEARCH_METHODS,
-        BackboneModule.CORE_CONCEPTS,
-        BackboneModule.APPLICATION_DOMAINS,
-        BackboneModule.FUTURE_DIRECTIONS,
-      ];
-
-      const angleStep = (2 * Math.PI) / 6;
-
-      return orderedBackboneModules.map((module, index) => {
-        const angleStart = index * angleStep;
-        const angleEnd = (index + 1) * angleStep;
-
-        const regionNodes = nodes.filter(
-          (n) => n.properties?.backboneModule === module,
-        );
-
-        return {
-          id: `region-${module}`,
-          name: BACKBONE_MODULE_TITLES[module],
-          color: BACKBONE_MODULE_COLORS[module],
-          icon: BACKBONE_MODULE_ICONS[module],
-          angleStart,
-          angleEnd,
-          nodes: regionNodes,
-          isCollapsed: collapsedRegions.includes(`region-${module}`),
-        };
-      });
-    } else {
-      if (customRegions.length === 0) {
-        const levelGroups = new Map<string, typeof nodes>();
-
-        nodes.forEach((node) => {
-          const level = node.level || "leaf";
-          if (!levelGroups.has(level)) {
-            levelGroups.set(level, []);
-          }
-          levelGroups.get(level)!.push(node);
-        });
-
-        const levels = Array.from(levelGroups.keys());
-        const angleStep = (2 * Math.PI) / levels.length;
-
-        return levels.map((level, index) => {
-          const angleStart = index * angleStep;
-          const angleEnd = (index + 1) * angleStep;
-
-          return {
-            id: `region-${level}`,
-            name:
-              level === "root"
-                ? "根节点"
-                : level === "core"
-                  ? "骨干节点"
-                  : "叶节点",
-            color: `hsl(${(index * 360) / levels.length}, 70%, 50%)`,
-            angleStart,
-            angleEnd,
-            nodes: levelGroups.get(level) || [],
-            isCollapsed: collapsedRegions.includes(`region-${level}`),
-          };
-        });
-      }
-
-      const angleStep = (2 * Math.PI) / customRegions.length;
-
-      return customRegions.map((region, index) => {
-        const angleStart = index * angleStep;
-        const angleEnd = (index + 1) * angleStep;
-
-        const regionNodes = nodes.filter((n) => region.nodeIds.includes(n.id));
-
-        return {
-          id: region.id,
-          name: region.name,
-          color: region.color,
-          angleStart,
-          angleEnd,
-          nodes: regionNodes,
-          isCollapsed: collapsedRegions.includes(region.id),
-        };
-      });
-    }
-  }, [nodes, edges, graphMeta?.template_type, customRegions, collapsedRegions]);
+  const regions = useMemo(() => computeRegions({
+    nodes,
+    edges,
+    templateType: graphMeta?.template_type,
+    backboneModules: graphMeta?.backbone_modules,
+    customRegions,
+    collapsedRegions,
+  }), [nodes, edges, graphMeta?.template_type, graphMeta?.backbone_modules, customRegions, collapsedRegions]);
 
   // Keyboard Shortcuts
   useKeyboardShortcuts({
@@ -974,14 +763,14 @@ export const GraphEditor = () => {
   // Global Shortcuts (new system)
   useGlobalShortcuts({
     handlers: {
-      showHelp: () => setIsShortcutHelpOpen(true),
-      openCommandPalette: () => setIsCommandPaletteOpen((prev) => !prev),
+      showHelp: () => panelState.setIsShortcutHelpOpen(true),
+      openCommandPalette: () => panelState.setIsCommandPaletteOpen((prev) => !prev),
       toggleTheme,
       openConsole: () => {
-        if (isConsoleOpen) {
-          closeConsole();
+        if (panelState.isConsoleOpen) {
+          panelState.closeConsole();
         } else {
-          openConsole();
+          panelState.openConsole();
         }
       },
       "setViewMode:mindmap": () => setViewMode("mindmap"),
@@ -1015,22 +804,12 @@ export const GraphEditor = () => {
     } else {
       setSidebarMode("none");
     }
-    setSelectedNode(null);
-    setSelectedNodeIds(new Set());
-    setFocusedNodeId(null);
-    setFocusedNodeIds(new Set());
-    setFocusedLinkIds(new Set());
-    state.setForceShowTextIds(new Set());
+    clearFocus();
   }, [
     prevSidebarMode,
     setSidebarMode,
     setPrevSidebarMode,
-    setSelectedNode,
-    setSelectedNodeIds,
-    setFocusedNodeId,
-    setFocusedNodeIds,
-    setFocusedLinkIds,
-    state,
+    clearFocus,
   ]);
 
   const handleConnectNodes = useCallback(
@@ -1053,17 +832,7 @@ export const GraphEditor = () => {
 
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
-      const neighbors = getDirectNeighbors(node.id, edges);
-      const focusedNodes = new Set([node.id, ...neighbors]);
-      const focusedLinks = getDirectNeighborEdges(node.id, focusedNodes, edges);
-      const directChildren = getDirectChildren(node.id, nodes, edges);
-
-      setSelectedNode(node);
-      setSelectedNodeIds(new Set([node.id]));
-      setFocusedNodeId(node.id);
-      setFocusedNodeIds(focusedNodes);
-      setFocusedLinkIds(focusedLinks);
-      state.setForceShowTextIds(new Set([node.id, ...directChildren]));
+      focusNodeWithNode(node);
 
       if (isMobile && isMobilePreviewMode) {
         // 预览模式：不打开侧边栏，只选中节点
@@ -1073,15 +842,8 @@ export const GraphEditor = () => {
       }
     },
     [
-      setSelectedNode,
-      setSelectedNodeIds,
+      focusNodeWithNode,
       setSidebarMode,
-      nodes,
-      edges,
-      setFocusedNodeId,
-      setFocusedNodeIds,
-      setFocusedLinkIds,
-      state,
       isMobile,
       isMobilePreviewMode,
     ],
@@ -1094,22 +856,12 @@ export const GraphEditor = () => {
   }, [selectedNode, id, aiOps, state]);
 
   const handleCanvasClick = useCallback(() => {
-    setSelectedNode(null);
-    setSelectedNodeIds(new Set());
-    setFocusedNodeId(null);
-    setFocusedNodeIds(new Set());
-    setFocusedLinkIds(new Set());
-    state.setForceShowTextIds(new Set());
+    clearFocus();
     if (sidebarMode !== "none" && sidebarMode !== "outline") {
       setSidebarMode("none");
     }
   }, [
-    setFocusedNodeId,
-    setFocusedNodeIds,
-    setFocusedLinkIds,
-    state,
-    setSelectedNode,
-    setSelectedNodeIds,
+    clearFocus,
     sidebarMode,
     setSidebarMode,
   ]);
@@ -1126,55 +878,6 @@ export const GraphEditor = () => {
     setMobileActionNodeId(node.id);
     setMobileActionMenuOpen(true);
   }, []);
-
-  const handleExecuteAction = async (action: AIAction, nodeId: string) => {
-    try {
-      message.info(`正在执行动作: ${action.name}...`);
-      const res = await api.aiActions.execute({
-        action_id: action.id,
-        node_id: nodeId,
-        graph_id: id,
-      });
-
-      // Handle show_result or fallback if data is string
-      if (
-        action.target_mode === "show_result" ||
-        typeof res.data === "string"
-      ) {
-        setActionResult({
-          title: action.name,
-          content:
-            typeof res.data === "string"
-              ? res.data
-              : JSON.stringify(res.data, null, 2),
-        });
-        message.success(`动作执行成功`);
-      } else {
-        await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
-        await queryClient.invalidateQueries({
-          queryKey: ["graphNodeStatus", id],
-        });
-
-        let feedback = `动作执行成功: ${action.name}`;
-        if (res.message) feedback += ` (${res.message})`;
-
-        if (action.target_mode === "update_node" && res.data?.updatedFields) {
-          feedback += `。已更新: ${res.data.updatedFields.join(", ")}`;
-        } else if (
-          action.target_mode === "spawn_children" &&
-          res.data?.createdCount
-        ) {
-          feedback += `。已生成 ${res.data.createdCount} 个子节点`;
-        }
-
-        message.success(feedback);
-      }
-    } catch (err: unknown) {
-      console.error(err);
-      const errorMessage = err instanceof Error ? err.message : '未知错误';
-      message.error(`执行失败: ${errorMessage}`);
-    }
-  };
 
   const commands: CommandItem[] = useCommandPalette({
     sidebarMode,
@@ -1255,7 +958,7 @@ export const GraphEditor = () => {
               nodes.find((n) => n.id === contextMenu.nodeId)?.content || ""
             }
             onClose={() => setContextMenu(null)}
-            onExecuteAction={handleExecuteAction}
+            onExecuteAction={aiOps.handleExecuteAction}
             onRefresh={() => {
               queryClient.invalidateQueries({ queryKey: ["graph", id] });
               queryClient.invalidateQueries({ queryKey: ["graphNodes", id] });
@@ -1282,63 +985,7 @@ export const GraphEditor = () => {
               branchSuggestions={branchSuggestions}
               selectedNodeForBranch={selectedNode}
               historicalAlternativeBranches={historicalAlternativeBranches}
-              onSelectBranch={async (selectedSuggestion) => {
-                if (!selectedNode || !id) return;
-
-                const suggestionsToCreate = [...branchSuggestions];
-                setBranchSuggestions([]);
-
-                const createdNodes: CreatedBranchNode[] = [];
-
-                for (const suggestion of suggestionsToCreate) {
-                  const isAccepted = suggestion.id === selectedSuggestion.id;
-                  const newNode = await aiOps.handleCreateBranch(
-                    suggestion,
-                    isAccepted,
-                  );
-                  if (newNode) {
-                    createdNodes.push({
-                      node: newNode,
-                      suggestion,
-                      isAccepted,
-                    });
-                  }
-                }
-
-                if (createdNodes.length > 0) {
-                  const selectedNodeData = createdNodes.find(
-                    (n) => n.isAccepted,
-                  );
-                  if (selectedNodeData) {
-                    explorationPathOps.addToPath({
-                      nodeId: selectedNodeData.node.id,
-                      nodeTitle: selectedNodeData.node.title,
-                      branchChoice: selectedNodeData.suggestion.title,
-                      parentNodeId: selectedNode?.id,
-                      branchSuggestionId: selectedNodeData.suggestion.id,
-                      alternativeBranches: suggestionsToCreate,
-                    });
-                    setSelectedNode(selectedNodeData.node);
-                    setFocusedNodeId(selectedNodeData.node.id);
-                    const focusedNodes = getFocusedNodes(
-                      selectedNodeData.node.id,
-                      nodes,
-                      edges,
-                    );
-                    const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                    setFocusedNodeIds(focusedNodes);
-                    setFocusedLinkIds(focusedLinks);
-                    const directChildren = getDirectChildren(
-                      selectedNodeData.node.id,
-                      nodes,
-                      edges,
-                    );
-                    setForceShowTextIds(
-                      new Set([selectedNodeData.node.id, ...directChildren]),
-                    );
-                  }
-                }
-              }}
+              onSelectBranch={selectBranch}
               isExplorationMode={isExplorationMode}
               colorScheme={colorScheme}
               linkStyle={linkStyle}
@@ -1358,7 +1005,7 @@ export const GraphEditor = () => {
               onSelectParent={handleSelectParentFromGraph}
               currentNodeId={selectedNode?.id}
               selectedParentIds={state.nodeForm.parentNodeIds}
-              leftPanelWidth={isRAGChatOpen ? ragChatWidth : 0}
+              leftPanelWidth={panelState.isRAGChatOpen ? panelState.ragChatWidth : 0}
               onNavigateToGraphMap={() => navigate(`/graph-map?from=${id}`)}
               onMarkNodeMastered={async (_nodeId: string) => {
                 try {
@@ -1432,128 +1079,12 @@ export const GraphEditor = () => {
                 isExplorationMode={isExplorationMode}
                 branchSuggestions={branchSuggestions}
                 selectedNodeForBranch={selectedNode}
-                onSelectBranch={async (selectedSuggestion) => {
-                  if (!selectedNode || !id) return;
-
-                  const suggestionsToCreate = [...branchSuggestions];
-                  setBranchSuggestions([]);
-
-                  const createdNodes: CreatedBranchNode[] = [];
-
-                  for (const suggestion of suggestionsToCreate) {
-                    const isAccepted = suggestion.id === selectedSuggestion.id;
-                    const newNode = await aiOps.handleCreateBranch(
-                      suggestion,
-                      isAccepted,
-                    );
-                    if (newNode) {
-                      createdNodes.push({
-                        node: newNode,
-                        suggestion,
-                        isAccepted,
-                      });
-                    }
-                  }
-
-                  if (createdNodes.length > 0) {
-                    const selectedNodeData = createdNodes.find(
-                      (n) => n.isAccepted,
-                    );
-                    if (selectedNodeData) {
-                      explorationPathOps.addToPath({
-                        nodeId: selectedNodeData.node.id,
-                        nodeTitle: selectedNodeData.node.title,
-                        branchChoice: selectedNodeData.suggestion.title,
-                        parentNodeId: selectedNode?.id,
-                        branchSuggestionId: selectedNodeData.suggestion.id,
-                        alternativeBranches: suggestionsToCreate,
-                      });
-                      setSelectedNode(selectedNodeData.node);
-                      setFocusedNodeId(selectedNodeData.node.id);
-                      const focusedNodes = getFocusedNodes(
-                        selectedNodeData.node.id,
-                        nodes,
-                        edges,
-                      );
-                      const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                      setFocusedNodeIds(focusedNodes);
-                      setFocusedLinkIds(focusedLinks);
-                      const directChildren = getDirectChildren(
-                        selectedNodeData.node.id,
-                        nodes,
-                        edges,
-                      );
-                      setForceShowTextIds(
-                        new Set([selectedNodeData.node.id, ...directChildren]),
-                      );
-                    }
-                  }
-                }}
+                onSelectBranch={selectBranch}
                 onSwitchBranch={async (pathItem, selectedSuggestion) => {
                   const parentNode = nodes.find(
                     (n) => n.id === pathItem.parentNodeId,
                   );
-                  if (!parentNode) return;
-
-                  const branches = pathItem.alternativeBranches || [];
-                  const createdNodes: CreatedBranchNode[] = [];
-
-                  for (const suggestion of branches) {
-                    const isAccepted = suggestion.id === selectedSuggestion.id;
-                    const newNode = await aiOps.handleCreateBranch(
-                      suggestion,
-                      isAccepted,
-                    );
-                    if (newNode) {
-                      createdNodes.push({
-                        node: newNode,
-                        suggestion,
-                        isAccepted,
-                      });
-                    }
-                  }
-
-                  if (createdNodes.length > 0) {
-                    const selectedNodeData = createdNodes.find(
-                      (n) => n.isAccepted,
-                    );
-                    if (selectedNodeData) {
-                      explorationPathOps.addToPath({
-                        nodeId: selectedNodeData.node.id,
-                        nodeTitle: selectedNodeData.node.title,
-                        branchChoice: selectedNodeData.suggestion.title,
-                        parentNodeId: parentNode.id,
-                        branchSuggestionId: selectedNodeData.suggestion.id,
-                        alternativeBranches: branches,
-                      });
-                      setHistoricalAlternativeBranches((prev) => [
-                        ...prev.filter((item) => item.nodeId !== parentNode.id),
-                        {
-                          nodeId: parentNode.id,
-                          branches,
-                          selectedBranchId: selectedSuggestion.id,
-                        },
-                      ]);
-                      setSelectedNode(selectedNodeData.node);
-                      setFocusedNodeId(selectedNodeData.node.id);
-                      const focusedNodes = getFocusedNodes(
-                        selectedNodeData.node.id,
-                        nodes,
-                        edges,
-                      );
-                      const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                      setFocusedNodeIds(focusedNodes);
-                      setFocusedLinkIds(focusedLinks);
-                      const directChildren = getDirectChildren(
-                        selectedNodeData.node.id,
-                        nodes,
-                        edges,
-                      );
-                      state.setForceShowTextIds(
-                        new Set([selectedNodeData.node.id, ...directChildren]),
-                      );
-                    }
-                  }
+                  if (parentNode) switchBranch(pathItem, selectedSuggestion, parentNode);
                 }}
                 historicalAlternativeBranches={historicalAlternativeBranches}
               />
@@ -1615,8 +1146,8 @@ export const GraphEditor = () => {
         onAIExpand={aiOps.handleAIExpand}
         onBranchExplore={handleGetBranchSuggestions}
         onBackgroundTask={aiOps.handleBackgroundTask}
-        isChatOpen={isRAGChatOpen}
-        setIsChatOpen={setIsRAGChatOpen}
+        isChatOpen={panelState.isRAGChatOpen}
+        setIsChatOpen={panelState.setIsRAGChatOpen}
         isTutorMode={state.isTutorMode}
         onToggleTutorMode={tutorOps.handleToggleTutorMode}
         isPathfindingMode={isPathfindingMode}
@@ -1638,8 +1169,8 @@ export const GraphEditor = () => {
         onDeleteSelected={nodeOps.handleDeleteNode}
         onBatchDelete={nodeOps.handleBatchDelete}
         onBatchLevelUpdate={nodeOps.handleBatchLevelUpdate}
-        isStyleSettingsOpen={isStyleSettingsOpen}
-        setIsStyleSettingsOpen={setIsStyleSettingsOpen}
+        isStyleSettingsOpen={panelState.isStyleSettingsOpen}
+        setIsStyleSettingsOpen={panelState.setIsStyleSettingsOpen}
         colorScheme={colorScheme}
         setColorScheme={setColorScheme}
         linkStyle={linkStyle}
@@ -1659,10 +1190,10 @@ export const GraphEditor = () => {
         }}
         onRefresh={() => window.location.reload()}
         onOpenHelp={() => state.setIsHelpOpen(true)}
-        onOpenShortcutSettings={() => setIsShortcutHelpOpen(true)}
+        onOpenShortcutSettings={() => panelState.setIsShortcutHelpOpen(true)}
         onShare={() => state.setIsShareModalOpen(true)}
         onOpenAnalysis={() => setIsAnalysisPanelOpen(true)}
-        onOpenConceptAggregation={() => setIsConceptAggregationOpen(true)}
+        onOpenConceptAggregation={() => panelState.setIsConceptAggregationOpen(true)}
         viewMode={viewMode}
         setViewMode={setViewMode}
         isExplorationMode={isExplorationMode}
@@ -1686,17 +1217,17 @@ export const GraphEditor = () => {
         onTogglePodcast={() => state.setIsPodcastModalOpen(true)}
         isMobilePreviewMode={isMobilePreviewMode}
         setIsMobilePreviewMode={setIsMobilePreviewMode}
-        isRAGChatOpen={isRAGChatOpen}
-        ragChatWidth={ragChatWidth}
+        isRAGChatOpen={panelState.isRAGChatOpen}
+        ragChatWidth={panelState.ragChatWidth}
         isReadOnly={isReadOnly}
-        isLiteratureExtractOpen={isLiteratureExtractOpen}
-        setIsLiteratureExtractOpen={setIsLiteratureExtractOpen}
-        isResearchProgressOpen={isResearchProgressOpen}
-        setIsResearchProgressOpen={setIsResearchProgressOpen}
-        isLiteratureLibraryOpen={isLiteratureLibraryOpen}
-        setIsLiteratureLibraryOpen={setIsLiteratureLibraryOpen}
-        isVersionHistoryOpen={isVersionHistoryOpen}
-        setIsVersionHistoryOpen={setIsVersionHistoryOpen}
+        isLiteratureExtractOpen={panelState.isLiteratureExtractOpen}
+        setIsLiteratureExtractOpen={panelState.setIsLiteratureExtractOpen}
+        isResearchProgressOpen={panelState.isResearchProgressOpen}
+        setIsResearchProgressOpen={panelState.setIsResearchProgressOpen}
+        isLiteratureLibraryOpen={panelState.isLiteratureLibraryOpen}
+        setIsLiteratureLibraryOpen={panelState.setIsLiteratureLibraryOpen}
+        isVersionHistoryOpen={panelState.isVersionHistoryOpen}
+        setIsVersionHistoryOpen={panelState.setIsVersionHistoryOpen}
         regions={regions}
         collapsedRegions={collapsedRegions}
         onRegionToggle={handleRegionToggle}
@@ -1748,118 +1279,28 @@ export const GraphEditor = () => {
             explorationPathOps.goToPathIndex(index);
             const pathItem = explorationPathOps.explorationPath[index];
             if (pathItem) {
-              const node = nodes.find((n) => n.id === pathItem.nodeId);
-              if (node) {
-                setSelectedNode(node);
-                setFocusedNodeId(node.id);
-                const focusedNodes = getFocusedNodes(node.id, nodes, edges);
-                const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                setFocusedNodeIds(focusedNodes);
-                setFocusedLinkIds(focusedLinks);
-                const directChildren = getDirectChildren(node.id, nodes, edges);
-                state.setForceShowTextIds(
-                  new Set([node.id, ...directChildren]),
-                );
-              }
+              focusNode(pathItem.nodeId);
             }
           }}
           onGoBack={() => {
             explorationPathOps.goBack();
             const pathItem = explorationPathOps.getCurrentPathItem();
             if (pathItem) {
-              const node = nodes.find((n) => n.id === pathItem.nodeId);
-              if (node) {
-                setSelectedNode(node);
-                setFocusedNodeId(node.id);
-                const focusedNodes = getFocusedNodes(node.id, nodes, edges);
-                const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                setFocusedNodeIds(focusedNodes);
-                setFocusedLinkIds(focusedLinks);
-                const directChildren = getDirectChildren(node.id, nodes, edges);
-                state.setForceShowTextIds(
-                  new Set([node.id, ...directChildren]),
-                );
-              }
+              focusNode(pathItem.nodeId);
             }
           }}
           onGoForward={() => {
             explorationPathOps.goForward();
             const pathItem = explorationPathOps.getCurrentPathItem();
             if (pathItem) {
-              const node = nodes.find((n) => n.id === pathItem.nodeId);
-              if (node) {
-                setSelectedNode(node);
-                setFocusedNodeId(node.id);
-                const focusedNodes = getFocusedNodes(node.id, nodes, edges);
-                const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                setFocusedNodeIds(focusedNodes);
-                setFocusedLinkIds(focusedLinks);
-                const directChildren = getDirectChildren(node.id, nodes, edges);
-                state.setForceShowTextIds(
-                  new Set([node.id, ...directChildren]),
-                );
-              }
+              focusNode(pathItem.nodeId);
             }
           }}
           onSwitchBranch={async (pathItem, selectedSuggestion) => {
             const parentNode = nodes.find(
               (n) => n.id === pathItem.parentNodeId,
             );
-            if (!parentNode) return;
-
-            const branches = pathItem.alternativeBranches || [];
-            const createdNodes: CreatedBranchNode[] = [];
-
-            for (const suggestion of branches) {
-              const isAccepted = suggestion.id === selectedSuggestion.id;
-              const newNode = await aiOps.handleCreateBranch(
-                suggestion,
-                isAccepted,
-              );
-              if (newNode) {
-                createdNodes.push({ node: newNode, suggestion, isAccepted });
-              }
-            }
-
-            if (createdNodes.length > 0) {
-              const selectedNodeData = createdNodes.find((n) => n.isAccepted);
-              if (selectedNodeData) {
-                explorationPathOps.addToPath({
-                  nodeId: selectedNodeData.node.id,
-                  nodeTitle: selectedNodeData.node.title,
-                  branchChoice: selectedNodeData.suggestion.title,
-                  parentNodeId: parentNode.id,
-                  branchSuggestionId: selectedNodeData.suggestion.id,
-                  alternativeBranches: branches,
-                });
-                setHistoricalAlternativeBranches((prev) => [
-                  ...prev.filter((item) => item.nodeId !== parentNode.id),
-                  {
-                    nodeId: parentNode.id,
-                    branches,
-                    selectedBranchId: selectedSuggestion.id,
-                  },
-                ]);
-                setSelectedNode(selectedNodeData.node);
-                setFocusedNodeId(selectedNodeData.node.id);
-                const focusedNodes = getFocusedNodes(
-                  selectedNodeData.node.id,
-                  nodes,
-                  edges,
-                );
-                const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                setFocusedNodeIds(focusedNodes);
-                setFocusedLinkIds(focusedLinks);
-                const directChildren = getDirectChildren(
-                  selectedNodeData.node.id,
-                  nodes,
-                  edges,
-                );
-                state.setForceShowTextIds(
-                  new Set([selectedNodeData.node.id, ...directChildren]),
-                );
-              }
-            }
+            if (parentNode) switchBranch(pathItem, selectedSuggestion, parentNode);
           }}
           canGoBack={explorationPathOps.canGoBack()}
           canGoForward={explorationPathOps.canGoForward()}
@@ -1881,10 +1322,10 @@ export const GraphEditor = () => {
       )}
 
       <ActionResultModal
-        isOpen={!!actionResult}
-        onClose={() => setActionResult(null)}
-        title={actionResult?.title || ""}
-        content={actionResult?.content || ""}
+        isOpen={!!panelState.actionResult}
+        onClose={() => panelState.setActionResult(null)}
+        title={panelState.actionResult?.title || ""}
+        content={panelState.actionResult?.content || ""}
       />
 
       <GraphModalManager
@@ -1897,8 +1338,8 @@ export const GraphEditor = () => {
       />
 
       <GraphStyleSettings
-        isOpen={isStyleSettingsOpen}
-        onClose={() => setIsStyleSettingsOpen(false)}
+        isOpen={panelState.isStyleSettingsOpen}
+        onClose={() => panelState.setIsStyleSettingsOpen(false)}
         currentColorScheme={colorScheme}
         currentLinkStyle={linkStyle}
         currentLinkAnimation={linkAnimation}
@@ -1911,14 +1352,14 @@ export const GraphEditor = () => {
         onEdgeWidthModeChange={setEdgeWidthMode}
         coloringMode={coloringMode}
         onOpenRelationshipTypeSettings={() => {
-          setIsStyleSettingsOpen(false);
-          setIsRelationshipTypeSettingsOpen(true);
+          panelState.setIsStyleSettingsOpen(false);
+          panelState.setIsRelationshipTypeSettingsOpen(true);
         }}
       />
 
       <RelationshipTypeSettings
-        isOpen={isRelationshipTypeSettingsOpen}
-        onClose={() => setIsRelationshipTypeSettingsOpen(false)}
+        isOpen={panelState.isRelationshipTypeSettingsOpen}
+        onClose={() => panelState.setIsRelationshipTypeSettingsOpen(false)}
       />
 
       <Suspense fallback={<ViewLoader />}>
@@ -1927,7 +1368,7 @@ export const GraphEditor = () => {
             state={state}
             nodes={nodes}
             edges={edges}
-            nodeStatus={nodeStatus as any}
+            nodeStatus={nodeStatus}
             graphStats={graphStats}
             nodeOps={nodeOps}
             aiOps={aiOps}
@@ -1978,14 +1419,14 @@ export const GraphEditor = () => {
       <Suspense fallback={<ViewLoader />}>
         <ConceptAggregationPanel
           graphId={id || ""}
-          isOpen={isConceptAggregationOpen}
-          onClose={() => setIsConceptAggregationOpen(false)}
+          isOpen={panelState.isConceptAggregationOpen}
+          onClose={() => panelState.setIsConceptAggregationOpen(false)}
         />
       </Suspense>
 
       <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
+        isOpen={panelState.isCommandPaletteOpen}
+        onClose={() => panelState.setIsCommandPaletteOpen(false)}
         commands={commands}
         nodes={nodes}
         onNodeSelect={(nodeId) => {
@@ -2000,8 +1441,8 @@ export const GraphEditor = () => {
       />
 
       <ShortcutHelpPanel
-        isOpen={isShortcutHelpOpen}
-        onClose={() => setIsShortcutHelpOpen(false)}
+        isOpen={panelState.isShortcutHelpOpen}
+        onClose={() => panelState.setIsShortcutHelpOpen(false)}
       />
 
       <Suspense fallback={<ViewLoader />}>
@@ -2013,13 +1454,13 @@ export const GraphEditor = () => {
             const node = nodes.find((n) => n.id === nodeId);
             if (node) handleNodeClick(node);
           }}
-          isOpen={isRAGChatOpen}
-          onOpenChange={setIsRAGChatOpen}
+          isOpen={panelState.isRAGChatOpen}
+          onOpenChange={panelState.setIsRAGChatOpen}
           selectedNodeIds={Array.from(selectedNodeIds)}
           aiEnabled={aiEnabled}
           isTutorMode={state.isTutorMode}
           tutorMode={state.tutorMode}
-          extractedConcepts={state.extractedConcepts}
+          extractedConcepts={panelState.extractedConcepts as unknown as TutorExtractedConcept[]}
           onToggleTutorMode={tutorOps.handleToggleTutorMode}
           onSwitchTutorMode={state.setTutorMode}
           onExtractConcepts={tutorOps.handleExtractConcepts}
@@ -2028,8 +1469,8 @@ export const GraphEditor = () => {
           onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
           suggestedNextTopics={state.suggestedNextTopics}
           onTutorChat={tutorOps.handleTutorChat}
-          width={ragChatWidth}
-          onWidthChange={setRagChatWidth}
+          width={panelState.ragChatWidth}
+          onWidthChange={panelState.setRagChatWidth}
           isMobilePreviewMode={
             isMobile && isMobilePreviewMode && !!selectedNode
           }
@@ -2094,16 +1535,16 @@ export const GraphEditor = () => {
       {user?.id && (
         <Suspense fallback={<ViewLoader />}>
           <Console
-            isOpen={isConsoleOpen}
-            onClose={closeConsole}
-            context={consoleContext}
-            onToggleMinimize={toggleConsoleMinimize}
-            isMinimized={isConsoleMinimized}
+            isOpen={panelState.isConsoleOpen}
+            onClose={panelState.closeConsole}
+            context={panelState.consoleContext}
+            onToggleMinimize={panelState.toggleConsoleMinimize}
+            isMinimized={panelState.isConsoleMinimized}
           />
         </Suspense>
       )}
 
-      {isLiteratureExtractOpen && id && (
+      {panelState.isLiteratureExtractOpen && id && (
         <Suspense fallback={<ViewLoader />}>
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
             <LiteratureExtractPanel
@@ -2117,65 +1558,65 @@ export const GraphEditor = () => {
                   queryKey: ["graphNodeStatus", id],
                 });
               }}
-              onClose={() => setIsLiteratureExtractOpen(false)}
+              onClose={() => panelState.setIsLiteratureExtractOpen(false)}
             />
           </div>
         </Suspense>
       )}
 
-      {isResearchProgressOpen && id && (
+      {panelState.isResearchProgressOpen && id && (
         <Suspense fallback={<ViewLoader />}>
           <ResearchProgressPanel
             graphId={id}
-            onClose={() => setIsResearchProgressOpen(false)}
+            onClose={() => panelState.setIsResearchProgressOpen(false)}
           />
         </Suspense>
       )}
 
-      {isLiteratureLibraryOpen && id && (
+      {panelState.isLiteratureLibraryOpen && id && (
         <Suspense fallback={<ViewLoader />}>
           <LiteratureLibraryPanel
             graphId={id}
-            onClose={() => setIsLiteratureLibraryOpen(false)}
+            onClose={() => panelState.setIsLiteratureLibraryOpen(false)}
           />
         </Suspense>
       )}
 
-      {isVersionHistoryOpen && id && (
+      {panelState.isVersionHistoryOpen && id && (
         <Suspense fallback={<ViewLoader />}>
           <div className="fixed right-0 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-700">
             <VersionHistoryPanel
               graphId={id}
-              onClose={() => setIsVersionHistoryOpen(false)}
+              onClose={() => panelState.setIsVersionHistoryOpen(false)}
               onDiffSelect={(sourceSnapshotId, targetSnapshotId) => {
-                setSelectedDiff({ sourceSnapshotId, targetSnapshotId });
+                panelState.setSelectedDiff({ sourceSnapshotId, targetSnapshotId });
               }}
             />
           </div>
         </Suspense>
       )}
 
-      {selectedDiff && id && (
+      {panelState.selectedDiff && id && (
         <Suspense fallback={<ViewLoader />}>
           <div className="fixed right-80 top-0 bottom-0 z-40 w-80 shadow-xl border-l border-slate-200 dark:border-slate-700">
             <DiffDetailPanel
               graphId={id}
-              sourceSnapshotId={selectedDiff.sourceSnapshotId}
-              targetSnapshotId={selectedDiff.targetSnapshotId}
-              onClose={() => setSelectedDiff(null)}
+              sourceSnapshotId={panelState.selectedDiff.sourceSnapshotId}
+              targetSnapshotId={panelState.selectedDiff.targetSnapshotId}
+              onClose={() => panelState.setSelectedDiff(null)}
             />
           </div>
         </Suspense>
       )}
 
-      {isConceptPreviewOpen && extractedConcepts.length > 0 && (
+      {panelState.isConceptPreviewOpen && panelState.extractedConcepts.length > 0 && (
         <Suspense fallback={<ViewLoader />}>
           <ConceptPreviewList
-            concepts={extractedConcepts}
-            isOpen={isConceptPreviewOpen}
+            concepts={panelState.extractedConcepts}
+            isOpen={panelState.isConceptPreviewOpen}
             onClose={() => {
-              setIsConceptPreviewOpen(false);
-              setExtractedConcepts([]);
+              panelState.setIsConceptPreviewOpen(false);
+              panelState.setExtractedConcepts([]);
             }}
             onConfirm={handleConfirmConcepts}
           />

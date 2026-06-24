@@ -1,5 +1,6 @@
 import { Node, Edge, BranchSuggestion, ExplorationPathItem } from '../../types';
 import type { CreateNodeData, UpdateNodeData } from '@shared/types/api';
+import type { AIAction } from '@shared/types/ai';
 import type { BatchGenerateConfig } from '../../components/GraphEditor/modals/BatchGenerateDialog';
 import type { RelatedNode } from '../graphEditor/useMiscState';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
@@ -83,6 +84,7 @@ interface UseGraphAIOperationsProps {
   record: (action: HistoryAction) => void;
   navigate: (path: string) => void;
   token?: string | null;
+  onActionResult: (result: { title: string; content: string } | null) => void;
 }
 
 export const useGraphAIOperations = ({
@@ -92,7 +94,8 @@ export const useGraphAIOperations = ({
   state,
   mutations,
   record,
-  navigate
+  navigate,
+  onActionResult
 }: UseGraphAIOperationsProps) => {
   const queryClient = useQueryClient();
   const asyncHandler = createAsyncHandler();
@@ -608,6 +611,42 @@ export const useGraphAIOperations = ({
     );
   };
 
+  const handleExecuteAction = async (action: AIAction, nodeId: string) => {
+    try {
+      message.info(`正在执行动作: ${action.name}...`);
+      const res = await api.aiActions.execute({
+        action_id: action.id,
+        node_id: nodeId,
+        graph_id: id,
+      });
+
+      if (action.target_mode === "show_result" || typeof res.data === "string") {
+        onActionResult({
+          title: action.name,
+          content: typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2),
+        });
+        message.success(`动作执行成功`);
+      } else {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(id) });
+
+        let feedback = `动作执行成功: ${action.name}`;
+        if (res.message) feedback += ` (${res.message})`;
+
+        if (action.target_mode === "update_node" && res.data?.updatedFields) {
+          feedback += `。已更新: ${res.data.updatedFields.join(", ")}`;
+        } else if (action.target_mode === "spawn_children" && res.data?.createdCount) {
+          feedback += `。已生成 ${res.data.createdCount} 个子节点`;
+        }
+
+        message.success(feedback);
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误';
+      message.error(`执行失败: ${errorMessage}`);
+    }
+  };
+
   return {
     handleAIGenerate,
     handleAIExpand,
@@ -619,6 +658,7 @@ export const useGraphAIOperations = ({
     handleGetBranchSuggestions,
     handleCreateBranch,
     handleSwitchBranch,
-    handleGenerateNodeContent
+    handleGenerateNodeContent,
+    handleExecuteAction
   };
 };

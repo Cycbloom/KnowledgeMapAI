@@ -1,0 +1,10 @@
+- [x] useFocusNode Hook 实现并替换 9 处重复焦点设置代码
+- [x] useNodeStatusSets Hook 实现并替换 3 个重复 useMemo
+- [x] computeRegions 纯函数实现并替换 130 行 regions 计算
+- [x] useGraphEditorPanelState Hook 实现并替换约 15 个分散的 useState
+- [x] useBranchSelection Hook 实现并替换 3 处分支选择回调
+- [x] handleExecuteAction 移入 useGraphAIOperations
+- [x] 2 处 as any 类型断言已消除
+- [x] GraphEditor.tsx 行数从 2186 降至 1627（减少 559 行，25.6%）
+- [x] `npm run check` 类型检查通过（无新增错误，仅 3 个预先存在的错误）
+- [x] `npm run lint` 代码规范检查通过（无新增错误，仅 4 个预先存在的错误）

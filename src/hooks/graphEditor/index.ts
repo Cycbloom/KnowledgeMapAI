@@ -29,6 +29,10 @@ export { useGraphInteraction } from './useGraphInteraction';
 export { useGraphNodeOperations } from './useGraphNodeOperations';
 export { useKnowledgePointOperations } from './useKnowledgePointOperations';
 export { useExplorationPath } from './useExplorationPath';
+export { useNodeStatusSets } from './useNodeStatusSets';
+export { useGraphEditorPanelState } from './useGraphEditorPanelState';
+export { useFocusNode } from './useFocusNode';
+export { useBranchSelection } from './useBranchSelection';
 
 interface GraphRef {
   centerNode?: (nodeId: string, options?: { forceRightPanelOpen?: boolean }) => void;

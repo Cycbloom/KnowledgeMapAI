@@ -213,8 +213,7 @@ export class NodesService {
       await cacheService.invalidateGraphCache(userId, graph_id);
       await cacheService.invalidateUserGraphsCache(userId);
 
-      appEventBus
-        .publish<NodeCreatedPayload>(
+      appEventBus.publish<NodeCreatedPayload>(
           'node_created',
           {
             nodeId: result.id,
@@ -224,8 +223,7 @@ export class NodesService {
           },
           userId,
           'graph_node_service',
-        )
-        .catch((err) => logger.error('node_created event publish failed:', err));
+        );
 
       // 异步处理 embedding（不阻塞返回）
       if (!existingKpId && title) {
@@ -1166,8 +1164,7 @@ export class NodesService {
 
       await cacheService.invalidateGraphCache(userId, graph_id);
 
-      appEventBus
-        .publish<EdgeCreatedPayload>(
+      appEventBus.publish<EdgeCreatedPayload>(
           'edge_created',
           {
             edgeId: edge.id,
@@ -1178,8 +1175,7 @@ export class NodesService {
           },
           userId,
           'edge_route',
-        )
-        .catch((err) => logger.error('edge_created event publish failed:', err));
+        );
 
       return {
         id: edge.id,

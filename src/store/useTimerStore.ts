@@ -2,9 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
 import type { TimerMode } from "@shared/types";
-import type { TaskStartedPayload } from "@shared/types/events";
 import { DEFAULT_SETTINGS } from "./useFocusStore";
-import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 
 // ---------------------------------------------------------------------------
@@ -95,76 +93,6 @@ function clearTimerInterval(): void {
   if (intervalId !== null) {
     clearInterval(intervalId);
     intervalId = null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Scheduler integration (optional, not enabled by default)
-// ---------------------------------------------------------------------------
-
-let schedulerUnsubscribe: (() => void) | null = null;
-
-function getTimeSliceForQueueLevel(queueLevel: number): number {
-  if (queueLevel === 0) return 15;
-  if (queueLevel === 1) return 25;
-  return 45;
-}
-
-function initSchedulerIntegration(): void {
-  const handler = (payload: TaskStartedPayload) => {
-    const timeSliceMinutes = getTimeSliceForQueueLevel(payload.queueLevel);
-    useTimerStore
-      .getState()
-      .start(payload.taskId, timeSliceMinutes, payload.queueLevel);
-  };
-
-  schedulerUnsubscribe = frontendEventBus.subscribe("task_started", handler);
-}
-
-function destroySchedulerIntegration(): void {
-  if (schedulerUnsubscribe) {
-    schedulerUnsubscribe();
-    schedulerUnsubscribe = null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Focus session persistence helpers
-// ---------------------------------------------------------------------------
-
-async function saveFocusSession(
-  taskId: string | null,
-  startTimeRef: Date | null,
-  elapsedSeconds: number,
-  completedSessions: number,
-  mode: TimerMode,
-): Promise<void> {
-  if (!startTimeRef) return;
-  try {
-    await api.scheduler.createFocusSession({
-      task_id: taskId ?? undefined,
-      started_at: startTimeRef.toISOString(),
-      ended_at: new Date().toISOString(),
-      duration: Math.round(elapsedSeconds / 60),
-      pomodoro_count: completedSessions + 1,
-      is_break: mode !== "focus",
-      mode,
-    });
-  } catch {
-    // Failed to save focus session — non-critical
-  }
-}
-
-async function tickTaskExecution(
-  taskId: string | null,
-  mode: TimerMode,
-  elapsedSeconds: number,
-): Promise<void> {
-  if (mode !== "focus" || !taskId) return;
-  try {
-    await api.scheduler.tickExecution(taskId, Math.round(elapsedSeconds));
-  } catch {
-    // Execution tick failed — non-critical
   }
 }
 
@@ -296,19 +224,16 @@ const useTimerStore = create<TimerState & TimerActions>()(
         const completedTaskId = taskId;
         const completedMode = mode;
 
-        await saveFocusSession(
-          completedTaskId,
-          startTimeRef,
-          elapsedDuration,
-          completedSessions,
-          completedMode,
-        );
-
-        await tickTaskExecution(
-          completedTaskId,
-          completedMode,
-          elapsedDuration,
-        );
+        // Publish event for network side-effects (handled by storeIntegrations)
+        if (startTimeRef) {
+          frontendEventBus.publish("focus_session_completed", {
+            taskId: completedTaskId,
+            startTimeRef,
+            elapsedDuration,
+            completedSessions,
+            mode: completedMode,
+          });
+        }
 
         // focus 番茄完成时通知面板保存子任务 actual_duration
         if (completedMode === "focus") {
@@ -350,14 +275,13 @@ const useTimerStore = create<TimerState & TimerActions>()(
         // Save current session if at least 1 minute elapsed
         const elapsedDuration = totalTime - timeLeft;
         if (elapsedDuration > 60 && startTimeRef) {
-          saveFocusSession(
+          frontendEventBus.publish("focus_session_completed", {
             taskId,
             startTimeRef,
             elapsedDuration,
             completedSessions,
             mode,
-          );
-          tickTaskExecution(taskId, mode, elapsedDuration);
+          });
         }
 
         const newCompletedSessions =
@@ -525,4 +449,4 @@ useTimerStore.subscribe((state, prevState) => {
   document.title = `${mins}:${secs} - ${modeLabel}`;
 });
 
-export { useTimerStore, initSchedulerIntegration, destroySchedulerIntegration };
+export { useTimerStore };

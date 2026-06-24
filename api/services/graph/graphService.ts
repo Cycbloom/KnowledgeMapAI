@@ -454,7 +454,7 @@ export class GraphService {
 
     await cacheService.invalidateUserGraphsCache(userId);
 
-    await appEventBus.publish(
+    appEventBus.publish(
       "graph_created",
       { graphId: data.id, title, userId } as GraphCreatedPayload,
       userId,
@@ -612,7 +612,7 @@ export class GraphService {
       userId,
     ).catch(err => logger.error('Record graph_updated event error:', err));
 
-    await appEventBus.publish(
+    appEventBus.publish(
       "graph_updated",
       { graphId, userId, changes: updates } as GraphUpdatedPayload,
       userId,
@@ -652,7 +652,7 @@ export class GraphService {
 
     await cacheService.invalidateUserGraphsCache(userId);
 
-    await appEventBus.publish(
+    appEventBus.publish(
       "graph_updated",
       { graphId, userId } as GraphUpdatedPayload,
       userId,
@@ -692,7 +692,7 @@ export class GraphService {
           .not("deleted_at", "is", null);
 
         for (const branch of branches ?? []) {
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: branch.id, userId } as GraphDeletedPayload,
             userId,
@@ -702,7 +702,7 @@ export class GraphService {
 
         await cacheService.invalidateAllGraphRelated(userId, graphId);
 
-        await appEventBus.publish(
+        appEventBus.publish(
           "graph_deleted",
           { graphId, userId } as GraphDeletedPayload,
           userId,
@@ -728,7 +728,7 @@ export class GraphService {
         })();
 
         for (const branchId of branchIds) {
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: branchId, userId } as GraphDeletedPayload,
             userId,
@@ -743,7 +743,7 @@ export class GraphService {
 
         await cacheService.invalidateAllGraphRelated(userId, graphId);
 
-        await appEventBus.publish(
+        appEventBus.publish(
           "graph_deleted",
           { graphId, userId } as GraphDeletedPayload,
           userId,
@@ -766,7 +766,7 @@ export class GraphService {
             .in("id", branchIds);
 
           for (const branch of branches) {
-            await appEventBus.publish(
+            appEventBus.publish(
               "graph_deleted",
               { graphId: branch.id, userId } as GraphDeletedPayload,
               userId,
@@ -782,7 +782,7 @@ export class GraphService {
 
         await cacheService.invalidateAllGraphRelated(userId, graphId);
 
-        await appEventBus.publish(
+        appEventBus.publish(
           "graph_deleted",
           { graphId, userId } as GraphDeletedPayload,
           userId,
@@ -824,7 +824,7 @@ export class GraphService {
 
         // RPC succeeded — publish events and invalidate cache
         for (const branch of allBranches ?? []) {
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: branch.id, userId } as GraphDeletedPayload,
             userId,
@@ -835,7 +835,7 @@ export class GraphService {
         await cacheService.invalidateUserGraphsCache(userId);
 
         for (const id of graphIds) {
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: id, userId } as GraphDeletedPayload,
             userId,
@@ -863,7 +863,7 @@ export class GraphService {
             .in("id", branchIds);
 
           for (const branch of allBranches) {
-            await appEventBus.publish(
+            appEventBus.publish(
               "graph_deleted",
               { graphId: branch.id, userId } as GraphDeletedPayload,
               userId,
@@ -875,7 +875,7 @@ export class GraphService {
         await cacheService.invalidateUserGraphsCache(userId);
 
         for (const id of data?.map((g: { id: string }) => g.id) || []) {
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: id, userId } as GraphDeletedPayload,
             userId,
@@ -910,7 +910,7 @@ export class GraphService {
 
     await cacheService.invalidateUserGraphsCache(userId);
 
-    await appEventBus.publish(
+    appEventBus.publish(
       "graph_updated",
       { graphId, userId } as GraphUpdatedPayload,
       userId,
@@ -951,7 +951,7 @@ export class GraphService {
         // RPC succeeded — publish events and invalidate cache
         for (const branch of branches ?? []) {
           await cacheService.invalidateAllGraphRelated(userId, branch.id);
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: branch.id, userId } as GraphDeletedPayload,
             userId,
@@ -961,7 +961,7 @@ export class GraphService {
 
         await cacheService.invalidateAllGraphRelated(userId, graphId);
 
-        await appEventBus.publish(
+        appEventBus.publish(
           "graph_deleted",
           { graphId, userId } as GraphDeletedPayload,
           userId,
@@ -978,7 +978,7 @@ export class GraphService {
 
           for (const branch of branches) {
             await cacheService.invalidateAllGraphRelated(userId, branch.id);
-            await appEventBus.publish(
+            appEventBus.publish(
               "graph_deleted",
               { graphId: branch.id, userId } as GraphDeletedPayload,
               userId,
@@ -997,7 +997,7 @@ export class GraphService {
 
         await cacheService.invalidateAllGraphRelated(userId, graphId);
 
-        await appEventBus.publish(
+        appEventBus.publish(
           "graph_deleted",
           { graphId, userId } as GraphDeletedPayload,
           userId,
@@ -1032,7 +1032,7 @@ export class GraphService {
     await cacheService.invalidateUserGraphsCache(userId);
 
     for (const id of data?.map((g: { id: string }) => g.id) || []) {
-      await appEventBus.publish(
+      appEventBus.publish(
         "graph_updated",
         { graphId: id, userId } as GraphUpdatedPayload,
         userId,
@@ -1075,7 +1075,7 @@ export class GraphService {
         // RPC succeeded — publish events and invalidate cache
         for (const branch of allBranches ?? []) {
           await cacheService.invalidateAllGraphRelated(userId, branch.id);
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: branch.id, userId } as GraphDeletedPayload,
             userId,
@@ -1086,7 +1086,7 @@ export class GraphService {
         await cacheService.invalidateUserGraphsCache(userId);
 
         for (const id of graphIds) {
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: id, userId } as GraphDeletedPayload,
             userId,
@@ -1115,7 +1115,7 @@ export class GraphService {
 
           for (const branch of allBranches) {
             await cacheService.invalidateAllGraphRelated(userId, branch.id);
-            await appEventBus.publish(
+            appEventBus.publish(
               "graph_deleted",
               { graphId: branch.id, userId } as GraphDeletedPayload,
               userId,
@@ -1127,7 +1127,7 @@ export class GraphService {
         await cacheService.invalidateUserGraphsCache(userId);
 
         for (const id of data?.map((g: { id: string }) => g.id) || []) {
-          await appEventBus.publish(
+          appEventBus.publish(
             "graph_deleted",
             { graphId: id, userId } as GraphDeletedPayload,
             userId,

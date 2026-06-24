@@ -25,12 +25,12 @@ class AppEventBus {
     }
   }
 
-  async publish<T = unknown>(
+  publish<T = unknown>(
     eventType: AppEventType,
     payload: T,
     userId: string,
     source?: string,
-  ): Promise<void> {
+  ): void {
     const event: AppEvent<T> = {
       id: crypto.randomUUID(),
       type: eventType,
@@ -50,18 +50,17 @@ class AppEventBus {
       `[AppEventBus] Publishing ${eventType} to ${handlers.size} subscriber(s)`,
     );
 
-    const promises = Array.from(handlers).map(async (handler) => {
-      try {
-        await handler(event as AppEvent);
-      } catch (error) {
-        logger.error(
-          `[AppEventBus] Handler failed for ${eventType}:`,
-          error,
-        );
-      }
-    });
-
-    await Promise.allSettled(promises);
+    // Fire-and-forget: execute all handlers asynchronously without blocking the caller
+    for (const handler of handlers) {
+      Promise.resolve()
+        .then(() => handler(event as AppEvent))
+        .catch((error) => {
+          logger.error(
+            `[AppEventBus] Handler failed for ${eventType}:`,
+            error,
+          );
+        });
+    }
   }
 
   getHandlerCount(eventType?: AppEventType): number {

@@ -127,6 +127,14 @@ export interface FocusSettingsChangedPayload {
   autoStartPomodoro: boolean;
 }
 
+export interface FocusSessionCompletedPayload {
+  taskId: string | null;
+  startTimeRef: Date | null;
+  elapsedDuration: number;
+  completedSessions: number;
+  mode: string;
+}
+
 export interface FrontendEventMap extends Record<string, unknown> {
   task_started: TaskStartedPayload;
   sse_status_changed: SSEStatusChangedPayload;
@@ -151,4 +159,5 @@ export interface FrontendEventMap extends Record<string, unknown> {
   message_hide: MessageHidePayload;
   achievement_unlocked: AchievementUnlockedPayload;
   focus_settings_changed: FocusSettingsChangedPayload;
+  focus_session_completed: FocusSessionCompletedPayload;
 }

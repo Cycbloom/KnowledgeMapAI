@@ -519,7 +519,7 @@ export class GraphVersionService {
 
     // 缓存失效和事件发布（事务外）
     await cacheService.invalidateAllGraphRelated(operatorId ?? '', graphId);
-    await appEventBus.publish(
+    appEventBus.publish(
       "graph_rollback",
       { graphId, userId: operatorId ?? '', snapshotId } as GraphRollbackPayload,
       operatorId ?? '',

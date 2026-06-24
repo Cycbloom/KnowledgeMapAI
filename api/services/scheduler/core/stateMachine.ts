@@ -306,7 +306,7 @@ class TaskStateMachine {
           task,
           sideEffectResult,
         );
-        await appEventBus.publish(
+        appEventBus.publish(
           transitionConfig.eventType,
           payload,
           userId,

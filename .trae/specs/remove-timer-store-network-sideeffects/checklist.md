@@ -1,0 +1,5 @@
+- [x] FrontendEventBus 中已新增 `focus_session_completed` 事件类型和 payload
+- [x] useTimerStore.ts 中无 `api` 导入，`saveFocusSession`/`tickTaskExecution`/`initSchedulerIntegration`/`destroySchedulerIntegration` 已移除
+- [x] useTimerStore.ts 的 `complete()` 和 `skipToNext()` 通过 `frontendEventBus.publish` 发布事件
+- [x] storeIntegrations.ts 订阅 `focus_session_completed` 事件并执行网络请求
+- [x] `npx tsc --noEmit` 通过零新增错误

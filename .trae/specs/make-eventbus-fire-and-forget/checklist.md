@@ -1,0 +1,3 @@
+- [x] eventBus.ts 的 `publish()` 已改为 fire-and-forget（返回 void，不 await 处理器）
+- [x] 所有 35 处 `await appEventBus.publish` 已改为 `appEventBus.publish`，3 处 `.catch()` 链式调用已移除
+- [x] `npx tsc --noEmit` 通过零新增错误

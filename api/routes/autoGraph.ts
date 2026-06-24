@@ -455,15 +455,11 @@ router.post(
       await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
       await cacheService.del(CacheKeys.GRAPH_NODES("public", graph_id));
 
-      appEventBus
-        .publish<NodeCreatedPayload>(
+      appEventBus.publish<NodeCreatedPayload>(
           "node_created",
           { nodeId: "", graphId: graph_id, userId: req.user.id, title: "" },
           req.user.id,
           "auto_graph_route",
-        )
-        .catch((err) =>
-          logger.error("node_created event publish failed:", err),
         );
 
       const nodeMapping: Record<

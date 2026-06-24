@@ -118,7 +118,7 @@ class SchedulerCronService {
       try {
         const taskCreated = await this.executeSchedule(getSupabaseAdmin(), schedule);
 
-        await appEventBus.publish<ScheduleExecutedPayload>(
+        appEventBus.publish<ScheduleExecutedPayload>(
           "schedule_executed",
           {
             scheduleId: schedule.id,
@@ -285,7 +285,7 @@ class SchedulerCronService {
 
     for (const [userId, count] of userReviews) {
       try {
-        await appEventBus.publish<NotificationNeededPayload>(
+        appEventBus.publish<NotificationNeededPayload>(
           "notification_needed",
           {
             userId,

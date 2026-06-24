@@ -97,7 +97,7 @@ class SpacedRepetitionBridge {
       const result = await this.processFSRSReview(supabase, userId, reviewId, qualityScore);
 
       if (result) {
-        await appEventBus.publish<ReviewCompletedPayload>(
+        appEventBus.publish<ReviewCompletedPayload>(
           "review_completed",
           {
             reviewTaskId: reviewId,

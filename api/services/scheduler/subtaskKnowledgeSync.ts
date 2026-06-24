@@ -368,7 +368,7 @@ export class SubtaskKnowledgeSyncService {
 
     const taskData = task as { id: string; user_id: string; title: string };
 
-    await appEventBus.publish(
+    appEventBus.publish(
       "notification_needed",
       {
         userId: taskData.user_id,
@@ -591,7 +591,7 @@ export class SubtaskKnowledgeSyncService {
         .single();
 
       if (task?.user_id) {
-        await appEventBus.publish(
+        appEventBus.publish(
           "learning_progress_updated",
           {
             knowledgePointId,

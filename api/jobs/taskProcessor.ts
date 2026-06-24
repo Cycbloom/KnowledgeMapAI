@@ -86,7 +86,7 @@ class TaskProcessor {
       );
       logger.debug(`[TaskProcessor] Task ${task.id} completed`);
 
-      await appEventBus.publish(
+      appEventBus.publish(
         "ai_task_completed",
         {
           taskId: task.id,
@@ -110,7 +110,7 @@ class TaskProcessor {
         errorMessage,
       );
 
-      await appEventBus.publish(
+      appEventBus.publish(
         "ai_task_failed",
         {
           taskId: task.id,

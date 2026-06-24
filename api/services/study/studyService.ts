@@ -382,8 +382,7 @@ export class StudyService {
       ).catch((err) => logger.error("Failed to update mastery_level after review:", err));
     }
 
-    appEventBus
-      .publish<ReviewCompletedPayload>(
+    appEventBus.publish<ReviewCompletedPayload>(
         "review_completed",
         {
           reviewTaskId: cardId,
@@ -394,8 +393,7 @@ export class StudyService {
         },
         userId,
         "study_service",
-      )
-      .catch((err) => logger.error("review_completed event publish failed:", err));
+      );
 
     return {
       card: updatedCard as StudyCard,

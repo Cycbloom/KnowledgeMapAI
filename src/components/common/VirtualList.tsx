@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { useVirtualScroll } from '../../hooks/common/useVirtualScroll';
+import { cn } from '@/lib/utils';
 
 interface VirtualListProps<T> {
   items: T[];
@@ -34,7 +35,7 @@ function VirtualListComponent<T>({
 
   return (
     <div
-      className={`overflow-auto ${className}`}
+      className={cn('overflow-auto', className)}
       style={{
         height: containerHeight,
         overscrollBehavior: 'contain',
@@ -101,7 +102,7 @@ function VirtualGridComponent<T>({
 
   return (
     <div
-      className={`overflow-auto ${className}`}
+      className={cn('overflow-auto', className)}
       style={{
         height: containerHeight,
         width: containerWidth,

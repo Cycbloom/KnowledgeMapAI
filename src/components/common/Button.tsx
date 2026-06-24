@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -75,19 +76,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={isDisabled}
-        className={`
-          inline-flex items-center justify-center gap-2
-          font-medium rounded-lg
-          transition-colors duration-150
-          focus:outline-none focus:ring-2 focus:ring-offset-2
-          dark:focus:ring-offset-slate-900
-          disabled:cursor-not-allowed disabled:opacity-60
-          min-w-[44px] min-h-[44px]
-          ${variantStyles[variant]}
-          ${sizeStyles[size]}
-          ${fullWidth ? 'w-full' : ''}
-          ${className}
-        `.replace(/\s+/g, ' ').trim()}
+        className={cn(
+          'inline-flex items-center justify-center gap-2',
+          'font-medium rounded-lg',
+          'transition-colors duration-150',
+          'focus:outline-none focus:ring-2 focus:ring-offset-2',
+          'dark:focus:ring-offset-slate-900',
+          'disabled:cursor-not-allowed disabled:opacity-60',
+          'min-w-[44px] min-h-[44px]',
+          variantStyles[variant],
+          sizeStyles[size],
+          fullWidth && 'w-full',
+          className
+        )}
         {...props}
       >
         {loading ? (

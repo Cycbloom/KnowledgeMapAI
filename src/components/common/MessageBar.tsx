@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { cn } from '@/lib/utils';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type { MessageShowPayload } from "../../services/FrontendEventTypes";
 import { useTheme } from "../../hooks";
@@ -105,7 +106,7 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`w-full h-8 ${getBackgroundColor(currentMessage.type)} text-white flex items-center px-4 text-xs select-none shadow-lg pointer-events-auto`}
+            className={cn('w-full h-8', getBackgroundColor(currentMessage.type), 'text-white flex items-center px-4 text-xs select-none shadow-lg pointer-events-auto')}
           >
             <div className="flex items-center gap-2 flex-1 overflow-hidden">
               <motion.div

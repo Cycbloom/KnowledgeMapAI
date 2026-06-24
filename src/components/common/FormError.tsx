@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface FormErrorProps {
   message?: string;
@@ -11,11 +12,11 @@ const FormError: React.FC<FormErrorProps> = ({ message, className = '' }) => {
 
   return (
     <div
-      className={`
-        flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400
-        animate-[fadeIn_0.2s_ease-out]
-        ${className}
-      `.replace(/\s+/g, ' ').trim()}
+      className={cn(
+        'flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400',
+        'animate-[fadeIn_0.2s_ease-out]',
+        className
+      )}
       role="alert"
     >
       <AlertCircle className="w-4 h-4 flex-shrink-0" />

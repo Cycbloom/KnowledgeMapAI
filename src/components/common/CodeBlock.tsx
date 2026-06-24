@@ -3,6 +3,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
 import type { Element } from 'hast';
+import { cn } from '@/lib/utils';
 
 interface CodeBlockProps {
   className?: string;
@@ -37,11 +38,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
 
   if (isInline) {
     return (
-      <code className={`px-1.5 py-0.5 rounded text-sm font-mono ${
-        isDark 
-          ? 'bg-slate-700 text-pink-400' 
-          : 'bg-slate-100 text-pink-600'
-      }`}>
+      <code className={cn('px-1.5 py-0.5 rounded text-sm font-mono', isDark ? 'bg-slate-700 text-pink-400' : 'bg-slate-100 text-pink-600')}>
         {children}
       </code>
     );
@@ -49,11 +46,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
 
   if (!language) {
     return (
-      <code className={`block px-4 py-3 rounded-lg text-sm font-mono overflow-x-auto ${
-        isDark 
-          ? 'bg-slate-800 text-slate-200' 
-          : 'bg-slate-100 text-slate-800'
-      }`}>
+      <code className={cn('block px-4 py-3 rounded-lg text-sm font-mono overflow-x-auto', isDark ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-800')}>
         {children}
       </code>
     );
@@ -61,19 +54,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
 
   return (
     <div className="relative group my-4">
-      <div className={`flex items-center justify-between px-4 py-2 rounded-t-lg text-xs font-medium ${
-        isDark 
-          ? 'bg-slate-800 text-slate-400 border-b border-slate-700' 
-          : 'bg-slate-200 text-slate-600 border-b border-slate-300'
-      }`}>
+      <div className={cn('flex items-center justify-between px-4 py-2 rounded-t-lg text-xs font-medium', isDark ? 'bg-slate-800 text-slate-400 border-b border-slate-700' : 'bg-slate-200 text-slate-600 border-b border-slate-300')}>
         <span className="uppercase">{language}</span>
         <button
           onClick={handleCopy}
-          className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-            isDark 
-              ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200' 
-              : 'hover:bg-slate-300 text-slate-500 hover:text-slate-700'
-          }`}
+          className={cn('flex items-center gap-1 px-2 py-1 rounded transition-colors', isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-300 text-slate-500 hover:text-slate-700')}
           title="复制代码"
         >
           {copied ? (

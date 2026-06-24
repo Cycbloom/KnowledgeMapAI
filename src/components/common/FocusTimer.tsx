@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 import { useFocusStore } from "../../store/useFocusStore";
 import type { TimerMode } from "@shared/types";
 import { useTimerStore } from "../../store/useTimerStore";
@@ -99,11 +100,12 @@ export const FocusTimer: React.FC = () => {
       }}
       layout
       initial={false}
-      className={`fixed z-50 shadow-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden ${
+      className={cn(
+        "fixed z-50 shadow-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden",
         isExpanded
           ? "rounded-2xl w-72"
           : "rounded-full hover:shadow-2xl transition-shadow"
-      }`}
+      )}
       style={{
         // Default position
         right: 16,
@@ -126,7 +128,7 @@ export const FocusTimer: React.FC = () => {
             }}
           >
             <div
-              className={`p-2 rounded-full ${isRunning ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"}`}
+              className={cn("p-2 rounded-full", isRunning ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400")}
             >
               {mode === "focus" ? <Brain size={20} /> : <Coffee size={20} />}
             </div>
@@ -240,7 +242,7 @@ export const FocusTimer: React.FC = () => {
                     onClick={() =>
                       updateSettings({ soundEnabled: !soundEnabled })
                     }
-                    className={`p-2 rounded-lg ${soundEnabled ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400"}`}
+                    className={cn("p-2 rounded-lg", soundEnabled ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400")}
                   >
                     {soundEnabled ? (
                       <Volume2 size={18} />
@@ -295,11 +297,12 @@ export const FocusTimer: React.FC = () => {
                       fill="transparent"
                       strokeDasharray={2 * Math.PI * 88}
                       strokeDashoffset={2 * Math.PI * 88 * (1 - progress / 100)}
-                      className={`${
+                      className={cn(
                         mode === "focus"
                           ? "text-primary-500"
-                          : "text-emerald-500"
-                      } transition-all duration-1000 ease-linear`}
+                          : "text-emerald-500",
+                        "transition-all duration-1000 ease-linear"
+                      )}
                       strokeLinecap="round"
                     />
                   </svg>
@@ -327,11 +330,12 @@ export const FocusTimer: React.FC = () => {
 
                   <button
                     onClick={handleStartPause}
-                    className={`p-4 rounded-full shadow-lg transform transition-transform active:scale-95 ${
+                    className={cn(
+                      "p-4 rounded-full shadow-lg transform transition-transform active:scale-95",
                       isRunning
                         ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
                         : "bg-primary-600 text-white hover:bg-primary-700"
-                    }`}
+                    )}
                   >
                     {isRunning ? (
                       <Pause size={28} fill="currentColor" />

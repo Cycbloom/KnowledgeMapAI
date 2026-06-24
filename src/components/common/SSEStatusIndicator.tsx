@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import type { SSEStatusChangedPayload } from '../../services/FrontendEventTypes';
 import { Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type SSEConnectionStatus = SSEStatusChangedPayload['status'];
 
@@ -65,7 +66,7 @@ export const SSEStatusIndicator = () => {
 
   return (
     <div
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}
+      className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium', statusInfo.bgColor, statusInfo.color)}
       title={statusInfo.tooltip}
     >
       <StatusIcon size={14} className={status === 'connecting' ? 'animate-spin' : ''} />

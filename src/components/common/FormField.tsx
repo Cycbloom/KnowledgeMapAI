@@ -1,5 +1,6 @@
 import React from 'react';
 import { FormError } from './FormError';
+import { cn } from '@/lib/utils';
 
 interface FormFieldProps {
   label: string;
@@ -19,7 +20,7 @@ const FormField: React.FC<FormFieldProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`.replace(/\s+/g, ' ').trim()}>
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}

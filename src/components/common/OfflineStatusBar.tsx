@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { WifiOff, Wifi, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNetworkStatus } from '../../hooks/common/useNetworkStatus';
@@ -244,7 +245,7 @@ export const OfflineStatusBar: React.FC = () => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className={`fixed top-0 left-0 right-0 z-[60] ${getBackgroundClass()} ${getTextClass()} border-b backdrop-blur-sm shadow-lg`}
+          className={cn('fixed top-0 left-0 right-0 z-[60]', getBackgroundClass(), getTextClass(), 'border-b backdrop-blur-sm shadow-lg')}
         >
           <div className="h-10 px-4 flex items-center justify-center gap-2">
             {renderIcon()}

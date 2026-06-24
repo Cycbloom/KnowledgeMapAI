@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../hooks';
+import { cn } from '@/lib/utils';
 
 interface AudioVisualizerProps {
   analyserData: Uint8Array | null;
@@ -277,15 +278,14 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className={`relative overflow-hidden ${className}`}
+      className={cn('relative overflow-hidden', className)}
       style={containerStyle}
     >
       <div
-        className={`
-          absolute inset-0 rounded-xl
-          ${isDark ? 'bg-slate-900/50' : 'bg-gray-50/50'}
-          backdrop-blur-sm
-        `}
+        className={cn(
+          'absolute inset-0 rounded-xl backdrop-blur-sm',
+          isDark ? 'bg-slate-900/50' : 'bg-gray-50/50'
+        )}
         style={{ borderRadius: type === 'circle' ? '50%' : '12px' }}
       />
       <canvas

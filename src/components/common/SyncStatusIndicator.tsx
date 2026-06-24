@@ -3,6 +3,7 @@ import { Check, RefreshCw, WifiOff, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSyncStatus } from '../../hooks/common/useSyncStatus';
 import { SyncDetailPanel } from './SyncDetailPanel';
+import { cn } from '@/lib/utils';
 
 type SyncState = 'synced' | 'syncing' | 'offline' | 'error';
 
@@ -36,7 +37,7 @@ export function SyncStatusIndicator() {
     <div className="relative">
       <button
         onClick={() => setShowPanel(!showPanel)}
-        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs hover:bg-white/10 transition-colors ${config.color}`}
+        className={cn('flex items-center gap-1 px-2 py-1 rounded-md text-xs hover:bg-white/10 transition-colors', config.color)}
         title={config.label}
       >
         <motion.div

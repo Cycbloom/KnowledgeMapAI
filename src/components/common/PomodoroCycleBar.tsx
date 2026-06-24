@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { TimerMode } from "@shared/types";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -356,13 +357,13 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
 
                   {/* Label — absolutely positioned below dot so it doesn't affect flex alignment */}
                   <span
-                    className={`absolute left-1/2 -translate-x-1/2 ${labelSize} leading-none select-none whitespace-nowrap ${
+                    className={cn('absolute left-1/2 -translate-x-1/2', labelSize, 'leading-none select-none whitespace-nowrap',
                       isCompleted
                         ? "text-emerald-500"
                         : isCurrent
                           ? "font-semibold text-gray-700 dark:text-gray-200"
                           : "text-gray-400 dark:text-gray-500"
-                    }`}
+                    )}
                     style={{ top: isCurrent ? dotD + 6 : dotD + 4 }}
                   >
                     {getLabel(station.type)}

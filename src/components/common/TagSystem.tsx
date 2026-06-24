@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { Tag, X, Plus, Hash, Filter, Sparkles, Loader2 } from 'lucide-react';
 import { useTheme } from "../../hooks";
+import { cn } from '@/lib/utils';
 import { Node } from '../../types';
 
 interface TagData {
@@ -104,12 +105,12 @@ export const TagCloud: React.FC<TagCloudProps> = ({
   }, [onTagClick, onTagSelect, selectedTags]);
 
   return (
-    <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+    <div className={cn('rounded-xl p-6 shadow-sm border', isDark ? 'bg-slate-800' : 'bg-white', isDark ? 'border-slate-700' : 'border-gray-100')}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+        <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-gray-800')}>
           标签云
         </h3>
-        <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+        <span className={cn('text-xs', isDark ? 'text-slate-400' : 'text-gray-500')}>
           {tagData.length} 个标签
         </span>
       </div>
@@ -123,20 +124,19 @@ export const TagCloud: React.FC<TagCloudProps> = ({
             <button
               key={tag.name}
               onClick={() => handleTagClick(tag.name)}
-              className={`
-                inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
-                transition-all hover:scale-105
-                ${isSelected 
-                  ? `${tag.color} text-white shadow-lg` 
-                  : isDark 
-                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
-              `}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all hover:scale-105',
+                isSelected
+                  ? cn(tag.color, 'text-white shadow-lg')
+                  : isDark
+                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              )}
               style={{ fontSize: `${size}rem` }}
             >
               <Hash size={12} />
               <span>{tag.name}</span>
-              <span className={`text-xs ${isSelected ? 'text-white/80' : isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+              <span className={cn('text-xs', isSelected ? 'text-white/80' : isDark ? 'text-slate-500' : 'text-gray-400')}>
                 {tag.count}
               </span>
             </button>
@@ -145,7 +145,7 @@ export const TagCloud: React.FC<TagCloudProps> = ({
       </div>
       
       {tagData.length === 0 && (
-        <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+        <div className={cn('text-center py-8', isDark ? 'text-slate-400' : 'text-gray-500')}>
           <Tag size={32} className="mx-auto mb-2 opacity-50" />
           <p>暂无标签</p>
         </div>
@@ -187,14 +187,14 @@ export const TagFilter: React.FC<TagFilterProps> = ({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg transition-colors
-          ${selectedTags.length > 0
+        className={cn(
+          'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
+          selectedTags.length > 0
             ? 'bg-primary-500 text-white'
-            : isDark 
-              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
-        `}
+            : isDark
+              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        )}
       >
         <Filter size={16} />
         <span className="text-sm">
@@ -208,19 +208,19 @@ export const TagFilter: React.FC<TagFilterProps> = ({
       </button>
 
       {isOpen && (
-        <div className={`
-          absolute top-full left-0 mt-2 w-72 rounded-xl shadow-xl border z-50
-          ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}
-        `}>
-          <div className={`p-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+        <div className={cn(
+          'absolute top-full left-0 mt-2 w-72 rounded-xl shadow-xl border z-50',
+          isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+        )}>
+          <div className={cn('p-3 border-b', isDark ? 'border-slate-700' : 'border-gray-100')}>
             <div className="flex items-center justify-between">
-              <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+              <span className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-gray-700')}>
                 选择标签
               </span>
               {selectedTags.length > 0 && (
                 <button
                   onClick={clearAll}
-                  className={`text-xs ${isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={cn('text-xs', isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')}
                 >
                   清除全部
                 </button>
@@ -235,13 +235,12 @@ export const TagFilter: React.FC<TagFilterProps> = ({
                 <button
                   key={tag}
                   onClick={() => handleTagToggle(tag)}
-                  className={`
-                    w-full text-left px-3 py-2 rounded-lg flex items-center justify-between
-                    transition-colors
-                    ${isSelected
+                  className={cn(
+                    'w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-colors',
+                    isSelected
                       ? isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-50 text-primary-600'
-                      : isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-gray-50 text-gray-700'}
-                  `}
+                      : isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-gray-50 text-gray-700'
+                  )}
                 >
                   <span className="flex items-center gap-2">
                     <Hash size={14} />
@@ -256,7 +255,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
           </div>
           
           {allTags.length === 0 && (
-            <div className={`p-4 text-center text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <div className={cn('p-4 text-center text-sm', isDark ? 'text-slate-400' : 'text-gray-500')}>
               暂无标签
             </div>
           )}
@@ -306,16 +305,16 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
   if (suggestions.length === 0 && !loading) return null;
 
   return (
-    <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+    <div className={cn('rounded-lg p-3', isDark ? 'bg-slate-700/50' : 'bg-gray-50')}>
       <div className="flex items-center gap-2 mb-2">
         <Sparkles size={14} className="text-primary-500" />
-        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+        <span className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-gray-500')}>
           建议标签
         </span>
       </div>
       
       {loading ? (
-        <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+        <div className={cn('flex items-center gap-2 text-sm', isDark ? 'text-slate-400' : 'text-gray-500')}>
           <Loader2 size={14} className="animate-spin" />
           分析中...
         </div>
@@ -325,13 +324,12 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
             <button
               key={tag}
               onClick={() => onAddTag(tag)}
-              className={`
-                inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs
-                transition-colors
-                ${isDark 
-                  ? 'bg-slate-600 text-slate-300 hover:bg-primary-600 hover:text-white' 
-                  : 'bg-gray-200 text-gray-600 hover:bg-primary-500 hover:text-white'}
-              `}
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors',
+                isDark
+                  ? 'bg-slate-600 text-slate-300 hover:bg-primary-600 hover:text-white'
+                  : 'bg-gray-200 text-gray-600 hover:bg-primary-500 hover:text-white'
+              )}
             >
               <Plus size={12} />
               {tag}
@@ -386,17 +384,17 @@ export const TagInput: React.FC<{
 
   return (
     <div className="relative">
-      <div className={`
-        flex flex-wrap gap-2 p-2 rounded-lg border
-        ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-200'}
-      `}>
+      <div className={cn(
+        'flex flex-wrap gap-2 p-2 rounded-lg border',
+        isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-200'
+      )}>
         {tags.map(tag => (
           <span
             key={tag}
-            className={`
-              inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm
-              ${getTagColor(tag)} text-white
-            `}
+            className={cn(
+              'inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm',
+              getTagColor(tag), 'text-white'
+            )}
           >
             <Hash size={10} />
             {tag}
@@ -421,26 +419,26 @@ export const TagInput: React.FC<{
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder={tags.length === 0 ? placeholder : ''}
-          className={`
-            flex-1 min-w-[100px] bg-transparent outline-none text-sm
-            ${isDark ? 'text-white placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'}
-          `}
+          className={cn(
+            'flex-1 min-w-[100px] bg-transparent outline-none text-sm',
+            isDark ? 'text-white placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
+          )}
         />
       </div>
 
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className={`
-          absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg border z-50
-          ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-200'}
-        `}>
+        <div className={cn(
+          'absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg border z-50',
+          isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-200'
+        )}>
           {filteredSuggestions.map(suggestion => (
             <button
               key={suggestion}
               onClick={() => handleAddTag(suggestion)}
-              className={`
-                w-full text-left px-3 py-2 text-sm flex items-center gap-2
-                ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-gray-50 text-gray-700'}
-              `}
+              className={cn(
+                'w-full text-left px-3 py-2 text-sm flex items-center gap-2',
+                isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-gray-50 text-gray-700'
+              )}
             >
               <Plus size={14} />
               {suggestion}

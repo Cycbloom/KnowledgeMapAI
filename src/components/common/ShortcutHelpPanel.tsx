@@ -10,6 +10,7 @@ import {
   ShortcutDefinition,
   ShortcutKey
 } from '../../config/shortcuts';
+import { cn } from '@/lib/utils';
 
 interface ShortcutHelpPanelProps {
   isOpen: boolean;
@@ -85,11 +86,11 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
         onClick={onClose}
       />
       
-      <div className={`
-        relative w-full max-w-3xl max-h-[75vh] rounded-xl shadow-2xl overflow-hidden flex flex-col
-        ${isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white border border-gray-200 text-gray-900'}
-      `}>
-        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+      <div className={cn(
+        'relative w-full max-w-3xl max-h-[75vh] rounded-xl shadow-2xl overflow-hidden flex flex-col',
+        isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white border border-gray-200 text-gray-900'
+      )}>
+        <div className={cn('flex items-center justify-between px-6 py-4 border-b', isDark ? 'border-slate-700' : 'border-gray-200')}>
           <div className="flex items-center gap-3">
             <Keyboard className="w-5 h-5 text-primary-500" />
             <h2 className="text-lg font-semibold">快捷键设置</h2>
@@ -97,37 +98,37 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => resetAllBindings()}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                isDark 
-                  ? 'text-slate-400 hover:text-white hover:bg-slate-800' 
+              className={cn('flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors',
+                isDark
+                  ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              )}
             >
               <RotateCcw size={14} />
               重置全部
             </button>
             <button
               onClick={onClose}
-              className={`p-2 rounded-lg transition-colors ${
+              className={cn('p-2 rounded-lg transition-colors',
                 isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-100'
-              }`}
+              )}
             >
               <X size={18} />
             </button>
           </div>
         </div>
         
-        <div className={`px-6 py-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-          <div className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
-            <Search className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
+        <div className={cn('px-6 py-3 border-b', isDark ? 'border-slate-700' : 'border-gray-200')}>
+          <div className={cn('flex items-center gap-3 px-3 py-2 rounded-lg', isDark ? 'bg-slate-800' : 'bg-gray-100')}>
+            <Search className={cn('w-4 h-4', isDark ? 'text-slate-400' : 'text-gray-400')} />
             <input
               type="text"
               placeholder="搜索快捷键..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`flex-1 bg-transparent text-sm focus:outline-none ${
+              className={cn('flex-1 bg-transparent text-sm focus:outline-none',
                 isDark ? 'placeholder-slate-500' : 'placeholder-gray-400'
-              }`}
+              )}
             />
           </div>
         </div>
@@ -135,9 +136,9 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
         <div className="flex-1 overflow-y-auto p-4">
           {Object.entries(groupedShortcuts).map(([category, shortcuts]) => (
             <div key={category} className="mb-6 last:mb-0">
-              <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 px-2 ${
+              <h3 className={cn('text-xs font-semibold uppercase tracking-wider mb-3 px-2',
                 isDark ? 'text-slate-500' : 'text-gray-400'
-              }`}>
+              )}>
                 {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS]}
               </h3>
               <div className="space-y-1">
@@ -148,23 +149,23 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
                   return (
                     <div
                       key={shortcut.id}
-                      className={`
-                        flex items-center justify-between px-3 py-2.5 rounded-lg
-                        ${isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-50'}
-                      `}
+                      className={cn(
+                        'flex items-center justify-between px-3 py-2.5 rounded-lg',
+                        isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-50'
+                      )}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{shortcut.name}</span>
                           {binding && !binding.enabled && (
-                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            <span className={cn('text-xs px-1.5 py-0.5 rounded',
                               isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-600'
-                            }`}>
+                            )}>
                               已禁用
                             </span>
                           )}
                         </div>
-                        <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                        <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-500' : 'text-gray-400')}>
                           {shortcut.description}
                         </p>
                       </div>
@@ -181,22 +182,21 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
                               setEditingId(null);
                               setPressedKeys({});
                             }}
-                            className={`
-                              w-32 px-2 py-1 text-sm text-center rounded border-2 border-primary-500
-                              ${isDark ? 'bg-slate-800' : 'bg-white'}
-                              focus:outline-none
-                            `}
+                            className={cn(
+                              'w-32 px-2 py-1 text-sm text-center rounded border-2 border-primary-500',
+                              isDark ? 'bg-slate-800' : 'bg-white',
+                              'focus:outline-none'
+                            )}
                           />
                         ) : (
                           <button
                             onClick={() => setEditingId(shortcut.id)}
-                            className={`
-                              flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border transition-colors
-                              ${isDark 
-                                ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500' 
+                            className={cn(
+                              'flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border transition-colors',
+                              isDark
+                                ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500'
                                 : 'bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-300'
-                              }
-                            `}
+                            )}
                           >
                             {binding ? formatShortcutKey(binding.keys) : '未设置'}
                           </button>
@@ -205,11 +205,11 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
                         {binding && JSON.stringify(binding.keys) !== JSON.stringify(shortcut.defaultKeys) && (
                           <button
                             onClick={() => resetBinding(shortcut.id)}
-                            className={`p-1 rounded transition-colors ${
-                              isDark 
-                                ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800' 
+                            className={cn('p-1 rounded transition-colors',
+                              isDark
+                                ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
                                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                            }`}
+                            )}
                             title="重置为默认"
                           >
                             <RotateCcw size={12} />
@@ -232,7 +232,7 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
           )}
         </div>
         
-        <div className={`px-6 py-3 border-t text-xs ${isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400'}`}>
+        <div className={cn('px-6 py-3 border-t text-xs', isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400')}>
           <div className="flex justify-between items-center">
             <span>点击快捷键按钮可以自定义</span>
             <span>共 {DEFAULT_SHORTCUTS.length} 个快捷键</span>
@@ -257,14 +257,13 @@ export const ShortcutHint: React.FC<{ actionId: string; className?: string }> = 
   }
   
   return (
-    <kbd className={`
-      hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded border
-      ${isDark 
-        ? 'bg-slate-800 border-slate-700 text-slate-400' 
-        : 'bg-gray-100 border-gray-200 text-gray-500'
-      }
-      ${className}
-    `}>
+    <kbd className={cn(
+      'hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded border',
+      isDark
+        ? 'bg-slate-800 border-slate-700 text-slate-400'
+        : 'bg-gray-100 border-gray-200 text-gray-500',
+      className
+    )}>
       {formatShortcutKey(binding.keys)}
     </kbd>
   );

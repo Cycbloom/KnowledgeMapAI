@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, CheckCircle, Lock, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { api } from '../../services/api';
 import { useTheme } from "../../hooks";
 
@@ -235,7 +236,7 @@ export const GlobalSearch = () => {
   return (
     <div className="relative w-full max-w-md" ref={wrapperRef}>
       <div className="relative">
-        <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} size={18} />
+        <Search className={cn("absolute left-3 top-1/2 transform -translate-y-1/2", isDark ? 'text-slate-400' : 'text-gray-400')} size={18} />
         <input
           ref={inputRef}
           type="text"
@@ -251,21 +252,22 @@ export const GlobalSearch = () => {
             }
           }}
           placeholder={searchType === 'semantic' ? "AI 语义搜索..." : "搜索图谱或节点..."}
-          className={`w-full pl-10 pr-24 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-            isDark 
-              ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
+          className={cn(
+            "w-full pl-10 pr-24 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+            isDark
+              ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400'
               : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'
-          }`}
+          )}
         />
         
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           <button
             onClick={() => setShowFilters(prev => !prev)}
-            className={`p-1 rounded-md transition-colors ${
-              showFilters 
-                ? 'bg-primary-500 text-white' 
+            className={cn("p-1 rounded-md transition-colors",
+              showFilters
+                ? 'bg-primary-500 text-white'
                 : isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
-            }`}
+            )}
             title="筛选"
           >
             <Filter size={14} />
@@ -273,11 +275,11 @@ export const GlobalSearch = () => {
           
           <button
             onClick={() => setSearchType(prev => prev === 'keyword' ? 'semantic' : 'keyword')}
-            className={`p-1 rounded-md transition-colors ${
-              searchType === 'semantic' 
-                ? 'text-primary-500' 
+            className={cn("p-1 rounded-md transition-colors",
+              searchType === 'semantic'
+                ? 'text-primary-500'
                 : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            )}
             title={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
           >
             <Sparkles size={14} fill={searchType === 'semantic' ? "currentColor" : "none"} />
@@ -289,9 +291,9 @@ export const GlobalSearch = () => {
                 setQuery('');
                 setResults(null);
               }}
-              className={`p-1 rounded-md transition-colors ${
+              className={cn("p-1 rounded-md transition-colors",
                 isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              )}
             >
               <X size={14} />
             </button>
@@ -300,11 +302,11 @@ export const GlobalSearch = () => {
       </div>
 
       {isOpen && (
-        <div className={`absolute top-full left-0 right-0 mt-2 rounded-xl shadow-2xl border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 ${
+        <div className={cn("absolute top-full left-0 right-0 mt-2 rounded-xl shadow-2xl border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200",
           isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-        }`}>
+        )}>
           {showFilters && (
-            <div className={`p-3 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-gray-50'}`}>
+            <div className={cn("p-3 border-b", isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-gray-50')}>
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-2">
                   <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>时间:</span>
@@ -313,11 +315,11 @@ export const GlobalSearch = () => {
                       <button
                         key={range}
                         onClick={() => setFilters(prev => ({ ...prev, timeRange: range }))}
-                        className={`px-2 py-1 rounded-md transition-colors ${
+                        className={cn("px-2 py-1 rounded-md transition-colors",
                           filters.timeRange === range
                             ? 'bg-primary-500 text-white'
                             : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                        }`}
+                        )}
                       >
                         {range === 'all' ? '全部' : range === 'today' ? '今天' : range === 'week' ? '本周' : '本月'}
                       </button>
@@ -337,11 +339,11 @@ export const GlobalSearch = () => {
                       <button
                         key={key}
                         onClick={() => setFilters(prev => ({ ...prev, status: key }))}
-                        className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${
+                        className={cn("px-2 py-1 rounded-md transition-colors flex items-center gap-1",
                           filters.status === key
                             ? 'bg-primary-500 text-white'
                             : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                        }`}
+                        )}
                       >
                         {Icon && <Icon size={10} />}
                         {label}
@@ -355,13 +357,13 @@ export const GlobalSearch = () => {
 
           {!query.trim() && searchHistory.length > 0 ? (
             <div className="max-h-[60vh] overflow-y-auto">
-              <div className={`px-4 py-2 flex items-center justify-between ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-                <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+              <div className={cn("px-4 py-2 flex items-center justify-between", isDark ? 'border-slate-700' : 'border-gray-100')}>
+                <span className={cn("text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
                   搜索历史
                 </span>
                 <button
                   onClick={clearHistory}
-                  className={`text-xs flex items-center gap-1 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
+                  className={cn("text-xs flex items-center gap-1", isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600')}
                 >
                   <Trash2 size={12} />
                   清空
@@ -371,19 +373,19 @@ export const GlobalSearch = () => {
                 <button
                   key={idx}
                   onClick={() => handleHistoryClick(item)}
-                  className={`w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors group ${
+                  className={cn("w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors group",
                     isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
-                  }`}
+                  )}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Clock size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
-                    <span className={`truncate ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{item.query}</span>
+                    <span className={cn("truncate", isDark ? 'text-slate-300' : 'text-gray-700')}>{item.query}</span>
                     {item.type === 'semantic' && (
                       <Sparkles size={12} className="text-primary-500" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                    <span className={cn("text-xs", isDark ? 'text-slate-500' : 'text-gray-400')}>
                       {formatDate(item.timestamp)}
                     </span>
                     <button
@@ -391,9 +393,9 @@ export const GlobalSearch = () => {
                         e.stopPropagation();
                         removeFromHistory(item.query);
                       }}
-                      className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-all ${
+                      className={cn("opacity-0 group-hover:opacity-100 p-1 rounded transition-all",
                         isDark ? 'hover:bg-slate-600 text-slate-400' : 'hover:bg-gray-200 text-gray-500'
-                      }`}
+                      )}
                     >
                       <X size={12} />
                     </button>
@@ -402,19 +404,19 @@ export const GlobalSearch = () => {
               ))}
             </div>
           ) : loading ? (
-            <div className={`p-4 text-center flex items-center justify-center gap-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <div className={cn("p-4 text-center flex items-center justify-center gap-2", isDark ? 'text-slate-400' : 'text-gray-500')}>
               <Loader2 size={16} className="animate-spin" />
               <span className="text-sm">搜索中...</span>
             </div>
           ) : results ? (
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
               {results.answer && (
-                <div className={`p-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-primary-50/50'}`}>
+                <div className={cn("p-4 border-b", isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-primary-50/50')}>
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles size={14} className="text-primary-500" />
-                    <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>AI 回答</span>
+                    <span className={cn("text-xs font-bold uppercase tracking-wider", isDark ? 'text-primary-400' : 'text-primary-600')}>AI 回答</span>
                   </div>
-                  <div className={`text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <div className={cn("text-sm leading-relaxed", isDark ? 'text-slate-300' : 'text-gray-700')}>
                     {results.answer}
                   </div>
                 </div>
@@ -422,25 +424,25 @@ export const GlobalSearch = () => {
 
               {results.graphs.length > 0 && (
                 <div className="py-2">
-                  <div className={`px-4 py-1 text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                  <div className={cn("px-4 py-1 text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
                     图谱 ({results.graphs.length})
                   </div>
                   {results.graphs.map((g) => (
                     <button
                       key={g.id}
                       onClick={() => handleSelect(`/graph/${g.id}`)}
-                      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors group ${
+                      className={cn("w-full text-left px-4 py-2 flex items-center gap-3 transition-colors group",
                         isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
-                      }`}
+                      )}
                     >
-                      <div className={`p-2 rounded-lg transition-colors ${
+                      <div className={cn("p-2 rounded-lg transition-colors",
                         isDark ? 'bg-primary-900/30 text-primary-400 group-hover:bg-primary-900/50' : 'bg-primary-50 text-primary-600 group-hover:bg-primary-100'
-                      }`}>
+                      )}>
                         <LayoutGrid size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className={`font-medium truncate ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{g.title}</div>
-                        {g.description && <div className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>{g.description}</div>}
+                        <div className={cn("font-medium truncate", isDark ? 'text-slate-200' : 'text-gray-800')}>{g.title}</div>
+                        {g.description && <div className={cn("text-xs truncate", isDark ? 'text-slate-500' : 'text-gray-500')}>{g.description}</div>}
                       </div>
                     </button>
                   ))}
@@ -448,37 +450,37 @@ export const GlobalSearch = () => {
               )}
 
               {results.nodes.length > 0 && (
-                <div className={`py-2 ${results.graphs.length > 0 ? 'border-t' : ''} ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-                  <div className={`px-4 py-1 text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                <div className={cn("py-2", results.graphs.length > 0 ? 'border-t' : '', isDark ? 'border-slate-700' : 'border-gray-100')}>
+                  <div className={cn("px-4 py-1 text-xs font-bold uppercase tracking-wider", isDark ? 'text-slate-500' : 'text-gray-400')}>
                     节点 ({results.nodes.length})
                   </div>
                   {results.nodes.map((n) => (
                     <button
                       key={n.id}
                       onClick={() => handleSelect(`/graph/${n.graph_id}?node_id=${n.id}`)}
-                      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors group ${
+                      className={cn("w-full text-left px-4 py-2 flex items-center gap-3 transition-colors group",
                         isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
-                      }`}
+                      )}
                     >
-                      <div className={`p-2 rounded-lg transition-colors ${
+                      <div className={cn("p-2 rounded-lg transition-colors",
                         isDark ? 'bg-green-900/30 text-green-400 group-hover:bg-green-900/50' : 'bg-green-50 text-green-600 group-hover:bg-green-100'
-                      }`}>
+                      )}>
                         <FileText size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className={`font-medium truncate flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                        <div className={cn("font-medium truncate flex items-center gap-2", isDark ? 'text-slate-200' : 'text-gray-800')}>
                           <span className="truncate">{n.title}</span>
                           {n.status === 'mastered' && <CheckCircle size={12} className="text-green-500" />}
                           {n.status === 'locked' && <Lock size={12} className="text-gray-400" />}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                          <span className={cn("text-xs", isDark ? 'text-slate-500' : 'text-gray-500')}>
                             {n.knowledge_graphs?.title || '未知图谱'}
                           </span>
                           {n.tags && n.tags.length > 0 && (
                             <div className="flex gap-1">
                               {n.tags.slice(0, 2).map((tag: string, i: number) => (
-                                <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500'}`}>
+                                <span key={i} className={cn("text-[10px] px-1.5 py-0.5 rounded-full", isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')}>
                                   {tag}
                                 </span>
                               ))}
@@ -492,18 +494,18 @@ export const GlobalSearch = () => {
               )}
 
               {results.graphs.length === 0 && results.nodes.length === 0 && (
-                <div className={`p-8 text-center text-sm ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                <div className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
                   未找到相关内容
                 </div>
               )}
             </div>
           ) : query.trim() ? null : (
-            <div className={`p-8 text-center text-sm ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+            <div className={cn("p-8 text-center text-sm", isDark ? 'text-slate-500' : 'text-gray-500')}>
               输入关键词开始搜索
             </div>
           )}
           
-          <div className={`px-4 py-2 border-t flex items-center justify-between text-xs ${isDark ? 'border-slate-700 text-slate-500' : 'border-gray-100 text-gray-400'}`}>
+          <div className={cn("px-4 py-2 border-t flex items-center justify-between text-xs", isDark ? 'border-slate-700 text-slate-500' : 'border-gray-100 text-gray-400')}>
             <span>按 Enter 搜索 · Ctrl+K 快捷键</span>
             <span>{searchType === 'semantic' ? '语义搜索' : '关键词搜索'}</span>
           </div>

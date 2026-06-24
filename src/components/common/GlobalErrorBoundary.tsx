@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode, useState, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import {
   RefreshCcw,
   AlertTriangle,
@@ -180,7 +181,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               {errorType.label}
             </h2>
-            <p className={`text-sm font-medium mb-2 ${errorType.color}`}>
+            <p className={cn("text-sm font-medium mb-2", errorType.color)}>
               {appError.code}
             </p>
             <p className="text-gray-500 dark:text-gray-400 mb-6">

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 
 interface LazyImageProps {
   src: string;
@@ -75,7 +76,7 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
 
   return (
     <div
-      className={`relative overflow-hidden ${className}`}
+      className={cn('relative overflow-hidden', className)}
       style={containerStyle}
     >
       {showSkeleton && !isLoaded && !hasError && (
@@ -101,12 +102,12 @@ export const LazyImage: React.FC<LazyImageProps> = memo(({
         ref={imgRef}
         src={isInView && !hasError ? src : placeholder}
         alt={alt}
-        className={`
-          w-full h-full object-cover
-          transition-all duration-500 ease-out
-          ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
-          ${hasError ? 'opacity-50 grayscale' : ''}
-        `}
+        className={cn(
+          'w-full h-full object-cover',
+          'transition-all duration-500 ease-out',
+          isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105',
+          hasError ? 'opacity-50 grayscale' : '',
+        )}
         onLoad={handleLoad}
         onError={handleError}
         loading="lazy"
@@ -200,7 +201,7 @@ export const LazyBackground: React.FC<LazyBackgroundProps> = memo(({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden ${className}`}
+      className={cn('relative overflow-hidden', className)}
     >
       {blurPlaceholder && !isLoaded && (
         <div

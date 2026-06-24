@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/common';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -101,11 +102,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="p-4 sm:p-6">
           <div className="flex items-start gap-4">
             <div
-              className={`p-3 rounded-full flex-shrink-0 ${
-                isDangerous
-                  ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                  : 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-              }`}
+              className={cn('p-3 rounded-full flex-shrink-0', isDangerous ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400')}
             >
               <AlertTriangle size={24} aria-hidden="true" />
             </div>
@@ -162,13 +159,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <button
             onClick={handleConfirm}
             disabled={!canConfirm}
-            className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 text-white rounded-lg sm:rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[44px] touch-target font-medium ${
+            className={cn(
+              'flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 text-white rounded-lg sm:rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[44px] touch-target font-medium',
               canConfirm
                 ? isDangerous
                   ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 dark:focus:ring-offset-slate-800'
                   : 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 dark:focus:ring-offset-slate-800'
                 : 'bg-gray-300 dark:bg-slate-600 text-gray-500 dark:text-slate-400 cursor-not-allowed'
-            }`}
+            )}
           >
             {confirmText}
           </button>

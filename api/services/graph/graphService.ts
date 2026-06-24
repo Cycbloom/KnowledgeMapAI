@@ -8,7 +8,7 @@ import {
 import { softDelete } from "../../utils/softDelete";
 import { logger } from "../../utils/logger";
 import { getLevelIndex } from "../../utils/levelUtils";
-import { withRpcFallback } from "../../utils/rpcFallback";
+import { withRpcFallback, withThreeLevelFallback } from "../../utils/rpcFallback";
 import {
   checkDuplicateGraphTopic,
   GraphTopicCheckResult,
@@ -27,7 +27,7 @@ import {
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import { graphVersionService } from "./graphVersionService";
-import { transactionExecutor } from "../../database/transactionExecutor";
+
 import type {
   GraphCreatedPayload,
   GraphUpdatedPayload,
@@ -674,48 +674,43 @@ export class GraphService {
    * @throws {AppError} 如果图谱不存在（RESOURCE_GRAPH_NOT_FOUND）
    */
   async deleteGraph(supabase: SupabaseClient, graphId: string, userId: string) {
-    try {
-      const { error } = await supabase.rpc('soft_delete_graph_with_branches', {
-        p_graph_id: graphId,
-        p_user_id: userId,
-      });
-      if (error) throw error;
+    await withThreeLevelFallback<void>({
+      context: 'deleteGraph',
+      rpcFn: async () => {
+        const { error } = await supabase.rpc('soft_delete_graph_with_branches', {
+          p_graph_id: graphId,
+          p_user_id: userId,
+        });
+        if (error) throw error;
 
-      // RPC succeeded — publish events and invalidate cache
-      const { data: branches } = await supabase
-        .from("knowledge_graphs")
-        .select("id")
-        .eq("parent_graph_id", graphId)
-        .eq("is_branch", true)
-        .not("deleted_at", "is", null);
+        // RPC succeeded — publish events and invalidate cache
+        const { data: branches } = await supabase
+          .from("knowledge_graphs")
+          .select("id")
+          .eq("parent_graph_id", graphId)
+          .eq("is_branch", true)
+          .not("deleted_at", "is", null);
 
-      for (const branch of branches ?? []) {
+        for (const branch of branches ?? []) {
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: branch.id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
+
+        await cacheService.invalidateAllGraphRelated(userId, graphId);
+
         await appEventBus.publish(
           "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
+          { graphId, userId } as GraphDeletedPayload,
           userId,
           "graph_service",
         );
-      }
-
-      await cacheService.invalidateAllGraphRelated(userId, graphId);
-
-      await appEventBus.publish(
-        "graph_deleted",
-        { graphId, userId } as GraphDeletedPayload,
-        userId,
-        "graph_service",
-      );
-
-      return;
-    } catch (rpcError) {
-      logger.warn('RPC soft_delete_graph_with_branches failed, falling back to sequential operations', { error: rpcError });
-    }
-
-    // Fallback: transactional sequential implementation
-    if (transactionExecutor.isAvailable()) {
-      try {
-        const branchIds = await transactionExecutor.executeInTransaction(async (client) => {
+      },
+      txFn: async (client) => {
+        const branchIds = await (async () => {
           const { rows: branches } = await client.query(
             `SELECT id FROM knowledge_graphs WHERE parent_graph_id = $1 AND is_branch = true AND deleted_at IS NULL`,
             [graphId],
@@ -730,7 +725,7 @@ export class GraphService {
             return ids;
           }
           return [];
-        });
+        })();
 
         for (const branchId of branchIds) {
           await appEventBus.publish(
@@ -754,53 +749,47 @@ export class GraphService {
           userId,
           "graph_service",
         );
+      },
+      fallbackFn: async () => {
+        const { data: branches } = await supabase
+          .from("knowledge_graphs")
+          .select("id")
+          .eq("parent_graph_id", graphId)
+          .eq("is_branch", true)
+          .is("deleted_at", null);
 
-        return;
-      } catch (txError) {
-        logger.warn('Transaction failed in deleteGraph fallback, falling back to non-transactional operations', { error: txError });
-      }
-    } else {
-      logger.warn('TransactionExecutor not available, using non-transactional fallback for deleteGraph');
-    }
+        if (branches && branches.length > 0) {
+          const branchIds = branches.map((b: { id: string }) => b.id);
+          await supabase
+            .from("knowledge_graphs")
+            .update({ deleted_at: new Date().toISOString() })
+            .in("id", branchIds);
 
-    // Non-transactional fallback
-    const { data: branches } = await supabase
-      .from("knowledge_graphs")
-      .select("id")
-      .eq("parent_graph_id", graphId)
-      .eq("is_branch", true)
-      .is("deleted_at", null);
+          for (const branch of branches) {
+            await appEventBus.publish(
+              "graph_deleted",
+              { graphId: branch.id, userId } as GraphDeletedPayload,
+              userId,
+              "graph_service",
+            );
+          }
+        }
 
-    if (branches && branches.length > 0) {
-      const branchIds = branches.map((b: { id: string }) => b.id);
-      await supabase
-        .from("knowledge_graphs")
-        .update({ deleted_at: new Date().toISOString() })
-        .in("id", branchIds);
+        const result = await softDelete(supabase, "knowledge_graphs", graphId);
+        if (!result.success) {
+          throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
+        }
 
-      for (const branch of branches) {
+        await cacheService.invalidateAllGraphRelated(userId, graphId);
+
         await appEventBus.publish(
           "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
+          { graphId, userId } as GraphDeletedPayload,
           userId,
           "graph_service",
         );
-      }
-    }
-
-    const result = await softDelete(supabase, "knowledge_graphs", graphId);
-    if (!result.success) {
-      throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
-    }
-
-    await cacheService.invalidateAllGraphRelated(userId, graphId);
-
-    await appEventBus.publish(
-      "graph_deleted",
-      { graphId, userId } as GraphDeletedPayload,
-      userId,
-      "graph_service",
-    );
+      },
+    });
   }
 
   /**
@@ -824,78 +813,79 @@ export class GraphService {
       .eq("is_branch", true)
       .is("deleted_at", null);
 
-    try {
-      const { data, error } = await supabase.rpc('batch_soft_delete_graphs', {
-        p_graph_ids: graphIds,
-        p_user_id: userId,
-      });
-      if (error) throw error;
+    return withThreeLevelFallback<{ count: number }>({
+      context: 'deleteGraphs',
+      rpcFn: async () => {
+        const { data, error } = await supabase.rpc('batch_soft_delete_graphs', {
+          p_graph_ids: graphIds,
+          p_user_id: userId,
+        });
+        if (error) throw error;
 
-      // RPC succeeded — publish events and invalidate cache
-      for (const branch of allBranches ?? []) {
-        await appEventBus.publish(
-          "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
-          userId,
-          "graph_service",
-        );
-      }
+        // RPC succeeded — publish events and invalidate cache
+        for (const branch of allBranches ?? []) {
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: branch.id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
 
-      await cacheService.invalidateUserGraphsCache(userId);
+        await cacheService.invalidateUserGraphsCache(userId);
 
-      for (const id of graphIds) {
-        await appEventBus.publish(
-          "graph_deleted",
-          { graphId: id, userId } as GraphDeletedPayload,
-          userId,
-          "graph_service",
-        );
-      }
+        for (const id of graphIds) {
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
 
-      return { count: (data as { graph_count: number })?.graph_count ?? graphIds.length };
-    } catch (rpcError) {
-      logger.warn('RPC batch_soft_delete_graphs failed, falling back to sequential operations', { error: rpcError });
-    }
+        return { count: (data as { graph_count: number })?.graph_count ?? graphIds.length };
+      },
+      fallbackFn: async () => {
+        const { data, error } = await supabase
+          .from("knowledge_graphs")
+          .update({ deleted_at: new Date().toISOString() })
+          .in("id", graphIds)
+          .eq("user_id", userId)
+          .select("id");
 
-    // Fallback: original sequential implementation
-    const { data, error } = await supabase
-      .from("knowledge_graphs")
-      .update({ deleted_at: new Date().toISOString() })
-      .in("id", graphIds)
-      .eq("user_id", userId)
-      .select("id");
+        if (error) throw error;
 
-    if (error) throw error;
+        if (allBranches && allBranches.length > 0) {
+          const branchIds = allBranches.map((b: { id: string }) => b.id);
+          await supabase
+            .from("knowledge_graphs")
+            .update({ deleted_at: new Date().toISOString() })
+            .in("id", branchIds);
 
-    if (allBranches && allBranches.length > 0) {
-      const branchIds = allBranches.map((b: { id: string }) => b.id);
-      await supabase
-        .from("knowledge_graphs")
-        .update({ deleted_at: new Date().toISOString() })
-        .in("id", branchIds);
+          for (const branch of allBranches) {
+            await appEventBus.publish(
+              "graph_deleted",
+              { graphId: branch.id, userId } as GraphDeletedPayload,
+              userId,
+              "graph_service",
+            );
+          }
+        }
 
-      for (const branch of allBranches) {
-        await appEventBus.publish(
-          "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
-          userId,
-          "graph_service",
-        );
-      }
-    }
+        await cacheService.invalidateUserGraphsCache(userId);
 
-    await cacheService.invalidateUserGraphsCache(userId);
+        for (const id of data?.map((g: { id: string }) => g.id) || []) {
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
 
-    for (const id of data?.map((g: { id: string }) => g.id) || []) {
-      await appEventBus.publish(
-        "graph_deleted",
-        { graphId: id, userId } as GraphDeletedPayload,
-        userId,
-        "graph_service",
-      );
-    }
-
-    return { count: data?.length || 0 };
+        return { count: data?.length || 0 };
+      },
+    });
   }
 
   /**
@@ -949,73 +939,72 @@ export class GraphService {
       .eq("parent_graph_id", graphId)
       .eq("is_branch", true);
 
-    try {
-      const { error } = await supabase.rpc('permanent_delete_graph', {
-        p_graph_id: graphId,
-        p_user_id: userId,
-      });
-      if (error) throw error;
+    await withThreeLevelFallback<void>({
+      context: 'permanentDeleteGraph',
+      rpcFn: async () => {
+        const { error } = await supabase.rpc('permanent_delete_graph', {
+          p_graph_id: graphId,
+          p_user_id: userId,
+        });
+        if (error) throw error;
 
-      // RPC succeeded — publish events and invalidate cache
-      for (const branch of branches ?? []) {
-        await cacheService.invalidateAllGraphRelated(userId, branch.id);
+        // RPC succeeded — publish events and invalidate cache
+        for (const branch of branches ?? []) {
+          await cacheService.invalidateAllGraphRelated(userId, branch.id);
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: branch.id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
+
+        await cacheService.invalidateAllGraphRelated(userId, graphId);
+
         await appEventBus.publish(
           "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
+          { graphId, userId } as GraphDeletedPayload,
           userId,
           "graph_service",
         );
-      }
+      },
+      fallbackFn: async () => {
+        if (branches && branches.length > 0) {
+          const branchIds = branches.map((b: { id: string }) => b.id);
+          await supabase
+            .from("knowledge_graphs")
+            .delete()
+            .in("id", branchIds);
 
-      await cacheService.invalidateAllGraphRelated(userId, graphId);
+          for (const branch of branches) {
+            await cacheService.invalidateAllGraphRelated(userId, branch.id);
+            await appEventBus.publish(
+              "graph_deleted",
+              { graphId: branch.id, userId } as GraphDeletedPayload,
+              userId,
+              "graph_service",
+            );
+          }
+        }
 
-      await appEventBus.publish(
-        "graph_deleted",
-        { graphId, userId } as GraphDeletedPayload,
-        userId,
-        "graph_service",
-      );
+        const { error } = await supabase
+          .from("knowledge_graphs")
+          .delete()
+          .eq("id", graphId)
+          .eq("user_id", userId);
 
-      return;
-    } catch (rpcError) {
-      logger.warn('RPC permanent_delete_graph failed, falling back to sequential operations', { error: rpcError });
-    }
+        if (error) throw error;
 
-    // Fallback: original sequential implementation
-    if (branches && branches.length > 0) {
-      const branchIds = branches.map((b: { id: string }) => b.id);
-      await supabase
-        .from("knowledge_graphs")
-        .delete()
-        .in("id", branchIds);
+        await cacheService.invalidateAllGraphRelated(userId, graphId);
 
-      for (const branch of branches) {
-        await cacheService.invalidateAllGraphRelated(userId, branch.id);
         await appEventBus.publish(
           "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
+          { graphId, userId } as GraphDeletedPayload,
           userId,
           "graph_service",
         );
-      }
-    }
-
-    const { error } = await supabase
-      .from("knowledge_graphs")
-      .delete()
-      .eq("id", graphId)
-      .eq("user_id", userId);
-
-    if (error) throw error;
-
-    await cacheService.invalidateAllGraphRelated(userId, graphId);
-
-    await appEventBus.publish(
-      "graph_deleted",
-      { graphId, userId } as GraphDeletedPayload,
-      userId,
-      "graph_service",
-    );
+      },
+    });
   }
 
   /**
@@ -1074,80 +1063,81 @@ export class GraphService {
       .in("parent_graph_id", graphIds)
       .eq("is_branch", true);
 
-    try {
-      const { data, error } = await supabase.rpc('batch_permanent_delete_graphs', {
-        p_graph_ids: graphIds,
-        p_user_id: userId,
-      });
-      if (error) throw error;
+    return withThreeLevelFallback<{ count: number }>({
+      context: 'permanentDeleteGraphs',
+      rpcFn: async () => {
+        const { data, error } = await supabase.rpc('batch_permanent_delete_graphs', {
+          p_graph_ids: graphIds,
+          p_user_id: userId,
+        });
+        if (error) throw error;
 
-      // RPC succeeded — publish events and invalidate cache
-      for (const branch of allBranches ?? []) {
-        await cacheService.invalidateAllGraphRelated(userId, branch.id);
-        await appEventBus.publish(
-          "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
-          userId,
-          "graph_service",
-        );
-      }
+        // RPC succeeded — publish events and invalidate cache
+        for (const branch of allBranches ?? []) {
+          await cacheService.invalidateAllGraphRelated(userId, branch.id);
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: branch.id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
 
-      await cacheService.invalidateUserGraphsCache(userId);
+        await cacheService.invalidateUserGraphsCache(userId);
 
-      for (const id of graphIds) {
-        await appEventBus.publish(
-          "graph_deleted",
-          { graphId: id, userId } as GraphDeletedPayload,
-          userId,
-          "graph_service",
-        );
-      }
+        for (const id of graphIds) {
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
 
-      return { count: (data as { graph_count: number })?.graph_count ?? graphIds.length };
-    } catch (rpcError) {
-      logger.warn('RPC batch_permanent_delete_graphs failed, falling back to sequential operations', { error: rpcError });
-    }
+        return { count: (data as { graph_count: number })?.graph_count ?? graphIds.length };
+      },
+      fallbackFn: async () => {
+        const { data, error } = await supabase
+          .from("knowledge_graphs")
+          .delete()
+          .in("id", graphIds)
+          .eq("user_id", userId)
+          .select("id");
 
-    // Fallback: original sequential implementation
-    const { data, error } = await supabase
-      .from("knowledge_graphs")
-      .delete()
-      .in("id", graphIds)
-      .eq("user_id", userId)
-      .select("id");
+        if (error) throw error;
 
-    if (error) throw error;
+        if (allBranches && allBranches.length > 0) {
+          const branchIds = allBranches.map((b: { id: string }) => b.id);
+          await supabase
+            .from("knowledge_graphs")
+            .delete()
+            .in("id", branchIds);
 
-    if (allBranches && allBranches.length > 0) {
-      const branchIds = allBranches.map((b: { id: string }) => b.id);
-      await supabase
-        .from("knowledge_graphs")
-        .delete()
-        .in("id", branchIds);
+          for (const branch of allBranches) {
+            await cacheService.invalidateAllGraphRelated(userId, branch.id);
+            await appEventBus.publish(
+              "graph_deleted",
+              { graphId: branch.id, userId } as GraphDeletedPayload,
+              userId,
+              "graph_service",
+            );
+          }
+        }
 
-      for (const branch of allBranches) {
-        await cacheService.invalidateAllGraphRelated(userId, branch.id);
-        await appEventBus.publish(
-          "graph_deleted",
-          { graphId: branch.id, userId } as GraphDeletedPayload,
-          userId,
-          "graph_service",
-        );
-      }
-    }
+        await cacheService.invalidateUserGraphsCache(userId);
 
-    await cacheService.invalidateUserGraphsCache(userId);
+        for (const id of data?.map((g: { id: string }) => g.id) || []) {
+          await appEventBus.publish(
+            "graph_deleted",
+            { graphId: id, userId } as GraphDeletedPayload,
+            userId,
+            "graph_service",
+          );
+        }
 
-    for (const id of data?.map((g: { id: string }) => g.id) || []) {
-      await appEventBus.publish(
-        "graph_deleted",
-        { graphId: id, userId } as GraphDeletedPayload,
-        userId,
-        "graph_service",
-      );
-    }
-
-    return { count: data?.length || 0 };
+        return { count: data?.length || 0 };
+      },
+    });
   }
 
   /**

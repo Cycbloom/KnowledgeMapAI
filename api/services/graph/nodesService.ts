@@ -11,6 +11,7 @@ import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { transactionExecutor } from '../../database/transactionExecutor';
+import { withThreeLevelFallback } from '../../utils/rpcFallback';
 
 const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
@@ -755,57 +756,48 @@ export class NodesService {
 
     const validPositions = positions.filter((pos) => kpIdToGnId.has(pos.id));
 
-    // 优先使用 RPC 批量更新
-    try {
-      const rpcResult = await supabase.rpc('batch_update_positions', {
-        p_ids: validPositions.map((pos) => kpIdToGnId.get(pos.id)),
-        p_x_positions: validPositions.map((pos) => pos.x_position),
-        p_y_positions: validPositions.map((pos) => pos.y_position),
-      });
-
-      if (!rpcResult.error) {
-        const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
-        for (const gid of graphIds) {
-          await cacheService.invalidateGraphCache(userId, gid);
-        }
-
+    const result = await withThreeLevelFallback<{ message: string; count: number }>({
+      context: 'batchUpdatePositions',
+      rpcFn: async () => {
+        const rpcResult = await supabase.rpc('batch_update_positions', {
+          p_ids: validPositions.map((pos) => kpIdToGnId.get(pos.id)),
+          p_x_positions: validPositions.map((pos) => pos.x_position),
+          p_y_positions: validPositions.map((pos) => pos.y_position),
+        });
+        if (rpcResult.error) throw rpcResult.error;
         return {
           message: `成功更新 ${validPositions.length} 个节点位置`,
           count: validPositions.length,
         };
-      }
-
-      logger.warn('batch_update_positions RPC failed, falling back:', rpcResult.error.message);
-    } catch (rpcError) {
-      logger.warn('batch_update_positions RPC error, falling back:', rpcError);
-    }
-
-    // 降级路径：逐条更新
-    const updatePromises = validPositions.map((pos) =>
-      supabase
-        .from('graph_nodes')
-        .update({
-          x_position: pos.x_position,
-          y_position: pos.y_position,
-        })
-        .eq('id', kpIdToGnId.get(pos.id)),
-    );
-
-    const results = await Promise.all(updatePromises);
-    const errors = results.filter((r) => r.error);
-    if (errors.length > 0) {
-      logger.error('Batch position update errors:', errors);
-    }
+      },
+      fallbackFn: async () => {
+        const updatePromises = validPositions.map((pos) =>
+          supabase
+            .from('graph_nodes')
+            .update({
+              x_position: pos.x_position,
+              y_position: pos.y_position,
+            })
+            .eq('id', kpIdToGnId.get(pos.id)),
+        );
+        const results = await Promise.all(updatePromises);
+        const errors = results.filter((r) => r.error);
+        if (errors.length > 0) {
+          logger.error('Batch position update errors:', errors);
+        }
+        return {
+          message: `成功更新 ${validPositions.length} 个节点位置`,
+          count: validPositions.length,
+        };
+      },
+    });
 
     const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
     for (const gid of graphIds) {
       await cacheService.invalidateGraphCache(userId, gid);
     }
 
-    return {
-      message: `成功更新 ${validPositions.length} 个节点位置`,
-      count: validPositions.length,
-    };
+    return result;
   }
 
   async batchUpdateNodes(
@@ -941,149 +933,63 @@ export class NodesService {
 
     // 使用事务执行所有更新
     if (pendingUpdates.length > 0) {
-      if (transactionExecutor.isAvailable()) {
-        try {
-          await transactionExecutor.executeInTransaction(async (client) => {
-            for (const item of pendingUpdates) {
-              if (Object.keys(item.kpUpdates).length > 0) {
-                const kpSetClauses: string[] = [];
-                const kpParams: unknown[] = [];
-                let paramIdx = 1;
-                for (const [key, value] of Object.entries(item.kpUpdates)) {
-                  kpSetClauses.push(`${key} = $${paramIdx}`);
-                  kpParams.push(value);
-                  paramIdx++;
-                }
-                kpSetClauses.push(`updated_at = $${paramIdx}`);
-                kpParams.push(new Date().toISOString());
+      await withThreeLevelFallback<void>({
+        context: 'batchUpdateNodes',
+        rpcFn: async () => {
+          // batchUpdateNodes 没有 RPC，跳过 Level 1
+          throw new Error('No RPC available for batchUpdateNodes');
+        },
+        txFn: async (client) => {
+          for (const item of pendingUpdates) {
+            if (Object.keys(item.kpUpdates).length > 0) {
+              const kpSetClauses: string[] = [];
+              const kpParams: unknown[] = [];
+              let paramIdx = 1;
+              for (const [key, value] of Object.entries(item.kpUpdates)) {
+                kpSetClauses.push(`${key} = $${paramIdx}`);
+                kpParams.push(value);
                 paramIdx++;
-                kpParams.push(item.knowledgePointId);
-
-                await client.query(
-                  `UPDATE knowledge_points SET ${kpSetClauses.join(', ')} WHERE id = $${paramIdx}`,
-                  kpParams,
-                );
               }
+              kpSetClauses.push(`updated_at = $${paramIdx}`);
+              kpParams.push(new Date().toISOString());
+              paramIdx++;
+              kpParams.push(item.knowledgePointId);
 
-              if (Object.keys(item.gnUpdates).length > 0) {
-                const gnSetClauses: string[] = [];
-                const gnParams: unknown[] = [];
-                let paramIdx = 1;
-                for (const [key, value] of Object.entries(item.gnUpdates)) {
-                  gnSetClauses.push(`${key} = $${paramIdx}`);
-                  gnParams.push(value);
-                  paramIdx++;
-                }
-                gnSetClauses.push(`updated_at = $${paramIdx}`);
-                gnParams.push(new Date().toISOString());
-                paramIdx++;
-                gnParams.push(item.graphNodeId);
-
-                await client.query(
-                  `UPDATE graph_nodes SET ${gnSetClauses.join(', ')} WHERE id = $${paramIdx}`,
-                  gnParams,
-                );
-              }
+              await client.query(
+                `UPDATE knowledge_points SET ${kpSetClauses.join(', ')} WHERE id = $${paramIdx}`,
+                kpParams,
+              );
             }
-          });
+
+            if (Object.keys(item.gnUpdates).length > 0) {
+              const gnSetClauses: string[] = [];
+              const gnParams: unknown[] = [];
+              let paramIdx = 1;
+              for (const [key, value] of Object.entries(item.gnUpdates)) {
+                gnSetClauses.push(`${key} = $${paramIdx}`);
+                gnParams.push(value);
+                paramIdx++;
+              }
+              gnSetClauses.push(`updated_at = $${paramIdx}`);
+              gnParams.push(new Date().toISOString());
+              paramIdx++;
+              gnParams.push(item.graphNodeId);
+
+              await client.query(
+                `UPDATE graph_nodes SET ${gnSetClauses.join(', ')} WHERE id = $${paramIdx}`,
+                gnParams,
+              );
+            }
+          }
 
           for (const item of pendingUpdates) {
             updateResults.push({ id: item.nodeUpdateId, updated: true });
           }
-        } catch (txError) {
-          logger.warn('batchUpdateNodes transaction failed, falling back to batch update:', txError);
-          // 降级路径：批量更新
-          const kpUpdates = pendingUpdates.filter(item => Object.keys(item.kpUpdates).length > 0);
-          const gnUpdates = pendingUpdates.filter(item => Object.keys(item.gnUpdates).length > 0);
-
-          // 批量更新 knowledge_points
-          for (const item of kpUpdates) {
-            try {
-              await knowledgePointService.update(
-                supabase,
-                item.knowledgePointId,
-                item.kpUpdates,
-              );
-              updateResults.push({ id: item.nodeUpdateId, updated: true });
-            } catch (error: unknown) {
-              logger.error('Batch update knowledge_point error:', error);
-              updateResults.push({
-                id: item.nodeUpdateId,
-                updated: false,
-                reason: error instanceof Error ? error.message : '知识点更新失败',
-              });
-            }
-          }
-
-          // 批量更新 graph_nodes
-          for (const item of gnUpdates) {
-            try {
-              await supabase
-                .from('graph_nodes')
-                .update(item.gnUpdates)
-                .eq('id', item.graphNodeId);
-
-              // 避免重复添加（如果 kp 更新已添加）
-              if (!kpUpdates.some(kp => kp.nodeUpdateId === item.nodeUpdateId)) {
-                updateResults.push({ id: item.nodeUpdateId, updated: true });
-              }
-            } catch (error: unknown) {
-              logger.error('Batch update graph_node error:', error);
-              updateResults.push({
-                id: item.nodeUpdateId,
-                updated: false,
-                reason: error instanceof Error ? error.message : '图谱节点更新失败',
-              });
-            }
-          }
-        }
-      } else {
-        // transactionExecutor 不可用，使用降级路径
-        logger.warn('transactionExecutor not available, using non-transactional batchUpdateNodes');
-        const kpUpdates = pendingUpdates.filter(item => Object.keys(item.kpUpdates).length > 0);
-        const gnUpdates = pendingUpdates.filter(item => Object.keys(item.gnUpdates).length > 0);
-
-        // 批量更新 knowledge_points
-        for (const item of kpUpdates) {
-          try {
-            await knowledgePointService.update(
-              supabase,
-              item.knowledgePointId,
-              item.kpUpdates,
-            );
-            updateResults.push({ id: item.nodeUpdateId, updated: true });
-          } catch (error: unknown) {
-            logger.error('Batch update knowledge_point error:', error);
-            updateResults.push({
-              id: item.nodeUpdateId,
-              updated: false,
-              reason: error instanceof Error ? error.message : '知识点更新失败',
-            });
-          }
-        }
-
-        // 批量更新 graph_nodes
-        for (const item of gnUpdates) {
-          try {
-            await supabase
-              .from('graph_nodes')
-              .update(item.gnUpdates)
-              .eq('id', item.graphNodeId);
-
-            // 避免重复添加（如果 kp 更新已添加）
-            if (!kpUpdates.some(kp => kp.nodeUpdateId === item.nodeUpdateId)) {
-              updateResults.push({ id: item.nodeUpdateId, updated: true });
-            }
-          } catch (error: unknown) {
-            logger.error('Batch update graph_node error:', error);
-            updateResults.push({
-              id: item.nodeUpdateId,
-              updated: false,
-              reason: error instanceof Error ? error.message : '图谱节点更新失败',
-            });
-          }
-        }
-      }
+        },
+        fallbackFn: async () => {
+          await this.executeBatchUpdateFallback(supabase, pendingUpdates, updateResults);
+        },
+      });
     }
 
     const graphIds = [...new Set(graphNodes.map((gn) => gn.graph_id))];
@@ -1101,6 +1007,65 @@ export class NodesService {
       failed: failedCount,
       results: updateResults,
     };
+  }
+
+  /**
+   * batchUpdateNodes 的非事务降级路径：逐条更新 knowledge_points 和 graph_nodes
+   */
+  private async executeBatchUpdateFallback(
+    supabase: SupabaseClient,
+    pendingUpdates: Array<{
+      nodeUpdateId: string;
+      graphNodeId: string;
+      knowledgePointId: string;
+      kpUpdates: Record<string, unknown>;
+      gnUpdates: Record<string, unknown>;
+    }>,
+    updateResults: Array<{ id: string; updated: boolean; reason?: string }>,
+  ): Promise<void> {
+    const kpUpdates = pendingUpdates.filter(item => Object.keys(item.kpUpdates).length > 0);
+    const gnUpdates = pendingUpdates.filter(item => Object.keys(item.gnUpdates).length > 0);
+
+    // 批量更新 knowledge_points
+    for (const item of kpUpdates) {
+      try {
+        await knowledgePointService.update(
+          supabase,
+          item.knowledgePointId,
+          item.kpUpdates,
+        );
+        updateResults.push({ id: item.nodeUpdateId, updated: true });
+      } catch (error: unknown) {
+        logger.error('Batch update knowledge_point error:', error);
+        updateResults.push({
+          id: item.nodeUpdateId,
+          updated: false,
+          reason: error instanceof Error ? error.message : '知识点更新失败',
+        });
+      }
+    }
+
+    // 批量更新 graph_nodes
+    for (const item of gnUpdates) {
+      try {
+        await supabase
+          .from('graph_nodes')
+          .update(item.gnUpdates)
+          .eq('id', item.graphNodeId);
+
+        // 避免重复添加（如果 kp 更新已添加）
+        if (!kpUpdates.some(kp => kp.nodeUpdateId === item.nodeUpdateId)) {
+          updateResults.push({ id: item.nodeUpdateId, updated: true });
+        }
+      } catch (error: unknown) {
+        logger.error('Batch update graph_node error:', error);
+        updateResults.push({
+          id: item.nodeUpdateId,
+          updated: false,
+          reason: error instanceof Error ? error.message : '图谱节点更新失败',
+        });
+      }
+    }
   }
 
   async getRelatedNodes(

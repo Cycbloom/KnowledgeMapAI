@@ -64,6 +64,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1);
 
+  const progressRef = useRef(progress);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
+  const visibleCountRef = useRef(0);
+  const isDraggingProgress = useRef(false);
+
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
 
   useEffect(() => {
@@ -149,33 +158,102 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
   useEffect(() => {
     if (!isPlaying) return;
-    
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          setIsPlaying(false);
-          return 100;
-        }
-        return prev + 0.5 * playSpeed;
-      });
-    }, 50);
 
-    return () => clearInterval(interval);
-  }, [isPlaying, playSpeed]);
+    lastTimeRef.current = performance.now();
 
-  const handleProgressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setProgress(Number(e.target.value));
-    setIsPlaying(false);
+    const animate = (currentTime: number) => {
+      const deltaTime = currentTime - lastTimeRef.current;
+      lastTimeRef.current = currentTime;
+
+      // 基于实际经过时间计算进度增量，确保速度一致
+      // playSpeed=1 时，10秒从0到100，即每秒10单位
+      const increment = (deltaTime / 1000) * 10 * playSpeed;
+      const newProgress = Math.min(100, progressRef.current + increment);
+
+      progressRef.current = newProgress;
+
+      // 直接操作 DOM 更新进度条视觉（绕过 React 渲染周期）
+      if (fillRef.current) {
+        fillRef.current.style.width = `${newProgress}%`;
+      }
+      if (thumbRef.current) {
+        thumbRef.current.style.left = `${newProgress}%`;
+      }
+
+      // 仅在节点可见性实际变化时更新 React 状态
+      const newVisibleCount = sortedNodes.filter(
+        n => (nodeTimeMap.get(n.id) || 0) <= newProgress
+      ).length;
+
+      if (newVisibleCount !== visibleCountRef.current || newProgress >= 100) {
+        visibleCountRef.current = newVisibleCount;
+        setProgress(newProgress);
+      }
+
+      if (newProgress >= 100) {
+        setIsPlaying(false);
+        return;
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [isPlaying, playSpeed, sortedNodes, nodeTimeMap]);
+
+  const updateProgressFromPosition = useCallback((clientX: number) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const newProgress = ratio * 100;
+    progressRef.current = newProgress;
+    if (fillRef.current) fillRef.current.style.width = `${newProgress}%`;
+    if (thumbRef.current) thumbRef.current.style.left = `${newProgress}%`;
+    setProgress(newProgress);
   }, []);
+
+  const handleTrackMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingProgress.current = true;
+    setIsPlaying(false);
+    updateProgressFromPosition(e.clientX);
+  }, [updateProgressFromPosition]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingProgress.current) return;
+      updateProgressFromPosition(e.clientX);
+    };
+
+    const handleMouseUp = () => {
+      isDraggingProgress.current = false;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [updateProgressFromPosition]);
 
   const handlePlayPause = useCallback(() => {
     if (progress >= 100) {
+      progressRef.current = 0;
       setProgress(0);
     }
+    progressRef.current = progress;
     setIsPlaying(prev => !prev);
   }, [progress]);
 
   const handleReset = useCallback(() => {
+    progressRef.current = 0;
     setProgress(0);
     setIsPlaying(false);
   }, []);
@@ -183,14 +261,18 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const handleStepForward = useCallback(() => {
     const nextIndex = Math.ceil(progress / 100 * sortedNodes.length);
     if (nextIndex < sortedNodes.length) {
-      setProgress(((nextIndex + 1) / sortedNodes.length) * 100);
+      const newProgress = ((nextIndex + 1) / sortedNodes.length) * 100;
+      progressRef.current = newProgress;
+      setProgress(newProgress);
     }
   }, [progress, sortedNodes.length]);
 
   const handleStepBack = useCallback(() => {
     const currentIndex = Math.floor(progress / 100 * sortedNodes.length);
     if (currentIndex > 0) {
-      setProgress(((currentIndex - 1) / sortedNodes.length) * 100);
+      const newProgress = ((currentIndex - 1) / sortedNodes.length) * 100;
+      progressRef.current = newProgress;
+      setProgress(newProgress);
     }
   }, [progress, sortedNodes.length]);
 
@@ -384,19 +466,23 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               {currentNodeCount} / {totalCount} 节点
             </span>
             
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={progress}
-              onChange={handleProgressChange}
-              className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
-              style={{
-                background: isDark 
-                  ? `linear-gradient(to right, #6366f1 ${progress}%, #334155 ${progress}%)`
-                  : `linear-gradient(to right, #6366f1 ${progress}%, #e5e7eb ${progress}%)`
-              }}
-            />
+            <div
+              ref={trackRef}
+              className="flex-1 h-2 rounded-lg cursor-pointer relative"
+              style={{ backgroundColor: isDark ? '#334155' : '#e5e7eb' }}
+              onMouseDown={handleTrackMouseDown}
+            >
+              <div
+                ref={fillRef}
+                className="absolute top-0 left-0 h-full rounded-lg"
+                style={{ width: `${progress}%`, backgroundColor: '#6366f1' }}
+              />
+              <div
+                ref={thumbRef}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full shadow-md cursor-grab active:cursor-grabbing"
+                style={{ left: `${progress}%`, backgroundColor: '#6366f1' }}
+              />
+            </div>
             
             <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'} w-12 text-right`}>
               {Math.round(progress)}%

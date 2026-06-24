@@ -1,0 +1,6 @@
+- [x] `withThreeLevelFallback<T>` 工具函数已实现，支持 RPC→事务→非事务三级降级
+- [x] graphNodeService.ts 的 removeFromGraph 和 batchDelete 已使用 withThreeLevelFallback
+- [x] graphService.ts 的 deleteGraph/deleteGraphs/permanentDeleteGraph/permanentDeleteGraphs 已使用 withThreeLevelFallback
+- [x] nodesService.ts 的 batchUpdatePositions 和 batchUpdateNodes 已使用降级工具（含 executeBatchUpdateFallback 私有方法）
+- [x] `npx tsc --noEmit` 通过零新增错误
+- [x] 降级行为不变（日志级别、降级顺序、错误传播）

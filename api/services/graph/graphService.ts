@@ -1174,55 +1174,69 @@ export class GraphService {
   ) {
     const { includeEmbedding, includeStatus } = options ?? {};
 
-    // When embedding is requested, skip cache to avoid storing large vector data
     if (includeEmbedding) {
-      const { data: graphNodes, error: gnError } = await supabase
-        .from("graph_nodes")
-        .select(GRAPH_NODES_SELECT_WITH_EMBEDDING)
-        .eq("graph_id", graphId)
-        .is("deleted_at", null);
+      const embCacheKey = userId
+        ? `graph_nodes_emb_${userId}_${graphId}`
+        : `graph_nodes_emb_${graphId}`;
 
-      if (gnError) {
-        logger.error("getGraphNodes error:", gnError);
-        throw gnError;
+      const result = await cacheService.getOrSet(
+        embCacheKey,
+        async () => {
+          const { data: graphNodes, error: gnError } = await supabase
+            .from("graph_nodes")
+            .select(GRAPH_NODES_SELECT_WITH_EMBEDDING)
+            .eq("graph_id", graphId)
+            .is("deleted_at", null);
+
+          if (gnError) {
+            logger.error("getGraphNodes error:", gnError);
+            throw gnError;
+          }
+
+          const nodes = (graphNodes || [])
+            .map((gn: any) => {
+              const node = buildNodeFromGraphNode(gn);
+              if (!node) return null;
+              return {
+                id: node.id,
+                graph_id: node.graph_id,
+                graph_node_id: gn.id,
+                title: node.title,
+                content: node.content,
+                summary: node.summary,
+                x_position: node.x_position,
+                y_position: node.y_position,
+                level: node.level,
+                properties: node.properties,
+                learning_material: node.learning_material,
+                is_accepted: node.is_accepted,
+                knowledge_point_id: node.knowledge_point_id,
+                visibility: node.visibility,
+                owner_id: node.owner_id,
+                created_at: node.created_at,
+                updated_at: node.updated_at,
+                embedding: node.embedding,
+              };
+            })
+            .filter(Boolean);
+
+          const { data: edges, error: edgesError } = await supabase
+            .from("edges")
+            .select("*")
+            .eq("graph_id", graphId)
+            .is("deleted_at", null);
+
+          if (edgesError) throw edgesError;
+
+          return { nodes, edges: edges || [] } as GraphNodesResult;
+        },
+        CacheTTL.SHORT,
+        userId ? [`user:${userId}`, `graph:${graphId}`] : [`graph:${graphId}`],
+      );
+
+      if (result.nodes.length > 500) {
+        logger.warn(`[Graph] Large graph loaded: ${result.nodes.length} nodes, ${result.edges.length} edges for graph ${graphId}`);
       }
-
-      const nodes = (graphNodes || [])
-        .map((gn: any) => {
-          const node = buildNodeFromGraphNode(gn);
-          if (!node) return null;
-          return {
-            id: node.id,
-            graph_id: node.graph_id,
-            graph_node_id: gn.id,
-            title: node.title,
-            content: node.content,
-            summary: node.summary,
-            x_position: node.x_position,
-            y_position: node.y_position,
-            level: node.level,
-            properties: node.properties,
-            learning_material: node.learning_material,
-            is_accepted: node.is_accepted,
-            knowledge_point_id: node.knowledge_point_id,
-            visibility: node.visibility,
-            owner_id: node.owner_id,
-            created_at: node.created_at,
-            updated_at: node.updated_at,
-            embedding: node.embedding,
-          };
-        })
-        .filter(Boolean);
-
-      const { data: edges, error: edgesError } = await supabase
-        .from("edges")
-        .select("*")
-        .eq("graph_id", graphId)
-        .is("deleted_at", null);
-
-      if (edgesError) throw edgesError;
-
-      const result: GraphNodesResult = { nodes, edges: edges || [] };
 
       if (includeStatus && userId) {
         result.nodeStatus = await this.getGraphNodeStatus(supabase, userId, graphId);
@@ -1288,6 +1302,10 @@ export class GraphService {
       CacheTTL.GRAPH_NODES,
       userId ? [`user:${userId}`, `graph:${graphId}`] : [`graph:${graphId}`],
     );
+
+    if (cachedData.nodes.length > 500) {
+      logger.warn(`[Graph] Large graph loaded: ${cachedData.nodes.length} nodes, ${cachedData.edges.length} edges for graph ${graphId}`);
+    }
 
     if (includeStatus && userId) {
       return {

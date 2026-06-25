@@ -42,8 +42,8 @@ interface ChatInputProps {
   onEditQuote?: (id: string, newText: string) => void;
   useGraphContext?: boolean;
   onToggleGraphContext?: () => void;
-  searchMode?: 'semantic' | 'keyword' | 'hybrid';
-  onSearchModeChange?: (mode: 'semantic' | 'keyword' | 'hybrid') => void;
+  searchMode?: "semantic" | "keyword" | "hybrid";
+  onSearchModeChange?: (mode: "semantic" | "keyword" | "hybrid") => void;
   onClearChat?: () => void;
   showQuoteTip?: boolean;
   onDismissQuoteTip?: () => void;
@@ -68,7 +68,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onEditQuote,
   useGraphContext = false,
   onToggleGraphContext,
-  searchMode = 'hybrid',
+  searchMode = "hybrid",
   onSearchModeChange,
   onClearChat,
   showQuoteTip = false,
@@ -365,12 +365,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {(onToggleGraphContext || onSearchModeChange || onClearChat) && (
         <div className="mb-3 flex items-center gap-2">
           {onSearchModeChange && (
-            <div className={`flex items-center gap-0.5 rounded-xl p-1 ${isDark ? "bg-slate-800/80" : "bg-gray-100"}`}>
-              {([
-                { value: 'semantic' as const, label: t("aiChat.searchModeSemantic") },
-                { value: 'keyword' as const, label: t("aiChat.searchModeKeyword") },
-                { value: 'hybrid' as const, label: t("aiChat.searchModeHybrid") },
-              ]).map((option) => (
+            <div
+              className={`flex items-center gap-0.5 rounded-xl p-1 ${isDark ? "bg-slate-800/80" : "bg-gray-100"}`}
+            >
+              {[
+                {
+                  value: "semantic" as const,
+                  label: t("aiChat.searchModeSemantic"),
+                },
+                {
+                  value: "keyword" as const,
+                  label: t("aiChat.searchModeKeyword"),
+                },
+                {
+                  value: "hybrid" as const,
+                  label: t("aiChat.searchModeHybrid"),
+                },
+              ].map((option) => (
                 <button
                   key={option.value}
                   onClick={() => onSearchModeChange(option.value)}
@@ -476,7 +487,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
                         : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
                 }`}
-                title={isMicActive ? t("aiChat.stopRecording") : t("aiChat.startRecording")}
+                title={
+                  isMicActive
+                    ? t("aiChat.stopRecording")
+                    : t("aiChat.startRecording")
+                }
               >
                 {isMicActive ? <MicOff size={16} /> : <Mic size={16} />}
               </button>

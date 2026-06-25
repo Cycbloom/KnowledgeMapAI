@@ -456,7 +456,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
       <div
-        className={`relative rounded-2xl border transition-all duration-200 ${
+        className={`flex flex-col rounded-2xl border transition-all duration-200 ${
           isDark
             ? "bg-slate-800/80 border-slate-700 focus-within:border-primary-500/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
             : "bg-white border-gray-200 focus-within:border-primary-400/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] shadow-sm"
@@ -472,7 +472,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               : t("aiChat.inputPlaceholder")
           }
           rows={3}
-          className={`w-full bg-transparent resize-none outline-none focus-visible:outline-none text-sm px-4 py-3 pr-28 ${
+          className={`w-full bg-transparent resize-none outline-none focus-visible:outline-none text-sm px-4 pt-3 pb-2 ${
             isDark
               ? "text-slate-200 placeholder-slate-500"
               : "text-gray-800 placeholder-gray-400"
@@ -480,7 +480,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           style={{ maxHeight: "160px", minHeight: "80px" }}
           disabled={isLoading}
         />
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+        <div className="flex items-center justify-end gap-1.5 px-3 pb-3">
           {enableSTT && hasRecognitionSupport && (
             <>
               <button

@@ -12,7 +12,7 @@ export const ttsApi = {
   
   synthesize: async (data: { text: string; voice?: string; speed?: number; output_format?: string }) => {
     const token = useStore.getState().token;
-    const response = await fetch(`${getApiUrl()}/ai/tts`, {
+    const response = await fetch(`${await getApiUrl()}/ai/tts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

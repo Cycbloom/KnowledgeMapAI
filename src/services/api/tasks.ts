@@ -25,7 +25,7 @@ export const dataApi = {
   export: async (graphId: string, format: 'json' | 'pdf' | 'markdown') => {
     const { getApiUrl } = await import('./client');
     const token = (await import('../../store/useStore')).useStore.getState().token;
-    return fetch(`${getApiUrl()}/data/export/${format}?graph_id=${graphId}`, {
+    return fetch(`${await getApiUrl()}/data/export/${format}?graph_id=${graphId}`, {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }

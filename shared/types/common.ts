@@ -184,7 +184,7 @@ export interface TutorContext {
   learningPath?: string[];
 }
 
-export type TTSEngine = "browser" | "qwen3";
+export type TTSEngine = "browser" | "sambert";
 
 export interface TTSConfig {
   engine: TTSEngine;

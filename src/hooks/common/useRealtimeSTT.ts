@@ -1,0 +1,244 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useStore } from '@/store/useStore';
+
+interface RealtimeSTTState {
+  isListening: boolean;
+  interimTranscript: string;
+  finalTranscript: string;
+  error: string | null;
+  isConnecting: boolean;
+}
+
+interface UseRealtimeSTTReturn extends RealtimeSTTState {
+  startListening: (lang?: string) => Promise<void>;
+  stopListening: () => void;
+  resetTranscript: () => void;
+}
+
+const WORKLET_CODE = `
+class PCMCaptureProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this._ratio = sampleRate / 16000;
+    this._buffer = [];
+  }
+
+  process(inputs) {
+    const input = inputs[0];
+    if (input && input[0]) {
+      const float32 = input[0];
+      const targetLen = Math.floor(float32.length / this._ratio);
+      const int16 = new Int16Array(targetLen);
+      for (let i = 0; i < targetLen; i++) {
+        const srcIdx = Math.floor(i * this._ratio);
+        const s = Math.max(-1, Math.min(1, float32[srcIdx]));
+        int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      this.port.postMessage(int16.buffer);
+    }
+    return true;
+  }
+}
+registerProcessor('pcm-capture', PCMCaptureProcessor);
+`;
+
+let eventIdCounter = 0;
+const nextEventId = () => `event_${++eventIdCounter}`;
+
+export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
+  const [isListening, setIsListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [finalTranscript, setFinalTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+
+  const getWsUrl = useCallback(() => {
+    const token = useStore.getState().token;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    return `${protocol}//${host}/api/ai/stt-realtime?token=${token}`;
+  }, []);
+
+  const cleanup = useCallback(() => {
+    if (workletNodeRef.current) {
+      workletNodeRef.current.disconnect();
+      workletNodeRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      mediaStreamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    if (wsRef.current) {
+      wsRef.current.onclose = null;
+      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+    }
+  }, []);
+
+  const startListening = useCallback(async (lang: string = 'zh') => {
+    setError(null);
+    setInterimTranscript('');
+    setFinalTranscript('');
+    setIsConnecting(true);
+
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+      mediaStreamRef.current = mediaStream;
+
+      const blob = new Blob([WORKLET_CODE], { type: 'application/javascript' });
+      const workletUrl = URL.createObjectURL(blob);
+      const audioContext = new AudioContext({ sampleRate: 48000 });
+      await audioContext.audioWorklet.addModule(workletUrl);
+      URL.revokeObjectURL(workletUrl);
+      audioContextRef.current = audioContext;
+
+      const source = audioContext.createMediaStreamSource(mediaStream);
+      const workletNode = new AudioWorkletNode(audioContext, 'pcm-capture');
+      source.connect(workletNode);
+      workletNode.connect(audioContext.destination);
+      workletNodeRef.current = workletNode;
+
+      const wsUrl = getWsUrl();
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsConnecting(false);
+        setIsListening(true);
+
+        ws.send(JSON.stringify({
+          event_id: nextEventId(),
+          type: 'session.update',
+          session: {
+            input_audio_format: 'pcm',
+            sample_rate: 16000,
+            input_audio_transcription: { language: lang },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.0,
+              silence_duration_ms: 400,
+            },
+          },
+        }));
+
+        workletNode.port.onmessage = (e: MessageEvent) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            const pcmBuffer = e.data as ArrayBuffer;
+            const base64 = arrayBufferToBase64(pcmBuffer);
+            ws.send(JSON.stringify({
+              event_id: nextEventId(),
+              type: 'input_audio_buffer.append',
+              audio: base64,
+            }));
+          }
+        };
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          switch (data.type) {
+            case 'conversation.item.input_audio_transcription.text':
+              setInterimTranscript((data.text || '') + (data.stash || ''));
+              break;
+            case 'conversation.item.input_audio_transcription.completed':
+              if (data.transcript) {
+                setFinalTranscript(prev => prev + (prev ? ' ' : '') + data.transcript);
+                setInterimTranscript('');
+              }
+              break;
+            case 'session.finished':
+              setIsListening(false);
+              cleanup();
+              break;
+            case 'error':
+              setError(data.error?.message || '语音识别错误');
+              setIsListening(false);
+              cleanup();
+              break;
+          }
+        } catch {
+          // ignore parse errors
+        }
+      };
+
+      ws.onerror = () => {
+        setError('WebSocket 连接错误');
+        setIsConnecting(false);
+        setIsListening(false);
+        cleanup();
+      };
+
+      ws.onclose = () => {
+        setIsListening(false);
+        setIsConnecting(false);
+      };
+
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '启动语音识别失败';
+      setError(message);
+      setIsConnecting(false);
+      cleanup();
+    }
+  }, [getWsUrl, cleanup]);
+
+  const stopListening = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        event_id: nextEventId(),
+        type: 'session.finish',
+      }));
+    }
+    setIsListening(false);
+    setTimeout(() => cleanup(), 2000);
+  }, [cleanup]);
+
+  const resetTranscript = useCallback(() => {
+    setInterimTranscript('');
+    setFinalTranscript('');
+  }, []);
+
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
+
+  return {
+    isListening,
+    interimTranscript,
+    finalTranscript,
+    error,
+    isConnecting,
+    startListening,
+    stopListening,
+    resetTranscript,
+  };
+};
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(binary);
+}

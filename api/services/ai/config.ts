@@ -34,7 +34,7 @@ export const getEnvConfig = (provider: AIProviderType): AIProviderConfig => {
     case "aliyun":
       return {
         apiKey: process.env.ALIYUN_API_KEY || "",
-        baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        baseURL: process.env.ALIYUN_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1",
         model: process.env.ALIYUN_MODEL || "qwen-long-latest",
       };
     case "openai":
@@ -109,6 +109,7 @@ export const getProviderForTask = async (
       main_ai?: { provider: string };
       embedding_ai?: { provider: string };
       stt_ai?: { provider: string };
+      tts_ai?: { provider: string };
     }>("system_config");
 
     if (task === "embedding") {
@@ -138,6 +139,13 @@ export const getProviderForTask = async (
     if (task === "stt") {
       if (sysConfig?.stt_ai?.provider) {
         return sysConfig.stt_ai.provider as AIProviderType;
+      }
+      return "aliyun";
+    }
+
+    if (task === "tts") {
+      if (sysConfig?.tts_ai?.provider) {
+        return sysConfig.tts_ai.provider as AIProviderType;
       }
       return "aliyun";
     }

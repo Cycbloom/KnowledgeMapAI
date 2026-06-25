@@ -12,11 +12,11 @@ const router = Router();
 router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (_req: AuthRequest, res: Response) => {
   try {
     const voices = [
-      { id: 'Cherry', name: 'Cherry (Female, Chinese)', lang: 'zh' },
-      { id: 'Harry', name: 'Harry (Male, Chinese)', lang: 'zh' },
-      { id: 'Winnie', name: 'Winnie (Child, Chinese)', lang: 'zh' },
-      { id: 'Farrah', name: 'Farrah (Female, English)', lang: 'en' },
-      { id: 'David', name: 'David (Male, English)', lang: 'en' }
+      { id: 'sambert-zhide-v1', name: '知德 (Male, Chinese)', lang: 'zh' },
+      { id: 'sambert-zhichu-v1', name: '知厨 (Male, Chinese)', lang: 'zh' },
+      { id: 'sambert-zhiyan-v1', name: '知言 (Female, Chinese)', lang: 'zh' },
+      { id: 'sambert-zhixiao-v1', name: '知笑 (Female, Chinese)', lang: 'zh' },
+      { id: 'sambert-zhilan-v1', name: '知岚 (Female, Chinese)', lang: 'zh' }
     ];
     res.json(voices);
   } catch (error: unknown) {
@@ -38,10 +38,12 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
 
     const buffer = await provider.synthesizeSpeech(text, voice, speed, output_format);
 
+    logger.info(`[TTS] Synthesized: ${buffer.length} bytes, format=${output_format}, first4=${buffer.subarray(0, 4).toString('hex')}`);
+
     performanceMonitor.recordLog({
       operation: 'tts_synthesize',
       provider: provider.providerType,
-      model: 'qwen3-tts-flash',
+      model: 'sambert-zhide-v1',
       inputTokens: text.length,
       outputTokens: buffer.length,
       totalTokens: text.length + buffer.length,
@@ -67,7 +69,7 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
     performanceMonitor.recordLog({
       operation: 'tts_synthesize',
       provider: provider.providerType,
-      model: 'qwen3-tts-flash',
+      model: 'sambert-zhide-v1',
       inputTokens: text.length,
       outputTokens: 0,
       totalTokens: text.length,
@@ -91,7 +93,7 @@ router.get('/tts/health', requireAuth, async (_req: AuthRequest, res: Response) 
       res.json({ 
         status: 'healthy',
         model_loaded: true,
-        model_name: 'aliyun-qwen3-tts'
+        model_name: 'aliyun-sambert-zhide'
       });
     } else {
       res.json({ 

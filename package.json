@@ -144,6 +144,7 @@
     "three": "^0.182.0",
     "ts-fsrs": "^5.2.3",
     "umap-js": "^1.4.0",
+    "ws": "^8.21.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.11"
   },
@@ -173,6 +174,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.27",
     "concurrently": "^9.2.1",

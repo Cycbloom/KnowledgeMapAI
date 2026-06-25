@@ -11,6 +11,7 @@ export * from './useHistory';
 export * from './useLocalSnapshot';
 export * from './useTheme';
 export * from './useSpeechRecognition';
+export * from './useRealtimeSTT';
 export * from './useTextToSpeech';
 export * from './useTopicCheck';
 export * from './useTutorOperations';

@@ -53,7 +53,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
     setVoice: _setVoice,
     currentEngine,
     switchEngine,
-  } = useTextToSpeech("qwen3");
+  } = useTextToSpeech("sambert");
 
   const scriptContainerRef = useRef<HTMLDivElement>(null);
 
@@ -233,10 +233,10 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                   {t("aiChat.browserTts")}
                 </button>
                 <button
-                  onClick={() => switchEngine("qwen3")}
-                  className={`px-2 py-1 rounded transition-colors ${currentEngine === "qwen3" ? "bg-white dark:bg-slate-600 shadow text-slate-800 dark:text-white" : "text-slate-500"}`}
+                  onClick={() => switchEngine("sambert")}
+                  className={`px-2 py-1 rounded transition-colors ${currentEngine === "sambert" ? "bg-white dark:bg-slate-600 shadow text-slate-800 dark:text-white" : "text-slate-500"}`}
                 >
-                  {t("aiChat.qwenTts")}
+                  {t("aiChat.sambertTts")}
                 </button>
               </div>
             </div>

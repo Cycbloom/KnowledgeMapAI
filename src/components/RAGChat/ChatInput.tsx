@@ -12,10 +12,12 @@ import {
   Pencil,
   Mic,
   MicOff,
+  Cloud,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSpeechRecognition } from "../../hooks";
+import { useRealtimeSTT } from "../../hooks/common/useRealtimeSTT";
 
 export interface QuoteReference {
   id: string;
@@ -87,6 +89,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     hasRecognitionSupport,
   } = useSpeechRecognition();
 
+  const realtimeSTT = useRealtimeSTT();
+  const [useRealtimeEngine, setUseRealtimeEngine] = useState(false);
+
   const prevTranscriptRef = useRef("");
   const handleTranscript = useCallback(() => {
     if (enableSTT && transcript && transcript !== prevTranscriptRef.current) {
@@ -109,6 +114,41 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       prevTranscriptRef.current = "";
     }
   }, [isListening]);
+
+  const isRealtimeActive = realtimeSTT.isListening || realtimeSTT.isConnecting;
+  const isMicActive = useRealtimeEngine ? isRealtimeActive : isListening;
+
+  const handleMicClick = useCallback(() => {
+    if (useRealtimeEngine) {
+      if (realtimeSTT.isListening) {
+        realtimeSTT.stopListening();
+        const transcriptText = (
+          realtimeSTT.finalTranscript + realtimeSTT.interimTranscript
+        ).trim();
+        if (transcriptText) {
+          const separator = input.trim() ? " " : "";
+          onInputChange(input + separator + transcriptText);
+        }
+        realtimeSTT.resetTranscript();
+      } else {
+        void realtimeSTT.startListening("zh");
+      }
+    } else {
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening();
+      }
+    }
+  }, [
+    useRealtimeEngine,
+    realtimeSTT,
+    input,
+    onInputChange,
+    isListening,
+    stopListening,
+    startListening,
+  ]);
 
   const startEditing = (quote: QuoteReference) => {
     setEditingQuoteId(quote.id);
@@ -406,19 +446,36 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           disabled={isLoading}
         />
         {enableSTT && hasRecognitionSupport && (
-          <button
-            onClick={isListening ? stopListening : startListening}
-            className={`p-2 rounded-xl transition-all ${
-              isListening
-                ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
-                : isDark
-                  ? "bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
-                  : "bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-700"
-            }`}
-            title={isListening ? t("aiChat.stopRecording") : t("aiChat.startRecording")}
-          >
-            {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-          </button>
+          <>
+            <button
+              onClick={() => setUseRealtimeEngine((prev) => !prev)}
+              className={`p-2 rounded-xl transition-all ${
+                useRealtimeEngine
+                  ? "bg-indigo-500 text-white hover:bg-indigo-600"
+                  : isDark
+                    ? "bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
+                    : "bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-700"
+              }`}
+              title={t("aiChat.realtimeStt")}
+            >
+              <Cloud size={18} />
+            </button>
+            <button
+              onClick={handleMicClick}
+              className={`p-2 rounded-xl transition-all ${
+                isMicActive
+                  ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
+                  : useRealtimeEngine
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600"
+                    : isDark
+                      ? "bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
+                      : "bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-700"
+              }`}
+              title={isMicActive ? t("aiChat.stopRecording") : t("aiChat.startRecording")}
+            >
+              {isMicActive ? <MicOff size={18} /> : <Mic size={18} />}
+            </button>
+          </>
         )}
         <button
           onClick={onSend}
@@ -440,6 +497,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           )}
         </button>
       </div>
+
+      {useRealtimeEngine &&
+        (realtimeSTT.isListening ||
+          realtimeSTT.isConnecting ||
+          realtimeSTT.error) && (
+          <div className="mt-1.5 px-2 text-xs">
+            {realtimeSTT.error ? (
+              <span className="text-red-500">{realtimeSTT.error}</span>
+            ) : realtimeSTT.isConnecting ? (
+              <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                {t("aiChat.sttConnecting")}
+              </span>
+            ) : (
+              <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                {realtimeSTT.interimTranscript}
+              </span>
+            )}
+          </div>
+        )}
 
       {isTutorMode && (
         <div className="flex gap-2 mt-3">

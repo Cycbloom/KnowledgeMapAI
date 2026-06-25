@@ -25,36 +25,36 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const qwen3AudioCache = new Map<string, CacheEntry>();
-const QWEN3_CACHE_LIMIT = 10;
+const sambertAudioCache = new Map<string, CacheEntry>();
+const SAMBERT_CACHE_LIMIT = 10;
 
-const getQwen3CacheKey = (text: string, voice: string, speed: number): string => {
+const getSambertCacheKey = (text: string, voice: string, speed: number): string => {
   return djb2Hash(`${text}|${voice}|${speed}`);
 };
 
-const getCachedQwen3Url = (key: string): string | null => {
-  const entry = qwen3AudioCache.get(key);
+const getCachedSambertUrl = (key: string): string | null => {
+  const entry = sambertAudioCache.get(key);
   if (entry) {
     entry.timestamp = Date.now();
-    qwen3AudioCache.delete(key);
-    qwen3AudioCache.set(key, entry);
+    sambertAudioCache.delete(key);
+    sambertAudioCache.set(key, entry);
     return entry.url;
   }
   return null;
 };
 
-const setCachedQwen3Url = (key: string, url: string): void => {
-  if (qwen3AudioCache.size >= QWEN3_CACHE_LIMIT) {
-    const oldestKey = qwen3AudioCache.keys().next().value;
+const setCachedSambertUrl = (key: string, url: string): void => {
+  if (sambertAudioCache.size >= SAMBERT_CACHE_LIMIT) {
+    const oldestKey = sambertAudioCache.keys().next().value;
     if (oldestKey !== undefined) {
-      const oldest = qwen3AudioCache.get(oldestKey);
+      const oldest = sambertAudioCache.get(oldestKey);
       if (oldest) {
         URL.revokeObjectURL(oldest.url);
       }
-      qwen3AudioCache.delete(oldestKey);
+      sambertAudioCache.delete(oldestKey);
     }
   }
-  qwen3AudioCache.set(key, { url, timestamp: Date.now() });
+  sambertAudioCache.set(key, { url, timestamp: Date.now() });
 };
 
 const useBrowserTTS = () => {
@@ -248,12 +248,12 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
       setError(null);
       setProgress(0);
 
-      const voiceName = typeof selectedVoice === 'string' && selectedVoice !== 'default' ? selectedVoice : 'Cherry';
+      const voiceName = typeof selectedVoice === 'string' && selectedVoice !== 'default' ? selectedVoice : 'sambert-zhide-v1';
       const speed = options?.rate || 1.0;
-      const cacheKey = getQwen3CacheKey(cleanText, voiceName, speed);
+      const cacheKey = getSambertCacheKey(cleanText, voiceName, speed);
 
       try {
-        const cachedUrl = getCachedQwen3Url(cacheKey);
+        const cachedUrl = getCachedSambertUrl(cacheKey);
         let url: string;
         if (cachedUrl) {
           url = cachedUrl;
@@ -265,7 +265,7 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
             output_format: 'mp3'
           });
           url = URL.createObjectURL(blob);
-          setCachedQwen3Url(cacheKey, url);
+          setCachedSambertUrl(cacheKey, url);
         }
 
         if (audioRef.current) {
@@ -300,9 +300,17 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
           }
         };
 
-        await audio.play();
+        try {
+          await audio.play();
+        } catch (playErr) {
+          if (playErr instanceof Error && playErr.name === 'AbortError') {
+            // 预期行为：音频被快速替换/暂停时触发，忽略
+            return;
+          }
+          throw playErr;
+        }
       } catch (err: unknown) {
-        console.warn('Qwen TTS error:', err);
+        console.warn('Sambert TTS error:', err);
         setIsSpeaking(false);
         setIsPaused(false);
         setProgress(0);
@@ -376,27 +384,52 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
     }
   }, [currentEngine, browserTTS]);
 
+  // 浏览器引擎：音色异步加载后同步
   useEffect(() => {
     if (currentEngine === 'browser') {
       setVoices(browserTTS.voices);
       setSelectedVoice(browserTTS.selectedVoice);
     }
-  }, [currentEngine, browserTTS]);
+  }, [currentEngine, browserTTS.voices, browserTTS.selectedVoice]);
 
+  // Sambert 引擎：切换时从 API 获取音色列表（只执行一次）
+  useEffect(() => {
+    if (currentEngine !== 'sambert') return;
+    let cancelled = false;
+    api.tts.voices().then((data) => {
+      if (!cancelled) {
+        setVoices(data);
+        setSelectedVoice('sambert-zhide-v1');
+      }
+    }).catch((err) => {
+      if (!cancelled) {
+        setError(err instanceof Error ? err.message : '获取语音列表失败');
+      }
+    });
+    return () => { cancelled = true; };
+  }, [currentEngine]);
+
+  // 仅在 audioUrl 变化时清理旧 URL（不暂停音频，避免新音频被误杀）
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
+  // 组件卸载时清理音频和语音合成
   useEffect(() => {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [audioUrl]);
+  }, []);
 
   return {
     isSpeaking,

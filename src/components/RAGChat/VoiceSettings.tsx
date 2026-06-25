@@ -69,11 +69,11 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
             </button>
             <button
               onClick={() => {
-                switchEngine('qwen3');
-                setTTSEngine('qwen3');
+                switchEngine('sambert');
+                setTTSEngine('sambert');
               }}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-all ${
-                ttsEngine === 'qwen3'
+                ttsEngine === 'sambert'
                   ? 'bg-primary-600 text-white'
                   : isDark 
                     ? 'bg-slate-700 text-primary-300 hover:bg-slate-600' 
@@ -81,7 +81,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               }`}
             >
               <Cpu size={12} />
-              <span>{t("aiChat.qwenTts")}</span>
+              <span>{t("aiChat.sambertTts")}</span>
             </button>
           </div>
         </div>
@@ -105,7 +105,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
         <div className="space-y-1 max-h-24 overflow-y-auto">
           {(voices as SpeechSynthesisVoice[]).map((voice: SpeechSynthesisVoice, index: number) => (
             <button
-              key={index}
+              key={voice.voiceURI ?? `${voice.name}-${voice.lang}-${index}`}
               onClick={() => handleVoiceChange(voice)}
               className={`w-full text-left px-2 py-1.5 text-xs rounded-md transition-all ${
                 typeof selectedVoice === 'object' && selectedVoice?.name === voice.name
@@ -122,11 +122,11 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
         </div>
       )}
 
-      {ttsEngine === 'qwen3' && (
+      {ttsEngine === 'sambert' && (
         <div className="space-y-1 max-h-24 overflow-y-auto">
-          {(voices as TTSVoice[]).map((voice: TTSVoice) => (
+          {(voices as TTSVoice[]).map((voice: TTSVoice, index: number) => (
             <button
-              key={voice.id}
+              key={voice.id ?? `${voice.name}-${voice.lang}-${index}`}
               onClick={() => handleVoiceChange(voice.id)}
               className={`w-full text-left px-2 py-1.5 text-xs rounded-md transition-all ${
                 selectedVoice === voice.id

@@ -62,7 +62,7 @@ router.post('/stt', requireAuth, upload.single('audio'), async (req: AuthRequest
     performanceMonitor.recordLog({
       operation: 'stt_transcribe',
       provider: provider.providerType,
-      model: 'paraformer-v2',
+      model: 'qwen3-asr-flash',
       inputTokens: audioBuffer.length,
       outputTokens: result.text.length,
       totalTokens: audioBuffer.length + result.text.length,
@@ -79,7 +79,7 @@ router.post('/stt', requireAuth, upload.single('audio'), async (req: AuthRequest
     performanceMonitor.recordLog({
       operation: 'stt_transcribe',
       provider: provider?.providerType ?? 'aliyun',
-      model: 'paraformer-v2',
+      model: 'qwen3-asr-flash',
       inputTokens: audioFile.buffer.length,
       outputTokens: 0,
       totalTokens: audioFile.buffer.length,
@@ -102,7 +102,7 @@ router.get('/stt/health', requireAuth, async (_req: AuthRequest, res: Response) 
       res.json({
         status: 'healthy',
         model_loaded: true,
-        model_name: 'paraformer-v2',
+        model_name: 'qwen3-asr-flash',
       });
     } else {
       res.json({

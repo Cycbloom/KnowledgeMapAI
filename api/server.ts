@@ -5,6 +5,7 @@ import { performanceMonitor } from './services/ai/performanceMonitor';
 import { PluginLoader } from './services/kernel/PluginLoader';
 import { PluginStoreService } from './services/kernel/PluginStoreService';
 import type { Server } from 'http';
+import { setupRealtimeSTT } from './routes/ai/stt-realtime';
 
 const PORT = process.env.PORT || 3001;
 
@@ -77,6 +78,10 @@ async function bootstrap(): Promise<void> {
 
   addHealth({ service: 'HTTP Server', phase: '3', status: 'success', details: `Port ${PORT}` });
   logger.info('[Phase 3/5] HTTP server started');
+
+  // Setup WebSocket for realtime STT
+  setupRealtimeSTT(server);
+  logger.info('[Phase 3/5] Realtime STT WebSocket server attached');
 
   // ===== Phase 4: Plugin Activation (blocking) =====
   logger.info('[Phase 4/5] Plugin activation...');

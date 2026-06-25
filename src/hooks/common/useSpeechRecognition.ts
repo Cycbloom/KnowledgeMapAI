@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { STTEngine, STTResult } from '@shared/types';
+import { api } from '../../services/api';
 
 interface SpeechRecognitionEvent {
   results: SpeechRecognitionResultList;
@@ -37,7 +39,7 @@ const checkSpeechRecognitionSupport = (): boolean => {
   return false;
 };
 
-export const useSpeechRecognition = () => {
+export const useSpeechRecognition = (engine: STTEngine = 'browser', lang: string = 'zh-CN') => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +54,11 @@ export const useSpeechRecognition = () => {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = 'zh-CN';
+        recognition.lang = lang;
         recognitionRef.current = recognition;
       }
     }
-  }, []);
+  }, [lang]);
 
   const startListening = useCallback(() => {
     if (!recognitionRef.current) return;
@@ -86,7 +88,23 @@ export const useSpeechRecognition = () => {
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        setError(event.error);
+        let message = event.error;
+        switch (event.error) {
+          case 'not-allowed':
+          case 'service-not-allowed':
+            message = '请允许麦克风权限以使用语音识别';
+            break;
+          case 'no-speech':
+            message = '未检测到语音输入';
+            break;
+          case 'network':
+            message = '网络错误，请检查网络连接';
+            break;
+          case 'aborted':
+            message = '语音识别已中止';
+            break;
+        }
+        setError(message);
         setIsListening(false);
         isStartingRef.current = false;
       };
@@ -103,7 +121,7 @@ export const useSpeechRecognition = () => {
 
       recognition.start();
     } catch (_e) {
-      setError('Failed to start speech recognition');
+      setError('启动语音识别失败');
       isStartingRef.current = false;
     }
   }, [isListening]);
@@ -119,6 +137,18 @@ export const useSpeechRecognition = () => {
     setTranscript('');
   }, []);
 
+  const transcribeFile = useCallback(async (file: File, options?: { language?: string }): Promise<STTResult> => {
+    try {
+      const result = await api.stt.transcribe(file, { language: options?.language || lang });
+      setTranscript(result.text);
+      return result;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '语音转文字失败';
+      setError(message);
+      throw err;
+    }
+  }, [lang]);
+
   return {
     isListening,
     transcript,
@@ -126,6 +156,9 @@ export const useSpeechRecognition = () => {
     startListening,
     stopListening,
     resetTranscript,
-    hasRecognitionSupport
+    hasRecognitionSupport,
+    transcribeFile,
+    lang,
+    engine,
   };
 };

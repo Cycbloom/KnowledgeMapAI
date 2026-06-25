@@ -30,8 +30,8 @@ export const getAIProvider = async (type?: AIProviderType): Promise<AIProvider> 
 };
 
 export const getAIProviderForTask = async (
-  task: 'text' | 'embedding' | 'reasoning' | 'tts' = 'text', 
-  providerOverride?: string, 
+  task: 'text' | 'embedding' | 'reasoning' | 'tts' | 'stt' = 'text',
+  providerOverride?: string,
   modelOverride?: string
 ): Promise<AIProvider> => {
     const defaultProviderType = await getProviderForTask(task);

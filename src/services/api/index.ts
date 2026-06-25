@@ -73,6 +73,7 @@ import {
 } from "./knowledgePoints";
 import { aiApi, aiActionsApi } from "./ai";
 import { ttsApi } from "./tts";
+import { sttApi } from "./stt";
 import { studyApi, dashboardApi, statisticsApi } from "./study";
 import { tasksApi, searchApi, dataApi } from "./tasks";
 import {
@@ -111,6 +112,7 @@ export const api: IApi = {
   ai: aiApi,
   aiActions: aiActionsApi,
   tts: ttsApi,
+  stt: sttApi,
   study: studyApi,
   dashboard: dashboardApi,
   statistics: statisticsApi,

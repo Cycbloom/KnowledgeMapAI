@@ -4,7 +4,7 @@ import { validate } from '../../middleware/validate';
 import { ttsSchema, ttsVoicesSchema } from '../../schemas/index';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { AppError } from '../../middleware/errorHandler';
-import { getAIProviderForTask } from '../../services/ai';
+import { getAIProviderForTask, performanceMonitor } from '../../services/ai';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -28,18 +28,31 @@ router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (_req: A
 
 router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, res: Response) => {
   const { text, voice, speed, output_format } = req.body;
-  
+  const startTime = Date.now();
+  const provider = await getAIProviderForTask('tts');
+
   try {
-    const provider = await getAIProviderForTask('tts');
     if (!provider.hasKey || !provider.synthesizeSpeech) {
       throw new AppError(ErrorCodes.TTS_PROVIDER_NOT_CONFIGURED);
     }
 
     const buffer = await provider.synthesizeSpeech(text, voice, speed, output_format);
-    
+
+    performanceMonitor.recordLog({
+      operation: 'tts_synthesize',
+      provider: provider.providerType,
+      model: 'qwen3-tts-flash',
+      inputTokens: text.length,
+      outputTokens: buffer.length,
+      totalTokens: text.length + buffer.length,
+      duration: Date.now() - startTime,
+      success: true,
+      estimatedCost: 0,
+    });
+
     let contentType = output_format === 'wav' ? 'audio/wav' : 'audio/mpeg';
     let filename = output_format === 'wav' ? 'speech.wav' : 'speech.mp3';
-    
+
     if (buffer.length > 4 && buffer.subarray(0, 4).toString() === 'RIFF') {
       contentType = 'audio/wav';
       filename = 'speech.wav';
@@ -48,9 +61,20 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     res.setHeader('Content-Length', buffer.length);
-    
+
     return res.send(buffer);
   } catch (error: unknown) {
+    performanceMonitor.recordLog({
+      operation: 'tts_synthesize',
+      provider: provider.providerType,
+      model: 'qwen3-tts-flash',
+      inputTokens: text.length,
+      outputTokens: 0,
+      totalTokens: text.length,
+      duration: Date.now() - startTime,
+      success: false,
+      estimatedCost: 0,
+    });
     const err = error as Error;
     logger.error('TTS Synthesis Error:', error);
     if (error instanceof AppError) {

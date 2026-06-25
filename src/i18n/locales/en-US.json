@@ -3448,6 +3448,10 @@
     "inputPlaceholder": "Type your question...",
     "tutorInputPlaceholder": "Chat with tutor...",
     "voiceSettings": "Voice Settings",
+    "browserTts": "Browser",
+    "qwenTts": "Qwen3-TTS",
+    "previewVoice": "Preview",
+    "voicePreviewText": "This is a voice preview sample.",
     "switchToNormal": "Switch to Normal Mode",
     "switchToTutor": "Switch to Tutor Mode",
     "modeLabel": "Mode:",
@@ -3485,6 +3489,16 @@
     "quoteTip": "Tip: Select text and press Ctrl+U to quickly quote it",
     "startRecording": "Start voice input",
     "stopRecording": "Stop voice input"
+  },
+  "podcast": {
+    "title": "AI Knowledge Podcast",
+    "deepDive": "Deep dive into \"{{title}}\"",
+    "generating": "Writing podcast script...",
+    "generatingHint": "AI is analyzing the graph structure, extracting core concepts, and generating an engaging audio explanation.",
+    "noScript": "No script content",
+    "clickToGenerate": "Click to generate",
+    "regenerate": "Regenerate script",
+    "stopPlayback": "Stop playback"
   },
   "literatureExtract": {
     "title": "Literature Extract",

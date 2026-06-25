@@ -3465,6 +3465,10 @@
     "inputPlaceholder": "输入你的问题...",
     "tutorInputPlaceholder": "与助教对话...",
     "voiceSettings": "语音设置",
+    "browserTts": "浏览器",
+    "qwenTts": "Qwen3-TTS",
+    "previewVoice": "试听",
+    "voicePreviewText": "这是一段语音试听示例。",
     "switchToNormal": "切换到普通模式",
     "switchToTutor": "切换到助教模式",
     "modeLabel": "模式：",
@@ -3502,6 +3506,16 @@
     "quoteTip": "提示：选中任意文本后按 Ctrl+U 可快速引用到对话",
     "startRecording": "开始语音输入",
     "stopRecording": "停止语音输入"
+  },
+  "podcast": {
+    "title": "AI 知识播客",
+    "deepDive": "为您深度解读 \"{{title}}\"",
+    "generating": "正在为您撰写播客脚本...",
+    "generatingHint": "AI 正在分析图谱结构，提取核心概念，并生成一段生动的语音讲解。",
+    "noScript": "暂无脚本内容",
+    "clickToGenerate": "点击生成",
+    "regenerate": "重新生成脚本",
+    "stopPlayback": "停止播放"
   },
   "literatureExtract": {
     "title": "文献提取",

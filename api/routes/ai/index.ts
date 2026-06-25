@@ -5,6 +5,7 @@ import chatRouter from './chat';
 import documentRouter from './document';
 import cardsRouter from './cards';
 import ttsRouter from './tts';
+import sttRoutes from './stt';
 import performanceRouter from './performance';
 import configRouter from './config';
 
@@ -15,6 +16,7 @@ router.use(chatRouter);
 router.use(documentRouter);
 router.use(cardsRouter);
 router.use(ttsRouter);
+router.use(sttRoutes);
 router.use('/performance', performanceRouter);
 router.use('/config', configRouter);
 

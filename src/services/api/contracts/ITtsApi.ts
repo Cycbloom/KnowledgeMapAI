@@ -1,7 +1,9 @@
+import type { TTSVoice } from '@shared/types';
+
 export interface ITtsApi {
   health(): Promise<unknown>;
 
-  voices(): Promise<unknown>;
+  voices(): Promise<TTSVoice[]>;
 
   synthesize(data: {
     text: string;

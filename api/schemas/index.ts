@@ -402,6 +402,11 @@ export const ttsSchema = z.object({
 
 export const ttsVoicesSchema = z.object({});
 
+// --- STT Schemas ---
+export const sttSchema = z.object({
+  language: z.string().optional(),
+});
+
 // --- Additional AI Schemas ---
 export const annotateTermsSchema = z.object({
   content: z.string().min(1, "内容不能为空"),
@@ -411,8 +416,9 @@ export const annotateTermsSchema = z.object({
 });
 
 export const podcastScriptSchema = z.object({
-  topic: z.string().min(1, "主题不能为空"),
-  content: z.string().optional(),
+  context: z.string().min(1, "内容不能为空"),
+  language: z.string().optional(),
+  graph_id: z.string().uuid("无效的图谱ID").optional(),
   style: z.enum(["conversational", "lecture", "interview"]).optional(),
   duration_minutes: z.number().min(1).max(60).optional(),
   provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),

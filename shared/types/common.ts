@@ -199,6 +199,19 @@ export interface TTSVoice {
   lang: string;
 }
 
+export type STTEngine = "browser" | "cloud";
+
+export interface STTResult {
+  text: string;
+  language?: string;
+  duration?: number;
+}
+
+export interface STTConfig {
+  engine: STTEngine;
+  language?: string;
+}
+
 export type LearningPathGoalType =
   | "natural_language"
   | "graph_node"

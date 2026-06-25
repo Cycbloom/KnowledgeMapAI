@@ -22,6 +22,10 @@ export interface AIProvider {
     speed?: number,
     format?: string,
   ) => Promise<Buffer>;
+  transcribeSpeech?: (
+    audioBuffer: Buffer,
+    options?: { language?: string; format?: string },
+  ) => Promise<{ text: string; language?: string; duration?: number }>;
 }
 
 export interface AIActionVariables {

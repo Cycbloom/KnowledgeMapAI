@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect, useState, useMemo } from "react";
+import { useLayoutEffect, useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStudyCards, useSemanticGroups } from "../hooks/queries";
@@ -80,6 +80,9 @@ export const Study = () => {
   const { data: semanticGroupsData } = useSemanticGroups(graphId ?? undefined);
   const updateProgressMutation = useUpdateCardProgressMutation();
 
+  const [semanticSimilarityMap, setSemanticSimilarityMap] = useState<Map<string, Map<string, number>>>(new Map());
+  const [prevKnowledgePointId, setPrevKnowledgePointId] = useState<string | null>(null);
+
   useEffect(() => {
     if (semanticGroupsData && typeof semanticGroupsData === "object" && "interference_pairs" in semanticGroupsData) {
       const map = new Map<string, Map<string, number>>();
@@ -137,8 +140,6 @@ export const Study = () => {
 
   // Quiz generation modal state
   const [showQuizModal, setShowQuizModal] = useState(false);
-  const [semanticSimilarityMap, setSemanticSimilarityMap] = useState<Map<string, Map<string, number>>>(new Map());
-  const [prevKnowledgePointId, setPrevKnowledgePointId] = useState<string | null>(null);
 
   // Reset state when params change
   useLayoutEffect(() => {
@@ -162,6 +163,55 @@ export const Study = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [tableMode, searchQuery]);
+
+  // Semantic-aware shuffle: spread semantically similar cards apart
+  const semanticAwareShuffle = useCallback((cards: StudyCard[]) => {
+    if (cards.length <= 2 || semanticSimilarityMap.size === 0) {
+      cards.sort(() => Math.random() - 0.5);
+      return;
+    }
+
+    const used = new Set<number>();
+    const result: StudyCard[] = [];
+
+    // Start with a random card
+    const startIdx = Math.floor(Math.random() * cards.length);
+    result.push(cards[startIdx]);
+    used.add(startIdx);
+
+    // Greedy: pick the card most dissimilar to the last one
+    while (result.length < cards.length) {
+      const lastKpId = result[result.length - 1].knowledge_point_id;
+      const simMap = semanticSimilarityMap.get(lastKpId);
+
+      let bestIdx = -1;
+      let bestSimilarity = Infinity;
+
+      for (let i = 0; i < cards.length; i++) {
+        if (used.has(i)) continue;
+        const candidateKpId = cards[i].knowledge_point_id;
+        const sim = simMap?.get(candidateKpId) ?? 0;
+
+        if (sim < bestSimilarity || (sim === bestSimilarity && Math.random() < 0.5)) {
+          bestSimilarity = sim;
+          bestIdx = i;
+        }
+      }
+
+      if (bestIdx === -1) break;
+      result.push(cards[bestIdx]);
+      used.add(bestIdx);
+    }
+
+    // Fill any remaining cards
+    for (let i = 0; i < cards.length; i++) {
+      if (!used.has(i)) result.push(cards[i]);
+    }
+
+    // Replace array contents in-place
+    cards.length = 0;
+    cards.push(...result);
+  }, [semanticSimilarityMap]);
 
   // 当 mode=quiz 且卡片加载完成时，自动开始测验
   useEffect(() => {
@@ -416,59 +466,10 @@ export const Study = () => {
   }, [currentCard]);
 
   // Compute similarity between current card and previous card
-  const similarityWithPrev = useMemo(() => {
+  const similarityWithPrev = (() => {
     if (!currentCard?.knowledge_point_id || !prevKnowledgePointId) return null;
     return semanticSimilarityMap.get(prevKnowledgePointId)?.get(currentCard.knowledge_point_id) ?? null;
-  }, [currentCard?.knowledge_point_id, prevKnowledgePointId, semanticSimilarityMap]);
-
-  // Semantic-aware shuffle: spread semantically similar cards apart
-  const semanticAwareShuffle = (cards: StudyCard[]) => {
-    if (cards.length <= 2 || semanticSimilarityMap.size === 0) {
-      cards.sort(() => Math.random() - 0.5);
-      return;
-    }
-
-    const used = new Set<number>();
-    const result: StudyCard[] = [];
-
-    // Start with a random card
-    const startIdx = Math.floor(Math.random() * cards.length);
-    result.push(cards[startIdx]);
-    used.add(startIdx);
-
-    // Greedy: pick the card most dissimilar to the last one
-    while (result.length < cards.length) {
-      const lastKpId = result[result.length - 1].knowledge_point_id;
-      const simMap = semanticSimilarityMap.get(lastKpId);
-
-      let bestIdx = -1;
-      let bestSimilarity = Infinity;
-
-      for (let i = 0; i < cards.length; i++) {
-        if (used.has(i)) continue;
-        const candidateKpId = cards[i].knowledge_point_id;
-        const sim = simMap?.get(candidateKpId) ?? 0;
-
-        if (sim < bestSimilarity || (sim === bestSimilarity && Math.random() < 0.5)) {
-          bestSimilarity = sim;
-          bestIdx = i;
-        }
-      }
-
-      if (bestIdx === -1) break;
-      result.push(cards[bestIdx]);
-      used.add(bestIdx);
-    }
-
-    // Fill any remaining cards
-    for (let i = 0; i < cards.length; i++) {
-      if (!used.has(i)) result.push(cards[i]);
-    }
-
-    // Replace array contents in-place
-    cards.length = 0;
-    cards.push(...result);
-  };
+  })();
 
   if (isLoading)
     return (

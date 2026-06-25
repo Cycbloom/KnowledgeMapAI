@@ -23,6 +23,90 @@ export class AliyunProvider extends BaseAIProvider {
     return this.synthesizeChunk(text, voice, speed, format);
   }
 
+  async transcribeSpeech(
+    audioBuffer: Buffer,
+    options?: { language?: string; format?: string },
+  ): Promise<{ text: string; language?: string; duration?: number }> {
+    if (!this.hasKey) {
+      throw new AppError(ErrorCodes.AI_SERVICE_UNAVAILABLE);
+    }
+
+    const format = options?.format || 'wav';
+    const mimeType = format === 'mp3' ? 'audio/mpeg' : `audio/${format}`;
+    const base64Audio = audioBuffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64Audio}`;
+
+    const url = 'https://dashscope.aliyuncs.com/api/v1/services/audio/asr/transcription';
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.client.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'paraformer-v2',
+          input: {
+            file_urls: [dataUrl],
+          },
+          parameters: {
+            language_hints: options?.language || 'zh',
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `Aliyun STT failed: ${response.status} ${response.statusText} - ${errorText}`,
+        });
+      }
+
+      const data = await response.json() as {
+        output?: { text?: string; transcription_url?: string };
+        request_id?: string;
+      };
+
+      let text = '';
+      if (data.output?.text) {
+        text = data.output.text;
+      } else if (data.output?.transcription_url) {
+        const transcriptResponse = await fetch(data.output.transcription_url, {
+          headers: { 'Authorization': `Bearer ${this.client.apiKey}` },
+        });
+        if (!transcriptResponse.ok) {
+          throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+            message: `Failed to fetch transcription: ${transcriptResponse.statusText}`,
+          });
+        }
+        const transcriptData = await transcriptResponse.json() as {
+          transcripts?: Array<{ text?: string; sentences?: Array<{ text?: string }> }>;
+        };
+        text = transcriptData.transcripts?.[0]?.text
+          || transcriptData.transcripts?.[0]?.sentences?.map(s => s.text || '').join('')
+          || '';
+      } else {
+        logger.error('Unexpected Aliyun STT response format:', data);
+        throw new AppError(ErrorCodes.AI_INVALID_RESPONSE);
+      }
+
+      return {
+        text,
+        language: options?.language,
+      };
+    } catch (error: unknown) {
+      logger.error('Aliyun STT Error:', error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: errorMessage || 'Aliyun STT error',
+      });
+    }
+  }
+
   private async synthesizeLongText(text: string, voice: string, speed: number, _format: string): Promise<Buffer> {
     const chunks = this.splitText(text);
     logger.info(`Splitting TTS text into ${chunks.length} chunks`);

@@ -132,10 +132,10 @@ router.post(
   requireAuth,
   validate(podcastScriptSchema),
   async (req: AuthRequest, res: Response) => {
-    const { topic, content } = req.body;
+    const { context, language } = req.body;
 
     try {
-      const script = await aiService.generatePodcastScript(topic, content);
+      const script = await aiService.generatePodcastScript(context, language);
       res.json({ script });
     } catch (error: unknown) {
       const err = error as Error;

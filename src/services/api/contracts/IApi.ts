@@ -12,6 +12,7 @@ import type { IPeriodicTasksApi } from './IPeriodicTasksApi';
 import type { IKnowledgePointsApi, IGraphNodesApi, ICombinedViewApi } from './IKnowledgePointsApi';
 import type { ISchedulerApi } from './ISchedulerApi';
 import type { ITtsApi } from './ITtsApi';
+import type { ISttApi } from './ISttApi';
 import type { ITasksApi, ISearchApi, IDataApi } from './ITasksApi';
 import type { ITemplatesApi, IPromptsApi, IFocusApi } from './ITemplatesApi';
 import type { ILearningPathsApi, ILearningPathApi } from './ILearningPathsApi';
@@ -40,6 +41,7 @@ export interface IApi {
   ai: IAiApi;
   aiActions: IAiActionsApi;
   tts: ITtsApi;
+  stt: ISttApi;
   study: IStudyApi;
   dashboard: IDashboardApi;
   statistics: IStatisticsApi;

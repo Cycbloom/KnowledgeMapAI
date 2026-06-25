@@ -11,8 +11,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "../../common";
-import { useTextToSpeech } from "../../../hooks";
-import { useTheme } from "../../../hooks";
+import { useTextToSpeech, useTheme } from "../../../hooks";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { Node } from "../../../types";
@@ -38,6 +38,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [_activeSegmentIndex, _setActiveSegmentIndex] = useState(-1);
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const {
     speak,
@@ -46,6 +47,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
     cancel,
     isSpeaking,
     isPaused,
+    progress,
     voices: _voices,
     selectedVoice: _selectedVoice,
     setVoice: _setVoice,
@@ -145,10 +147,10 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-                  AI 知识播客
+                  {t("podcast.title")}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  为您深度解读 "{graphTitle}"
+                  {t("podcast.deepDive", { title: graphTitle })}
                 </p>
               </div>
             </div>
@@ -166,10 +168,10 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
               <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
                 <p className="text-slate-600 dark:text-slate-300 animate-pulse">
-                  正在为您撰写播客脚本...
+                  {t("podcast.generating")}
                 </p>
                 <div className="text-xs text-slate-400 max-w-md text-center">
-                  AI 正在分析图谱结构，提取核心概念，并生成一段生动的语音讲解。
+                  {t("podcast.generatingHint")}
                 </div>
               </div>
             ) : (
@@ -196,32 +198,24 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-slate-400">
                     <FileText size={48} className="mb-4 opacity-50" />
-                    <p>暂无脚本内容</p>
+                    <p>{t("podcast.noScript")}</p>
                     <button
                       onClick={generateScript}
                       className="mt-4 text-primary-600 hover:underline"
                     >
-                      点击生成
+                      {t("podcast.clickToGenerate")}
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Audio Visualization (Fake/Simple for now) */}
-            {isSpeaking && !isPaused && (
+            {/* Audio Progress Bar */}
+            {isSpeaking && (
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-100 dark:bg-slate-700 overflow-hidden">
-                <motion.div
-                  className="h-full bg-primary-500"
-                  animate={{
-                    width: ["0%", "100%"],
-                    x: ["-100%", "100%"],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 2,
-                    ease: "linear",
-                  }}
+                <div
+                  className="h-full bg-primary-500 transition-all duration-300"
+                  style={{ width: `${Math.round(progress * 100)}%` }}
                 />
               </div>
             )}
@@ -236,13 +230,13 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                   onClick={() => switchEngine("browser")}
                   className={`px-2 py-1 rounded transition-colors ${currentEngine === "browser" ? "bg-white dark:bg-slate-600 shadow text-slate-800 dark:text-white" : "text-slate-500"}`}
                 >
-                  浏览器
+                  {t("aiChat.browserTts")}
                 </button>
                 <button
                   onClick={() => switchEngine("qwen3")}
                   className={`px-2 py-1 rounded transition-colors ${currentEngine === "qwen3" ? "bg-white dark:bg-slate-600 shadow text-slate-800 dark:text-white" : "text-slate-500"}`}
                 >
-                  AI 语音
+                  {t("aiChat.qwenTts")}
                 </button>
               </div>
             </div>
@@ -251,7 +245,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                 onClick={generateScript}
                 disabled={isGenerating || isSpeaking}
                 className="p-2 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-50"
-                title="重新生成脚本"
+                title={t("podcast.regenerate")}
               >
                 <RefreshCw size={20} />
               </button>
@@ -277,7 +271,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                 <button
                   onClick={cancel}
                   className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-full transition-colors"
-                  title="停止播放"
+                  title={t("podcast.stopPlayback")}
                 >
                   <StopCircle size={20} />
                 </button>

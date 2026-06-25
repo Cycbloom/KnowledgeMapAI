@@ -1,10 +1,14 @@
 import { request, getApiUrl } from './client';
 import { useStore } from '@/store/useStore';
+import type { TTSVoice } from '@shared/types';
 
 export const ttsApi = {
   health: () => request('/ai/tts/health'),
-  
-  voices: () => request('/ai/tts/voices'),
+
+  voices: async (): Promise<TTSVoice[]> => {
+    const result = await request('/ai/tts/voices') as TTSVoice[];
+    return result;
+  },
   
   synthesize: async (data: { text: string; voice?: string; speed?: number; output_format?: string }) => {
     const token = useStore.getState().token;

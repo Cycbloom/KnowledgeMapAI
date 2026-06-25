@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TTSEngine } from '../../types';
 import { api } from '../../services/api';
+import { cleanTextForSpeech } from '../../utils/textCleaning';
+import type { TTSVoice } from '@shared/types';
 
 interface TextToSpeechOptions {
   rate?: number;
@@ -8,6 +10,52 @@ interface TextToSpeechOptions {
   volume?: number;
   voice?: SpeechSynthesisVoice | null;
 }
+
+const djb2Hash = (str: string): string => {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash & 0xffffffff;
+  }
+  return hash.toString(16);
+};
+
+interface CacheEntry {
+  url: string;
+  timestamp: number;
+}
+
+const qwen3AudioCache = new Map<string, CacheEntry>();
+const QWEN3_CACHE_LIMIT = 10;
+
+const getQwen3CacheKey = (text: string, voice: string, speed: number): string => {
+  return djb2Hash(`${text}|${voice}|${speed}`);
+};
+
+const getCachedQwen3Url = (key: string): string | null => {
+  const entry = qwen3AudioCache.get(key);
+  if (entry) {
+    entry.timestamp = Date.now();
+    qwen3AudioCache.delete(key);
+    qwen3AudioCache.set(key, entry);
+    return entry.url;
+  }
+  return null;
+};
+
+const setCachedQwen3Url = (key: string, url: string): void => {
+  if (qwen3AudioCache.size >= QWEN3_CACHE_LIMIT) {
+    const oldestKey = qwen3AudioCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      const oldest = qwen3AudioCache.get(oldestKey);
+      if (oldest) {
+        URL.revokeObjectURL(oldest.url);
+      }
+      qwen3AudioCache.delete(oldestKey);
+    }
+  }
+  qwen3AudioCache.set(key, { url, timestamp: Date.now() });
+};
 
 const useBrowserTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -50,16 +98,7 @@ const useBrowserTTS = () => {
 
     window.speechSynthesis.cancel();
 
-    const cleanText = text
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/`[^`]+`/g, '')
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/\*([^*]+)\*/g, '$1')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
-      .replace(/\n+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const cleanText = cleanTextForSpeech(text);
 
     if (!cleanText) {
       setError('没有可朗读的文本');
@@ -86,7 +125,7 @@ const useBrowserTTS = () => {
     };
 
     utterance.onerror = (event) => {
-      console.error('Speech synthesis error:', event);
+      console.warn('Speech synthesis error:', event);
       setIsSpeaking(false);
       setIsPaused(false);
       
@@ -162,17 +201,23 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[] | string[]>([]);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[] | TTSVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   const browserTTS = useBrowserTTS();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const switchEngine = useCallback((newEngine: TTSEngine) => {
     if (currentEngine !== newEngine) {
       if (currentEngine === 'browser') {
         window.speechSynthesis?.cancel();
       } else {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
         if (audioUrl) {
           URL.revokeObjectURL(audioUrl);
           setAudioUrl(null);
@@ -191,16 +236,7 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
         return;
       }
 
-      const cleanText = text
-        .replace(/```[\s\S]*?```/g, '')
-        .replace(/`[^`]+`/g, '')
-        .replace(/\*\*([^*]+)\*\*/g, '$1')
-        .replace(/\*([^*]+)\*/g, '$1')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
-        .replace(/\n+/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const cleanText = cleanTextForSpeech(text);
 
       if (!cleanText) {
         setError('没有可朗读的文本');
@@ -210,50 +246,92 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
       setIsLoading(true);
       setIsSpeaking(true);
       setError(null);
-      try {
-        const blob = await api.tts.synthesize({
-          text: cleanText,
-          voice: typeof selectedVoice === 'string' && selectedVoice !== 'default' ? selectedVoice : 'Vivian',
-          speed: options?.rate || 1.0,
-          output_format: 'mp3'
-        });
+      setProgress(0);
 
-        const url = URL.createObjectURL(blob);
+      const voiceName = typeof selectedVoice === 'string' && selectedVoice !== 'default' ? selectedVoice : 'Cherry';
+      const speed = options?.rate || 1.0;
+      const cacheKey = getQwen3CacheKey(cleanText, voiceName, speed);
+
+      try {
+        const cachedUrl = getCachedQwen3Url(cacheKey);
+        let url: string;
+        if (cachedUrl) {
+          url = cachedUrl;
+        } else {
+          const blob = await api.tts.synthesize({
+            text: cleanText,
+            voice: voiceName,
+            speed,
+            output_format: 'mp3'
+          });
+          url = URL.createObjectURL(blob);
+          setCachedQwen3Url(cacheKey, url);
+        }
+
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        if (audioUrl) {
+          URL.revokeObjectURL(audioUrl);
+        }
+
         setAudioUrl(url);
 
         const audio = new Audio(url);
+        audioRef.current = audio;
+
         audio.onended = () => {
           setIsSpeaking(false);
-          URL.revokeObjectURL(url);
-          setAudioUrl(null);
+          setIsPaused(false);
+          setProgress(0);
+          audioRef.current = null;
         };
         audio.onerror = () => {
           setIsSpeaking(false);
+          setIsPaused(false);
+          setProgress(0);
           setError('音频播放失败');
-          URL.revokeObjectURL(url);
-          setAudioUrl(null);
+          audioRef.current = null;
+        };
+        audio.ontimeupdate = () => {
+          if (audio.duration > 0) {
+            setProgress(Math.min(1, audio.currentTime / audio.duration));
+          }
         };
 
         await audio.play();
       } catch (err: unknown) {
-        console.error('Qwen TTS error:', err);
+        console.warn('Qwen TTS error:', err);
         setIsSpeaking(false);
+        setIsPaused(false);
+        setProgress(0);
         setError(err instanceof Error ? err.message : '语音合成失败');
       } finally {
         setIsLoading(false);
       }
     }
-  }, [currentEngine, browserTTS, selectedVoice]);
+  }, [currentEngine, browserTTS, selectedVoice, audioUrl]);
 
   const pause = useCallback(() => {
     if (currentEngine === 'browser') {
       browserTTS.pause();
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPaused(true);
+      }
     }
   }, [currentEngine, browserTTS]);
 
   const resume = useCallback(() => {
     if (currentEngine === 'browser') {
       browserTTS.resume();
+    } else {
+      if (audioRef.current) {
+        void audioRef.current.play();
+        setIsPaused(false);
+      }
     }
   }, [currentEngine, browserTTS]);
 
@@ -261,6 +339,10 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
     if (currentEngine === 'browser') {
       browserTTS.cancel();
     } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
         setAudioUrl(null);
@@ -269,6 +351,7 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
     setIsSpeaking(false);
     setIsPaused(false);
     setIsLoading(false);
+    setProgress(0);
   }, [currentEngine, browserTTS, audioUrl]);
 
   const setVoice = useCallback((voice: SpeechSynthesisVoice | string) => {
@@ -284,8 +367,8 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
       setVoices(browserTTS.voices);
     } else {
       try {
-        const data = await api.tts.voices() as { voices: string[] };
-        setVoices(data.voices || []);
+        const data = await api.tts.voices();
+        setVoices(data);
         setError(null);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : '获取语音列表失败');
@@ -300,6 +383,21 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
     }
   }, [currentEngine, browserTTS]);
 
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [audioUrl]);
+
   return {
     isSpeaking,
     isPaused,
@@ -308,6 +406,7 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
     voices,
     selectedVoice,
     audioUrl,
+    progress,
     speak,
     pause,
     resume,

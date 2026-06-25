@@ -3,6 +3,7 @@ import { Volume2, VolumeX, Loader2, X, Globe, Cpu, Play, Pause } from 'lucide-re
 import { useTextToSpeech } from "../../hooks";
 import { TTSEngine } from '../../types';
 import { useTranslation } from 'react-i18next';
+import type { TTSVoice } from '@shared/types';
 
 interface VoiceSettingsProps {
   isDark: boolean;
@@ -15,11 +16,11 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
   const { 
     isSpeaking: _isSpeaking, 
     isPaused: _isPaused, 
-    isLoading: _ttsLoading,
+    isLoading: ttsLoading,
     error: ttsError, 
     voices, 
     selectedVoice, 
-    speak: _speak, 
+    speak, 
     pause: _pause, 
     resume: _resume, 
     cancel: _cancel, 
@@ -28,10 +29,8 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
     hasSupport 
   } = useTextToSpeech(ttsEngine);
 
-  const handleVoiceChange = (voice: SpeechSynthesisVoice) => {
-    if (ttsEngine === 'browser') {
-      setVoice(voice);
-    }
+  const handleVoiceChange = (voice: SpeechSynthesisVoice | string) => {
+    setVoice(voice);
   };
 
   if (!hasSupport) return null;
@@ -66,7 +65,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               }`}
             >
               <Globe size={12} />
-              <span>{t("aiChat.modeFree") === "Free Chat" ? "Browser" : "浏览器"}</span>
+              <span>{t("aiChat.browserTts")}</span>
             </button>
             <button
               onClick={() => {
@@ -82,12 +81,26 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               }`}
             >
               <Cpu size={12} />
-              <span>Qwen3-TTS</span>
+              <span>{t("aiChat.qwenTts")}</span>
             </button>
           </div>
         </div>
       </div>
-      
+
+      <button
+        onClick={() => speak(t("aiChat.voicePreviewText"))}
+        disabled={ttsLoading}
+        className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-all ${
+          isDark
+            ? 'bg-slate-700 text-primary-300 hover:bg-slate-600'
+            : 'bg-white text-primary-600 hover:bg-primary-100'
+        } disabled:opacity-50`}
+        title={t("aiChat.previewVoice")}
+      >
+        <Play size={12} />
+        <span>{t("aiChat.previewVoice")}</span>
+      </button>
+
       {ttsEngine === 'browser' && (
         <div className="space-y-1 max-h-24 overflow-y-auto">
           {(voices as SpeechSynthesisVoice[]).map((voice: SpeechSynthesisVoice, index: number) => (
@@ -97,8 +110,8 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
               className={`w-full text-left px-2 py-1.5 text-xs rounded-md transition-all ${
                 typeof selectedVoice === 'object' && selectedVoice?.name === voice.name
                   ? 'bg-primary-600 text-white'
-                  : isDark 
-                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+                  : isDark
+                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     : 'bg-white text-primary-600 hover:bg-primary-100'
               }`}
             >
@@ -108,7 +121,28 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
           ))}
         </div>
       )}
-      
+
+      {ttsEngine === 'qwen3' && (
+        <div className="space-y-1 max-h-24 overflow-y-auto">
+          {(voices as TTSVoice[]).map((voice: TTSVoice) => (
+            <button
+              key={voice.id}
+              onClick={() => handleVoiceChange(voice.id)}
+              className={`w-full text-left px-2 py-1.5 text-xs rounded-md transition-all ${
+                selectedVoice === voice.id
+                  ? 'bg-primary-600 text-white'
+                  : isDark
+                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    : 'bg-white text-primary-600 hover:bg-primary-100'
+              }`}
+            >
+              <div className="font-medium">{voice.name}</div>
+              <div className="opacity-75">{voice.lang}</div>
+            </button>
+          ))}
+        </div>
+      )}
+
       {ttsError && (
         <div className={`mt-2 text-xs px-2 py-1 rounded ${isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-600'}`}>
           {ttsError}

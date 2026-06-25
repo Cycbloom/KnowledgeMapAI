@@ -14,6 +14,7 @@ import { mobileAchievementsApi } from "./achievements";
 import { mobilePeriodicTasksApi } from "./periodicTasks";
 import type { IApi } from "../api/contracts/IApi";
 import type { ITtsApi } from "../api/contracts/ITtsApi";
+import type { ISttApi } from "../api/contracts/ISttApi";
 import type { ITasksApi, ISearchApi, IDataApi } from "../api/contracts/ITasksApi";
 import type { ITemplatesApi, IPromptsApi, IFocusApi } from "../api/contracts/ITemplatesApi";
 import type { ILearningPathsApi, ILearningPathApi } from "../api/contracts/ILearningPathsApi";
@@ -82,6 +83,7 @@ export const mobileApi: IApi = {
   ai: mobileAiApi,
   aiActions: mobileAiApi.aiActions,
   tts: createNotSupportedModule<ITtsApi>("tts"),
+  stt: createNotSupportedModule<ISttApi>("stt"),
   study: mobileStudyApi,
   dashboard: mobileDashboardApi,
   statistics: mobileStatisticsApi,

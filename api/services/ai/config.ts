@@ -102,12 +102,13 @@ export const getDefaultProvider = async (): Promise<AIProviderType> => {
 };
 
 export const getProviderForTask = async (
-  task: "text" | "embedding" | "reasoning" | "tts" = "text",
+  task: "text" | "embedding" | "reasoning" | "tts" | "stt" = "text",
 ): Promise<AIProviderType | null> => {
   try {
     const sysConfig = await appSettingsService.getSetting<{
       main_ai?: { provider: string };
       embedding_ai?: { provider: string };
+      stt_ai?: { provider: string };
     }>("system_config");
 
     if (task === "embedding") {
@@ -132,6 +133,13 @@ export const getProviderForTask = async (
       }
 
       return null;
+    }
+
+    if (task === "stt") {
+      if (sysConfig?.stt_ai?.provider) {
+        return sysConfig.stt_ai.provider as AIProviderType;
+      }
+      return "aliyun";
     }
 
     if (sysConfig?.main_ai?.provider) {

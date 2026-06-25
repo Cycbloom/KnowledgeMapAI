@@ -86,6 +86,24 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     return estimateTokenConsumption(confirmState.mode, graphCount);
   }, [confirmState.mode, effectiveGraphIds.length]);
 
+  const loadSkills = async () => {
+    try {
+      const { skills: loadedSkills } = await agentApi.getSkills();
+      setSkills(loadedSkills);
+    } catch (err) {
+      setError("Failed to load skills");
+    }
+  };
+
+  const handleSelectSkillForConfirm = useCallback((skill: SkillDefinition, mode: AnalysisMode = 'quick') => {
+    setConfirmState({
+      mode,
+      skill,
+      customPrompt: '',
+    });
+    setStep('confirm');
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       loadSkills();
@@ -118,24 +136,6 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
       }
     }
   }, [skills, isOpen, initialAnalysisMode]);
-
-  const loadSkills = async () => {
-    try {
-      const { skills: loadedSkills } = await agentApi.getSkills();
-      setSkills(loadedSkills);
-    } catch (err) {
-      setError("Failed to load skills");
-    }
-  };
-
-  const handleSelectSkillForConfirm = useCallback((skill: SkillDefinition, mode: AnalysisMode = 'quick') => {
-    setConfirmState({
-      mode,
-      skill,
-      customPrompt: '',
-    });
-    setStep('confirm');
-  }, []);
 
   const handleSelectSkill = useCallback((skill: SkillDefinition) => {
     handleSelectSkillForConfirm(skill, 'quick');
@@ -320,7 +320,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     setPendingActions(prev => prev.filter(a => a.id !== actionId));
   }, []);
 
-  const handleAllActionsResolved = useCallback(async () => {
+  const handleAllActionsResolved = async () => {
     setPendingActions([]);
     if (session?.id) {
       try {
@@ -349,7 +349,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
         setIsLoading(false);
       }
     }
-  }, [session?.id, handleSSEEvent]);
+  };
 
   const activeMergeSuggestions =
     session?.structuredResult?.merge_suggestions?.filter(

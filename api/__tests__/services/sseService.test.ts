@@ -2,12 +2,14 @@ import { Response } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { sseService } from '../../services/core/sseService';
 
+type EventCallback = (...args: unknown[]) => void;
+
 function createMockResponse(writeReturn: boolean = true): Response {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, EventCallback[]> = {};
   const mockRes = {
     write: vi.fn(() => writeReturn),
     end: vi.fn(),
-    on: vi.fn((event: string, cb: Function) => {
+    on: vi.fn((event: string, cb: EventCallback) => {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(cb);
       return mockRes;

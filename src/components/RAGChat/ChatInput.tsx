@@ -363,26 +363,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
       {(onToggleGraphContext || onSearchModeChange || onClearChat) && (
-        <div className="mb-2 flex items-center gap-2 flex-wrap">
-          {onToggleGraphContext && (
-            <button
-              onClick={onToggleGraphContext}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                useGraphContext
-                  ? isDark
-                    ? "bg-primary-900/40 text-primary-300 ring-1 ring-primary-700"
-                    : "bg-primary-50 text-primary-600 ring-1 ring-primary-200"
-                  : isDark
-                    ? "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600"
-              }`}
-            >
-              <Network size={13} />
-              {t("aiChat.graphContext")}
-            </button>
-          )}
+        <div className="mb-3 flex items-center gap-2">
           {onSearchModeChange && (
-            <div className={`flex items-center gap-0.5 rounded-md p-0.5 ${isDark ? "bg-slate-800" : "bg-gray-100"}`}>
+            <div className={`flex items-center gap-0.5 rounded-xl p-1 ${isDark ? "bg-slate-800/80" : "bg-gray-100"}`}>
               {([
                 { value: 'semantic' as const, label: t("aiChat.searchModeSemantic") },
                 { value: 'keyword' as const, label: t("aiChat.searchModeKeyword") },
@@ -391,40 +374,61 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <button
                   key={option.value}
                   onClick={() => onSearchModeChange(option.value)}
-                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     searchMode === option.value
                       ? isDark
-                        ? "bg-primary-600 text-white"
-                        : "bg-primary-500 text-white"
+                        ? "bg-primary-600 text-white shadow-sm"
+                        : "bg-primary-500 text-white shadow-sm"
                       : isDark
-                        ? "text-slate-400 hover:text-slate-300"
-                        : "text-gray-500 hover:text-gray-700"
+                        ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-white/60"
                   }`}
+                  title={option.label}
                 >
                   {option.label}
                 </button>
               ))}
             </div>
           )}
-          {onClearChat && (
-            <button
-              onClick={onClearChat}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                isDark
-                  ? "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-400"
-                  : "bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500"
-              }`}
-              title={t("aiChat.clearConversation")}
-            >
-              <Trash2 size={13} />
-              {t("aiChat.clearConversation")}
-            </button>
-          )}
+          <div className="flex items-center gap-1.5 ml-auto">
+            {onToggleGraphContext && (
+              <button
+                onClick={onToggleGraphContext}
+                className={`p-2 rounded-lg transition-all ${
+                  useGraphContext
+                    ? isDark
+                      ? "bg-primary-900/40 text-primary-300 ring-1 ring-primary-700/50"
+                      : "bg-primary-50 text-primary-600 ring-1 ring-primary-200"
+                    : isDark
+                      ? "bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-slate-300"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600"
+                }`}
+                title={t("aiChat.graphContext")}
+              >
+                <Network size={16} />
+              </button>
+            )}
+            {onClearChat && (
+              <button
+                onClick={onClearChat}
+                className={`p-2 rounded-lg transition-all ${
+                  isDark
+                    ? "bg-slate-800/80 text-slate-400 hover:bg-red-900/30 hover:text-red-400"
+                    : "bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500"
+                }`}
+                title={t("aiChat.clearConversation")}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         </div>
       )}
       <div
-        className={`flex items-end gap-2 p-2 rounded-2xl ${
-          isDark ? "bg-slate-800" : "bg-gray-100"
+        className={`relative rounded-2xl border transition-all duration-200 ${
+          isDark
+            ? "bg-slate-800/80 border-slate-700 focus-within:border-primary-500/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
+            : "bg-white border-gray-200 focus-within:border-primary-400/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] shadow-sm"
         }`}
       >
         <textarea
@@ -437,65 +441,67 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               : t("aiChat.inputPlaceholder")
           }
           rows={3}
-          className={`flex-1 bg-transparent resize-none outline-none text-sm ${
+          className={`w-full bg-transparent resize-none outline-none focus-visible:outline-none text-sm px-4 py-3 pr-28 ${
             isDark
               ? "text-slate-200 placeholder-slate-500"
               : "text-gray-800 placeholder-gray-400"
           }`}
-          style={{ maxHeight: "120px" }}
+          style={{ maxHeight: "160px", minHeight: "80px" }}
           disabled={isLoading}
         />
-        {enableSTT && hasRecognitionSupport && (
-          <>
-            <button
-              onClick={() => setUseRealtimeEngine((prev) => !prev)}
-              className={`p-2 rounded-xl transition-all ${
-                useRealtimeEngine
-                  ? "bg-indigo-500 text-white hover:bg-indigo-600"
-                  : isDark
-                    ? "bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
-                    : "bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-700"
-              }`}
-              title={t("aiChat.realtimeStt")}
-            >
-              <Cloud size={18} />
-            </button>
-            <button
-              onClick={handleMicClick}
-              className={`p-2 rounded-xl transition-all ${
-                isMicActive
-                  ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
-                  : useRealtimeEngine
-                    ? "bg-indigo-500 text-white hover:bg-indigo-600"
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+          {enableSTT && hasRecognitionSupport && (
+            <>
+              <button
+                onClick={() => setUseRealtimeEngine((prev) => !prev)}
+                className={`p-2 rounded-lg transition-all ${
+                  useRealtimeEngine
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/25"
                     : isDark
-                      ? "bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
-                      : "bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-700"
-              }`}
-              title={isMicActive ? t("aiChat.stopRecording") : t("aiChat.startRecording")}
-            >
-              {isMicActive ? <MicOff size={18} /> : <Mic size={18} />}
-            </button>
-          </>
-        )}
-        <button
-          onClick={onSend}
-          disabled={!input.trim() || isLoading}
-          className={`p-2 rounded-xl transition-all ${
-            input.trim() && !isLoading
-              ? isTutorMode
-                ? "bg-amber-500 text-white hover:bg-amber-600"
-                : "bg-primary-600 text-white hover:bg-primary-700"
-              : isDark
-                ? "bg-slate-700 text-slate-500"
-                : "bg-gray-200 text-gray-400"
-          }`}
-        >
-          {isLoading ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : (
-            <Send size={18} />
+                      ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                }`}
+                title={t("aiChat.realtimeStt")}
+              >
+                <Cloud size={16} />
+              </button>
+              <button
+                onClick={handleMicClick}
+                className={`p-2 rounded-lg transition-all ${
+                  isMicActive
+                    ? "bg-red-500 text-white hover:bg-red-600 animate-pulse shadow-md shadow-red-500/25"
+                    : useRealtimeEngine
+                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/25"
+                      : isDark
+                        ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                }`}
+                title={isMicActive ? t("aiChat.stopRecording") : t("aiChat.startRecording")}
+              >
+                {isMicActive ? <MicOff size={16} /> : <Mic size={16} />}
+              </button>
+            </>
           )}
-        </button>
+          <button
+            onClick={onSend}
+            disabled={!input.trim() || isLoading}
+            className={`p-2 rounded-lg transition-all ${
+              input.trim() && !isLoading
+                ? isTutorMode
+                  ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/25"
+                  : "bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/25"
+                : isDark
+                  ? "bg-slate-700/60 text-slate-500 cursor-not-allowed"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            {isLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Send size={16} />
+            )}
+          </button>
+        </div>
       </div>
 
       {useRealtimeEngine &&

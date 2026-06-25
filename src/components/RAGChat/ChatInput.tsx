@@ -115,6 +115,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [isListening]);
 
+  const baseInputRef = useRef("");
+  const isRealtimeTrackingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isRealtimeTrackingRef.current) return;
+    const transcriptText = (
+      realtimeSTT.finalTranscript +
+      (realtimeSTT.interimTranscript ? " " + realtimeSTT.interimTranscript : "")
+    ).trim();
+    const separator = baseInputRef.current.trim() ? " " : "";
+    onInputChange(
+      transcriptText
+        ? baseInputRef.current + separator + transcriptText
+        : baseInputRef.current,
+    );
+  }, [
+    realtimeSTT.finalTranscript,
+    realtimeSTT.interimTranscript,
+    onInputChange,
+  ]);
+
   const isRealtimeActive = realtimeSTT.isListening || realtimeSTT.isConnecting;
   const isMicActive = useRealtimeEngine ? isRealtimeActive : isListening;
 
@@ -122,15 +143,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (useRealtimeEngine) {
       if (realtimeSTT.isListening) {
         realtimeSTT.stopListening();
-        const transcriptText = (
-          realtimeSTT.finalTranscript + realtimeSTT.interimTranscript
-        ).trim();
-        if (transcriptText) {
-          const separator = input.trim() ? " " : "";
-          onInputChange(input + separator + transcriptText);
-        }
+        isRealtimeTrackingRef.current = false;
         realtimeSTT.resetTranscript();
       } else {
+        baseInputRef.current = input;
+        isRealtimeTrackingRef.current = true;
         void realtimeSTT.startListening("zh");
       }
     } else {
@@ -144,7 +161,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     useRealtimeEngine,
     realtimeSTT,
     input,
-    onInputChange,
     isListening,
     stopListening,
     startListening,
@@ -531,8 +547,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 {t("aiChat.sttConnecting")}
               </span>
             ) : (
-              <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                {realtimeSTT.interimTranscript}
+              <span
+                className={`inline-flex items-center gap-1.5 ${
+                  isDark ? "text-slate-400" : "text-slate-500"
+                }`}
+              >
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                {t("aiChat.sttListening")}
               </span>
             )}
           </div>

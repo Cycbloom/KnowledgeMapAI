@@ -3494,6 +3494,7 @@
     "sambertTts": "Sambert 语音",
     "realtimeStt": "实时识别",
     "sttConnecting": "连接中...",
+    "sttListening": "正在聆听...",
     "browserStt": "浏览器识别",
     "cloudStt": "云端识别",
     "previewVoice": "试听",

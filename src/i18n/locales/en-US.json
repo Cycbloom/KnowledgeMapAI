@@ -3477,6 +3477,7 @@
     "sambertTts": "Sambert TTS",
     "realtimeStt": "Realtime",
     "sttConnecting": "Connecting...",
+    "sttListening": "Listening...",
     "browserStt": "Browser STT",
     "cloudStt": "Cloud STT",
     "previewVoice": "Preview",

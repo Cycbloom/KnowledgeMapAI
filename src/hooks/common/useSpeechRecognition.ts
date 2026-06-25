@@ -1,164 +1,189 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { STTEngine, STTResult } from '@shared/types';
 import { api } from '../../services/api';
 
-interface SpeechRecognitionEvent {
-  results: SpeechRecognitionResultList;
-  resultIndex: number;
-}
-
-interface SpeechRecognitionErrorEvent {
-  error: string;
-  message: string;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-  onstart: (() => void) | null;
-}
-
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
+/**
+ * 选择浏览器支持的音频 MIME 类型，优先使用压缩率与兼容性较好的格式。
+ */
+const getSupportedMimeType = (): string => {
+  if (typeof window === 'undefined' || typeof window.MediaRecorder === 'undefined') {
+    return '';
   }
-}
-
-const checkSpeechRecognitionSupport = (): boolean => {
-  if (typeof window !== 'undefined') {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    return !!SpeechRecognition;
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4',
+  ];
+  for (const type of candidates) {
+    if (window.MediaRecorder.isTypeSupported(type)) {
+      return type;
+    }
   }
-  return false;
+  return '';
 };
 
-export const useSpeechRecognition = (engine: STTEngine = 'browser', lang: string = 'zh-CN') => {
+const checkRecognitionSupport = (): boolean => {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
+  return !!navigator.mediaDevices?.getUserMedia && typeof window.MediaRecorder !== 'undefined';
+};
+
+/**
+ * 文件转写语音识别 Hook（qwen3-asr-flash）。
+ *
+ * 录音流程基于 MediaRecorder，停止录音后将音频文件上传至后端 `/api/ai/stt`
+ * 进行文件转写，转写完成后通过 `transcript` 输出文本。
+ */
+export const useSpeechRecognition = (lang: string = 'zh') => {
   const [isListening, setIsListening] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const hasRecognitionSupport = checkSpeechRecognitionSupport();
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const hasRecognitionSupport = checkRecognitionSupport();
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const langRef = useRef(lang);
   const isStartingRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = lang;
-        recognitionRef.current = recognition;
-      }
-    }
+    langRef.current = lang;
   }, [lang]);
 
-  const startListening = useCallback(() => {
-    if (!recognitionRef.current) return;
-    if (isListening || isStartingRef.current) return;
+  const cleanupMedia = useCallback(() => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
+  }, []);
 
+  const startListening = useCallback(async () => {
+    if (isListening || isTranscribing || isStartingRef.current) return;
+    if (!checkRecognitionSupport()) {
+      setError('当前环境不支持语音录制');
+      return;
+    }
+
+    isStartingRef.current = true;
     try {
-      isStartingRef.current = true;
-      setTranscript('');
       setError(null);
+      setTranscript('');
+      audioChunksRef.current = [];
 
-      const recognition = recognitionRef.current;
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+      mediaStreamRef.current = stream;
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
+      const mimeType = getSupportedMimeType();
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcriptPart = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcriptPart;
-          } else {
-            interimTranscript += transcriptPart;
-          }
+      mediaRecorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
-
-        setTranscript(prev => prev + finalTranscript + interimTranscript);
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        let message = event.error;
-        switch (event.error) {
-          case 'not-allowed':
-          case 'service-not-allowed':
-            message = '请允许麦克风权限以使用语音识别';
-            break;
-          case 'no-speech':
-            message = '未检测到语音输入';
-            break;
-          case 'network':
-            message = '网络错误，请检查网络连接';
-            break;
-          case 'aborted':
-            message = '语音识别已中止';
-            break;
-        }
-        setError(message);
-        setIsListening(false);
-        isStartingRef.current = false;
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        isStartingRef.current = false;
-      };
-
-      recognition.onstart = () => {
-        setIsListening(true);
-        isStartingRef.current = false;
-      };
-
-      recognition.start();
-    } catch (_e) {
-      setError('启动语音识别失败');
+      mediaRecorder.start();
+      setIsListening(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '启动录音失败';
+      setError(message);
+      cleanupMedia();
+    } finally {
       isStartingRef.current = false;
     }
-  }, [isListening]);
+  }, [isListening, isTranscribing, cleanupMedia]);
 
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  }, [isListening]);
+  const stopListening = useCallback(async (): Promise<void> => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || !isListening) return;
+
+    await new Promise<void>((resolve) => {
+      recorder.onstop = async () => {
+        setIsListening(false);
+        cleanupMedia();
+
+        const chunks = audioChunksRef.current;
+        const mimeType = recorder.mimeType || 'audio/webm';
+        audioChunksRef.current = [];
+
+        if (chunks.length === 0) {
+          resolve();
+          return;
+        }
+
+        const audioBlob = new Blob(chunks, { type: mimeType });
+        if (audioBlob.size === 0) {
+          resolve();
+          return;
+        }
+
+        const ext = mimeType.includes('webm')
+          ? 'webm'
+          : mimeType.includes('ogg')
+            ? 'ogg'
+            : mimeType.includes('mp4')
+              ? 'mp4'
+              : 'wav';
+        const file = new File(
+          [audioBlob],
+          `recording-${Date.now()}.${ext}`,
+          { type: mimeType },
+        );
+
+        setIsTranscribing(true);
+        try {
+          const result = await api.stt.transcribe(file, {
+            language: langRef.current,
+          });
+          setTranscript(result.text);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : '语音转文字失败';
+          setError(message);
+        } finally {
+          setIsTranscribing(false);
+          resolve();
+        }
+      };
+
+      try {
+        recorder.stop();
+      } catch {
+        setIsListening(false);
+        cleanupMedia();
+        resolve();
+      }
+    });
+  }, [isListening, cleanupMedia]);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
   }, []);
 
-  const transcribeFile = useCallback(async (file: File, options?: { language?: string }): Promise<STTResult> => {
-    try {
-      const result = await api.stt.transcribe(file, { language: options?.language || lang });
-      setTranscript(result.text);
-      return result;
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : '语音转文字失败';
-      setError(message);
-      throw err;
-    }
-  }, [lang]);
+  useEffect(() => {
+    return () => {
+      cleanupMedia();
+    };
+  }, [cleanupMedia]);
 
   return {
     isListening,
+    isTranscribing,
     transcript,
     error,
     startListening,
     stopListening,
     resetTranscript,
     hasRecognitionSupport,
-    transcribeFile,
-    lang,
-    engine,
   };
 };

@@ -82,7 +82,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const {
     isListening,
+    isTranscribing,
     transcript,
+    error: sttError,
     startListening,
     stopListening,
     resetTranscript,
@@ -137,6 +139,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   ]);
 
   const isRealtimeActive = realtimeSTT.isListening || realtimeSTT.isConnecting;
+  const isFileTranscribing = !useRealtimeEngine && isTranscribing;
   const isMicActive = useRealtimeEngine ? isRealtimeActive : isListening;
 
   const handleMicClick = useCallback(() => {
@@ -152,9 +155,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       }
     } else {
       if (isListening) {
-        stopListening();
-      } else {
-        startListening();
+        void stopListening();
+      } else if (!isTranscribing) {
+        void startListening();
       }
     }
   }, [
@@ -162,6 +165,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     realtimeSTT,
     input,
     isListening,
+    isTranscribing,
     stopListening,
     startListening,
   ]);
@@ -494,22 +498,33 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </button>
               <button
                 onClick={handleMicClick}
+                disabled={isFileTranscribing}
                 className={`p-2 rounded-lg transition-all ${
                   isMicActive
                     ? "bg-red-500 text-white hover:bg-red-600 animate-pulse shadow-md shadow-red-500/25"
-                    : useRealtimeEngine
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/25"
-                      : isDark
-                        ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                    : isFileTranscribing
+                      ? "bg-indigo-500 text-white shadow-md shadow-indigo-500/25"
+                      : useRealtimeEngine
+                        ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/25"
+                        : isDark
+                          ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
                 }`}
                 title={
-                  isMicActive
-                    ? t("aiChat.stopRecording")
-                    : t("aiChat.startRecording")
+                  isFileTranscribing
+                    ? t("aiChat.sttTranscribing")
+                    : isMicActive
+                      ? t("aiChat.stopRecording")
+                      : t("aiChat.startRecording")
                 }
               >
-                {isMicActive ? <MicOff size={16} /> : <Mic size={16} />}
+                {isFileTranscribing ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : isMicActive ? (
+                  <MicOff size={16} />
+                ) : (
+                  <Mic size={16} />
+                )}
               </button>
             </>
           )}
@@ -558,6 +573,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             )}
           </div>
         )}
+
+      {!useRealtimeEngine && (isFileTranscribing || sttError) && (
+        <div className="mt-1.5 px-2 text-xs">
+          {sttError ? (
+            <span className="text-red-500">{sttError}</span>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1.5 ${
+                isDark ? "text-slate-400" : "text-slate-500"
+              }`}
+            >
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              {t("aiChat.sttTranscribing")}
+            </span>
+          )}
+        </div>
+      )}
 
       {isTutorMode && (
         <div className="flex gap-2 mt-3">

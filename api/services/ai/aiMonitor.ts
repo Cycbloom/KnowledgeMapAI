@@ -6,12 +6,7 @@ export interface AIMonitoringOptions {
   operation: string;
   provider: AIProviderType;
   model: string;
-  metadata?: {
-    graphId?: string;
-    nodeId?: string;
-    userId?: string;
-    batchCount?: number;
-  };
+  metadata?: Record<string, unknown>;
   sessionId?: string;
 }
 
@@ -36,9 +31,10 @@ interface MonitoringResult<T> {
 /**
  * 统一的AI性能监控装饰器
  *
- * 此函数是所有 AI 调用监控的唯一规范入口，
- * performanceMonitor.withAutoGraphTracking 应委托至此，
- * 避免维护两套计时/token/成本计算逻辑导致行为漂移。
+ * 此函数是所有 AI 调用监控的唯一规范入口。
+ * 路由层禁止直接调用 performanceMonitor.recordLog，必须通过本函数包装；
+ * 也不得引入并行的监控装饰器（如已删除的 withAIPerformanceTracking /
+ * withAutoGraphTracking），避免维护多套计时/token/成本计算逻辑导致行为漂移。
  *
  * 用于包装所有AI Provider API调用，自动记录：
  * - 输入/输出Token（含缓存命中详情）

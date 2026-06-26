@@ -1,11 +1,9 @@
 import type {
-  AIProviderType,
   AIPerformanceLog,
   AIPerformanceStats,
   GetPerformanceLogsQuery,
 } from "@shared/types";
 import { pricingService } from "./pricingService";
-import { withAIMonitoring } from "./aiMonitor";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
 
@@ -448,52 +446,6 @@ class PerformanceMonitor {
     return count;
   }
 
-  async withAutoGraphTracking<T>(
-    operation: string,
-    providerType: AIProviderType,
-    model: string,
-    fn: () => Promise<{
-      result: T;
-      usage?: {
-        prompt_tokens?: number;
-        completion_tokens?: number;
-        prompt_tokens_details?: {
-          cached_tokens?: number;
-          audio_tokens?: number;
-        };
-        completion_tokens_details?: {
-          reasoning_tokens?: number;
-          audio_tokens?: number;
-        };
-      };
-    }>,
-    metadata?: {
-      graphId?: string;
-      graphTitle?: string;
-      userId?: string;
-      userName?: string;
-      topic?: string;
-      nodeTitle?: string;
-      nodeId?: string;
-      nodeLevel?: string;
-      style?: string;
-    },
-    sessionId?: string,
-  ): Promise<T> {
-    return withAIMonitoring(
-      { operation, provider: providerType, model, metadata, sessionId },
-      fn as () => Promise<{
-        result: T;
-        usage?: {
-          prompt_tokens?: number;
-          completion_tokens?: number;
-          prompt_tokens_details?: { cached_tokens?: number };
-          completion_tokens_details?: { reasoning_tokens?: number };
-        };
-      }>,
-    );
-  }
-
   async getDatabaseStats(): Promise<{
     totalRecords: number;
     oldestRecord: string | null;
@@ -551,6 +503,7 @@ class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 
 export interface EnrichedMetadata {
+  [key: string]: unknown;
   graphId?: string;
   graphTitle?: string;
   graphDescription?: string;

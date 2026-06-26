@@ -64,36 +64,50 @@ export function registerDbIpcHandlers(dbManager: DatabaseManager): void {
     }
   });
 
-  // db:batch - Multiple operations in a transaction
+  // db:batch - Multiple operations wrapped in a SQLite transaction for atomicity.
+  // If any operation throws, the entire transaction is rolled back.
   ipcMain.handle('db:batch', async (_event, request: IpcDbBatchRequest): Promise<IpcDbResponse> => {
     try {
       if (!dbManager.isReady()) {
         return { success: false, error: 'Database not initialized' };
       }
 
-      const results: unknown[] = [];
-      // Execute each operation
-      for (const op of request.operations) {
-        const { resource, method, params } = op;
-        let result: unknown;
+      const executeOperations = (): unknown[] => {
+        const results: unknown[] = [];
+        // Execute each operation
+        for (const op of request.operations) {
+          const { resource, method, params } = op;
+          let result: unknown;
 
-        switch (method) {
-          case 'create':
-            result = dbManager.create(resource, params.data as Record<string, unknown>);
-            break;
-          case 'update':
-            result = dbManager.update(resource, params.id as string, params.data as Record<string, unknown>);
-            break;
-          case 'delete':
-            result = dbManager.delete(resource, params.id as string);
-            break;
-          case 'softDelete':
-            result = dbManager.softDelete(resource, params.id as string);
-            break;
-          default:
-            result = { error: `Unknown method: ${method}` };
+          switch (method) {
+            case 'create':
+              result = dbManager.create(resource, params.data as Record<string, unknown>);
+              break;
+            case 'update':
+              result = dbManager.update(resource, params.id as string, params.data as Record<string, unknown>);
+              break;
+            case 'delete':
+              result = dbManager.delete(resource, params.id as string);
+              break;
+            case 'softDelete':
+              result = dbManager.softDelete(resource, params.id as string);
+              break;
+            default:
+              result = { error: `Unknown method: ${method}` };
+          }
+          results.push(result);
         }
-        results.push(result);
+        return results;
+      };
+
+      // Wrap operations in a transaction for atomicity.
+      // Fallback to sequential execution if transaction method is unavailable.
+      let results: unknown[];
+      if (typeof dbManager.transaction === 'function') {
+        results = dbManager.transaction(executeOperations);
+      } else {
+        console.warn('[db:batch] dbManager.transaction unavailable, falling back to non-transactional execution');
+        results = executeOperations();
       }
 
       return { success: true, data: results };

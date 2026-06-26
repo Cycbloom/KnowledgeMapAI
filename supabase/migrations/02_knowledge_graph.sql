@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   is_favorite BOOLEAN DEFAULT false,
   podcast_script TEXT,
   parent_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
+  is_branch BOOLEAN DEFAULT false,
   last_used_at TIMESTAMPTZ DEFAULT NOW(),
   embedding vector(1024),
   deleted_at TIMESTAMPTZ DEFAULT NULL,
@@ -34,6 +35,7 @@ COMMENT ON COLUMN knowledge_graphs.is_public IS '是否公开，公开图谱对�
 COMMENT ON COLUMN knowledge_graphs.is_favorite IS '是否收藏';
 COMMENT ON COLUMN knowledge_graphs.podcast_script IS '播客脚本内容';
 COMMENT ON COLUMN knowledge_graphs.parent_graph_id IS '父图谱ID，用于子图谱关系';
+COMMENT ON COLUMN knowledge_graphs.is_branch IS '是否为分支图谱';
 COMMENT ON COLUMN knowledge_graphs.last_used_at IS '最后使用时间，用于排序';
 COMMENT ON COLUMN knowledge_graphs.embedding IS '图谱嵌入向量，用于语义搜索';
 COMMENT ON COLUMN knowledge_graphs.deleted_at IS '软删除时间，非null表示已删除';

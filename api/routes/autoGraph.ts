@@ -5,7 +5,8 @@ import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import type { AIProviderType } from "@shared/types";
 import { getAIProviderForTask } from "../services/ai";
-import { promptService, performanceMonitor } from "../services/ai";
+import { promptService } from "../services/ai";
+import { withAIMonitoring } from "../services/ai/aiMonitor";
 import { cacheService, CacheKeys } from "../services/common";
 import { logger } from "../utils/logger";
 import {
@@ -375,10 +376,13 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
 
 请优化这个规则，使其更适合生成知识图谱节点。`;
 
-      const completion = await performanceMonitor.withAutoGraphTracking(
-        "auto_graph_optimize_prompt",
-        provider.providerType,
-        provider.model,
+      const completion = await withAIMonitoring(
+        {
+          operation: "auto_graph_optimize_prompt",
+          provider: provider.providerType,
+          model: provider.model,
+          metadata: { userId: req.user.id },
+        },
         async () => {
           const result = await provider.client.chat.completions.create({
             messages: [
@@ -396,7 +400,6 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
               | undefined,
           };
         },
-        { userId: req.user.id },
       );
 
       const content = completion.choices[0].message.content;

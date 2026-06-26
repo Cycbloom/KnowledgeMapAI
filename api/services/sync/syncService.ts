@@ -35,7 +35,7 @@ const SYNC_TABLES: Record<string, SyncTableConfig> = {
   study_cards: {
     userColumn: "user_id",
     hasDeletedAt: false,
-    updatedAtColumn: "created_at",
+    updatedAtColumn: "updated_at",
   },
   user_tasks: {
     userColumn: "user_id",

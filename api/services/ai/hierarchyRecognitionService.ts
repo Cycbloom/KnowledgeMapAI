@@ -3,7 +3,8 @@ import type { AIProviderType } from "@shared/types";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse, withAIPerformanceTracking } from "./utils";
+import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import {
   withTimeoutAndRetry,
   LONG_TIMEOUT,
@@ -56,7 +57,7 @@ export class HierarchyRecognitionService {
     try {
       const model = options?.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "analyzeHierarchy",
           provider: provider.providerType,

@@ -143,3 +143,9 @@ CREATE TRIGGER quiz_sets_updated_at
 CREATE TRIGGER quiz_set_cards_updated_at
   BEFORE UPDATE ON quiz_set_cards
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- study_cards: keep updated_at in sync on review (fsrs_*/last_reviewed/next_review changes)
+DROP TRIGGER IF EXISTS study_cards_updated_at ON study_cards;
+CREATE TRIGGER study_cards_updated_at
+  BEFORE UPDATE ON study_cards
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

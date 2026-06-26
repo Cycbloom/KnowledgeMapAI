@@ -3,7 +3,8 @@ import { getAIProviderForTask } from "./factory";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse, withAIPerformanceTracking } from "./utils";
+import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import {
   withTimeoutAndRetry,
   TimeoutError,
@@ -152,7 +153,7 @@ export class LiteratureMetadataService {
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "extractMetadata",
           provider: provider.providerType,
@@ -258,7 +259,7 @@ export class LiteratureMetadataService {
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "detectLiteratureType",
           provider: provider.providerType,

@@ -673,53 +673,66 @@ export class BackupService {
     }
 
     if (data.nodes && data.nodes.length > 0) {
-      for (const n of data.nodes) {
-        const graphId = oldToNewGraphIds.get(n.graph_id);
-        if (!graphId) continue;
+      const nodesWithGraph = data.nodes
+        .map((n) => {
+          const graphId = oldToNewGraphIds.get(n.graph_id);
+          if (!graphId) return null;
+          return { node: n, graphId };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
 
-        const { data: kp, error: kpError } = await supabase
+      if (nodesWithGraph.length > 0) {
+        const knowledgePointsToInsert = nodesWithGraph.map(({ node: n }) => ({
+          title: n.title,
+          content: n.content || '',
+          summary: n.summary || null,
+          learning_material: n.learning_material || null,
+          keywords: n.keywords || [],
+          aliases: n.aliases || [],
+          properties: n.properties || {},
+          visibility: 'private',
+          owner_id: userId,
+          mastery_level: n.mastery_level || 0,
+          last_study_at: n.last_study_at || null,
+          total_study_duration: n.total_study_duration || 0,
+        }));
+
+        const { data: insertedKps, error: kpError } = await supabase
           .from('knowledge_points')
-          .insert({
-            title: n.title,
-            content: n.content || '',
-            summary: n.summary || null,
-            learning_material: n.learning_material || null,
-            keywords: n.keywords || [],
-            aliases: n.aliases || [],
-            properties: n.properties || {},
-            visibility: 'private',
-            owner_id: userId,
-            mastery_level: n.mastery_level || 0,
-            last_study_at: n.last_study_at || null,
-            total_study_duration: n.total_study_duration || 0,
-          })
-          .select('id')
-          .single();
+          .insert(knowledgePointsToInsert)
+          .select('id');
 
         if (kpError) {
-          logger.warn('Failed to restore knowledge point:', kpError);
-          continue;
-        }
-
-        const { error: gnError } = await supabase
-          .from('graph_nodes')
-          .insert({
-            graph_id: graphId,
-            knowledge_point_id: kp.id,
-            x_position: n.x_position || 0,
-            y_position: n.y_position || 0,
-            level: n.level || 'normal',
-            is_accepted: n.is_accepted !== undefined ? n.is_accepted : true,
+          logger.warn('Failed to restore knowledge points:', kpError);
+        } else {
+          const insertedKpsList = insertedKps ?? [];
+          const graphNodesToInsert = insertedKpsList.map((kp, i) => {
+            const { node: n, graphId } = nodesWithGraph[i];
+            return {
+              graph_id: graphId,
+              knowledge_point_id: kp.id,
+              x_position: n.x_position || 0,
+              y_position: n.y_position || 0,
+              level: n.level || 'normal',
+              is_accepted: n.is_accepted !== undefined ? n.is_accepted : true,
+            };
           });
 
-        if (gnError) {
-          logger.warn('Failed to restore graph node:', gnError);
-          await supabase.from('knowledge_points').delete().eq('id', kp.id);
-          continue;
-        }
+          if (graphNodesToInsert.length > 0) {
+            const { error: gnError } = await supabase
+              .from('graph_nodes')
+              .insert(graphNodesToInsert);
 
-        oldToNewKnowledgePointIds.set(n.id, kp.id);
-        stats.nodes++;
+            if (gnError) {
+              logger.warn('Failed to restore graph nodes:', gnError);
+            } else {
+              insertedKpsList.forEach((kp, i) => {
+                oldToNewKnowledgePointIds.set(nodesWithGraph[i].node.id, kp.id);
+              });
+              stats.nodes = graphNodesToInsert.length;
+            }
+          }
+        }
       }
     }
 

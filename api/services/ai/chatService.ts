@@ -1,11 +1,11 @@
+import type { Response } from "express";
 import { getAIProviderForTask, getAIProvider } from "./factory";
-import type { AIProviderType } from "@shared/types";
+import type { AIProviderType, AIProvider } from "@shared/types";
+import type { AuthRequest } from "../../middleware/auth";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import {
-  withAIPerformanceTracking,
-} from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import {
   getMockResponse,
 } from "./mock";
@@ -21,6 +21,14 @@ import {
   dedupedRequest,
   generateRequestKey,
 } from "./aiUtils";
+import { graphService } from "../graph";
+import { aiService } from "./aiService";
+import { enrichMetadata } from "./performanceMonitor";
+import {
+  sendStreamChunk,
+  sendStreamDone,
+  sendStreamError,
+} from "../../routes/ai/utils";
 
 export class ChatService {
   async chat(
@@ -54,7 +62,7 @@ export class ChatService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withAIPerformanceTracking(
+        return withAIMonitoring(
           {
             operation: options.operation || "chat",
             provider: provider.providerType,
@@ -132,7 +140,7 @@ export class ChatService {
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "tutorChat",
           provider: provider.providerType,
@@ -205,6 +213,292 @@ export class ChatService {
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
         message: err.message || "AI tutor chat failed",
       });
+    }
+  }
+
+  // === 流式聊天 ===
+
+  private streamMockResponse(res: Response, content: string): void {
+    const chunks = content.split("");
+    const sendMockChunks = async () => {
+      for (const chunk of chunks) {
+        sendStreamChunk(res, chunk);
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+      sendStreamDone(res);
+    };
+    sendMockChunks();
+  }
+
+  private async streamChatCompletion(
+    res: Response,
+    provider: AIProvider,
+    messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+    model: string,
+    options: {
+      operation: string;
+      metadata: Record<string, unknown>;
+      sessionId: string;
+    },
+  ): Promise<void> {
+    await withAIMonitoring(
+      {
+        operation: options.operation,
+        provider: provider.providerType,
+        model,
+        metadata: options.metadata,
+        sessionId: options.sessionId,
+      },
+      async () => {
+        const stream = await withTimeoutAndRetry(
+          () =>
+            provider.client.chat.completions.create({
+              messages,
+              model,
+              stream: true,
+              stream_options: { include_usage: true },
+            }),
+          {
+            timeout: DEFAULT_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `${options.operation} stream retry attempt ${attempt}: ${error.message}`,
+              );
+            },
+          },
+        );
+
+        let inputTokens = 0;
+        let outputTokens = 0;
+        let cachedInputTokens = 0;
+
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          if (content) {
+            sendStreamChunk(res, content);
+          }
+          if (chunk.usage) {
+            inputTokens = chunk.usage.prompt_tokens || 0;
+            outputTokens = chunk.usage.completion_tokens || 0;
+            cachedInputTokens =
+              chunk.usage.prompt_tokens_details?.cached_tokens || 0;
+          }
+        }
+
+        return {
+          result: undefined,
+          usage: {
+            prompt_tokens: inputTokens,
+            completion_tokens: outputTokens,
+            prompt_tokens_details: { cached_tokens: cachedInputTokens },
+          },
+        };
+      },
+    );
+  }
+
+  async chatStream(
+    req: AuthRequest,
+    res: Response,
+    options: {
+      message: string;
+      graphId: string;
+      contextNodeIds?: string[];
+      history?: Array<{ role: string; content: string }>;
+      provider?: AIProviderType;
+      model?: string;
+      language?: string;
+      sessionId: string;
+    },
+  ): Promise<void> {
+    try {
+      const provider = options.provider
+        ? await getAIProvider(options.provider)
+        : await getAIProviderForTask("text");
+
+      if (!provider.hasKey) {
+        const mockContent = getMockResponse(
+          "chat",
+          options.message,
+        ) as string;
+        this.streamMockResponse(res, mockContent);
+        return;
+      }
+
+      const supabase = req.supabase;
+      if (!supabase) {
+        sendStreamError(res, "未授权", ErrorCodes.AUTH_UNAUTHORIZED);
+        return;
+      }
+
+      const { nodes, edges } = await graphService.getGraphNodes(
+        supabase,
+        req.user.id,
+        options.graphId,
+      );
+
+      const contextText = aiService.buildGraphContext(nodes, edges, {
+        contextNodeIds: options.contextNodeIds,
+        graphId: options.graphId,
+      });
+
+      const systemPrompt = await promptService.getRenderedPrompt(
+        getSupabaseAdmin(),
+        "chat",
+        { contextText },
+        req.user.id,
+        options.graphId,
+        options.language,
+      );
+
+      const messages: Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }> = [
+        { role: "system", content: systemPrompt },
+        ...(options.history ?? []).map((msg) => ({
+          role: msg.role as "user" | "assistant" | "system",
+          content: msg.content,
+        })),
+        { role: "user", content: options.message },
+      ];
+
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
+        graphId: options.graphId,
+        userId: req.user.id,
+        topic: options.message.slice(0, 50),
+      });
+
+      const model = options.model || provider.model;
+
+      await this.streamChatCompletion(res, provider, messages, model, {
+        operation: "chat",
+        metadata: enrichedMetadata,
+        sessionId: options.sessionId,
+      });
+      sendStreamDone(res);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("AI Chat Error:", error);
+      sendStreamError(
+        res,
+        err.message || "AI 对话失败",
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
+    }
+  }
+
+  async tutorChatStream(
+    req: AuthRequest,
+    res: Response,
+    options: {
+      message: string;
+      graphId?: string;
+      contextNodeIds?: string[];
+      history?: Array<{ role: string; content: string }>;
+      mode?: "free" | "guided";
+      provider?: AIProviderType;
+      model?: string;
+      sessionId: string;
+    },
+  ): Promise<void> {
+    try {
+      const provider = options.provider
+        ? await getAIProvider(options.provider)
+        : await getAIProviderForTask("text");
+
+      if (!provider.hasKey) {
+        const mockContent = await aiService.tutorChat(
+          [{ role: "user", content: options.message }],
+          { mode: options.mode },
+          { provider: options.provider, model: options.model },
+        );
+        this.streamMockResponse(res, mockContent);
+        return;
+      }
+
+      let context: {
+        mode: string;
+        graphId?: string;
+        existingNodes?: string[];
+        currentNodeId?: string;
+        currentNodeTitle?: string;
+        currentNodeContent?: string;
+      } = { mode: options.mode ?? "free" };
+
+      if (options.graphId) {
+        const supabase = req.supabase;
+        if (!supabase) {
+          sendStreamError(res, "未授权", ErrorCodes.AUTH_UNAUTHORIZED);
+          return;
+        }
+        const { nodes } = await graphService.getGraphNodes(
+          supabase,
+          req.user.id,
+          options.graphId,
+        );
+        context = aiService.buildTutorContext(
+          nodes,
+          options.contextNodeIds?.[0],
+          options.mode ?? "free",
+          options.graphId,
+        );
+      }
+
+      const messages: Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }> = [
+        ...(options.history ?? []).map((msg) => ({
+          role: msg.role as "user" | "assistant" | "system",
+          content: msg.content,
+        })),
+        { role: "user", content: options.message },
+      ];
+
+      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
+        graphId: options.graphId,
+        userId: req.user.id,
+        topic: options.message.slice(0, 50),
+        style: options.mode,
+      });
+
+      const systemPrompt = await promptService.getRenderedPrompt(
+        getSupabaseAdmin(),
+        "tutor_chat",
+        {
+          isGuided: options.mode === "guided",
+          currentNodeId: context.currentNodeId,
+          currentNodeTitle: context.currentNodeTitle,
+          currentNodeContent: context.currentNodeContent,
+          existingNodes: context.existingNodes
+            ? context.existingNodes.slice(0, 20).join(", ")
+            : undefined,
+        },
+      );
+
+      const fullMessages: Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }> = [{ role: "system", content: systemPrompt }, ...messages];
+
+      const model = options.model || provider.model;
+
+      await this.streamChatCompletion(res, provider, fullMessages, model, {
+        operation: "tutor_chat",
+        metadata: enrichedMetadata,
+        sessionId: options.sessionId,
+      });
+      sendStreamDone(res);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("AI Tutor Chat Error:", error);
+      sendStreamError(
+        res,
+        err.message || "AI 助教对话失败",
+        ErrorCodes.SYSTEM_INTERNAL_ERROR,
+      );
     }
   }
 }

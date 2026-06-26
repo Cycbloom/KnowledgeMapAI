@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS study_cards (
   fsrs_last_review TIMESTAMPTZ,
   last_rating INTEGER CHECK (last_rating BETWEEN 1 AND 4),
   quiz_set_id UUID REFERENCES quiz_sets(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE study_cards IS '学习卡片表，支持 FSRS 间隔重复算法';

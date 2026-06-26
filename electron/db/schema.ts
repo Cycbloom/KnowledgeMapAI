@@ -641,6 +641,7 @@ const studyCardsTable: TableDef = {
     timestampColumn('fsrs_last_review'),
     fkColumn('quiz_set_id'),
     timestampColumn('created_at', false),
+    timestampColumn('updated_at', false),
     syncStatusColumn(),
     localUpdatedAtColumn(),
   ],
@@ -654,7 +655,7 @@ const studyCardsTable: TableDef = {
   ],
   syncEnabled: true,
   userColumn: 'user_id',
-  hasUpdatedAt: false,
+  hasUpdatedAt: true,
 };
 
 const quizSetCardsTable: TableDef = {

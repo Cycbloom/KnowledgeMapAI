@@ -3,10 +3,8 @@ import type { AIProviderType } from "@shared/types";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import {
-  parseAIResponse,
-  withAIPerformanceTracking,
-} from "./utils";
+import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import {
   getMockConcepts,
   getMockImageGraph,
@@ -73,7 +71,7 @@ export class AnalysisService {
           {},
         )) || IMAGE_TO_GRAPH_SYSTEM_PROMPT;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "generateGraphFromImage",
           provider: provider.providerType,
@@ -150,7 +148,7 @@ export class AnalysisService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withAIPerformanceTracking(
+        return withAIMonitoring(
           {
             operation: "extractConcepts",
             provider: provider.providerType,
@@ -282,7 +280,7 @@ Please respond in Chinese.`,
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "analyzeCrossGraphConnections",
           provider: provider.providerType,

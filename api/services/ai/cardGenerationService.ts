@@ -3,10 +3,8 @@ import type { AIProviderType } from "@shared/types";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import {
-  parseAIResponse,
-  withAIPerformanceTracking,
-} from "./utils";
+import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import { getMockCards } from "./mock";
 import {
   withTimeoutAndRetry,
@@ -110,7 +108,7 @@ class CardGenerationService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withAIPerformanceTracking(
+        return withAIMonitoring(
           {
             operation: "generateCards",
             provider: provider.providerType,

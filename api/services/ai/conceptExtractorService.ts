@@ -3,7 +3,8 @@ import type { AIProviderType } from "@shared/types";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import { parseAIResponse, withAIPerformanceTracking } from "./utils";
+import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import {
   withTimeoutAndRetry,
   TimeoutError,
@@ -327,7 +328,7 @@ export class ConceptExtractorService {
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "extractConcepts",
           provider: provider.providerType,
@@ -476,7 +477,7 @@ export class ConceptExtractorService {
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "classifyConcept",
           provider: provider.providerType,
@@ -587,7 +588,7 @@ ${typeDescriptions}
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "locateBackboneModule",
           provider: provider.providerType,

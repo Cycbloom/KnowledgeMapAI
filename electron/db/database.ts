@@ -95,6 +95,16 @@ export class DatabaseManager {
     return this.db;
   }
 
+  // Execute a function within a database transaction (atomic).
+  // If the function throws, the transaction is rolled back automatically.
+  // Returns whatever the function returns.
+  transaction<T>(fn: () => T): T {
+    this.ensureReady();
+    const db = this.getDb();
+    const transactionFn = db.transaction(fn);
+    return transactionFn();
+  }
+
   // ============ Generic CRUD Methods ============
 
   // Find all records with optional filters

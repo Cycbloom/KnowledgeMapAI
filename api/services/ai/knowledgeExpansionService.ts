@@ -4,10 +4,8 @@ import { promptService } from "./promptService";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
-import {
-  parseAIResponse,
-  withAIPerformanceTracking,
-} from "./utils";
+import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import {
   getMockResponse,
   getMockBranchSuggestions,
@@ -74,7 +72,7 @@ export class KnowledgeExpansionService {
     try {
       const model = options.model || provider.model;
 
-      return withAIPerformanceTracking(
+      return withAIMonitoring(
         {
           operation: "expandKnowledge",
           provider: provider.providerType,
@@ -227,7 +225,7 @@ export class KnowledgeExpansionService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withAIPerformanceTracking(
+        return withAIMonitoring(
           {
             operation: "getBranchSuggestions",
             provider: provider.providerType,
@@ -347,7 +345,7 @@ export class KnowledgeExpansionService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withAIPerformanceTracking(
+        return withAIMonitoring(
           {
             operation: "suggestNextTopic",
             provider: provider.providerType,

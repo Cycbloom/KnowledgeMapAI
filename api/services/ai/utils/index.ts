@@ -1,7 +1,6 @@
 import { logger } from "../../../utils/logger";
 
 export { extractTokenUsage } from "./tokenUtils";
-export { withAIPerformanceTracking } from "./performanceTracker";
 
 export const cleanJsonString = (str: string): string => {
   let cleaned = str.trim();

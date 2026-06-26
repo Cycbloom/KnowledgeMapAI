@@ -6,7 +6,8 @@ import {
   dedupedRequest,
   generateRequestKey,
 } from "./aiUtils";
-import { parseAIResponse, withAIPerformanceTracking } from "./utils";
+import { parseAIResponse } from "./utils";
+import { withAIMonitoring } from "./aiMonitor";
 import { withTimeoutAndRetry, TimeoutError, RetryError, DEFAULT_TIMEOUT, LONG_TIMEOUT } from "../../utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -194,7 +195,7 @@ export class ContentGenerationService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withAIPerformanceTracking(
+        return withAIMonitoring(
           {
             operation: "generateLearningMaterial",
             provider: provider.providerType,
@@ -322,7 +323,7 @@ export class ContentGenerationService {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
 
-        return withAIPerformanceTracking(
+        return withAIMonitoring(
           {
             operation: "generateTaskDetails",
             provider: provider.providerType,

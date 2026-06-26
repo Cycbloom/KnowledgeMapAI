@@ -41,11 +41,11 @@ COMMENT ON COLUMN graph_events.snapshot_id IS '关联的快照ID，用于标记�
 
 ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS branch_name VARCHAR(255);
 ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS branch_source_snapshot_id UUID REFERENCES graph_snapshots(id) ON DELETE SET NULL;
-ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS is_branch BOOLEAN DEFAULT false;
+
 
 COMMENT ON COLUMN knowledge_graphs.branch_name IS '分支名称，仅当 is_branch=true 时有值';
 COMMENT ON COLUMN knowledge_graphs.branch_source_snapshot_id IS '分支来源快照ID，记录分支创建时的快照';
-COMMENT ON COLUMN knowledge_graphs.is_branch IS '是否为分支图谱';
+
 
 CREATE INDEX IF NOT EXISTS idx_graph_events_graph_created ON graph_events(graph_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_graph_events_event_type ON graph_events(event_type);

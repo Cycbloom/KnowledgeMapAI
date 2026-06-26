@@ -13,7 +13,8 @@ import { cacheService, CacheKeys } from "../common/cacheService";
 import type { NodeLevel } from "../../../shared/types/graph";
 import type { AIProviderType } from "../../../shared/types";
 import { promptService } from "../ai/promptService";
-import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
+import { enrichMetadata } from "../ai/performanceMonitor";
+import { withAIMonitoring } from "../ai/aiMonitor";
 import { getAIProvider, getAIProviderForTask } from "../ai/factory";
 import { autoGraphRouteService } from "./autoGraphRouteService";
 import { scrapeUrl } from "../../utils/scraper";
@@ -1363,10 +1364,19 @@ export class AutoGraphService {
       );
     }
 
-    const completion = await performanceMonitor.withAutoGraphTracking(
-      "auto_graph_init",
-      provider.providerType,
-      model || provider.model,
+    const completion = await withAIMonitoring(
+      {
+        operation: "auto_graph_init",
+        provider: provider.providerType,
+        model: model || provider.model,
+        metadata: await enrichMetadata(supabase, {
+          graphId,
+          userId,
+          topic,
+          style,
+        }),
+        sessionId,
+      },
       async () => {
         const result = await provider.client.chat.completions.create({
           messages: [
@@ -1385,13 +1395,6 @@ export class AutoGraphService {
           usage: result.usage,
         };
       },
-      await enrichMetadata(supabase, {
-        graphId,
-        userId,
-        topic,
-        style,
-      }),
-      sessionId,
     );
 
     const content = completion.choices[0].message.content;
@@ -1495,10 +1498,20 @@ export class AutoGraphService {
       );
     }
 
-    const completion = await performanceMonitor.withAutoGraphTracking(
-      "auto_graph_expand",
-      provider.providerType,
-      model || provider.model,
+    const completion = await withAIMonitoring(
+      {
+        operation: "auto_graph_expand",
+        provider: provider.providerType,
+        model: model || provider.model,
+        metadata: await enrichMetadata(supabase, {
+          graphId,
+          userId,
+          nodeTitle,
+          nodeId,
+          nodeLevel,
+        }),
+        sessionId,
+      },
       async () => {
         const result = await provider.client.chat.completions.create({
           messages: [
@@ -1517,14 +1530,6 @@ export class AutoGraphService {
           usage: result.usage,
         };
       },
-      await enrichMetadata(supabase, {
-        graphId,
-        userId,
-        nodeTitle,
-        nodeId,
-        nodeLevel,
-      }),
-      sessionId,
     );
 
     const content = completion.choices[0].message.content;
@@ -1651,10 +1656,13 @@ export class AutoGraphService {
       graphId,
     );
 
-    const completion = await performanceMonitor.withAutoGraphTracking(
-      "apply_template",
-      provider.providerType,
-      model || provider.model,
+    const completion = await withAIMonitoring(
+      {
+        operation: "apply_template",
+        provider: provider.providerType,
+        model: model || provider.model,
+        metadata: { graphId, userId },
+      },
       async () => {
         const result = await provider.client.chat.completions.create({
           messages: [
@@ -1694,7 +1702,6 @@ export class AutoGraphService {
             | undefined,
         };
       },
-      { graphId, userId },
     );
 
     const content = completion.choices[0].message.content;

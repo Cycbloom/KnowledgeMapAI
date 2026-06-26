@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { appEventBus } from "../core/eventBus";
 import type { ReviewCompletedPayload } from "../../../shared/types/scheduler";
 import { semanticInterferenceService } from "./semanticInterferenceService";
+import { applyTopologyPriority } from "./topologyScheduler";
 
 /**
  * Spaced Repetition Bridge - FSRS-only review queue and processing.
@@ -66,7 +67,8 @@ class SpacedRepetitionBridge {
         result.push(...spacedItems as UnifiedReviewItem[]);
       }
 
-      return result;
+      const topologyResult = await applyTopologyPriority(result, supabase, userId);
+      return topologyResult;
     } catch (error) {
       logger.warn("[SRBridge] Semantic sorting failed, falling back to default sort:", error);
       return items;

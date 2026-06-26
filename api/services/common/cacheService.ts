@@ -6,6 +6,8 @@ const localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 logger.info('📦 In-Memory Cache initialized');
 
+const accessOrder = new Map<string, number>();
+
 const tagIndex = new Map<string, Set<string>>();
 const keyTags = new Map<string, Set<string>>();
 
@@ -76,6 +78,7 @@ export const cacheService = {
   get: async <T>(key: string): Promise<T | undefined> => {
     const value = localCache.get<T>(key);
     if (value !== undefined) {
+      accessOrder.set(key, Date.now());
       logger.debug(`[Cache] HIT: ${key}`);
     } else {
       logger.debug(`[Cache] MISS: ${key}`);
@@ -86,30 +89,39 @@ export const cacheService = {
   set: async <T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<boolean> => {
     const effectiveTTL = stochasticTTL(ttl || DEFAULT_TTL);
 
-    // LRU eviction: if at capacity, remove oldest key before adding new one
+    // LRU eviction: select least-recently-accessed key from accessOrder
     if (localCache.keys().length >= MAX_CACHE_KEYS && !localCache.has(key)) {
-      const allKeys = localCache.keys();
-      if (allKeys.length > 0) {
-        const oldestKey = allKeys[0];
+      let oldestKey: string | null = null;
+      let oldestTime = Infinity;
+      for (const [k, t] of accessOrder) {
+        if (t < oldestTime) {
+          oldestTime = t;
+          oldestKey = k;
+        }
+      }
+      if (oldestKey !== null) {
         await cacheService.del(oldestKey);
         logger.debug(`[Cache] LRU evicted: ${oldestKey}`);
       }
     }
 
     const success = localCache.set(key, value, effectiveTTL);
-    
-    if (success && tags && tags.length > 0) {
-      const tagSet = new Set(tags);
-      keyTags.set(key, tagSet);
-      
-      for (const tag of tagSet) {
-        if (!tagIndex.has(tag)) {
-          tagIndex.set(tag, new Set());
+
+    if (success) {
+      accessOrder.set(key, Date.now());
+      if (tags && tags.length > 0) {
+        const tagSet = new Set(tags);
+        keyTags.set(key, tagSet);
+
+        for (const tag of tagSet) {
+          if (!tagIndex.has(tag)) {
+            tagIndex.set(tag, new Set());
+          }
+          tagIndex.get(tag)!.add(key);
         }
-        tagIndex.get(tag)!.add(key);
       }
     }
-    
+
     logger.debug(`[Cache] SET: ${key} (TTL: ${effectiveTTL}s)`);
     return success;
   },
@@ -126,7 +138,7 @@ export const cacheService = {
 
   del: async (key: string | string[]): Promise<number> => {
     const keys = Array.isArray(key) ? key : [key];
-    
+
     for (const k of keys) {
       const tags = keyTags.get(k);
       if (tags) {
@@ -141,8 +153,9 @@ export const cacheService = {
         }
         keyTags.delete(k);
       }
+      accessOrder.delete(k);
     }
-    
+
     return localCache.del(keys);
   },
 
@@ -158,6 +171,7 @@ export const cacheService = {
 
   flush: async (): Promise<void> => {
     localCache.flushAll();
+    accessOrder.clear();
     tagIndex.clear();
     keyTags.clear();
   },

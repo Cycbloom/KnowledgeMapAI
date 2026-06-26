@@ -1,4 +1,4 @@
-import { type Server } from 'http';
+import { type Server, type IncomingMessage } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { getSupabaseAdmin } from '../../supabase';
 import { getProviderConfig } from '../../services/ai/config';
@@ -6,6 +6,7 @@ import { logger } from '../../utils/logger';
 
 export function setupRealtimeSTT(server: Server): void {
   const wss = new WebSocketServer({ noServer: true });
+  const userConnections = new Map<string, WebSocket>();
 
   server.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url || '', `http://${request.headers.host}`);
@@ -27,8 +28,9 @@ export function setupRealtimeSTT(server: Server): void {
         return;
       }
 
+      const userId = data.user.id;
       wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
+        wss.emit('connection', ws, request, userId);
       });
     }).catch(() => {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
@@ -36,8 +38,13 @@ export function setupRealtimeSTT(server: Server): void {
     });
   });
 
-  wss.on('connection', async (clientWs: WebSocket) => {
+  wss.on('connection', async (clientWs: WebSocket, _request: IncomingMessage, userId: string) => {
     try {
+      const oldWs = userConnections.get(userId);
+      if (oldWs && oldWs.readyState === WebSocket.OPEN) {
+        logger.info(`[STT-Realtime] Replaced existing connection for user ${userId}`);
+        oldWs.close(1000, 'replaced');
+      }
       const config = await getProviderConfig('aliyun');
       const apiKey = config.apiKey;
 
@@ -82,9 +89,17 @@ export function setupRealtimeSTT(server: Server): void {
         }
       };
 
-      clientWs.on('close', cleanup);
+      clientWs.on('close', () => {
+        if (userConnections.get(userId) === clientWs) {
+          userConnections.delete(userId);
+        }
+        cleanup();
+      });
       clientWs.on('error', (err) => {
         logger.error('[STT-Realtime] Client WS error:', err);
+        if (userConnections.get(userId) === clientWs) {
+          userConnections.delete(userId);
+        }
         cleanup();
       });
 
@@ -102,6 +117,8 @@ export function setupRealtimeSTT(server: Server): void {
           clientWs.close();
         }
       });
+
+      userConnections.set(userId, clientWs);
 
     } catch (error) {
       logger.error('[STT-Realtime] Setup error:', error);

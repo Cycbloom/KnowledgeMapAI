@@ -367,29 +367,72 @@ export const mobileGraphsApi: IGraphsApi = {
     });
   },
 
-  getTags: async (): Promise<string[]> => {
+  getTags: async (): Promise<{ tags: Array<{ name: string; count: number }> }> => {
     return withClientOptionalUser(async (client, userId) => {
       if (!userId) {
-        return [];
+        return { tags: [] };
       }
 
-      const { data, error } = await client
+      try {
+        const { data, error } = await client.rpc("get_user_graph_tags", {
+          p_user_id: userId,
+        });
+
+        if (!error && data) {
+          return { tags: data as Array<{ name: string; count: number }> };
+        }
+
+        console.warn("get_user_graph_tags RPC failed, falling back:", error?.message);
+      } catch (err) {
+        console.warn("get_user_graph_tags RPC error, falling back:", err);
+      }
+
+      const { data: graphs } = await client
         .from("knowledge_graphs")
-        .select("tags")
+        .select("id")
         .eq("user_id", userId)
         .is("deleted_at", null);
 
-      if (error) {
-        console.error("getTags error:", error);
-        return [];
+      const graphIds = ((graphs || []) as Array<{ id: string }>).map((g) => g.id);
+
+      if (graphIds.length === 0) {
+        return { tags: [] };
       }
 
-      const allTags = new Set<string>();
-      ((data || []) as Pick<KnowledgeGraphRow, "tags">[]).forEach((g) => {
-        (g.tags || []).forEach((tag: string) => allTags.add(tag));
+      const { data: graphNodes } = await client
+        .from("graph_nodes")
+        .select(
+          `
+          graph_id,
+          knowledge_points (
+            properties
+          )
+        `,
+        )
+        .in("graph_id", graphIds)
+        .is("deleted_at", null);
+
+      const tagMap = new Map<string, number>();
+
+      ((graphNodes || []) as Array<{
+        knowledge_points:
+          | { properties?: { tags?: string[] } }
+          | Array<{ properties?: { tags?: string[] } }>
+          | null;
+      }>).forEach((gn) => {
+        const kp = gn.knowledge_points;
+        const props = Array.isArray(kp) ? kp[0]?.properties : kp?.properties;
+        const tags = props?.tags || [];
+        tags.forEach((tag: string) => {
+          tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+        });
       });
 
-      return Array.from(allTags);
+      const tags = Array.from(tagMap.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+      return { tags };
     });
   },
 

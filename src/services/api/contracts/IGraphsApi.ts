@@ -48,7 +48,7 @@ export interface IGraphsApi {
 
   listTrash(): Promise<Graph[]>;
 
-  getTags(): Promise<string[]>;
+  getTags(): Promise<{ tags: Array<{ name: string; count: number }> }>;
 
   getDomains(): Promise<{ domains: Array<{ name: string; count: number }> }>;
 

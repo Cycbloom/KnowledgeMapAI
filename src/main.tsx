@@ -6,9 +6,10 @@ import App from './App'
 import { ThemeProvider } from './hooks'
 import { registerServiceWorker } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
-import { initErrorReporter } from './utils/errorReporter'
+import { initErrorReporter, setUserContext, clearUserContext } from './utils/errorReporter'
 import { initCsrf } from './services/api'
 import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
+import { useStore } from './store/useStore'
 import './store/storeIntegrations'
 import './index.css'
 import 'katex/dist/katex.min.css'
@@ -25,6 +26,16 @@ export const queryClient = new QueryClient({
 
 initCsrf()
 initializeEventSubscribers(queryClient)
+
+useStore.subscribe((state, prevState) => {
+  if (state.user !== prevState.user) {
+    if (state.user) {
+      setUserContext(state.user.id, state.user.email)
+    } else {
+      clearUserContext()
+    }
+  }
+})
 
 const isElectron = navigator.userAgent.toLowerCase().includes('electron')
 

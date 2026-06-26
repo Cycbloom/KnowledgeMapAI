@@ -1,4 +1,5 @@
 import { request } from "../services/api/client";
+import { useStore } from "../store/useStore";
 
 interface ErrorReport {
   message: string;
@@ -36,11 +37,16 @@ const flushErrors = async (): Promise<void> => {
 setInterval(flushErrors, FLUSH_INTERVAL);
 
 const getUserId = (): string | undefined => {
+  const storeUser = useStore.getState().user;
+  if (storeUser?.id) {
+    return storeUser.id;
+  }
+
   try {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      return user.id;
+    const ctxStr = localStorage.getItem("errorContext");
+    if (ctxStr) {
+      const ctx = JSON.parse(ctxStr) as { userId?: string };
+      return ctx.userId;
     }
   } catch {
     return undefined;

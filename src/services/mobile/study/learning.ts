@@ -1,7 +1,10 @@
 import { getMobileSupabaseClient } from "@/lib/supabase";
+import { Rating, State } from "ts-fsrs";
+import type { Card } from "ts-fsrs";
 import type { StudyCard } from "@shared/types/common";
 import type { GetCardsParams, CardGroup, StudyStats } from "@shared/types/api";
 import type { IStudyApi } from "../../api/contracts/IStudyApi";
+import { fsrsEngine } from "./fsrsEngine";
 
 interface StudyCardInsert {
   user_id: string;
@@ -213,6 +216,13 @@ export const mobileStudyApi: IStudyApi = {
       throw new Error("Supabase client not initialized");
     }
 
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
     const { data: card, error: fetchError } = await client
       .from("study_cards")
       .select("*")
@@ -224,30 +234,30 @@ export const mobileStudyApi: IStudyApi = {
     }
 
     const cardRow = card as StudyCard;
+    const fsrsCard = fsrsEngine.dbCardToFSRS(cardRow);
     const now = new Date();
-    const reviewCount = (cardRow.review_count || 0) + 1;
+    const rating = fsrsEngine.mapQualityToRating(quality);
 
-    let nextReviewDays = 1;
-    if (quality >= 4) {
-      nextReviewDays = Math.min(2 ** reviewCount, 365);
-    } else if (quality >= 3) {
-      nextReviewDays = Math.min(reviewCount * 2, 30);
-    } else if (quality >= 2) {
-      nextReviewDays = 1;
-    } else {
-      nextReviewDays = 0;
-    }
-
-    const nextReview = new Date(
-      now.getTime() + nextReviewDays * 24 * 60 * 60 * 1000,
-    );
+    const f = await fsrsEngine.getFSRSForUser(user.id, client);
+    const schedulingCards = f.repeat(fsrsCard, now) as unknown as Record<
+      Rating,
+      { card: Card }
+    >;
+    const scheduledCard = schedulingCards[rating].card;
 
     const { data: updatedCard, error: updateError } = await client
       .from("study_cards")
       .update({
         last_reviewed: now.toISOString(),
-        next_review: nextReview.toISOString(),
-        review_count: reviewCount,
+        next_review: scheduledCard.due.toISOString(),
+        review_count: scheduledCard.reps,
+        fsrs_state: State[scheduledCard.state] as keyof typeof State,
+        fsrs_stability: scheduledCard.stability,
+        fsrs_difficulty: scheduledCard.difficulty,
+        fsrs_elapsed_days: scheduledCard.elapsed_days,
+        fsrs_scheduled_days: scheduledCard.scheduled_days,
+        fsrs_last_review: now.toISOString(),
+        last_rating: rating,
       })
       .eq("id", id)
       .select()
@@ -255,6 +265,15 @@ export const mobileStudyApi: IStudyApi = {
 
     if (updateError) {
       throw new Error(updateError.message);
+    }
+
+    // mastery_level 重算策略（方案 C 降级）：
+    // 移动端无 update_knowledge_point_mastery RPC，mastery 重算由桌面端下次登录时
+    // 通过 masteryCalculationService 批量触发，此处仅 warn 不影响主流程。
+    if (cardRow.knowledge_point_id) {
+      console.warn(
+        "[Mobile] mastery recalc RPC not available, will be synced on desktop login",
+      );
     }
 
     return { success: true, card: updatedCard as StudyCard };

@@ -9,7 +9,6 @@ export interface KnowledgeGraphRow {
   domain?: string | null;
   user_id?: string | null;
   settings?: Record<string, unknown> | null;
-  tags?: string[] | null;
   is_favorite?: boolean;
   is_public?: boolean;
   template_type?: string | null;

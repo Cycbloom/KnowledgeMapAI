@@ -1,7 +1,14 @@
 import { expose } from 'comlink';
 import * as d3 from 'd3-force';
 import type { SimulationNodeDatum } from 'd3-force';
+import { quadtree } from 'd3-quadtree';
 import { UMAP } from 'umap-js';
+import type {
+  LayoutNode3D,
+  LayoutLink3D,
+  LayoutResult3D,
+} from '../three/layout/forceLayout3D';
+import type { Node as GraphNode, Edge as GraphEdge, NodeLevel } from '../types';
 
 interface Node {
   id: string;
@@ -66,26 +73,63 @@ const calculateForceDirectedLayout = (
     adjacencyList.get(edge.target)?.add(edge.source);
   });
 
+  // Quadtree-backed repulsion. Instead of an O(n^2) all-pairs loop, build a
+  // quadtree per iteration and prune subtrees whose bounding box lies outside
+  // the repulsion radius. Repulsion falls off as 1/r^2, so contributions below
+  // a small magnitude threshold are negligible and safe to skip.
+  const minRepulsionForce = 0.05;
+  const repulsionRadius = Math.sqrt(repulsionStrength / minRepulsionForce);
+  const repulsionRadius2 = repulsionRadius * repulsionRadius;
+
   for (let iter = 0; iter < iterations; iter++) {
     const nodesArray = Array.from(nodeMap.values());
 
+    const qt = quadtree<Node>()
+      .x((d: Node) => d.x ?? 0)
+      .y((d: Node) => d.y ?? 0)
+      .addAll(nodesArray);
+
     for (let i = 0; i < nodesArray.length; i++) {
       const nodeA = nodesArray[i];
+      const ax = nodeA.x ?? 0;
+      const ay = nodeA.y ?? 0;
       let fx = 0;
       let fy = 0;
 
-      for (let j = 0; j < nodesArray.length; j++) {
-        if (i === j) continue;
-        const nodeB = nodesArray[j];
-
-        const dx = (nodeA.x ?? 0) - (nodeB.x ?? 0);
-        const dy = (nodeA.y ?? 0) - (nodeB.y ?? 0);
-        const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-
-        const force = repulsionStrength / (distance * distance);
-        fx += (dx / distance) * force;
-        fy += (dy / distance) * force;
-      }
+      qt.visit((node, x0, y0, x1, y1) => {
+        if (Array.isArray(node)) {
+          // Internal node: skip the whole subtree when its bounding box is
+          // entirely outside the query circle around (ax, ay).
+          let closestX = ax;
+          if (ax < x0) closestX = x0;
+          else if (ax > x1) closestX = x1;
+          let closestY = ay;
+          if (ay < y0) closestY = y0;
+          else if (ay > y1) closestY = y1;
+          const ddx = ax - closestX;
+          const ddy = ay - closestY;
+          return ddx * ddx + ddy * ddy > repulsionRadius2;
+        }
+        // Leaf: exact pairwise repulsion against every point stored here
+        // (coincident points are chained via `next`).
+        let leaf: typeof node | undefined = node;
+        while (leaf) {
+          const point = leaf.data;
+          if (point !== nodeA) {
+            const dx = ax - (point.x ?? 0);
+            const dy = ay - (point.y ?? 0);
+            const dist2 = dx * dx + dy * dy;
+            if (dist2 <= repulsionRadius2) {
+              const distance = Math.sqrt(dist2) || 1;
+              const force = repulsionStrength / (distance * distance);
+              fx += (dx / distance) * force;
+              fy += (dy / distance) * force;
+            }
+          }
+          leaf = leaf.next;
+        }
+        return false;
+      });
 
       const neighbors = adjacencyList.get(nodeA.id);
       if (neighbors) {
@@ -120,20 +164,12 @@ const calculateForceDirectedLayout = (
   return Array.from(nodeMap.values());
 };
 
-const calculateNodeImportance = (
-  nodeId: string,
+const calculatePageRank = (
   nodes: Node[],
-  edges: Edge[]
-): number => {
-  const nodeMap = new Map<string, Node>();
-  nodes.forEach(n => nodeMap.set(n.id, n));
-
-  const outDegree = edges.filter(e => e.source === nodeId).length;
-  const inDegree = edges.filter(e => e.target === nodeId).length;
-  const totalDegree = outDegree + inDegree;
-
+  edges: Edge[],
+  iterations: number = 20
+): Map<string, number> => {
   const dampingFactor = 0.85;
-  const iterations = 20;
 
   const incomingEdges = new Map<string, string[]>();
   const outgoingEdges = new Map<string, string[]>();
@@ -170,6 +206,23 @@ const calculateNodeImportance = (
 
     ranks.forEach((_, id) => ranks.set(id, newRanks.get(id) || 0));
   }
+
+  return ranks;
+};
+
+const calculateNodeImportance = (
+  nodeId: string,
+  nodes: Node[],
+  edges: Edge[],
+  pageRanks?: Map<string, number>
+): number => {
+  const outDegree = edges.filter(e => e.source === nodeId).length;
+  const inDegree = edges.filter(e => e.target === nodeId).length;
+  const totalDegree = outDegree + inDegree;
+
+  // Reuse a precomputed PageRank vector when provided so batch callers pay
+  // the iterative cost only once for the whole graph instead of per node.
+  const ranks = pageRanks ?? calculatePageRank(nodes, edges);
 
   const normalizedPageRank = (ranks.get(nodeId) || 0) * nodes.length;
   const degreeScore = totalDegree / (2 * Math.max(1, nodes.length - 1));
@@ -572,13 +625,178 @@ const calculateSemanticLayout = (
   };
 };
 
+// ============ 3D Force Layout (offloaded from main thread) ============
+// Mirrors src/three/layout/forceLayout3D.ts but runs inside the worker so the
+// main thread stays responsive. Collision detection uses a uniform spatial
+// grid (O(n) average) instead of the original O(n^2) pairwise check.
+
+const LEVEL_PRIORITY_3D: Record<NodeLevel, number> = {
+  root: 0,
+  core: 1,
+  sub: 2,
+  normal: 3,
+  leaf: 4,
+};
+
+function get3DLevelNumber(level?: NodeLevel): number {
+  if (!level) return 3;
+  return LEVEL_PRIORITY_3D[level] ?? 3;
+}
+
+function compute3DNodeImportance(node: GraphNode, edges: GraphEdge[]): number {
+  const connections = edges.filter(
+    e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id
+  ).length;
+  const childCount = edges.filter(e => e.source_knowledge_point_id === node.id).length;
+  const levelFactor = Math.max(1, 5 - get3DLevelNumber(node.level));
+  return connections * 0.3 + childCount * 0.5 + levelFactor * 0.5;
+}
+
+interface Layout3DOptions {
+  width?: number;
+  height?: number;
+  depth?: number;
+  iterations?: number;
+}
+
+const calculate3DForceLayout = (
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  options: Layout3DOptions = {}
+): LayoutResult3D => {
+  const { width: _width = 800, height: _height = 600, depth = 600, iterations = 300 } = options;
+
+  const layoutNodes: LayoutNode3D[] = nodes.map((node, index) => {
+    const angle = (index / Math.max(1, nodes.length)) * Math.PI * 2;
+    const radius = 100 + Math.random() * 100;
+    return {
+      id: node.id,
+      x: Math.cos(angle) * radius + (Math.random() - 0.5) * 50,
+      y: Math.sin(angle) * radius + (Math.random() - 0.5) * 50,
+      z: (Math.random() - 0.5) * depth * 0.5,
+      vx: 0,
+      vy: 0,
+      vz: 0,
+      level: get3DLevelNumber(node.level),
+      importance: compute3DNodeImportance(node, edges),
+      data: node,
+    };
+  });
+
+  const nodeMap = new Map<string, LayoutNode3D>();
+  layoutNodes.forEach(n => nodeMap.set(n.id, n));
+
+  const layoutLinks: LayoutLink3D[] = edges.map(edge => ({
+    source: edge.source_knowledge_point_id,
+    target: edge.target_knowledge_point_id,
+    strength: 1,
+  }));
+
+  const centerX = 0;
+  const centerY = 0;
+  const centerZ = 0;
+
+  // Uniform-grid collision detection. The cell size equals the collision
+  // threshold, so any node within collision range must live in one of the 27
+  // neighbouring cells — turning the old O(n^2) all-pairs check into O(n).
+  const collisionDistance = 60;
+  const cellSize = collisionDistance;
+
+  for (let iter = 0; iter < iterations; iter++) {
+    layoutNodes.forEach(node => {
+      node.vx += (centerX - node.x) * 0.001;
+      node.vy += (centerY - node.y) * 0.001;
+      node.vz += (centerZ - node.z) * 0.001;
+    });
+
+    layoutLinks.forEach(link => {
+      const source = nodeMap.get(link.source);
+      const target = nodeMap.get(link.target);
+      if (!source || !target) return;
+
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const dz = target.z - source.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+      const idealDist = 80;
+      const force = (dist - idealDist) * 0.02 * link.strength;
+
+      const fx = (dx / dist) * force;
+      const fy = (dy / dist) * force;
+      const fz = (dz / dist) * force;
+
+      source.vx += fx;
+      source.vy += fy;
+      source.vz += fz;
+      target.vx -= fx;
+      target.vy -= fy;
+      target.vz -= fz;
+    });
+
+    const grid = new Map<string, LayoutNode3D[]>();
+    for (const node of layoutNodes) {
+      const key = `${Math.floor(node.x / cellSize)},${Math.floor(node.y / cellSize)},${Math.floor(node.z / cellSize)}`;
+      const bucket = grid.get(key);
+      if (bucket) {
+        bucket.push(node);
+      } else {
+        grid.set(key, [node]);
+      }
+    }
+
+    layoutNodes.forEach(node => {
+      const cx = Math.floor(node.x / cellSize);
+      const cy = Math.floor(node.y / cellSize);
+      const cz = Math.floor(node.z / cellSize);
+      for (let dz = -1; dz <= 1; dz++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const bucket = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
+            if (!bucket) continue;
+            for (let bi = 0; bi < bucket.length; bi++) {
+              const other = bucket[bi];
+              if (other === node) continue;
+              const ddx = other.x - node.x;
+              const ddy = other.y - node.y;
+              const ddz = other.z - node.z;
+              const dist = Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz) || 1;
+              if (dist < collisionDistance) {
+                const force = (collisionDistance - dist) * 0.05;
+                const fx = (ddx / dist) * force;
+                const fy = (ddy / dist) * force;
+                const fz = (ddz / dist) * force;
+                node.vx -= fx;
+                node.vy -= fy;
+                node.vz -= fz;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    layoutNodes.forEach(node => {
+      node.vx *= 0.9;
+      node.vy *= 0.9;
+      node.vz *= 0.9;
+      node.x += node.vx;
+      node.y += node.vy;
+      node.z += node.vz;
+    });
+  }
+
+  return { nodes: layoutNodes, links: layoutLinks };
+};
+
 const graphWorker = {
   calculateForceDirectedLayout,
   calculateNodeImportance,
+  calculatePageRank,
   filterNodes,
   sortNodes,
   calculateMindMapLayout,
   calculateSemanticLayout,
+  calculate3DForceLayout,
 };
 
 export type GraphWorker = typeof graphWorker;

@@ -105,33 +105,32 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
-const isVercelOrigin = (origin: string): boolean => {
-  return (
-    origin.endsWith(".vercel.app") ||
-    origin.includes(".vercel.app") ||
-    /^https?:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
-  );
+// Strict CORS allowlist: only specific Vercel preview subdomains and local dev origins.
+const VERCEL_PREVIEW_REGEX = /^https:\/\/knowledgemap-[a-z0-9]+\.vercel\.app$/;
+const LOCALHOST_REGEX = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+const isAllowedOrigin = (origin: string): boolean => {
+  if (VERCEL_PREVIEW_REGEX.test(origin)) {
+    return true;
+  }
+  if (LOCALHOST_REGEX.test(origin)) {
+    return true;
+  }
+  return allowedOrigins.indexOf(origin) !== -1;
 };
 
 app.use(
   cors({
     origin: (origin, callback) => {
+      // No Origin header (same-origin / non-browser clients): allow.
       if (!origin) return callback(null, true);
 
-      if (isVercelOrigin(origin)) {
+      if (isAllowedOrigin(origin)) {
         return callback(null, true);
       }
 
-      if (
-        allowedOrigins.indexOf(origin) !== -1 ||
-        !process.env.NODE_ENV ||
-        process.env.NODE_ENV === "development"
-      ) {
-        callback(null, true);
-      } else {
-        logger.warn("CORS blocked origin", { origin, allowedOrigins });
-        callback(new Error("Not allowed by CORS"));
-      }
+      logger.warn("CORS blocked origin", { origin, allowedOrigins });
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   }),

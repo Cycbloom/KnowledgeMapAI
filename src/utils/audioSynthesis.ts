@@ -47,6 +47,23 @@ export interface NoiseTrack {
 
 const NOISE_BUFFER_DURATION = 2;
 
+const nativeSetTimeout = setTimeout;
+
+const activeTimerIds = new Set<ReturnType<typeof setTimeout>>();
+
+const trackedSetTimeout = (callback: () => void, delay: number): void => {
+  const id = nativeSetTimeout(() => {
+    activeTimerIds.delete(id);
+    callback();
+  }, delay);
+  activeTimerIds.add(id);
+};
+
+export const stopAllAudioSynthesis = (): void => {
+  activeTimerIds.forEach((id) => clearTimeout(id));
+  activeTimerIds.clear();
+};
+
 export function createWhiteNoise(context: AudioContext): AudioBufferSourceNode {
   const bufferSize = context.sampleRate * NOISE_BUFFER_DURATION;
   const buffer = context.createBuffer(1, bufferSize, context.sampleRate);
@@ -189,10 +206,10 @@ export function createThunderSound(
     mainGain.gain.linearRampToValueAtTime(0.8, nextTime + 0.1);
     mainGain.gain.exponentialRampToValueAtTime(0.01, nextTime + 2);
 
-    setTimeout(scheduleThunder, (nextTime - now + 3) * 1000);
+    trackedSetTimeout(scheduleThunder, (nextTime - now + 3) * 1000);
   };
 
-  setTimeout(scheduleThunder, Math.random() * 5000);
+  trackedSetTimeout(scheduleThunder, Math.random() * 5000);
 
   return nodes;
 }
@@ -331,10 +348,10 @@ export function createForestSound(
     osc.start(nextTime);
     osc.stop(nextTime + 0.2);
 
-    setTimeout(scheduleBirdChirp, (nextTime - now + 0.3) * 1000);
+    trackedSetTimeout(scheduleBirdChirp, (nextTime - now + 0.3) * 1000);
   };
 
-  setTimeout(scheduleBirdChirp, Math.random() * 3000);
+  trackedSetTimeout(scheduleBirdChirp, Math.random() * 3000);
 
   return nodes;
 }
@@ -384,10 +401,10 @@ export function createFireSound(
     osc.start(nextTime);
     osc.stop(nextTime + 0.15);
 
-    setTimeout(scheduleCrackle, (nextTime - now + 0.2) * 1000);
+    trackedSetTimeout(scheduleCrackle, (nextTime - now + 0.2) * 1000);
   };
 
-  setTimeout(scheduleCrackle, Math.random() * 1000);
+  trackedSetTimeout(scheduleCrackle, Math.random() * 1000);
 
   return nodes;
 }
@@ -435,10 +452,10 @@ export function createCafeSound(
     murmurNoise.start(nextTime);
     murmurNoise.stop(nextTime + 2.5);
 
-    setTimeout(scheduleMurmur, (nextTime - now + 3) * 1000);
+    trackedSetTimeout(scheduleMurmur, (nextTime - now + 3) * 1000);
   };
 
-  setTimeout(scheduleMurmur, Math.random() * 2000);
+  trackedSetTimeout(scheduleMurmur, Math.random() * 2000);
 
   return nodes;
 }
@@ -485,10 +502,10 @@ export function createLibrarySound(
     pageNoise.start(nextTime);
     pageNoise.stop(nextTime + 0.5);
 
-    setTimeout(schedulePageTurn, (nextTime - now + 1) * 1000);
+    trackedSetTimeout(schedulePageTurn, (nextTime - now + 1) * 1000);
   };
 
-  setTimeout(schedulePageTurn, Math.random() * 10000);
+  trackedSetTimeout(schedulePageTurn, Math.random() * 10000);
 
   return nodes;
 }
@@ -524,10 +541,10 @@ export function createNightSound(
     osc.stop(now + chirpCount * 0.1 + 0.1);
 
     nodes.push(osc, oscGain);
-    setTimeout(scheduleCricket, Math.random() * 3000 + 1000);
+    trackedSetTimeout(scheduleCricket, Math.random() * 3000 + 1000);
   };
 
-  setTimeout(scheduleCricket, Math.random() * 1000);
+  trackedSetTimeout(scheduleCricket, Math.random() * 1000);
 
   const scheduleFrog = () => {
     const now = context.currentTime;
@@ -552,10 +569,10 @@ export function createNightSound(
     osc.stop(nextTime + 0.6);
 
     nodes.push(osc, oscGain);
-    setTimeout(scheduleFrog, (nextTime - now + 1) * 1000);
+    trackedSetTimeout(scheduleFrog, (nextTime - now + 1) * 1000);
   };
 
-  setTimeout(scheduleFrog, Math.random() * 15000);
+  trackedSetTimeout(scheduleFrog, Math.random() * 15000);
 
   return nodes;
 }
@@ -703,10 +720,10 @@ export function createSingingBowlSound(
     osc3.stop(nextTime + 4);
 
     nodes.push(osc1, osc2, osc3, gain1, gain2, gain3);
-    setTimeout(scheduleBowl, (nextTime - now + 12) * 1000);
+    trackedSetTimeout(scheduleBowl, (nextTime - now + 12) * 1000);
   };
 
-  setTimeout(scheduleBowl, Math.random() * 5000);
+  trackedSetTimeout(scheduleBowl, Math.random() * 5000);
 
   return nodes;
 }
@@ -748,10 +765,10 @@ export function createWindChimeSound(
     osc.stop(nextTime + 2.5);
 
     nodes.push(osc, filter, oscGain);
-    setTimeout(scheduleChime, (nextTime - now + 3) * 1000);
+    trackedSetTimeout(scheduleChime, (nextTime - now + 3) * 1000);
   };
 
-  setTimeout(scheduleChime, Math.random() * 3000);
+  trackedSetTimeout(scheduleChime, Math.random() * 3000);
 
   return nodes;
 }
@@ -783,7 +800,7 @@ export function createBreathingSound(
     mainGain.gain.linearRampToValueAtTime(0.05, now + 9);
     mainGain.gain.linearRampToValueAtTime(0.05, now + 12);
 
-    setTimeout(breatheCycle, 12000);
+    trackedSetTimeout(breatheCycle, 12000);
   };
 
   breatheCycle();

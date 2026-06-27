@@ -9,12 +9,32 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_SUPABASE_URL = "http://127.0.0.1:54321";
 const LOCAL_SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
-const LOCAL_SUPABASE_SERVICE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+// Public Supabase demo service_role key (from official Supabase docs).
+// Used ONLY as a development fallback when SUPABASE_SERVICE_ROLE_KEY is missing.
+const DEMO_SERVICE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35yJt5IUY2-hG09QYxi0IprSuN4kDawpg";
 
 function isDevelopment(): boolean {
   const nodeEnv = process.env.NODE_ENV;
   return nodeEnv === "development" || !nodeEnv;
+}
+
+function resolveServiceKey(): string {
+  const envServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (envServiceKey) {
+    return envServiceKey;
+  }
+
+  if (isDevelopment()) {
+    console.warn(
+      "SUPABASE_SERVICE_ROLE_KEY is missing; falling back to public Supabase demo service_role key for development.",
+    );
+    return DEMO_SERVICE_KEY;
+  }
+
+  throw new Error(
+    "SUPABASE_SERVICE_ROLE_KEY is missing in production environment. Refusing to start.",
+  );
 }
 
 function getSupabaseConfig(): {
@@ -23,14 +43,14 @@ function getSupabaseConfig(): {
   anonKey: string;
 } {
   const envUrl = process.env.VITE_SUPABASE_URL;
-  const envServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const envAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  const serviceKey = resolveServiceKey();
 
-  if (envUrl && envServiceKey) {
+  if (envUrl) {
     return {
       url: envUrl,
-      serviceKey: envServiceKey,
-      anonKey: envAnonKey || envServiceKey,
+      serviceKey,
+      anonKey: envAnonKey || serviceKey,
     };
   }
 
@@ -38,14 +58,14 @@ function getSupabaseConfig(): {
     logger.info("Using local Supabase configuration for development");
     return {
       url: LOCAL_SUPABASE_URL,
-      serviceKey: LOCAL_SUPABASE_SERVICE_KEY,
-      anonKey: LOCAL_SUPABASE_ANON_KEY,
+      serviceKey,
+      anonKey: envAnonKey || LOCAL_SUPABASE_ANON_KEY,
     };
   }
 
   return {
     url: envUrl || "",
-    serviceKey: envServiceKey || "",
+    serviceKey,
     anonKey: envAnonKey || "",
   };
 }

@@ -208,7 +208,13 @@ CREATE POLICY "Users can manage actions for their graphs" ON ai_actions FOR ALL 
 -- App Settings
 ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow read access for authenticated users" ON app_settings FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users" ON app_settings FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow admins to manage app settings" ON app_settings FOR ALL TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+  );
 
 -- Focus Sessions
 ALTER TABLE focus_sessions ENABLE ROW LEVEL SECURITY;

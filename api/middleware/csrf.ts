@@ -21,6 +21,16 @@ const generateToken = (): string => {
   return crypto.randomBytes(32).toString("hex");
 };
 
+const isTokenValid = (cookieToken: string, headerToken: string): boolean => {
+  const cookieBuffer = Buffer.from(cookieToken, "utf-8");
+  const headerBuffer = Buffer.from(headerToken, "utf-8");
+  // Lengths differ: return false without comparing to avoid timingSafeEqual throwing.
+  if (cookieBuffer.length !== headerBuffer.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(cookieBuffer, headerBuffer);
+};
+
 const shouldSkipCsrf = (req: Request): boolean => {
   const isMobileClient = req.headers["x-mobile-client"] === "true";
   const isElectronClient = req.headers["x-electron-client"] === "true";
@@ -29,7 +39,14 @@ const shouldSkipCsrf = (req: Request): boolean => {
   );
   const isLocalhost =
     req.hostname === "localhost" || req.hostname === "127.0.0.1";
-  return isMobileClient || isElectronClient || isRouteSkipped || isLocalhost;
+  // Only skip CSRF for localhost outside production; production must enforce CSRF.
+  const skipLocalhost = process.env.NODE_ENV !== "production";
+  return (
+    isMobileClient ||
+    isElectronClient ||
+    isRouteSkipped ||
+    (skipLocalhost && isLocalhost)
+  );
 };
 
 const getCookieOptions = () => {
@@ -81,7 +98,7 @@ export const csrfProtection = (
     return;
   }
 
-  if (cookieToken !== headerToken) {
+  if (!isTokenValid(cookieToken, headerToken)) {
     next(new AppError("Invalid CSRF token", 403, ErrorCodes.AUTH_FORBIDDEN));
     return;
   }

@@ -152,18 +152,25 @@ export class SyncEngine {
       const port = this.apiPort;
       if (!port) return;
 
-      const response = await fetch(`http://localhost:${port}/api/sync/pull`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.authToken ?? ''}`,
-        },
-        body: JSON.stringify({ tables }),
-      });
+      const response = await this.retryWithBackoff(async () => {
+        const resp = await fetch(`http://localhost:${port}/api/sync/pull`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.authToken ?? ''}`,
+          },
+          body: JSON.stringify({ tables }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Pull failed: ${response.status} ${response.statusText}`);
-      }
+        if (!resp.ok) {
+          // Attach status so isRetryableError can distinguish 4xx (no retry) from 5xx (retry)
+          const err = new Error(`Pull failed: ${resp.status} ${resp.statusText}`) as Error & { status?: number };
+          err.status = resp.status;
+          throw err;
+        }
+
+        return resp;
+      });
 
       const result = (await response.json()) as { data: Record<string, { records: unknown[]; timestamp: string }> };
       const data = result.data;
@@ -174,6 +181,16 @@ export class SyncEngine {
 
         // Batch upsert records
         for (const record of tableData.records) {
+          const recordId = (record as Record<string, unknown>).id as string | undefined;
+          // Protect local unpushed changes: if local record is pending_push, record conflict and skip upsert
+          if (recordId) {
+            const localRecord = this.dbManager.findById<Record<string, unknown>>(tableName, recordId);
+            if (localRecord?.sync_status === 'pending_push') {
+              this.dbManager.addSyncConflict(tableName, recordId, localRecord, record);
+              console.warn(`[SyncEngine] Pull 跳过 pending_push 记录，记录冲突: ${tableName}/${recordId}`);
+              continue;
+            }
+          }
           const enrichedRecord = {
             ...(record as Record<string, unknown>),
             sync_status: 'synced',
@@ -241,18 +258,25 @@ export class SyncEngine {
           return mergedOp?.id ?? op.id;
         });
 
-        const response = await fetch(`http://localhost:${port}/api/sync/push`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.authToken ?? ''}`,
-          },
-          body: JSON.stringify({ operations: batch }),
-        });
+        const response = await this.retryWithBackoff(async () => {
+          const resp = await fetch(`http://localhost:${port}/api/sync/push`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.authToken ?? ''}`,
+            },
+            body: JSON.stringify({ operations: batch }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`Push failed: ${response.status} ${response.statusText}`);
-        }
+          if (!resp.ok) {
+            // Attach status so isRetryableError can distinguish 4xx (no retry) from 5xx (retry)
+            const err = new Error(`Push failed: ${resp.status} ${resp.statusText}`) as Error & { status?: number };
+            err.status = resp.status;
+            throw err;
+          }
+
+          return resp;
+        });
 
         const result = (await response.json()) as {
           results: Array<{
@@ -280,6 +304,9 @@ export class SyncEngine {
             // Conflict: cloud wins, update local with server data
             const localRecord = this.dbManager.findById(op.table, op.id);
             this.dbManager.addSyncConflict(op.table, op.id, localRecord, pushResult.serverData);
+            console.warn(`[SyncEngine] Push 冲突: ${op.table}/${op.id}（Cloud Wins 策略，用云端数据覆盖本地）`);
+            // Notify renderer via IPC so the UI can surface the conflict
+            this.notifyConflict(op.table, op.id, localRecord, pushResult.serverData);
             if (pushResult.serverData) {
               this.dbManager.upsert(op.table, {
                 ...(pushResult.serverData as Record<string, unknown>),
@@ -397,6 +424,63 @@ export class SyncEngine {
       }
     } catch (error) {
       console.error('[SyncEngine] 清理操作日志失败:', error);
+    }
+  }
+
+  // Retry a function with exponential backoff. Retries only on retryable errors
+  // (network/timeout/5xx); 4xx errors fail immediately. Uses config.maxRetries by default.
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries?: number,
+    initialDelay: number = 1000
+  ): Promise<T> {
+    const retries = maxRetries ?? this.config.maxRetries;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        const lastError = error instanceof Error ? error : new Error(String(error));
+        const isRetryable = this.isRetryableError(error);
+        if (!isRetryable || attempt === retries) {
+          throw lastError;
+        }
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.warn(`[SyncEngine] 重试 ${attempt + 1}/${retries}，等待 ${delay}ms: ${lastError.message}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    // Unreachable: loop always returns or throws
+    throw new Error('retryWithBackoff: exhausted retries unexpectedly');
+  }
+
+  // Determine if an error is retryable. Network/timeout/5xx are retryable; 4xx are not.
+  private isRetryableError(error: unknown): boolean {
+    if (error instanceof Error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('timeout') || msg.includes('network') || msg.includes('econnreset')) {
+        return true;
+      }
+      const fetchError = error as Error & { status?: number };
+      if (fetchError.status && fetchError.status >= 500) {
+        return true;
+      }
+      if (fetchError.status && fetchError.status >= 400 && fetchError.status < 500) {
+        return false;
+      }
+    }
+    return true; // Default: retry unknown errors
+  }
+
+  // Notify the renderer of a sync conflict via IPC (used by Push conflict handling)
+  private notifyConflict(table: string, id: string, local: unknown, remote: unknown): void {
+    const payload = { table, id, local, remote };
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('sync:conflict', payload);
+      return;
+    }
+    const fallbackWindow = BrowserWindow.getAllWindows()[0];
+    if (fallbackWindow && !fallbackWindow.isDestroyed()) {
+      fallbackWindow.webContents.send('sync:conflict', payload);
     }
   }
 }

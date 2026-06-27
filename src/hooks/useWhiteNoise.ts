@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNoiseStore, WhiteNoiseType, MixedNoise, NoisePreset } from '../store/useNoiseStore';
-import { NoiseMixer, BUILT_IN_PRESETS, NoisePreset as AudioNoisePreset } from '../utils/audioSynthesis';
+import { NoiseMixer, BUILT_IN_PRESETS, NoisePreset as AudioNoisePreset, stopAllAudioSynthesis } from '../utils/audioSynthesis';
 
 interface UseWhiteNoiseReturn {
   isPlaying: boolean;
@@ -207,6 +207,8 @@ export function useWhiteNoise(): UseWhiteNoiseReturn {
         mixerRef.current.stopAll();
         mixerRef.current = null;
       }
+
+      stopAllAudioSynthesis();
 
       if (audioContextRef.current) {
         audioContextRef.current.close();

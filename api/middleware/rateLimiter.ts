@@ -14,6 +14,7 @@ interface RateLimitConfig {
 }
 
 const localStore = new Map<string, { count: number; resetTime: number }>();
+let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
 const cleanupLocalStore = () => {
   const now = Date.now();
@@ -24,7 +25,14 @@ const cleanupLocalStore = () => {
   }
 };
 
-setInterval(cleanupLocalStore, 60000);
+cleanupIntervalId = setInterval(cleanupLocalStore, 60000);
+
+export const destroyRateLimiter = (): void => {
+  if (cleanupIntervalId !== null) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+  }
+};
 
 export const createRateLimiter = (config: RateLimitConfig) => {
   const {

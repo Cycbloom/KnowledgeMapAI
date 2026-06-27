@@ -3,8 +3,9 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Stars, Line, Billboard, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import * as Comlink from 'comlink';
 import { Node, Edge, ColorScheme, GraphColorMode, NodeLevel, type Node as GraphNode } from '../types';
-import { create3DForceLayout, LayoutNode3D, LayoutLink3D } from './layout/forceLayout3D';
+import type { LayoutNode3D, LayoutLink3D, LayoutResult3D } from './layout/forceLayout3D';
 import { useTheme } from '../hooks';
 import { truncateText } from '../utils/textUtils';
 import {
@@ -733,6 +734,14 @@ function Scene({
   );
 }
 
+type Planet3DLayoutWorkerApi = {
+  calculate3DForceLayout: (
+    nodes: Node[],
+    edges: Edge[],
+    options: { width?: number; height?: number; depth?: number; iterations?: number }
+  ) => Promise<LayoutResult3D>;
+};
+
 export const PlanetView: React.FC<PlanetViewProps> = ({
   nodes,
   edges,
@@ -749,13 +758,44 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
   const { isDark } = useTheme();
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
-  const layout = useMemo(() => {
-    return create3DForceLayout(nodes, edges, {
-      width,
-      height,
-      depth: height
-    });
-  }, [nodes, edges, width, height]);
+  // 3D layout runs in a Web Worker (comlink) so the main thread stays
+  // responsive even for large graphs. The worker is created once; the layout
+  // is recomputed whenever the graph or viewport dimensions change.
+  const [layout, setLayout] = useState<LayoutResult3D>({ nodes: [], links: [] });
+  const [workerReady, setWorkerReady] = useState(false);
+  const proxyRef = useRef<Planet3DLayoutWorkerApi | null>(null);
+
+  useEffect(() => {
+    const worker = new Worker(
+      new URL('../workers/graphCalculator.worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    proxyRef.current = Comlink.wrap<Planet3DLayoutWorkerApi>(worker);
+    setWorkerReady(true);
+    return () => {
+      worker.terminate();
+      proxyRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const proxy = proxyRef.current;
+    if (!workerReady || !proxy) return;
+    let cancelled = false;
+    proxy
+      .calculate3DForceLayout(nodes, edges, { width, height, depth: height })
+      .then((result) => {
+        if (!cancelled && result) {
+          setLayout(result);
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn('3D force layout computation failed', error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [workerReady, nodes, edges, width, height]);
 
   const handleNodeClick = useCallback((node: LayoutNode3D) => {
     onNodeClick(node.data);

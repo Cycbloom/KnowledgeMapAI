@@ -6,7 +6,7 @@ import App from './App'
 import { ThemeProvider } from './hooks'
 import { registerServiceWorker } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
-import { initErrorReporter, setUserContext, clearUserContext } from './utils/errorReporter'
+import { initErrorReporter, destroyErrorReporter, setUserContext, clearUserContext } from './utils/errorReporter'
 import { initCsrf } from './services/api'
 import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
 import { useStore } from './store/useStore'
@@ -59,6 +59,12 @@ if (import.meta.env.PROD && !isElectron) {
 if (isElectron) {
   initErrorReporter()
   initPerformanceMonitoring()
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    destroyErrorReporter()
+  })
 }
 
 const rootElement = document.getElementById('root');

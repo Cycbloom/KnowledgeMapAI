@@ -66,6 +66,11 @@ BEGIN
        OLD.keywords IS DISTINCT FROM NEW.keywords OR
        OLD.properties IS DISTINCT FROM NEW.properties THEN
 
+      -- Acquire a per-knowledge-point transaction-scoped advisory lock to prevent
+      -- concurrent version_number races (SELECT MAX + 1 under contention).
+      -- Lock key is hashtext(NEW.id); released automatically at end of transaction.
+      PERFORM pg_advisory_xact_lock(hashtext(NEW.id::text));
+
       SELECT COALESCE(MAX(version_number), 0) + 1 INTO next_version
       FROM knowledge_point_versions
       WHERE knowledge_point_id = NEW.id;
@@ -552,15 +557,32 @@ RETURNS TABLE (
   similarity FLOAT
 ) AS $$
 DECLARE
-  v_embedding vector(1024);
-  v_similar record;
+  v_found_id UUID;
+  v_found_title VARCHAR(512);
 BEGIN
-  RETURN QUERY
-  SELECT
-    FALSE as is_duplicate,
-    NULL::UUID as similar_graph_id,
-    NULL::VARCHAR(512) as similar_graph_title,
-    0.0::FLOAT as similarity;
+  -- Check for an exact topic/title match within the same user's non-deleted graphs.
+  -- knowledge_graphs has no `topic` column; the graph title is the topic identifier.
+  SELECT id, title INTO v_found_id, v_found_title
+  FROM knowledge_graphs
+  WHERE user_id = p_user_id
+    AND title = p_topic
+    AND deleted_at IS NULL
+    AND (p_exclude_graph_id IS NULL OR id != p_exclude_graph_id)
+  LIMIT 1;
+
+  IF v_found_id IS NOT NULL THEN
+    RETURN QUERY SELECT
+      TRUE AS is_duplicate,
+      v_found_id AS similar_graph_id,
+      v_found_title AS similar_graph_title,
+      1.0::FLOAT AS similarity;
+  ELSE
+    RETURN QUERY SELECT
+      FALSE AS is_duplicate,
+      NULL::UUID AS similar_graph_id,
+      NULL::VARCHAR(512) AS similar_graph_title,
+      0.0::FLOAT AS similarity;
+  END IF;
 END;
 $$ LANGUAGE plpgsql STABLE;
 

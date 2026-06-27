@@ -18,6 +18,9 @@ const errorQueue: ErrorReport[] = [];
 const MAX_QUEUE_SIZE = 10;
 const FLUSH_INTERVAL = 5000;
 
+let flushIntervalId: ReturnType<typeof setInterval> | null = null;
+let originalConsoleError: typeof console.error | null = null;
+
 const flushErrors = async (): Promise<void> => {
   if (errorQueue.length === 0) return;
 
@@ -33,8 +36,6 @@ const flushErrors = async (): Promise<void> => {
     console.warn("[ErrorReporter] Failed to flush errors");
   }
 };
-
-setInterval(flushErrors, FLUSH_INTERVAL);
 
 const getUserId = (): string | undefined => {
   const storeUser = useStore.getState().user;
@@ -66,6 +67,10 @@ const reportError = (error: ErrorReport): void => {
 };
 
 export const initErrorReporter = (): void => {
+  if (flushIntervalId === null) {
+    flushIntervalId = setInterval(flushErrors, FLUSH_INTERVAL);
+  }
+
   window.onerror = (message, source, lineno, colno, error) => {
     reportError({
       message: String(message),
@@ -97,7 +102,10 @@ export const initErrorReporter = (): void => {
     });
   };
 
-  const originalConsoleError = console.error;
+  if (originalConsoleError !== null) return;
+
+  originalConsoleError = console.error;
+  const savedOriginal = originalConsoleError;
   console.error = (...args) => {
     const message = args
       .map((arg) =>
@@ -116,8 +124,19 @@ export const initErrorReporter = (): void => {
       });
     }
 
-    originalConsoleError.apply(console, args);
+    savedOriginal.apply(console, args);
   };
+};
+
+export const destroyErrorReporter = (): void => {
+  if (flushIntervalId !== null) {
+    clearInterval(flushIntervalId);
+    flushIntervalId = null;
+  }
+  if (originalConsoleError !== null) {
+    console.error = originalConsoleError;
+    originalConsoleError = null;
+  }
 };
 
 export const captureException = (

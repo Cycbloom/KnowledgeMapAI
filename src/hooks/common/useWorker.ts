@@ -70,8 +70,14 @@ interface GraphWorkerApi {
   calculateNodeImportance: (
     nodeId: string,
     nodes: Array<{ id: string }>,
-    edges: Array<{ source: string; target: string }>
+    edges: Array<{ source: string; target: string }>,
+    pageRanks?: Map<string, number>
   ) => Promise<number>;
+  calculatePageRank: (
+    nodes: Array<{ id: string }>,
+    edges: Array<{ source: string; target: string }>,
+    iterations?: number
+  ) => Promise<Map<string, number>>;
   filterNodes: (
     nodes: Array<{ id: string; [key: string]: unknown }>,
     query: string,
@@ -168,10 +174,20 @@ export const useGraphWorker = () => {
   const calculateImportance = useCallback(async (
     nodeId: string,
     nodes: Array<{ id: string }>,
-    edges: Array<{ source: string; target: string }>
+    edges: Array<{ source: string; target: string }>,
+    pageRanks?: Map<string, number>
   ) => {
     if (!proxyRef.current) return null;
-    return proxyRef.current.calculateNodeImportance(nodeId, nodes, edges);
+    return proxyRef.current.calculateNodeImportance(nodeId, nodes, edges, pageRanks);
+  }, []);
+
+  const calculatePageRank = useCallback(async (
+    nodes: Array<{ id: string }>,
+    edges: Array<{ source: string; target: string }>,
+    iterations?: number
+  ) => {
+    if (!proxyRef.current) return null;
+    return proxyRef.current.calculatePageRank(nodes, edges, iterations);
   }, []);
 
   const filterNodes = useCallback(async (
@@ -239,6 +255,7 @@ export const useGraphWorker = () => {
   return {
     calculateLayout,
     calculateImportance,
+    calculatePageRank,
     filterNodes,
     sortNodes,
     calculateMindMapLayout,

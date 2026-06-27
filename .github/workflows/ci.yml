@@ -33,8 +33,34 @@ jobs:
         run: npm run check:electron
 
       - name: Security Audit
-        continue-on-error: true
-        run: npm audit
+        run: |
+          # Run npm audit and filter for high/critical vulnerabilities.
+          # Known non-critical vulnerabilities can be added to the whitelist below.
+          npm audit --omit=dev --json > audit-result.json 2>/dev/null || true
+          node -e '
+            const fs = require("fs");
+            const audit = JSON.parse(fs.readFileSync("./audit-result.json", "utf8"));
+            const vulnerabilities = audit.vulnerabilities || {};
+            // Whitelist of package names with known accepted vulnerabilities.
+            // Add entries here when a vulnerability is reviewed and deemed non-exploitable
+            // in this project context (e.g. dev-only dependency, not reachable at runtime).
+            const whitelist = new Set([
+              // Example: "some-package"
+            ]);
+            const failing = Object.entries(vulnerabilities).filter(([name, v]) => {
+              if (whitelist.has(name)) return false;
+              return v.severity === "critical" || v.severity === "high";
+            });
+            if (failing.length > 0) {
+              console.error("High/Critical vulnerabilities found (not whitelisted):");
+              failing.forEach(([name, v]) => {
+                const via = (v.via || []).map(x => typeof x === "string" ? x : x.title).join(", ");
+                console.error("  - " + name + ": " + v.severity + " (via " + via + ")");
+              });
+              process.exit(1);
+            }
+            console.log("Audit passed: no non-whitelisted high/critical vulnerabilities");
+          '
 
       - name: Run Tests
         run: npm test -- run

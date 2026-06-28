@@ -64,108 +64,104 @@ export class KnowledgeExpansionService {
       nodeTitle,
       options.contextLevel || "normal",
     );
-    const cached = await cacheService.get<{ suggestions: unknown[] }>(cacheKey);
-    if (cached) {
-      return cached;
-    }
 
     try {
-      const model = options.model || provider.model;
-
-      return withAIMonitoring(
-        {
-          operation: "expandKnowledge",
-          provider: provider.providerType,
-          model,
-          metadata: {
-            graphId: options.graphId,
-            userId: options.userId,
-          },
-        },
+      return await cacheService.getOrSet<{ suggestions: unknown[] }>(
+        cacheKey,
         async () => {
-          const existingNodesContext =
-            existingNodes && existingNodes.length > 0
-              ? `\nExisting Nodes in Graph: ${existingNodes
-                  .slice(0, 300)
-                  .join(", ")}`
-              : "";
+          const model = options.model || provider.model;
 
-          const childrenContext =
-            childNodes && childNodes.length > 0
-              ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
-                  ", ",
-                )}`
-              : "";
-
-          const contextLevel = options.contextLevel || "normal";
-
-          const templateContext = {
-            customPrompt: options.expandPrompt,
-            nodeTitle,
-            nodeContent: nodeContent || "",
-            existingNodes: existingNodesContext,
-            childrenContext,
-            isRootOrCore: ["root", "core"].includes(contextLevel),
-            isLeaf: contextLevel === "leaf",
-          };
-
-          const systemPrompt = await promptService.getRenderedPrompt(
-            getSupabaseAdmin(),
-            "expand_knowledge",
-            templateContext,
-            options.userId,
-            options.graphId,
-            options.language,
-          );
-
-          const completion = await withTimeoutAndRetry(
-            () =>
-              provider.client.chat.completions.create({
-                messages: [
-                  { role: "system", content: systemPrompt },
-                  {
-                    role: "user",
-                    content: `Node Title: ${nodeTitle}\nNode Content: ${
-                      nodeContent || ""
-                    }${existingNodesContext}${childrenContext}`,
-                  },
-                ],
-                model,
-                response_format: { type: "json_object" },
-              }),
+          return withAIMonitoring(
             {
-              timeout: LONG_TIMEOUT,
-              maxRetries: 3,
-              onRetry: (attempt, error) => {
-                logger.warn(
-                  `Expand Knowledge retry attempt ${attempt}: ${error.message}`,
-                );
+              operation: "expandKnowledge",
+              provider: provider.providerType,
+              model,
+              metadata: {
+                graphId: options.graphId,
+                userId: options.userId,
               },
             },
+            async () => {
+              const existingNodesContext =
+                existingNodes && existingNodes.length > 0
+                  ? `\nExisting Nodes in Graph: ${existingNodes
+                      .slice(0, 300)
+                      .join(", ")}`
+                  : "";
+
+              const childrenContext =
+                childNodes && childNodes.length > 0
+                  ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
+                      ", ",
+                    )}`
+                  : "";
+
+              const contextLevel = options.contextLevel || "normal";
+
+              const templateContext = {
+                customPrompt: options.expandPrompt,
+                nodeTitle,
+                nodeContent: nodeContent || "",
+                existingNodes: existingNodesContext,
+                childrenContext,
+                isRootOrCore: ["root", "core"].includes(contextLevel),
+                isLeaf: contextLevel === "leaf",
+              };
+
+              const systemPrompt = await promptService.getRenderedPrompt(
+                getSupabaseAdmin(),
+                "expand_knowledge",
+                templateContext,
+                options.userId,
+                options.graphId,
+                options.language,
+              );
+
+              const completion = await withTimeoutAndRetry(
+                () =>
+                  provider.client.chat.completions.create({
+                    messages: [
+                      { role: "system", content: systemPrompt },
+                      {
+                        role: "user",
+                        content: `Node Title: ${nodeTitle}\nNode Content: ${
+                          nodeContent || ""
+                        }${existingNodesContext}${childrenContext}`,
+                      },
+                    ],
+                    model,
+                    response_format: { type: "json_object" },
+                  }),
+                {
+                  timeout: LONG_TIMEOUT,
+                  maxRetries: 3,
+                  onRetry: (attempt, error) => {
+                    logger.warn(
+                      `Expand Knowledge retry attempt ${attempt}: ${error.message}`,
+                    );
+                  },
+                },
+              );
+
+              const content = completion.choices[0].message.content || "";
+
+              if (!content || content.trim() === "") {
+                throw new Error(
+                  "[AI] Empty response from AI provider for expandKnowledge",
+                );
+              }
+
+              const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+                content,
+                "Expand Knowledge",
+              );
+              const result = { suggestions: parsed.suggestions || parsed };
+
+              return { result, usage: completion.usage };
+            },
           );
-
-          const content = completion.choices[0].message.content || "";
-
-          if (!content || content.trim() === "") {
-            logger.error(
-              "[AI] Empty response from AI provider for expandKnowledge",
-            );
-            const mockResult = getMockResponse("expand", nodeTitle) as {
-              suggestions: unknown[];
-            };
-            return { result: mockResult, usage: completion.usage };
-          }
-
-          const parsed = parseAIResponse<{ suggestions: unknown[] }>(
-            content,
-            "Expand Knowledge",
-          );
-          const result = { suggestions: parsed.suggestions || parsed };
-
-          await cacheService.set(cacheKey, result, 60 * 60 * 24);
-
-          return { result, usage: completion.usage };
         },
+        60 * 60 * 24,
       );
     } catch (error: unknown) {
       const err = error as Error;
@@ -178,6 +174,17 @@ export class KnowledgeExpansionService {
         throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
           message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
         });
+      }
+
+      if (
+        err.message?.includes("Empty response from AI provider for expandKnowledge")
+      ) {
+        logger.error(
+          "[AI] Empty response from AI provider for expandKnowledge",
+        );
+        return getMockResponse("expand", nodeTitle) as {
+          suggestions: unknown[];
+        };
       }
 
       if (err.message?.includes("parse") || err.message?.includes("JSON")) {

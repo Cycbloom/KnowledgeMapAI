@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, requireAdmin, type AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -11,7 +11,7 @@ import {
 import {
   conceptAggregationService,
 } from "../services/graph";
-import { requireKnowledgePointOwnership, requireAdmin } from "../middleware/ownership";
+import { requireKnowledgePointOwnership } from "../middleware/ownership";
 import { logger } from "../utils/logger";
 import { z } from "zod";
 

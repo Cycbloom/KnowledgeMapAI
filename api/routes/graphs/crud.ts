@@ -130,12 +130,15 @@ router.post(
       req.user.id,
       title,
       description,
-      { templateType: template_type, presetId: preset_id },
+      {
+        templateType: template_type,
+        presetId: preset_id,
+        domains:
+          domains && Array.isArray(domains) && domains.length > 0
+            ? domains
+            : undefined,
+      },
     );
-
-    if (domains && Array.isArray(domains) && domains.length > 0) {
-      await graphDomainService.updateGraphDomains(req.supabase!, data.id, domains);
-    }
 
     res.status(201).json(data);
   },

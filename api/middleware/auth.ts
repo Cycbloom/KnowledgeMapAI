@@ -3,6 +3,7 @@ import { getSupabaseAdmin, getSupabaseAnon, createClientWithToken } from '../sup
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from './errorHandler';
 import { ErrorCodes, type ErrorCode } from '../../shared/types/errorCodes';
+import { cacheService } from '../services/common/cacheService';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -127,17 +128,27 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
       throw new AppError('User not authenticated', 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
-    const { data: userRecord, error } = await getSupabaseAdmin()
-      .from('users')
-      .select('role')
-      .eq('id', req.user.id)
-      .single();
+    const cacheKey = `user_role:${req.user.id}`;
+    const cachedRole = await cacheService.get<string>(cacheKey);
 
-    if (error || !userRecord) {
-      throw new AppError('Failed to verify user role', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+    let role: string | undefined = cachedRole;
+
+    if (cachedRole === undefined) {
+      const { data: userRecord, error } = await getSupabaseAdmin()
+        .from('users')
+        .select('role')
+        .eq('id', req.user.id)
+        .single();
+
+      if (error || !userRecord) {
+        throw new AppError('Failed to verify user role', 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      }
+
+      role = userRecord.role;
+      cacheService.set(cacheKey, role, 300).catch(() => {});
     }
 
-    if (userRecord.role === 'admin') {
+    if (role === 'admin') {
       return next();
     }
 
@@ -145,7 +156,7 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
     if (req.user.email && adminEmails.includes(req.user.email)) {
       return next();
     }
-    
+
     throw new AppError('Admin access required', 403, ErrorCodes.AUTH_FORBIDDEN);
   });
 };

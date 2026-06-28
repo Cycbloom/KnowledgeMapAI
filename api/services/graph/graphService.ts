@@ -27,6 +27,8 @@ import {
 import { appEventBus } from "../core/eventBus";
 import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import { graphVersionService } from "./graphVersionService";
+import { transactionExecutor } from "../../database/transactionExecutor";
+import { graphDomainService } from "./graphDomainService";
 
 import type {
   GraphCreatedPayload,
@@ -332,6 +334,10 @@ export class GraphService {
    * 3. 创建关联的学习任务
    * 4. 发布 graph_created 事件
    *
+   * 当传入 domains 且 transactionExecutor 可用时，graph 与 domains 的插入
+   * 会在同一事务中执行，避免 domain 创建失败导致孤立 graph 记录。
+   * transactionExecutor 不可用时降级为分别调用，domain 失败仅记录 warn。
+   *
    * @param supabase - Supabase 客户端
    * @param userId - 用户 ID
    * @param title - 图谱标题
@@ -340,6 +346,7 @@ export class GraphService {
    * @param options.skipDuplicateCheck - 跳过主题重复检测
    * @param options.templateType - 模板类型
    * @param options.presetId - 骨干模块预设 ID
+   * @param options.domains - 关联领域列表，事务可用时与 graph 创建一起原子提交
    * @returns 创建的图谱数据
    * @throws {AppError} 如果主题重复（DUPLICATE_TOPIC）
    *
@@ -362,6 +369,7 @@ export class GraphService {
       skipDuplicateCheck?: boolean;
       templateType?: string;
       presetId?: string;
+      domains?: Array<{ domain_id: string; is_primary?: boolean }>;
     },
   ) {
     if (!options?.skipDuplicateCheck) {
@@ -391,19 +399,81 @@ export class GraphService {
       embedding = null;
     }
 
-    const { data, error } = await supabase
-      .from("knowledge_graphs")
-      .insert({
-        user_id: userId,
-        title,
-        description: description || null,
-        embedding: embedding ?? undefined,
-        template_type: options?.templateType || null,
-      })
-      .select()
-      .single();
+    const domainsList = options?.domains;
+    const useTransaction =
+      !!domainsList &&
+      domainsList.length > 0 &&
+      transactionExecutor.isAvailable();
 
-    if (error) throw error;
+    let data: { id: string; [key: string]: unknown };
+
+    if (useTransaction && domainsList) {
+      data = await transactionExecutor.executeInTransaction(async (client) => {
+        const graphResult = await client.query(
+          `INSERT INTO knowledge_graphs (user_id, title, description, embedding, template_type)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+          [
+            userId,
+            title,
+            description || null,
+            embedding ? JSON.stringify(embedding) : null,
+            options?.templateType || null,
+          ],
+        );
+        const graph = graphResult.rows[0] as { id: string; [key: string]: unknown };
+
+        const hasPrimary = domainsList.some((d) => d.is_primary);
+        const normalizedDomains = domainsList.map((d, i) => ({
+          domain_id: d.domain_id,
+          is_primary: hasPrimary ? d.is_primary ?? false : i === 0,
+        }));
+
+        const domainValues: string[] = [];
+        const domainParams: unknown[] = [graph.id];
+        let paramIdx = 2;
+        for (const d of normalizedDomains) {
+          domainValues.push(
+            `($1, $${paramIdx}, $${paramIdx + 1})`,
+          );
+          domainParams.push(d.domain_id, d.is_primary);
+          paramIdx += 2;
+        }
+
+        await client.query(
+          `INSERT INTO graph_domains (graph_id, domain_id, is_primary) VALUES ${domainValues.join(", ")}`,
+          domainParams,
+        );
+
+        return graph;
+      });
+    } else {
+      const { data: graphData, error } = await supabase
+        .from("knowledge_graphs")
+        .insert({
+          user_id: userId,
+          title,
+          description: description || null,
+          embedding: embedding ?? undefined,
+          template_type: options?.templateType || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      data = graphData as { id: string; [key: string]: unknown };
+
+      if (domainsList && domainsList.length > 0) {
+        try {
+          await graphDomainService.updateGraphDomains(supabase, data.id, domainsList);
+        } catch (e) {
+          logger.warn(
+            "[GraphService] Failed to update graph domains (non-transactional fallback):",
+            e,
+          );
+        }
+      }
+    }
 
     if (options?.templateType === "topic_research") {
       const preset = options?.presetId

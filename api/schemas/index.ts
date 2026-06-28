@@ -33,7 +33,14 @@ export const createGraphSchema = z.object({
   description: z.string().optional(),
   template_type: z.string().optional(),
   preset_id: z.string().optional(),
-  domains: z.array(z.string()).optional(),
+  domains: z
+    .array(
+      z.object({
+        domain_id: z.string().uuid("无效的领域ID"),
+        is_primary: z.boolean().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const updateGraphSchema = z.object({

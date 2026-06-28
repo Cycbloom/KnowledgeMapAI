@@ -1168,51 +1168,44 @@ export class PromptService {
       graphId || "none",
     );
 
-    // Try cache first
-    const cached = await cacheService.get<PromptTemplate>(cacheKey);
-    if (cached) return cached;
+    return cacheService.getOrSet<PromptTemplate | null>(cacheKey, async () => {
+      // Server-side OR filter: only fetch templates that are actually relevant.
+      // Matches: scope=system  OR  (scope=user AND user_id=userId)  OR  (scope=graph AND graph_id=graphId)
+      // This avoids pulling every template with the same code into memory and prevents
+      // returning other users' templates when a service-role (admin) client bypasses RLS.
+      // userId/graphId are UUIDs (hex + hyphens), so they are safe to interpolate into
+      // the PostgREST .or() string without injection risk.
+      const orConditions: string[] = ["scope.eq.system"];
+      if (userId) {
+        orConditions.push(`and(scope.eq.user,user_id.eq.${userId})`);
+      }
+      if (graphId) {
+        orConditions.push(`and(scope.eq.graph,graph_id.eq.${graphId})`);
+      }
 
-    // Server-side OR filter: only fetch templates that are actually relevant.
-    // Matches: scope=system  OR  (scope=user AND user_id=userId)  OR  (scope=graph AND graph_id=graphId)
-    // This avoids pulling every template with the same code into memory and prevents
-    // returning other users' templates when a service-role (admin) client bypasses RLS.
-    // userId/graphId are UUIDs (hex + hyphens), so they are safe to interpolate into
-    // the PostgREST .or() string without injection risk.
-    const orConditions: string[] = ["scope.eq.system"];
-    if (userId) {
-      orConditions.push(`and(scope.eq.user,user_id.eq.${userId})`);
-    }
-    if (graphId) {
-      orConditions.push(`and(scope.eq.graph,graph_id.eq.${graphId})`);
-    }
+      const { data: templates, error } = await supabase
+        .from("prompt_templates")
+        .select("*")
+        .eq("code", code)
+        .or(orConditions.join(","));
 
-    const { data: templates, error } = await supabase
-      .from("prompt_templates")
-      .select("*")
-      .eq("code", code)
-      .or(orConditions.join(","));
+      if (error) throw error;
 
-    if (error) throw error;
+      if (!templates || templates.length === 0) return null;
 
-    if (!templates || templates.length === 0) return null;
+      // Sort by priority: Graph > User > System (filtering is already done server-side)
+      const getWeight = (t: PromptTemplate) => {
+        if (t.scope === "graph" && t.graph_id === graphId) return 3;
+        if (t.scope === "user" && t.user_id === userId) return 2;
+        if (t.scope === "system") return 1;
+        return 0;
+      };
 
-    // Sort by priority: Graph > User > System (filtering is already done server-side)
-    const getWeight = (t: PromptTemplate) => {
-      if (t.scope === "graph" && t.graph_id === graphId) return 3;
-      if (t.scope === "user" && t.user_id === userId) return 2;
-      if (t.scope === "system") return 1;
-      return 0;
-    };
+      const sorted = templates.sort((a, b) => getWeight(b) - getWeight(a));
+      const bestMatch = sorted[0];
 
-    const sorted = templates.sort((a, b) => getWeight(b) - getWeight(a));
-    const bestMatch = sorted[0];
-
-    // Cache the result (short TTL to allow quick updates, e.g. 60s)
-    if (bestMatch) {
-      await cacheService.set(cacheKey, bestMatch, 60);
-    }
-
-    return bestMatch || null;
+      return bestMatch || null;
+    }, 60);
   }
 
   // Management Methods

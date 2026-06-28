@@ -21,6 +21,22 @@ vi.mock('../../supabase', () => ({
   createClientWithToken: () => mockTokenClient,
 }));
 
+// Mock cacheService to prevent cache pollution across tests.
+// vi.hoisted ensures the mock fns are initialized before the hoisted vi.mock
+// factory runs (the factory accesses them eagerly, unlike the supabase mock
+// above which wraps variable access in lazily-called functions).
+const { mockCacheGet, mockCacheSet } = vi.hoisted(() => ({
+  mockCacheGet: vi.fn().mockResolvedValue(undefined),
+  mockCacheSet: vi.fn().mockResolvedValue(true),
+}));
+
+vi.mock('../../services/common/cacheService', () => ({
+  cacheService: {
+    get: mockCacheGet,
+    set: mockCacheSet,
+  },
+}));
+
 interface MockRequest {
   headers: Record<string, string | undefined>;
   body?: unknown;

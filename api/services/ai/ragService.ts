@@ -233,7 +233,7 @@ export class RAGService {
   }
 
   /**
-   * 转义 ilike 模式中的特殊字符（%_\）
+   * 转义 like 模式中的特殊字符（%_\）
    */
   private escapePattern(pattern: string): string {
     return pattern.replace(/[%_\\]/g, "\\$&");
@@ -248,7 +248,7 @@ export class RAGService {
   }
 
   /**
-   * 关键词检索：基于 ilike 模糊匹配在 knowledge_points 表中搜索
+   * 关键词检索：基于 like 模糊匹配在 knowledge_points 表中搜索
    */
   async keywordSearch(
     query: string,
@@ -267,12 +267,14 @@ export class RAGService {
       const safePattern = this.escapePostgrestValue(pattern);
 
       // 在 knowledge_points 表中搜索，条件为 title 或 content 模糊匹配
+      // 使用 like（而非 ilike）以利用 12_indexes.sql 中的 pg_trgm GIN 索引
+      // （idx_knowledge_points_title_trgm / idx_knowledge_points_content_trgm 仅在 LIKE/~ 操作符下生效）
       // 使用双引号包裹值避免 PostgREST 过滤器语法注入
       const { data: knowledgePoints, error: kpError } = await supabase
         .from("knowledge_points")
         .select("id, title, content")
         .eq("owner_id", userId)
-        .or(`title.ilike."${safePattern}",content.ilike."${safePattern}"`);
+        .or(`title.like."${safePattern}",content.like."${safePattern}"`);
 
       if (kpError) {
         logger.error("关键词检索 knowledge_points 失败", { error: kpError });

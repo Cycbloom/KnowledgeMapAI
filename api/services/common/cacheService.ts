@@ -1,4 +1,5 @@
 import NodeCache from 'node-cache';
+import { LRUCache } from 'lru-cache';
 import crypto from 'crypto';
 import { logger } from '../../utils/logger';
 
@@ -7,7 +8,9 @@ const localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 logger.info('📦 In-Memory Cache initialized');
 
-const accessOrder = new Map<string, number>();
+// LRU tracker: O(1) eviction via lru-cache, replacing O(N) Map scan.
+// Value stores the key itself so pop() returns the evicted key for O(1) cleanup.
+const lruTracker = new LRUCache<string, string>({ max: MAX_CACHE_KEYS });
 
 const tagIndex = new Map<string, Set<string>>();
 const keyTags = new Map<string, Set<string>>();
@@ -79,7 +82,10 @@ export const cacheService = {
   get: async <T>(key: string): Promise<T | undefined> => {
     const value = localCache.get<T>(key);
     if (value !== undefined) {
-      accessOrder.set(key, Date.now());
+      // lru-cache get updates access order in O(1); re-add if evicted from tracker
+      if (lruTracker.get(key) === undefined) {
+        lruTracker.set(key, key);
+      }
       logger.debug(`[Cache] HIT: ${key}`);
     } else {
       logger.debug(`[Cache] MISS: ${key}`);
@@ -90,26 +96,19 @@ export const cacheService = {
   set: async <T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<boolean> => {
     const effectiveTTL = stochasticTTL(ttl || DEFAULT_TTL);
 
-    // LRU eviction: select least-recently-accessed key from accessOrder
+    // LRU eviction: O(1) via lruTracker.pop() instead of O(N) Map scan
+    lruTracker.set(key, key);
     if (localCache.keys().length >= MAX_CACHE_KEYS && !localCache.has(key)) {
-      let oldestKey: string | null = null;
-      let oldestTime = Infinity;
-      for (const [k, t] of accessOrder) {
-        if (t < oldestTime) {
-          oldestTime = t;
-          oldestKey = k;
-        }
-      }
-      if (oldestKey !== null) {
-        await cacheService.del(oldestKey);
-        logger.debug(`[Cache] LRU evicted: ${oldestKey}`);
+      const poppedKey = lruTracker.pop();
+      if (poppedKey !== undefined) {
+        await cacheService.del(poppedKey);
+        logger.debug(`[Cache] LRU evicted: ${poppedKey}`);
       }
     }
 
     const success = localCache.set(key, value, effectiveTTL);
 
     if (success) {
-      accessOrder.set(key, Date.now());
       if (tags && tags.length > 0) {
         const tagSet = new Set(tags);
         keyTags.set(key, tagSet);
@@ -154,7 +153,7 @@ export const cacheService = {
         }
         keyTags.delete(k);
       }
-      accessOrder.delete(k);
+      lruTracker.delete(k);
     }
 
     return localCache.del(keys);
@@ -172,7 +171,7 @@ export const cacheService = {
 
   flush: async (): Promise<void> => {
     localCache.flushAll();
-    accessOrder.clear();
+    lruTracker.clear();
     tagIndex.clear();
     keyTags.clear();
   },

@@ -24,7 +24,7 @@ COMMENT ON TABLE knowledge_points IS '独立的知识点实体，支持跨图谱
 COMMENT ON COLUMN knowledge_points.visibility IS '知识点可见性：private(私有), public(公共), pending(待审核)';
 COMMENT ON COLUMN knowledge_points.owner_id IS '知识点所有者，引用 auth.users(id)，私有知识点仅所有者可见';
 COMMENT ON COLUMN knowledge_points.keywords IS '关键词数组，结构: [{"term": "关键词文本", "importance": 5, "category": "定义", "explanation": "简短解释"}]';
-COMMENT ON COLUMN knowledge_points.mastery_level IS '知识点掌握度 (0.00-1.00)，用于 SM-2 算法和智能调度';
+COMMENT ON COLUMN knowledge_points.mastery_level IS '知识点掌握度 (0.00-1.00)，用于评估知识点掌握程度';
 COMMENT ON COLUMN knowledge_points.last_study_at IS '最后学习时间，用于计算复习间隔';
 COMMENT ON COLUMN knowledge_points.total_study_duration IS '累计学习时长（分钟）';
 COMMENT ON COLUMN knowledge_points.learning_material IS '学习材料/补充资料';

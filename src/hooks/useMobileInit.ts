@@ -4,6 +4,7 @@ import { App } from "@capacitor/app";
 import { Network } from "@capacitor/network";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { useNavigate, useLocation } from "react-router-dom";
+import { mobileSyncService } from "../services/sync/mobileSyncService";
 
 export function useMobileInit() {
   const [isMobile, setIsMobile] = useState(false);
@@ -33,12 +34,17 @@ export function useMobileInit() {
       try {
         const status = await Network.getStatus();
         setIsOnline(status.connected);
+        mobileSyncService.setOnlineStatus(status.connected);
+        if (status.connected) {
+          await mobileSyncService.start();
+        }
       } catch {
         console.warn("Failed to get network status");
       }
 
       Network.addListener("networkStatusChange", (status) => {
         setIsOnline(status.connected);
+        mobileSyncService.setOnlineStatus(status.connected);
       });
     };
 
@@ -64,6 +70,7 @@ export function useMobileInit() {
     return () => {
       backButtonListener.then((listener) => listener.remove());
       Network.removeAllListeners();
+      void mobileSyncService.stop();
     };
   }, [location.pathname, navigate]);
 

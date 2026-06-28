@@ -265,9 +265,9 @@ class SchedulerCronService {
     const today = new Date().toISOString().split("T")[0];
 
     const { data: overdueReviews, error } = await getSupabaseAdmin()
-      .from("knowledge_review_tasks")
-      .select("id, user_id, knowledge_point_id, next_review_date")
-      .lte("next_review_date", new Date().toISOString())
+      .from("study_cards")
+      .select("id, user_id, knowledge_point_id, next_review")
+      .lte("next_review", new Date().toISOString())
       .limit(100);
 
     if (error) {

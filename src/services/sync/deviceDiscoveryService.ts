@@ -1,4 +1,4 @@
-import { SyncDevice } from './syncTypes';
+import type { SyncDevice } from '../../../shared/sync';
 
 const BROADCAST_INTERVAL = 5000;
 const DEVICE_TIMEOUT = 30000;

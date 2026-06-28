@@ -6,23 +6,23 @@ import type {
   FrontendKernelAPI,
 } from "./types";
 import { DependencyResolver } from "./DependencyResolver";
+import { PluginLifecycleBase } from "@shared/kernel";
 
-export class Kernel implements FrontendKernelAPI {
+export class Kernel
+  extends PluginLifecycleBase<Plugin, FrontendKernelAPI, PluginEntry>
+  implements FrontendKernelAPI
+{
   private routeRegistry = new Map<string, RouteRegistration>();
   private navRegistry: NavItemRegistration[] = [];
   private apiRegistry = new Map<string, Record<string, unknown>>();
   private extensionPoint = new Map<string, Array<{ pluginName: string; extension: unknown }>>();
-  private pluginRegistry = new Map<string, PluginEntry>();
   private dependencyResolver = new DependencyResolver();
   private currentPluginName: string | null = null;
 
-  registerPlugin(plugin: Plugin): void {
-    if (this.pluginRegistry.has(plugin.name)) {
-      console.warn(`[Kernel] Plugin "${plugin.name}" is already registered, skipping`);
-      return;
-    }
+  // ---- 基类抽象成员实现 ----
 
-    const entry: PluginEntry = {
+  protected override createEntry(plugin: Plugin): PluginEntry {
+    return {
       plugin,
       state: "installed",
       registeredRoutes: [],
@@ -30,108 +30,91 @@ export class Kernel implements FrontendKernelAPI {
       registeredApiModules: [],
       registeredExtensions: new Map(),
     };
-
-    this.pluginRegistry.set(plugin.name, entry);
-
-    this.runInPluginContext(plugin.name, () => {
-      plugin.onInstall(this);
-    });
-
-    entry.state = "inactive";
   }
 
-  async activatePlugin(name: string): Promise<void> {
-    const entry = this.pluginRegistry.get(name);
-    if (!entry) {
-      throw new Error(`[Kernel] Plugin "${name}" is not registered`);
-    }
+  protected override getPluginAPI(): FrontendKernelAPI {
+    return this;
+  }
 
-    if (entry.state === "active") {
-      console.warn(`[Kernel] Plugin "${name}" is already active, skipping`);
-      return;
-    }
+  protected override logWarn(message: string): void {
+    console.warn(message);
+  }
 
-    const deps = entry.plugin.dependencies ?? [];
-    for (const dep of deps) {
-      const depEntry = this.pluginRegistry.get(dep);
-      if (!depEntry) {
-        throw new Error(
-          `[Kernel] Cannot activate "${name}": dependency "${dep}" is not registered`,
+  protected override logInfo(_message: string): void {
+    // 前端禁止 console.info，按现有行为不输出信息日志
+  }
+
+  protected override resolveActivationOrder(): Plugin[] {
+    const plugins = Array.from(this.pluginRegistry.values()).map(
+      (entry) => entry.plugin,
+    );
+    return this.dependencyResolver.resolve(plugins);
+  }
+
+  protected override cleanupPluginRegistrations(pluginName: string): void {
+    const entry = this.pluginRegistry.get(pluginName);
+    if (!entry) return;
+
+    for (const routePath of entry.registeredRoutes) {
+      this.routeRegistry.delete(routePath);
+    }
+    entry.registeredRoutes = [];
+
+    this.navRegistry = this.navRegistry.filter(
+      (item) => !entry.registeredNavItems.includes(item.path),
+    );
+    entry.registeredNavItems = [];
+
+    for (const moduleName of entry.registeredApiModules) {
+      this.apiRegistry.delete(moduleName);
+    }
+    entry.registeredApiModules = [];
+
+    for (const [pointName] of entry.registeredExtensions) {
+      const extensions = this.extensionPoint.get(pointName);
+      if (extensions) {
+        const filtered = extensions.filter(
+          (ext) => ext.pluginName !== pluginName,
         );
-      }
-      if (depEntry.state !== "active") {
-        await this.activatePlugin(dep);
+        if (filtered.length === 0) {
+          this.extensionPoint.delete(pointName);
+        } else {
+          this.extensionPoint.set(pointName, filtered);
+        }
       }
     }
-
-    if (entry.plugin.onActivate) {
-      await this.runInPluginContextAsync(name, async () => {
-        await entry.plugin.onActivate?.();
-      });
-    }
-
-    entry.state = "active";
+    entry.registeredExtensions.clear();
   }
 
-  async deactivatePlugin(name: string): Promise<void> {
-    const entry = this.pluginRegistry.get(name);
-    if (!entry) {
-      throw new Error(`[Kernel] Plugin "${name}" is not registered`);
-    }
+  // ---- 上下文包裹（保留原 runInPluginContext 语义） ----
 
-    if (entry.state !== "active") {
-      console.warn(`[Kernel] Plugin "${name}" is not active, skipping deactivation`);
-      return;
-    }
-
-    const dependents = this.getDependents(name);
-    for (const dependent of dependents) {
-      const depEntry = this.pluginRegistry.get(dependent);
-      if (depEntry?.state === "active") {
-        await this.deactivatePlugin(dependent);
-      }
-    }
-
-    if (entry.plugin.onDeactivate) {
-      await this.runInPluginContextAsync(name, async () => {
-        await entry.plugin.onDeactivate?.();
-      });
-    }
-
-    this.cleanupPluginRegistrations(name);
-    entry.state = "inactive";
-  }
-
-  async activateAll(): Promise<void> {
-    const plugins = Array.from(this.pluginRegistry.values()).map(
-      (entry) => entry.plugin,
-    );
-
-    const sorted = this.dependencyResolver.resolve(plugins);
-
-    for (const plugin of sorted) {
-      const entry = this.pluginRegistry.get(plugin.name);
-      if (entry && entry.state !== "active") {
-        await this.activatePlugin(plugin.name);
-      }
+  protected override withPluginContextSync<T>(
+    pluginName: string,
+    fn: () => T,
+  ): T {
+    const prev = this.currentPluginName;
+    this.currentPluginName = pluginName;
+    try {
+      return fn();
+    } finally {
+      this.currentPluginName = prev;
     }
   }
 
-  async deactivateAll(): Promise<void> {
-    const plugins = Array.from(this.pluginRegistry.values()).map(
-      (entry) => entry.plugin,
-    );
-
-    const sorted = this.dependencyResolver.resolve(plugins);
-    const reverseOrder = [...sorted].reverse();
-
-    for (const plugin of reverseOrder) {
-      const entry = this.pluginRegistry.get(plugin.name);
-      if (entry?.state === "active") {
-        await this.deactivatePlugin(plugin.name);
-      }
+  protected override async withPluginContextAsync<T>(
+    pluginName: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    const prev = this.currentPluginName;
+    this.currentPluginName = pluginName;
+    try {
+      return await fn();
+    } finally {
+      this.currentPluginName = prev;
     }
   }
+
+  // ---- 前端独有方法 ----
 
   registerRoute(registration: RouteRegistration): void {
     if (this.routeRegistry.has(registration.path)) {
@@ -225,74 +208,5 @@ export class Kernel implements FrontendKernelAPI {
       result[name] = module;
     }
     return result;
-  }
-
-  private getDependents(pluginName: string): string[] {
-    const dependents: string[] = [];
-    for (const [name, entry] of this.pluginRegistry) {
-      const deps = entry.plugin.dependencies ?? [];
-      if (deps.includes(pluginName)) {
-        dependents.push(name);
-      }
-    }
-    return dependents;
-  }
-
-  private cleanupPluginRegistrations(pluginName: string): void {
-    const entry = this.pluginRegistry.get(pluginName);
-    if (!entry) return;
-
-    for (const routePath of entry.registeredRoutes) {
-      this.routeRegistry.delete(routePath);
-    }
-    entry.registeredRoutes = [];
-
-    this.navRegistry = this.navRegistry.filter(
-      (item) => !entry.registeredNavItems.includes(item.path),
-    );
-    entry.registeredNavItems = [];
-
-    for (const moduleName of entry.registeredApiModules) {
-      this.apiRegistry.delete(moduleName);
-    }
-    entry.registeredApiModules = [];
-
-    for (const [pointName] of entry.registeredExtensions) {
-      const extensions = this.extensionPoint.get(pointName);
-      if (extensions) {
-        const filtered = extensions.filter(
-          (ext) => ext.pluginName !== pluginName,
-        );
-        if (filtered.length === 0) {
-          this.extensionPoint.delete(pointName);
-        } else {
-          this.extensionPoint.set(pointName, filtered);
-        }
-      }
-    }
-    entry.registeredExtensions.clear();
-  }
-
-  private runInPluginContext<T>(pluginName: string, fn: () => T): T {
-    const prev = this.currentPluginName;
-    this.currentPluginName = pluginName;
-    try {
-      return fn();
-    } finally {
-      this.currentPluginName = prev;
-    }
-  }
-
-  private async runInPluginContextAsync<T>(
-    pluginName: string,
-    fn: () => Promise<T>,
-  ): Promise<T> {
-    const prev = this.currentPluginName;
-    this.currentPluginName = pluginName;
-    try {
-      return await fn();
-    } finally {
-      this.currentPluginName = prev;
-    }
   }
 }

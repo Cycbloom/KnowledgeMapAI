@@ -12,6 +12,8 @@ export interface SyncOperation {
   data: Record<string, unknown>;
   timestamp: string;
   userId: string;
+  /** 客户端生成的操作唯一 ID（UUID），用于幂等性检查 */
+  clientOpId?: string;
 }
 
 /** 同步批次 */
@@ -61,4 +63,14 @@ export interface PushOperation {
   id: string;
   data?: Record<string, unknown>;
   clientUpdatedAt: string;
+}
+
+/** 同步状态 */
+export interface SyncStatus {
+  isRunning: boolean;
+  lastSync?: string;
+  lastSyncStatus?: "success" | "error";
+  pendingOperations: number;
+  conflicts: SyncConflict[];
+  devices: SyncDevice[];
 }

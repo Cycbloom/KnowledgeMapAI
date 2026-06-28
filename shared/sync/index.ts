@@ -5,6 +5,7 @@ export type {
   SyncDevice,
   SyncConfig,
   PushOperation,
+  SyncStatus,
 } from "./types";
 
 export { mergeOperations } from "./operationMerger";

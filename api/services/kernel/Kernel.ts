@@ -10,141 +10,94 @@ import type {
 } from "./types";
 import { DependencyResolver } from "./DependencyResolver";
 import { logger } from "../../utils/logger";
+import { PluginLifecycleBase } from "@shared/kernel";
 
 /**
  * 插件系统核心内核
  *
  * Kernel 负责管理插件的生命周期和路由注册。
+ * 核心生命周期逻辑继承自 PluginLifecycleBase，本类仅保留后端独有行为。
  */
-export class Kernel implements KernelAPI {
-  private pluginRegistry = new Map<string, PluginEntry>();
+export class Kernel
+  extends PluginLifecycleBase<Plugin, KernelAPI, PluginEntry>
+  implements KernelAPI
+{
   private routeRegistry: RouteEntry[] = [];
   private dependencyResolver = new DependencyResolver();
   private currentInstallingPlugin: string | null = null;
 
-  registerPlugin(plugin: Plugin): void {
-    if (this.pluginRegistry.has(plugin.name)) {
-      logger.warn(`[Kernel] Plugin "${plugin.name}" is already registered, skipping`);
-      return;
-    }
+  // ---- 基类抽象成员实现 ----
 
-    const entry: PluginEntry = {
+  protected override createEntry(plugin: Plugin): PluginEntry {
+    return {
       plugin,
       state: "installed",
       registeredRoutes: [],
     };
-
-    this.pluginRegistry.set(plugin.name, entry);
-    logger.info(`[Kernel] Plugin "${plugin.name}" v${plugin.version} registered`);
-
-    this.currentInstallingPlugin = plugin.name;
-    plugin.onInstall(this);
-    this.currentInstallingPlugin = null;
-    entry.state = "inactive";
   }
 
-  async activatePlugin(name: string): Promise<void> {
-    const entry = this.pluginRegistry.get(name);
-    if (!entry) {
-      throw new Error(`[Kernel] Plugin "${name}" is not registered`);
-    }
-
-    if (entry.state === "active") {
-      logger.warn(`[Kernel] Plugin "${name}" is already active, skipping`);
-      return;
-    }
-
-    const deps = entry.plugin.dependencies ?? [];
-    for (const dep of deps) {
-      const depEntry = this.pluginRegistry.get(dep);
-      if (!depEntry) {
-        throw new Error(
-          `[Kernel] Cannot activate "${name}": dependency "${dep}" is not registered`,
-        );
-      }
-      if (depEntry.state !== "active") {
-        logger.info(
-          `[Kernel] Auto-activating dependency "${dep}" for plugin "${name}"`,
-        );
-        await this.activatePlugin(dep);
-      }
-    }
-
-    if (entry.plugin.onActivate) {
-      await entry.plugin.onActivate();
-    }
-
-    entry.state = "active";
-    logger.info(`[Kernel] Plugin "${name}" activated`);
+  protected override getPluginAPI(): KernelAPI {
+    return this;
   }
 
-  async deactivatePlugin(name: string): Promise<void> {
-    const entry = this.pluginRegistry.get(name);
-    if (!entry) {
-      throw new Error(`[Kernel] Plugin "${name}" is not registered`);
-    }
-
-    if (entry.state !== "active") {
-      logger.warn(`[Kernel] Plugin "${name}" is not active, skipping deactivation`);
-      return;
-    }
-
-    const dependents = this.getDependents(name);
-    for (const dependent of dependents) {
-      const depEntry = this.pluginRegistry.get(dependent);
-      if (depEntry?.state === "active") {
-        logger.info(
-          `[Kernel] Deactivating dependent plugin "${dependent}" before "${name}"`,
-        );
-        await this.deactivatePlugin(dependent);
-      }
-    }
-
-    if (entry.plugin.onDeactivate) {
-      await entry.plugin.onDeactivate();
-    }
-
-    this.cleanupPluginRegistrations(name);
-    entry.state = "inactive";
-    logger.info(`[Kernel] Plugin "${name}" deactivated`);
+  protected override logWarn(message: string): void {
+    logger.warn(message);
   }
 
-  async activateAll(): Promise<void> {
+  protected override logInfo(message: string): void {
+    logger.info(message);
+  }
+
+  protected override resolveActivationOrder(): Plugin[] {
     const plugins = Array.from(this.pluginRegistry.values()).map(
       (entry) => entry.plugin,
     );
+    return this.dependencyResolver.resolve(plugins);
+  }
 
-    const sorted = this.dependencyResolver.resolve(plugins);
+  protected override cleanupPluginRegistrations(pluginName: string): void {
+    const entry = this.pluginRegistry.get(pluginName);
+    if (!entry) return;
 
-    for (const plugin of sorted) {
-      const entry = this.pluginRegistry.get(plugin.name);
-      if (entry && entry.state !== "active") {
-        await this.activatePlugin(plugin.name);
-      }
-    }
+    const routeRouters = new Set(entry.registeredRoutes.map((r) => r.router));
+    this.routeRegistry = this.routeRegistry.filter(
+      (r) => !routeRouters.has(r.router),
+    );
+    entry.registeredRoutes = [];
 
     logger.info(
-      `[Kernel] All plugins activated (${sorted.map((p) => p.name).join(", ")})`,
+      `[Kernel] Cleaned up all registrations for plugin "${pluginName}"`,
     );
   }
 
-  async deactivateAll(): Promise<void> {
-    const plugins = Array.from(this.pluginRegistry.values()).map(
-      (entry) => entry.plugin,
-    );
+  // ---- 上下文包裹（保留原 currentInstallingPlugin 语义） ----
 
-    const sorted = this.dependencyResolver.resolve(plugins);
-    const reverseOrder = [...sorted].reverse();
-
-    for (const plugin of reverseOrder) {
-      const entry = this.pluginRegistry.get(plugin.name);
-      if (entry?.state === "active") {
-        await this.deactivatePlugin(plugin.name);
-      }
+  protected override withPluginContextSync<T>(
+    pluginName: string,
+    fn: () => T,
+  ): T {
+    const prev = this.currentInstallingPlugin;
+    this.currentInstallingPlugin = pluginName;
+    try {
+      return fn();
+    } finally {
+      this.currentInstallingPlugin = prev;
     }
+  }
 
+  // ---- activateAll / deactivateAll 完成钩子 ----
+
+  protected override onAllActivated(plugins: Plugin[]): void {
+    logger.info(
+      `[Kernel] All plugins activated (${plugins.map((p) => p.name).join(", ")})`,
+    );
+  }
+
+  protected override onAllDeactivated(): void {
     logger.info("[Kernel] All plugins deactivated");
   }
+
+  // ---- 后端独有方法 ----
 
   registerRoutes(prefix: string, router: Router, options?: RouteOptions): void {
     const entry: RouteEntry = { prefix, router, options };
@@ -273,31 +226,5 @@ export class Kernel implements KernelAPI {
       state: entry.state,
       errorMessage: entry.errorMessage,
     };
-  }
-
-  private getDependents(pluginName: string): string[] {
-    const dependents: string[] = [];
-    for (const [name, entry] of this.pluginRegistry) {
-      const deps = entry.plugin.dependencies ?? [];
-      if (deps.includes(pluginName)) {
-        dependents.push(name);
-      }
-    }
-    return dependents;
-  }
-
-  private cleanupPluginRegistrations(pluginName: string): void {
-    const entry = this.pluginRegistry.get(pluginName);
-    if (!entry) return;
-
-    const routeRouters = new Set(entry.registeredRoutes.map((r) => r.router));
-    this.routeRegistry = this.routeRegistry.filter(
-      (r) => !routeRouters.has(r.router),
-    );
-    entry.registeredRoutes = [];
-
-    logger.info(
-      `[Kernel] Cleaned up all registrations for plugin "${pluginName}"`,
-    );
   }
 }

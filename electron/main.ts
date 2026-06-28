@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import { DatabaseManager } from "./db/database";
 import { registerDbIpcHandlers } from "./ipc/dbHandlers";
 import { SyncEngine } from "./sync/syncEngine";
+import { logger } from "./utils/logger";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,7 +43,7 @@ const originalHandle = ipcMain.handle.bind(ipcMain);
 ipcMain.handle = (channel: string, handler: (...args: any[]) => any) => {
   return originalHandle(channel, (...args: any[]) => {
     if (!IPC_HANDLE_CHANNELS.has(channel)) {
-      console.warn(`[Security] Rejected IPC handle call to unregistered channel: ${channel}`);
+      logger.warn(`[Security] Rejected IPC handle call to unregistered channel: ${channel}`);
       throw new Error(`IPC channel not allowed: ${channel}`);
     }
     return handler(...args);
@@ -71,7 +72,7 @@ function loadEnvVariables() {
         envPath = devEnvPath;
       }
     }
-    console.log("[Main] 尝试加载环境变量文件:", envPath);
+    logger.info("[Main] 尝试加载环境变量文件", envPath);
     dotenv.config({ path: envPath });
 
     const configPath = path.join(app.getPath('userData'), 'config.json');
@@ -83,18 +84,18 @@ function loadEnvVariables() {
           if (userConfig.database.anonKey) process.env.VITE_SUPABASE_ANON_KEY = userConfig.database.anonKey;
           if (userConfig.database.serviceRoleKey) process.env.SUPABASE_SERVICE_ROLE_KEY = userConfig.database.serviceRoleKey;
           if (userConfig.database.databaseUrl) process.env.DATABASE_URL = userConfig.database.databaseUrl;
-          console.log("[Main] 从用户配置文件加载数据库配置");
+          logger.info("[Main] 从用户配置文件加载数据库配置");
         }
       } catch (e) {
-        console.warn("[Main] 读取用户配置文件失败:", e);
+        logger.warn("[Main] 读取用户配置文件失败", e);
       }
     }
-    
-    console.log("[Main] 环境变量加载结果:");
-    console.log(`  VITE_SUPABASE_URL: ${process.env.VITE_SUPABASE_URL ? '已加载' : '未找到'}`);
-    console.log(`  SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '已加载' : '未找到'}`);
+
+    logger.info("[Main] 环境变量加载结果");
+    logger.info(`  VITE_SUPABASE_URL: ${process.env.VITE_SUPABASE_URL ? '已加载' : '未找到'}`);
+    logger.info(`  SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '已加载' : '未找到'}`);
   } catch (err) {
-    console.warn("[Main] 加载环境变量文件失败:", err);
+    logger.warn("[Main] 加载环境变量文件失败", err);
   }
 }
 
@@ -122,7 +123,11 @@ async function loadApiApp() {
           apiApp = module.default || module;
           apiKernel = module.kernel || null;
         } catch (error3) {
-          console.error("[Main] 所有 API 应用加载路径都失败:", error, error2, error3);
+          logger.error("[Main] 所有 API 应用加载路径都失败", {
+            errors: [error, error2, error3].map((e) =>
+              e instanceof Error ? { message: e.message, stack: e.stack } : e,
+            ),
+          });
           throw error3;
         }
       }
@@ -132,7 +137,7 @@ async function loadApiApp() {
     apiApp = module.default || module;
     apiKernel = module.kernel || null;
   }
-  console.log("[Main] API 应用加载成功");
+  logger.info("[Main] API 应用加载成功");
 
   try {
     const isPackaged = app.isPackaged;
@@ -144,9 +149,9 @@ async function loadApiApp() {
       ? path.join(process.resourcesPath, "migrations")
       : path.join(__dirname, "..", "supabase", "migrations");
     migrationService.setMigrationsPath(migrationsPath);
-    console.log(`[Main] 迁移服务已配置，路径: ${migrationsPath}`);
+    logger.info(`[Main] 迁移服务已配置，路径: ${migrationsPath}`);
   } catch (error) {
-    console.warn("[Main] 迁移服务配置失败:", error);
+    logger.warn("[Main] 迁移服务配置失败", error);
   }
 }
 
@@ -194,17 +199,17 @@ async function startApiServer(): Promise<number> {
       
       server.once("error", (err: NodeJS.ErrnoException) => {
         if (err.code === "EADDRINUSE") {
-          console.log(`[API] 端口 ${port} 已被占用，尝试另一个随机端口`);
+          logger.info(`[API] 端口 ${port} 已被占用，尝试另一个随机端口`);
           tryPort(getRandomPort());
         } else {
           reject(err);
         }
       });
-      
+
       server.once("listening", () => {
         apiServer = server;
         apiPort = port;
-        console.log(`[API] 服务器已启动，端口: ${port}`);
+        logger.info(`[API] 服务器已启动，端口: ${port}`);
         resolve(port);
       });
       
@@ -219,7 +224,7 @@ async function stopApiServer(): Promise<void> {
   return new Promise((resolve) => {
     if (apiServer) {
       apiServer.close(() => {
-        console.log("[API] 服务器已关闭");
+        logger.info("[API] 服务器已关闭");
         apiServer = null;
         apiPort = 0;
         resolve();
@@ -233,7 +238,7 @@ async function stopApiServer(): Promise<void> {
 async function initializeLocalDatabase(): Promise<DatabaseManager | null> {
   try {
     const dbPath = path.join(app.getPath('userData'), 'knowledgemap.db');
-    console.log('[Main] 初始化本地 SQLite 数据库:', dbPath);
+    logger.info('[Main] 初始化本地 SQLite 数据库', dbPath);
 
     dbManager = new DatabaseManager(dbPath);
     dbManager.initialize();
@@ -245,10 +250,10 @@ async function initializeLocalDatabase(): Promise<DatabaseManager | null> {
     syncEngine = new SyncEngine(dbManager, mainWindow);
     syncEngine.registerIpcHandlers();
 
-    console.log('[Main] 本地数据库和同步引擎初始化成功');
+    logger.info('[Main] 本地数据库和同步引擎初始化成功');
     return dbManager;
   } catch (error) {
-    console.error('[Main] 本地数据库初始化失败，将降级到 HTTP 模式:', error);
+    logger.error('[Main] 本地数据库初始化失败，将降级到 HTTP 模式', error);
     dbManager = null;
     syncEngine = null;
     return null;
@@ -288,7 +293,7 @@ async function createWindow(): Promise<void> {
   });
 
   if (VITE_DEV_SERVER_URL) {
-    console.log(`[Main] 加载开发服务器: ${VITE_DEV_SERVER_URL}`);
+    logger.info(`[Main] 加载开发服务器: ${VITE_DEV_SERVER_URL}`);
     mainWindow.loadURL(VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools();
   } else {
@@ -299,15 +304,15 @@ async function createWindow(): Promise<void> {
       indexPath = path.join(__dirname, "..", "dist", "index.html");
     }
 
-    console.log(`[Main] 尝试加载文件: ${indexPath}`);
-    console.log(`[Main] app.getAppPath(): ${app.getAppPath()}`);
-    console.log(`[Main] process.resourcesPath: ${process.resourcesPath}`);
-    console.log(`[Main] __dirname: ${__dirname}`);
-    console.log(`[Main] app.isPackaged: ${app.isPackaged}`);
+    logger.info(`[Main] 尝试加载文件: ${indexPath}`);
+    logger.info(`[Main] app.getAppPath(): ${app.getAppPath()}`);
+    logger.info(`[Main] process.resourcesPath: ${process.resourcesPath}`);
+    logger.info(`[Main] __dirname: ${__dirname}`);
+    logger.info(`[Main] app.isPackaged: ${app.isPackaged}`);
 
     mainWindow?.loadFile(indexPath).catch((err) => {
-      console.error("Failed to load index.html:", err);
-      console.error("Error details:", {
+      logger.error("Failed to load index.html", err);
+      logger.error("Error details", {
         indexPath,
         appPath: app.getAppPath(),
         resourcesPath: process.resourcesPath,
@@ -341,7 +346,7 @@ function configureCrashReporter(): void {
   (app as any).on(
     "render-process-crashed",
     (event: any, webContents: any, killed: boolean) => {
-      console.error("[Main] 渲染进程崩溃:", {
+      logger.error("[Main] 渲染进程崩溃", {
         killed,
         url: webContents.getURL(),
       });
@@ -356,11 +361,11 @@ function configureCrashReporter(): void {
   );
 
   process.on("uncaughtException", (error) => {
-    console.error("[Main] 未捕获的异常:", error);
+    logger.error("[Main] 未捕获的异常", error);
   });
 
   process.on("unhandledRejection", (reason, promise) => {
-    console.error("[Main] 未处理的 Promise 拒绝:", {
+    logger.error("[Main] 未处理的 Promise 拒绝", {
       reason,
       promise,
     });
@@ -376,7 +381,7 @@ app.whenReady().then(async () => {
   if (app.isPackaged && !VITE_DEV_SERVER_URL) {
     try {
       const port = await startApiServer();
-      console.log(`[Main] API 服务器已启动，端口: ${port}`);
+      logger.info(`[Main] API 服务器已启动，端口: ${port}`);
       // Set API port for sync engine
       if (syncEngine) {
         syncEngine.setApiPort(port);
@@ -385,13 +390,13 @@ app.whenReady().then(async () => {
       if (apiKernel) {
         try {
           await apiKernel.activateAll();
-          console.log("[Main] 所有插件已激活");
+          logger.info("[Main] 所有插件已激活");
         } catch (error) {
-          console.error("[Main] 插件激活失败:", error);
+          logger.error("[Main] 插件激活失败", error);
         }
       }
     } catch (error) {
-      console.error("[Main] 启动 API 服务器失败:", error);
+      logger.error("[Main] 启动 API 服务器失败", error);
     }
   }
 
@@ -420,19 +425,19 @@ app.on("will-quit", async () => {
   if (apiKernel) {
     try {
       await apiKernel.deactivateAll();
-      console.log('[Main] 所有插件已停用');
+      logger.info('[Main] 所有插件已停用');
     } catch (error) {
-      console.error('[Main] 插件停用失败:', error);
+      logger.error('[Main] 插件停用失败', error);
     }
   }
   if (syncEngine) {
     syncEngine.stop();
-    console.log('[Main] 同步引擎已停止');
+    logger.info('[Main] 同步引擎已停止');
   }
   await stopApiServer();
   if (dbManager) {
     dbManager.close();
-    console.log('[Main] 本地数据库已关闭');
+    logger.info('[Main] 本地数据库已关闭');
   }
 });
 
@@ -486,7 +491,7 @@ ipcMain.handle("shell:openExternal", async (_event, url: string) => {
 
 function configureAutoUpdater(): void {
   if (!app.isPackaged) {
-    console.log(
+    logger.info(
       "[AutoUpdater] Skipping auto updater configuration in development mode",
     );
     return;
@@ -502,22 +507,22 @@ function configureAutoUpdater(): void {
   autoUpdater.autoDownload = true;
 
   autoUpdater.on("checking-for-update", () => {
-    console.log("[AutoUpdater] 检查更新中...");
+    logger.info("[AutoUpdater] 检查更新中...");
     mainWindow?.webContents.send("update:checking");
   });
 
   autoUpdater.on("update-available", (info) => {
-    console.log("[AutoUpdater] 发现新版本:", info.version);
+    logger.info("[AutoUpdater] 发现新版本", info);
     mainWindow?.webContents.send("update:available", info);
   });
 
   autoUpdater.on("update-not-available", () => {
-    console.log("[AutoUpdater] 当前已是最新版本");
+    logger.info("[AutoUpdater] 当前已是最新版本");
     mainWindow?.webContents.send("update:not-available");
   });
 
   autoUpdater.on("error", (error) => {
-    console.error("[AutoUpdater] 更新错误:", error);
+    logger.error("[AutoUpdater] 更新错误", error);
     mainWindow?.webContents.send("update:error", { error: error.message });
   });
 
@@ -528,12 +533,12 @@ function configureAutoUpdater(): void {
       transferred: progress.transferred,
       total: progress.total,
     };
-    console.log("[AutoUpdater] 下载进度:", progressInfo);
+    logger.info("[AutoUpdater] 下载进度", progressInfo);
     mainWindow?.webContents.send("update:download-progress", progressInfo);
   });
 
   autoUpdater.on("update-downloaded", (info) => {
-    console.log("[AutoUpdater] 更新已下载完成:", info.version);
+    logger.info("[AutoUpdater] 更新已下载完成", info);
     mainWindow?.webContents.send("update:downloaded", info);
 
     setTimeout(() => {

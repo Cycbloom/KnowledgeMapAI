@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { DatabaseManager } from '../db/database';
+import { logger } from '../utils/logger';
 
 export interface IpcDbRequest {
   resource: string;  // table name
@@ -106,7 +107,7 @@ export function registerDbIpcHandlers(dbManager: DatabaseManager): void {
       if (typeof dbManager.transaction === 'function') {
         results = dbManager.transaction(executeOperations);
       } else {
-        console.warn('[db:batch] dbManager.transaction unavailable, falling back to non-transactional execution');
+        logger.warn('[db:batch] dbManager.transaction unavailable, falling back to non-transactional execution');
         results = executeOperations();
       }
 

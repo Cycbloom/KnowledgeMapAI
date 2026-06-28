@@ -299,14 +299,20 @@ eventSource.onmessage = (event) => {
 
 ## 任务调度
 
-### SM2 算法
+### FSRS 算法
 
 ```typescript
-const nextReview = sm2Service.calculateNextReview(
-  quality, // 0-5
-  interval, // 当前间隔
-  easeFactor, // 难度因子
+const { card, scheduledCard } = await studyService.updateProgress(
+  supabase,        // SupabaseClient
+  cardId,          // study_cards.id
+  quality,         // 0-5（内部映射为 Again/Hard/Good/Easy）
+  userId,
 );
+// scheduledCard.due            下次复习时间
+// scheduledCard.scheduled_days 预定间隔天数
+// scheduledCard.stability      记忆稳定度
+// scheduledCard.difficulty     难度因子
+// scheduledCard.state          New/Learning/Review/Relearning
 ```
 
 ### 智能推荐

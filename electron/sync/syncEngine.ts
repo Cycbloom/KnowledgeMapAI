@@ -3,6 +3,7 @@ import { DatabaseManager } from '../db/database';
 import { TABLES } from '../db/schema';
 import type { SyncStatus } from '../../shared/types/ipc';
 import { mergeOperations as sharedMergeOperations } from '../../shared/sync/operationMerger';
+import { logger } from '../utils/logger';
 
 interface SyncConfig {
   syncInterval: number; // ms, default 30000
@@ -39,7 +40,7 @@ export class SyncEngine {
   start(): void {
     if (this.isRunning) return;
 
-    console.warn('[SyncEngine] 启动同步引擎，间隔:', this.config.syncInterval, 'ms');
+    logger.warn(`[SyncEngine] 启动同步引擎，间隔: ${this.config.syncInterval}ms`);
     this.isRunning = true;
 
     // Load last sync timestamps from database
@@ -61,7 +62,7 @@ export class SyncEngine {
       this.syncTimer = null;
     }
     this.isRunning = false;
-    console.warn('[SyncEngine] 同步引擎已停止');
+    logger.warn('[SyncEngine] 同步引擎已停止');
   }
 
   // Set online status (called when network status changes)
@@ -70,7 +71,7 @@ export class SyncEngine {
     this.isOnline = online;
 
     if (online && wasOffline) {
-      console.warn('[SyncEngine] 网络恢复，触发同步');
+      logger.warn('[SyncEngine] 网络恢复，触发同步');
       this.sync();
     }
 
@@ -131,7 +132,7 @@ export class SyncEngine {
       this.notifyStatusChanged();
     } catch (error) {
       this.syncError = (error as Error).message;
-      console.error('[SyncEngine] 同步失败:', error);
+      logger.error('[SyncEngine] 同步失败', error);
       this.notifyStatusChanged();
     } finally {
       this.isSyncing = false;
@@ -187,7 +188,7 @@ export class SyncEngine {
             const localRecord = this.dbManager.findById<Record<string, unknown>>(tableName, recordId);
             if (localRecord?.sync_status === 'pending_push') {
               this.dbManager.addSyncConflict(tableName, recordId, localRecord, record);
-              console.warn(`[SyncEngine] Pull 跳过 pending_push 记录，记录冲突: ${tableName}/${recordId}`);
+              logger.warn(`[SyncEngine] Pull 跳过 pending_push 记录，记录冲突: ${tableName}/${recordId}`);
               continue;
             }
           }
@@ -203,9 +204,9 @@ export class SyncEngine {
         this.dbManager.updateSyncMetadata(tableName, tableData.timestamp, 'pull', tableData.records.length);
       }
 
-      console.warn('[SyncEngine] Pull 完成');
+      logger.warn('[SyncEngine] Pull 完成');
     } catch (error) {
-      console.error('[SyncEngine] Pull 失败:', error);
+      logger.error('[SyncEngine] Pull 失败', error);
       throw error;
     }
   }
@@ -304,7 +305,7 @@ export class SyncEngine {
             // Conflict: cloud wins, update local with server data
             const localRecord = this.dbManager.findById(op.table, op.id);
             this.dbManager.addSyncConflict(op.table, op.id, localRecord, pushResult.serverData);
-            console.warn(`[SyncEngine] Push 冲突: ${op.table}/${op.id}（Cloud Wins 策略，用云端数据覆盖本地）`);
+            logger.warn(`[SyncEngine] Push 冲突: ${op.table}/${op.id}（Cloud Wins 策略，用云端数据覆盖本地）`);
             // Notify renderer via IPC so the UI can surface the conflict
             this.notifyConflict(op.table, op.id, localRecord, pushResult.serverData);
             if (pushResult.serverData) {
@@ -332,16 +333,16 @@ export class SyncEngine {
         }
       }
 
-      console.warn('[SyncEngine] Push 完成');
+      logger.warn('[SyncEngine] Push 完成');
     } catch (error) {
-      console.error('[SyncEngine] Push 失败:', error);
+      logger.error('[SyncEngine] Push 失败', error);
       throw error;
     }
   }
 
   // Full sync for first-time setup (pull all data)
   async fullSync(): Promise<void> {
-    console.warn('[SyncEngine] 开始全量同步...');
+    logger.warn('[SyncEngine] 开始全量同步...');
 
     // Reset all sync timestamps to epoch
     for (const tableName of Object.keys(TABLES)) {
@@ -349,7 +350,7 @@ export class SyncEngine {
     }
 
     await this.pullFromCloud();
-    console.warn('[SyncEngine] 全量同步完成');
+    logger.warn('[SyncEngine] 全量同步完成');
   }
 
   // Register IPC handlers for sync control
@@ -420,10 +421,10 @@ export class SyncEngine {
     try {
       const deletedCount = this.dbManager.cleanupSyncedOperations(7); // Clean up operations older than 7 days
       if (deletedCount > 0) {
-        console.warn(`[SyncEngine] 清理了 ${deletedCount} 条旧操作日志`);
+        logger.warn(`[SyncEngine] 清理了 ${deletedCount} 条旧操作日志`);
       }
     } catch (error) {
-      console.error('[SyncEngine] 清理操作日志失败:', error);
+      logger.error('[SyncEngine] 清理操作日志失败', error);
     }
   }
 
@@ -445,7 +446,7 @@ export class SyncEngine {
           throw lastError;
         }
         const delay = initialDelay * Math.pow(2, attempt);
-        console.warn(`[SyncEngine] 重试 ${attempt + 1}/${retries}，等待 ${delay}ms: ${lastError.message}`);
+        logger.warn(`[SyncEngine] 重试 ${attempt + 1}/${retries}，等待 ${delay}ms: ${lastError.message}`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

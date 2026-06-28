@@ -1,10 +1,3 @@
-import {
-  SyncOperation,
-  SyncBatch,
-  SyncDevice,
-  SyncConflict,
-  SyncStatus,
-} from "./syncTypes";
 import { deviceDiscoveryService } from "./deviceDiscoveryService";
 import { syncAuthService, PairedDevice } from "./syncAuthService";
 import {
@@ -12,48 +5,16 @@ import {
   addToOfflineQueue,
   clearOfflineQueue,
 } from "../../utils/offlineStorage";
-import { autoResolveConflicts } from "../../../shared/sync/conflictResolver";
-import type { SyncOperation as SharedSyncOperation, SyncConflict as SharedSyncConflict } from "../../../shared/sync/types";
+import { autoResolveConflicts } from "../../../shared/sync";
+import type {
+  SyncOperation,
+  SyncBatch,
+  SyncDevice,
+  SyncConflict,
+  SyncStatus,
+} from "../../../shared/sync";
 import { getSupabaseClient } from "../../lib/supabase";
-
-/** 将移动端 SyncOperation 转换为共享模块 SyncOperation */
-function toSharedOperation(op: SyncOperation): SharedSyncOperation {
-  return {
-    id: op.id,
-    action: op.type,
-    table: op.table,
-    recordId: op.recordId,
-    data: op.record,
-    timestamp: op.timestamp,
-    userId: op.userId,
-  };
-}
-
-/** 将共享模块 SyncOperation 转换为移动端 SyncOperation */
-function fromSharedOperation(op: SharedSyncOperation): SyncOperation {
-  return {
-    id: op.id,
-    type: op.action,
-    table: op.table,
-    record: op.data,
-    recordId: op.recordId,
-    timestamp: op.timestamp,
-    userId: op.userId,
-  };
-}
-
-/** 将移动端 SyncConflict 转换为共享模块 SyncConflict */
-function toSharedConflict(conflict: SyncConflict): SharedSyncConflict {
-  return {
-    id: conflict.id,
-    table: conflict.table,
-    recordId: conflict.recordId,
-    localVersion: toSharedOperation(conflict.localVersion),
-    remoteVersion: toSharedOperation(conflict.remoteVersion),
-    resolved: conflict.resolved,
-    resolution: conflict.resolution,
-  };
-}
+import { withRetry } from "../../../api/utils/retry";
 
 export class MobileSyncService {
   private isRunning = false;
@@ -65,6 +26,8 @@ export class MobileSyncService {
   private deviceId: string;
   private deviceName: string;
   private userId: string = "unknown";
+  private retryAttempts: Map<string, { count: number; lastFailure: number }> = new Map();
+  private onlineStatus: boolean = true;
 
   constructor() {
     this.deviceId = `mobile-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
@@ -92,6 +55,27 @@ export class MobileSyncService {
 
     await deviceDiscoveryService.stop();
     this.isRunning = false;
+  }
+
+  /**
+   * 设置网络在线状态。
+   * - 从离线恢复到在线时：若服务未启动则 start()，并立即触发一次 sync()
+   * - 从在线变为离线时：仅记录状态（不停止定时器，保留以备恢复）
+   */
+  setOnlineStatus(isOnline: boolean): void {
+    const wasOffline = !this.onlineStatus;
+    this.onlineStatus = isOnline;
+
+    if (isOnline && wasOffline) {
+      // 网络恢复，立即触发同步
+      if (!this.syncInterval) {
+        void this.start();
+      }
+      // 异步触发 sync，不阻塞
+      void this.sync().catch((error) => {
+        console.warn("Failed to sync after network recovery:", error);
+      });
+    }
   }
 
   private startAutoSync(): void {
@@ -149,12 +133,13 @@ export class MobileSyncService {
 
     this.pendingOperations = pendingOps.map((op) => ({
       id: op.id,
-      type: op.type,
+      action: op.type,
       table: op.entityType,
-      record: (op.data || {}) as Record<string, unknown>,
+      data: (op.data || {}) as Record<string, unknown>,
       recordId: op.entityId,
       timestamp: new Date(op.timestamp).toISOString(),
       userId: this.userId,
+      clientOpId: crypto.randomUUID(),
     }));
   }
 
@@ -167,67 +152,92 @@ export class MobileSyncService {
       return;
     }
 
+    // 检查设备失败次数，跳过连续失败过多的设备
+    const attempts = this.retryAttempts.get(device.id);
+    if (attempts && attempts.count >= 5) {
+      return;
+    }
+
     const token = await syncAuthService.generateSyncToken(device.id);
     if (!token) {
       return;
     }
 
     try {
-      // Send pending operations to device
-      if (this.pendingOperations.length > 0) {
-        const batch: SyncBatch = {
-          batchId: `batch-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-          timestamp: new Date().toISOString(),
-          operations: this.pendingOperations,
-          deviceId: this.deviceId,
-          userId: this.userId,
-        };
+      await withRetry(
+        async () => {
+          // Send pending operations to device
+          if (this.pendingOperations.length > 0) {
+            const batch: SyncBatch = {
+              batchId: `batch-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+              timestamp: new Date().toISOString(),
+              operations: this.pendingOperations,
+              deviceId: this.deviceId,
+              userId: this.userId,
+            };
 
-        const response = await fetch(
-          `http://${device.ipAddress}:3001/api/sync/receive`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Sync-Token": token,
-              "X-Device-Id": this.deviceId,
-            },
-            body: JSON.stringify(batch),
+            const response = await fetch(
+              `http://${device.ipAddress}:3001/api/sync/receive`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Sync-Token": token,
+                  "X-Device-Id": this.deviceId,
+                },
+                body: JSON.stringify(batch),
+              },
+            );
+
+            if (response.ok) {
+              // Get remote operations
+              const remoteBatch = await response.json();
+              await this.applyRemoteOperations(remoteBatch.operations);
+
+              // Clear pending operations
+              await clearOfflineQueue();
+              this.pendingOperations = [];
+            }
+          } else {
+            // No pending operations, just get remote changes
+            const response = await fetch(
+              `http://${device.ipAddress}:3001/api/sync/send`,
+              {
+                method: "GET",
+                headers: {
+                  "X-Sync-Token": token,
+                  "X-Device-Id": this.deviceId,
+                },
+              },
+            );
+
+            if (response.ok) {
+              const remoteBatch = await response.json();
+              await this.applyRemoteOperations(remoteBatch.operations);
+            }
+          }
+
+          // Update last sync time
+          syncAuthService.updateLastSync(device.id);
+        },
+        {
+          maxRetries: 3,
+          initialDelay: 1000,
+          maxDelay: 10000,
+          onRetry: (attempt, error) => {
+            console.warn(`Retry ${attempt} for device ${device.id}:`, error);
           },
-        );
-
-        if (response.ok) {
-          // Get remote operations
-          const remoteBatch = await response.json();
-          await this.applyRemoteOperations(remoteBatch.operations);
-
-          // Clear pending operations
-          await clearOfflineQueue();
-          this.pendingOperations = [];
-        }
-      } else {
-        // No pending operations, just get remote changes
-        const response = await fetch(
-          `http://${device.ipAddress}:3001/api/sync/send`,
-          {
-            method: "GET",
-            headers: {
-              "X-Sync-Token": token,
-              "X-Device-Id": this.deviceId,
-            },
-          },
-        );
-
-        if (response.ok) {
-          const remoteBatch = await response.json();
-          await this.applyRemoteOperations(remoteBatch.operations);
-        }
-      }
-
-      // Update last sync time
-      syncAuthService.updateLastSync(device.id);
+        },
+      );
+      // 成功后重置失败计数
+      this.retryAttempts.delete(device.id);
     } catch (error) {
-      console.warn(`Failed to sync with device ${device.id}:`, error);
+      // 失败后更新计数
+      const current = this.retryAttempts.get(device.id) ?? { count: 0, lastFailure: Date.now() };
+      current.count += 1;
+      current.lastFailure = Date.now();
+      this.retryAttempts.set(device.id, current);
+      console.warn(`Failed to sync with device ${device.id} after retries:`, error);
     }
   }
 
@@ -262,18 +272,32 @@ export class MobileSyncService {
       throw new Error("Supabase client not initialized");
     }
 
-    switch (operation.type) {
+    // 幂等性检查：若 operation 有 clientOpId，先查询是否已应用
+    if (operation.clientOpId) {
+      const { data: existing } = await supabase
+        .from("sync_operations")
+        .select("id")
+        .eq("client_op_id", operation.clientOpId)
+        .eq("user_id", operation.userId)
+        .maybeSingle();
+      if (existing) {
+        // 已应用过，跳过
+        return;
+      }
+    }
+
+    switch (operation.action) {
       case "create": {
         const { error } = await supabase
           .from(operation.table)
-          .insert(operation.record);
+          .insert(operation.data);
         if (error) throw error;
         break;
       }
       case "update": {
         const { error } = await supabase
           .from(operation.table)
-          .update(operation.record)
+          .update(operation.data)
           .eq("id", operation.recordId);
         if (error) throw error;
         break;
@@ -295,6 +319,21 @@ export class MobileSyncService {
         break;
       }
     }
+
+    // 记录已应用（若有 clientOpId）
+    if (operation.clientOpId) {
+      const { error: recordError } = await supabase
+        .from("sync_operations")
+        .insert({
+          client_op_id: operation.clientOpId,
+          user_id: operation.userId,
+          device_id: this.deviceId,
+          table_name: operation.table,
+          record_id: operation.recordId,
+          action: operation.action,
+        });
+      if (recordError) throw recordError;
+    }
   }
 
   private async getLocalVersion(
@@ -305,9 +344,9 @@ export class MobileSyncService {
     if (!supabase) {
       return {
         id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        type: "update",
+        action: "update",
         table,
-        record: {},
+        data: {},
         recordId,
         timestamp: new Date().toISOString(),
         userId: this.userId,
@@ -322,9 +361,9 @@ export class MobileSyncService {
 
     return {
       id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-      type: "update",
+      action: "update",
       table,
-      record: data ? data as Record<string, unknown> : {},
+      data: data ? data as Record<string, unknown> : {},
       recordId,
       timestamp: (data as Record<string, unknown>)?.updated_at as string ?? (data as Record<string, unknown>)?.created_at as string ?? new Date().toISOString(),
       userId: this.userId,
@@ -336,21 +375,18 @@ export class MobileSyncService {
       return;
     }
 
-    // 转换为共享模块格式并使用共享冲突解决器
-    const sharedConflicts = this.conflicts.map(toSharedConflict);
-    const { resolved, unresolved } = autoResolveConflicts(sharedConflicts);
+    // 使用共享冲突解决器
+    const { resolved, unresolved } = autoResolveConflicts(this.conflicts);
 
-    // 将已解决的操作转换回移动端格式并应用
-    for (const sharedOp of resolved) {
-      const op = fromSharedOperation(sharedOp);
+    // 应用已解决的操作
+    for (const op of resolved) {
       await this.applyOperation(op);
     }
 
     // 更新冲突列表：标记已解决的，保留未解决的
     const resolvedIds = new Set(resolved.map((op) => op.id));
     this.conflicts = this.conflicts.map((c) => {
-      const sharedC = toSharedConflict(c);
-      if (resolvedIds.has(sharedC.localVersion.id) || resolvedIds.has(sharedC.remoteVersion.id)) {
+      if (resolvedIds.has(c.localVersion.id) || resolvedIds.has(c.remoteVersion.id)) {
         return { ...c, resolved: true, resolution: "remote" as const };
       }
       return c;
@@ -361,14 +397,7 @@ export class MobileSyncService {
       const existingIds = new Set(this.conflicts.map((c) => c.id));
       for (const uc of unresolved) {
         if (!existingIds.has(uc.id)) {
-          this.conflicts.push({
-            id: uc.id,
-            table: uc.table,
-            recordId: uc.recordId,
-            localVersion: fromSharedOperation(uc.localVersion),
-            remoteVersion: fromSharedOperation(uc.remoteVersion),
-            resolved: false,
-          });
+          this.conflicts.push(uc);
         }
       }
     }
@@ -377,11 +406,11 @@ export class MobileSyncService {
   async addOperation(operation: SyncOperation): Promise<void> {
     this.pendingOperations.push(operation);
     await addToOfflineQueue({
-      type: operation.type,
+      type: operation.action,
       entityType: operation.table as 'node' | 'edge' | 'graph' | 'settings',
       entityId: operation.recordId,
       graphId: "default",
-      data: operation.record,
+      data: operation.data,
     });
   }
 

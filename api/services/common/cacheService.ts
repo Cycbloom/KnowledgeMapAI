@@ -1,4 +1,5 @@
 import NodeCache from 'node-cache';
+import crypto from 'crypto';
 import { logger } from '../../utils/logger';
 
 const MAX_CACHE_KEYS = 1000;
@@ -473,14 +474,9 @@ export const cacheService = {
 };
 
 /**
- * 计算文本的简单 hash，用于 searchSimilar 缓存键
+ * 计算文本的 SHA-256 哈希（截断到 32 字符），用于 searchSimilar 缓存键
+ * 使用 SHA-256 替代原 32 位 DJB2 哈希，碰撞概率从 ~2^-32 降到 ~2^-128
  */
 export function computeTextHash(text: string): string {
-  let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    const char = text.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
+  return crypto.createHash('sha256').update(text).digest('hex').slice(0, 32);
 }

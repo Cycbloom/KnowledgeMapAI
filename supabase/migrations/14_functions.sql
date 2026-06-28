@@ -598,15 +598,29 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Update user focus stats
+-- 修复：必须先读取旧的 last_focus_date 再写入，否则 SELECT 会读到刚被覆盖的新值，
+-- 导致 prev_focus_date = focus_date - 1 永远不成立，连续学习天数统计失效。
 CREATE OR REPLACE FUNCTION update_user_focus_stats()
 RETURNS TRIGGER AS $$
 DECLARE
   focus_date DATE;
   prev_focus_date DATE;
+  prev_streak INTEGER;
   new_streak INTEGER;
 BEGIN
   focus_date := NEW.started_at::date;
 
+  -- 1. 在任何 INSERT/UPDATE 之前，先读取旧的 last_focus_date 与 current_streak。
+  --    原实现先执行 INSERT...ON CONFLICT 把 last_focus_date 覆盖为 focus_date，
+  --    随后再 SELECT last_focus_date，读到的始终是新值，streak 累加逻辑完全失效。
+  SELECT last_focus_date, current_streak
+  INTO prev_focus_date, prev_streak
+  FROM user_focus_stats
+  WHERE user_id = NEW.user_id;
+
+  -- 2. 累加总量统计并更新 last_focus_date。
+  --    current_streak/longest_streak 不在 ON CONFLICT 中更新，留待下方根据
+  --    prev_focus_date 与 focus_date 的关系单独计算，避免与历史值混淆。
   INSERT INTO user_focus_stats (user_id, total_focus_seconds, total_sessions, total_pomodoros, current_streak, longest_streak, last_focus_date)
   VALUES (
     NEW.user_id,
@@ -624,23 +638,35 @@ BEGIN
     last_focus_date = focus_date,
     updated_at = NOW();
 
+  -- 3. 仅在非 break session 时更新连续学习天数。
+  --    触发器本身已有 WHEN (NEW.is_break = FALSE OR NEW.is_break IS NULL) 守卫，
+  --    此处保留 is_break 检查作为防御性逻辑，确保函数直接调用时行为一致。
   IF COALESCE(NEW.is_break, FALSE) = FALSE THEN
-    SELECT last_focus_date INTO prev_focus_date
-    FROM user_focus_stats
-    WHERE user_id = NEW.user_id;
-
-    IF prev_focus_date IS NOT NULL THEN
-      IF prev_focus_date = focus_date - 1 THEN
-        new_streak := (SELECT current_streak FROM user_focus_stats WHERE user_id = NEW.user_id) + 1;
-        UPDATE user_focus_stats
-        SET current_streak = new_streak,
-            longest_streak = GREATEST(longest_streak, new_streak)
-        WHERE user_id = NEW.user_id;
-      ELSIF prev_focus_date < focus_date - 1 THEN
-        UPDATE user_focus_stats
-        SET current_streak = 1
-        WHERE user_id = NEW.user_id;
-      END IF;
+    IF prev_focus_date IS NULL THEN
+      -- 首次学习（或历史数据 last_focus_date 缺失）：streak 置 1。
+      -- 对于全新行，INSERT 已将 current_streak 置 1，此 UPDATE 为幂等；
+      -- 对于历史行但 last_focus_date 缺失，此 UPDATE 修正异常数据。
+      UPDATE user_focus_stats
+      SET current_streak = 1,
+          updated_at = NOW()
+      WHERE user_id = NEW.user_id;
+    ELSIF prev_focus_date = focus_date THEN
+      -- 同日多次学习：保持 streak 不变（避免一日内多次累加）。
+      NULL;
+    ELSIF prev_focus_date = focus_date - 1 THEN
+      -- 连续两日学习：streak + 1，并更新 longest_streak 为历史最大值。
+      new_streak := COALESCE(prev_streak, 0) + 1;
+      UPDATE user_focus_stats
+      SET current_streak = new_streak,
+          longest_streak = GREATEST(COALESCE(longest_streak, 1), new_streak),
+          updated_at = NOW()
+      WHERE user_id = NEW.user_id;
+    ELSE
+      -- 间隔多日（prev_focus_date < focus_date - 1）：重置 streak = 1。
+      UPDATE user_focus_stats
+      SET current_streak = 1,
+          updated_at = NOW()
+      WHERE user_id = NEW.user_id;
     END IF;
   END IF;
 

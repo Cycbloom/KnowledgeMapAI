@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { getSupabaseAdmin } from '../api/supabase.js';
 import { AIService } from '../api/services/aiService.js';
+import { logger } from '../api/utils/logger.js';
 
 dotenv.config();
 
@@ -10,25 +11,25 @@ const aiService = new AIService();
  * 批量为现有节点生成向量
  */
 async function backfillEmbeddings() {
-  console.log('🚀 开始为现有节点批量生成向量...');
+  logger.info('🚀 开始为现有节点批量生成向量...');
 
   // 1. 获取所有节点（重新生成所有向量）
   const { data: nodes, error } = await getSupabaseAdmin()
-    .from('nodes')
+    .from('knowledge_points')
     .select('id, title, content')
     .or('embedding.is.null'); // 已移除过滤，强制重新生成所有
 
   if (error) {
-    console.error('❌ 获取节点失败:', error);
+    logger.error('❌ 获取节点失败:', error);
     return;
   }
 
   if (!nodes || nodes.length === 0) {
-    console.log('✅ 没有需要处理的节点。');
+    logger.info('✅ 没有需要处理的节点。');
     return;
   }
 
-  console.log(`总计发现 ${nodes.length} 个节点需要处理。`);
+  logger.info(`总计发现 ${nodes.length} 个节点需要处理。`);
 
   let successCount = 0;
   let failCount = 0;
@@ -38,7 +39,7 @@ async function backfillEmbeddings() {
       const textToEmbed = `${node.title || ''} ${node.content || ''}`.trim();
       
       if (!textToEmbed) {
-        console.warn(`[跳过] 节点 ${node.id} 没有标题和内容。`);
+        logger.warn(`[跳过] 节点 ${node.id} 没有标题和内容。`);
         continue;
       }
 
@@ -48,37 +49,37 @@ async function backfillEmbeddings() {
 
       if (embedding) {
         const { error: updateError } = await getSupabaseAdmin()
-          .from('nodes')
+          .from('knowledge_points')
           .update({ embedding })
           .eq('id', node.id);
 
         if (updateError) {
           throw updateError;
         }
-        
-        console.log('✅ 完成');
+
+        logger.info('✅ 完成');
         successCount++;
       } else {
-        console.log('❌ 失败 (AI 未返回向量)');
+        logger.info('❌ 失败 (AI 未返回向量)');
         failCount++;
       }
-      
+
       // 稍微停顿一下，避免触发 API 频率限制
       await new Promise(resolve => setTimeout(resolve, 200));
 
     } catch (err) {
-      console.log('❌ 报错');
-      console.error(`节点 ${node.id} 处理出错:`, err);
+      logger.info('❌ 报错');
+      logger.error(`节点 ${node.id} 处理出错:`, err);
       failCount++;
     }
   }
 
-  console.log('\n✨ 批量处理结束:');
-  console.log(`- 成功: ${successCount}`);
-  console.log(`- 失败: ${failCount}`);
+  logger.info('\n✨ 批量处理结束:');
+  logger.info(`- 成功: ${successCount}`);
+  logger.info(`- 失败: ${failCount}`);
 }
 
 backfillEmbeddings().catch(err => {
-  console.error('脚本运行出错:', err);
+  logger.error('脚本运行出错:', err);
   process.exit(1);
 });

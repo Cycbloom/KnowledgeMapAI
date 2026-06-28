@@ -70,10 +70,12 @@ CREATE TABLE IF NOT EXISTS ai_performance_logs (
   error_message TEXT,
   cost_breakdown JSONB,
   metadata JSONB DEFAULT '{}',
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 COMMENT ON TABLE ai_performance_logs IS 'AI服务性能监控日志，记录所有AI API调用的详细指标';
+COMMENT ON COLUMN ai_performance_logs.user_id IS '关联用户ID（NULL 表示系统级日志，如定时任务），用于 RLS 按用户隔离';
 COMMENT ON COLUMN ai_performance_logs.timestamp IS '[DEPRECATED] 使用 created_at (TIMESTAMPTZ) 替代此字段。此列仅保留向后兼容，新代码应使用 created_at。';
 COMMENT ON COLUMN ai_performance_logs.operation IS '操作类型标识';
 COMMENT ON COLUMN ai_performance_logs.session_id IS '会话ID，用于关联同一场对话中的多个AI调用';

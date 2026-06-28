@@ -297,5 +297,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_model ON ai_performance_logs(model);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_success ON ai_performance_logs(success);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_created_at ON ai_performance_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_session_id ON ai_performance_logs(session_id);
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_user_id ON ai_performance_logs(user_id);
 
 

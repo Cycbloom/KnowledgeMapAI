@@ -24,3 +24,6 @@ COMMENT ON COLUMN document_chunks.chunk_index IS '分块序号，从0开始递�
 COMMENT ON COLUMN document_chunks.content IS '分块文本内容';
 COMMENT ON COLUMN document_chunks.embedding IS '分块文本的向量嵌入，维度1024，用于语义相似度检索';
 COMMENT ON COLUMN document_chunks.created_at IS '分块创建时间';
+
+-- Enable Row Level Security
+ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;

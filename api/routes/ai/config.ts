@@ -346,6 +346,7 @@ router.get(
       const isLocal = url.includes("127.0.0.1") || url.includes("localhost");
       const mode = isLocal ? "local" : "cloud";
 
+      // admin client: 系统级数据库连接健康检查，需绕过 RLS 探测全局数据库状态
       const result = await aiConfigRouteService.testDatabaseConnection(getSupabaseAdmin());
       const connected = result.connected;
 
@@ -413,6 +414,7 @@ router.put(
         return;
       }
 
+      // admin client: 数据库重新初始化后的连接测试，需使用新配置的 admin client 验证连通性
       const admin = getSupabaseAdmin();
       const testResult = await aiConfigRouteService.testDatabaseConnectionWithConfig(admin);
 

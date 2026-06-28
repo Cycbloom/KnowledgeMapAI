@@ -23,6 +23,11 @@ const REFRESH_TOKEN_EXPIRES_IN = '7d';
 const ACCESS_TOKEN_EXPIRES_SECONDS = 3600;
 
 function getJwtSecret(): string {
+  // 生产环境必须显式配置 JWT_SECRET，避免多实例密钥不一致
+  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+
   if (process.env.JWT_SECRET) {
     return process.env.JWT_SECRET;
   }

@@ -130,6 +130,7 @@ class PerformanceMonitor {
 
   private async persistToDatabase(log: AIPerformanceLog): Promise<void> {
     try {
+      const userId = log.metadata?.userId ?? null;
       const { error } = await getSupabaseAdmin().from("ai_performance_logs").insert({
         id: log.id,
         timestamp: log.timestamp,
@@ -150,6 +151,7 @@ class PerformanceMonitor {
         error_message: log.errorMessage || null,
         cost_breakdown: log.costBreakdown || null,
         metadata: log.metadata || {},
+        user_id: userId,
       });
 
       if (error) {
@@ -536,7 +538,7 @@ async function getUserInfo(
   userId: string,
 ): Promise<{ id: string; name?: string | null } | null> {
   const { data } = await supabase
-    .from("profiles")
+    .from("users")
     .select("id, name")
     .eq("id", userId)
     .maybeSingle();

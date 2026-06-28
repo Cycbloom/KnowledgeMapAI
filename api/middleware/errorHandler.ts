@@ -73,12 +73,9 @@ const sanitizeBody = (body: unknown): unknown => {
   return sanitizeValue(body);
 };
 
-export interface AppErrorDetails {
-  field?: string;
-  value?: unknown;
-  constraint?: string;
-  [key: string]: unknown;
-}
+export type AppErrorDetails =
+  | { field?: string; value?: unknown; constraint?: string; [key: string]: unknown }
+  | Array<{ field?: string; message?: string; [key: string]: unknown }>;
 
 export interface AppErrorContext {
   userId?: string;

@@ -14,7 +14,6 @@ import { getMockResponse } from "../../services/ai";
 import { getAIProviderForTask, getAIProvider } from "../../services/ai";
 import { logger } from "../../utils/logger";
 import { promptService } from "../../services/ai";
-import { getSupabaseAdmin } from "../../supabase";
 import {
   setSSEHeaders,
   sendStreamChunk,
@@ -54,7 +53,7 @@ router.post(
 
     try {
       const systemPrompt = await promptService.getRenderedPrompt(
-        getSupabaseAdmin(),
+        req.supabase!,
         "annotate_terms",
         { nodeContent: content },
         req.user.id,
@@ -69,7 +68,7 @@ router.post(
 内容：
 ${content}`;
 
-      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
+      const enrichedMetadata = await enrichMetadata(req.supabase!, {
         graphId: graph_id,
         userId: req.user.id,
         topic: content?.slice(0, 50),
@@ -171,7 +170,7 @@ router.post(
       const templateContext = annotationService.buildTemplateContext(topic, context, level);
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        getSupabaseAdmin(),
+        req.supabase!,
         "generate_content",
         templateContext,
         req.user.id,
@@ -179,7 +178,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
+      const enrichedMetadata = await enrichMetadata(req.supabase!, {
         graphId: graph_id,
         userId: req.user.id,
         topic,
@@ -298,7 +297,7 @@ router.post(
       const templateContext = annotationService.buildTemplateContext(topic, context, level);
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        getSupabaseAdmin(),
+        req.supabase!,
         "generate_content",
         templateContext,
         req.user.id,
@@ -306,7 +305,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(getSupabaseAdmin(), {
+      const enrichedMetadata = await enrichMetadata(req.supabase!, {
         graphId: graph_id,
         userId: req.user.id,
         topic,

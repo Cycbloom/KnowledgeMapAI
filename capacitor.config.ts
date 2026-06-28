@@ -1,12 +1,14 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const config: CapacitorConfig = {
   appId: "com.knowledgemap.app",
   appName: "KnowledgeMap",
   webDir: "dist",
   server: {
     androidScheme: "https",
-    cleartext: true,
+    cleartext: isDev,
   },
   plugins: {
     SplashScreen: {
@@ -17,9 +19,9 @@ const config: CapacitorConfig = {
     },
   },
   android: {
-    allowMixedContent: true,
+    allowMixedContent: isDev,
     captureInput: true,
-    webContentsDebuggingEnabled: true,
+    webContentsDebuggingEnabled: isDev,
     buildOptions: {
       signingType: "apksigner",
     },

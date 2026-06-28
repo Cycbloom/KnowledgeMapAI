@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
 import { ErrorCodes } from '../../shared/types/errorCodes';
+import { AppError } from './errorHandler';
 
 type ValidationSchemas = {
   body?: ZodSchema;
@@ -9,7 +10,7 @@ type ValidationSchemas = {
 };
 
 export const validate = (schemaOrSchemas: ZodSchema | ValidationSchemas) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     try {
       if (schemaOrSchemas instanceof ZodSchema) {
         // Legacy mode: only validate body
@@ -36,13 +37,7 @@ export const validate = (schemaOrSchemas: ZodSchema | ValidationSchemas) => {
           message: err.message,
         }));
         
-        // Use 400 Bad Request for validation errors
-        res.status(400).json({
-          success: false,
-          code: ErrorCodes.VALIDATION_ERROR,
-          error: '输入验证失败',
-          details: errorMessages,
-        });
+        throw new AppError(ErrorCodes.VALIDATION_ERROR, { details: errorMessages });
       } else {
         next(error);
       }

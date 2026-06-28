@@ -815,3 +815,10 @@ export const snapshotsQuerySchema = z.object({
   page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
   pageSize: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
 });
+
+// --- AI Action Route Schemas (re-export from aiAction.ts) ---
+export {
+  createActionSchema,
+  updateActionSchema,
+  executeActionSchema,
+} from "./aiAction";

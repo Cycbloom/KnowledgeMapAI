@@ -10,6 +10,7 @@ import {
   getMockResponse,
 } from "./mock";
 import {
+  withTimeout,
   withTimeoutAndRetry,
   TimeoutError,
   RetryError,
@@ -250,40 +251,43 @@ export class ChatService {
         sessionId: options.sessionId,
       },
       async () => {
-        const stream = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages,
-              model,
-              stream: true,
-              stream_options: { include_usage: true },
-            }),
-          {
-            timeout: DEFAULT_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `${options.operation} stream retry attempt ${attempt}: ${error.message}`,
-              );
-            },
-          },
+        // 建立流连接：仅 timeout，不 retry
+        // 流式响应不可重试——若首 chunk 后失败，retry 会重新发起请求并再次发送重复内容
+        const stream = await withTimeout(
+          provider.client.chat.completions.create({
+            messages,
+            model,
+            stream: true,
+            stream_options: { include_usage: true },
+          }),
+          DEFAULT_TIMEOUT,
         );
 
         let inputTokens = 0;
         let outputTokens = 0;
         let cachedInputTokens = 0;
 
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || "";
-          if (content) {
-            sendStreamChunk(res, content);
+        try {
+          // 接收 chunks 阶段不可 retry
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || "";
+            if (content) {
+              sendStreamChunk(res, content);
+            }
+            if (chunk.usage) {
+              inputTokens = chunk.usage.prompt_tokens || 0;
+              outputTokens = chunk.usage.completion_tokens || 0;
+              cachedInputTokens =
+                chunk.usage.prompt_tokens_details?.cached_tokens || 0;
+            }
           }
-          if (chunk.usage) {
-            inputTokens = chunk.usage.prompt_tokens || 0;
-            outputTokens = chunk.usage.completion_tokens || 0;
-            cachedInputTokens =
-              chunk.usage.prompt_tokens_details?.cached_tokens || 0;
-          }
+        } catch (error: unknown) {
+          // 已发送的 chunks 无法撤回：停止发送，向上抛错以触发 success: false 上报
+          const err = error as Error;
+          logger.error(
+            `${options.operation} stream chunk iteration failed: ${err.message}`,
+          );
+          throw error;
         }
 
         return {

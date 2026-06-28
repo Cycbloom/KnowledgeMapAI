@@ -1,6 +1,5 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
-import { getSupabaseAdmin } from "../supabase";
 import { syncService } from "../services/sync";
 import { p2pSyncService } from "../services/sync/p2pSyncService";
 import type { SyncOperation } from "../../shared/sync/types";
@@ -10,7 +9,7 @@ const router = Router();
 // POST /api/sync/pull
 router.post("/pull", requireAuth, async (req: AuthRequest, res: Response) => {
   const { tables } = req.body as { tables: Record<string, string> };
-  const result = await syncService.pull(getSupabaseAdmin(), req.user.id, tables);
+  const result = await syncService.pull(req.supabase!, req.user.id, tables);
   res.json({ data: result });
 });
 
@@ -25,13 +24,13 @@ router.post("/push", requireAuth, async (req: AuthRequest, res: Response) => {
       clientUpdatedAt: string;
     }>;
   };
-  const results = await syncService.push(getSupabaseAdmin(), req.user.id, operations);
+  const results = await syncService.push(req.supabase!, req.user.id, operations);
   res.json({ results });
 });
 
 // GET /api/sync/status
 router.get("/status", requireAuth, async (req: AuthRequest, res: Response) => {
-  const result = await syncService.getStatus(getSupabaseAdmin(), req.user.id);
+  const result = await syncService.getStatus(req.supabase!, req.user.id);
   res.json({ data: result });
 });
 
@@ -60,7 +59,7 @@ router.post("/receive", requireAuth, async (req: AuthRequest, res: Response) => 
     data: op.data,
     clientUpdatedAt: op.timestamp,
   }));
-  const results = await syncService.push(getSupabaseAdmin(), req.user.id, pushOperations);
+  const results = await syncService.push(req.supabase!, req.user.id, pushOperations);
   res.json({ results, deviceId });
 });
 
@@ -73,7 +72,7 @@ router.get("/send", requireAuth, async (req: AuthRequest, res: Response) => {
       tableMap[table] = "";
     }
   }
-  const result = await syncService.pull(getSupabaseAdmin(), req.user.id, tableMap);
+  const result = await syncService.pull(req.supabase!, req.user.id, tableMap);
   res.json({ data: result });
 });
 

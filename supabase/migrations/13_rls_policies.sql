@@ -560,9 +560,9 @@ CREATE POLICY "Users can view own notification settings" ON notification_setting
 CREATE POLICY "Users can insert own notification settings" ON notification_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own notification settings" ON notification_settings FOR UPDATE USING (auth.uid() = user_id);
 
--- AI Performance Logs (system-level, no user_id column)
+-- AI Performance Logs (user-scoped via user_id; NULL = system-level)
 ALTER TABLE ai_performance_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can view ai performance logs" ON ai_performance_logs FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can view own or system-level ai performance logs" ON ai_performance_logs FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
 CREATE POLICY "Service role can insert ai performance logs" ON ai_performance_logs FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 -- Task Reviews
@@ -571,3 +571,50 @@ CREATE POLICY "Users can view own task reviews" ON task_reviews FOR SELECT USING
 CREATE POLICY "Users can insert own task reviews" ON task_reviews FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own task reviews" ON task_reviews FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own task reviews" ON task_reviews FOR DELETE USING (auth.uid() = user_id);
+
+-- Document Chunks
+-- document_chunks 通过 knowledge_point_id 外键关联 knowledge_points，策略参照 knowledge_points 模式：
+-- SELECT: owner_id 匹配 OR visibility='public' OR 在 public graph 内
+-- INSERT/UPDATE/DELETE: 仅 owner
+ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own document_chunks" ON document_chunks FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.visibility = 'public'
+  )
+  OR EXISTS (
+    SELECT 1 FROM knowledge_points
+    JOIN graph_nodes ON graph_nodes.knowledge_point_id = knowledge_points.id
+    JOIN knowledge_graphs ON knowledge_graphs.id = graph_nodes.graph_id
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_graphs.is_public = true
+    AND graph_nodes.deleted_at IS NULL
+  )
+);
+CREATE POLICY "Users can insert own document_chunks" ON document_chunks FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own document_chunks" ON document_chunks FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own document_chunks" ON document_chunks FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_points
+    WHERE knowledge_points.id = document_chunks.knowledge_point_id
+    AND knowledge_points.owner_id = auth.uid()
+  )
+);

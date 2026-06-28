@@ -21,6 +21,7 @@ export function setupRealtimeSTT(server: Server): void {
       return;
     }
 
+    // admin client: WebSocket 升级阶段未经过 Express 中间件，无 req.supabase 可用，需使用 admin client 验证 token
     getSupabaseAdmin().auth.getUser(token).then(({ data, error }) => {
       if (error || !data.user) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');

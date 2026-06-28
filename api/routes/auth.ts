@@ -27,6 +27,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
       throw new AppError('请填写所有必填字段', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
+    // admin client: 注册流程无已认证会话，无 req.supabase 可用，需使用 admin client 创建用户与档案
     const admin = getSupabaseAdmin();
     const result = await authRouteService.signUp(admin, email, password, name);
 
@@ -85,6 +86,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
       hasPassword: !!password,
     });
 
+    // admin client: 登录流程无已认证会话，无 req.supabase 可用，需使用 admin client 验证凭据并补建档案
     const admin = getSupabaseAdmin();
     const result = await authRouteService.signInWithPassword(admin, email, password);
 
@@ -120,6 +122,7 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
       throw new AppError(ErrorCodes.MISSING_REFRESH_TOKEN);
     }
 
+    // admin client: 需跨用户验证 refresh token，无已认证会话，必须使用 admin client
     const result = await authRouteService.refreshSession(getSupabaseAdmin(), refreshToken);
 
     res.json({ session: result.session, user: result.user });
@@ -131,6 +134,7 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
 
 router.post('/logout', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
+    // admin client: 注销需撤销用户会话（session 管理），需 service role 权限，不能使用 user-scoped client
     await authRouteService.signOut(getSupabaseAdmin(), req.user.id);
 
     res.json({ message: '退出登录成功' });

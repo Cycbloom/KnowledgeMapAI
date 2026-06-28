@@ -90,6 +90,7 @@ router.get("/system", async (_req, res) => {
 router.get("/services", async (_req, res) => {
   const now = new Date().toISOString();
 
+  // admin client: 系统级监控接口，需绕过 RLS 探测全局数据库健康状态
   const admin = getSupabaseAdmin();
   const dbHealth = await systemMonitorService.checkDatabaseHealth(admin);
 
@@ -201,6 +202,7 @@ router.get("/dashboard", async (_req, res) => {
     const [cpuUsage, memoryUsage] = [getCpuUsage(), getMemoryUsage()];
     const cpus = os.cpus();
 
+    // admin client: 系统级监控仪表盘，需绕过 RLS 探测全局数据库健康状态
     const dbHealth = await systemMonitorService.checkDatabaseHealth(getSupabaseAdmin());
     const dbStatus = dbHealth.status;
     const dbLatency = dbHealth.latency;

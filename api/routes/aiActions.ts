@@ -1,118 +1,154 @@
-import express from "express";
-import { requireAuth } from "../middleware/auth";
-import { getSupabaseAdmin } from "../supabase";
-import { aiActionService } from "../services/ai";
+import { Router, type Response } from "express";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
+import {
+  createActionSchema,
+  updateActionSchema,
+  executeActionSchema,
+} from "../schemas/aiAction";
+import { aiActionService, type AIAction } from "../services/ai";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 
-const router = express.Router();
+const router = Router();
 
 // List Actions
-router.get("/", requireAuth, async (req, res) => {
-  const userId = (req as any).user.id;
-  const graphId = req.query.graph_id as string;
+router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
+  const userId: string | undefined = req.user?.id;
+  const supabase = req.supabase;
+  if (!supabase || !userId) {
+    throw new AppError("未授权访问", 401, ErrorCodes.AUTH_UNAUTHORIZED);
+  }
+  const graphId = req.query.graph_id as string | undefined;
 
-  const actions = await aiActionService.listActions(
-    getSupabaseAdmin(),
-    userId,
-    graphId,
-  );
+  const actions = await aiActionService.listActions(supabase, userId, graphId);
   res.json(actions);
 });
 
 // Create Action
-router.post("/", requireAuth, async (req, res) => {
-  const action = req.body;
-  const userId = (req as any).user.id;
+router.post(
+  "/",
+  requireAuth,
+  validate({ body: createActionSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const userId: string | undefined = req.user?.id;
+    const supabase = req.supabase;
+    if (!supabase || !userId) {
+      throw new AppError("未授权访问", 401, ErrorCodes.AUTH_UNAUTHORIZED);
+    }
 
-  // Enforce user ownership if scope is user/graph
-  if (action.scope === "user") {
-    action.user_id = userId;
-  } else if (action.scope === "graph") {
-    // Verify graph ownership
-    if (!action.graph_id)
-      throw new AppError(
-        "图谱级别操作需要提供图谱ID",
-        400,
-        ErrorCodes.VALIDATION_ERROR,
+    const action: Partial<AIAction> = { ...req.body };
+
+    // Enforce user ownership if scope is user/graph
+    if (action.scope === "user") {
+      action.user_id = userId;
+    } else if (action.scope === "graph") {
+      // Verify graph ownership (graph_id presence is business logic bound to scope)
+      if (!action.graph_id) {
+        throw new AppError(
+          "图谱级别操作需要提供图谱ID",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
+      }
+
+      const graph = await aiActionService.getGraphOwner(
+        supabase,
+        action.graph_id,
       );
 
-    // Check if user owns graph
-    const graph = await aiActionService.getGraphOwner(getSupabaseAdmin(), action.graph_id);
+      if (!graph) {
+        throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      }
 
-    if (!graph) {
-      throw new AppError("图谱不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      if (graph.user_id !== userId) {
+        throw new AppError(
+          "没有权限为此图谱创建操作",
+          403,
+          ErrorCodes.AUTH_FORBIDDEN,
+        );
+      }
+
+      action.user_id = userId; // Assign creator
     }
 
-    if (graph.user_id !== userId) {
-      throw new AppError("没有权限为此图谱创建操作", 403, ErrorCodes.AUTH_FORBIDDEN);
-    }
-
-    action.user_id = userId; // Assign creator
-  } else if (action.scope === "system") {
-    // Only admin can create system actions (Skip check for now or assume backend protection)
-  }
-
-  const newAction = await aiActionService.createAction(getSupabaseAdmin(), action);
-  res.status(201).json(newAction);
-});
+    const newAction = await aiActionService.createAction(supabase, action);
+    res.status(201).json(newAction);
+  },
+);
 
 // Update Action
-router.put("/:id", requireAuth, async (req, res) => {
-  const { id } = req.params;
-  const updates = req.body;
-  const userId = (req as any).user.id;
+router.put(
+  "/:id",
+  requireAuth,
+  validate({ body: updateActionSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const userId: string | undefined = req.user?.id;
+    const supabase = req.supabase;
+    if (!supabase || !userId) {
+      throw new AppError("未授权访问", 401, ErrorCodes.AUTH_UNAUTHORIZED);
+    }
 
-  // Check ownership
-  const existing = await aiActionService.getAction(getSupabaseAdmin(), id);
-  if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
+    const updates = req.body;
 
-  if (existing.scope !== "system" && existing.user_id !== userId) {
-    throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
-  }
+    // Check ownership
+    const existing = await aiActionService.getAction(supabase, id);
+    if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
 
-  const updated = await aiActionService.updateAction(
-    getSupabaseAdmin(),
-    id,
-    updates,
-  );
-  res.json(updated);
-});
+    if (existing.scope !== "system" && existing.user_id !== userId) {
+      throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
+    }
+
+    const updated = await aiActionService.updateAction(supabase, id, updates);
+    res.json(updated);
+  },
+);
 
 // Delete Action
-router.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const userId = (req as any).user.id;
+  const userId: string | undefined = req.user?.id;
+  const supabase = req.supabase;
+  if (!supabase || !userId) {
+    throw new AppError("未授权访问", 401, ErrorCodes.AUTH_UNAUTHORIZED);
+  }
 
   // Check ownership
-  const existing = await aiActionService.getAction(getSupabaseAdmin(), id);
+  const existing = await aiActionService.getAction(supabase, id);
   if (!existing) throw new AppError(ErrorCodes.ACTION_NOT_FOUND);
 
   if (existing.scope !== "system" && existing.user_id !== userId) {
     throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
   }
 
-  await aiActionService.deleteAction(getSupabaseAdmin(), id);
+  await aiActionService.deleteAction(supabase, id);
   res.json({ success: true });
 });
 
 // Execute Action
-router.post("/execute", requireAuth, async (req, res) => {
-  const { action_id, node_id, graph_id } = req.body;
-  const userId = (req as any).user.id;
+router.post(
+  "/execute",
+  requireAuth,
+  validate({ body: executeActionSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const userId: string | undefined = req.user?.id;
+    const supabase = req.supabase;
+    if (!supabase || !userId) {
+      throw new AppError("未授权访问", 401, ErrorCodes.AUTH_UNAUTHORIZED);
+    }
 
-  if (!action_id || !node_id) {
-    throw new AppError(ErrorCodes.ACTION_ID_NODE_ID_REQUIRED);
-  }
+    const { action_id, node_id, graph_id } = req.body;
 
-  const result = await aiActionService.executeAction(
-    action_id,
-    node_id,
-    userId,
-    graph_id || "none",
-  );
+    const result = await aiActionService.executeAction(
+      action_id,
+      node_id,
+      userId,
+      graph_id ?? "none",
+    );
 
-  res.json(result);
-});
+    res.json(result);
+  },
+);
 
 export default router;

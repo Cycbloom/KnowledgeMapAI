@@ -33,6 +33,10 @@ shared/types/*.js.map
 # 开发产物
 dev-dist/
 
+# vite-plugin-pwa 在 swDest 配置下偶发输出到项目根的产物（未被引用）
+/pwa-sw.js
+/workbox-*.js
+
 # 本地数据库
 data/*.db
 data/*.db-shm

@@ -17,16 +17,35 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames
-          .filter(name => !name.includes('v1'))
-          .map(name => caches.delete(name))
-      );
-    })
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    // 手写 SW 不依赖 navigation preload，显式禁用以避免浏览器继续发起预载请求
+    if (self.registration.navigationPreload) {
+      try {
+        await self.registration.navigationPreload.disable();
+      } catch {
+        // 旧浏览器不支持 navigationPreload，忽略
+      }
+    }
+
+    // 清理非 v1 缓存（保留现有逻辑）
+    const cacheNames = await caches.keys();
+
+    // 额外清理 Workbox 残留缓存（workbox-precache-v2-*）
+    const toDelete = cacheNames.filter(name =>
+      !name.includes('v1') || name.startsWith('workbox-precache-v2-')
+    );
+    await Promise.all(toDelete.map(name => caches.delete(name)));
+
+    // 注销同 scope 下非当前脚本的残留 SW 注册（清理历史 VitePWA/Workbox 残留）
+    const registrations = await self.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations
+        .filter(reg => reg.active && reg.active.scriptURL !== self.registration.active.scriptURL)
+        .map(reg => reg.unregister())
+    );
+
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
@@ -51,9 +70,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (request.destination === 'document') {
-    event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html'))
-    );
+    event.respondWith((async () => {
+      // 优先消费 navigation preload（若浏览器已发起），避免 preload 被取消的警告
+      const preloaded = await event.preloadResponse;
+      if (preloaded) {
+        return preloaded;
+      }
+      try {
+        return await fetch(request);
+      } catch {
+        return await caches.match('/index.html');
+      }
+    })());
     return;
   }
 

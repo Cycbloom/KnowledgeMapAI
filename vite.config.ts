@@ -101,6 +101,7 @@ export default defineConfig({
       ? [
           VitePWA({
             registerType: "autoUpdate",
+            injectRegister: false,
             includeAssets: ["favicon.svg", "robots.txt", "icons/*.png"],
             manifest: {
               name: "Knowledge Map AI",
@@ -195,6 +196,7 @@ export default defineConfig({
               iarc_rating_id: "",
             },
             workbox: {
+              swDest: "pwa-sw.js",
               globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
               maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
               cleanupOutdatedCaches: true,
@@ -244,7 +246,7 @@ export default defineConfig({
                 },
               ],
             },
-            devOptions: {
+            devOptions: { // NOTE: dev SW 文件名冲突通过 injectRegister: false 缓解；vite-plugin-pwa 不支持单独命名 dev SW
               enabled: true,
               type: "module",
             },

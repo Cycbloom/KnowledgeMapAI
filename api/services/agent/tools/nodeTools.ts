@@ -1,4 +1,5 @@
 import type { AgentTool, ToolContext } from '../types';
+import { notDeleted } from '../../common/softDeleteHelper';
 
 interface TagInfo {
   name: string;
@@ -26,19 +27,19 @@ export const getGraphTagsTool: AgentTool = {
     const { supabase, userId } = context;
     const graphId = params.graph_id as string;
 
-    const { data: graphCheck, error: graphError } = await supabase
+    const { data: graphCheck, error: graphError } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id')
       .eq('id', graphId)
       .eq('user_id', userId)
-      .is('deleted_at', null)
+      )
       .single();
 
     if (graphError || !graphCheck) {
       throw new Error('Graph not found or access denied');
     }
 
-    const { data: nodes, error: nodesError } = await supabase
+    const { data: nodes, error: nodesError } = await notDeleted(supabase
       .from('graph_nodes')
       .select(`
         knowledge_point_id,
@@ -47,7 +48,7 @@ export const getGraphTagsTool: AgentTool = {
         )
       `)
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (nodesError) {
       throw new Error(`Failed to get nodes: ${nodesError.message}`);
@@ -123,7 +124,7 @@ export const getNodeRelationsTool: AgentTool = {
       throw new Error('Knowledge point not found');
     }
 
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from('graph_nodes')
       .select(`
         graph_id,
@@ -133,7 +134,7 @@ export const getNodeRelationsTool: AgentTool = {
         )
       `)
       .eq('knowledge_point_id', nodeId)
-      .is('deleted_at', null);
+      );
 
     if (gnError) {
       throw new Error(`Failed to get graph nodes: ${gnError.message}`);
@@ -177,7 +178,7 @@ export const getNodeRelationsTool: AgentTool = {
         return;
       }
 
-      const query = supabase
+      const query = notDeleted(supabase
         .from('edges')
         .select(`
           id,
@@ -187,7 +188,7 @@ export const getNodeRelationsTool: AgentTool = {
           graph_id
         `)
         .in('graph_id', userGraphIds)
-        .is('deleted_at', null);
+        );
 
       let edges: Array<{
         id: string;

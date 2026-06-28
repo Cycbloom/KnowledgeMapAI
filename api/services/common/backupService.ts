@@ -6,6 +6,7 @@ import { cacheService, CacheKeys } from './cacheService';
 import type { KnowledgeGraphRow, StudyCardRow, FocusSessionRow, UserAchievementRow } from '@shared/types/database';
 import type { Edge } from '@shared/types/graph';
 import type { PeriodicTask } from '@shared/types/common';
+import { notDeleted } from './softDeleteHelper';
 
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
 const MAX_AUTO_SNAPSHOTS: Record<string, number> = {
@@ -192,7 +193,7 @@ export async function createBackup(
 
   if (graphIds.length > 0) {
     const [graphNodesResult, edgesResult, backboneModulesResult] = await Promise.all([
-      supabase.from('graph_nodes').select(`
+      notDeleted(supabase.from('graph_nodes').select(`
         id,
         graph_id,
         knowledge_point_id,
@@ -218,8 +219,8 @@ export async function createBackup(
           created_at,
           updated_at
         )
-      `).in('graph_id', graphIds).is('deleted_at', null),
-      supabase.from('edges').select('*').in('graph_id', graphIds).is('deleted_at', null),
+      `).in('graph_id', graphIds)),
+      notDeleted(supabase.from('edges').select('*').in('graph_id', graphIds)),
       supabase.from('graph_backbone_modules').select('*').in('graph_id', graphIds),
     ]);
     

@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface AutoTaskResult {
   taskId: string;
@@ -51,12 +52,12 @@ class AutoTaskGenerator {
       }
     }
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 1)
-      .is("deleted_at", null);
+      );
 
     const { data: task, error } = await supabase
       .from("user_tasks")
@@ -137,12 +138,12 @@ class AutoTaskGenerator {
       }
     }
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 0)
-      .is("deleted_at", null);
+      );
 
     const today = new Date();
     today.setHours(9, 0, 0, 0);
@@ -265,13 +266,13 @@ class AutoTaskGenerator {
     knowledgePointId: string,
     _taskContext: string,
   ) {
-    const { data } = await supabase
+    const { data } = await notDeleted(supabase
       .from("user_tasks")
       .select("id, title, queue_level, priority, status")
       .eq("user_id", userId)
       .eq("knowledge_point_id", knowledgePointId)
       .in("status", ["pending", "in_progress", "paused"])
-      .is("deleted_at", null)
+      )
       .limit(1)
       .maybeSingle();
 

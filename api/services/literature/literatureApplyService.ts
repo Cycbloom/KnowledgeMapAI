@@ -7,6 +7,7 @@ import { cacheService, CacheKeys } from '../common/cacheService';
 import { performanceMonitor } from '../ai/performanceMonitor';
 import type { ExtractedConcept, LiteratureInfo, ConceptSource, ReferenceBook } from '@shared/types/graph';
 import { BackboneModule, TITLE_TO_BACKBONE_MODULE } from '@shared/types/graph';
+import { notDeleted } from '../common/softDeleteHelper';
 
 const MERGE_THRESHOLD = parseFloat(process.env.CONCEPT_MERGE_THRESHOLD || "0.85");
 const FUZZY_TITLE_CONFIRM_THRESHOLD = 0.75;
@@ -58,7 +59,7 @@ class LiteratureApplyService {
 
       const conceptsToProcess: ExtractedConcept[] = concepts;
 
-      const { data: existingGraphNodes } = await supabase
+      const { data: existingGraphNodes } = await notDeleted(supabase
         .from("graph_nodes")
         .select(
           `
@@ -74,7 +75,7 @@ class LiteratureApplyService {
         `,
         )
         .eq("graph_id", graphId)
-        .is("deleted_at", null);
+        );
 
       const existingNodesMap = new Map<
         string,
@@ -224,12 +225,12 @@ class LiteratureApplyService {
             );
 
           if (upgradeResult.success) {
-            const { data: existingGN } = await supabase
+            const { data: existingGN } = await notDeleted(supabase
               .from("graph_nodes")
               .select("id")
               .eq("knowledge_point_id", existingMatch.id)
               .eq("graph_id", graphId)
-              .is("deleted_at", null)
+              )
               .single();
 
             if (existingGN) {
@@ -344,12 +345,12 @@ class LiteratureApplyService {
                     [conceptSource],
                   );
                 if (upgradeResult.success) {
-                  const { data: existingGN } = await supabase
+                  const { data: existingGN } = await notDeleted(supabase
                     .from("graph_nodes")
                     .select("id")
                     .eq("knowledge_point_id", existingNode.id)
                     .eq("graph_id", graphId)
-                    .is("deleted_at", null)
+                    )
                     .single();
                   if (existingGN) {
                     nodeMapping[concept.title] = existingNode.id;
@@ -390,12 +391,12 @@ class LiteratureApplyService {
                     );
 
                   if (upgradeResult.success) {
-                    const { data: existingGN } = await supabase
+                    const { data: existingGN } = await notDeleted(supabase
                       .from("graph_nodes")
                       .select("id")
                       .eq("knowledge_point_id", similar.id)
                       .eq("graph_id", graphId)
-                      .is("deleted_at", null)
+                      )
                       .single();
 
                     if (existingGN) {
@@ -431,12 +432,12 @@ class LiteratureApplyService {
                     );
 
                   if (upgradeResult.success) {
-                    const { data: existingGN } = await supabase
+                    const { data: existingGN } = await notDeleted(supabase
                       .from("graph_nodes")
                       .select("id")
                       .eq("knowledge_point_id", existingId)
                       .eq("graph_id", graphId)
-                      .is("deleted_at", null)
+                      )
                       .single();
 
                     if (existingGN) {
@@ -473,12 +474,12 @@ class LiteratureApplyService {
                   );
 
                 if (upgradeResult.success) {
-                  const { data: existingGN } = await supabase
+                  const { data: existingGN } = await notDeleted(supabase
                     .from("graph_nodes")
                     .select("id")
                     .eq("knowledge_point_id", existingId)
                     .eq("graph_id", graphId)
-                    .is("deleted_at", null)
+                    )
                     .single();
 
                   if (existingGN) {
@@ -516,7 +517,7 @@ class LiteratureApplyService {
         conceptsWithEmbeddingCount: conceptsWithEmbedding.length,
       });
 
-      const { data: backboneNodes } = await supabase
+      const { data: backboneNodes } = await notDeleted(supabase
         .from("graph_nodes")
         .select(
           `
@@ -531,7 +532,7 @@ class LiteratureApplyService {
         `,
         )
         .eq("graph_id", graphId)
-        .is("deleted_at", null);
+        );
 
       const backboneModuleMap = new Map<BackboneModule, string>();
       const backboneNodeIds = new Set<string>();

@@ -8,6 +8,7 @@ import { transactionExecutor } from '../../database/transactionExecutor';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface GraphNodeQueryResult {
   knowledge_point_id: string;
@@ -124,7 +125,7 @@ export class DataService {
     }
 
     const [graphNodesResult, edgesResult] = await Promise.all([
-      supabase.from('graph_nodes').select(`
+      notDeleted(supabase.from('graph_nodes').select(`
         id,
         graph_id,
         knowledge_point_id,
@@ -142,8 +143,8 @@ export class DataService {
           learning_material,
           properties
         )
-      `).eq('graph_id', graphId).is('deleted_at', null),
-      supabase.from('edges').select('*').eq('graph_id', graphId).is('deleted_at', null),
+      `).eq('graph_id', graphId)),
+      notDeleted(supabase.from('edges').select('*').eq('graph_id', graphId)),
     ]);
 
     const nodes: ExportNode[] = (graphNodesResult.data as GraphNodeQueryResult[] || []).map((gn) => {

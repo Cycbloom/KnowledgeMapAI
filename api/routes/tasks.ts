@@ -1,5 +1,6 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthedRequest } from '../middleware/auth';
+import { requireTaskOwnership } from '../middleware/ownership';
 import { asyncTaskService } from '../services/asyncTaskService';
 import { sseService } from '../services/core';
 import { logger } from '../utils/logger';
@@ -81,7 +82,7 @@ router.post('/:id/retry', requireAuth, async (req: AuthedRequest, res: Response)
   }
 });
 
-router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.delete('/:id', requireAuth, requireTaskOwnership, async (req: AuthedRequest, res: Response) => {
   try {
     await asyncTaskService.deleteTask(req.supabase, req.params.id, req.user.id);
     res.json({ success: true });

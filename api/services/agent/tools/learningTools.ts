@@ -1,5 +1,6 @@
 import type { AgentTool, ToolContext } from '../types';
 import { isIndexValue, resolveId } from '../../../../shared/utils/indexMapping';
+import { notDeleted } from '../../common/softDeleteHelper';
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
@@ -38,11 +39,11 @@ export const getStudyProgressTool: AgentTool = {
     const graphIds = params.graphIds as string[] | undefined;
     const summarize = params.summarize !== false;
 
-    let query = supabase
+    let query = notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, title')
       .eq('user_id', userId)
-      .is('deleted_at', null);
+      );
 
     if (graphIds && graphIds.length > 0) {
       query = query.in('id', graphIds);
@@ -365,11 +366,11 @@ export const getPrerequisiteChainTool: AgentTool = {
       throw new Error('Graph not found');
     }
 
-    const { data: userGraphs, error: userGraphsError } = await supabase
+    const { data: userGraphs, error: userGraphsError } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, title')
       .eq('user_id', userId)
-      .is('deleted_at', null);
+      );
 
     if (userGraphsError) {
       throw new Error(`Failed to get user graphs: ${userGraphsError.message}`);

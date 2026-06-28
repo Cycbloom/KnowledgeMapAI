@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { efficiencyService } from "./efficiencyService";
 import { UserTask } from "./taskService";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface TimeSlotRecommendation {
   startHour: number;
@@ -323,12 +324,12 @@ export class SmartSchedulerService {
     client: SupabaseClient,
     userId: string,
   ): Promise<SmartSchedulerResult> {
-    const { data: tasksData, error } = await client
+    const { data: tasksData, error } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
-      .is("deleted_at", null);
+      );
 
     if (error || !tasksData) {
       logger.error("Failed to fetch tasks for smart recommendations", { error });

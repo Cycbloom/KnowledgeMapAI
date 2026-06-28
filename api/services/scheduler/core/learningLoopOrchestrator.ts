@@ -9,6 +9,7 @@ import type {
 import type { StudyMode, StudyWorkflowStage, StudyWorkflowConfig } from "../../../../shared/types/scheduler";
 import { getStudyModePreset } from "../../../../shared/constants/studyModePresets";
 import { MASTERY_THRESHOLDS } from "../../../../shared/constants/masteryThresholds";
+import { notDeleted } from '../../common/softDeleteHelper';
 
 type LoopStage = "learn" | "test" | "review" | "iterate";
 
@@ -146,12 +147,12 @@ class LearningLoopOrchestrator {
 
     const config = stageConfig[stage];
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", loop.userId)
       .eq("queue_level", config.queueLevel)
-      .is("deleted_at", null);
+      );
 
     const { data: task, error } = await supabase
       .from("user_tasks")

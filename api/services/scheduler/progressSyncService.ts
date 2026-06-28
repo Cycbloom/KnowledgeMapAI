@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { masteryCalculationService } from "../study/masteryCalculationService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface SyncStudyDurationParams {
   taskId: string;
@@ -57,12 +58,12 @@ export class ProgressSyncService {
 
     logger.info('Syncing study duration', { taskId, userId, durationMinutes });
 
-    const { data: task, error: taskError } = await client
+    const { data: task, error: taskError } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {
@@ -134,12 +135,12 @@ export class ProgressSyncService {
 
     logger.info('Syncing task completion', { taskId, userId, completionQuality });
 
-    const { data: task, error: taskError } = await client
+    const { data: task, error: taskError } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {
@@ -426,12 +427,12 @@ export class ProgressSyncService {
       isPrimary: boolean;
     }>;
   }> {
-    const { data: task, error: taskError } = await client
+    const { data: task, error: taskError } = await notDeleted(client
       .from("user_tasks")
       .select("id, title, actual_duration, estimated_duration, progress_percentage")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {

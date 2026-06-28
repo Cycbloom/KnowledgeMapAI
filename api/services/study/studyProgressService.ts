@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface StudyProgress {
   id: string;
@@ -78,11 +79,11 @@ export class StudyProgressService {
     userId: string,
     graphId: string
   ): Promise<StudyProgress> {
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('knowledge_point_id')
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (gnError) {
       throw new AppError(

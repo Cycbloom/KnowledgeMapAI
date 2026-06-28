@@ -7,6 +7,7 @@ import { graphNodeService } from "../graph/index";
 import { aiService } from "../ai/aiService";
 import { getSupabaseAdmin } from "../../supabase";
 import type { StudyCard } from "../../../shared/types/common";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface CreateCardWithGraphNodeData {
   knowledge_point_id: string;
@@ -80,11 +81,11 @@ export class StudyRouteService {
     userId: string,
     data: CreateCardWithGraphNodeData,
   ) {
-    const { data: graphNode } = await supabase
+    const { data: graphNode } = await notDeleted(supabase
       .from("graph_nodes")
       .select("graph_id")
       .eq("knowledge_point_id", data.knowledge_point_id)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!graphNode) {
@@ -124,11 +125,11 @@ export class StudyRouteService {
       ...new Set(cards.map((c) => c.knowledge_point_id)),
     ];
 
-    const { data: graphNodes } = await supabase
+    const { data: graphNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select("knowledge_point_id, graph_id")
       .in("knowledge_point_id", knowledgePointIds)
-      .is("deleted_at", null);
+      );
 
     const nodeGraphMap = new Map(
       graphNodes?.map((gn) => [gn.knowledge_point_id, gn.graph_id]),

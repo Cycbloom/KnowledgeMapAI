@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { notDeleted } from '../common/softDeleteHelper';
 import {
   isIndexValue,
   resolveId,
@@ -46,11 +47,11 @@ export class IndexMappingService {
       if (cached) return cached;
     }
 
-    const { data: graphs, error } = await supabase
+    const { data: graphs, error } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new Error(`Failed to build graph index map: ${error.message}`);
@@ -75,7 +76,7 @@ export class IndexMappingService {
       if (cached) return cached;
     }
 
-    const { data: nodes, error } = await supabase
+    const { data: nodes, error } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -84,7 +85,7 @@ export class IndexMappingService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new Error(`Failed to build node index map: ${error.message}`);
@@ -119,11 +120,11 @@ export class IndexMappingService {
       if (cached) return cached;
     }
 
-    const { data: tasks, error } = await supabase
+    const { data: tasks, error } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new Error(`Failed to build task index map: ${error.message}`);

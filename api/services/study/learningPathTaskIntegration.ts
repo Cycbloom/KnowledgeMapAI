@@ -8,6 +8,7 @@ import type {
   LearningPathService,
 } from "./learningPathService";
 import { topologicalSortNodes } from "./learningPathAlgorithms";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export class LearningPathTaskIntegration {
   private learningPathService: LearningPathService;
@@ -36,12 +37,12 @@ export class LearningPathTaskIntegration {
       throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 0)
-      .is("deleted_at", null);
+      );
 
     const { data: nodes } = await supabase
       .from("learning_path_nodes")
@@ -177,12 +178,12 @@ export class LearningPathTaskIntegration {
       throw new AppError("无权访问此节点", 403, ErrorCodes.AUTH_FORBIDDEN);
     }
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", options?.queue_level ?? 0)
-      .is("deleted_at", null);
+      );
 
     const { data: task, error: taskError } = await supabase
       .from("user_tasks")

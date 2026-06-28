@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { aiService } from "../ai/aiService";
 import { logger } from "../../utils/logger";
 import { cacheService, CacheKeys } from "../common/cacheService";
+import { notDeleted } from '../common/softDeleteHelper';
 import type {
   NodeLevel,
   ConceptSource,
@@ -526,7 +527,7 @@ export class ConceptAggregationService {
       userGraphs.map((g) => [g.id, g.title || g.id]),
     );
 
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -540,7 +541,7 @@ export class ConceptAggregationService {
       `,
       )
       .in("graph_id", otherGraphIds)
-      .is("deleted_at", null);
+      );
 
     if (gnError || !graphNodes) {
       logger.error("Failed to fetch cross-graph nodes:", gnError);
@@ -640,7 +641,7 @@ export class ConceptAggregationService {
       mergedSources: [],
     };
 
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -657,7 +658,7 @@ export class ConceptAggregationService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (gnError || !graphNodes) {
       logger.error("Failed to fetch graph nodes:", gnError);
@@ -760,12 +761,12 @@ export class ConceptAggregationService {
         }
 
         for (const duplicate of group.duplicates) {
-          const { data: duplicateGraphNodes } = await supabase
+          const { data: duplicateGraphNodes } = await notDeleted(supabase
             .from("graph_nodes")
             .select("id")
             .eq("knowledge_point_id", duplicate.id)
             .eq("graph_id", graphId)
-            .is("deleted_at", null);
+            );
 
           if (duplicateGraphNodes && duplicateGraphNodes.length > 0) {
             const { error: edgeUpdateError } = await supabase
@@ -1075,7 +1076,7 @@ export class ConceptAggregationService {
   }> {
     const threshold = options.threshold ?? 10;
 
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -1088,7 +1089,7 @@ export class ConceptAggregationService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (gnError || !graphNodes) {
       logger.error(
@@ -1156,7 +1157,7 @@ export class ConceptAggregationService {
   }> {
     const threshold = options.similarityThreshold ?? 0.7;
 
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -1171,7 +1172,7 @@ export class ConceptAggregationService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (gnError || !graphNodes) {
       logger.error("Failed to fetch nodes for overlap detection:", gnError);
@@ -1466,12 +1467,12 @@ ${conceptList}
             edgesUpdatedInGroup++;
           }
 
-          const { data: sourceGraphNodes } = await supabase
+          const { data: sourceGraphNodes } = await notDeleted(supabase
             .from("graph_nodes")
             .select("id")
             .eq("knowledge_point_id", sourceId)
             .eq("graph_id", graphId)
-            .is("deleted_at", null);
+            );
 
           if (sourceGraphNodes && sourceGraphNodes.length > 0) {
             const { error: deleteNodeError } = await supabase
@@ -1589,12 +1590,12 @@ ${conceptList}
     childKnowledgePointId: string,
     parentKnowledgePointId: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabase
+    const { error } = await notDeleted(supabase
       .from("graph_nodes")
       .update({ parent_id: parentKnowledgePointId })
       .eq("knowledge_point_id", childKnowledgePointId)
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       return { success: false, error: error.message };

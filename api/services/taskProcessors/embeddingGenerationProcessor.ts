@@ -3,6 +3,7 @@ import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './in
 import { aiService } from '../ai/aiService';
 import { chunkingService } from '../ai/chunkingService';
 import { logger } from '../../utils/logger';
+import { notDeleted } from '../common/softDeleteHelper';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
@@ -37,7 +38,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
         }
         knowledgePoints = data || [];
       } else if (graphId) {
-        const { data: graphNodes, error: gnError } = await supabase
+        const { data: graphNodes, error: gnError } = await notDeleted(supabase
           .from('graph_nodes')
           .select(`
             knowledge_point_id,
@@ -49,7 +50,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
             )
           `)
           .eq('graph_id', graphId)
-          .is('deleted_at', null);
+          );
 
         if (gnError) {
           throw new Error(`Failed to fetch graph nodes: ${gnError.message}`);

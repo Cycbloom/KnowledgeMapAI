@@ -9,6 +9,7 @@ import { subtaskStateMachine } from "./subtaskStateMachine";
 import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
 import { aiService, type CardDifficulty } from "../ai/index";
 import { studyService } from "../study/studyService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface PracticeSession {
   id: string;
@@ -965,11 +966,11 @@ export class SubtaskQuizIntegrationService {
       });
     }
 
-    const { data: graphNode } = await supabase
+    const { data: graphNode } = await notDeleted(supabase
       .from("graph_nodes")
       .select("graph_id")
       .eq("knowledge_point_id", knowledgePointId)
-      .is("deleted_at", null)
+      )
       .limit(1)
       .single();
 
@@ -1002,11 +1003,11 @@ export class SubtaskQuizIntegrationService {
       }
     }
 
-    const { data: graphNode } = await supabase
+    const { data: graphNode } = await notDeleted(supabase
       .from("graph_nodes")
       .select("graph_id")
       .eq("knowledge_point_id", knowledgePointId)
-      .is("deleted_at", null)
+      )
       .limit(1)
       .single();
 

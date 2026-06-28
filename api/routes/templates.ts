@@ -5,6 +5,7 @@ import {
   type AuthedRequest,
   type OptionalAuthRequest,
 } from "../middleware/auth";
+import { requireTemplateOwnership } from "../middleware/ownership";
 import { validate } from "../middleware/validate";
 import {
   uuidParamsSchema,
@@ -74,6 +75,7 @@ router.put(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateTemplateSchema }),
+  requireTemplateOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await graphTemplateService.updateTemplate(
@@ -90,6 +92,7 @@ router.delete(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
+  requireTemplateOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     await graphTemplateService.deleteTemplate(req.supabase, id, req.user.id);

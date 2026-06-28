@@ -1,6 +1,15 @@
+// 组合根：在 barrel 加载时绑定 chatService 到 aiService，
+// 拆解 aiService ↔ chatService 运行时循环依赖。
+// chatService 与 aiService 均单向依赖 contextBuilder，无运行时环。
+import { chatService } from "./chatService";
+import { bindChatService } from "./aiService";
+
+bindChatService(chatService);
+
 export {
   aiService,
   AIService,
+  bindChatService,
   type GenerateCardsOptions,
   type CardDifficulty,
 } from "./aiService";

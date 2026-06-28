@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { graphVersionService } from './graphVersionService';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface CreateEdgeData {
   graph_id: string;
@@ -93,12 +94,12 @@ export class EdgeService {
     }
 
     // 降级路径：原有逐条查询逻辑
-    const { data: sourceGn, error: sourceError } = await supabase
+    const { data: sourceGn, error: sourceError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('id')
       .eq('knowledge_point_id', source_knowledge_point_id)
       .eq('graph_id', graph_id)
-      .is('deleted_at', null)
+      )
       .maybeSingle();
 
     if (sourceError) {
@@ -110,12 +111,12 @@ export class EdgeService {
       throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
-    const { data: targetGn, error: targetError } = await supabase
+    const { data: targetGn, error: targetError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('id')
       .eq('knowledge_point_id', target_knowledge_point_id)
       .eq('graph_id', graph_id)
-      .is('deleted_at', null)
+      )
       .maybeSingle();
 
     if (targetError) {
@@ -238,11 +239,11 @@ export class EdgeService {
   }
 
   async update(supabase: SupabaseClient, edgeId: string, data: UpdateEdgeData): Promise<Edge> {
-    const { data: updatedEdge, error } = await supabase
+    const { data: updatedEdge, error } = await notDeleted(supabase
       .from('edges')
       .update(data)
       .eq('id', edgeId)
-      .is('deleted_at', null)
+      )
       .select()
       .single();
 
@@ -270,7 +271,7 @@ export class EdgeService {
   }
 
   async getGraphEdges(supabase: SupabaseClient, graphId: string): Promise<Edge[]> {
-    const { data: edges, error } = await supabase
+    const { data: edges, error } = await notDeleted(supabase
       .from('edges')
       .select(`
         id,
@@ -287,7 +288,7 @@ export class EdgeService {
         created_at
       `)
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (error) {
       logger.error('Get graph edges error:', error);
@@ -302,12 +303,12 @@ export class EdgeService {
     graphId: string,
     knowledgePointId: string
   ): Promise<number> {
-    const { data: edges, error: findError } = await supabase
+    const { data: edges, error: findError } = await notDeleted(supabase
       .from('edges')
       .select('id')
       .eq('graph_id', graphId)
       .or(`source_knowledge_point_id.eq.${knowledgePointId},target_knowledge_point_id.eq.${knowledgePointId}`)
-      .is('deleted_at', null);
+      );
 
     if (findError) {
       logger.error('Find edges error:', findError);

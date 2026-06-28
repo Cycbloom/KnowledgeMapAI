@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "../../supabase";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface OverviewData {
   totalGraphs: number;
@@ -73,11 +74,11 @@ export class HealthService {
       };
     }
 
-    const { count: totalNodes } = await supabase
+    const { count: totalNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select("id", { count: "exact", head: true })
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     const { data: studyCards } = await supabase
       .from("study_cards")
@@ -201,7 +202,7 @@ export class HealthService {
       return [];
     }
 
-    const { data: graphNodes } = await supabase
+    const { data: graphNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -216,7 +217,7 @@ export class HealthService {
       `,
       )
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     const nodeIds =
       graphNodes?.map(
@@ -290,7 +291,7 @@ export class HealthService {
       return [];
     }
 
-    const { data: graphNodes } = await supabase
+    const { data: graphNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -305,7 +306,7 @@ export class HealthService {
       `,
       )
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     const nodeIds =
       graphNodes?.map(
@@ -441,11 +442,11 @@ export class HealthService {
       return [];
     }
 
-    const { data: graphNodes } = await supabase
+    const { data: graphNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select("knowledge_point_id")
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     const nodeIds = graphNodes?.map((gn: any) => gn.knowledge_point_id) || [];
 

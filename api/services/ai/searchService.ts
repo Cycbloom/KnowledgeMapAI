@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { aiService } from "./aiService";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface SearchResult {
   graphs: SearchGraphResult[];
@@ -93,7 +94,7 @@ export class SearchService {
     let nodes: SearchNodeResult[] = [];
 
     if (kpIds.length > 0) {
-      const { data: graphNodes, error: gnError } = await supabase
+      const { data: graphNodes, error: gnError } = await notDeleted(supabase
         .from("graph_nodes")
         .select(
           `
@@ -105,7 +106,7 @@ export class SearchService {
         `
         )
         .in("knowledge_point_id", kpIds)
-        .is("deleted_at", null);
+        );
 
       if (gnError) {
         logger.error("Search graph nodes error:", gnError);
@@ -184,7 +185,7 @@ export class SearchService {
       const kpRows = semanticKPs.data as SemanticKpRow[];
       const kpIds = kpRows.map((kp) => kp.id);
 
-      const { data: graphNodes } = await supabase
+      const { data: graphNodes } = await notDeleted(supabase
         .from("graph_nodes")
         .select(
           `
@@ -196,7 +197,7 @@ export class SearchService {
         `
         )
         .in("knowledge_point_id", kpIds)
-        .is("deleted_at", null);
+        );
 
       const gnMap = new Map(
         ((graphNodes ?? []) as unknown as GraphNodeSearchRow[]).map((gn) => [gn.knowledge_point_id, gn])

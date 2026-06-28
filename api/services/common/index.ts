@@ -31,4 +31,5 @@ export type {
   UpdateNotificationSettingsData,
 } from "./notificationService";
 export { systemMonitorService } from "./systemMonitorService";
+export { notDeleted, deletedOnly } from "./softDeleteHelper";
 

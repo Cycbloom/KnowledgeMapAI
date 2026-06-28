@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { notDeleted } from '../common/softDeleteHelper';
 
 class TaskExecutionService {
   async listByTask(
@@ -8,12 +9,12 @@ class TaskExecutionService {
     userId: string,
     taskId: string,
   ) {
-    const { data: task } = await supabase
+    const { data: task } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {

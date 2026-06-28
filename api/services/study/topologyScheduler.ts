@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import type { UnifiedReviewItem } from "./spacedRepetitionBridge";
+import { notDeleted } from '../common/softDeleteHelper';
 
 const MASTERY_THRESHOLD = 0.6;
 
@@ -27,12 +28,12 @@ export async function applyTopologyPriority(
 
   try {
     // 1. Query prerequisite edges targeting any of the review queue KP ids.
-    const { data: edges, error: edgesError } = await supabase
+    const { data: edges, error: edgesError } = await notDeleted(supabase
       .from("edges")
       .select("source_knowledge_point_id, target_knowledge_point_id")
       .eq("relationship_type", "prerequisite")
       .in("target_knowledge_point_id", kpIds)
-      .is("deleted_at", null);
+      );
 
     if (edgesError) throw edgesError;
     if (!edges || edges.length === 0) return items;

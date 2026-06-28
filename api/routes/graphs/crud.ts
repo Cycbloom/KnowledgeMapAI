@@ -23,6 +23,7 @@ import {
 } from "../../services/graph";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { AppError } from "../../middleware/errorHandler";
+import { requireGraphOwnership } from "../../middleware/ownership";
 import { cacheService } from "../../services/common";
 import { logger } from "../../utils/logger";
 import { z } from "zod";
@@ -252,6 +253,7 @@ router.put(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateGraphSchema }),
+  requireGraphOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { domains, ...updates } = req.body;
@@ -275,6 +277,7 @@ router.put(
   "/:id/share",
   requireAuth,
   validate({ params: uuidParamsSchema, body: shareGraphSchema }),
+  requireGraphOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { is_public } = req.body;
@@ -294,6 +297,7 @@ router.put(
   "/:id/favorite",
   requireAuth,
   validate({ params: uuidParamsSchema }),
+  requireGraphOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { is_favorite } = req.body;
@@ -324,6 +328,7 @@ router.put(
   "/:id/view-mode",
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateViewModeSchema }),
+  requireGraphOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { viewMode } = req.body;
@@ -343,6 +348,7 @@ router.delete(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
+  requireGraphOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     await graphService.deleteGraph(req.supabase, id, req.user.id);
@@ -425,6 +431,7 @@ router.delete(
   "/:id/permanent",
   requireAuth,
   validate({ params: uuidParamsSchema }),
+  requireGraphOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     await graphService.permanentDeleteGraph(req.supabase, id, req.user.id);

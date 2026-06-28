@@ -4,6 +4,7 @@ import { logger } from "../../../utils/logger";
 import { appEventBus } from "../../core/eventBus";
 import type { ScheduleExecutedPayload } from "../../../../shared/types/scheduler";
 import type { NotificationNeededPayload } from "../../../../shared/types/events";
+import { notDeleted } from '../../common/softDeleteHelper';
 
 interface CronJob {
   name: string;
@@ -146,11 +147,11 @@ class SchedulerCronService {
       task_template_id: string;
     },
   ): Promise<string | undefined> {
-    const { data: template } = await supabase
+    const { data: template } = await notDeleted(supabase
       .from("user_tasks")
       .select("title, description, queue_level, priority, tags, task_type")
       .eq("id", schedule.task_template_id)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!template) {
@@ -158,12 +159,12 @@ class SchedulerCronService {
       return undefined;
     }
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", schedule.user_id)
       .eq("queue_level", template.queue_level ?? 0)
-      .is("deleted_at", null);
+      );
 
     const { data: task, error } = await supabase
       .from("user_tasks")

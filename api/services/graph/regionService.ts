@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface CustomRegion {
   id: string;
@@ -30,12 +31,12 @@ class RegionService {
     userId: string,
     graphId: string,
   ): Promise<CustomRegion[]> {
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, settings")
       .eq("id", graphId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (graphError || !graph) {
@@ -60,12 +61,12 @@ class RegionService {
   ): Promise<CustomRegion> {
     const { name, color, nodeIds } = data;
 
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, settings")
       .eq("id", graphId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (graphError || !graph) {
@@ -120,12 +121,12 @@ class RegionService {
     regionId: string,
     updates: UpdateRegionData,
   ): Promise<CustomRegion> {
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, settings")
       .eq("id", graphId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (graphError || !graph) {
@@ -187,12 +188,12 @@ class RegionService {
     graphId: string,
     regionId: string,
   ): Promise<{ success: boolean; message: string }> {
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, settings")
       .eq("id", graphId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (graphError || !graph) {

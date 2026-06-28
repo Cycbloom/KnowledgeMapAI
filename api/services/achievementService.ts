@@ -3,6 +3,7 @@ import { logger } from '../utils/logger';
 import { periodicTaskService } from './scheduler/periodicTaskService';
 import { focusService } from './scheduler/focusService';
 import { transactionExecutor } from '../database/transactionExecutor';
+import { notDeleted } from './common/softDeleteHelper';
 import type {
   Achievement,
   UserAchievement,
@@ -396,11 +397,11 @@ export class AchievementService {
 
     await this.updateDailyTask(userId, 'create_node', 1);
 
-    const { count: nodeCount, error: nodeError } = await getSupabaseAdmin()
+    const { count: nodeCount, error: nodeError } = await notDeleted(getSupabaseAdmin()
       .from('graph_nodes')
       .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
       .eq('knowledge_graphs.user_id', userId)
-      .is('deleted_at', null);
+      );
 
     if (!nodeError) {
       await this.checkAndUnlock(userId, 'nodes_created', nodeCount || 0);
@@ -508,20 +509,20 @@ export class AchievementService {
           break;
         }
         case 'graphs_created': {
-          const { count: graphCount } = await getSupabaseAdmin()
+          const { count: graphCount } = await notDeleted(getSupabaseAdmin()
             .from('knowledge_graphs')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .is('deleted_at', null);
+            );
           current = graphCount || 0;
           break;
         }
         case 'nodes_created': {
-          const { count: nodeCount } = await getSupabaseAdmin()
+          const { count: nodeCount } = await notDeleted(getSupabaseAdmin()
             .from('graph_nodes')
             .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
             .eq('knowledge_graphs.user_id', userId)
-            .is('deleted_at', null);
+            );
           current = nodeCount || 0;
           break;
         }

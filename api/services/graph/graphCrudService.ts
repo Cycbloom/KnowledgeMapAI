@@ -3,6 +3,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { cacheService, CacheKeys, CacheTTL } from "../common/cacheService";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export class GraphCrudService {
   async getGraphMap(supabase: SupabaseClient, userId: string) {
@@ -31,21 +32,21 @@ export class GraphCrudService {
   }
 
   private async getGraphMapFallback(supabase: SupabaseClient, userId: string) {
-    const { data: graphs } = await supabase
+    const { data: graphs } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, description, created_at, is_public, domain")
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .order("last_used_at", { ascending: false });
 
     const graphIds = (graphs || []).map((g) => g.id);
 
     const [nodeCountsResult, relationsResult] = await Promise.all([
-      supabase
+      notDeleted(supabase
         .from("graph_nodes")
         .select("graph_id")
         .in("graph_id", graphIds)
-        .is("deleted_at", null),
+        ),
       supabase
         .from("graph_relations")
         .select(
@@ -100,11 +101,11 @@ export class GraphCrudService {
   }
 
   private async getTagsFallback(supabase: SupabaseClient, userId: string) {
-    const { data: graphs } = await supabase
+    const { data: graphs } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     const graphIds = (graphs || []).map((g) => g.id);
 
@@ -112,7 +113,7 @@ export class GraphCrudService {
       return { tags: [] };
     }
 
-    const { data: graphNodes } = await supabase
+    const { data: graphNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -123,7 +124,7 @@ export class GraphCrudService {
         `,
       )
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     const tagMap = new Map<string, number>();
 
@@ -147,11 +148,11 @@ export class GraphCrudService {
     return cacheService.getOrSet(
       CacheKeys.GRAPH_DOMAINS(userId),
       async () => {
-        const { data: graphs } = await supabase
+        const { data: graphs } = await notDeleted(supabase
           .from("knowledge_graphs")
           .select("domain")
           .eq("user_id", userId)
-          .is("deleted_at", null)
+          )
           .not("domain", "is", null);
 
         const domainMap = new Map<string, number>();
@@ -173,11 +174,11 @@ export class GraphCrudService {
   }
 
   async analyzeMap(supabase: SupabaseClient, userId: string) {
-    const { data: graphs } = await supabase
+    const { data: graphs } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, description")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     const graphIds = (graphs || []).map((g) => g.id);
 
@@ -300,7 +301,7 @@ export class GraphCrudService {
     // 按模块分别查询，使用 SQL JSONB 条件在数据库层过滤
     const moduleStats = await Promise.all(
       modules.map(async (mod: { module_type: string; title: string; icon: string; color: string }) => {
-        const { data: moduleNodes, error: gnError } = await supabase
+        const { data: moduleNodes, error: gnError } = await notDeleted(supabase
           .from("graph_nodes")
           .select(
             `
@@ -312,7 +313,7 @@ export class GraphCrudService {
           `,
           )
           .eq("graph_id", graphId)
-          .is("deleted_at", null)
+          )
           .eq("knowledge_points.properties->>backboneModule", mod.module_type);
 
         if (gnError) {
@@ -357,7 +358,7 @@ export class GraphCrudService {
     return cacheService.getOrSet(
       CacheKeys.GRAPH_LITERATURE(graphId, moduleFilter),
       async () => {
-        const { data: graphNodes, error: gnError } = await supabase
+        const { data: graphNodes, error: gnError } = await notDeleted(supabase
           .from("graph_nodes")
           .select(
             `
@@ -369,7 +370,7 @@ export class GraphCrudService {
         `,
           )
           .eq("graph_id", graphId)
-          .is("deleted_at", null);
+          );
 
         if (gnError) throw gnError;
 
@@ -452,12 +453,12 @@ export class GraphCrudService {
     graphId: string,
     viewMode: string,
   ) {
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, settings")
       .eq("id", graphId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (graphError || !graph) {

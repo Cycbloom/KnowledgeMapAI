@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { isIndexValue, buildIndexMap } from '../../../shared/utils/indexMapping';
 import { logger } from '../../utils/logger';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface RecommendationItem {
   id: string;
@@ -30,11 +31,11 @@ export class AgentRouteService {
     let created = 0;
     const errors: string[] = [];
 
-    const { data: userGraphs } = await supabase
+    const { data: userGraphs } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, title')
       .eq('user_id', userId)
-      .is('deleted_at', null);
+      );
 
     const graphIdByIndex = buildIndexMap(userGraphs || []);
     const graphIdByTitle = new Map<string, string>();

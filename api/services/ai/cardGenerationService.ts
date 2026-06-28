@@ -11,7 +11,7 @@ import {
   TimeoutError,
   RetryError,
   LONG_TIMEOUT,
-} from "../../utils/retry";
+} from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import {

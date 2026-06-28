@@ -5,6 +5,7 @@ import { checkDuplicateGraphTopic } from '../../utils/similaritySearch';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface FormattedRelation {
   id: string;
@@ -104,11 +105,11 @@ export class GraphRelationsRouteService {
       .select('id, title, description')
       .in('id', allGraphIds);
 
-    const { data: nodeCounts } = await supabase
+    const { data: nodeCounts } = await notDeleted(supabase
       .from('graph_nodes')
       .select('graph_id')
       .in('graph_id', allGraphIds)
-      .is('deleted_at', null);
+      );
 
     const nodeCountMap = new Map<string, number>();
     (nodeCounts || []).forEach((n: { graph_id: string }) => {

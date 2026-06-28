@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface CreateTaskKPData {
   knowledge_point_id: string;
@@ -18,12 +19,12 @@ export interface UpdateTaskKPData {
 
 class TaskKnowledgePointService {
   async list(client: SupabaseClient, userId: string, taskId: string) {
-    const { data: task } = await client
+    const { data: task } = await notDeleted(client
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {
@@ -58,12 +59,12 @@ class TaskKnowledgePointService {
     taskId: string,
     data: CreateTaskKPData,
   ) {
-    const { data: task } = await client
+    const { data: task } = await notDeleted(client
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {
@@ -124,12 +125,12 @@ class TaskKnowledgePointService {
     kpId: string,
     updates: UpdateTaskKPData,
   ) {
-    const { data: task } = await client
+    const { data: task } = await notDeleted(client
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {

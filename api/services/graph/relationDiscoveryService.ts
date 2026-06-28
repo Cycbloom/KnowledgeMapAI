@@ -4,6 +4,7 @@ import { promptService } from "../ai/promptService";
 import { logger } from "../../utils/logger";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface DiscoveredRelation {
   source_graph_id: string;
@@ -94,21 +95,21 @@ export class RelationDiscoveryService {
     let graphs: GraphInfo[];
 
     if (graphIds && graphIds.length > 0) {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .in("id", graphIds)
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
     } else {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
@@ -511,21 +512,21 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
     let graphs: GraphInfo[];
 
     if (graphIds && graphIds.length > 0) {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .in("id", graphIds)
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
     } else {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
@@ -709,21 +710,21 @@ ${graphs.map((g, i) => `${i + 1}. ${g.title} (${g.domain || "未分类"}, ${g.no
     let graphs: GraphInfo[];
 
     if (graphIds && graphIds.length > 0) {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .in("id", graphIds)
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
     } else {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
@@ -938,21 +939,21 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
     let graphs: GraphInfo[];
 
     if (graphIds && graphIds.length > 0) {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .in("id", graphIds)
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
     } else {
-      const { data: graphData, error } = await supabase
+      const { data: graphData, error } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .eq("user_id", userId)
-        .is("deleted_at", null);
+        );
 
       if (error) throw error;
       graphs = await this.enrichGraphsWithNodeInfo(supabase, graphData || []);
@@ -1136,7 +1137,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
   ): Promise<GraphInfo[]> {
     const graphIds = graphs.map((g) => g.id);
 
-    const { data: graphNodes, error } = await supabase
+    const { data: graphNodes, error } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -1149,7 +1150,7 @@ ${JSON.stringify(relationSummaries, null, 2)}`,
       `,
       )
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       logger.error("Failed to fetch nodes for graphs", error);

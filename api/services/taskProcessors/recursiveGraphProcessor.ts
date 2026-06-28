@@ -11,6 +11,7 @@ import { getAutoGraphPrompt } from "./utils";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
 import { graphLockService } from "../common/graphLockService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export class RecursiveGraphProcessor implements TaskProcessor {
   async process(
@@ -88,11 +89,11 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       let totalEdges = 0;
       const nodeMap = new Map<string, string>();
 
-      const { data: existingNodes } = await supabase
+      const { data: existingNodes } = await notDeleted(supabase
         .from("graph_nodes")
         .select("knowledge_points(title)")
         .eq("graph_id", graph_id)
-        .is("deleted_at", null);
+        );
 
       const existingNodeTitles = new Set<string>();
       if (existingNodes) {

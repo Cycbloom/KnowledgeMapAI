@@ -15,6 +15,7 @@ import type {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export type {
   UserTask,
@@ -32,12 +33,12 @@ export class TaskService {
     userId: string,
     taskData: CreateTaskData,
   ): Promise<UserTask> {
-    const { data: maxPosResult } = await client
+    const { data: maxPosResult } = await notDeleted(client
       .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", 0)
-      .is("deleted_at", null)
+      )
       .order("position", { ascending: false })
       .limit(1)
       .single();
@@ -73,12 +74,12 @@ export class TaskService {
   ): Promise<UserTask> {
     const queueLevel = taskData.queue_level ?? 0;
 
-    const { count } = await client
+    const { count } = await notDeleted(client
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", queueLevel)
-      .is("deleted_at", null);
+      );
 
     const { data, error } = await client
       .from("user_tasks")
@@ -116,7 +117,7 @@ export class TaskService {
       Omit<UserTask, "id" | "user_id" | "created_at" | "updated_at">
     >,
   ): Promise<UserTask> {
-    const { data, error } = await client
+    const { data, error } = await notDeleted(client
       .from("user_tasks")
       .update({
         ...updates,
@@ -124,7 +125,7 @@ export class TaskService {
       })
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 
@@ -155,12 +156,12 @@ export class TaskService {
     taskId: string,
     userId: string,
   ): Promise<UserTask | null> {
-    const { data, error } = await client
+    const { data, error } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (error && error.code !== "PGRST116") {
@@ -174,12 +175,12 @@ export class TaskService {
     taskId: string,
     userId: string,
   ): Promise<UserTaskStatus | null> {
-    const { data, error } = await client
+    const { data, error } = await notDeleted(client
       .from("user_tasks")
       .select("status")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (error && error.code !== "PGRST116") {
@@ -195,11 +196,11 @@ export class TaskService {
     options?: PaginationOptions,
   ): Promise<{ tasks: UserTask[]; total: number }> {
     const { offset, end } = getPaginationParams(options);
-    let query = client
+    let query = notDeleted(client
       .from("user_tasks")
       .select("*", { count: "exact" })
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .order("queue_level", { ascending: true })
       .order("position", { ascending: true })
       .range(offset, end);
@@ -225,12 +226,12 @@ export class TaskService {
     userId: string,
     queueLevel: number,
   ): Promise<UserTask[]> {
-    const { data, error } = await client
+    const { data, error } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .eq("queue_level", queueLevel)
-      .is("deleted_at", null)
+      )
       .order("position", { ascending: true });
 
     if (error)
@@ -272,7 +273,7 @@ export class TaskService {
     }
 
     // Fallback: original sequential implementation
-    const { data: task, error: taskError } = await client
+    const { data: task, error: taskError } = await notDeleted(client
       .from("user_tasks")
       .update({
         status: "in_progress",
@@ -280,7 +281,7 @@ export class TaskService {
       })
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 
@@ -313,7 +314,7 @@ export class TaskService {
     taskId: string,
     userId: string,
   ): Promise<UserTask> {
-    const { data: task, error: taskError } = await client
+    const { data: task, error: taskError } = await notDeleted(client
       .from("user_tasks")
       .update({
         status: "paused",
@@ -321,7 +322,7 @@ export class TaskService {
       })
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 
@@ -382,7 +383,7 @@ export class TaskService {
         .eq("id", execution.id);
     }
 
-    const { data: task, error: taskError } = await client
+    const { data: task, error: taskError } = await notDeleted(client
       .from("user_tasks")
       .update({
         status: "completed",
@@ -391,7 +392,7 @@ export class TaskService {
       })
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 
@@ -406,19 +407,19 @@ export class TaskService {
     userId: string,
     targetQueue: number,
   ): Promise<UserTask> {
-    const { data: maxPosResult } = await client
+    const { data: maxPosResult } = await notDeleted(client
       .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", targetQueue)
-      .is("deleted_at", null)
+      )
       .order("position", { ascending: false })
       .limit(1)
       .single();
 
     const nextPosition = (maxPosResult?.position ?? -1) + 1;
 
-    const { data, error } = await client
+    const { data, error } = await notDeleted(client
       .from("user_tasks")
       .update({
         queue_level: targetQueue,
@@ -427,7 +428,7 @@ export class TaskService {
       })
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 
@@ -516,12 +517,12 @@ export class TaskService {
       updateData.actual_duration = currentDuration + progressData.actual_duration_add;
     }
 
-    const { data: task, error } = await client
+    const { data: task, error } = await notDeleted(client
       .from("user_tasks")
       .update(updateData)
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 
@@ -631,11 +632,11 @@ export class TaskService {
     const limit = filters.limit ?? 50;
     const offset = filters.offset ?? 0;
 
-    let query = client
+    let query = notDeleted(client
       .from("user_tasks")
       .select("*", { count: "exact" })
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .order("queue_level", { ascending: true })
       .order("position", { ascending: true });
 
@@ -699,12 +700,12 @@ export class TaskService {
     userId: string,
     taskId: string,
   ): Promise<Record<string, unknown> | null> {
-    const { data: task, error: taskError } = await client
+    const { data: task, error: taskError } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {
@@ -787,11 +788,11 @@ export class TaskService {
       statusFilter.push("cancelled");
     }
 
-    const { data: tasks, error } = await client
+    const { data: tasks, error } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .in("status", statusFilter)
       .order("queue_level", { ascending: true })
       .order("position", { ascending: true });

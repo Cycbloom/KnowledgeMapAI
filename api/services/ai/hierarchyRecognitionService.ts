@@ -8,7 +8,7 @@ import { withAIMonitoring } from "./aiMonitor";
 import {
   withTimeoutAndRetry,
   LONG_TIMEOUT,
-} from "../../utils/retry";
+} from "../../../shared/utils/retry";
 
 export interface ConceptForAnalysis {
   id: string;

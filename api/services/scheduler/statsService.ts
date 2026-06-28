@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface UserTaskSchedulerStats {
   total_tasks: number;
@@ -49,11 +50,11 @@ export class StatsService {
         break;
     }
 
-    const { data: tasks, error: tasksError } = await client
+    const { data: tasks, error: tasksError } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .gte("created_at", startDate.toISOString());
 
     if (tasksError)

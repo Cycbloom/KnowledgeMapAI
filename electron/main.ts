@@ -3,12 +3,21 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import * as http from "http";
 import * as fs from "fs";
-import pkg from "electron-updater";
-const { autoUpdater } = pkg;
 import dotenv from "dotenv";
 import { DatabaseManager } from "./db/database";
 import { registerDbIpcHandlers } from "./ipc/dbHandlers";
+import { registerAppHandlers } from "./ipc/appHandlers";
+import { registerWindowHandlers } from "./ipc/windowHandlers";
+import { registerShellHandlers } from "./ipc/shellHandlers";
+import {
+  registerUpdateHandlers,
+  configureAutoUpdater,
+} from "./ipc/updateHandlers";
+import { registerConfigHandlers } from "./ipc/configHandlers";
+import { registerSyncHandlers } from "./ipc/syncHandlers";
 import { SyncEngine } from "./sync/syncEngine";
+import { windowManager } from "./utils/windowManager";
+import { trayManager } from "./utils/trayManager";
 import { logger } from "./utils/logger";
 
 /** Minimal contract for the loaded API Express application. */
@@ -24,28 +33,39 @@ interface ApiKernel {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// IPC channel whitelist for security validation
+// IPC channel whitelist for security validation.
+// Keep in sync with the per-domain register*Handlers() calls below and with
+// preload.ts (the renderer's view of the same channels).
 const IPC_HANDLE_CHANNELS = new Set([
+  // app domain
   "app:getVersion",
   "app:getPlatform",
   "app:quit",
+  "api:getPort",
+  // window domain
   "window:minimize",
   "window:maximize",
   "window:close",
-  "api:getPort",
+  // update domain (Task 7 added confirm-download / install-confirmed)
   "update:check",
   "update:install",
+  "update:confirm-download",
+  "update:install-confirmed",
+  // config domain
   "config:read",
   "config:write",
+  // db domain (registered by dbHandlers.ts)
   "db:query",
   "db:batch",
   "db:getStatus",
+  // sync domain
   "sync:getStatus",
   "sync:trigger",
   "sync:pause",
   "sync:resume",
   "sync:setAuthToken",
   "sync:fullSync",
+  // shell domain
   "shell:openExternal",
 ]);
 
@@ -78,7 +98,7 @@ function loadEnvVariables() {
     } else {
       const devEnvPath = path.join(__dirname, "..", "..", ".env.development");
       const defaultEnvPath = path.join(__dirname, "..", "..", ".env");
-      
+
       if (fs.existsSync(devEnvPath)) {
         envPath = devEnvPath;
       } else if (fs.existsSync(defaultEnvPath)) {
@@ -214,21 +234,21 @@ async function startApiServer(): Promise<number> {
 
   return new Promise((resolve, reject) => {
     const server = http.createServer(appInstance as Parameters<typeof http.createServer>[0]);
-    
+
     const getRandomPort = (): number => {
       return 30000 + Math.floor(Math.random() * 30000);
     };
-    
+
     let attempts = 0;
     const maxAttempts = 100;
-    
+
     const tryPort = (port: number): void => {
       attempts++;
       if (attempts > maxAttempts) {
         reject(new Error(`尝试了 ${maxAttempts} 个端口都无法启动 API 服务器`));
         return;
       }
-      
+
       server.once("error", (err: NodeJS.ErrnoException) => {
         if (err.code === "EADDRINUSE") {
           logger.info(`[API] 端口 ${port} 已被占用，尝试另一个随机端口`);
@@ -244,10 +264,10 @@ async function startApiServer(): Promise<number> {
         logger.info(`[API] 服务器已启动，端口: ${port}`);
         resolve(port);
       });
-      
+
       server.listen(port);
     };
-    
+
     tryPort(getRandomPort());
   });
 }
@@ -278,9 +298,9 @@ async function initializeLocalDatabase(): Promise<DatabaseManager | null> {
     // Register IPC handlers for database access
     registerDbIpcHandlers(dbManager);
 
-    // Initialize sync engine
+    // Initialize sync engine (IPC handlers are registered centrally in
+    // app.whenReady via registerSyncHandlers, not here).
     syncEngine = new SyncEngine(dbManager, mainWindow);
-    syncEngine.registerIpcHandlers();
 
     logger.info('[Main] 本地数据库和同步引擎初始化成功');
     return dbManager;
@@ -293,23 +313,31 @@ async function initializeLocalDatabase(): Promise<DatabaseManager | null> {
 }
 
 async function createWindow(): Promise<void> {
-  mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    minWidth: 800,
-    minHeight: 600,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
-      sandbox: true,
-      webSecurity: true,
+  // Task 6.2: delegate BrowserWindow construction to windowManager.
+  // url/file are intentionally omitted so that the dev-server / packaged
+  // load logic below stays in main.ts (it has richer error handling).
+  const window = windowManager.createWindow({
+    id: "main",
+    options: {
+      width: 1400,
+      height: 900,
+      minWidth: 800,
+      minHeight: 600,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, "preload.js"),
+        sandbox: true,
+        webSecurity: true,
+      },
+      title: "KnowledgeMap",
+      show: false,
+      backgroundColor: "#1a1a2e",
+      icon: getResourcePath("public", "favicon.svg"),
     },
-    title: "KnowledgeMap",
-    show: false,
-    backgroundColor: "#1a1a2e",
-    icon: getResourcePath("public", "favicon.svg"),
   });
+
+  mainWindow = window;
 
   if (syncEngine) {
     syncEngine.setMainWindow(mainWindow);
@@ -447,8 +475,33 @@ app.whenReady().then(async () => {
     }
   }
 
+  // Task 8.3: register per-domain IPC handlers centrally.
+  // (db:* handlers are registered inside initializeLocalDatabase because
+  // they require the DatabaseManager instance.)
+  registerAppHandlers({ getPort: () => apiPort });
+  registerWindowHandlers({ getMainWindow: () => mainWindow });
+  registerShellHandlers();
+  registerUpdateHandlers({ getMainWindow: () => mainWindow });
+  registerConfigHandlers();
+  registerSyncHandlers({ getSyncEngine: () => syncEngine });
+
   await createWindow();
-  configureAutoUpdater();
+
+  // Task 6.3: enable system tray. Wrapped in try/catch because the tray icon
+  // (public/favicon.svg) may be missing or in a format Tray cannot load —
+  // failure must not block app startup.
+  if (mainWindow) {
+    try {
+      trayManager.initialize(mainWindow);
+      logger.info("[Main] 系统托盘已初始化");
+    } catch (error) {
+      logger.warn("[Main] 系统托盘初始化失败（图标可能缺失或格式不支持）", error);
+    }
+  }
+
+  // Task 7: auto-updater UX (autoDownload disabled; renderer confirms download
+  // and install via update:confirm-download / update:install-confirmed).
+  configureAutoUpdater({ getMainWindow: () => mainWindow });
 
   // Start sync engine in packaged mode
   if (app.isPackaged && syncEngine) {
@@ -485,159 +538,5 @@ app.on("will-quit", async () => {
   if (dbManager) {
     dbManager.close();
     logger.info('[Main] 本地数据库已关闭');
-  }
-});
-
-ipcMain.handle("app:getVersion", () => {
-  return app.getVersion();
-});
-
-ipcMain.handle("app:getPlatform", () => {
-  return process.platform;
-});
-
-ipcMain.handle("api:getPort", () => {
-  return apiPort;
-});
-
-ipcMain.handle("app:quit", () => {
-  app.quit();
-});
-
-ipcMain.handle("window:minimize", () => {
-  mainWindow?.minimize();
-});
-
-ipcMain.handle("window:maximize", () => {
-  if (mainWindow?.isMaximized()) {
-    mainWindow.unmaximize();
-  } else {
-    mainWindow?.maximize();
-  }
-});
-
-ipcMain.handle("window:close", () => {
-  mainWindow?.close();
-});
-
-ipcMain.handle("shell:openExternal", async (_event, url: string) => {
-  if (typeof url !== "string") {
-    return { success: false, error: "Invalid URL type" };
-  }
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    return { success: false, error: "Only http:// and https:// URLs are allowed" };
-  }
-  try {
-    await shell.openExternal(url);
-    return { success: true };
-  } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
-  }
-});
-
-function configureAutoUpdater(): void {
-  if (!app.isPackaged) {
-    logger.info(
-      "[AutoUpdater] Skipping auto updater configuration in development mode",
-    );
-    return;
-  }
-
-  autoUpdater.setFeedURL({
-    provider: "github",
-    owner: "knowledgemap",
-    repo: "knowledgemap-app",
-    releaseType: "release",
-  });
-
-  autoUpdater.autoDownload = true;
-
-  autoUpdater.on("checking-for-update", () => {
-    logger.info("[AutoUpdater] 检查更新中...");
-    mainWindow?.webContents.send("update:checking");
-  });
-
-  autoUpdater.on("update-available", (info) => {
-    logger.info("[AutoUpdater] 发现新版本", info);
-    mainWindow?.webContents.send("update:available", info);
-  });
-
-  autoUpdater.on("update-not-available", () => {
-    logger.info("[AutoUpdater] 当前已是最新版本");
-    mainWindow?.webContents.send("update:not-available");
-  });
-
-  autoUpdater.on("error", (error) => {
-    logger.error("[AutoUpdater] 更新错误", error);
-    mainWindow?.webContents.send("update:error", { error: error.message });
-  });
-
-  autoUpdater.on("download-progress", (progress) => {
-    const progressInfo = {
-      percent: Math.round(progress.percent),
-      speed: progress.bytesPerSecond,
-      transferred: progress.transferred,
-      total: progress.total,
-    };
-    logger.info("[AutoUpdater] 下载进度", progressInfo);
-    mainWindow?.webContents.send("update:download-progress", progressInfo);
-  });
-
-  autoUpdater.on("update-downloaded", (info) => {
-    logger.info("[AutoUpdater] 更新已下载完成", info);
-    mainWindow?.webContents.send("update:downloaded", info);
-
-    setTimeout(() => {
-      autoUpdater.quitAndInstall();
-    }, 2000);
-  });
-
-  if (app.isPackaged) {
-    setTimeout(() => {
-      autoUpdater.checkForUpdates();
-    }, 5000);
-  }
-}
-
-ipcMain.handle("update:check", () => {
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdates();
-    return { success: true, message: "开始检查更新" };
-  } else {
-    return { success: false, message: "开发模式下不检查更新" };
-  }
-});
-
-ipcMain.handle("update:install", () => {
-  autoUpdater.quitAndInstall();
-  return { success: true };
-});
-
-ipcMain.handle("config:read", async () => {
-  try {
-    const configPath = path.join(app.getPath('userData'), 'config.json');
-    if (!fs.existsSync(configPath)) {
-      return {};
-    }
-    const content = fs.readFileSync(configPath, 'utf-8');
-    return JSON.parse(content);
-  } catch {
-    return {};
-  }
-});
-
-ipcMain.handle("config:write", async (_event, data: Record<string, unknown>) => {
-  try {
-    const userDataPath = app.getPath('userData');
-    if (!fs.existsSync(userDataPath)) {
-      fs.mkdirSync(userDataPath, { recursive: true });
-    }
-    const configPath = path.join(userDataPath, 'config.json');
-    fs.writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf-8');
-    return { success: true };
-  } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
   }
 });

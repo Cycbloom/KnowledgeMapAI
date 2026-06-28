@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger';
+import { notDeleted } from '../common/softDeleteHelper';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const MAX_CONTEXT_LENGTH = 500;
@@ -25,11 +26,11 @@ export class DomainContextService {
     }
 
     try {
-      const { data: domainRecord, error: domainError } = await supabase
+      const { data: domainRecord, error: domainError } = await notDeleted(supabase
         .from('domains')
         .select('name')
         .eq('id', domainId)
-        .is('deleted_at', null)
+        )
         .single();
 
       if (domainError || !domainRecord) {
@@ -57,11 +58,11 @@ export class DomainContextService {
 
       const graphIds = graphDomains.map((gd: { graph_id: string }) => gd.graph_id);
 
-      const { data: graphs, error: graphsError } = await supabase
+      const { data: graphs, error: graphsError } = await notDeleted(supabase
         .from('knowledge_graphs')
         .select('id, title, description')
         .in('id', graphIds)
-        .is('deleted_at', null);
+        );
 
       if (graphsError) {
         logger.error('Failed to query knowledge_graphs', { domainId, error: graphsError });

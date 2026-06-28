@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface CalendarTask {
   id: string;
@@ -30,11 +31,11 @@ interface CalendarExecution {
 
 class CalendarService {
   async exportICS(supabase: SupabaseClient, userId: string) {
-    const { data: tasks, error: tasksError } = await supabase
+    const { data: tasks, error: tasksError } = await notDeleted(supabase
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .order("scheduled_start", { ascending: true });
 
     if (tasksError) {
@@ -72,11 +73,11 @@ class CalendarService {
       throw new Error("User not found");
     }
 
-    const { data: tasks, error: tasksError } = await supabase
+    const { data: tasks, error: tasksError } = await notDeleted(supabase
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .order("scheduled_start", { ascending: true });
 
     if (tasksError) {
@@ -108,11 +109,11 @@ class CalendarService {
     start?: string,
     end?: string,
   ) {
-    let tasksQuery = supabase
+    let tasksQuery = notDeleted(supabase
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (start) {
       tasksQuery = tasksQuery.gte("scheduled_start", start);

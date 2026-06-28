@@ -7,6 +7,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { StudyCard } from "../../../shared/types/common";
 import { transactionExecutor } from "../../database/transactionExecutor";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface CreateQuizSetData {
   title: string;
@@ -417,11 +418,11 @@ class QuizSetsService {
         );
       }
 
-      const { data: graphNode } = await supabase
+      const { data: graphNode } = await notDeleted(supabase
         .from("graph_nodes")
         .select("title, content")
         .eq("knowledge_point_id", oldCard.knowledge_point_id)
-        .is("deleted_at", null)
+        )
         .single();
 
       if (!graphNode) {

@@ -8,7 +8,7 @@ import {
 } from "./aiUtils";
 import { parseAIResponse } from "./utils";
 import { withAIMonitoring } from "./aiMonitor";
-import { withTimeoutAndRetry, TimeoutError, RetryError, DEFAULT_TIMEOUT, LONG_TIMEOUT } from "../../utils/retry";
+import { withTimeoutAndRetry, TimeoutError, RetryError, DEFAULT_TIMEOUT, LONG_TIMEOUT } from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { performanceMonitor } from "./performanceMonitor";

@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { notDeleted } from '../common/softDeleteHelper';
 
 const ALLOWED_SETTINGS_FIELDS = [
   "q0_time_slice",
@@ -74,12 +75,12 @@ class TaskSettingService {
     taskId: string,
     notes: string,
   ) {
-    const { data: task, error } = await supabase
+    const { data: task, error } = await notDeleted(supabase
       .from("user_tasks")
       .update({ notes, updated_at: new Date().toISOString() })
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 

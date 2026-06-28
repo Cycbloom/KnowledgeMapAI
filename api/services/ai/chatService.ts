@@ -15,7 +15,7 @@ import {
   TimeoutError,
   RetryError,
   DEFAULT_TIMEOUT,
-} from "../../utils/retry";
+} from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import {
@@ -23,7 +23,10 @@ import {
   generateRequestKey,
 } from "./aiUtils";
 import { graphService } from "../graph";
-import { aiService } from "./aiService";
+import {
+  buildGraphContext,
+  buildTutorContext,
+} from "./contextBuilder";
 import { enrichMetadata } from "./performanceMonitor";
 import {
   sendStreamChunk,
@@ -342,7 +345,7 @@ export class ChatService {
         options.graphId,
       );
 
-      const contextText = aiService.buildGraphContext(nodes, edges, {
+      const contextText = buildGraphContext(nodes, edges, {
         contextNodeIds: options.contextNodeIds,
         graphId: options.graphId,
       });
@@ -413,7 +416,7 @@ export class ChatService {
         : await getAIProviderForTask("text");
 
       if (!provider.hasKey) {
-        const mockContent = await aiService.tutorChat(
+        const mockContent = await this.tutorChat(
           [{ role: "user", content: options.message }],
           { mode: options.mode },
           { provider: options.provider, model: options.model },
@@ -442,7 +445,7 @@ export class ChatService {
           req.user.id,
           options.graphId,
         );
-        context = aiService.buildTutorContext(
+        context = buildTutorContext(
           nodes,
           options.contextNodeIds?.[0],
           options.mode ?? "free",

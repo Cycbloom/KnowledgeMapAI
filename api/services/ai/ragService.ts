@@ -8,10 +8,11 @@ import { rerankingService } from "./rerankingService";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { withAIMonitoring } from "./aiMonitor";
-import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
+import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../../shared/utils/retry";
 import { contextWindowManager } from "./contextWindowManager";
 import { promptService } from "./promptService";
 import { reciprocalRankFusion, type RankedItem } from "../../utils/rrf";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface GraphNodeWithKnowledge {
   knowledge_point_id: string;
@@ -173,11 +174,11 @@ export class RAGService {
         }
 
         const kpIds = data.map((row) => row.id);
-        const { data: graphNodes } = await supabase
+        const { data: graphNodes } = await notDeleted(supabase
           .from("graph_nodes")
           .select("knowledge_point_id, graph_id")
           .in("knowledge_point_id", kpIds)
-          .is("deleted_at", null);
+          );
 
         const kpToGraphId = new Map<string, string>();
         if (graphNodes) {
@@ -314,12 +315,12 @@ export class RAGService {
       // 如果指定了 graphId，通过 graph_nodes 表关联过滤
       if (graphId) {
         const kpIds = scoredResults.map((r) => r.id);
-        const { data: graphNodes, error: gnError } = await supabase
+        const { data: graphNodes, error: gnError } = await notDeleted(supabase
           .from("graph_nodes")
           .select("knowledge_point_id")
           .eq("graph_id", graphId)
           .in("knowledge_point_id", kpIds)
-          .is("deleted_at", null);
+          );
 
         if (gnError) {
           logger.error("关键词检索 graph_nodes 过滤失败", { error: gnError });
@@ -341,11 +342,11 @@ export class RAGService {
 
       // 未指定 graphId 时，查询每个知识点所属的图谱
       const kpIds = scoredResults.map((r) => r.id);
-      const { data: graphNodes } = await supabase
+      const { data: graphNodes } = await notDeleted(supabase
         .from("graph_nodes")
         .select("knowledge_point_id, graph_id")
         .in("knowledge_point_id", kpIds)
-        .is("deleted_at", null);
+        );
 
       const kpToGraphId = new Map<string, string>();
       if (graphNodes) {
@@ -812,7 +813,7 @@ export class RAGService {
 
     let currentNodeContext: string | undefined;
     if (currentNodeId) {
-      const { data: currentGraphNode } = await getSupabaseAdmin()
+      const { data: currentGraphNode } = await notDeleted(getSupabaseAdmin()
         .from("graph_nodes")
         .select(
           `
@@ -825,7 +826,7 @@ export class RAGService {
         `,
         )
         .eq("knowledge_point_id", currentNodeId)
-        .is("deleted_at", null)
+        )
         .single();
 
       if (currentGraphNode) {
@@ -1257,7 +1258,7 @@ export class RAGService {
     }>;
     suggestions: string[];
   }> {
-    const { data: graphNodes } = await getSupabaseAdmin()
+    const { data: graphNodes } = await notDeleted(getSupabaseAdmin()
       .from("graph_nodes")
       .select(
         `
@@ -1271,7 +1272,7 @@ export class RAGService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (!graphNodes || graphNodes.length === 0) {
       return { gaps: [], suggestions: [] };
@@ -1289,11 +1290,11 @@ export class RAGService {
       } as NodeInfo;
     });
 
-    const { data: edges } = await getSupabaseAdmin()
+    const { data: edges } = await notDeleted(getSupabaseAdmin()
       .from("edges")
       .select("source_knowledge_point_id, target_knowledge_point_id")
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     const connectedNodes = new Set<string>();
 

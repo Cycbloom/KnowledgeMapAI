@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import type { NodeLevel, NetworkAnalysisResult } from "../../../shared/types/graph";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface GraphNodeData {
   graphNodeId: string;
@@ -20,7 +21,7 @@ export class NetworkAnalysisService {
     supabase: SupabaseClient,
     graphId: string,
   ): Promise<NetworkAnalysisResult> {
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -35,7 +36,7 @@ export class NetworkAnalysisService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (gnError || !graphNodes) {
       logger.error("Failed to fetch graph nodes for analysis:", gnError);
@@ -57,11 +58,11 @@ export class NetworkAnalysisService {
       };
     });
 
-    const { data: edges, error: edgeError } = await supabase
+    const { data: edges, error: edgeError } = await notDeleted(supabase
       .from("edges")
       .select("source_knowledge_point_id, target_knowledge_point_id")
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (edgeError) {
       logger.error("Failed to fetch edges for analysis:", edgeError);

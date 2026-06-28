@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import type { UserTask } from "../../../shared/types/scheduler";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface PathNodeTask {
   id: string;
@@ -80,12 +81,12 @@ export class PathTaskService {
       });
     }
 
-    const { data: maxPosResult } = await client
+    const { data: maxPosResult } = await notDeleted(client
       .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", 0)
-      .is("deleted_at", null)
+      )
       .order("position", { ascending: false })
       .limit(1)
       .single();
@@ -183,12 +184,12 @@ export class PathTaskService {
 
     const existingNodeIds = new Set(existingLinks?.map((link) => link.node_id) ?? []);
 
-    const { data: maxPosResult } = await client
+    const { data: maxPosResult } = await notDeleted(client
       .from("user_tasks")
       .select("position")
       .eq("user_id", userId)
       .eq("queue_level", 0)
-      .is("deleted_at", null)
+      )
       .order("position", { ascending: false })
       .limit(1)
       .single();

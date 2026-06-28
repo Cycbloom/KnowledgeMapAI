@@ -15,6 +15,7 @@ import type { LearningPathStage } from "./learningPathAlgorithms";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface LearningPath {
   graphId: string;
@@ -185,7 +186,7 @@ class LearningPathRouteService {
     progress: number;
   }> {
     try {
-      const { data: graphNodes } = await supabase
+      const { data: graphNodes } = await notDeleted(supabase
         .from("graph_nodes")
         .select(
           `
@@ -198,7 +199,7 @@ class LearningPathRouteService {
       `,
         )
         .eq("graph_id", graphId)
-        .is("deleted_at", null);
+        );
 
       if (!graphNodes || graphNodes.length === 0) {
         return {
@@ -409,11 +410,11 @@ ${graphMeta.description ? `描述：${graphMeta.description}` : ""}
               ) {
                 const matchedGraph = duplicateCheck.similarGraphs[0];
 
-                const { data: nodeCount } = await supabase
+                const { data: nodeCount } = await notDeleted(supabase
                   .from("graph_nodes")
                   .select("id", { count: "exact", head: true })
                   .eq("graph_id", matchedGraph.id)
-                  .is("deleted_at", null);
+                  );
 
                 return {
                   ...q,

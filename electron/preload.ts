@@ -23,6 +23,10 @@ const electronAPI = {
   update: {
     check: () => ipcRenderer.invoke("update:check"),
     install: () => ipcRenderer.invoke("update:install"),
+    // Task 7.3: renderer confirms it wants to download the available update
+    confirmDownload: () => ipcRenderer.invoke("update:confirm-download"),
+    // Task 7.4: renderer confirms it wants to quit and install the downloaded update
+    installConfirmed: () => ipcRenderer.invoke("update:install-confirmed"),
     onChecking: (callback: () => void) => {
       const subscription = () => callback();
       ipcRenderer.on("update:checking", subscription);

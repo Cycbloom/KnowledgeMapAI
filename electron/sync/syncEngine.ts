@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow } from 'electron';
 import { DatabaseManager } from '../db/database';
 import { TABLES } from '../db/schema';
 import type { SyncStatus } from '../../shared/types/ipc';
@@ -351,46 +351,6 @@ export class SyncEngine {
 
     await this.pullFromCloud();
     logger.warn('[SyncEngine] 全量同步完成');
-  }
-
-  // Register IPC handlers for sync control
-  registerIpcHandlers(): void {
-    ipcMain.handle('sync:getStatus', async () => {
-      return { success: true, data: this.getStatus() };
-    });
-
-    ipcMain.handle('sync:trigger', async () => {
-      try {
-        await this.sync();
-        return { success: true };
-      } catch (error) {
-        return { success: false, error: (error as Error).message };
-      }
-    });
-
-    ipcMain.handle('sync:pause', async () => {
-      this.stop();
-      return { success: true };
-    });
-
-    ipcMain.handle('sync:resume', async () => {
-      this.start();
-      return { success: true };
-    });
-
-    ipcMain.handle('sync:setAuthToken', async (_event, token: string) => {
-      this.setAuthToken(token);
-      return { success: true };
-    });
-
-    ipcMain.handle('sync:fullSync', async () => {
-      try {
-        await this.fullSync();
-        return { success: true };
-      } catch (error) {
-        return { success: false, error: (error as Error).message };
-      }
-    });
   }
 
   // ============ Private Helpers ============

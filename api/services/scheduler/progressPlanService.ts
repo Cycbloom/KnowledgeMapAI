@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { notDeleted } from '../common/softDeleteHelper';
 
 function calculateDaysBetween(startDate: Date, endDate: Date): number {
   const start = new Date(startDate);
@@ -133,12 +134,12 @@ class ProgressPlanService {
   ): Promise<Array<Record<string, unknown>>> {
     const { start_date, end_date, progress_mode, custom_allocations } = data;
 
-    const { data: task, error: taskError } = await supabase
+    const { data: task, error: taskError } = await notDeleted(supabase
       .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {
@@ -227,12 +228,12 @@ class ProgressPlanService {
       });
     }
 
-    const { data: task, error: taskError } = await supabase
+    const { data: task, error: taskError } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {
@@ -280,12 +281,12 @@ class ProgressPlanService {
     userId: string,
     taskId: string,
   ): Promise<{ task: Record<string, unknown>; plans: Array<Record<string, unknown>> }> {
-    const { data: task, error: taskError } = await supabase
+    const { data: task, error: taskError } = await notDeleted(supabase
       .from("user_tasks")
       .select("id, title, progress_mode, progress_percentage")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {
@@ -333,12 +334,12 @@ class ProgressPlanService {
 
     const progressDate = date || new Date().toISOString().split("T")[0];
 
-    const { data: task, error: taskError } = await supabase
+    const { data: task, error: taskError } = await notDeleted(supabase
       .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (taskError || !task) {

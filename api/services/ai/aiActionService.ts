@@ -7,6 +7,7 @@ import { createKnowledgePointWithGraphNode, GRAPH_NODES_SELECT } from '../../uti
 import { performanceMonitor, enrichMetadata } from './performanceMonitor';
 import { pricingService } from './pricingService';
 import { transactionExecutor } from '../../database/transactionExecutor';
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface AIActionVariables {
   includeParent?: boolean;
@@ -156,11 +157,11 @@ export class AIActionService {
     if (!action) throw new Error('Action not found');
 
     // 2. Fetch Node Context
-    const { data: graphNode, error: nodeError } = await getSupabaseAdmin()
+    const { data: graphNode, error: nodeError } = await notDeleted(getSupabaseAdmin()
       .from('graph_nodes')
       .select(GRAPH_NODES_SELECT)
       .eq('knowledge_point_id', nodeId)
-      .is('deleted_at', null)
+      )
       .maybeSingle();
     
     if (nodeError || !graphNode) throw new Error('Node not found');
@@ -187,19 +188,19 @@ export class AIActionService {
     if (action.variables) {
         // Parent Context
         if (action.variables.includeParent) {
-            const { data: edges } = await getSupabaseAdmin()
+            const { data: edges } = await notDeleted(getSupabaseAdmin()
                 .from('edges')
                 .select('source_knowledge_point_id')
                 .eq('target_knowledge_point_id', nodeId)
-                .is('deleted_at', null);
+                );
 
             if (edges && edges.length > 0) {
                 const parentIds = edges.map((e: { source_knowledge_point_id: string }) => e.source_knowledge_point_id);
-                const { data: parentGraphNodes } = await getSupabaseAdmin()
+                const { data: parentGraphNodes } = await notDeleted(getSupabaseAdmin()
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
                     .in('knowledge_point_id', parentIds)
-                    .is('deleted_at', null);
+                    );
 
                 if (parentGraphNodes && parentGraphNodes.length > 0) {
                     context.parents = (parentGraphNodes as Array<{ knowledge_points: unknown }>).map((pgn) => {
@@ -215,19 +216,19 @@ export class AIActionService {
 
         // Children Context
         if (action.variables.includeChildren) {
-             const { data: edges } = await getSupabaseAdmin()
+             const { data: edges } = await notDeleted(getSupabaseAdmin()
                 .from('edges')
                 .select('target_knowledge_point_id')
                 .eq('source_knowledge_point_id', nodeId)
-                .is('deleted_at', null);
+                );
 
             if (edges && edges.length > 0) {
                 const childIds = edges.map((e: { target_knowledge_point_id: string }) => e.target_knowledge_point_id);
-                const { data: childGraphNodes } = await getSupabaseAdmin()
+                const { data: childGraphNodes } = await notDeleted(getSupabaseAdmin()
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
                     .in('knowledge_point_id', childIds)
-                    .is('deleted_at', null);
+                    );
 
                 if (childGraphNodes && childGraphNodes.length > 0) {
                     context.children = (childGraphNodes as Array<{ knowledge_points: unknown }>).map((cgn) => {
@@ -243,20 +244,20 @@ export class AIActionService {
 
         // Siblings Context
         if (action.variables.includeSiblings) {
-            const { data: parentEdges } = await getSupabaseAdmin()
+            const { data: parentEdges } = await notDeleted(getSupabaseAdmin()
                 .from('edges')
                 .select('source_knowledge_point_id')
                 .eq('target_knowledge_point_id', nodeId)
-                .is('deleted_at', null);
+                );
 
             if (parentEdges && parentEdges.length > 0) {
                 const parentIds = parentEdges.map((e: { source_knowledge_point_id: string }) => e.source_knowledge_point_id);
 
-                const { data: siblingEdges } = await getSupabaseAdmin()
+                const { data: siblingEdges } = await notDeleted(getSupabaseAdmin()
                     .from('edges')
                     .select('target_knowledge_point_id')
                     .in('source_knowledge_point_id', parentIds)
-                    .is('deleted_at', null);
+                    );
 
                 if (siblingEdges && siblingEdges.length > 0) {
                     const siblingIds = [...new Set(
@@ -266,11 +267,11 @@ export class AIActionService {
                     )];
 
                     if (siblingIds.length > 0) {
-                        const { data: siblingGraphNodes } = await getSupabaseAdmin()
+                        const { data: siblingGraphNodes } = await notDeleted(getSupabaseAdmin()
                             .from('graph_nodes')
                             .select(GRAPH_NODES_SELECT)
                             .in('knowledge_point_id', siblingIds)
-                            .is('deleted_at', null)
+                            )
                             .limit(10);
 
                         if (siblingGraphNodes && siblingGraphNodes.length > 0) {

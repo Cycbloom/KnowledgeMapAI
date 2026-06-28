@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { notDeleted } from '../common/softDeleteHelper';
 
 // Supported sync tables configuration
 interface SyncTableConfig {
@@ -476,11 +477,11 @@ export class SyncService {
     userId: string,
   ): Promise<boolean> {
     // Check if the knowledge point is in a graph the user has access to
-    const { data: graphNode } = await supabase
+    const { data: graphNode } = await notDeleted(supabase
       .from("graph_nodes")
       .select("graph_id")
       .eq("knowledge_point_id", knowledgePointId)
-      .is("deleted_at", null)
+      )
       .maybeSingle();
 
     if (!graphNode?.graph_id) return false;

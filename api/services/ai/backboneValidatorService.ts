@@ -8,7 +8,7 @@ import { getAIProviderForTask } from "./factory";
 import { performanceMonitor } from "./performanceMonitor";
 import { pricingService } from "./pricingService";
 import { parseAIResponse } from "./utils";
-import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
+import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 

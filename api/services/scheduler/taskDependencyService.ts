@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface DependencyRecord {
   id: string;
@@ -26,12 +27,12 @@ class TaskDependencyService {
     userId: string,
     taskId: string,
   ): Promise<DependencyRecord[]> {
-    const { data: task } = await supabase
+    const { data: task } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .maybeSingle();
 
     if (!task) {
@@ -64,12 +65,12 @@ class TaskDependencyService {
     userId: string,
     taskId: string,
   ): Promise<DependencyRecord[]> {
-    const { data: task } = await supabase
+    const { data: task } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .maybeSingle();
 
     if (!task) {
@@ -107,12 +108,12 @@ class TaskDependencyService {
       throw new Error("任务不能依赖自身");
     }
 
-    const { data: tasks, error: tasksError } = await supabase
+    const { data: tasks, error: tasksError } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .in("id", [taskId, data.depends_on_task_id])
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (tasksError) {
       throw new Error("查询任务失败");

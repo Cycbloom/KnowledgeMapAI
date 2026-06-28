@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface HourlyEfficiency {
   [hour: number]: number;
@@ -128,12 +129,12 @@ export class EfficiencyService {
     userId: string,
     tag: string,
   ): Promise<void> {
-    const { data: tasks, error } = await client
+    const { data: tasks, error } = await notDeleted(client
       .from("user_tasks")
       .select("id, status, tags, completed_at")
       .eq("user_id", userId)
       .contains("tags", [tag])
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
@@ -209,12 +210,12 @@ export class EfficiencyService {
     userId: string,
     queueLevel: number,
   ): Promise<void> {
-    const { data: tasks, error } = await client
+    const { data: tasks, error } = await notDeleted(client
       .from("user_tasks")
       .select("id, status, queue_level, completed_at")
       .eq("user_id", userId)
       .eq("queue_level", queueLevel)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
@@ -332,12 +333,12 @@ export class EfficiencyService {
     userId: string,
     tag: string,
   ): Promise<TagEfficiencyData> {
-    const { data: tasks, error } = await client
+    const { data: tasks, error } = await notDeleted(client
       .from("user_tasks")
       .select("id, status, tags")
       .eq("user_id", userId)
       .contains("tags", [tag])
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
@@ -381,12 +382,12 @@ export class EfficiencyService {
     userId: string,
     queueLevel: number,
   ): Promise<QueueEfficiencyData> {
-    const { data: tasks, error } = await client
+    const { data: tasks, error } = await notDeleted(client
       .from("user_tasks")
       .select("id, status, queue_level")
       .eq("user_id", userId)
       .eq("queue_level", queueLevel)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, {
@@ -450,11 +451,11 @@ export class EfficiencyService {
   ): Promise<UserEfficiencyProfile> {
     const hourlyEfficiency = await this.calculateHourlyEfficiency(client, userId);
 
-    const { data: allTags } = await client
+    const { data: allTags } = await notDeleted(client
       .from("user_tasks")
       .select("tags")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     const uniqueTags = new Set<string>();
     if (allTags) {

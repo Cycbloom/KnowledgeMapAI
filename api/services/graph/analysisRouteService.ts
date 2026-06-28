@@ -4,6 +4,7 @@ import { domainContextService } from '../ai/domainContextService';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface Recommendation {
   title: string;
@@ -33,11 +34,11 @@ export class AnalysisRouteService {
     sessionId?: string,
   ): Promise<AnalyzeDomainResult> {
     try {
-      const { data: existingGraphs } = await supabase
+      const { data: existingGraphs } = await notDeleted(supabase
         .from('knowledge_graphs')
         .select('id, title, description')
         .eq('user_id', userId)
-        .is('deleted_at', null);
+        );
 
       const existingTitles = (existingGraphs || []).map((g) =>
         g.title.toLowerCase(),

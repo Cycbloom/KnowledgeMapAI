@@ -8,6 +8,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { withThreeLevelFallback } from '../../utils/rpcFallback';
 import { graphVersionService } from './graphVersionService';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface AddToGraphData {
   graph_id: string;
@@ -26,12 +27,12 @@ interface PositionUpdate {
 
 export class GraphNodeService {
   async addToGraph(supabase: SupabaseClient, data: AddToGraphData): Promise<GraphNodeWithKnowledgePoint> {
-    const { data: existingNode } = await supabase
+    const { data: existingNode } = await notDeleted(supabase
       .from("graph_nodes")
       .select(GRAPH_NODES_SELECT)
       .eq("graph_id", data.graph_id)
       .eq("knowledge_point_id", data.knowledge_point_id)
-      .is("deleted_at", null)
+      )
       .maybeSingle();
 
     if (existingNode) {
@@ -195,11 +196,11 @@ export class GraphNodeService {
   async batchUpdatePositions(supabase: SupabaseClient, positions: PositionUpdate[]): Promise<number> {
     if (!positions.length) return 0;
 
-    const { data: graphNodes, error: findError } = await supabase
+    const { data: graphNodes, error: findError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('id, knowledge_point_id, graph_id')
       .in('knowledge_point_id', positions.map(p => p.id))
-      .is('deleted_at', null);
+      );
 
     if (findError) {
       logger.error('Find nodes for batch position update error:', findError);
@@ -325,11 +326,11 @@ export class GraphNodeService {
   }
 
   async getGraphNodes(supabase: SupabaseClient, graphId: string): Promise<GraphNodeWithKnowledgePoint[]> {
-    const { data: graphNodes, error } = await supabase
+    const { data: graphNodes, error } = await notDeleted(supabase
       .from('graph_nodes')
       .select(GRAPH_NODES_SELECT)
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (error) {
       logger.error('getGraphNodes error:', error);
@@ -345,11 +346,11 @@ export class GraphNodeService {
   ): Promise<GraphNodeWithKnowledgePoint[]> {
     if (!knowledgePointIds.length) return [];
 
-    const { data: graphNodes, error } = await supabase
+    const { data: graphNodes, error } = await notDeleted(supabase
       .from('graph_nodes')
       .select(GRAPH_NODES_SELECT)
       .in('knowledge_point_id', knowledgePointIds)
-      .is('deleted_at', null);
+      );
 
     if (error) {
       logger.error('getGraphNodesByKnowledgePoints error:', error);

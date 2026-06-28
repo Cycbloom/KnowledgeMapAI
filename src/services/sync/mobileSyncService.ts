@@ -14,7 +14,7 @@ import type {
   SyncStatus,
 } from "../../../shared/sync";
 import { getSupabaseClient } from "../../lib/supabase";
-import { withRetry } from "../../../api/utils/retry";
+import { withRetry } from "../../../shared/utils/retry";
 
 export class MobileSyncService {
   private isRunning = false;

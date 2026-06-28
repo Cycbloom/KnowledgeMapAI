@@ -2,7 +2,7 @@ import type { AIProviderType } from "@shared/types";
 import { logger } from "../../utils/logger";
 import { appSettingsService } from "../core/appSettingsService";
 import { withAIMonitoring } from "./aiMonitor";
-import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../utils/retry";
+import { withTimeoutAndRetry, LONG_TIMEOUT } from "../../../shared/utils/retry";
 
 type RerankingProvider = "jina" | "cohere";
 

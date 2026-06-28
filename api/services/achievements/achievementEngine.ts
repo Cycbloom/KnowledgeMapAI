@@ -6,6 +6,7 @@ import "./evaluators"
 import type { AppEventType, AppEvent, FocusSessionEndedPayload } from "@shared/types/events"
 import type { Achievement, FocusSession } from "@shared/types/scheduler"
 import type { UserAchievementRow, FocusSessionRow } from "@shared/types/database"
+import { notDeleted } from '../common/softDeleteHelper';
 
 export class AchievementEngine {
   async evaluateAchievements(userId: string, eventType: AppEventType, event?: AppEvent): Promise<Achievement[]> {
@@ -290,11 +291,11 @@ export class AchievementEngine {
       case "node_created":
         await achievementService.updateDailyTask(userId, "create_node", 1)
         try {
-          const { count: nodeCount } = await getSupabaseAdmin()
+          const { count: nodeCount } = await notDeleted(getSupabaseAdmin()
             .from("graph_nodes")
             .select("id, knowledge_graphs!inner(user_id)", { count: "exact", head: true })
             .eq("knowledge_graphs.user_id", userId)
-            .is("deleted_at", null)
+            )
           await periodicTaskService.updatePeriodicTaskProgress(userId, "create", nodeCount || 0)
         } catch (error) {
           logger.error("[AchievementEngine] Failed to update periodic task progress for create:", error)

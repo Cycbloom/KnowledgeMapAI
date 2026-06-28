@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { smartTaskLinker } from "./smartTaskLinker";
+import { notDeleted } from '../common/softDeleteHelper';
 
 const MINUTES_PER_KNOWLEDGE_POINT = 30;
 const MINUTES_PER_DAY = 240;
@@ -40,11 +41,11 @@ export class GraphTaskService {
       graphId,
     });
 
-    const { data: graphNodes, error: nodesError } = await supabase
+    const { data: graphNodes, error: nodesError } = await notDeleted(supabase
       .from("graph_nodes")
       .select("knowledge_point_id")
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (nodesError) {
       logger.error(
@@ -137,11 +138,11 @@ export class GraphTaskService {
 
     logger.info("[GraphTaskService] Creating new task for graph");
 
-    const { data: graphNodes, error: nodesError } = await supabase
+    const { data: graphNodes, error: nodesError } = await notDeleted(supabase
       .from("graph_nodes")
       .select("knowledge_point_id")
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (nodesError) {
       logger.error(
@@ -154,12 +155,12 @@ export class GraphTaskService {
     const knowledgePointCount = graphNodes?.length || 0;
     const metrics = this.calculateTaskMetrics(knowledgePointCount);
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", 1)
-      .is("deleted_at", null);
+      );
 
     const { data: task, error: taskError } = await supabase
       .from("user_tasks")
@@ -250,12 +251,12 @@ export class GraphTaskService {
   async recalculateAllGraphTasks(supabase: SupabaseClient): Promise<void> {
     logger.info("[GraphTaskService] Recalculating all graph tasks");
 
-    const { data: graphTasks, error: fetchError } = await supabase
+    const { data: graphTasks, error: fetchError } = await notDeleted(supabase
       .from("user_tasks")
       .select("id, context")
       .eq("task_type", "graph_learning")
       .not("context->>graph_id", "is", null)
-      .is("deleted_at", null);
+      );
 
     if (fetchError) {
       logger.error(

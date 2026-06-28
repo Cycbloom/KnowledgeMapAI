@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../../utils/logger";
 import { appEventBus } from "../../core/eventBus";
+import { notDeleted } from '../../common/softDeleteHelper';
 import type {
   UserTaskStatus,
   TaskStartedPayload,
@@ -263,12 +264,12 @@ class TaskStateMachine {
       updateData.completed_at = new Date().toISOString();
     }
 
-    const { data: task, error: taskError } = await supabase
+    const { data: task, error: taskError } = await notDeleted(supabase
       .from("user_tasks")
       .update(updateData)
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .select()
       .single();
 

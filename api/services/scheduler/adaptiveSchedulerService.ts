@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { efficiencyService } from "./efficiencyService";
 import { logger } from "../../utils/logger";
 import type { UserTask } from "./taskService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface SchedulerWeights {
   timeSlot: number;
@@ -314,12 +315,12 @@ export class AdaptiveSchedulerService {
     client: SupabaseClient,
     userId: string,
   ): Promise<AdaptiveSchedulerResult> {
-    const { data: tasksData, error } = await client
+    const { data: tasksData, error } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .in("status", ["pending", "paused", "in_progress"])
-      .is("deleted_at", null);
+      );
 
     if (error || !tasksData) {
       logger.error("Failed to fetch tasks for adaptive recommendations", { error });

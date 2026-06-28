@@ -21,6 +21,7 @@ import { scrapeUrl } from "../../utils/scraper";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { transactionExecutor } from "../../database/transactionExecutor";
+import { notDeleted } from '../common/softDeleteHelper';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 200;
@@ -256,12 +257,12 @@ export class AutoGraphService {
     }
 
     for (const [tempId, kpId] of reusedKpIds) {
-      const { data: existingGN } = await supabase
+      const { data: existingGN } = await notDeleted(supabase
         .from("graph_nodes")
         .select("id")
         .eq("knowledge_point_id", kpId)
         .eq("graph_id", graphId)
-        .is("deleted_at", null)
+        )
         .maybeSingle();
 
       if (existingGN) {
@@ -418,7 +419,7 @@ export class AutoGraphService {
 
     if (edgesToCreate.length > 0) {
       try {
-        const { data: createdEdges, error: verifyError } = await supabase
+        const { data: createdEdges, error: verifyError } = await notDeleted(supabase
           .from("edges")
           .select(
             "id, source_knowledge_point_id, target_knowledge_point_id, relationship_type",
@@ -432,7 +433,7 @@ export class AutoGraphService {
             edgesToCreate.map((e) => e.target_knowledge_point_id),
           )
           .eq("graph_id", graphId)
-          .is("deleted_at", null);
+          );
 
         if (verifyError) {
           logger.error("Edge verification failed", {
@@ -803,7 +804,7 @@ export class AutoGraphService {
     const reusedKpIds = new Map<string, string>();
     const mergedIndices = new Set<number>();
 
-    const { data: existingGraphNodes } = await supabase
+    const { data: existingGraphNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -816,7 +817,7 @@ export class AutoGraphService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     const normalizedTitleToKpId = new Map<string, string>();
     const embeddingMap = new Map<
@@ -1112,11 +1113,11 @@ export class AutoGraphService {
 
     if (edges.length > 0) {
       const graphId = edges[0].graph_id;
-      const { data: existingEdges } = await supabase
+      const { data: existingEdges } = await notDeleted(supabase
         .from("edges")
         .select("source_knowledge_point_id, target_knowledge_point_id")
         .eq("graph_id", graphId)
-        .is("deleted_at", null);
+        );
 
       const existingPairs = new Set<string>();
       if (existingEdges) {

@@ -7,7 +7,7 @@ import {
   TimeoutError,
   RetryError,
   DEFAULT_TIMEOUT,
-} from '../../utils/retry';
+} from '../../../shared/utils/retry';
 
 describe('retry utilities', () => {
   beforeEach(() => {

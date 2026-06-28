@@ -1,5 +1,6 @@
 import type { AgentTool, ToolContext } from "../types";
 import { isIndexValue, resolveId } from "../../../../shared/utils/indexMapping";
+import { notDeleted } from '../../common/softDeleteHelper';
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -53,11 +54,11 @@ export const getGraphOverviewTool: AgentTool = {
       ? paramGraphIds
       : contextGraphIds;
 
-    let query = supabase
+    let query = notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, description, domain", { count: "exact" })
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (graphIds && graphIds.length > 0) {
       query = query.in("id", graphIds);
@@ -152,11 +153,11 @@ export const getGraphRelationsTool: AgentTool = {
       ? paramGraphIds
       : contextGraphIds;
 
-    let query = supabase
+    let query = notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (targetGraphIds && targetGraphIds.length > 0) {
       query = query.in("id", targetGraphIds);
@@ -246,11 +247,11 @@ export const getIsolatedGraphsTool: AgentTool = {
     const { supabase, userId, graphIds: contextGraphIds } = context;
     const summarize = params.summarize !== false;
 
-    let query = supabase
+    let query = notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, description, domain")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (contextGraphIds && contextGraphIds.length > 0) {
       query = query.in("id", contextGraphIds);
@@ -614,11 +615,11 @@ export const searchGraphsTool: AgentTool = {
     };
 
     if (type === "graph" || type === "all") {
-      const { data: graphs, error: graphsError } = await supabase
+      const { data: graphs, error: graphsError } = await notDeleted(supabase
         .from("knowledge_graphs")
         .select("id, title, description, domain")
         .eq("user_id", userId)
-        .is("deleted_at", null)
+        )
         .or(`title.ilike.%${query}%,description.ilike.%${query}%`);
 
       if (graphsError) {

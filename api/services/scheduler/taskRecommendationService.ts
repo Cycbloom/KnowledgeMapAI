@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UserTask } from "./taskService";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface TaskRecommendation {
   task: UserTask;
@@ -389,7 +390,7 @@ export class TaskRecommendationService {
   ): Promise<TaskRecommendation[]> {
     const now = context?.currentTime || new Date();
 
-    const { data: tasks, error } = await client
+    const { data: tasks, error } = await notDeleted(client
       .from("user_tasks")
       .select(
         `
@@ -402,7 +403,7 @@ export class TaskRecommendationService {
       )
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
-      .is("deleted_at", null)
+      )
       .order("priority", { ascending: false });
 
     if (error || !tasks) {
@@ -1014,12 +1015,12 @@ export class TaskRecommendationService {
     taskId: string,
     userId: string,
   ): Promise<UserTask | null> {
-    const { data: task, error } = await client
+    const { data: task, error } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (error || !task) return null;

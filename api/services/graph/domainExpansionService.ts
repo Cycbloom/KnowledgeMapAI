@@ -5,6 +5,7 @@ import { domainContextService } from '../ai/domainContextService';
 import { checkDuplicateGraphTopic } from '../../utils/similaritySearch';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { notDeleted } from '../common/softDeleteHelper';
 
 class DomainExpansionService {
   async expandDomain(
@@ -46,12 +47,12 @@ class DomainExpansionService {
       }> = [];
 
       if (graph_ids && graph_ids.length > 0) {
-        const { data: graphsById } = await supabase
+        const { data: graphsById } = await notDeleted(supabase
           .from('knowledge_graphs')
           .select('id, title, description, domain')
           .eq('user_id', userId)
           .in('id', graph_ids)
-          .is('deleted_at', null);
+          );
 
         if (graphsById) {
           sourceGraphs.push(...graphsById);
@@ -59,12 +60,12 @@ class DomainExpansionService {
       }
 
       if (domain && domain.trim()) {
-        const { data: graphsByDomain } = await supabase
+        const { data: graphsByDomain } = await notDeleted(supabase
           .from('knowledge_graphs')
           .select('id, title, description, domain')
           .eq('user_id', userId)
           .ilike('domain', `%${domain.trim()}%`)
-          .is('deleted_at', null);
+          );
 
         if (graphsByDomain) {
           const existingIds = new Set(sourceGraphs.map((g) => g.id));
@@ -85,11 +86,11 @@ class DomainExpansionService {
             domain,
           )
         ) {
-          const { data: domainData } = await supabase
+          const { data: domainData } = await notDeleted(supabase
             .from('domains')
             .select('id, name')
             .eq('id', domain)
-            .is('deleted_at', null)
+            )
             .single();
 
           if (domainData) {
@@ -97,12 +98,12 @@ class DomainExpansionService {
             targetDomainName = domainData.name;
           }
         } else {
-          const { data: domainData } = await supabase
+          const { data: domainData } = await notDeleted(supabase
             .from('domains')
             .select('id, name')
             .eq('name', domain)
             .or(`user_id.eq.${userId},and(is_system.eq.true,user_id.is.null)`)
-            .is('deleted_at', null)
+            )
             .maybeSingle();
 
           if (domainData) {
@@ -116,11 +117,11 @@ class DomainExpansionService {
         throw new AppError('未找到选中的图谱或领域', 404, ErrorCodes.RESOURCE_NOT_FOUND);
       }
 
-      const { data: existingGraphs } = await supabase
+      const { data: existingGraphs } = await notDeleted(supabase
         .from('knowledge_graphs')
         .select('id, title, description')
         .eq('user_id', userId)
-        .is('deleted_at', null);
+        );
 
       const existingTitles = (existingGraphs || []).map((g) =>
         g.title.toLowerCase(),
@@ -385,11 +386,11 @@ ${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关�
         }
       }
 
-      const { data: allExistingGraphs, error: queryError } = await supabase
+      const { data: allExistingGraphs, error: queryError } = await notDeleted(supabase
         .from('knowledge_graphs')
         .select('id, title')
         .eq('user_id', userId)
-        .is('deleted_at', null);
+        );
 
       if (queryError) {
         logger.error('Failed to query existing graphs:', queryError);

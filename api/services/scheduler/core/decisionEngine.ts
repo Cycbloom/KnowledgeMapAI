@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../../utils/logger";
 import { efficiencyService } from "../efficiencyService";
+import { notDeleted } from '../../common/softDeleteHelper';
 
 interface DecisionFactor {
   name: string;
@@ -110,12 +111,12 @@ class SchedulerDecisionEngine {
     supabase: SupabaseClient,
     userId: string,
   ): Promise<Array<Record<string, unknown>>> {
-    const { data: tasks, error } = await supabase
+    const { data: tasks, error } = await notDeleted(supabase
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
       .in("status", ["pending", "paused"])
-      .is("deleted_at", null)
+      )
       .order("priority", { ascending: false })
       .limit(50);
 

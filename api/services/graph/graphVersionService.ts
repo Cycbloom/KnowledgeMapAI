@@ -22,6 +22,7 @@ import { cacheService } from '../common/cacheService';
 import { appEventBus } from '../core/eventBus';
 import type { GraphRollbackPayload } from '../../../shared/types/events';
 import { transactionExecutor } from '../../database/transactionExecutor';
+import { notDeleted } from '../common/softDeleteHelper';
 
 const SNAPSHOT_DESCRIPTIONS: Record<string, string> = {
   pre_ai_expand: 'AI 扩展前自动快照',
@@ -136,22 +137,22 @@ export class GraphVersionService {
     snapshotType: GraphSnapshotType,
     operatorId?: string | null,
   ): Promise<GraphSnapshot> {
-    const { data: nodes, error: nodesError } = await supabase
+    const { data: nodes, error: nodesError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('id, knowledge_point_id, x_position, y_position, level, is_accepted, knowledge_points(title, content, summary)')
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (nodesError) {
       logger.error('Query graph nodes for snapshot error:', nodesError);
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
-    const { data: edges, error: edgesError } = await supabase
+    const { data: edges, error: edgesError } = await notDeleted(supabase
       .from('edges')
       .select('id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow')
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (edgesError) {
       logger.error('Query edges for snapshot error:', edgesError);
@@ -396,11 +397,11 @@ export class GraphVersionService {
     } else {
       logger.warn('TransactionExecutor unavailable, rollbackToSnapshot executing without transaction guarantee');
 
-      const { data: currentNodes, error: nodesError } = await supabase
+      const { data: currentNodes, error: nodesError } = await notDeleted(supabase
         .from('graph_nodes')
         .select('id')
         .eq('graph_id', graphId)
-        .is('deleted_at', null);
+        );
 
       if (nodesError) {
         logger.error('Query current nodes for rollback error:', nodesError);
@@ -419,11 +420,11 @@ export class GraphVersionService {
           throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
         }
 
-        const { error: softDeleteEdgesError } = await supabase
+        const { error: softDeleteEdgesError } = await notDeleted(supabase
           .from('edges')
           .update({ deleted_at: new Date().toISOString() })
           .eq('graph_id', graphId)
-          .is('deleted_at', null);
+          );
 
         if (softDeleteEdgesError) {
           logger.error('Soft delete edges for rollback error:', softDeleteEdgesError);
@@ -765,11 +766,11 @@ export class GraphVersionService {
       newGraphId = newGraph.id;
 
       // 复制知识点（创建独立副本）
-      const { data: sourceKps, error: kpsError } = await supabase
+      const { data: sourceKps, error: kpsError } = await notDeleted(supabase
         .from('graph_nodes')
         .select('knowledge_point_id, knowledge_points(id, title, content, summary, learning_material, keywords, properties, visibility, owner_id, mastery_level)')
         .eq('graph_id', graphId)
-        .is('deleted_at', null);
+        );
 
       if (kpsError) {
         logger.error('Query source knowledge points for branch error:', kpsError);
@@ -809,11 +810,11 @@ export class GraphVersionService {
         }
       }
 
-      const { data: sourceNodes, error: nodesError } = await supabase
+      const { data: sourceNodes, error: nodesError } = await notDeleted(supabase
         .from('graph_nodes')
         .select('knowledge_point_id, x_position, y_position, level, is_accepted')
         .eq('graph_id', graphId)
-        .is('deleted_at', null);
+        );
 
       if (nodesError) {
         logger.error('Query source nodes for branch error:', nodesError);
@@ -840,11 +841,11 @@ export class GraphVersionService {
         }
       }
 
-      const { data: sourceEdges, error: edgesError } = await supabase
+      const { data: sourceEdges, error: edgesError } = await notDeleted(supabase
         .from('edges')
         .select('source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow')
         .eq('graph_id', graphId)
-        .is('deleted_at', null);
+        );
 
       if (edgesError) {
         logger.error('Query source edges for branch error:', edgesError);
@@ -892,12 +893,12 @@ export class GraphVersionService {
     supabase: SupabaseClient,
     graphId: string,
   ): Promise<BranchInfo[]> {
-    const { data, error } = await supabase
+    const { data, error } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, title, branch_name, created_at')
       .eq('parent_graph_id', graphId)
       .eq('is_branch', true)
-      .is('deleted_at', null);
+      );
 
     if (error) {
       logger.error('List branches error:', error);
@@ -1283,7 +1284,7 @@ export class GraphVersionService {
             n => n.knowledgePointId === branchKpId,
           );
           if (branchNode) {
-            await supabase
+            await notDeleted(supabase
               .from('graph_nodes')
               .update({
                 x_position: branchNode.xPosition,
@@ -1293,7 +1294,7 @@ export class GraphVersionService {
               })
               .eq('graph_id', mainGraphId)
               .eq('knowledge_point_id', nodeDiff.knowledgePointId)
-              .is('deleted_at', null);
+              );
             // 更新 knowledge_point 内容（如果有变更）
             // TODO: Task 2 完成分支知识点隔离后，需通过 source_knowledge_point_id 映射到主图原始 kp id
             if (nodeDiff.changedFields.includes('content') || nodeDiff.changedFields.includes('summary')) {
@@ -1316,7 +1317,7 @@ export class GraphVersionService {
         if (selectedEdgeIds.has(edgeKey)) {
           const branchEdge = edgeDiff.after;
           if (branchEdge) {
-            await supabase
+            await notDeleted(supabase
               .from('edges')
               .update({
                 weight: branchEdge.weight,
@@ -1329,7 +1330,7 @@ export class GraphVersionService {
               .eq('source_knowledge_point_id', branchEdge.sourceKnowledgePointId)
               .eq('target_knowledge_point_id', branchEdge.targetKnowledgePointId)
               .eq('relationship_type', branchEdge.relationshipType)
-              .is('deleted_at', null);
+              );
           }
           edgesModified++;
         }
@@ -1338,12 +1339,12 @@ export class GraphVersionService {
       // 应用删除节点 (fallback)
       for (const node of mergeResult.diff.nodes.removed) {
         if (selectedRemovedNodeIds.has(node.knowledgePointId)) {
-          await supabase
+          await notDeleted(supabase
             .from('graph_nodes')
             .update({ deleted_at: new Date().toISOString() })
             .eq('graph_id', mainGraphId)
             .eq('knowledge_point_id', node.knowledgePointId)
-            .is('deleted_at', null);
+            );
           nodesRemoved++;
         }
       }
@@ -1352,14 +1353,14 @@ export class GraphVersionService {
       for (const edge of mergeResult.diff.edges.removed) {
         const edgeKey = this.getEdgeKey(edge);
         if (selectedRemovedEdgeIds.has(edgeKey)) {
-          await supabase
+          await notDeleted(supabase
             .from('edges')
             .update({ deleted_at: new Date().toISOString() })
             .eq('graph_id', mainGraphId)
             .eq('source_knowledge_point_id', edge.sourceKnowledgePointId)
             .eq('target_knowledge_point_id', edge.targetKnowledgePointId)
             .eq('relationship_type', edge.relationshipType)
-            .is('deleted_at', null);
+            );
           edgesRemoved++;
         }
       }
@@ -1372,7 +1373,7 @@ export class GraphVersionService {
           const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
           if (sourceData && 'knowledgePointId' in sourceData) {
             const nodeData = sourceData as SnapshotNodeData;
-            await supabase
+            await notDeleted(supabase
               .from('graph_nodes')
               .update({
                 x_position: nodeData.xPosition,
@@ -1382,13 +1383,13 @@ export class GraphVersionService {
               })
               .eq('graph_id', mainGraphId)
               .eq('knowledge_point_id', nodeData.knowledgePointId)
-              .is('deleted_at', null);
+              );
           }
         } else if (conflict.entityType === 'edge') {
           const sourceData = resolution === 'branch' ? conflict.branchChange.after : conflict.mainChange.after;
           if (sourceData && 'sourceKnowledgePointId' in sourceData) {
             const edgeData = sourceData as SnapshotEdgeData;
-            await supabase
+            await notDeleted(supabase
               .from('edges')
               .update({
                 weight: edgeData.weight,
@@ -1401,7 +1402,7 @@ export class GraphVersionService {
               .eq('source_knowledge_point_id', edgeData.sourceKnowledgePointId)
               .eq('target_knowledge_point_id', edgeData.targetKnowledgePointId)
               .eq('relationship_type', edgeData.relationshipType)
-              .is('deleted_at', null);
+              );
           }
         }
         conflictsResolved++;
@@ -1447,11 +1448,11 @@ export class GraphVersionService {
       .from('knowledge_points')
       .select('id, source_knowledge_point_id')
       .in('id', (
-        await supabase
+        await notDeleted(supabase
           .from('graph_nodes')
           .select('knowledge_point_id')
           .eq('graph_id', branchGraphId)
-          .is('deleted_at', null)
+          )
       ).data?.map((n: { knowledge_point_id: string }) => n.knowledge_point_id) ?? []);
 
     if (error) {
@@ -1491,22 +1492,22 @@ export class GraphVersionService {
     supabase: SupabaseClient,
     graphId: string,
   ): Promise<SnapshotData> {
-    const { data: nodes, error: nodesError } = await supabase
+    const { data: nodes, error: nodesError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('id, knowledge_point_id, x_position, y_position, level, is_accepted, knowledge_points(title, content, summary)')
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (nodesError) {
       logger.error('Query current nodes error:', nodesError);
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
-    const { data: edges, error: edgesError } = await supabase
+    const { data: edges, error: edgesError } = await notDeleted(supabase
       .from('edges')
       .select('id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight, custom_label, custom_color, custom_line_style, show_arrow')
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (edgesError) {
       logger.error('Query current edges error:', edgesError);

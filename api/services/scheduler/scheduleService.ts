@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { notDeleted } from '../common/softDeleteHelper';
 
 class ScheduleService {
   calculateNextRunAt(
@@ -274,12 +275,12 @@ class ScheduleService {
       });
     }
 
-    const { count } = await supabase
+    const { count } = await notDeleted(supabase
       .from("user_tasks")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("queue_level", template.queue_level ?? 0)
-      .is("deleted_at", null);
+      );
 
     const { data: task, error: taskError } = await supabase
       .from("user_tasks")

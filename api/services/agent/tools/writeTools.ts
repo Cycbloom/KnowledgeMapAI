@@ -2,6 +2,7 @@ import type { AgentTool, ToolContext } from "../types";
 import { createKnowledgePointWithGraphNode } from "../../../utils/nodeHelpers";
 import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
+import { notDeleted } from '../../common/softDeleteHelper';
 
 const createNodeTool: AgentTool = {
   name: "create_node",
@@ -38,12 +39,12 @@ const createNodeTool: AgentTool = {
     const content = (params.content as string) || "";
     const level = (params.level as string) || "normal";
 
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id")
       .eq("id", graphId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (graphError) {
@@ -108,12 +109,12 @@ const createEdgeTool: AgentTool = {
     const targetKnowledgePointId = params.target_knowledge_point_id as string;
     const relationshipType = params.relationship_type as string;
 
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id")
       .eq("id", graphId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (graphError) {
@@ -200,11 +201,11 @@ const createGraphRelationTool: AgentTool = {
     const relationType = params.relation_type as string;
     const contextDesc = params.context as string | undefined;
 
-    const { data: graphs, error: graphsError } = await supabase
+    const { data: graphs, error: graphsError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id")
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .in("id", [sourceGraphId, targetGraphId]);
 
     if (graphsError) {

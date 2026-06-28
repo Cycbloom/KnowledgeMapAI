@@ -6,6 +6,7 @@ import { BackboneModule, TITLE_TO_BACKBONE_MODULE } from '../../../shared/types/
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { logger } from '../../utils/logger';
+import { notDeleted } from '../common/softDeleteHelper';
 
 class GraphExpansionService {
   async batchInitialize(
@@ -15,12 +16,12 @@ class GraphExpansionService {
     style: string = 'academic',
     sessionId?: string,
   ) {
-    const { data: graphs, error: graphsError } = await supabase
+    const { data: graphs, error: graphsError } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, title')
       .in('id', graphIds)
       .eq('user_id', userId)
-      .is('deleted_at', null);
+      );
 
     if (graphsError || !graphs || graphs.length === 0) {
       throw new AppError('未找到有效的图谱', 404, ErrorCodes.RESOURCE_NOT_FOUND);
@@ -91,12 +92,12 @@ class GraphExpansionService {
     graphId: string,
     style: string = 'academic',
   ) {
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, title, description')
       .eq('id', graphId)
       .eq('user_id', userId)
-      .is('deleted_at', null)
+      )
       .single();
 
     if (graphError || !graph) {
@@ -156,12 +157,12 @@ class GraphExpansionService {
     context?: string,
     useAI?: boolean,
   ) {
-    const { data: graph } = await supabase
+    const { data: graph } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, title')
       .eq('id', graphId)
       .eq('user_id', userId)
-      .is('deleted_at', null)
+      )
       .single();
 
     if (!graph) {
@@ -203,12 +204,12 @@ class GraphExpansionService {
     userId: string,
     graphId: string,
   ) {
-    const { data: graph, error: graphError } = await supabase
+    const { data: graph, error: graphError } = await notDeleted(supabase
       .from('knowledge_graphs')
       .select('id, template_type')
       .eq('id', graphId)
       .eq('user_id', userId)
-      .is('deleted_at', null)
+      )
       .single();
 
     if (graphError || !graph) {
@@ -223,7 +224,7 @@ class GraphExpansionService {
       );
     }
 
-    const { data: coreNodes, error: nodesError } = await supabase
+    const { data: coreNodes, error: nodesError } = await notDeleted(supabase
       .from('graph_nodes')
       .select(
         `
@@ -236,7 +237,7 @@ class GraphExpansionService {
         `,
       )
       .eq('graph_id', graphId)
-      .is('deleted_at', null);
+      );
 
     if (nodesError) {
       logger.error('查询核心节点失败', {

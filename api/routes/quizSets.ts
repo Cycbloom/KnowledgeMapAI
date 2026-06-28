@@ -1,5 +1,6 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthedRequest } from "../middleware/auth";
+import { requireQuizSetOwnership } from "../middleware/ownership";
 import { validate } from "../middleware/validate";
 import {
   createQuizSetSchema,
@@ -57,6 +58,7 @@ router.put(
   "/quiz-sets/:id",
   requireAuth,
   validate(updateQuizSetSchema),
+  requireQuizSetOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { title, description, config } = req.body;
@@ -73,6 +75,7 @@ router.delete(
   "/quiz-sets/:id",
   requireAuth,
   validate(uuidParamsSchema),
+  requireQuizSetOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     await quizSetsService.delete(req.supabase, req.user.id, id);
@@ -128,6 +131,7 @@ router.delete(
   "/quiz-sets/:id/cards/:cardId",
   requireAuth,
   validate(uuidParamsSchema),
+  requireQuizSetOwnership,
   async (req: AuthedRequest, res: Response) => {
     const { id, cardId } = req.params;
     await quizSetsService.removeCard(req.supabase, req.user.id, id, cardId);

@@ -4,6 +4,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { logger } from '../../utils/logger';
 import type { AchievementRow, PeriodicTaskRow } from '@shared/types/database';
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface PeriodicTask {
   id: string;
@@ -655,13 +656,13 @@ export class PeriodicTaskService {
                 break;
               }
               case 'tasks': {
-                const { count: taskCount } = await supabase
+                const { count: taskCount } = await notDeleted(supabase
                   .from('user_tasks')
                   .select('*', { count: 'exact', head: true })
                   .eq('user_id', user.id)
                   .eq('status', 'completed')
                   .gte('completed_at', `${start}T00:00:00`)
-                  .is('deleted_at', null);
+                  );
                 currentValue = taskCount ?? 0;
                 break;
               }

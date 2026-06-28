@@ -12,6 +12,7 @@ import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { transactionExecutor } from '../../database/transactionExecutor';
 import { withThreeLevelFallback } from '../../utils/rpcFallback';
+import { notDeleted } from '../common/softDeleteHelper';
 
 const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
@@ -293,7 +294,7 @@ export class NodesService {
     _userId: string,
     knowledgePointId: string,
   ) {
-    const { data: graphNode, error } = await supabase
+    const { data: graphNode, error } = await notDeleted(supabase
       .from('graph_nodes')
       .select(
         `
@@ -323,7 +324,7 @@ export class NodesService {
     `,
       )
       .eq('knowledge_point_id', knowledgePointId)
-      .is('deleted_at', null)
+      )
       .maybeSingle();
 
     if (error) {
@@ -344,7 +345,7 @@ export class NodesService {
     knowledgePointId: string,
     updates: UpdateNodeData,
   ) {
-    const { data: existingNode, error: findError } = await supabase
+    const { data: existingNode, error: findError } = await notDeleted(supabase
       .from('graph_nodes')
       .select(
         `
@@ -369,7 +370,7 @@ export class NodesService {
     `,
       )
       .eq('knowledge_point_id', knowledgePointId)
-      .is('deleted_at', null)
+      )
       .maybeSingle();
 
     if (findError) {
@@ -606,7 +607,7 @@ export class NodesService {
     knowledgePointId: string,
     hardDelete: boolean,
   ) {
-    const { data: graphNode, error: findError } = await supabase
+    const { data: graphNode, error: findError } = await notDeleted(supabase
       .from('graph_nodes')
       .select(
         `
@@ -620,7 +621,7 @@ export class NodesService {
     `,
       )
       .eq('knowledge_point_id', knowledgePointId)
-      .is('deleted_at', null)
+      )
       .maybeSingle();
 
     if (findError) {
@@ -684,11 +685,11 @@ export class NodesService {
     userId: string,
     nodeIds: string[],
   ) {
-    const { data: graphNodes, error: findError } = await supabase
+    const { data: graphNodes, error: findError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('id, graph_id, knowledge_point_id')
       .in('knowledge_point_id', nodeIds)
-      .is('deleted_at', null);
+      );
 
     if (findError) {
       logger.error('Find nodes for batch delete error:', findError);
@@ -731,14 +732,14 @@ export class NodesService {
     userId: string,
     positions: PositionUpdate[],
   ) {
-    const { data: graphNodes, error: findError } = await supabase
+    const { data: graphNodes, error: findError } = await notDeleted(supabase
       .from('graph_nodes')
       .select('id, graph_id, knowledge_point_id')
       .in(
         'knowledge_point_id',
         positions.map((p) => p.id),
       )
-      .is('deleted_at', null);
+      );
 
     if (findError) {
       logger.error('Find nodes for batch position update error:', findError);
@@ -804,7 +805,7 @@ export class NodesService {
     nodes: BatchUpdateNodeItem[],
   ) {
     const nodeIds = nodes.map((n) => n.id);
-    const { data: graphNodes, error: findError } = await supabase
+    const { data: graphNodes, error: findError } = await notDeleted(supabase
       .from('graph_nodes')
       .select(
         `
@@ -821,7 +822,7 @@ export class NodesService {
       `,
       )
       .in('knowledge_point_id', nodeIds)
-      .is('deleted_at', null);
+      );
 
     if (findError) {
       logger.error('Find nodes for batch update error:', findError);
@@ -1072,7 +1073,7 @@ export class NodesService {
     knowledgePointId: string,
     limit: number = 5,
   ) {
-    const { data: graphNode, error: nodeError } = await supabase
+    const { data: graphNode, error: nodeError } = await notDeleted(supabase
       .from('graph_nodes')
       .select(
         `
@@ -1087,7 +1088,7 @@ export class NodesService {
       `,
       )
       .eq('knowledge_point_id', knowledgePointId)
-      .is('deleted_at', null)
+      )
       .maybeSingle();
 
     if (nodeError) {

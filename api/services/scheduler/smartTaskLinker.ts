@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { graphTaskService } from "./graphTaskService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export interface LinkedTaskResult {
   taskId: string;
@@ -118,11 +119,11 @@ class SmartTaskLinker {
     let graphId = options?.graphId;
 
     if (!graphId) {
-      const { data: gn } = await supabase
+      const { data: gn } = await notDeleted(supabase
         .from("graph_nodes")
         .select("graph_id")
         .eq("knowledge_point_id", knowledgePointId)
-        .is("deleted_at", null)
+        )
         .limit(1)
         .maybeSingle();
 
@@ -170,7 +171,7 @@ class SmartTaskLinker {
   }
 
   private async getGraphNodes(supabase: SupabaseClient, graphId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -179,7 +180,7 @@ class SmartTaskLinker {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       logger.error("[SmartTaskLinker] Error fetching graph nodes:", error);

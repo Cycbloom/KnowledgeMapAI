@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface UserTaskRow {
   status: string;
@@ -89,11 +90,11 @@ export class TaskAnalyticsService {
     const monthAgo = new Date(today);
     monthAgo.setDate(monthAgo.getDate() - 30);
 
-    const { data: tasks } = await client
+    const { data: tasks } = await notDeleted(client
       .from("user_tasks")
       .select("*")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     const { data: executions } = await client
       .from("task_executions")

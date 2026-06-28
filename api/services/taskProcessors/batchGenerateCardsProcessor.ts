@@ -4,6 +4,7 @@ import { aiService } from '../ai/aiService';
 import { logger } from '../../utils/logger';
 
 import type { AIProviderType } from '@shared/types';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface BatchGenerateCardsPayload {
   node_ids: string[];
@@ -66,7 +67,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
       const { node_ids, config } = payload;
       const { types = ['qa', 'choice', 'true_false'], count = 3 } = config || {};
 
-      const { data: graphNodes, error: gnError } = await supabase
+      const { data: graphNodes, error: gnError } = await notDeleted(supabase
         .from('graph_nodes')
         .select(`
           id,
@@ -80,7 +81,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
           )
         `)
         .in('knowledge_point_id', node_ids)
-        .is('deleted_at', null);
+        );
 
       if (gnError || !graphNodes || graphNodes.length === 0) {
         throw new Error('Failed to fetch nodes');
@@ -112,7 +113,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
       const parentNodesMap = new Map<string, { id: string; title: string; content: string | null }>();
       
       if (parentIds.length > 0) {
-        const { data: parentGraphNodes } = await supabase
+        const { data: parentGraphNodes } = await notDeleted(supabase
           .from('graph_nodes')
           .select(`
             knowledge_point_id,
@@ -123,7 +124,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
             )
           `)
           .in('knowledge_point_id', parentIds)
-          .is('deleted_at', null);
+          );
         
         if (parentGraphNodes) {
           parentGraphNodes.forEach((pgn: ParentGraphNodeWithKnowledgePoint) => {

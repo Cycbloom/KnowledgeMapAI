@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export const graphDomainService = {
   async migrateGraphDomainIfNeeded(
@@ -126,12 +127,12 @@ export const graphDomainService = {
       return { graphs: [], total: 0 };
     }
 
-    const { data: graphs, error } = await supabase
+    const { data: graphs, error } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("*")
       .eq("user_id", userId)
       .in("id", filteredGraphIds)
-      .is("deleted_at", null)
+      )
       .order("is_favorite", { ascending: false })
       .order("last_used_at", { ascending: false });
 
@@ -140,11 +141,11 @@ export const graphDomainService = {
     const graphIds = graphs?.map((g) => g.id) || [];
     const countMap = new Map<string, number>();
     if (graphIds.length > 0) {
-      const { data: nodeCounts } = await supabase
+      const { data: nodeCounts } = await notDeleted(supabase
         .from("graph_nodes")
         .select("graph_id")
         .in("graph_id", graphIds)
-        .is("deleted_at", null);
+        );
       nodeCounts?.forEach((n) => {
         countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
       });

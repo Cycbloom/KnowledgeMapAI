@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 import { cacheService, CacheKeys } from '../common/cacheService';
 
 import type { AIProviderType } from '@shared/types';
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface GenerateQuestionsPayload {
   knowledge_point_id: string;
@@ -45,11 +46,11 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
       let totalCount = 0;
       const errors: string[] = [];
 
-      const { data: graphNodeData } = await supabase
+      const { data: graphNodeData } = await notDeleted(supabase
         .from('graph_nodes')
         .select('graph_id, knowledge_point_id')
         .eq('knowledge_point_id', node_id)
-        .is('deleted_at', null)
+        )
         .single();
       const graph_id = graphNodeData?.graph_id;
 

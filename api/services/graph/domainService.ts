@@ -4,6 +4,7 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { logger } from "../../utils/logger";
 import { aiService } from "../ai/aiService";
 import { getAIProviderForTask } from "../ai/factory";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface DomainRecord {
   id: string;
@@ -134,11 +135,11 @@ export const domainService = {
     supabase: SupabaseClient,
     userId: string,
   ): Promise<DomainTreeNode[]> {
-    const { data: domains, error } = await supabase
+    const { data: domains, error } = await notDeleted(supabase
       .from("domains")
       .select("*")
       .or(`user_id.eq.${userId},and(is_system.eq.true,user_id.is.null)`)
-      .is("deleted_at", null)
+      )
       .order("sort_order", { ascending: true });
 
     if (error) {
@@ -178,11 +179,11 @@ export const domainService = {
     id: string,
     userId: string,
   ): Promise<DomainRecord & { graphCount: number; children: unknown[] }> {
-    const { data: domain, error } = await supabase
+    const { data: domain, error } = await notDeleted(supabase
       .from("domains")
       .select("*")
       .eq("id", id)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (error || !domain) {
@@ -201,11 +202,11 @@ export const domainService = {
       .select("*", { count: "exact", head: true })
       .eq("domain_id", id);
 
-    const { data: children } = await supabase
+    const { data: children } = await notDeleted(supabase
       .from("domains")
       .select("id, name, color, icon, sort_order, is_system")
       .eq("parent_id", id)
-      .is("deleted_at", null)
+      )
       .order("sort_order", { ascending: true });
 
     logger.info("获取领域详情成功", { domainId: id, userId });
@@ -300,11 +301,11 @@ export const domainService = {
   ): Promise<DomainRecord> {
     const updates = data;
 
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existing, error: fetchError } = await notDeleted(supabase
       .from("domains")
       .select("*")
       .eq("id", id)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (fetchError || !existing) {
@@ -370,11 +371,11 @@ export const domainService = {
     id: string,
     userId: string,
   ): Promise<void> {
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existing, error: fetchError } = await notDeleted(supabase
       .from("domains")
       .select("*")
       .eq("id", id)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (fetchError || !existing) {
@@ -409,11 +410,11 @@ export const domainService = {
   ): Promise<{ success: boolean; updated_count: number }> {
     const domainIds = items.map((item) => item.id);
 
-    const { data: domains, error } = await supabase
+    const { data: domains, error } = await notDeleted(supabase
       .from("domains")
       .select("id, user_id, is_system, deleted_at")
       .in("id", domainIds)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       logger.error("查询领域信息失败", { error: error.message, userId });
@@ -570,11 +571,11 @@ ${description ? `领域描述：${description}` : ""}
       reason: string;
     }>;
   }> {
-    const { data: domains, error } = await supabase
+    const { data: domains, error } = await notDeleted(supabase
       .from("domains")
       .select("id, name, description, color")
       .or(`user_id.eq.${userId},and(is_system.eq.true,user_id.is.null)`)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       logger.error("获取领域列表失败", { error: error.message, userId });

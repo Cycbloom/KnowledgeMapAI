@@ -3,6 +3,7 @@ import { subtaskStateMachine } from "./subtaskStateMachine";
 import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
 import { logger } from "../../utils/logger";
 import type { LearningState } from "../../../shared/types/scheduler";
+import { notDeleted } from '../common/softDeleteHelper';
 
 interface CreateSubtaskData {
   title: string;
@@ -38,12 +39,12 @@ export class SubtaskService {
     userId: string,
     taskId: string,
   ) {
-    const { data: task } = await supabase
+    const { data: task } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {
@@ -70,12 +71,12 @@ export class SubtaskService {
     taskId: string,
     data: CreateSubtaskData,
   ) {
-    const { data: task } = await supabase
+    const { data: task } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {
@@ -133,12 +134,12 @@ export class SubtaskService {
     subtaskId: string,
     updates: UpdateSubtaskData,
   ) {
-    const { data: task } = await supabase
+    const { data: task } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {
@@ -229,12 +230,12 @@ export class SubtaskService {
     masteryLevel: number,
     reason?: string,
   ) {
-    const { data: task } = await supabase
+    const { data: task } = await notDeleted(supabase
       .from("user_tasks")
       .select("id")
       .eq("id", taskId)
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .single();
 
     if (!task) {

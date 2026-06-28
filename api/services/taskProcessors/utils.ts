@@ -5,6 +5,7 @@ import { logger } from "../../utils/logger";
 import { getNextLevel } from "../../utils/levelUtils";
 import { performanceMonitor, enrichMetadata } from "../ai/performanceMonitor";
 import { pricingService } from "../ai/pricingService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 export async function getAutoGraphPrompt(
   supabase: SupabaseClient,
@@ -38,11 +39,11 @@ export async function generateNodesForGraph(
     let totalNodes = 0;
     const effectiveSessionId = sessionId || crypto.randomUUID();
 
-    const { data: existingNodes } = await supabase
+    const { data: existingNodes } = await notDeleted(supabase
       .from("graph_nodes")
       .select("knowledge_points(title)")
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     const existingNodeTitles = new Set<string>();
     existingNodes?.forEach((gn: any) => {
@@ -228,13 +229,13 @@ export async function expandNodeForGraph(
     let totalNodes = 0;
     const effectiveSessionId = sessionId || crypto.randomUUID();
 
-    const { data: existingChildEdges } = await supabase
+    const { data: existingChildEdges } = await notDeleted(supabase
       .from("edges")
       .select(
         "target_knowledge_point_id, knowledge_points!edges_target_knowledge_point_id_fkey(title)",
       )
       .eq("source_knowledge_point_id", parentNodeId)
-      .is("deleted_at", null);
+      );
 
     const existingChildTitles = new Set<string>();
     existingChildEdges?.forEach((edge: any) => {

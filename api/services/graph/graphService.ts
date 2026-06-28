@@ -29,6 +29,7 @@ import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import { graphVersionService } from "./graphVersionService";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { graphDomainService } from "./graphDomainService";
+import { notDeleted } from '../common/softDeleteHelper';
 
 import type {
   GraphCreatedPayload,
@@ -153,11 +154,11 @@ export class GraphService {
   }
 
   private async listGraphsFallback(supabase: SupabaseClient, userId: string) {
-    const { data: graphs, error } = await supabase
+    const { data: graphs, error } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("*")
       .eq("user_id", userId)
-      .is("deleted_at", null)
+      )
       .order("is_favorite", { ascending: false })
       .order("last_used_at", { ascending: false });
 
@@ -170,12 +171,12 @@ export class GraphService {
     }
 
     const [nodeCountsResult, graphNodesDataResult] = await Promise.all([
-      supabase
+      notDeleted(supabase
         .from("graph_nodes")
         .select("graph_id")
         .in("graph_id", graphIds)
-        .is("deleted_at", null),
-      supabase
+        ),
+      notDeleted(supabase
         .from("graph_nodes")
         .select(
           `
@@ -186,7 +187,7 @@ export class GraphService {
         `,
         )
         .in("graph_id", graphIds)
-        .is("deleted_at", null),
+        ),
     ]);
 
     const countMap = new Map<string, number>();
@@ -253,11 +254,11 @@ export class GraphService {
       return [];
     }
 
-    const { data: nodeCounts } = await supabase
+    const { data: nodeCounts } = await notDeleted(supabase
       .from("graph_nodes")
       .select("graph_id")
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     const countMap = new Map<string, number>();
     nodeCounts?.forEach((n: { graph_id: string }) => {
@@ -291,11 +292,11 @@ export class GraphService {
     graphId: string,
     _userId: string | null,
   ) {
-    const { data, error } = await supabase
+    const { data, error } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("*")
       .eq("id", graphId)
-      .is("deleted_at", null)
+      )
       .maybeSingle();
 
     if (error) {
@@ -821,12 +822,12 @@ export class GraphService {
         );
       },
       fallbackFn: async () => {
-        const { data: branches } = await supabase
+        const { data: branches } = await notDeleted(supabase
           .from("knowledge_graphs")
           .select("id")
           .eq("parent_graph_id", graphId)
           .eq("is_branch", true)
-          .is("deleted_at", null);
+          );
 
         if (branches && branches.length > 0) {
           const branchIds = branches.map((b: { id: string }) => b.id);
@@ -876,12 +877,12 @@ export class GraphService {
     userId: string,
   ) {
     // Get branch IDs before RPC for event publishing
-    const { data: allBranches } = await supabase
+    const { data: allBranches } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id")
       .in("parent_graph_id", graphIds)
       .eq("is_branch", true)
-      .is("deleted_at", null);
+      );
 
     return withThreeLevelFallback<{ count: number }>({
       context: 'deleteGraphs',
@@ -1242,11 +1243,11 @@ export class GraphService {
       const result = await cacheService.getOrSet(
         embCacheKey,
         async () => {
-          const { data: graphNodes, error: gnError } = await supabase
+          const { data: graphNodes, error: gnError } = await notDeleted(supabase
             .from("graph_nodes")
             .select(GRAPH_NODES_SELECT_WITH_EMBEDDING)
             .eq("graph_id", graphId)
-            .is("deleted_at", null);
+            );
 
           if (gnError) {
             logger.error("getGraphNodes error:", gnError);
@@ -1280,11 +1281,11 @@ export class GraphService {
             })
             .filter(Boolean);
 
-          const { data: edges, error: edgesError } = await supabase
+          const { data: edges, error: edgesError } = await notDeleted(supabase
             .from("edges")
             .select("*")
             .eq("graph_id", graphId)
-            .is("deleted_at", null);
+            );
 
           if (edgesError) throw edgesError;
 
@@ -1312,11 +1313,11 @@ export class GraphService {
     const cachedData = await cacheService.getOrSet(
       cacheKey,
       async () => {
-        const { data: graphNodes, error: gnError } = await supabase
+        const { data: graphNodes, error: gnError } = await notDeleted(supabase
           .from("graph_nodes")
           .select(GRAPH_NODES_SELECT)
           .eq("graph_id", graphId)
-          .is("deleted_at", null);
+          );
 
         if (gnError) {
           logger.error("getGraphNodes error:", gnError);
@@ -1349,11 +1350,11 @@ export class GraphService {
           })
           .filter(Boolean);
 
-        const { data: edges, error: edgesError } = await supabase
+        const { data: edges, error: edgesError } = await notDeleted(supabase
           .from("edges")
           .select("*")
           .eq("graph_id", graphId)
-          .is("deleted_at", null);
+          );
 
         if (edgesError) throw edgesError;
 
@@ -1707,7 +1708,7 @@ export class GraphService {
       throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
 
-    const { data: graphNodes, error: nodesError } = await supabase
+    const { data: graphNodes, error: nodesError } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -1730,19 +1731,19 @@ export class GraphService {
       `,
       )
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     if (nodesError) {
       throw nodesError;
     }
 
-    const { data: edges, error: edgesError } = await supabase
+    const { data: edges, error: edgesError } = await notDeleted(supabase
       .from("edges")
       .select(
         "id, graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight",
       )
       .in("graph_id", graphIds)
-      .is("deleted_at", null);
+      );
 
     if (edgesError) {
       throw edgesError;
@@ -1788,11 +1789,11 @@ export const graphService = new GraphService();
 export async function getUserAccessibleGraphs(
   userId: string,
 ): Promise<GraphWithCollaborators[]> {
-  const { data: ownedGraphs, error: ownedError } = await getSupabaseAdmin()
+  const { data: ownedGraphs, error: ownedError } = await notDeleted(getSupabaseAdmin()
     .from("knowledge_graphs")
     .select("*")
     .eq("user_id", userId)
-    .is("deleted_at", null)
+    )
     .order("last_used_at", { ascending: false });
 
   if (ownedError) {

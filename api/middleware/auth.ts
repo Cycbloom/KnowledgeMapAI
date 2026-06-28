@@ -90,6 +90,25 @@ export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFu
   const localPayload = jwtService.verifySupabaseToken(token);
 
   if (localPayload) {
+    // Step 1.5: Revoked token 检查（带 30s 内存缓存）
+    // 缓存命中 true 表示已撤销；缓存命中 false 表示未撤销（跳过 DB 查询）；
+    // 缓存未命中则查询 DB 并写缓存。
+    const tokenHash = jwtService.computeTokenHash(token);
+    const revokedCacheKey = `auth:revoked:${tokenHash}`;
+    const revokedCached = await cacheService.get<boolean>(revokedCacheKey);
+
+    if (revokedCached === true) {
+      throw new AppError('Token has been revoked', 401, ErrorCodes.AUTH_TOKEN_REVOKED);
+    }
+
+    if (revokedCached === undefined) {
+      const isRevoked = await jwtService.isTokenRevoked(token);
+      await cacheService.set(revokedCacheKey, isRevoked, 30);
+      if (isRevoked) {
+        throw new AppError('Token has been revoked', 401, ErrorCodes.AUTH_TOKEN_REVOKED);
+      }
+    }
+
     // Step 2: 命中缓存则复用 user
     const cacheKey = `auth:user:${localPayload.sub}`;
     const cached = await cacheService.get<User>(cacheKey);

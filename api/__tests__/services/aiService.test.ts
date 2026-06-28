@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AIService } from "../../services/ai/aiService";
+import { AIService, bindChatService } from "../../services/ai/aiService";
+import { chatService } from "../../services/ai/chatService";
 
 vi.mock("../../services/ai/factory", () => ({
   getAIProviderForTask: vi.fn(),
   getAIProvider: vi.fn(),
 }));
+
+// aiService.chat/tutorChat 通过延迟绑定委托 chatService（拆解循环依赖），
+// 测试前需注入 chatService 实例。
+bindChatService(chatService);
 
 import * as factory from "../../services/ai/factory";
 

@@ -1,5 +1,6 @@
 import type { AgentTool, ToolContext } from "../types";
 import { isIndexValue, resolveId } from "../../../../shared/utils/indexMapping";
+import { notDeleted } from '../../common/softDeleteHelper';
 
 const extractDomain = (title: string): string => {
   const keywords = title.split(/[\s\-_/]/).filter((k) => k.length > 1);
@@ -36,11 +37,11 @@ export const getDomainDistributionTool: AgentTool = {
   execute: async (_params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
 
-    const { data: graphs, error } = await supabase
+    const { data: graphs, error } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, domain")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (error) {
       throw new Error(`Failed to get domain distribution: ${error.message}`);
@@ -227,11 +228,11 @@ export const getLearningPathsTool: AgentTool = {
     const endGraphId = params.end_graph_id as string | undefined;
     const summarize = params.summarize !== false;
 
-    const { data: graphs, error: graphsError } = await supabase
+    const { data: graphs, error: graphsError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, domain")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (graphsError) {
       throw new Error(`Failed to get graphs: ${graphsError.message}`);
@@ -490,12 +491,12 @@ export const getSimilarGraphsTool: AgentTool = {
       }
     });
 
-    const { data: otherGraphs, error: otherError } = await supabase
+    const { data: otherGraphs, error: otherError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, domain")
       .eq("user_id", userId)
       .neq("id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (otherError) {
       throw new Error(`Failed to get other graphs: ${otherError.message}`);
@@ -635,11 +636,11 @@ export const getKnowledgeCoverageTool: AgentTool = {
     const { supabase, userId } = context;
     const domain = params.domain as string | undefined;
 
-    let graphsQuery = supabase
+    let graphsQuery = notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, domain")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (domain) {
       graphsQuery = graphsQuery.eq("domain", domain);
@@ -739,11 +740,11 @@ export const analyzeMergeCandidatesTool: AgentTool = {
     const maxCandidates = (params.max_candidates as number) ?? 10;
     const summarize = params.summarize !== false;
 
-    const { data: graphs, error: graphsError } = await supabase
+    const { data: graphs, error: graphsError } = await notDeleted(supabase
       .from("knowledge_graphs")
       .select("id, title, domain")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      );
 
     if (graphsError) {
       throw new Error(`Failed to get graphs: ${graphsError.message}`);

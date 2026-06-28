@@ -6,6 +6,7 @@ import {
 import { hierarchyRecognitionService } from "../ai/hierarchyRecognitionService";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";
+import { notDeleted } from '../common/softDeleteHelper';
 import type {
   NodeLevel,
   ConceptSource,
@@ -244,7 +245,7 @@ export class ConceptAnalysisService {
     supabase: SupabaseClient,
     graphId: string,
   ): Promise<ConceptWithEmbedding[]> {
-    const { data: graphNodes, error: gnError } = await supabase
+    const { data: graphNodes, error: gnError } = await notDeleted(supabase
       .from("graph_nodes")
       .select(
         `
@@ -261,7 +262,7 @@ export class ConceptAnalysisService {
       `,
       )
       .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      );
 
     if (gnError || !graphNodes) {
       logger.error("Failed to fetch graph nodes:", gnError);

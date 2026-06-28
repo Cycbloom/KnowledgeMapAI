@@ -1,42 +1,48 @@
 // AIService - 门面类，委托给各领域子服务
 import { embeddingOps } from "./embeddingOps";
-import { chatService } from "./chatService";
+import type { ChatService } from "./chatService";
 import { cardGenerationService } from "./cardGenerationService";
 import { knowledgeExpansionService } from "./knowledgeExpansionService";
 import { contentGenerationService } from "./contentGenerationService";
 import { analysisService } from "./analysisService";
-import { logger } from "../../utils/logger";
-
-interface GraphNode {
-  id: string;
-  title: string;
-  content?: string | null;
-}
-
-interface GraphEdge {
-  source_knowledge_point_id: string;
-  target_knowledge_point_id: string;
-  relationship?: string | null;
-}
-
-interface BuildGraphContextOptions {
-  contextNodeIds?: string[];
-  maxContextLength?: number;
-  graphId?: string;
-}
-
-interface TutorContext {
-  mode: string;
-  graphId?: string;
-  existingNodes?: string[];
-  currentNodeId?: string;
-  currentNodeTitle?: string;
-  currentNodeContent?: string;
-}
+import {
+  buildGraphContext as buildGraphContextImpl,
+  buildTutorContext as buildTutorContextImpl,
+  type GraphNode,
+  type GraphEdge,
+  type BuildGraphContextOptions,
+  type TutorContext,
+} from "./contextBuilder";
 
 // Re-export types from 子服务，保持外部 API 不变
 export type { CardDifficulty, GenerateCardsOptions } from "./cardGenerationService";
 export type { GenerateLearningMaterialResult } from "./contentGenerationService";
+// Re-export context types so existing aiService type references keep working
+export type {
+  GraphNode,
+  GraphEdge,
+  BuildGraphContextOptions,
+  TutorContext,
+};
+
+// chatService 通过延迟绑定注入，避免 aiService ↔ chatService 运行时循环依赖。
+// chatService 不再 import aiService（已改为 import contextBuilder），
+// 此处也不在模块顶层 import chatService 单例，二者均单向依赖 contextBuilder。
+let chatServiceRef: ChatService | null = null;
+
+/** 绑定 chatService 实例（在服务启动时由组合根调用，例如 ai/index.ts）。 */
+export function bindChatService(cs: ChatService): void {
+  chatServiceRef = cs;
+}
+
+function requireChatService(): ChatService {
+  if (!chatServiceRef) {
+    throw new Error(
+      "aiService.chat / aiService.tutorChat called before bindChatService(chatService)",
+    );
+  }
+  return chatServiceRef;
+}
 
 export class AIService {
   // === 嵌入向量 (EmbeddingOps) ===
@@ -59,7 +65,7 @@ export class AIService {
       operation?: string;
     },
   ) {
-    return chatService.chat(messages, options);
+    return requireChatService().chat(messages, options);
   }
 
   async tutorChat(
@@ -76,7 +82,7 @@ export class AIService {
     },
     options?: { provider?: import("@shared/types").AIProviderType; model?: string },
   ) {
-    return chatService.tutorChat(messages, context, options);
+    return requireChatService().tutorChat(messages, context, options);
   }
 
   // === 学习卡片生成 (CardGenerationService) ===
@@ -177,78 +183,7 @@ export class AIService {
     edges: GraphEdge[],
     options: BuildGraphContextOptions = {},
   ): string {
-    const {
-      contextNodeIds,
-      maxContextLength = 15000,
-      graphId,
-    } = options;
-
-    const validNodes = nodes.filter(
-      (n): n is NonNullable<typeof n> => n !== null,
-    );
-
-    let contextText = "";
-
-    if (contextNodeIds && contextNodeIds.length > 0) {
-      const selectedNodes = validNodes.filter((n) =>
-        contextNodeIds.includes(n.id),
-      );
-      const nodesText = selectedNodes
-        .map((n) => `[Node] ${n.title}: ${n.content || "(No content)"}`)
-        .join("\n");
-
-      const relatedEdges = edges.filter(
-        (e) =>
-          contextNodeIds.includes(e.source_knowledge_point_id) &&
-          contextNodeIds.includes(e.target_knowledge_point_id),
-      );
-
-      const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
-
-      const edgesText = relatedEdges
-        .map((e) => {
-          const source =
-            nodeTitleMap.get(e.source_knowledge_point_id) || "Unknown";
-          const target =
-            nodeTitleMap.get(e.target_knowledge_point_id) || "Unknown";
-          return `[Edge] ${source} -> ${target} (${e.relationship || "related"})`;
-        })
-        .join("\n");
-
-      contextText = `Selected Nodes:\n${nodesText}\n\nRelationships:\n${edgesText}`;
-    } else {
-      const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
-
-      if (validNodes.length > 100) {
-        const nodesText = validNodes.map((n) => `- ${n.title}`).join("\n");
-        contextText = `Graph Overview (Nodes Only):\n${nodesText}`;
-      } else {
-        const nodesText = validNodes
-          .map((n) => `[Node] ${n.title}: ${n.content || "(No content)"}`)
-          .join("\n");
-        const edgesText = edges
-          .map((e) => {
-            const source =
-              nodeTitleMap.get(e.source_knowledge_point_id) || "Unknown";
-            const target =
-              nodeTitleMap.get(e.target_knowledge_point_id) || "Unknown";
-            return `[Edge] ${source} -> ${target} (${e.relationship || "related"})`;
-          })
-          .join("\n");
-
-        contextText = `All Nodes:\n${nodesText}\n\nAll Relationships:\n${edgesText}`;
-      }
-    }
-
-    if (contextText.length > maxContextLength) {
-      contextText = `${contextText.substring(0, maxContextLength)}...(truncated)`;
-      logger.warn("Graph context truncated due to length", {
-        graph_id: graphId,
-        length: contextText.length,
-      });
-    }
-
-    return contextText;
+    return buildGraphContextImpl(nodes, edges, options);
   }
 
   buildTutorContext(
@@ -257,27 +192,7 @@ export class AIService {
     mode: string = "free",
     graphId?: string,
   ): TutorContext {
-    const validNodes = nodes.filter(
-      (n): n is NonNullable<typeof n> => n !== null,
-    );
-
-    const context: TutorContext = { mode };
-
-    if (graphId) {
-      context.graphId = graphId;
-      context.existingNodes = validNodes.map((n) => n.title);
-
-      if (currentNodeId) {
-        const currentNode = validNodes.find((n) => n.id === currentNodeId);
-        if (currentNode) {
-          context.currentNodeId = currentNode.id;
-          context.currentNodeTitle = currentNode.title;
-          context.currentNodeContent = currentNode.content ?? undefined;
-        }
-      }
-    }
-
-    return context;
+    return buildTutorContextImpl(nodes, currentNodeId, mode, graphId);
   }
 
   // === 分析与提取 (AnalysisService) ===

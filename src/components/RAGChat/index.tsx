@@ -922,6 +922,7 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
   onPathSelect,
   onLearningPathNodeClick,
   onStartNarrative,
+  enableSTT,
 }) => {
   const { isDark } = useTheme();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -981,6 +982,7 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
                 onPathSelect={onPathSelect}
                 onLearningPathNodeClick={onLearningPathNodeClick}
                 onStartNarrative={onStartNarrative}
+                enableSTT={enableSTT}
               />
             </motion.div>
           </div>

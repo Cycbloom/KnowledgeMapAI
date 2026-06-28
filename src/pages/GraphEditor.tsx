@@ -1333,6 +1333,7 @@ export const GraphEditor = () => {
           onPathSelect={handleSelectLearningPath}
           onLearningPathNodeClick={handleLearningPathNodeClick}
           onStartNarrative={handleStartNarrative}
+          enableSTT={true}
         />
       </Suspense>
 

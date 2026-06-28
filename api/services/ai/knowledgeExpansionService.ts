@@ -155,7 +155,11 @@ export class KnowledgeExpansionService {
                 content,
                 "Expand Knowledge",
               );
-              const result = { suggestions: parsed.suggestions || parsed };
+              const result = {
+                suggestions:
+                  parsed.suggestions ??
+                  (Array.isArray(parsed) ? parsed : [parsed]),
+              };
 
               return { result, usage: completion.usage };
             },

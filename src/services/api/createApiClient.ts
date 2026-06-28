@@ -1,6 +1,7 @@
 import axios, {
   AxiosInstance,
   AxiosError,
+  AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
 import { useStore } from "@/store/useStore";
@@ -13,6 +14,17 @@ import {
 } from "@/config/electronConfig";
 import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 import { localQuery, isCloudOnlyResource } from "./localClient";
+
+/**
+ * Shape of the error response body returned by the backend.
+ * Matches the `data` field expected by `createErrorFromResponse`.
+ */
+interface ApiErrorResponse {
+  message?: string;
+  error?: string;
+  code?: string;
+  details?: Array<{ field: string; message: string }>;
+}
 
 const isMobileClient = (): boolean => {
   return isCapacitorMobile();
@@ -70,7 +82,7 @@ export { initCsrf };
  * Axios adapter that implements Local-First strategy for Electron production.
  * Tries IPC → SQLite first; falls back to HTTP if local DB unavailable or resource is cloud-only.
  */
-function localFirstAdapter(config: InternalAxiosRequestConfig): Promise<any> {
+function localFirstAdapter(config: InternalAxiosRequestConfig): Promise<AxiosResponse> {
   const defaultAdapter = axios.getAdapter(axios.defaults.adapter);
 
   // Only active in Electron production mode
@@ -218,7 +230,7 @@ export const createApiClient = (): AxiosInstance => {
       const appError = createErrorFromResponse({
         status: error.response?.status || 0,
         statusText: error.message,
-        data: error.response?.data as any,
+        data: error.response?.data as ApiErrorResponse | undefined,
       });
 
       const tokenRefreshManager = TokenRefreshManager.getInstance();

@@ -2,7 +2,8 @@ import { Router, type Response } from "express";
 import {
   requireAuth,
   optionalAuth,
-  type AuthRequest,
+  type AuthedRequest,
+  type OptionalAuthRequest,
 } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import {
@@ -10,6 +11,8 @@ import {
   updateGraphSchema,
   uuidParamsSchema,
   shareGraphSchema,
+  checkTopicSchema,
+  batchOperationSchema,
 } from "../../schemas/index";
 import {
   graphService,
@@ -24,20 +27,11 @@ import { cacheService } from "../../services/common";
 import { logger } from "../../utils/logger";
 import { z } from "zod";
 
-const checkTopicSchema = z.object({
-  topic: z.string().min(2).max(200),
-  exclude_graph_id: z.string().uuid().optional(),
-});
-
-const batchOperationSchema = z.object({
-  ids: z.array(z.string().uuid()).min(1).max(50),
-});
-
 const router = Router();
 
 // List all graphs for the user (Auth Required)
-router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+router.get("/", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const supabase = req.supabase;
   const userId = req.user.id;
   const domainId = req.query.domain_id as string | undefined;
   const domainIdsStr = req.query.domain_ids as string | undefined;
@@ -65,33 +59,33 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // List deleted graphs (Auth Required)
-router.get("/trash", requireAuth, async (req: AuthRequest, res: Response) => {
-  const data = await graphService.listTrash(req.supabase!, req.user.id);
+router.get("/trash", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const data = await graphService.listTrash(req.supabase, req.user.id);
   res.json(data);
 });
 
-router.get("/map", requireAuth, async (req: AuthRequest, res: Response) => {
-  const data = await graphCrudService.getGraphMap(req.supabase!, req.user.id);
+router.get("/map", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const data = await graphCrudService.getGraphMap(req.supabase, req.user.id);
   res.json(data);
 });
 
 // Get all tags from user's graphs
-router.get("/tags", requireAuth, async (req: AuthRequest, res: Response) => {
-  const data = await graphCrudService.getTags(req.supabase!, req.user.id);
+router.get("/tags", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const data = await graphCrudService.getTags(req.supabase, req.user.id);
   res.json(data);
 });
 
 // Get all domains from user's graphs
-router.get("/domains", requireAuth, async (req: AuthRequest, res: Response) => {
-  const data = await graphCrudService.getDomains(req.supabase!, req.user.id);
+router.get("/domains", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const data = await graphCrudService.getDomains(req.supabase, req.user.id);
   res.json(data);
 });
 
 router.get(
   "/map/analyze",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    const data = await graphCrudService.analyzeMap(req.supabase!, req.user.id);
+  async (req: AuthedRequest, res: Response) => {
+    const data = await graphCrudService.analyzeMap(req.supabase, req.user.id);
     res.json(data);
   },
 );
@@ -101,11 +95,11 @@ router.post(
   "/check-topic",
   requireAuth,
   validate({ body: checkTopicSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { topic, exclude_graph_id } = req.body;
 
     const result = await graphService.checkTopicDuplicate(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       topic,
       exclude_graph_id,
@@ -123,10 +117,10 @@ router.post(
   "/",
   requireAuth,
   validate({ body: createGraphSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { title, description, domains, template_type, preset_id } = req.body;
     const data = await graphService.createGraph(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       title,
       description,
@@ -147,25 +141,19 @@ router.post(
 router.get(
   "/intelligent-suggestions",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user.id;
     const graphIds = req.query.graph_ids
       ? (req.query.graph_ids as string).split(",")
       : undefined;
 
-    try {
-      const result = await relationDiscoveryService.getIntelligentSuggestions(
-        req.supabase!,
-        userId,
-        { graph_ids: graphIds },
-      );
+    const result = await relationDiscoveryService.getIntelligentSuggestions(
+      req.supabase,
+      userId,
+      { graph_ids: graphIds },
+    );
 
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "获取智能建议失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -174,19 +162,13 @@ router.get(
   "/:id/analysis/module-gaps",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    try {
-      const result = await conceptAggregationService.detectNewModuleNeeds(
-        req.supabase!,
-        id,
-      );
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "模块缺口分析失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await conceptAggregationService.detectNewModuleNeeds(
+      req.supabase,
+      id,
+    );
+    res.json(result);
   },
 );
 
@@ -195,19 +177,13 @@ router.get(
   "/:id/analysis/module-overlap",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    try {
-      const result = await conceptAggregationService.detectModuleOverlap(
-        req.supabase!,
-        id,
-      );
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "模块重叠分析失败";
-      throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const result = await conceptAggregationService.detectModuleOverlap(
+      req.supabase,
+      id,
+    );
+    res.json(result);
   },
 );
 
@@ -215,10 +191,10 @@ router.get(
   "/:id/research-progress",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     try {
-      const data = await graphCrudService.getResearchProgress(req.supabase!, id);
+      const data = await graphCrudService.getResearchProgress(req.supabase, id);
       res.json(data);
     } catch (error: unknown) {
       const message =
@@ -232,12 +208,12 @@ router.get(
   "/:id/literature",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const moduleFilter = req.query.module as string | undefined;
 
     try {
-      const data = await graphCrudService.getLiterature(req.supabase!, id, moduleFilter);
+      const data = await graphCrudService.getLiterature(req.supabase, id, moduleFilter);
       res.json(data);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "文献库获取失败";
@@ -250,7 +226,7 @@ router.get(
   "/:id",
   optionalAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id || null;
 
@@ -276,18 +252,18 @@ router.put(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateGraphSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { domains, ...updates } = req.body;
     const data = await graphService.updateGraph(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       updates,
     );
 
     if (domains) {
-      await graphDomainService.updateGraphDomains(req.supabase!, id, domains);
+      await graphDomainService.updateGraphDomains(req.supabase, id, domains);
     }
 
     res.json(data);
@@ -299,12 +275,12 @@ router.put(
   "/:id/share",
   requireAuth,
   validate({ params: uuidParamsSchema, body: shareGraphSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { is_public } = req.body;
 
     const data = await graphService.updateGraph(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       { is_public },
@@ -318,7 +294,7 @@ router.put(
   "/:id/favorite",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { is_favorite } = req.body;
 
@@ -331,7 +307,7 @@ router.put(
     }
 
     const data = await graphService.toggleFavorite(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       is_favorite,
@@ -348,12 +324,12 @@ router.put(
   "/:id/view-mode",
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateViewModeSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { viewMode } = req.body;
 
     const data = await graphCrudService.updateViewMode(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       viewMode,
@@ -367,9 +343,9 @@ router.delete(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    await graphService.deleteGraph(req.supabase!, id, req.user.id);
+    await graphService.deleteGraph(req.supabase, id, req.user.id);
 
     await cacheService.invalidateUserGraphsCache(req.user.id);
     await cacheService.invalidateGraphCache(req.user.id, id);
@@ -383,10 +359,10 @@ router.post(
   "/batch/restore",
   requireAuth,
   validate({ body: batchOperationSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { ids } = req.body;
     const result = await graphService.restoreGraphs(
-      req.supabase!,
+      req.supabase,
       ids,
       req.user.id,
     );
@@ -399,10 +375,10 @@ router.post(
   "/batch/delete",
   requireAuth,
   validate({ body: batchOperationSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { ids } = req.body;
     const result = await graphService.deleteGraphs(
-      req.supabase!,
+      req.supabase,
       ids,
       req.user.id,
     );
@@ -418,10 +394,10 @@ router.delete(
   "/batch/permanent",
   requireAuth,
   validate({ body: batchOperationSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { ids } = req.body;
     const result = await graphService.permanentDeleteGraphs(
-      req.supabase!,
+      req.supabase,
       ids,
       req.user.id,
     );
@@ -437,9 +413,9 @@ router.post(
   "/:id/restore",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    await graphService.restoreGraph(req.supabase!, id, req.user.id);
+    await graphService.restoreGraph(req.supabase, id, req.user.id);
     res.json({ message: "图谱已恢复" });
   },
 );
@@ -449,9 +425,9 @@ router.delete(
   "/:id/permanent",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    await graphService.permanentDeleteGraph(req.supabase!, id, req.user.id);
+    await graphService.permanentDeleteGraph(req.supabase, id, req.user.id);
     res.json({ message: "图谱已永久删除" });
   },
 );

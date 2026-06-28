@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -162,10 +162,10 @@ router.get(
   "/",
   requireAuth,
   validate({ query: listQuerySchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { status } = req.query;
     const data = await learningPathService.getLearningPaths(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       status as string | undefined,
     );
@@ -177,9 +177,9 @@ router.post(
   "/",
   requireAuth,
   validate({ body: createPathSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const data = await learningPathService.createLearningPath(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       req.body,
     );
@@ -191,10 +191,10 @@ router.get(
   "/progress/:graphId",
   requireAuth,
   validate({ params: graphIdParamSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const progress = await learningPathRouteService.getProgress(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       graphId,
     );
@@ -206,10 +206,10 @@ router.get(
   "/:id",
   requireAuth,
   validate({ params: uuidParamSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await learningPathService.getLearningPath(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
     );
@@ -226,10 +226,10 @@ router.put(
   "/:id",
   requireAuth,
   validate({ params: uuidParamSchema, body: updatePathSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await learningPathService.updateLearningPath(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       req.body,
@@ -242,12 +242,12 @@ router.delete(
   "/:id",
   requireAuth,
   validate({ params: uuidParamSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const hardDelete = req.query.hard === "true";
 
     await learningPathService.deleteLearningPath(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       hardDelete,
@@ -263,10 +263,10 @@ router.post(
   "/:id/nodes",
   requireAuth,
   validate({ params: uuidParamSchema, body: addNodeSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await learningPathService.addNodeToPath(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       req.body,
@@ -279,10 +279,10 @@ router.put(
   "/:id/nodes/:nodeId/status",
   requireAuth,
   validate({ params: nodeIdParamSchema, body: updateNodeStatusSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, nodeId } = req.params;
     const data = await learningPathService.updateNodeStatus(
-      req.supabase!,
+      req.supabase,
       id,
       nodeId,
       req.user.id,
@@ -296,12 +296,12 @@ router.put(
   "/:id/nodes/reorder",
   requireAuth,
   validate({ params: uuidParamSchema, body: reorderNodesSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { nodeOrders } = req.body;
 
     await learningPathService.reorderNodes(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       nodeOrders,
@@ -315,11 +315,11 @@ router.delete(
   "/:id/nodes/:nodeId",
   requireAuth,
   validate({ params: nodeIdParamSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, nodeId } = req.params;
 
     await learningPathService.removeNodeFromPath(
-      req.supabase!,
+      req.supabase,
       id,
       nodeId,
       req.user.id,
@@ -333,10 +333,10 @@ router.get(
   "/:id/progress",
   requireAuth,
   validate({ params: uuidParamSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await learningPathService.getPathProgress(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
     );
@@ -348,12 +348,12 @@ router.put(
   "/:id/progress",
   requireAuth,
   validate({ params: uuidParamSchema, body: updateProgressSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { node_id, ...input } = req.body;
 
     const data = await learningPathService.updateProgress(
-      req.supabase!,
+      req.supabase,
       id,
       node_id,
       req.user.id,
@@ -368,10 +368,10 @@ router.post(
   "/:id/plans",
   requireAuth,
   validate({ params: uuidParamSchema, body: createPlanSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await learningPathService.createDailyPlan(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       req.body,
@@ -384,12 +384,12 @@ router.get(
   "/:id/plans",
   requireAuth,
   validate({ params: uuidParamSchema, query: plansQuerySchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { start_date, end_date } = req.query;
 
     const data = await learningPathService.getDailyPlans(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       start_date as string | undefined,
@@ -404,11 +404,11 @@ router.get(
   "/:id/plans/:date",
   requireAuth,
   validate({ params: dateParamSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, date } = req.params;
 
     const data = await learningPathService.getDailyPlan(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       date,
@@ -426,11 +426,11 @@ router.put(
   "/:id/plans/:date",
   requireAuth,
   validate({ params: dateParamSchema, body: updatePlanSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, date } = req.params;
 
     const existingPlan = await learningPathService.getDailyPlan(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       date,
@@ -441,7 +441,7 @@ router.put(
     }
 
     const data = await learningPathService.updatePlanStatus(
-      req.supabase!,
+      req.supabase,
       existingPlan.id,
       req.user.id,
       req.body,
@@ -455,7 +455,7 @@ router.post(
   "/generate-preview",
   requireAuth,
   validate({ body: generatePreviewPathSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       graph_id,
       target_goal,
@@ -468,7 +468,7 @@ router.post(
     } = req.body;
 
     const learningPath = await learningPathRouteService.generatePath(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       {
         graph_id,
@@ -489,10 +489,10 @@ router.post(
   "/questions",
   requireAuth,
   validate({ body: getQuestionsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_id } = req.body;
     const result = await learningPathRouteService.generateQuestions(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       { graph_id },
     );
@@ -504,7 +504,7 @@ router.post(
   "/generate",
   requireAuth,
   validate({ body: generatePathSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       graph_id,
       target_goal,
@@ -520,7 +520,7 @@ router.post(
 
     try {
       const learningPath = await learningPathService.generateAndSavePath(
-        req.supabase!,
+        req.supabase,
         req.user.id,
         graph_id,
         {
@@ -558,10 +558,10 @@ router.post(
   "/:id/auto-schedule",
   requireAuth,
   validate({ body: autoScheduleSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { start_date, daily_minutes } = req.body;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await learningPathService.autoSchedulePath(

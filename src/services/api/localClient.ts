@@ -58,8 +58,11 @@ export async function localQuery<T = unknown>(request: IpcDbRequest): Promise<T 
   const available = await isLocalDbAvailable();
   if (!available) return null;
 
+  const electronAPI = window.electronAPI;
+  if (!electronAPI) return null;
+
   try {
-    const response = await window.electronAPI.db.query(request) as IpcDbResponse<T>;
+    const response = await electronAPI.db.query(request) as IpcDbResponse<T>;
     if (!response.success) {
       console.warn(`[LocalClient] IPC query failed: ${response.error}`);
       return null;
@@ -85,8 +88,11 @@ export async function localBatch<T = unknown>(operations: IpcDbRequest[]): Promi
   const available = await isLocalDbAvailable();
   if (!available) return null;
 
+  const electronAPI = window.electronAPI;
+  if (!electronAPI) return null;
+
   try {
-    const response = await window.electronAPI.db.batch(operations) as IpcDbResponse<T[]>;
+    const response = await electronAPI.db.batch(operations) as IpcDbResponse<T[]>;
     if (!response.success) {
       console.warn(`[LocalClient] IPC batch failed: ${response.error}`);
       return null;
@@ -107,7 +113,10 @@ export async function getLocalDbStatus(): Promise<DbStatus | null> {
     const available = await isLocalDbAvailable();
     if (!available) return null;
 
-    const response = await window.electronAPI.db.getStatus() as IpcDbResponse<DbStatus>;
+    const electronAPI = window.electronAPI;
+    if (!electronAPI) return null;
+
+    const response = await electronAPI.db.getStatus() as IpcDbResponse<DbStatus>;
     if (!response.success) return null;
     return response.data as DbStatus;
   } catch {

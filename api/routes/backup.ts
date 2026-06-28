@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { logger } from "../utils/logger";
 import {
   readBackupFile,
@@ -11,11 +11,11 @@ import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
-router.get("/export", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/export", requireAuth, async (req: AuthedRequest, res: Response) => {
   const userId = req.user.id;
 
   try {
-    const result = await backupService.exportAndRecord(req.supabase!, userId, "manual");
+    const result = await backupService.exportAndRecord(req.supabase, userId, "manual");
 
     const content = await fs.readFile(result.filePath, "utf-8");
 
@@ -35,11 +35,11 @@ router.get("/export", requireAuth, async (req: AuthRequest, res: Response) => {
 router.get(
   "/snapshots",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user.id;
 
     try {
-      const snapshots = await backupService.getSnapshots(req.supabase!, userId);
+      const snapshots = await backupService.getSnapshots(req.supabase, userId);
       res.json({ snapshots });
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -52,13 +52,13 @@ router.get(
 router.post(
   "/snapshots",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user.id;
     const { type = "manual" } = req.body;
 
     try {
       const result = await backupService.exportAndRecord(
-        req.supabase!,
+        req.supabase,
         userId,
         type as "auto_30min" | "auto_5hour" | "auto_1day" | "manual",
       );
@@ -83,12 +83,12 @@ router.post(
 router.delete(
   "/snapshots/:id",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user.id;
     const { id } = req.params;
 
     try {
-      await backupService.deleteSnapshot(req.supabase!, id, userId);
+      await backupService.deleteSnapshot(req.supabase, id, userId);
       res.json({ success: true, message: "快照已删除" });
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -104,13 +104,13 @@ router.delete(
 router.post(
   "/restore/:id",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user.id;
     const { id } = req.params;
 
     try {
       const snapshot = await backupService.getSnapshot(
-        req.supabase!,
+        req.supabase,
         id,
         userId,
       );
@@ -121,7 +121,7 @@ router.post(
       const backupData = await readBackupFile(snapshot.file_path);
 
       const { stats } = await backupService.importBackup(
-        req.supabase!,
+        req.supabase,
         userId,
         backupData.data,
         "replace",
@@ -140,7 +140,7 @@ router.post(
   },
 );
 
-router.post("/import", requireAuth, async (req: AuthRequest, res: Response) => {
+router.post("/import", requireAuth, async (req: AuthedRequest, res: Response) => {
   const userId = req.user.id;
   const backupData = req.body;
   const mode = req.query.mode || "merge";
@@ -151,7 +151,7 @@ router.post("/import", requireAuth, async (req: AuthRequest, res: Response) => {
 
   try {
     const { stats, mode: appliedMode } = await backupService.importBackup(
-      req.supabase!,
+      req.supabase,
       userId,
       backupData.data,
       mode as string,

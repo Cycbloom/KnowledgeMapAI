@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { subtaskQuizIntegrationService } from "../../services/scheduler";
@@ -27,11 +27,11 @@ router.post(
   "/",
   requireAuth,
   validate({ body: startQuizSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { subtask_id, knowledge_point_id } = req.body;
     try {
       const session = await subtaskQuizIntegrationService.startQuizSession(
-        req.supabase!,
+        req.supabase,
         subtask_id,
         knowledge_point_id,
       );
@@ -49,12 +49,12 @@ router.post(
   "/:id/complete",
   requireAuth,
   validate({ body: completeQuizSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { results } = req.body;
     const subtaskId = req.params.id;
     try {
       const completionResult = await subtaskQuizIntegrationService.completeQuiz(
-        req.supabase!,
+        req.supabase,
         subtaskId,
         results,
       );

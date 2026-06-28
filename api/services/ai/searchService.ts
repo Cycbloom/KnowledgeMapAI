@@ -34,6 +34,27 @@ export interface SemanticSearchResult {
   answer: string;
 }
 
+interface GraphNodeSearchRow {
+  knowledge_point_id: string;
+  graph_id: string;
+  knowledge_graphs?: { title: string } | { title: string }[] | null;
+}
+
+interface SemanticKpRow {
+  id: string;
+  title: string;
+  content?: string;
+  summary?: string;
+  similarity?: number;
+}
+
+interface SemanticGraphRow {
+  id: string;
+  title: string;
+  description?: string;
+  similarity?: number;
+}
+
 export class SearchService {
   private escapePattern(pattern: string): string {
     return pattern.replace(/[%_\\]/g, "\\$&");
@@ -94,17 +115,19 @@ export class SearchService {
         (knowledgePointsResult.data || []).map((kp) => [kp.id, kp])
       );
 
-      nodes = (graphNodes || []).map((gn: any) => {
+      nodes = ((graphNodes ?? []) as unknown as GraphNodeSearchRow[]).map((gn) => {
         const kp = kpMap.get(gn.knowledge_point_id);
+        const kgRaw = gn.knowledge_graphs;
+        const knowledgeGraphs = Array.isArray(kgRaw) ? kgRaw[0] : kgRaw;
         return {
           id: kp?.id || gn.knowledge_point_id,
           title: kp?.title || "",
           content: kp?.content || "",
           graph_id: gn.graph_id,
-          knowledge_graphs: gn.knowledge_graphs,
+          knowledge_graphs: knowledgeGraphs ?? undefined,
           updated_at: kp?.updated_at,
         };
-      });
+      }) as SearchNodeResult[];
     }
 
     return {
@@ -158,7 +181,8 @@ export class SearchService {
     let graphs: SearchGraphResult[] = [];
 
     if (semanticKPs.data && semanticKPs.data.length > 0) {
-      const kpIds = semanticKPs.data.map((kp: any) => kp.id);
+      const kpRows = semanticKPs.data as SemanticKpRow[];
+      const kpIds = kpRows.map((kp) => kp.id);
 
       const { data: graphNodes } = await supabase
         .from("graph_nodes")
@@ -175,31 +199,33 @@ export class SearchService {
         .is("deleted_at", null);
 
       const gnMap = new Map(
-        (graphNodes || []).map((gn: any) => [gn.knowledge_point_id, gn])
+        ((graphNodes ?? []) as unknown as GraphNodeSearchRow[]).map((gn) => [gn.knowledge_point_id, gn])
       );
 
-      nodes = semanticKPs.data
-        .filter((kp: any) => gnMap.has(kp.id))
-        .map((kp: any) => {
+      nodes = kpRows
+        .filter((kp) => gnMap.has(kp.id))
+        .map((kp) => {
           const gn = gnMap.get(kp.id);
+          const kgRaw = gn?.knowledge_graphs;
+          const kgTitle = Array.isArray(kgRaw) ? kgRaw[0]?.title : kgRaw?.title;
           return {
             id: kp.id,
             knowledge_point_id: kp.id,
             title: kp.title,
             content: kp.content,
             summary: kp.summary || "",
-            graph_id: gn.graph_id,
-            graph_title: gn.knowledge_graphs?.title || "",
+            graph_id: gn?.graph_id ?? "",
+            graph_title: kgTitle || "",
             similarity: kp.similarity,
           };
-        });
+        }) as SearchNodeResult[];
     }
 
     if (semanticGraphs.data && semanticGraphs.data.length > 0) {
-      graphs = semanticGraphs.data.map((g: any) => ({
+      graphs = (semanticGraphs.data as unknown as SemanticGraphRow[]).map((g) => ({
         id: g.id,
         title: g.title,
-        description: g.description,
+        description: g.description ?? null,
         updated_at: "",
         similarity: g.similarity,
       }));

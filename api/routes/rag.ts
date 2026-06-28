@@ -1,5 +1,5 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 import { ragService } from '../services/ai';
@@ -42,7 +42,7 @@ const analyzeGapsSchema = z.object({
   graph_id: z.string().uuid('无效的图谱ID'),
 });
 
-router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
+router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthedRequest, res: Response) => {
   const { message, graph_id, current_node_id, history, provider, model, language, session_id, use_graph_context, graph_hops, search_mode } = req.body;
   const sessionId = session_id || crypto.randomUUID();
 
@@ -62,7 +62,7 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
     });
     const duration = Date.now() - startTime;
 
-    const enrichedMetadata = await enrichMetadata(req.supabase!, {
+    const enrichedMetadata = await enrichMetadata(req.supabase, {
       graphId: graph_id,
       userId: req.user.id,
       topic: message?.slice(0, 50),
@@ -89,7 +89,7 @@ router.post('/chat', requireAuth, validate(ragChatSchema), async (req: AuthReque
   }
 });
 
-router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: AuthRequest, res: Response) => {
+router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: AuthedRequest, res: Response) => {
   const { message, graph_id, current_node_id, history, provider, model, language, session_id, use_graph_context, graph_hops, search_mode } = req.body;
   const sessionId = session_id || crypto.randomUUID();
 
@@ -121,7 +121,7 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
     );
     const duration = Date.now() - startTime;
 
-    const enrichedMetadata = await enrichMetadata(req.supabase!, {
+    const enrichedMetadata = await enrichMetadata(req.supabase, {
       graphId: graph_id,
       userId: req.user.id,
       topic: message?.slice(0, 50),
@@ -151,7 +151,7 @@ router.post('/chat/stream', requireAuth, validate(ragChatSchema), async (req: Au
   }
 });
 
-router.post('/search', requireAuth, validate(ragSearchSchema), async (req: AuthRequest, res: Response) => {
+router.post('/search', requireAuth, validate(ragSearchSchema), async (req: AuthedRequest, res: Response) => {
   const { query, graph_id, match_threshold, match_count, use_graph_context, graph_hops, search_mode } = req.body;
 
   try {
@@ -171,7 +171,7 @@ router.post('/search', requireAuth, validate(ragSearchSchema), async (req: AuthR
   }
 });
 
-router.post('/analyze-gaps', requireAuth, validate(analyzeGapsSchema), async (req: AuthRequest, res: Response) => {
+router.post('/analyze-gaps', requireAuth, validate(analyzeGapsSchema), async (req: AuthedRequest, res: Response) => {
   const { graph_id } = req.body;
 
   try {

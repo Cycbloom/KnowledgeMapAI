@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthRequest, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import {
   generateContentSchema,
@@ -39,7 +39,7 @@ router.post(
   "/annotate-terms",
   requireAuth,
   validate(annotateTermsSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { content, graph_id } = req.body;
     const provider = await getAIProviderForTask("text");
 
@@ -53,7 +53,7 @@ router.post(
 
     try {
       const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase!,
+        req.supabase,
         "annotate_terms",
         { nodeContent: content },
         req.user.id,
@@ -68,7 +68,7 @@ router.post(
 内容：
 ${content}`;
 
-      const enrichedMetadata = await enrichMetadata(req.supabase!, {
+      const enrichedMetadata = await enrichMetadata(req.supabase, {
         graphId: graph_id,
         userId: req.user.id,
         topic: content?.slice(0, 50),
@@ -130,7 +130,7 @@ router.post(
   "/podcast/script",
   requireAuth,
   validate(podcastScriptSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { context, language } = req.body;
 
     try {
@@ -148,7 +148,7 @@ router.post(
   "/generate-content",
   requireAuth,
   validate(generateContentSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       topic,
       context,
@@ -170,7 +170,7 @@ router.post(
       const templateContext = annotationService.buildTemplateContext(topic, context, level);
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase!,
+        req.supabase,
         "generate_content",
         templateContext,
         req.user.id,
@@ -178,7 +178,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(req.supabase!, {
+      const enrichedMetadata = await enrichMetadata(req.supabase, {
         graphId: graph_id,
         userId: req.user.id,
         topic,
@@ -235,7 +235,7 @@ router.post(
   "/learning-material",
   requireAuth,
   validate(generateLearningMaterialSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { topic, context, level, provider, model, graph_id, language } =
       req.body;
 
@@ -261,7 +261,7 @@ router.post(
   "/generate-content-stream",
   requireAuth,
   validate(generateContentSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       topic,
       context,
@@ -297,7 +297,7 @@ router.post(
       const templateContext = annotationService.buildTemplateContext(topic, context, level);
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase!,
+        req.supabase,
         "generate_content",
         templateContext,
         req.user.id,
@@ -305,7 +305,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(req.supabase!, {
+      const enrichedMetadata = await enrichMetadata(req.supabase, {
         graphId: graph_id,
         userId: req.user.id,
         topic,

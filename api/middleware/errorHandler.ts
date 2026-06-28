@@ -198,23 +198,30 @@ const buildErrorResponse = (
   return { response, status: statusCode };
 };
 
-export const errorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
+export const errorHandler = (err: unknown, req: Request, res: Response, _next: NextFunction) => {
   const requestId = req.requestId || 'unknown';
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   const sanitizedBody = sanitizeBody(req.body);
-  
+
+  const errCode = (err as { code?: string })?.code;
+  const errStatusCode = (err as { statusCode?: number })?.statusCode
+                    ?? (err as { status?: number })?.status
+                    ?? 500;
+  const errMsg = (err as { message?: string })?.message ?? '内部服务器错误';
+  const errStack = (err as { stack?: string })?.stack;
+
   logger.errorWithRequest('Error occurred', err, {
     requestId,
     userId,
     path: req.originalUrl,
     method: req.method,
   }, {
-    code: err.code,
-    statusCode: err.statusCode || err.status || 500,
+    code: errCode,
+    statusCode: errStatusCode,
     body: sanitizedBody,
   });
 
-  if (err.code === '23505') {
+  if (errCode === '23505') {
     const { response, status } = buildErrorResponse(
       req,
       ErrorCodes.DATABASE_DUPLICATE_ENTRY,
@@ -224,7 +231,7 @@ export const errorHandler = (err: any, req: Request, res: Response, _next: NextF
     return res.status(status).json(response);
   }
 
-  if (err.code === '23503') {
+  if (errCode === '23503') {
     const { response, status } = buildErrorResponse(
       req,
       ErrorCodes.DATABASE_FOREIGN_KEY_VIOLATION,
@@ -255,21 +262,20 @@ export const errorHandler = (err: any, req: Request, res: Response, _next: NextF
     return res.status(status).json(response);
   }
 
-  const status = err.status || err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' && status === 500
+  const message = process.env.NODE_ENV === 'production' && errStatusCode === 500
     ? 'Internal Server Error'
-    : err.message || '内部服务器错误';
-  
+    : errMsg;
+
   const { response, status: responseStatus } = buildErrorResponse(
     req,
     ErrorCodes.SYSTEM_INTERNAL_ERROR,
     message,
-    status
+    errStatusCode
   );
 
   if (process.env.NODE_ENV === 'development') {
-    response.stack = err.stack;
+    response.stack = errStack;
   }
-  
+
   return res.status(responseStatus).json(response);
 };

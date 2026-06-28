@@ -53,6 +53,15 @@ export const shareGraphSchema = z.object({
   is_public: z.boolean({ required_error: "必须指定是否公开" }),
 });
 
+export const checkTopicSchema = z.object({
+  topic: z.string().min(2).max(200),
+  exclude_graph_id: z.string().uuid().optional(),
+});
+
+export const batchOperationSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(50),
+});
+
 // --- Node Schemas ---
 export const createNodeSchema = z.object({
   id: z.string().uuid().optional(),
@@ -103,6 +112,66 @@ export const createEdgeSchema = z.object({
 
 export const updateEdgeSchema = z.object({
   relationship_type: z.string().optional(),
+});
+
+// --- Knowledge Point Schemas ---
+export const createKnowledgePointSchema = z.object({
+  body: z.object({
+    title: z.string().min(1).max(255),
+    content: z.string().optional(),
+    summary: z.string().max(200).optional(),
+    learning_material: z.string().optional(),
+    properties: z.record(z.unknown()).optional(),
+    visibility: z
+      .enum(["private", "public", "pending"])
+      .optional()
+      .default("private"),
+  }),
+});
+
+export const updateKnowledgePointSchema = z.object({
+  body: z.object({
+    title: z.string().min(1).max(255).optional(),
+    content: z.string().optional(),
+    summary: z.string().max(200).optional(),
+    learning_material: z.string().optional(),
+    properties: z.record(z.unknown()).optional(),
+    visibility: z.enum(["private", "public", "pending"]).optional(),
+  }),
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+});
+
+export const searchSimilarSchema = z.object({
+  body: z.object({
+    query: z.string().min(1),
+    threshold: z.number().min(0).max(1).optional().default(0.8),
+    limit: z.number().min(1).max(20).optional().default(5),
+  }),
+});
+
+export const submitPublicSchema = z.object({
+  body: z.object({
+    knowledge_point_id: z.string().uuid(),
+    suggested_changes: z
+      .object({
+        title: z.string().min(1).max(255).optional(),
+        content: z.string().optional(),
+        summary: z.string().max(200).optional(),
+        learning_material: z.string().optional(),
+      })
+      .optional(),
+  }),
+});
+
+export const rejectSuggestionSchema = z.object({
+  body: z.object({
+    reason: z.string().min(1),
+  }),
+  params: z.object({
+    id: z.string().uuid(),
+  }),
 });
 
 // --- Study Schemas ---

@@ -1838,7 +1838,7 @@ export async function getUserAccessibleGraphs(
     (graph, index, self) => index === self.findIndex((g) => g.id === graph.id),
   );
 
-  return uniqueGraphs as GraphWithCollaborators[];
+  return uniqueGraphs as unknown as GraphWithCollaborators[];
 }
 
 export async function getGraphWithUserRole(

@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { relationshipService } from "../../services/story";
@@ -16,9 +16,9 @@ const createRelationshipSchema = z.object({
 const router = Router();
 
 // GET / - List relationships for a graph
-router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graphId } = req.params;
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
 
   const relationships = await relationshipService.list(supabase, graphId);
 
@@ -30,9 +30,9 @@ router.post(
   "/",
   requireAuth,
   validate(createRelationshipSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const {
       source_character_id,
@@ -60,9 +60,9 @@ router.post(
 router.delete(
   "/:id",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, id } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     await relationshipService.delete(supabase, graphId, id);
 

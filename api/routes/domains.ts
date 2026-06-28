@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
 import {
   requireAuth,
-  type AuthRequest,
+  type AuthedRequest,
 } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { z } from "zod";
@@ -50,8 +50,8 @@ const reorderSchema = z.object({
 
 const router = Router();
 
-router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+router.get("/", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const supabase = req.supabase;
   const userId = req.user.id;
 
   const tree = await domainService.listDomainsTree(supabase, userId);
@@ -62,8 +62,8 @@ router.get(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase!;
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
     const { id } = req.params;
     const userId = req.user.id;
 
@@ -76,8 +76,8 @@ router.post(
   "/",
   requireAuth,
   validate({ body: createDomainSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase!;
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
     const userId = req.user.id;
 
     const result = await domainService.createDomain(supabase, userId, req.body);
@@ -89,8 +89,8 @@ router.put(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateDomainSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase!;
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
     const { id } = req.params;
     const userId = req.user.id;
 
@@ -103,8 +103,8 @@ router.delete(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase!;
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
     const { id } = req.params;
     const userId = req.user.id;
 
@@ -116,9 +116,9 @@ router.delete(
 router.get(
   "/ensure-uncategorized",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase!;
-    const userId = req.user!.id;
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
+    const userId = req.user.id;
 
     const id = await domainService.ensureUncategorizedDomain(supabase, userId);
     res.json({ id, name: "未分类" });
@@ -129,7 +129,7 @@ router.post(
   "/generate-color",
   requireAuth,
   validate({ body: generateColorSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { name, description } = req.body;
 
     const result = await domainService.generateColor(name, description);
@@ -141,8 +141,8 @@ router.post(
   "/recommend",
   requireAuth,
   validate({ body: recommendDomainsSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase!;
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
     const userId = req.user.id;
     const { title, description } = req.body;
 
@@ -155,8 +155,8 @@ router.put(
   "/reorder",
   requireAuth,
   validate({ body: reorderSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase!;
+  async (req: AuthedRequest, res: Response) => {
+    const supabase = req.supabase;
     const userId = req.user.id;
     const { reorder_items } = req.body;
 

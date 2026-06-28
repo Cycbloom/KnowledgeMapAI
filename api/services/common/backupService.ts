@@ -223,7 +223,7 @@ export async function createBackup(
       supabase.from('graph_backbone_modules').select('*').in('graph_id', graphIds),
     ]);
     
-    const graphNodes = (graphNodesResult.data as GraphNodeWithKnowledgePoint[] | null) || [];
+    const graphNodes = (graphNodesResult.data as unknown as GraphNodeWithKnowledgePoint[] | null) || [];
     nodes = graphNodes.map((gn) => ({
       id: gn.knowledge_points?.id || gn.knowledge_point_id,
       graph_id: gn.graph_id,

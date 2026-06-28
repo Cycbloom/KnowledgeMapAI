@@ -1,5 +1,5 @@
 import { message } from './messageHelper';
-import { isNetworkError } from './errors';
+import { wrapUnknownError, getUserFriendlyMessage } from './errors';
 
 export interface AsyncOperationOptions<T = unknown> {
   loadingSetter?: (loading: boolean) => void;
@@ -26,13 +26,11 @@ export function createAsyncHandler() {
       if (onSuccess) onSuccess(result);
       return result;
     } catch (err) {
-      const error = err as Error;
-      const msg = isNetworkError(error) 
-        ? '网络连接失败，请检查网络' 
-        : (errorMessage || error.message || '操作失败');
+      const appError = wrapUnknownError(err);
+      const msg = errorMessage || getUserFriendlyMessage(appError);
       message.error(msg);
-      console.error(err);
-      if (onError) onError(error);
+      console.error(appError);
+      if (onError) onError(appError);
       return null;
     } finally {
       if (loadingSetter) loadingSetter(false);

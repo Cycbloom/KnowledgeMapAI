@@ -1,14 +1,32 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { getSupabaseAdmin, getSupabaseAnon, createClientWithToken } from '../supabase';
-import { type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient, type User } from '@supabase/supabase-js';
 import { AppError } from './errorHandler';
 import { ErrorCodes, type ErrorCode } from '../../shared/types/errorCodes';
 import { cacheService } from '../services/common/cacheService';
+import { jwtService } from '../services/auth/jwtService';
 
-export interface AuthRequest extends Request {
-  user?: any;
-  supabase?: SupabaseClient;
+export type AuthRequest = Request;
+
+export interface AuthedRequest extends Request {
+  user: User;
+  supabase: SupabaseClient;
 }
+
+/**
+ * OptionalAuthRequest: 用于 optionalAuth 路由的请求类型。
+ *
+ * 与 AuthedRequest 不同，OptionalAuthRequest 显式声明 user 和 supabase 为可选，
+ * 反映未认证场景下的真实运行时状态。受 optionalAuth 保护的路由 handler 必须使用
+ * req.user?.id / req.supabase! 形式进行防御性访问。
+ *
+ * 由于 Request 全局声明将 user/supabase 设为非可选（以避免 requireAuth 路由的
+ * 海量类型修正），OptionalAuthRequest 通过 Omit + 交集重新声明这两个字段为可选。
+ */
+export type OptionalAuthRequest = Omit<Request, 'user' | 'supabase'> & {
+  user?: User;
+  supabase?: SupabaseClient;
+};
 
 interface TokenError {
   message: string;
@@ -68,6 +86,40 @@ export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFu
     throw new AppError('Token missing', 401, ErrorCodes.AUTH_TOKEN_MISSING);
   }
 
+  // Step 1: 尝试本地 JWT 验证（无网络开销）
+  const localPayload = jwtService.verifySupabaseToken(token);
+
+  if (localPayload) {
+    // Step 2: 命中缓存则复用 user
+    const cacheKey = `auth:user:${localPayload.sub}`;
+    const cached = await cacheService.get<User>(cacheKey);
+
+    if (cached) {
+      req.user = cached;
+      req.supabase = createClientWithToken(token);
+      return next();
+    }
+
+    // Step 3: 缓存未命中，远程验证用户仍存在
+    const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
+
+    if (error) {
+      const tokenError = parseTokenError(error);
+      throw new AppError(tokenError.message, tokenError.status, tokenError.code);
+    }
+
+    if (!user) {
+      throw new AppError('User not found', 401, ErrorCodes.AUTH_TOKEN_INVALID);
+    }
+
+    // 写缓存，TTL 5 分钟
+    await cacheService.set(cacheKey, user, 300);
+    req.user = user;
+    req.supabase = createClientWithToken(token);
+    return next();
+  }
+
+  // 本地验证失败（密钥未配置或签名错误），回退到远程验证
   const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
 
   if (error) {
@@ -81,7 +133,7 @@ export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFu
 
   req.user = user;
   req.supabase = createClientWithToken(token);
-  
+
   next();
 };
 
@@ -107,18 +159,46 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
   }
 
   try {
-    const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
+    // Step 1: 尝试本地 JWT 验证（无网络开销）
+    const localPayload = jwtService.verifySupabaseToken(token);
 
-    if (!error && user) {
-      req.user = user;
-      req.supabase = createClientWithToken(token);
+    if (localPayload) {
+      // Step 2: 命中缓存则复用 user
+      const cacheKey = `auth:user:${localPayload.sub}`;
+      const cached = await cacheService.get<User>(cacheKey);
+
+      if (cached) {
+        req.user = cached;
+        req.supabase = createClientWithToken(token);
+        return next();
+      }
+
+      // Step 3: 缓存未命中，远程验证
+      const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
+
+      if (!error && user) {
+        // 写缓存，TTL 5 分钟
+        await cacheService.set(cacheKey, user, 300);
+        req.user = user;
+        req.supabase = createClientWithToken(token);
+      } else {
+        req.supabase = getSupabaseAnon();
+      }
     } else {
-      req.supabase = getSupabaseAnon();
+      // 本地验证失败（密钥未配置或签名错误），回退到远程验证
+      const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
+
+      if (!error && user) {
+        req.user = user;
+        req.supabase = createClientWithToken(token);
+      } else {
+        req.supabase = getSupabaseAnon();
+      }
     }
   } catch {
     req.supabase = getSupabaseAnon();
   }
-  
+
   next();
 };
 

@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import {
   createCardSchema,
@@ -27,12 +27,12 @@ interface CardBatchItem {
   options?: string[];
 }
 
-router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/stats", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graph_id } = req.query;
 
   try {
     const stats = await studyService.getStudyStats(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       graph_id as string | undefined,
     );
@@ -86,7 +86,7 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res: Response) => {
  *       200:
  *         description: List of study cards
  */
-router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/cards", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graphId, knowledgePointId, knowledgePointIds, dueOnly, refresh } =
     StudyRouteService.parseCardQueryParams(req.query as Record<string, unknown>);
 
@@ -95,7 +95,7 @@ router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    const cards = await studyService.getCards(req.supabase!, {
+    const cards = await studyService.getCards(req.supabase, {
       userId: req.user.id,
       graphId,
       knowledgePointId,
@@ -155,7 +155,7 @@ router.post(
   "/cards",
   requireAuth,
   validate(createCardSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       knowledge_point_id,
       question,
@@ -167,7 +167,7 @@ router.post(
 
     try {
       const card = await studyRouteService.createCardWithGraphNode(
-        req.supabase!,
+        req.supabase,
         req.user.id,
         {
           knowledge_point_id,
@@ -239,13 +239,13 @@ router.post(
   "/cards/batch",
   requireAuth,
   validate(createCardsBatchSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { cards } = req.body;
     const typedCards = cards as CardBatchItem[];
 
     try {
       const createdCards = await studyRouteService.createCardsBatchWithGraphNodes(
-        req.supabase!,
+        req.supabase,
         req.user.id,
         typedCards,
       );
@@ -298,13 +298,13 @@ router.put(
   "/cards/:id/progress",
   requireAuth,
   validate(updateCardProgressSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { quality } = req.body;
 
     try {
       const result = await studyService.updateProgress(
-        req.supabase!,
+        req.supabase,
         id,
         quality,
         req.user.id,
@@ -346,11 +346,11 @@ router.put(
 router.get(
   "/progress",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_id } = req.query;
 
     const data = await studyRouteService.getProgress(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       graph_id as string,
     );
@@ -359,10 +359,10 @@ router.get(
   },
 );
 
-router.get("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/fsrs-parameters", requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const params = await fsrsParameterService.getParameters(
-      req.supabase!,
+      req.supabase,
       req.user.id,
     );
     res.json(params);
@@ -377,7 +377,7 @@ router.get("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Respon
   }
 });
 
-router.put("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Response) => {
+router.put("/fsrs-parameters", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { w } = req.body as { w: number[] };
 
   if (!Array.isArray(w) || w.length === 0) {
@@ -386,7 +386,7 @@ router.put("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Respon
 
   try {
     const params = await fsrsParameterService.setParameters(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       w,
     );
@@ -402,10 +402,10 @@ router.put("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Respon
   }
 });
 
-router.delete("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Response) => {
+router.delete("/fsrs-parameters", requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     await fsrsParameterService.resetParameters(
-      req.supabase!,
+      req.supabase,
       req.user.id,
     );
     res.json({ success: true, message: "已重置为默认参数" });
@@ -420,10 +420,10 @@ router.delete("/fsrs-parameters", requireAuth, async (req: AuthRequest, res: Res
   }
 });
 
-router.post("/fsrs-parameters/optimize", requireAuth, async (req: AuthRequest, res: Response) => {
+router.post("/fsrs-parameters/optimize", requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const result = await fsrsParameterService.optimizeParameters(
-      req.supabase!,
+      req.supabase,
       req.user.id,
     );
     res.json(result);
@@ -438,12 +438,12 @@ router.post("/fsrs-parameters/optimize", requireAuth, async (req: AuthRequest, r
   }
 });
 
-router.get("/semantic-groups", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/semantic-groups", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graph_id } = req.query;
 
   try {
     // Get due cards for the user
-    let query = req.supabase!
+    let query = req.supabase
       .from("study_cards")
       .select("knowledge_point_id")
       .eq("user_id", req.user.id);
@@ -468,8 +468,8 @@ router.get("/semantic-groups", requireAuth, async (req: AuthRequest, res: Respon
     }
 
     const [groups, interferencePairs] = await Promise.all([
-      semanticInterferenceService.getSemanticGroups(req.supabase!, kpIds),
-      semanticInterferenceService.detectInterferencePairs(req.supabase!, kpIds),
+      semanticInterferenceService.getSemanticGroups(req.supabase, kpIds),
+      semanticInterferenceService.detectInterferencePairs(req.supabase, kpIds),
     ]);
 
     res.json({ groups, interference_pairs: interferencePairs });

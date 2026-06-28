@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -149,7 +149,7 @@ router.post(
   "/init",
   requireAuth,
   validate(initGraphSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       topic,
       style,
@@ -293,7 +293,7 @@ router.post(
   "/expand",
   requireAuth,
   validate(expandNodeSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       node_id,
       node_title,
@@ -308,7 +308,7 @@ router.post(
       language,
       session_id,
     } = req.body;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await autoGraphService.expandNode(supabase, {
@@ -345,9 +345,9 @@ router.post(
   "/optimize-prompt",
   requireAuth,
   validate(optimizePromptSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { topic, currentPrompt } = req.body;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
     const provider = await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
@@ -428,12 +428,12 @@ router.post(
   "/save-nodes",
   requireAuth,
   validate(saveNodesSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_id, nodes } = req.body;
 
     try {
       const existingGraphNodes = await graphNodeService.getGraphNodes(
-        req.supabase!,
+        req.supabase,
         graph_id,
       );
 
@@ -449,7 +449,7 @@ router.post(
       }
 
       const result = await autoGraphService.processAINodes(
-        req.supabase!,
+        req.supabase,
         req.user.id,
         graph_id,
         nodesWithTempId,
@@ -488,12 +488,12 @@ router.post(
   },
 );
 
-router.post("/generate-embeddings", async (req: AuthRequest, res) => {
+router.post("/generate-embeddings", async (req: AuthedRequest, res) => {
   try {
     const { limit = 100 } = req.body || {};
 
     const result = await embeddingService.generateEmbeddingsBatch(
-      req.supabase!,
+      req.supabase,
       Math.min(limit, 500),
     );
 
@@ -512,12 +512,12 @@ router.post("/generate-embeddings", async (req: AuthRequest, res) => {
   }
 });
 
-router.get("/embedding-status", async (req: AuthRequest, res) => {
+router.get("/embedding-status", async (req: AuthedRequest, res) => {
   try {
     const status = embeddingService.getStatus();
 
     const embeddingStatus = await autoGraphRouteService.getEmbeddingStatus(
-      req.supabase!,
+      req.supabase,
     );
 
     res.json({
@@ -539,7 +539,7 @@ router.post(
   "/generate-templates",
   requireAuth,
   validate(generateTemplatesSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       topic,
       context,
@@ -603,7 +603,7 @@ router.post(
   "/apply-template",
   requireAuth,
   validate(applyTemplateSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       template,
       templateId,
@@ -615,7 +615,7 @@ router.post(
       model,
     } = req.body;
 
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       logger.info("Applying template", {

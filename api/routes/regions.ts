@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
 import {
   requireAuth,
-  type AuthRequest,
+  type AuthedRequest,
 } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { regionService } from "../services/graph";
@@ -34,9 +34,9 @@ router.get(
   "/",
   requireAuth,
   validate({ params: graphIdParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
-    const regions = await regionService.list(req.supabase!, req.user.id, graphId);
+    const regions = await regionService.list(req.supabase, req.user.id, graphId);
     res.json({ regions });
   },
 );
@@ -45,10 +45,10 @@ router.post(
   "/",
   requireAuth,
   validate({ params: graphIdParamsSchema, body: createRegionSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { name, color, nodeIds } = req.body;
-    const region = await regionService.create(req.supabase!, req.user.id, graphId, { name, color, nodeIds });
+    const region = await regionService.create(req.supabase, req.user.id, graphId, { name, color, nodeIds });
     res.status(201).json(region);
   },
 );
@@ -57,10 +57,10 @@ router.patch(
   "/:regionId",
   requireAuth,
   validate({ params: regionIdParamsSchema, body: updateRegionSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, regionId } = req.params;
     const updates = req.body;
-    const region = await regionService.update(req.supabase!, req.user.id, graphId, regionId, updates);
+    const region = await regionService.update(req.supabase, req.user.id, graphId, regionId, updates);
     res.json(region);
   },
 );
@@ -69,9 +69,9 @@ router.delete(
   "/:regionId",
   requireAuth,
   validate({ params: regionIdParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, regionId } = req.params;
-    await regionService.delete(req.supabase!, req.user.id, graphId, regionId);
+    await regionService.delete(req.supabase, req.user.id, graphId, regionId);
     res.json({ success: true, message: "区域已删除" });
   },
 );

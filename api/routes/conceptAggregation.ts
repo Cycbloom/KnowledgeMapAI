@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
 import {
   requireAuth,
-  type AuthRequest,
+  type AuthedRequest,
 } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
@@ -63,10 +63,10 @@ router.post(
   "/:graphId/concept-aggregation/analyze",
   requireAuth,
   validate(analyzeSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { similarityThreshold, hierarchyThreshold } = req.body || {};
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       logger.info("Starting concept aggregation analysis", {
@@ -136,7 +136,7 @@ router.post(
 router.get(
   "/:graphId/concept-aggregation/results",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { jobId } = req.query;
 
@@ -159,7 +159,7 @@ router.get(
         setTimeout(async () => {
           try {
             const result: AnalysisResult =
-              await conceptAnalysisService.analyzeConcepts(req.supabase!, {
+              await conceptAnalysisService.analyzeConcepts(req.supabase, {
                 graphId,
                 onProgress: (progress) => {
                   res.write(
@@ -197,7 +197,7 @@ router.get(
       });
 
       const result: AnalysisResult =
-        await conceptAnalysisService.analyzeConcepts(req.supabase!, {
+        await conceptAnalysisService.analyzeConcepts(req.supabase, {
           graphId,
         });
 
@@ -232,7 +232,7 @@ router.post(
   "/:graphId/concept-aggregation/merge",
   requireAuth,
   validate(mergeSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { groups } = req.body;
 
@@ -248,7 +248,7 @@ router.post(
       });
 
       const result = await conceptAggregationService.batchMerge(
-        req.supabase!,
+        req.supabase,
         graphId,
         groups,
         req.user.id,
@@ -282,7 +282,7 @@ router.post(
   "/:graphId/concept-aggregation/hierarchy",
   requireAuth,
   validate(hierarchySchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { relations } = req.body;
 
@@ -294,7 +294,7 @@ router.post(
       });
 
       const result = await conceptAggregationService.batchUpdateHierarchy(
-        req.supabase!,
+        req.supabase,
         graphId,
         req.user.id,
         relations,

@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthRequest, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { z } from "zod";
 import { AgentService, SKILLS, agentRouteService } from "../services/agent";
@@ -59,7 +59,7 @@ router.post(
   "/sessions",
   requireAuth,
   validate({ body: createSessionSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
@@ -67,7 +67,7 @@ router.post(
 
     const { skill_id, graph_ids, custom_prompt } = req.body;
 
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     const session = await agentService.createSession(userId, {
       skillId: skill_id,
       graphIds: graph_ids,
@@ -87,13 +87,13 @@ router.post(
 router.get(
   "/sessions",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
 
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     const sessions = await agentService.getSessionsByUserId(userId);
     res.json({ sessions });
   },
@@ -102,9 +102,9 @@ router.get(
 router.get(
   "/sessions/:id",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     const session = await agentService.getSession(id);
 
     if (!session) {
@@ -118,9 +118,9 @@ router.get(
 router.delete(
   "/sessions/:id",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     await agentService.deleteSession(id);
     res.json({ success: true });
   },
@@ -130,7 +130,7 @@ router.post(
   "/sessions/:id/execute",
   requireAuth,
   validate({ body: executeSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
@@ -146,7 +146,7 @@ router.post(
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
 
     try {
       await agentService.executeSession(id, userId, res, custom_prompt);
@@ -167,7 +167,7 @@ router.post(
 router.post(
   "/sessions/:id/resume",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
@@ -182,7 +182,7 @@ router.post(
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
 
     try {
       await agentService.resumeSession(id, userId, res);
@@ -203,7 +203,7 @@ router.post(
   "/sessions/:id/autonomous",
   requireAuth,
   validate({ body: autonomousSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
@@ -212,7 +212,7 @@ router.post(
     const { id } = req.params;
     const { goal } = req.body;
 
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
 
     try {
       const result = await agentService.executeWithAutonomy(id, userId, goal);
@@ -247,7 +247,7 @@ router.post(
   "/recommendations/apply",
   requireAuth,
   validate({ body: applyRecommendationsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
@@ -257,7 +257,7 @@ router.post(
 
     try {
       const result = await agentRouteService.applyRecommendations(
-        req.supabase!,
+        req.supabase,
         userId,
         recommendations,
         graphIndex,
@@ -281,9 +281,9 @@ router.post(
 router.get(
   "/sessions/:id/pending-actions",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     const pendingActions = await agentService.getPendingActions(id);
     res.json({ pendingActions });
   },
@@ -292,13 +292,13 @@ router.get(
 router.post(
   "/sessions/:id/actions/:actionId/confirm",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id, actionId } = req.params;
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     try {
       const result = await agentService.confirmAction(id, actionId);
       if (!result.success) {
@@ -316,13 +316,13 @@ router.post(
 router.post(
   "/sessions/:id/actions/:actionId/reject",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id, actionId } = req.params;
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     try {
       const result = await agentService.rejectAction(id, actionId);
       if (!result.success) {
@@ -341,14 +341,14 @@ router.post(
   "/sessions/:id/actions/batch-confirm",
   requireAuth,
   validate({ body: batchActionSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id } = req.params;
     const { action_ids } = req.body;
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     try {
       const results = await agentService.batchConfirmActions(id, action_ids);
       res.json({ success: true, results: results.results, needsResume: results.needsResume });
@@ -364,14 +364,14 @@ router.post(
   "/sessions/:id/actions/batch-reject",
   requireAuth,
   validate({ body: batchActionSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
       throw new AppError("Unauthorized", 401, ErrorCodes.AUTH_UNAUTHORIZED);
     }
     const { id } = req.params;
     const { action_ids } = req.body;
-    const agentService = new AgentService(req.supabase!);
+    const agentService = new AgentService(req.supabase);
     try {
       const results = await agentService.batchRejectActions(id, action_ids);
       res.json({ success: true, results: results.results, needsResume: results.needsResume });

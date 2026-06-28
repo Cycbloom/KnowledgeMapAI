@@ -52,6 +52,54 @@ interface ApplyMergeResult {
   conflictsResolved: number;
 }
 
+interface GraphNodeSnapshotRow {
+  id: string;
+  knowledge_point_id: string;
+  x_position: number;
+  y_position: number;
+  level: string;
+  is_accepted: boolean;
+  knowledge_points:
+    | { title: string; content: string; summary: string | null }
+    | { title: string; content: string; summary: string | null }[]
+    | null;
+}
+
+interface EdgeSnapshotRow {
+  id: string;
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+  relationship_type: string;
+  weight: number;
+  custom_label: string | null;
+  custom_color: string | null;
+  custom_line_style: string | null;
+  show_arrow: boolean | null;
+}
+
+interface GraphEventRow {
+  id: string;
+  graph_id: string;
+  event_type: VersionGraphEventType;
+  event_data: Record<string, unknown>;
+  operator_id: string | null;
+  batch_id: string | null;
+  snapshot_id: string | null;
+  created_at: string;
+}
+
+interface GraphSnapshotRow {
+  id: string;
+  graph_id: string;
+  snapshot_data: SnapshotData;
+  description: string | null;
+  snapshot_type: GraphSnapshotType;
+  node_count: number;
+  edge_count: number;
+  operator_id: string | null;
+  created_at: string;
+}
+
 export class GraphVersionService {
   async recordEvent(
     supabase: SupabaseClient,
@@ -110,7 +158,7 @@ export class GraphVersionService {
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
-    const snapshotNodes: SnapshotNodeData[] = (nodes ?? []).map((node: any) => ({
+    const snapshotNodes: SnapshotNodeData[] = ((nodes ?? []) as unknown as GraphNodeSnapshotRow[]).map((node) => ({
       id: node.id,
       knowledgePointId: node.knowledge_point_id,
       title: Array.isArray(node.knowledge_points)
@@ -128,7 +176,7 @@ export class GraphVersionService {
       isAccepted: node.is_accepted,
     }));
 
-    const snapshotEdges: SnapshotEdgeData[] = (edges ?? []).map((edge: any) => ({
+    const snapshotEdges: SnapshotEdgeData[] = ((edges ?? []) as unknown as EdgeSnapshotRow[]).map((edge) => ({
       id: edge.id,
       sourceKnowledgePointId: edge.source_knowledge_point_id,
       targetKnowledgePointId: edge.target_knowledge_point_id,
@@ -1465,7 +1513,7 @@ export class GraphVersionService {
       throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
-    const snapshotNodes: SnapshotNodeData[] = (nodes ?? []).map((node: any) => ({
+    const snapshotNodes: SnapshotNodeData[] = ((nodes ?? []) as unknown as GraphNodeSnapshotRow[]).map((node) => ({
       id: node.id,
       knowledgePointId: node.knowledge_point_id,
       title: Array.isArray(node.knowledge_points)
@@ -1483,7 +1531,7 @@ export class GraphVersionService {
       isAccepted: node.is_accepted,
     }));
 
-    const snapshotEdges: SnapshotEdgeData[] = (edges ?? []).map((edge: any) => ({
+    const snapshotEdges: SnapshotEdgeData[] = ((edges ?? []) as unknown as EdgeSnapshotRow[]).map((edge) => ({
       id: edge.id,
       sourceKnowledgePointId: edge.source_knowledge_point_id,
       targetKnowledgePointId: edge.target_knowledge_point_id,
@@ -1618,7 +1666,7 @@ export class GraphVersionService {
     return `${edge.sourceKnowledgePointId}:${edge.targetKnowledgePointId}:${edge.relationshipType}`;
   }
 
-  private mapEvent(data: any): GraphEvent {
+  private mapEvent(data: GraphEventRow): GraphEvent {
     return {
       id: data.id,
       graphId: data.graph_id,
@@ -1631,7 +1679,7 @@ export class GraphVersionService {
     };
   }
 
-  private mapSnapshot(data: any): GraphSnapshot {
+  private mapSnapshot(data: GraphSnapshotRow): GraphSnapshot {
     return {
       id: data.id,
       graphId: data.graph_id,

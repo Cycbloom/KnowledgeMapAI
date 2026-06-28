@@ -2,7 +2,8 @@ import { Router, type Response } from "express";
 import {
   requireAuth,
   optionalAuth,
-  type AuthRequest,
+  type AuthedRequest,
+  type OptionalAuthRequest,
 } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import {
@@ -32,7 +33,7 @@ const updateTemplateSchema = createTemplateSchema.partial().extend({
 
 const router = Router();
 
-router.get("/", optionalAuth, async (req: AuthRequest, res: Response) => {
+router.get("/", optionalAuth, async (req: OptionalAuthRequest, res: Response) => {
   const { category } = req.query;
   const data = await graphTemplateService.getTemplates(
     req.supabase!,
@@ -45,7 +46,7 @@ router.get(
   "/:id",
   optionalAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
     const data = await graphTemplateService.getTemplate(req.supabase!, id);
     if (!data) {
@@ -59,9 +60,9 @@ router.post(
   "/",
   requireAuth,
   validate({ body: createTemplateSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const data = await graphTemplateService.createTemplate(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       req.body,
     );
@@ -73,10 +74,10 @@ router.put(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateTemplateSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await graphTemplateService.updateTemplate(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       req.body,
@@ -89,9 +90,9 @@ router.delete(
   "/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    await graphTemplateService.deleteTemplate(req.supabase!, id, req.user.id);
+    await graphTemplateService.deleteTemplate(req.supabase, id, req.user.id);
 
     await cacheService.delByTags(["template:all"]);
 
@@ -103,11 +104,11 @@ router.post(
   "/from-template",
   requireAuth,
   validate({ body: createGraphFromTemplateSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { template_id, title, description } = req.body;
 
     const template = await graphTemplateService.getTemplate(
-      req.supabase!,
+      req.supabase,
       template_id,
     );
     if (!template) {
@@ -115,7 +116,7 @@ router.post(
     }
 
     const graph = await graphService.createGraph(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       title || template.name,
       description || template.description,
@@ -144,7 +145,7 @@ router.post(
       const templateEdges = template.edges as TemplateEdge[] | undefined;
 
       await templateRouteService.createFromTemplate(
-        req.supabase!,
+        req.supabase,
         req.user.id,
         templateNodes,
         templateEdges,

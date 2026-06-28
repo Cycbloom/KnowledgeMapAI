@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { taskKnowledgePointService } from "../../services/scheduler";
@@ -41,12 +41,12 @@ router.post(
   "/tasks/:id/knowledge-points",
   requireAuth,
   validate({ body: createTaskKPBodySchema, params: createTaskKPParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { knowledge_point_id, relevance_score, is_primary, notes } = req.body;
 
     const data = await taskKnowledgePointService.create(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       { knowledge_point_id, relevance_score, is_primary, notes },
@@ -60,11 +60,11 @@ router.get(
   "/tasks/:id/knowledge-points",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
     const data = await taskKnowledgePointService.list(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
     );
@@ -77,12 +77,12 @@ router.put(
   "/tasks/:id/knowledge-points/:kpId",
   requireAuth,
   validate({ body: updateTaskKPBodySchema, params: updateTaskKPParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, kpId } = req.params;
     const updates = req.body;
 
     const data = await taskKnowledgePointService.update(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       kpId,
@@ -97,10 +97,10 @@ router.delete(
   "/tasks/:id/knowledge-points/:kpId",
   requireAuth,
   validate({ params: taskKPParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, kpId } = req.params;
 
-    await taskKnowledgePointService.delete(req.supabase!, req.user.id, id, kpId);
+    await taskKnowledgePointService.delete(req.supabase, req.user.id, id, kpId);
 
     res.json({ success: true });
   },

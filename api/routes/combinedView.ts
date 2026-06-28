@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -18,12 +18,12 @@ router.post(
   "/combined-view",
   requireAuth,
   validate(combinedViewSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids } = req.body;
 
     try {
       const result = await graphService.getCombinedView(
-        req.supabase!,
+        req.supabase,
         req.user.id,
         graph_ids,
       );

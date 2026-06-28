@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { appearanceService } from "../../services/story";
@@ -20,9 +20,9 @@ router.post(
   "/",
   requireAuth,
   validate(createAppearanceSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const { character_id, scene_detail_id, role_in_scene, notes } = req.body;
 
@@ -37,9 +37,9 @@ router.post(
   },
 );
 
-router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graphId, id } = req.params;
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
 
   await appearanceService.delete(supabase, graphId, id);
 
@@ -49,9 +49,9 @@ router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
 router.get(
   "/stats/:characterId",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, characterId } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const result = await appearanceService.getStats(
       supabase,

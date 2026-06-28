@@ -1,5 +1,14 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+/** Update info passed to update:available / update:downloaded callbacks. */
+export interface UpdateInfo {
+  version?: string;
+  releaseNotes?: string | Record<string, unknown>;
+  releaseName?: string;
+  releaseDate?: string;
+  [key: string]: unknown;
+}
+
 const electronAPI = {
   app: {
     getVersion: () => ipcRenderer.invoke("app:getVersion"),
@@ -19,9 +28,11 @@ const electronAPI = {
       ipcRenderer.on("update:checking", subscription);
       return () => ipcRenderer.removeListener("update:checking", subscription);
     },
-    onAvailable: (callback: (info: any) => void) => {
-      const subscription = (_event: Electron.IpcRendererEvent, info: any) =>
-        callback(info);
+    onAvailable: (callback: (info: UpdateInfo) => void) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        info: UpdateInfo,
+      ) => callback(info);
       ipcRenderer.on("update:available", subscription);
       return () => ipcRenderer.removeListener("update:available", subscription);
     },
@@ -60,9 +71,11 @@ const electronAPI = {
       return () =>
         ipcRenderer.removeListener("update:download-progress", subscription);
     },
-    onDownloaded: (callback: (info: any) => void) => {
-      const subscription = (_event: Electron.IpcRendererEvent, info: any) =>
-        callback(info);
+    onDownloaded: (callback: (info: UpdateInfo) => void) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        info: UpdateInfo,
+      ) => callback(info);
       ipcRenderer.on("update:downloaded", subscription);
       return () =>
         ipcRenderer.removeListener("update:downloaded", subscription);

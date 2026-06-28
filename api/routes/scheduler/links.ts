@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { taskLinkService } from "../../services/scheduler";
@@ -44,11 +44,11 @@ router.post(
   "/tasks/:id/links",
   requireAuth,
   validate({ body: createLinkBodySchema, params: createLinkParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { link_type, title, url, description, icon, metadata } = req.body;
 
-    const link = await taskLinkService.create(req.supabase!, req.user.id, id, {
+    const link = await taskLinkService.create(req.supabase, req.user.id, id, {
       link_type,
       title,
       url,
@@ -65,10 +65,10 @@ router.get(
   "/tasks/:id/links",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    const links = await taskLinkService.list(req.supabase!, req.user.id, id);
+    const links = await taskLinkService.list(req.supabase, req.user.id, id);
 
     res.json({ success: true, data: links });
   },
@@ -78,11 +78,11 @@ router.put(
   "/tasks/:id/links/:linkId",
   requireAuth,
   validate({ body: updateLinkBodySchema, params: updateLinkParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, linkId } = req.params;
     const updates = req.body;
 
-    const link = await taskLinkService.update(req.supabase!, req.user.id, id, linkId, updates);
+    const link = await taskLinkService.update(req.supabase, req.user.id, id, linkId, updates);
 
     res.json({ success: true, data: link });
   },
@@ -92,10 +92,10 @@ router.delete(
   "/tasks/:id/links/:linkId",
   requireAuth,
   validate({ params: linkParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, linkId } = req.params;
 
-    await taskLinkService.delete(req.supabase!, req.user.id, id, linkId);
+    await taskLinkService.delete(req.supabase, req.user.id, id, linkId);
 
     res.json({ success: true });
   },

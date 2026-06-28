@@ -51,7 +51,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 
   (res as any).end = function (this: Response, ...args: unknown[]): void {
     const duration = Date.now() - startTime;
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     const log: RequestLog = {
       method: req.method,
@@ -138,7 +138,7 @@ export const slowRequestLogger = (thresholdMs: number = 1000) => {
         logger.warn(`Slow request: ${req.method} ${req.path}`, {
           duration: `${duration}ms`,
           status: res.statusCode,
-          userId: (req as any).user?.id,
+          userId: req.user?.id,
         });
       }
     });

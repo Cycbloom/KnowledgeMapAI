@@ -4,6 +4,7 @@ import { OrbitControls, Text, Stars, Line, Billboard, Html } from '@react-three/
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import * as Comlink from 'comlink';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Node, Edge, ColorScheme, GraphColorMode, NodeLevel, type Node as GraphNode } from '../types';
 import type { LayoutNode3D, LayoutLink3D, LayoutResult3D } from './layout/forceLayout3D';
 import { useTheme } from '../hooks';
@@ -12,6 +13,22 @@ import {
   getLevelColors, getStatusColors, getHeatmapColors, getDecayColors,
   calculateNodeHeat, getLearningStatus
 } from '../config/learningStatusColors';
+
+/**
+ * Per-node learning status consumed by heatmap / decay / status coloring modes.
+ * Field shape mirrors the param types of `getLearningStatus` and
+ * `calculateNodeHeat` in `learningStatusColors.ts`, plus `fsrs_retrievability`
+ * accessed directly by the decay coloring branch.
+ */
+interface NodeStatus {
+  locked: boolean;
+  mastered: boolean;
+  due_today?: boolean;
+  due?: boolean;
+  review_count?: number;
+  next_review?: string;
+  fsrs_retrievability?: number;
+}
 
 interface PlanetViewProps {
   nodes: Node[];
@@ -22,7 +39,7 @@ interface PlanetViewProps {
   height?: number;
   colorScheme?: ColorScheme;
   coloringMode?: GraphColorMode;
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   focusedNodeId?: string | null;
   enableRotation?: boolean;
 }
@@ -244,12 +261,12 @@ function Scene({
   onNodeHover: (id: string | null) => void;
   colorScheme: ColorScheme;
   coloringMode: GraphColorMode;
-  nodeStatus?: Record<string, any>;
+  nodeStatus?: Record<string, NodeStatus>;
   focusedNodeId?: string | null;
   isDark: boolean;
   enableRotation: boolean;
 }) {
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const { gl, camera } = useThree();
 
   // 共享球体几何体：所有节点复用同一份

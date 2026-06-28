@@ -49,7 +49,7 @@ export const createRateLimiter = (config: RateLimitConfig) => {
       return next();
     }
 
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
     const key = userId ? `${keyPrefix}:user:${userId}` : `${keyPrefix}:ip:${ip}`;
 

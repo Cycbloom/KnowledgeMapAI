@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, requireAdmin, type AuthRequest } from "../middleware/auth";
+import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -14,134 +14,69 @@ import {
 import { requireKnowledgePointOwnership } from "../middleware/ownership";
 import { logger } from "../utils/logger";
 import { z } from "zod";
+import {
+  createKnowledgePointSchema,
+  updateKnowledgePointSchema,
+  searchSimilarSchema,
+  submitPublicSchema,
+  rejectSuggestionSchema,
+} from "../schemas/index";
 
 const router = Router();
-
-const createKnowledgePointSchema = z.object({
-  body: z.object({
-    title: z.string().min(1).max(255),
-    content: z.string().optional(),
-    summary: z.string().max(200).optional(),
-    learning_material: z.string().optional(),
-    properties: z.record(z.unknown()).optional(),
-    visibility: z
-      .enum(["private", "public", "pending"])
-      .optional()
-      .default("private"),
-  }),
-});
-
-const updateKnowledgePointSchema = z.object({
-  body: z.object({
-    title: z.string().min(1).max(255).optional(),
-    content: z.string().optional(),
-    summary: z.string().max(200).optional(),
-    learning_material: z.string().optional(),
-    properties: z.record(z.unknown()).optional(),
-    visibility: z.enum(["private", "public", "pending"]).optional(),
-  }),
-  params: z.object({
-    id: z.string().uuid(),
-  }),
-});
-
-const searchSimilarSchema = z.object({
-  body: z.object({
-    query: z.string().min(1),
-    threshold: z.number().min(0).max(1).optional().default(0.8),
-    limit: z.number().min(1).max(20).optional().default(5),
-  }),
-});
-
-const submitPublicSchema = z.object({
-  body: z.object({
-    knowledge_point_id: z.string().uuid(),
-    suggested_changes: z
-      .object({
-        title: z.string().min(1).max(255).optional(),
-        content: z.string().optional(),
-        summary: z.string().max(200).optional(),
-        learning_material: z.string().optional(),
-      })
-      .optional(),
-  }),
-});
-
-const rejectSuggestionSchema = z.object({
-  body: z.object({
-    reason: z.string().min(1),
-  }),
-  params: z.object({
-    id: z.string().uuid(),
-  }),
-});
 
 router.get(
   "/",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { visibility } = req.query;
 
-    try {
-      const data = await knowledgePointService.list(
-        req.supabase!,
-        req.user.id,
-        {
-          visibility: visibility as "public" | undefined,
-        },
-      );
-      res.json(data);
-    } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const data = await knowledgePointService.list(
+      req.supabase,
+      req.user.id,
+      {
+        visibility: visibility as "public" | undefined,
+      },
+    );
+    res.json(data);
   },
 );
 
 router.get(
   "/:id",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    try {
-      const data = await knowledgePointService.getAccessible(
-        req.supabase!,
-        id,
-        req.user.id,
+    const data = await knowledgePointService.getAccessible(
+      req.supabase,
+      id,
+      req.user.id,
+    );
+
+    if (!data) {
+      throw new AppError(
+        "Knowledge point not found",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
       );
-
-      if (!data) {
-        throw new AppError(
-          "Knowledge point not found",
-          404,
-          ErrorCodes.RESOURCE_NOT_FOUND,
-        );
-      }
-
-      res.json(data);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
+
+    res.json(data);
   },
 );
 
 router.get(
   "/:id/graphs",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    try {
-      const data = await knowledgePointService.getGraphs(
-        req.supabase!,
-        id,
-        req.user.id,
-      );
-      res.json(data);
-    } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const data = await knowledgePointService.getGraphs(
+      req.supabase,
+      id,
+      req.user.id,
+    );
+    res.json(data);
   },
 );
 
@@ -149,25 +84,21 @@ router.post(
   "/",
   requireAuth,
   validate(createKnowledgePointSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { title, content, summary, learning_material, properties, visibility } =
       req.body;
 
-    try {
-      const data = await knowledgePointService.create(req.supabase!, {
-        title,
-        content,
-        summary,
-        learning_material,
-        properties,
-        visibility,
-        owner_id: req.user.id,
-      });
+    const data = await knowledgePointService.create(req.supabase, {
+      title,
+      content,
+      summary,
+      learning_material,
+      properties,
+      visibility,
+      owner_id: req.user.id,
+    });
 
-      res.status(201).json(data);
-    } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.status(201).json(data);
   },
 );
 
@@ -176,21 +107,16 @@ router.put(
   requireAuth,
   requireKnowledgePointOwnership,
   validate(updateKnowledgePointSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
 
-    try {
-      const data = await knowledgePointService.update(
-        req.supabase!,
-        id,
-        updates,
-      );
-      res.json(data);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const data = await knowledgePointService.update(
+      req.supabase,
+      id,
+      updates,
+    );
+    res.json(data);
   },
 );
 
@@ -198,7 +124,7 @@ router.post(
   "/search-similar",
   requireAuth,
   validate(searchSimilarSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { query, threshold, limit } = req.body;
 
     try {
@@ -209,7 +135,7 @@ router.post(
       }
 
       const data = await knowledgePointService.searchSimilar(
-        req.supabase!,
+        req.supabase,
         embedding,
         req.user.id,
         threshold,
@@ -227,38 +153,30 @@ router.post(
 router.delete(
   "/:id/hard-delete",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    try {
-      const data = await knowledgePointService.delete(
-        req.supabase!,
-        id,
-        req.user.id,
-      );
-      res.json(data);
-    } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    const data = await knowledgePointService.delete(
+      req.supabase,
+      id,
+      req.user.id,
+    );
+    res.json(data);
   },
 );
 
 router.get(
   "/public",
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { search, limit = 20, offset = 0 } = req.query;
 
-    try {
-      const result = await knowledgePointService.listPublic(req.supabase!, {
-        search: search as string,
-        limit: Number(limit),
-        offset: Number(offset),
-      });
+    const result = await knowledgePointService.listPublic(req.supabase, {
+      search: search as string,
+      limit: Number(limit),
+      offset: Number(offset),
+    });
 
-      res.json(result);
-    } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -266,12 +184,12 @@ router.post(
   "/submit-public",
   requireAuth,
   validate(submitPublicSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { knowledge_point_id, suggested_changes } = req.body;
 
     try {
       const result = await knowledgePointService.submitForPublic(
-        req.supabase!,
+        req.supabase,
         { knowledge_point_id, suggested_changes },
         req.user.id,
       );
@@ -289,7 +207,7 @@ router.post(
       if (err.message === "Permission denied") {
         throw new AppError("没有权限执行此操作", 403, ErrorCodes.AUTH_FORBIDDEN);
       }
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw error;
     }
   },
 );
@@ -298,19 +216,15 @@ router.get(
   "/admin/knowledge-points/pending",
   requireAuth,
   requireAdmin,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { limit = 20, offset = 0 } = req.query;
 
-    try {
-      const result = await knowledgePointService.listPending(req.supabase!, {
-        limit: Number(limit),
-        offset: Number(offset),
-      });
+    const result = await knowledgePointService.listPending(req.supabase, {
+      limit: Number(limit),
+      offset: Number(offset),
+    });
 
-      res.json(result);
-    } catch (error) {
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
-    }
+    res.json(result);
   },
 );
 
@@ -318,12 +232,12 @@ router.post(
   "/admin/knowledge-points/suggestions/:id/approve",
   requireAuth,
   requireAdmin,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
     try {
       const data = await knowledgePointService.approvePublic(
-        req.supabase!,
+        req.supabase,
         id,
         req.user.id,
       );
@@ -341,7 +255,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw error;
     }
   },
 );
@@ -351,13 +265,13 @@ router.post(
   requireAuth,
   requireAdmin,
   validate(rejectSuggestionSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { reason } = req.body;
 
     try {
       await knowledgePointService.rejectPublic(
-        req.supabase!,
+        req.supabase,
         id,
         req.user.id,
         reason,
@@ -375,7 +289,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw error;
     }
   },
 );
@@ -436,32 +350,27 @@ router.get(
   "/:id/versions",
   requireAuth,
   validate(listVersionsSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { limit, offset } = req.query;
 
-    try {
-      const kp = await knowledgePointService.getAccessible(req.supabase!, id, req.user.id);
+    const kp = await knowledgePointService.getAccessible(req.supabase, id, req.user.id);
 
-      if (!kp) {
-        throw new AppError(
-          "Knowledge point not found",
-          404,
-          ErrorCodes.RESOURCE_NOT_FOUND,
-        );
-      }
-
-      const result = await knowledgePointVersionService.getVersionHistory(
-        req.supabase!,
-        id,
-        { limit: Number(limit), offset: Number(offset) },
+    if (!kp) {
+      throw new AppError(
+        "Knowledge point not found",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
       );
-
-      res.json(result);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
+
+    const result = await knowledgePointVersionService.getVersionHistory(
+      req.supabase,
+      id,
+      { limit: Number(limit), offset: Number(offset) },
+    );
+
+    res.json(result);
   },
 );
 
@@ -469,39 +378,34 @@ router.get(
   "/:id/versions/:versionNumber",
   requireAuth,
   validate(getVersionSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, versionNumber } = req.params;
 
-    try {
-      const kp = await knowledgePointService.getAccessible(req.supabase!, id, req.user.id);
+    const kp = await knowledgePointService.getAccessible(req.supabase, id, req.user.id);
 
-      if (!kp) {
-        throw new AppError(
-          "Knowledge point not found",
-          404,
-          ErrorCodes.RESOURCE_NOT_FOUND,
-        );
-      }
-
-      const version = await knowledgePointVersionService.getVersion(
-        req.supabase!,
-        id,
-        Number(versionNumber),
+    if (!kp) {
+      throw new AppError(
+        "Knowledge point not found",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
       );
-
-      if (!version) {
-        throw new AppError(
-          "Version not found",
-          404,
-          ErrorCodes.RESOURCE_NOT_FOUND,
-        );
-      }
-
-      res.json(version);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError((error as Error).message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
     }
+
+    const version = await knowledgePointVersionService.getVersion(
+      req.supabase,
+      id,
+      Number(versionNumber),
+    );
+
+    if (!version) {
+      throw new AppError(
+        "Version not found",
+        404,
+        ErrorCodes.RESOURCE_NOT_FOUND,
+      );
+    }
+
+    res.json(version);
   },
 );
 
@@ -509,12 +413,12 @@ router.get(
   "/:id/versions/compare",
   requireAuth,
   validate(compareVersionsSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { version1, version2 } = req.query;
 
     try {
-      const kp = await knowledgePointService.getAccessible(req.supabase!, id, req.user.id);
+      const kp = await knowledgePointService.getAccessible(req.supabase, id, req.user.id);
 
       if (!kp) {
         throw new AppError(
@@ -525,7 +429,7 @@ router.get(
       }
 
       const result = await knowledgePointVersionService.compareVersions(
-        req.supabase!,
+        req.supabase,
         id,
         Number(version1),
         Number(version2),
@@ -534,7 +438,6 @@ router.get(
       res.json(result);
     } catch (error) {
       const err = error as Error;
-      if (error instanceof AppError) throw error;
       if (err.message === "One or both versions not found") {
         throw new AppError(
           "One or both versions not found",
@@ -542,7 +445,7 @@ router.get(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw error;
     }
   },
 );
@@ -552,12 +455,12 @@ router.post(
   requireAuth,
   requireKnowledgePointOwnership,
   validate(rollbackSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, versionNumber } = req.params;
 
     try {
       const result = await knowledgePointVersionService.rollback(
-        req.supabase!,
+        req.supabase,
         id,
         Number(versionNumber),
         req.user.id,
@@ -569,7 +472,6 @@ router.post(
       });
     } catch (error) {
       const err = error as Error;
-      if (error instanceof AppError) throw error;
       if (err.message === "Version not found") {
         throw new AppError(
           "Version not found",
@@ -577,7 +479,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw error;
     }
   },
 );
@@ -587,13 +489,13 @@ router.post(
   requireAuth,
   requireKnowledgePointOwnership,
   validate(createManualVersionSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { change_summary } = req.body;
 
     try {
       const version = await knowledgePointVersionService.createManualVersion(
-        req.supabase!,
+        req.supabase,
         id,
         change_summary,
         req.user.id,
@@ -602,7 +504,6 @@ router.post(
       res.status(201).json(version);
     } catch (error) {
       const err = error as Error;
-      if (error instanceof AppError) throw error;
       if (err.message === "Knowledge point not found") {
         throw new AppError(
           "Knowledge point not found",
@@ -610,7 +511,7 @@ router.post(
           ErrorCodes.RESOURCE_NOT_FOUND,
         );
       }
-      throw new AppError(err.message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+      throw error;
     }
   },
 );
@@ -620,7 +521,7 @@ router.put(
   requireAuth,
   requireKnowledgePointOwnership,
   validate(updateAliasesSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { aliases } = req.body;
 
@@ -632,7 +533,7 @@ router.put(
       });
 
       await conceptAggregationService.addAliases(
-        req.supabase!,
+        req.supabase,
         id,
         aliases,
       );
@@ -657,7 +558,6 @@ router.put(
         userId: req.user.id,
       });
 
-      if (error instanceof AppError) throw error;
       if (err.message === "Knowledge point not found") {
         throw new AppError(
           "知识点不存在",
@@ -666,11 +566,7 @@ router.put(
         );
       }
 
-      throw new AppError(
-        err.message || "更新别名失败",
-        500,
-        ErrorCodes.SYSTEM_INTERNAL_ERROR,
-      );
+      throw error;
     }
   },
 );

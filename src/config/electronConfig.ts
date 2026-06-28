@@ -1,5 +1,5 @@
 export function isElectron(): boolean {
-  if (typeof window !== "undefined" && (window as any).electronAPI) {
+  if (typeof window !== "undefined" && window.electronAPI) {
     return true;
   }
   if (
@@ -20,9 +20,9 @@ export function isElectronProduction(): boolean {
 }
 
 export async function getApiPort(): Promise<number> {
-  if (typeof window !== "undefined" && (window as any).electronAPI) {
+  if (typeof window !== "undefined" && window.electronAPI) {
     try {
-      const port = await (window as any).electronAPI.api.getPort();
+      const port = await window.electronAPI.api.getPort();
       return port || 3001;
     } catch {
       return 3001;

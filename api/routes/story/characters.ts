@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { characterService } from "../../services/story";
 import { z } from "zod";
@@ -40,9 +40,9 @@ const updateCharacterSchema = z.object({
 
 const router = Router();
 
-router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graphId } = req.params;
-  const { characters } = await characterService.list(req.supabase!, graphId);
+  const { characters } = await characterService.list(req.supabase, graphId);
   res.json({ characters });
 });
 
@@ -50,10 +50,10 @@ router.post(
   "/",
   requireAuth,
   validate(createCharacterSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const character = await characterService.create(
-      req.supabase!,
+      req.supabase,
       graphId,
       req.body,
     );
@@ -65,10 +65,10 @@ router.put(
   "/:id",
   requireAuth,
   validate(updateCharacterSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, id } = req.params;
     const character = await characterService.update(
-      req.supabase!,
+      req.supabase,
       graphId,
       id,
       req.body,
@@ -77,9 +77,9 @@ router.put(
   },
 );
 
-router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graphId, id } = req.params;
-  await characterService.delete(req.supabase!, graphId, id);
+  await characterService.delete(req.supabase, graphId, id);
   res.json({ message: "角色已删除" });
 });
 

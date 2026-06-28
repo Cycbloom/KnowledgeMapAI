@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -136,7 +136,7 @@ router.post(
   "/metadata",
   requireAuth,
   validate(metadataRequestSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       content,
       url,
@@ -206,7 +206,7 @@ router.post(
   "/extract",
   requireAuth,
   upload.single("file"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       content,
       url,
@@ -449,9 +449,9 @@ router.post(
   "/apply",
   requireAuth,
   validate(literatureApplySchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_id, concepts, relations, literature } = req.body;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await literatureApplyService.applyLiterature(

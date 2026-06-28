@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export function isCapacitorMobile(): boolean {
   try {
-    const capacitor = (window as any).Capacitor;
+    const capacitor = window.Capacitor;
     if (!capacitor) {
       return false;
     }
@@ -27,7 +27,7 @@ export function isCapacitorMobile(): boolean {
 }
 
 export function isElectronDesktop(): boolean {
-  return !!(window as any).electronAPI || !!(window as any).electron;
+  return !!window.electronAPI || !!window.electron;
 }
 
 export function isWebOnly(): boolean {

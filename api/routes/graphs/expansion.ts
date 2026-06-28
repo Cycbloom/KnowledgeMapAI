@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
 import {
   requireAuth,
-  type AuthRequest,
+  type AuthedRequest,
 } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { uuidParamsSchema } from "../../schemas/index";
@@ -129,10 +129,10 @@ router.post(
   "/domain/expand",
   requireAuth,
   validate({ body: expandDomainSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids, domain, count = 10 } = req.body;
     const userId = req.user.id;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await domainExpansionService.expandDomain(supabase, userId, {
@@ -154,10 +154,10 @@ router.post(
   "/domain/batch-create",
   requireAuth,
   validate({ body: batchCreateDomainGraphsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphs, domain, domain_id, relations } = req.body;
     const userId = req.user.id;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await domainExpansionService.batchCreateDomainGraphs(supabase, userId, {
@@ -179,10 +179,10 @@ router.post(
   "/batch-initialize",
   requireAuth,
   validate({ body: batchInitializeSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids, style = "academic", session_id } = req.body;
     const userId = req.user.id;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await graphExpansionService.batchInitialize(
@@ -206,11 +206,11 @@ router.post(
   "/:id/initialize",
   requireAuth,
   validate({ params: uuidParamsSchema, body: initializeGraphSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const { style = "academic" } = req.body;
     const userId = req.user.id;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await graphExpansionService.initializeGraph(
@@ -233,13 +233,13 @@ router.post(
   "/discover-relations",
   requireAuth,
   validate({ body: discoverRelationsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids, max_suggestions, include_cross_domain } = req.body;
     const userId = req.user.id;
 
     try {
       const result = await relationDiscoveryService.discoverRelations(
-        req.supabase!,
+        req.supabase,
         userId,
         {
           graph_ids,
@@ -261,7 +261,7 @@ router.post(
   "/create-discovered-relation",
   requireAuth,
   validate({ body: createRelationFromDiscoverySchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       source_graph_id,
       target_graph_id,
@@ -274,7 +274,7 @@ router.post(
 
     try {
       const result = await relationDiscoveryService.createRelationFromDiscovery(
-        req.supabase!,
+        req.supabase,
         userId,
         {
           source_graph_id,
@@ -302,7 +302,7 @@ router.post(
   "/cross-domain-insights",
   requireAuth,
   validate({ body: crossDomainInsightsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids, min_intersection = 2 } = req.body;
     const userId = req.user.id;
 
@@ -314,7 +314,7 @@ router.post(
       });
 
       const result = await relationDiscoveryService.analyzeCrossDomainInsights(
-        req.supabase!,
+        req.supabase,
         userId,
         {
           graph_ids,
@@ -336,7 +336,7 @@ router.post(
   "/learning-path-suggestions",
   requireAuth,
   validate({ body: learningPathSuggestionsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids, difficulty } = req.body;
     const userId = req.user.id;
 
@@ -349,7 +349,7 @@ router.post(
 
       const result =
         await relationDiscoveryService.generateLearningPathSuggestions(
-          req.supabase!,
+          req.supabase,
           userId,
           {
             graph_ids,
@@ -371,7 +371,7 @@ router.post(
   "/knowledge-gaps",
   requireAuth,
   validate({ body: knowledgeGapsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids, min_importance } = req.body;
     const userId = req.user.id;
 
@@ -383,7 +383,7 @@ router.post(
       });
 
       const result = await relationDiscoveryService.analyzeKnowledgeGaps(
-        req.supabase!,
+        req.supabase,
         userId,
         {
           graph_ids,
@@ -405,11 +405,11 @@ router.post(
   "/:graphId/nodes/validate-backbone",
   requireAuth,
   validate({ params: uuidParamsSchema, body: validateBackboneSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { nodes, context, useAI } = req.body;
     const userId = req.user.id;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await graphExpansionService.validateBackbone(
@@ -435,10 +435,10 @@ router.post(
   "/:graphId/fix-backbone-modules",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const userId = req.user.id;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await graphExpansionService.fixBackboneModules(
@@ -460,7 +460,7 @@ router.post(
 router.get(
   "/:id/analysis",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const supabase = req.supabase;
 
@@ -496,7 +496,7 @@ router.get(
 router.get(
   "/:id/backbone-suggestions",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const supabase = req.supabase;
 

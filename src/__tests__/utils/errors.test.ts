@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   AppError,
   NetworkError,
@@ -20,10 +20,6 @@ import {
   getUserFriendlyMessage,
   createErrorFromResponse,
   wrapUnknownError,
-  handleApiError,
-  createApiErrorHandler,
-  withErrorHandling,
-  assertNever,
   USER_FRIENDLY_MESSAGES,
   type ErrorCode,
 } from "../../utils/errors";
@@ -506,123 +502,6 @@ describe("errors utilities", () => {
       const error = wrapUnknownError(null);
       expect(error.name).toBe("AppError");
       expect(error.message).toBe("未知错误");
-    });
-  });
-
-  describe("handleApiError", () => {
-    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-
-    beforeEach(() => {
-      consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-      consoleErrorSpy.mockRestore();
-    });
-
-    it("should return error result", () => {
-      const result = handleApiError(new Error("Test error"));
-      expect(result.error).toBeInstanceOf(AppError);
-      expect(result.userMessage).toBeDefined();
-    });
-
-    it("should use fallback message for UNKNOWN_ERROR", () => {
-      const result = handleApiError(new Error("Unknown"), {
-        fallbackMessage: "操作失败，请重试",
-      });
-      expect(result.userMessage).toBe("操作失败，请重试");
-    });
-
-    it("should not use fallback for known error codes", () => {
-      const result = handleApiError(new NetworkError(), {
-        fallbackMessage: "操作失败，请重试",
-      });
-      expect(result.userMessage).toBe("网络错误，请检查网络连接");
-    });
-
-    it("should log to console by default", () => {
-      handleApiError(new Error("Test"), { context: "TestContext" });
-      expect(consoleErrorSpy).toHaveBeenCalled();
-    });
-
-    it("should not log when logToConsole is false", () => {
-      handleApiError(new Error("Test"), { logToConsole: false });
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
-    });
-
-    it("should set redirect for auth errors", () => {
-      const result = handleApiError(new AuthError());
-      expect(result.shouldRedirect).toBe(true);
-      expect(result.redirectPath).toBe("/login");
-    });
-
-    it("should set redirect for token expired errors", () => {
-      const result = handleApiError(new TokenExpiredError());
-      expect(result.shouldRedirect).toBe(true);
-      expect(result.redirectPath).toBe("/login");
-    });
-
-    it("should call onAuthError callback", () => {
-      const onAuthError = vi.fn();
-      handleApiError(new AuthError(), { onAuthError });
-      expect(onAuthError).toHaveBeenCalled();
-    });
-
-    it("should call onNetworkError callback", () => {
-      const onNetworkError = vi.fn();
-      handleApiError(new NetworkError(), { onNetworkError });
-      expect(onNetworkError).toHaveBeenCalled();
-    });
-
-    it("should not redirect for non-auth errors", () => {
-      const result = handleApiError(new ValidationError());
-      expect(result.shouldRedirect).toBe(false);
-      expect(result.redirectPath).toBeUndefined();
-    });
-  });
-
-  describe("createApiErrorHandler", () => {
-    it("should create a handler with preset options", () => {
-      const onAuthError = vi.fn();
-      const handler = createApiErrorHandler({ onAuthError });
-      const result = handler(new AuthError(), "TestContext");
-      expect(onAuthError).toHaveBeenCalled();
-      expect(result.shouldRedirect).toBe(true);
-    });
-  });
-
-  describe("withErrorHandling", () => {
-    it("should return data on success", async () => {
-      const result = await withErrorHandling(() => Promise.resolve("success"));
-      expect(result.data).toBe("success");
-      expect(result.error).toBeNull();
-    });
-
-    it("should return error on failure", async () => {
-      const result = await withErrorHandling(() =>
-        Promise.reject(new Error("fail")),
-      );
-      expect(result.data).toBeNull();
-      expect(result.error?.name).toBe("AppError");
-    });
-
-    it("should pass options to handleApiError", async () => {
-      const onNetworkError = vi.fn();
-      const result = await withErrorHandling(
-        () => Promise.reject(new NetworkError()),
-        { onNetworkError },
-      );
-      expect(onNetworkError).toHaveBeenCalled();
-      expect(result.error?.name).toBe("NetworkError");
-    });
-  });
-
-  describe("assertNever", () => {
-    it("should throw AppError", () => {
-      expect(() => assertNever("unexpected" as never)).toThrow(AppError);
-      expect(() => assertNever("unexpected" as never)).toThrow(
-        "Unexpected value: unexpected",
-      );
     });
   });
 });

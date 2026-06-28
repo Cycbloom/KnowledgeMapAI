@@ -1,5 +1,5 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { uuidParamsSchema, createRelationshipTypeSchema, updateRelationshipTypeSchema } from '../schemas/index';
 import { relationshipTypeService } from '../services/graph';
@@ -8,15 +8,15 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
-router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
-  const types = await relationshipTypeService.getAll(req.supabase!, req.user.id);
+router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const types = await relationshipTypeService.getAll(req.supabase, req.user.id);
   res.json({ data: types });
 });
 
 router.get(
   '/category/:category',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { category } = req.params;
     const validCategories = ['hierarchical', 'dependency', 'semantic', 'temporal', 'interaction', 'causal', 'custom'];
     
@@ -25,7 +25,7 @@ router.get(
     }
 
     const types = await relationshipTypeService.getByCategory(
-      req.supabase!,
+      req.supabase,
       category as any,
       req.user.id
     );
@@ -37,9 +37,9 @@ router.get(
   '/:id',
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    const type = await relationshipTypeService.getById(req.supabase!, id);
+    const type = await relationshipTypeService.getById(req.supabase, id);
 
     if (!type) {
       throw new AppError('关系类型不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
@@ -53,9 +53,9 @@ router.post(
   '/',
   requireAuth,
   validate({ body: createRelationshipTypeSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const type = await relationshipTypeService.create(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       req.body
     );
@@ -67,10 +67,10 @@ router.put(
   '/:id',
   requireAuth,
   validate({ params: uuidParamsSchema, body: updateRelationshipTypeSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const type = await relationshipTypeService.update(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
       req.body
@@ -83,9 +83,9 @@ router.delete(
   '/:id',
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    await relationshipTypeService.delete(req.supabase!, id, req.user.id);
+    await relationshipTypeService.delete(req.supabase, id, req.user.id);
     res.json({ message: '关系类型已删除' });
   }
 );

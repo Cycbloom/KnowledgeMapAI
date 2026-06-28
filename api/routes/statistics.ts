@@ -1,16 +1,16 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { studyService } from "../services/study";
 
 const router = Router();
 
 // Get aggregated statistics
-router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   const userId = req.user.id;
   const now = new Date();
 
   // Optimize: Use RPC for server-side aggregation
-  const stats = await studyService.getUserStudyStats(req.supabase!, userId);
+  const stats = await studyService.getUserStudyStats(req.supabase, userId);
 
   // --- Process Distribution ---
   const stateCounts: Record<string, number> = {

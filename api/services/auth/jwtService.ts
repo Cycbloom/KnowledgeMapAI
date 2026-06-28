@@ -114,6 +114,26 @@ export class JwtService {
     }
   }
 
+  /**
+   * 验证 Supabase Auth 下发的 JWT（区别于 app 自有 JWT）
+   * 使用 SUPABASE_JWT_SECRET 环境变量验证签名
+   * @returns { sub: string } | null
+   */
+  verifySupabaseToken(token: string): { sub: string } | null {
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    if (!secret) {
+      // 开发环境未配置时回退到远程验证
+      return null;
+    }
+    try {
+      const payload = jwt.verify(token, secret) as { sub?: string };
+      if (!payload.sub) return null;
+      return { sub: payload.sub };
+    } catch {
+      return null;
+    }
+  }
+
   refreshAccessToken(refreshToken: string): TokenPair | null {
     const payload = this.verifyRefreshToken(refreshToken);
     if (!payload) {

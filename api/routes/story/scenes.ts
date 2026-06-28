@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { sceneService } from "../../services/story";
@@ -33,9 +33,9 @@ const router = Router();
 router.get(
   "/:structureId",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, structureId } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const result = await sceneService.get(supabase, graphId, structureId);
 
@@ -47,9 +47,9 @@ router.post(
   "/",
   requireAuth,
   validate(createSceneDetailSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const {
       structure_id,
@@ -81,9 +81,9 @@ router.put(
   "/:id",
   requireAuth,
   validate(updateSceneDetailSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, id } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const scene = await sceneService.update(supabase, graphId, id, req.body);
 

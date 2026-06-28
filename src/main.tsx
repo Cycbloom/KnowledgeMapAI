@@ -64,7 +64,7 @@ if (import.meta.env.PROD && !isElectron) {
   initPerformanceMonitoring()
 }
 
-if (isElectron) {
+if (isElectron && import.meta.env.PROD) {
   initErrorReporter()
   initPerformanceMonitoring()
 }

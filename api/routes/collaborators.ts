@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, optionalAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, optionalAuth, type AuthedRequest, type OptionalAuthRequest } from "../middleware/auth";
 import { collaboratorService } from "../services/graph";
 import { logger } from "../utils/logger";
 import { AppError } from "../middleware/errorHandler";
@@ -7,7 +7,7 @@ import { ErrorCodes } from "../../shared/types/errorCodes";
 
 const router = Router();
 
-router.get("/:invitationToken/info", optionalAuth, async (req: AuthRequest, res: Response) => {
+router.get("/:invitationToken/info", optionalAuth, async (req: OptionalAuthRequest, res: Response) => {
   try {
     const { invitationToken } = req.params;
     const result = await collaboratorService.getInvitationInfo(req.supabase!, invitationToken);
@@ -24,7 +24,7 @@ router.get("/:invitationToken/info", optionalAuth, async (req: AuthRequest, res:
   }
 });
 
-router.post("/graphs/:graphId/share", requireAuth, async (req: AuthRequest, res: Response) => {
+router.post("/graphs/:graphId/share", requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -34,7 +34,7 @@ router.post("/graphs/:graphId/share", requireAuth, async (req: AuthRequest, res:
     const { graphId } = req.params;
     const { role = "viewer" } = req.body;
 
-    const result = await collaboratorService.generateShareLink(req.supabase!, graphId, userId, role);
+    const result = await collaboratorService.generateShareLink(req.supabase, graphId, userId, role);
 
     if (!result.success) {
       throw new AppError(result.error ?? "生成分享链接失败", 400, ErrorCodes.VALIDATION_ERROR);
@@ -48,7 +48,7 @@ router.post("/graphs/:graphId/share", requireAuth, async (req: AuthRequest, res:
   }
 });
 
-router.post("/:invitationToken/join", requireAuth, async (req: AuthRequest, res: Response) => {
+router.post("/:invitationToken/join", requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -56,7 +56,7 @@ router.post("/:invitationToken/join", requireAuth, async (req: AuthRequest, res:
     }
 
     const { invitationToken } = req.params;
-    const result = await collaboratorService.joinByShareLink(req.supabase!, invitationToken, userId);
+    const result = await collaboratorService.joinByShareLink(req.supabase, invitationToken, userId);
 
     if (!result.success) {
       throw new AppError(result.error ?? "加入协作失败", 400, ErrorCodes.VALIDATION_ERROR);

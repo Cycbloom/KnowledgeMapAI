@@ -1,8 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { message } from '../../utils/messageHelper';
-import type { MessageShowPayload } from '../../services/FrontendEventTypes';
 import {
   AppError,
   ValidationError,
@@ -11,8 +10,6 @@ import {
   isNetworkError,
   isValidationError,
 } from '../../utils/errors';
-
-type MessageType = MessageShowPayload["type"];
 
 interface ErrorHandlerOptions {
   silent?: boolean;
@@ -115,62 +112,13 @@ export const useError = () => {
     }
   }, [handleError]);
 
-  const withErrorHandling = useCallback(async <T,>(
-    fn: () => Promise<T>,
-    options: ErrorHandlerOptions = {}
-  ): Promise<T | null> => {
-    try {
-      return await fn();
-    } catch (error) {
-      handleError(error, options);
-      return null;
-    }
-  }, [handleError]);
-
   return {
     handleError,
     handleSilent,
     handleAsync,
     handleAsyncWithFallback,
-    withErrorHandling,
     parseError,
   };
-};
-
-export class ErrorHandlerService {
-  private publishMessage: (msg: { type: MessageType; content: string; duration?: number }) => void;
-
-  constructor(publishMessage: (msg: { type: MessageType; content: string; duration?: number }) => void) {
-    this.publishMessage = publishMessage;
-  }
-
-  handle(error: unknown, context?: string): ErrorInfo {
-    const errorInfo = parseError(error);
-    const prefix = context ? `[${context}] ` : '';
-    console.error(`${prefix}${errorInfo.message}`, error);
-    this.publishMessage({ type: 'error', content: errorInfo.message, duration: 5000 });
-    return errorInfo;
-  }
-
-  parse(error: unknown): ErrorInfo {
-    return parseError(error);
-  }
-}
-
-export const useErrorHandlerService = () => {
-  const publishMessage = useCallback((msg: { type: MessageType; content: string; duration?: number }) => {
-    if (msg.type === 'success') {
-      message.success(msg.content, { duration: msg.duration });
-    } else if (msg.type === 'error') {
-      message.error(msg.content, { duration: msg.duration });
-    } else if (msg.type === 'info') {
-      message.info(msg.content, { duration: msg.duration });
-    } else if (msg.type === 'warning') {
-      message.warning(msg.content, { duration: msg.duration });
-    }
-  }, []);
-  const handler = useMemo(() => new ErrorHandlerService(publishMessage), [publishMessage]);
-  return handler;
 };
 
 export type { ErrorHandlerOptions, ErrorInfo };

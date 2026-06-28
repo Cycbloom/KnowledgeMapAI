@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 import { notificationService } from '../services/common';
@@ -42,11 +42,11 @@ const updateSettingsSchema = z.object({
 router.get(
   '/',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const unreadOnly = req.query.unread_only === 'true';
 
-    const data = await notificationService.list(req.supabase!, req.user.id, { limit, unreadOnly });
+    const data = await notificationService.list(req.supabase, req.user.id, { limit, unreadOnly });
     res.json({ success: true, data });
   },
 );
@@ -54,8 +54,8 @@ router.get(
 router.get(
   '/unread-count',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    const count = await notificationService.getUnreadCount(req.supabase!, req.user.id);
+  async (req: AuthedRequest, res: Response) => {
+    const count = await notificationService.getUnreadCount(req.supabase, req.user.id);
     res.json({ success: true, count });
   },
 );
@@ -64,10 +64,10 @@ router.post(
   '/',
   requireAuth,
   validate({ body: createNotificationSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { type, title, message, data, expires_at } = req.body;
 
-    const notification = await notificationService.create(req.supabase!, req.user.id, { type, title, message, data, expires_at });
+    const notification = await notificationService.create(req.supabase, req.user.id, { type, title, message, data, expires_at });
     res.json({ success: true, data: notification });
   },
 );
@@ -75,10 +75,10 @@ router.post(
 router.put(
   '/:id/read',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    await notificationService.markAsRead(req.supabase!, req.user.id, id);
+    await notificationService.markAsRead(req.supabase, req.user.id, id);
     res.json({ success: true });
   },
 );
@@ -86,8 +86,8 @@ router.put(
 router.put(
   '/read-all',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    await notificationService.markAllAsRead(req.supabase!, req.user.id);
+  async (req: AuthedRequest, res: Response) => {
+    await notificationService.markAllAsRead(req.supabase, req.user.id);
     res.json({ success: true });
   },
 );
@@ -95,10 +95,10 @@ router.put(
 router.delete(
   '/:id',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    await notificationService.delete(req.supabase!, req.user.id, id);
+    await notificationService.delete(req.supabase, req.user.id, id);
     res.json({ success: true });
   },
 );
@@ -106,8 +106,8 @@ router.delete(
 router.delete(
   '/clear-all',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    await notificationService.clearAll(req.supabase!, req.user.id);
+  async (req: AuthedRequest, res: Response) => {
+    await notificationService.clearAll(req.supabase, req.user.id);
     res.json({ success: true });
   },
 );
@@ -115,8 +115,8 @@ router.delete(
 router.get(
   '/settings',
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    const data = await notificationService.getSettings(req.supabase!, req.user.id);
+  async (req: AuthedRequest, res: Response) => {
+    const data = await notificationService.getSettings(req.supabase, req.user.id);
     res.json({ success: true, data });
   },
 );
@@ -125,10 +125,10 @@ router.put(
   '/settings',
   requireAuth,
   validate({ body: updateSettingsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { ...updates } = req.body;
 
-    const data = await notificationService.updateSettings(req.supabase!, req.user.id, updates);
+    const data = await notificationService.updateSettings(req.supabase, req.user.id, updates);
     res.json({ success: true, data });
   },
 );

@@ -1,6 +1,6 @@
 import { Router, type Response } from 'express';
 import { z } from 'zod';
-import { requireAuth, type AuthRequest } from '../../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
 import { 
   generateCardsSchema, 
@@ -19,7 +19,7 @@ import { logger } from '../../utils/logger';
 
 const router = Router();
 
-router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthRequest, res: Response) => {
+router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthedRequest, res: Response) => {
   const { node_title, node_content, count, types, provider, model, graph_id } = req.body;
 
   try {
@@ -49,7 +49,7 @@ const syncGenerateCardsSchema = z.object({
   model: z.string().optional(),
 });
 
-router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchema), async (req: AuthRequest, res: Response) => {
+router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchema), async (req: AuthedRequest, res: Response) => {
   const { node_ids, config, provider, model } = req.body;
 
   try {
@@ -78,12 +78,12 @@ router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchem
   }
 });
 
-router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSchema), async (req: AuthRequest, res: Response) => {
+router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSchema), async (req: AuthedRequest, res: Response) => {
   const { node_ids, config } = req.body;
 
   try {
     const taskIds = [];
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabase, node_ids);
 
@@ -113,12 +113,12 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
   }
 });
 
-router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema), async (req: AuthRequest, res: Response) => {
+router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema), async (req: AuthedRequest, res: Response) => {
   const { node_ids } = req.body;
 
   try {
     const taskIds = [];
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabase, node_ids);
 
@@ -148,7 +148,7 @@ router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema)
   }
 });
 
-router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
+router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthedRequest, res: Response) => {
   const { node_title, node_content, node_level, existing_titles, current_children, expand_prompt, provider, model, graph_id } = req.body;
 
   try {
@@ -168,7 +168,7 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
   }
 });
 
-router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema), async (req: AuthRequest, res: Response) => {
+router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema), async (req: AuthedRequest, res: Response) => {
   const { node_title, node_content, existing_nodes, child_nodes, context_level, provider, model, graph_id } = req.body;
 
   try {
@@ -187,11 +187,11 @@ router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema
   }
 });
 
-router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/tasks/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { id } = req.params;
   
   try {
-    const task = await asyncTaskService.getTask(req.supabase!, id, req.user.id);
+    const task = await asyncTaskService.getTask(req.supabase, id, req.user.id);
     
     if (!task) {
       throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND);
@@ -205,7 +205,7 @@ router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) =>
   }
 });
 
-router.post('/cross-graph-connections', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/cross-graph-connections', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graph1_id, graph1_title, graph1_nodes, graph2_id, graph2_title, graph2_nodes, provider, model } = req.body;
 
   if (!graph1_id || !graph2_id || !graph1_nodes || !graph2_nodes) {

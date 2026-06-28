@@ -30,7 +30,42 @@ export interface AIAction {
 export interface AIActionExecutionResult {
   success: boolean;
   message?: string;
-  data?: any; // The result (text, updated node, or created children)
+  // The result (text, updated node, or created children)
+  data?: unknown;
+}
+
+interface AiActionNodeContext {
+  id: string;
+  graph_id: string;
+  title: string;
+  content: string;
+  properties: Record<string, unknown>;
+}
+
+interface AiActionContext {
+  nodeTitle: string;
+  nodeContent: string;
+  parents?: string;
+  children?: string;
+  siblings?: string;
+}
+
+interface AiActionSpawnChild {
+  title: string;
+  content?: string;
+}
+
+interface AiActionParsedResponse {
+  content?: string;
+  title?: string;
+  tags?: unknown;
+  children?: unknown;
+}
+
+interface KpUpdateData {
+  content?: string;
+  title?: string;
+  properties?: Record<string, unknown>;
 }
 
 const ACTION_SCHEMAS: Record<string, string> = {
@@ -134,16 +169,16 @@ export class AIActionService {
       ? graphNode.knowledge_points[0] 
       : graphNode.knowledge_points;
     
-    const node: any = {
+    const node: AiActionNodeContext = {
       id: kp?.id || graphNode.knowledge_point_id,
       graph_id: graphNode.graph_id,
       title: kp?.title || '',
       content: kp?.content || '',
-      properties: kp?.properties || {},
+      properties: (kp?.properties ?? {}) as Record<string, unknown>,
     };
 
     // 3. Prepare Context
-    const context: any = {
+    const context: AiActionContext = {
         nodeTitle: node.title,
         nodeContent: node.content || '',
     };
@@ -157,19 +192,22 @@ export class AIActionService {
                 .select('source_knowledge_point_id')
                 .eq('target_knowledge_point_id', nodeId)
                 .is('deleted_at', null);
-            
+
             if (edges && edges.length > 0) {
-                const parentIds = edges.map((e: any) => e.source_knowledge_point_id);
+                const parentIds = edges.map((e: { source_knowledge_point_id: string }) => e.source_knowledge_point_id);
                 const { data: parentGraphNodes } = await getSupabaseAdmin()
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
                     .in('knowledge_point_id', parentIds)
                     .is('deleted_at', null);
-                
+
                 if (parentGraphNodes && parentGraphNodes.length > 0) {
-                    context.parents = parentGraphNodes.map((pgn: any) => {
-                      const k = Array.isArray(pgn.knowledge_points) ? pgn.knowledge_points[0] : pgn.knowledge_points;
-                      return `Title: ${k?.title || ''}\nContent: ${k?.content || ''}`;
+                    context.parents = (parentGraphNodes as Array<{ knowledge_points: unknown }>).map((pgn) => {
+                      const kpArr = pgn.knowledge_points;
+                      const k = Array.isArray(kpArr) ? kpArr[0] : kpArr;
+                      const kTitle = (k as { title?: string } | null | undefined)?.title || '';
+                      const kContent = (k as { content?: string } | null | undefined)?.content || '';
+                      return `Title: ${kTitle}\nContent: ${kContent}`;
                     }).join('\n---\n');
                 }
             }
@@ -182,19 +220,22 @@ export class AIActionService {
                 .select('target_knowledge_point_id')
                 .eq('source_knowledge_point_id', nodeId)
                 .is('deleted_at', null);
-            
+
             if (edges && edges.length > 0) {
-                const childIds = edges.map((e: any) => e.target_knowledge_point_id);
+                const childIds = edges.map((e: { target_knowledge_point_id: string }) => e.target_knowledge_point_id);
                 const { data: childGraphNodes } = await getSupabaseAdmin()
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
                     .in('knowledge_point_id', childIds)
                     .is('deleted_at', null);
-                
+
                 if (childGraphNodes && childGraphNodes.length > 0) {
-                    context.children = childGraphNodes.map((cgn: any) => {
-                      const k = Array.isArray(cgn.knowledge_points) ? cgn.knowledge_points[0] : cgn.knowledge_points;
-                      return `Title: ${k?.title || ''}\nContent: ${k?.content || ''}`;
+                    context.children = (childGraphNodes as Array<{ knowledge_points: unknown }>).map((cgn) => {
+                      const kpArr = cgn.knowledge_points;
+                      const k = Array.isArray(kpArr) ? kpArr[0] : kpArr;
+                      const kTitle = (k as { title?: string } | null | undefined)?.title || '';
+                      const kContent = (k as { content?: string } | null | undefined)?.content || '';
+                      return `Title: ${kTitle}\nContent: ${kContent}`;
                     }).join('\n---\n');
                 }
             }
@@ -207,21 +248,21 @@ export class AIActionService {
                 .select('source_knowledge_point_id')
                 .eq('target_knowledge_point_id', nodeId)
                 .is('deleted_at', null);
-            
+
             if (parentEdges && parentEdges.length > 0) {
-                const parentIds = parentEdges.map((e: any) => e.source_knowledge_point_id);
-                
+                const parentIds = parentEdges.map((e: { source_knowledge_point_id: string }) => e.source_knowledge_point_id);
+
                 const { data: siblingEdges } = await getSupabaseAdmin()
                     .from('edges')
                     .select('target_knowledge_point_id')
                     .in('source_knowledge_point_id', parentIds)
                     .is('deleted_at', null);
-                
+
                 if (siblingEdges && siblingEdges.length > 0) {
                     const siblingIds = [...new Set(
                         siblingEdges
-                            .map((e: any) => e.target_knowledge_point_id)
-                            .filter((id: any) => id !== nodeId)
+                            .map((e: { target_knowledge_point_id: string }) => e.target_knowledge_point_id)
+                            .filter((id: string) => id !== nodeId)
                     )];
 
                     if (siblingIds.length > 0) {
@@ -231,11 +272,14 @@ export class AIActionService {
                             .in('knowledge_point_id', siblingIds)
                             .is('deleted_at', null)
                             .limit(10);
-                        
+
                         if (siblingGraphNodes && siblingGraphNodes.length > 0) {
-                            context.siblings = siblingGraphNodes.map((sgn: any) => {
-                              const k = Array.isArray(sgn.knowledge_points) ? sgn.knowledge_points[0] : sgn.knowledge_points;
-                              return `Title: ${k?.title || ''}\nContent: ${k?.content || ''}`;
+                            context.siblings = (siblingGraphNodes as Array<{ knowledge_points: unknown }>).map((sgn) => {
+                              const kpArr = sgn.knowledge_points;
+                              const k = Array.isArray(kpArr) ? kpArr[0] : kpArr;
+                              const kTitle = (k as { title?: string } | null | undefined)?.title || '';
+                              const kContent = (k as { content?: string } | null | undefined)?.content || '';
+                              return `Title: ${kTitle}\nContent: ${kContent}`;
                             }).join('\n---\n');
                         }
                     }
@@ -330,7 +374,7 @@ export class AIActionService {
     }
 
     // For other modes, parse JSON
-    let parsed: any;
+    let parsed: unknown;
     try {
         // Simple cleanup for markdown code blocks
         const cleanJson = responseContent.replace(/```json\s*|\s*```/g, '').trim();
@@ -339,19 +383,29 @@ export class AIActionService {
         return { success: false, message: 'Failed to parse AI response as JSON' };
     }
 
+    // Type guard: ensure parsed is a non-null object with expected fields
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return { success: false, message: 'Invalid AI response format' };
+    }
+    const parsedObj = parsed as AiActionParsedResponse;
+
     if (action.target_mode === 'update_node') {
-        const kpUpdates: any = {};
-        if (parsed.content) kpUpdates.content = parsed.content;
-        if (parsed.title) kpUpdates.title = parsed.title;
-        
-        if (parsed.tags && Array.isArray(parsed.tags)) {
+        const kpUpdates: KpUpdateData = {};
+        if (typeof parsedObj.content === 'string' && parsedObj.content) {
+            kpUpdates.content = parsedObj.content;
+        }
+        if (typeof parsedObj.title === 'string' && parsedObj.title) {
+            kpUpdates.title = parsedObj.title;
+        }
+
+        if (Array.isArray(parsedObj.tags)) {
              const { data: kp } = await getSupabaseAdmin()
                .from('knowledge_points')
                .select('properties')
                .eq('id', nodeId)
                .single();
-             const currentProps = kp?.properties || {};
-             kpUpdates.properties = { ...currentProps, tags: parsed.tags };
+             const currentProps = (kp?.properties ?? {}) as Record<string, unknown>;
+             kpUpdates.properties = { ...currentProps, tags: parsedObj.tags as string[] };
         }
 
         if (Object.keys(kpUpdates).length > 0) {
@@ -365,7 +419,9 @@ export class AIActionService {
     }
 
     if (action.target_mode === 'spawn_children') {
-        if (parsed.children && Array.isArray(parsed.children)) {
+        const childrenRaw = parsedObj.children;
+        if (Array.isArray(childrenRaw)) {
+            const children = childrenRaw as AiActionSpawnChild[];
             const createdNodeIds: string[] = [];
 
             if (transactionExecutor.isAvailable()) {
@@ -374,7 +430,7 @@ export class AIActionService {
                   const kpIds: string[] = [];
 
                   // 批量 INSERT knowledge_points
-                  for (const child of parsed.children) {
+                  for (const child of children) {
                     const kpResult = await client.query(
                       `INSERT INTO knowledge_points (title, content, visibility, owner_id, properties)
                        VALUES ($1, $2, 'private', $3, '{}')
@@ -412,7 +468,7 @@ export class AIActionService {
               } catch (txError) {
                 logger.warn('spawn_children transaction failed, falling back to non-transactional creation:', txError);
                 // 降级路径：逐个创建
-                for (const child of parsed.children) {
+                for (const child of children) {
                   const result = await createKnowledgePointWithGraphNode(
                     getSupabaseAdmin(),
                     userId,
@@ -442,7 +498,7 @@ export class AIActionService {
             } else {
               // transactionExecutor 不可用，使用降级路径
               logger.warn('transactionExecutor not available, using non-transactional spawn_children');
-              for (const child of parsed.children) {
+              for (const child of children) {
                 const result = await createKnowledgePointWithGraphNode(
                   getSupabaseAdmin(),
                   userId,

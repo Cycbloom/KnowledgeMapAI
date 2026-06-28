@@ -50,6 +50,18 @@ import { Console } from "../Console/Console";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { apiClient } from "../../services/api/createApiClient";
 
+/**
+ * Shape of the user_metadata stored on the Supabase User object.
+ * Supabase types `user_metadata` as a generic record; this narrows it to the
+ * fields actually accessed in the UI.
+ */
+interface UserMetadata {
+  name?: string;
+  full_name?: string;
+  avatar_url?: string;
+  study_streak?: number;
+}
+
 interface SidebarLinkProps {
   to: string;
   icon: LucideIcon;
@@ -428,7 +440,7 @@ export const Layout = () => {
                     <span
                       className={`text-xs font-medium max-w-[80px] truncate ${isDark ? "text-slate-300" : "text-gray-700"}`}
                     >
-                      {(user.user_metadata as any)?.name ||
+                      {(user.user_metadata as UserMetadata | undefined)?.name ||
                         user.email?.split("@")[0]}
                     </span>
                   </div>

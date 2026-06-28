@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import {
   createNodeSchema,
@@ -19,9 +19,9 @@ router.post(
   "/nodes",
   requireAuth,
   validate(createNodeSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const result = await nodesService.createNode(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       req.body,
     );
@@ -32,9 +32,9 @@ router.post(
 router.get(
   "/nodes/:id",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    const data = await nodesService.getNode(req.supabase!, req.user.id, id);
+    const data = await nodesService.getNode(req.supabase, req.user.id, id);
     res.json(data);
   },
 );
@@ -43,10 +43,10 @@ router.put(
   "/nodes/:id",
   requireAuth,
   validate(updateNodeSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await nodesService.updateNode(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       req.body,
@@ -58,11 +58,11 @@ router.put(
 router.get(
   "/nodes/:id/related",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const limit = parseInt(req.query.limit as string) || 5;
     const data = await nodesService.getRelatedNodes(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       limit,
@@ -75,12 +75,12 @@ router.delete(
   "/nodes/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const hardDeleteParam = req.query.hard_delete;
     const hardDelete = hardDeleteParam === "true" || hardDeleteParam === "1";
     const result = await nodesService.deleteNode(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       hardDelete,
@@ -93,10 +93,10 @@ router.post(
   "/nodes/batch-delete",
   requireAuth,
   validate(batchDeleteNodesSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { node_ids } = req.body;
     const result = await nodesService.batchDeleteNodes(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       node_ids,
     );
@@ -108,10 +108,10 @@ router.post(
   "/nodes/batch-update-positions",
   requireAuth,
   validate(batchUpdatePositionsSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { positions } = req.body;
     const result = await nodesService.batchUpdatePositions(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       positions,
     );
@@ -123,10 +123,10 @@ router.post(
   "/nodes/batch-update",
   requireAuth,
   validate(batchUpdateNodesSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { nodes } = req.body;
     const result = await nodesService.batchUpdateNodes(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       nodes,
     );
@@ -137,10 +137,10 @@ router.post(
 router.get(
   "/nodes/:id/knowledge-point-graphs",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const data = await knowledgePointService.getGraphs(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
     );
@@ -152,9 +152,9 @@ router.post(
   "/edges",
   requireAuth,
   validate(createEdgeSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const edge = await nodesService.createEdge(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       req.body,
     );
@@ -166,9 +166,9 @@ router.delete(
   "/edges/:id",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
-    await nodesService.deleteEdge(req.supabase!, req.user.id, id);
+    await nodesService.deleteEdge(req.supabase, req.user.id, id);
     res.json({ message: "Edge deleted" });
   },
 );

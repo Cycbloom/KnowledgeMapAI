@@ -11,6 +11,17 @@ import { registerDbIpcHandlers } from "./ipc/dbHandlers";
 import { SyncEngine } from "./sync/syncEngine";
 import { logger } from "./utils/logger";
 
+/** Minimal contract for the loaded API Express application. */
+interface ApiApp {
+  (req: unknown, res: unknown): void;
+}
+
+/** Minimal contract for the API kernel (lifecycle management). */
+interface ApiKernel {
+  activateAll(): Promise<void>;
+  deactivateAll(): Promise<void>;
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // IPC channel whitelist for security validation
@@ -40,15 +51,19 @@ const IPC_HANDLE_CHANNELS = new Set([
 
 // Wrap ipcMain.handle to validate channels against whitelist
 const originalHandle = ipcMain.handle.bind(ipcMain);
-ipcMain.handle = (channel: string, handler: (...args: any[]) => any) => {
-  return originalHandle(channel, (...args: any[]) => {
+type IpcHandleListener = (
+  event: Electron.IpcMainInvokeEvent,
+  ...args: unknown[]
+) => unknown | Promise<unknown>;
+ipcMain.handle = ((channel: string, handler: IpcHandleListener) => {
+  return originalHandle(channel, (event: Electron.IpcMainInvokeEvent, ...args: unknown[]) => {
     if (!IPC_HANDLE_CHANNELS.has(channel)) {
       logger.warn(`[Security] Rejected IPC handle call to unregistered channel: ${channel}`);
       throw new Error(`IPC channel not allowed: ${channel}`);
     }
-    return handler(...args);
+    return handler(event, ...args);
   });
-};
+}) as typeof ipcMain.handle;
 
 // Note: ipcMain.on wrapper is intentionally omitted because all current IPC
 // communication uses ipcMain.handle (request-response). Main→Renderer events
@@ -101,27 +116,36 @@ function loadEnvVariables() {
 
 loadEnvVariables();
 
-let apiApp: any = null;
-let apiKernel: any = null;
+let apiApp: ApiApp | null = null;
+let apiKernel: ApiKernel | null = null;
 let dbManager: DatabaseManager | null = null;
 let syncEngine: SyncEngine | null = null;
 
 async function loadApiApp() {
   if (app.isPackaged) {
     try {
-      const module = await import(path.join(process.resourcesPath, "api", "app.js"));
-      apiApp = module.default || module;
-      apiKernel = module.kernel || null;
+      const module = await import(path.join(process.resourcesPath, "api", "app.js")) as {
+        default?: ApiApp;
+        kernel?: ApiKernel;
+      };
+      apiApp = module.default ?? (module as unknown as ApiApp);
+      apiKernel = module.kernel ?? null;
     } catch (error) {
       try {
-        const module = await import(path.join(__dirname, "api", "app.js"));
-        apiApp = module.default || module;
-        apiKernel = module.kernel || null;
+        const module = await import(path.join(__dirname, "api", "app.js")) as {
+          default?: ApiApp;
+          kernel?: ApiKernel;
+        };
+        apiApp = module.default ?? (module as unknown as ApiApp);
+        apiKernel = module.kernel ?? null;
       } catch (error2) {
         try {
-          const module = await import("../api/app.js");
-          apiApp = module.default || module;
-          apiKernel = module.kernel || null;
+          const module = await import("../api/app.js") as {
+            default?: ApiApp;
+            kernel?: ApiKernel;
+          };
+          apiApp = module.default ?? (module as unknown as ApiApp);
+          apiKernel = module.kernel ?? null;
         } catch (error3) {
           logger.error("[Main] 所有 API 应用加载路径都失败", {
             errors: [error, error2, error3].map((e) =>
@@ -133,9 +157,12 @@ async function loadApiApp() {
       }
     }
   } else {
-    const module = await import("../api/app.js");
-    apiApp = module.default || module;
-    apiKernel = module.kernel || null;
+    const module = await import("../api/app.js") as {
+      default?: ApiApp;
+      kernel?: ApiKernel;
+    };
+    apiApp = module.default ?? (module as unknown as ApiApp);
+    apiKernel = module.kernel ?? null;
   }
   logger.info("[Main] API 应用加载成功");
 
@@ -179,9 +206,14 @@ async function startApiServer(): Promise<number> {
   if (!apiApp) {
     await loadApiApp();
   }
-  
+
+  const appInstance = apiApp;
+  if (!appInstance) {
+    throw new Error("[Main] API 应用加载失败，无法启动服务器");
+  }
+
   return new Promise((resolve, reject) => {
-    const server = http.createServer(apiApp);
+    const server = http.createServer(appInstance as Parameters<typeof http.createServer>[0]);
     
     const getRandomPort = (): number => {
       return 30000 + Math.floor(Math.random() * 30000);
@@ -343,9 +375,24 @@ function configureCrashReporter(): void {
     },
   });
 
-  (app as any).on(
+  (
+    app as unknown as {
+      on(
+        event: "render-process-crashed",
+        listener: (
+          event: Electron.Event,
+          webContents: Electron.WebContents,
+          killed: boolean,
+        ) => void,
+      ): void;
+    }
+  ).on(
     "render-process-crashed",
-    (event: any, webContents: any, killed: boolean) => {
+    (
+      _event: Electron.Event,
+      webContents: Electron.WebContents,
+      killed: boolean,
+    ) => {
       logger.error("[Main] 渲染进程崩溃", {
         killed,
         url: webContents.getURL(),

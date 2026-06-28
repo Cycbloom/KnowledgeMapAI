@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -31,7 +31,7 @@ router.post(
   "/graph-nodes",
   requireAuth,
   validate(createGraphNodeSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       graph_id,
       knowledge_point_id,
@@ -42,7 +42,7 @@ router.post(
     } = req.body;
 
     const graph = await graphService.getGraph(
-      req.supabase!,
+      req.supabase,
       graph_id,
       req.user.id,
     );
@@ -56,7 +56,7 @@ router.post(
     }
 
     try {
-      const data = await graphNodeService.addToGraph(req.supabase!, {
+      const data = await graphNodeService.addToGraph(req.supabase, {
         graph_id,
         knowledge_point_id,
         x_position,
@@ -85,12 +85,12 @@ router.post(
 router.post(
   "/graph-nodes/add-existing",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_id, knowledge_point_id, x_position, y_position, level } =
       req.body;
 
     const graph = await graphService.getGraph(
-      req.supabase!,
+      req.supabase,
       graph_id,
       req.user.id,
     );
@@ -104,7 +104,7 @@ router.post(
     }
 
     const kp = await knowledgePointService.getAccessible(
-      req.supabase!,
+      req.supabase,
       knowledge_point_id,
       req.user.id,
     );
@@ -118,7 +118,7 @@ router.post(
     }
 
     try {
-      const data = await graphNodeService.addToGraph(req.supabase!, {
+      const data = await graphNodeService.addToGraph(req.supabase, {
         graph_id,
         knowledge_point_id,
         x_position: x_position || 0,
@@ -146,11 +146,11 @@ router.post(
 router.delete(
   "/graph-nodes/:id/soft-delete",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
     const success = await graphNodeService.softDeleteGraphNode(
-      req.supabase!,
+      req.supabase,
       id,
       req.user.id,
     );

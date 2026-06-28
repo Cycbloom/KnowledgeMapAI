@@ -1,5 +1,20 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface UserTaskRow {
+  status: string;
+  completed_at: string | null;
+  created_at: string;
+  queue_level: number;
+  tags: string[] | null;
+  priority: number;
+  deadline: string | null;
+}
+
+interface TaskExecutionRow {
+  duration: number | null;
+  started_at: string | null;
+}
+
 interface TaskAnalytics {
   overview: {
     todayCompleted: number;
@@ -149,7 +164,7 @@ export class TaskAnalyticsService {
     };
   }
 
-  private calculateCompletionTrend(tasks: any[], days: number) {
+  private calculateCompletionTrend(tasks: UserTaskRow[], days: number) {
     const trend: Array<{
       date: string;
       completed: number;
@@ -190,7 +205,7 @@ export class TaskAnalyticsService {
     return trend;
   }
 
-  private calculateTimeDistribution(executions: any[]) {
+  private calculateTimeDistribution(executions: TaskExecutionRow[]) {
     const distribution: Array<{ day: number; hour: number; value: number }> =
       [];
     const map: Record<string, number> = {};
@@ -218,7 +233,7 @@ export class TaskAnalyticsService {
     return distribution;
   }
 
-  private calculateQueueStats(tasks: any[]) {
+  private calculateQueueStats(tasks: UserTaskRow[]) {
     const stats: Array<{
       queueLevel: number;
       totalTasks: number;
@@ -246,7 +261,7 @@ export class TaskAnalyticsService {
     return stats;
   }
 
-  private calculateTagStats(tasks: any[]) {
+  private calculateTagStats(tasks: UserTaskRow[]) {
     const tagMap: Record<string, { count: number; completed: number }> = {};
 
     tasks.forEach((task) => {
@@ -273,7 +288,7 @@ export class TaskAnalyticsService {
       .slice(0, 10);
   }
 
-  private calculatePriorityStats(tasks: any[]) {
+  private calculatePriorityStats(tasks: UserTaskRow[]) {
     const priorityLabels = ["低", "中", "高", "紧急"];
     const stats: Array<{
       priority: number;
@@ -322,7 +337,7 @@ export class TaskAnalyticsService {
   private async calculateComparison(
     _client: SupabaseClient,
     _userId: string,
-    currentTasks: any[],
+    currentTasks: UserTaskRow[],
     weekAgo: Date,
   ) {
     const twoWeeksAgo = new Date(weekAgo);

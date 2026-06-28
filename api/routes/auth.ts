@@ -10,156 +10,115 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
-router.post('/register', validate(registerSchema), async (req: Request, res: Response, _next: import('express').NextFunction): Promise<void> => {
+router.post('/register', validate(registerSchema), async (req: Request, res: Response): Promise<void> => {
   const requestId = req.requestId || 'unknown';
-  try {
-    const { email, password, name } = req.body;
-    
-    logger.info('Register attempt', {
-      requestId,
-      email: email?.substring(0, 3) + '***',
-      hasName: !!name,
-      passwordLength: password?.length || 0,
-    });
+  const { email, password, name } = req.body;
 
-    if (!email || !password || !name) {
-      logger.warn('Register validation failed: missing fields', { requestId });
-      throw new AppError('请填写所有必填字段', 400, ErrorCodes.VALIDATION_ERROR);
-    }
+  logger.info('Register attempt', {
+    requestId,
+    email: email?.substring(0, 3) + '***',
+    hasName: !!name,
+    passwordLength: password?.length || 0,
+  });
 
-    // admin client: 注册流程无已认证会话，无 req.supabase 可用，需使用 admin client 创建用户与档案
-    const admin = getSupabaseAdmin();
-    const result = await authRouteService.signUp(admin, email, password, name);
-
-    logger.info('User created successfully', {
-      requestId,
-      userId: result.user?.id,
-      hasSession: !!result.session,
-    });
-
-    await authRouteService.createUserProfile(admin, result.user!.id, email, name);
-
-    let session = result.session;
-    if (!session) {
-      logger.info('No session returned, attempting to sign in', { requestId });
-      
-      try {
-        const signInResult = await authRouteService.signInWithPassword(admin, email, password);
-        session = signInResult.session;
-        logger.info('Auto sign-in successful', { requestId, hasSession: !!session });
-      } catch {
-        logger.error('Auto sign-in after registration failed', { requestId });
-        res.status(201).json({ 
-          user: result.user, 
-          session: null,
-          message: '注册成功，请登录' 
-        });
-        return;
-      }
-    }
-
-    res.status(201).json({ user: result.user, session });
-  } catch (error: unknown) {
-    logger.error('Register error', {
-      requestId,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    
-    if (error instanceof AppError) {
-      throw error;
-    }
-    
-    const message = error instanceof Error ? error.message : '内部服务器错误';
-    throw new AppError(message, 500, ErrorCodes.SYSTEM_INTERNAL_ERROR);
+  if (!email || !password || !name) {
+    logger.warn('Register validation failed: missing fields', { requestId });
+    throw new AppError('请填写所有必填字段', 400, ErrorCodes.VALIDATION_ERROR);
   }
+
+  // admin client: 注册流程无已认证会话，无 req.supabase 可用，需使用 admin client 创建用户与档案
+  const admin = getSupabaseAdmin();
+  const result = await authRouteService.signUp(admin, email, password, name);
+
+  logger.info('User created successfully', {
+    requestId,
+    userId: result.user?.id,
+    hasSession: !!result.session,
+  });
+
+  await authRouteService.createUserProfile(admin, result.user!.id, email, name);
+
+  let session = result.session;
+  if (!session) {
+    logger.info('No session returned, attempting to sign in', { requestId });
+
+    try {
+      const signInResult = await authRouteService.signInWithPassword(admin, email, password);
+      session = signInResult.session;
+      logger.info('Auto sign-in successful', { requestId, hasSession: !!session });
+    } catch {
+      logger.error('Auto sign-in after registration failed', { requestId });
+      res.status(201).json({
+        user: result.user,
+        session: null,
+        message: '注册成功，请登录'
+      });
+      return;
+    }
+  }
+
+  res.status(201).json({ user: result.user, session });
 });
 
-router.post('/login', validate(loginSchema), async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
+router.post('/login', validate(loginSchema), async (req: Request, res: Response): Promise<void> => {
   const requestId = req.requestId || 'unknown';
-  try {
-    const { email, password } = req.body;
-    
-    logger.info('Login attempt', {
-      requestId,
-      email: email?.substring(0, 3) + '***',
-      hasPassword: !!password,
-    });
+  const { email, password } = req.body;
 
-    // admin client: 登录流程无已认证会话，无 req.supabase 可用，需使用 admin client 验证凭据并补建档案
-    const admin = getSupabaseAdmin();
-    const result = await authRouteService.signInWithPassword(admin, email, password);
+  logger.info('Login attempt', {
+    requestId,
+    email: email?.substring(0, 3) + '***',
+    hasPassword: !!password,
+  });
 
-    logger.info('Login successful', {
-      requestId,
-      userId: result.user.id,
-      email: result.user.email?.substring(0, 3) + '***',
-    });
+  // admin client: 登录流程无已认证会话，无 req.supabase 可用，需使用 admin client 验证凭据并补建档案
+  const admin = getSupabaseAdmin();
+  const result = await authRouteService.signInWithPassword(admin, email, password);
 
-    await authRouteService.ensureUserProfile(
-      admin,
-      result.user.id,
-      email,
-      result.user.user_metadata?.name as string || 'Restored User',
-    );
+  logger.info('Login successful', {
+    requestId,
+    userId: result.user.id,
+    email: result.user.email?.substring(0, 3) + '***',
+  });
 
-    res.json({ user: result.user, session: result.session });
-  } catch (error: unknown) {
-    logger.error('Login error', {
-      requestId,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    next(error);
-  }
+  await authRouteService.ensureUserProfile(
+    admin,
+    result.user.id,
+    email,
+    result.user.user_metadata?.name as string || 'Restored User',
+  );
+
+  res.json({ user: result.user, session: result.session });
 });
 
-router.post('/refresh', async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
-  try {
-    const { refreshToken } = req.body;
-    
-    if (!refreshToken) {
-      throw new AppError(ErrorCodes.MISSING_REFRESH_TOKEN);
-    }
+router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
+  const { refreshToken } = req.body;
 
-    // admin client: 需跨用户验证 refresh token，无已认证会话，必须使用 admin client
-    const result = await authRouteService.refreshSession(getSupabaseAdmin(), refreshToken);
-
-    res.json({ session: result.session, user: result.user });
-  } catch (error: unknown) {
-    logger.error('Refresh token error:', error);
-    next(error);
+  if (!refreshToken) {
+    throw new AppError(ErrorCodes.MISSING_REFRESH_TOKEN);
   }
+
+  // admin client: 需跨用户验证 refresh token，无已认证会话，必须使用 admin client
+  const result = await authRouteService.refreshSession(getSupabaseAdmin(), refreshToken);
+
+  res.json({ session: result.session, user: result.user });
 });
 
-router.post('/logout', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
-  try {
-    // admin client: 注销需撤销用户会话（session 管理），需 service role 权限，不能使用 user-scoped client
-    await authRouteService.signOut(getSupabaseAdmin(), req.user.id);
+router.post('/logout', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  // admin client: 注销需撤销用户会话（session 管理），需 service role 权限，不能使用 user-scoped client
+  await authRouteService.signOut(getSupabaseAdmin(), req.user.id);
 
-    res.json({ message: '退出登录成功' });
-  } catch (error) {
-    next(error);
-  }
+  res.json({ message: '退出登录成功' });
 });
 
-router.get('/user', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
-  try {
-    const profile = await authService.getProfile(req.user.id);
-    res.json({ user: { ...req.user, profile } });
-  } catch (error) {
-    next(error);
-  }
+router.get('/user', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const profile = await authService.getProfile(req.user.id);
+  res.json({ user: { ...req.user, profile } });
 });
 
-router.put('/profile', requireAuth, validate(updateProfileSchema), async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
-  try {
-    const { name, settings } = req.body;
-    const profile = await authService.updateProfile(req.user.id, { name, settings });
-    res.json({ user: { ...req.user, profile } });
-  } catch (error) {
-    next(error);
-  }
+router.put('/profile', requireAuth, validate(updateProfileSchema), async (req: AuthRequest, res: Response): Promise<void> => {
+  const { name, settings } = req.body;
+  const profile = await authService.updateProfile(req.user.id, { name, settings });
+  res.json({ user: { ...req.user, profile } });
 });
 
 export default router;

@@ -1,5 +1,5 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { searchService } from '../services/ai';
 import { logger } from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
@@ -7,7 +7,7 @@ import { ErrorCodes } from '../../shared/types/errorCodes';
 
 const router = Router();
 
-router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { q, type } = req.query;
   
   if (!q || typeof q !== 'string' || q.trim().length === 0) {
@@ -19,13 +19,13 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     if (type === 'semantic') {
       const result = await searchService.semanticSearch(
-        req.supabase!,
+        req.supabase,
         query,
         req.user.id
       );
       res.json(result);
     } else {
-      const result = await searchService.search(req.supabase!, query);
+      const result = await searchService.search(req.supabase, query);
       res.json(result);
     }
   } catch (error) {

@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { AuthRequest, requireAuth } from '../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { promptService } from '../services/ai';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
@@ -9,10 +9,10 @@ const router = Router();
 
 // Get all templates for the current user and optional graph
 // Returns all raw rows, frontend can organize them by code
-router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graph_id } = req.query;
   const userId = req.user.id;
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
 
   try {
     const result = await promptService.list(supabase, {
@@ -30,10 +30,10 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Create or Update a template
-router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { code, scope, template_content, graph_id } = req.body;
   const userId = req.user.id;
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
 
   if (!code || !scope || !template_content) {
     throw new AppError(ErrorCodes.VALIDATION_MISSING_FIELD);
@@ -66,9 +66,9 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Delete a template (Reset to default)
-router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { id } = req.params;
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
 
   try {
     await promptService.deleteTemplate(supabase, id);
@@ -82,7 +82,7 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Optimize Prompt using AI
-router.post('/optimize', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/optimize', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { template_content, instruction } = req.body;
   
   if (!template_content) {

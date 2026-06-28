@@ -2,7 +2,8 @@ import { Router, type Response } from "express";
 import {
   requireAuth,
   optionalAuth,
-  type AuthRequest,
+  type AuthedRequest,
+  type OptionalAuthRequest,
 } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { uuidParamsSchema } from "../../schemas/index";
@@ -29,7 +30,7 @@ router.get(
   "/:id/nodes",
   optionalAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id || null;
     const includeEmbedding = req.query.includeEmbedding === "true";
@@ -55,7 +56,7 @@ router.get(
   "/:id/node-status",
   optionalAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id || null;
     const data = userId
@@ -70,11 +71,11 @@ router.post(
   "/batch-node-status",
   requireAuth,
   validate({ body: batchNodeStatusSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graph_ids } = req.body;
     const userId = req.user.id;
     const data = await graphService.batchGetGraphNodeStatus(
-      req.supabase!,
+      req.supabase,
       userId,
       graph_ids,
     );
@@ -87,7 +88,7 @@ router.get(
   "/:id/learning-path",
   optionalAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: OptionalAuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id || null;
 
@@ -102,13 +103,13 @@ router.get(
   "/:id/analyze",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.id;
 
     try {
       const analysis = await graphService.analyzeGraph(
-        req.supabase!,
+        req.supabase,
         userId,
         id,
       );
@@ -125,14 +126,14 @@ router.get(
   "/:id/missing-connections",
   requireAuth,
   validate({ params: uuidParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.id;
     const maxSuggestions = parseInt(req.query.max as string) || 10;
 
     try {
       const suggestions = await graphService.findMissingConnections(
-        req.supabase!,
+        req.supabase,
         userId,
         id,
         maxSuggestions,
@@ -151,13 +152,13 @@ router.post(
   "/domain/analyze",
   requireAuth,
   validate({ body: analyzeDomainSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { domain, count = 10, context_domain_id, session_id } = req.body;
     const userId = req.user.id;
 
     try {
       const result = await analysisRouteService.analyzeDomain(
-        req.supabase!,
+        req.supabase,
         userId,
         domain,
         count,

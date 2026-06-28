@@ -48,8 +48,6 @@ export interface TaskKnowledgePointRelation {
   created_at: string;
 }
 
-const _MASTERY_INCREMENT_BASE = 0.05;
-
 export class ProgressSyncService {
   async syncStudyDuration(
     client: SupabaseClient,
@@ -390,44 +388,6 @@ export class ProgressSyncService {
     }
 
     return results;
-  }
-
-  /** @deprecated 使用 masteryCalculationService 替代 */
-  // @ts-expect-error kept for backward compatibility
-  private calculateMasteryIncrement(
-    durationMinutes: number,
-    isPrimary: boolean
-  ): number {
-    const MASTERY_MAX = 1.0;
-    const MASTERY_MIN = 0.0;
-    const baseIncrement = _MASTERY_INCREMENT_BASE * (durationMinutes / 30);
-    const primaryBonus = isPrimary ? 1.5 : 1.0;
-    return Math.min(MASTERY_MAX, Math.max(MASTERY_MIN, baseIncrement * primaryBonus));
-  }
-
-  /** @deprecated 使用 masteryCalculationService 替代 */
-  // @ts-expect-error kept for backward compatibility
-  private calculateCompletionMasteryIncrement(
-    currentMastery: number,
-    isPrimary: boolean,
-    relevanceScore: number,
-    qualityMultiplier: number
-  ): number {
-    const MASTERY_MAX = 1.0;
-    const MASTERY_MIN = 0.0;
-    const diminishingFactor = 1 - currentMastery * 0.5;
-    const primaryBonus = isPrimary ? 1.5 : 1.0;
-    const relevanceFactor = relevanceScore / 100;
-
-    const increment =
-      _MASTERY_INCREMENT_BASE *
-      2 *
-      diminishingFactor *
-      primaryBonus *
-      relevanceFactor *
-      qualityMultiplier;
-
-    return Math.min(MASTERY_MAX, Math.max(MASTERY_MIN, increment));
   }
 
   private getQualityMultiplier(quality: number): number {

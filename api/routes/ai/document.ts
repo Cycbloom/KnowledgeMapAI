@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { textToGraphSchema, urlToTextSchema } from "../../schemas/index";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -25,7 +25,7 @@ router.post(
   "/text-to-graph",
   requireAuth,
   validate(textToGraphSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       text,
       graph_id,
@@ -69,7 +69,7 @@ router.post(
         }
 
         const { nodeCount, edgeCount } = await autoGraphService.saveTextToGraph(
-          req.supabase!,
+          req.supabase,
           req.user.id,
           graph_id,
           nodes,
@@ -149,7 +149,7 @@ router.post(
 
     try {
       const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase!,
+        req.supabase,
         "text_to_graph",
         {},
         req.user.id,
@@ -157,7 +157,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(req.supabase!, {
+      const enrichedMetadata = await enrichMetadata(req.supabase, {
         graphId: graph_id,
         userId: req.user.id,
         topic: text?.slice(0, 50),
@@ -233,7 +233,7 @@ router.post(
   "/document-to-graph",
   requireAuth,
   upload.single("file"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const {
       graph_id,
       provider: providerOverride,
@@ -271,7 +271,7 @@ router.post(
       );
 
       const systemPrompt = await promptService.getRenderedPrompt(
-        req.supabase!,
+        req.supabase,
         "document_to_graph",
         {},
         req.user.id,
@@ -279,7 +279,7 @@ router.post(
         language,
       );
 
-      const enrichedMetadata = await enrichMetadata(req.supabase!, {
+      const enrichedMetadata = await enrichMetadata(req.supabase, {
         graphId: graph_id,
         userId: req.user.id,
         documentName: file.originalname,
@@ -350,7 +350,7 @@ router.post(
   "/image-to-graph",
   requireAuth,
   upload.single("file"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { provider: providerOverride, model: modelOverride } = req.body;
     const file = req.file;
 
@@ -386,7 +386,7 @@ router.post(
   "/url-to-text",
   requireAuth,
   validate(urlToTextSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { url } = req.body;
 
     try {

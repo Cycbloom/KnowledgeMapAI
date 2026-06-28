@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -30,9 +30,9 @@ const initializeTemplateSchema = z.object({
 
 const router = Router();
 
-router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graphId } = req.params;
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
 
   try {
     const tree = await structureService.listStructures(supabase, graphId);
@@ -48,9 +48,9 @@ router.post(
   "/",
   requireAuth,
   validate(createStoryStructureSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const structure = await structureService.createStructure(
@@ -71,9 +71,9 @@ router.put(
   "/:id",
   requireAuth,
   validate(updateStoryStructureSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId, id } = req.params;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const structure = await structureService.updateStructure(
@@ -91,9 +91,9 @@ router.put(
   },
 );
 
-router.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
+router.delete("/:id", requireAuth, async (req: AuthedRequest, res: Response) => {
   const { graphId, id } = req.params;
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
 
   try {
     await structureService.deleteStructure(supabase, graphId, id);
@@ -109,10 +109,10 @@ router.post(
   "/initialize-template",
   requireAuth,
   validate(initializeTemplateSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { templateCode } = req.body;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
 
     try {
       const result = await structureService.initializeFromTemplate(

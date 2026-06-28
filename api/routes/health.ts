@@ -1,5 +1,5 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { requireAuth, type AuthedRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { ErrorCodes } from '../../shared/types/errorCodes';
 import { logger } from '../utils/logger';
@@ -7,8 +7,8 @@ import { healthService } from "../services/core";
 
 const router = Router();
 
-router.get('/overview', requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+router.get('/overview', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const supabase = req.supabase;
 
   try {
     const overview = await healthService.getOverview(supabase, req.user.id);
@@ -19,8 +19,8 @@ router.get('/overview', requireAuth, async (req: AuthRequest, res: Response) => 
   }
 });
 
-router.get('/heatmap', requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+router.get('/heatmap', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const supabase = req.supabase;
 
   try {
     const heatmap = await healthService.getHeatmap(supabase, req.user.id);
@@ -31,8 +31,8 @@ router.get('/heatmap', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.get('/weak-points', requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+router.get('/weak-points', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const supabase = req.supabase;
 
   try {
     const weakPoints = await healthService.getWeakPoints(supabase, req.user.id);
@@ -43,8 +43,8 @@ router.get('/weak-points', requireAuth, async (req: AuthRequest, res: Response) 
   }
 });
 
-router.get('/weekly-activity', requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+router.get('/weekly-activity', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const supabase = req.supabase;
 
   try {
     const days = parseInt(req.query.days as string) || 7;
@@ -56,8 +56,8 @@ router.get('/weekly-activity', requireAuth, async (req: AuthRequest, res: Respon
   }
 });
 
-router.get('/predictions', requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+router.get('/predictions', requireAuth, async (req: AuthedRequest, res: Response) => {
+  const supabase = req.supabase;
 
   try {
     const predictions = await healthService.getPredictions(supabase, req.user.id);

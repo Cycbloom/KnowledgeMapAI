@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import { subtaskService } from "../../services/scheduler";
@@ -58,7 +58,7 @@ router.post(
   "/tasks/:id/subtasks",
   requireAuth,
   validate({ body: createSubtaskBodySchema, params: createSubtaskParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
     const {
       title,
@@ -69,7 +69,7 @@ router.post(
       due_date,
     } = req.body;
 
-    const data = await subtaskService.create(req.supabase!, req.user.id, id, {
+    const data = await subtaskService.create(req.supabase, req.user.id, id, {
       title,
       description,
       knowledge_point_id,
@@ -86,10 +86,10 @@ router.get(
   "/tasks/:id/subtasks",
   requireAuth,
   validate({ params: z.object({ id: z.string().uuid("无效的任务ID") }) }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id } = req.params;
 
-    const data = await subtaskService.list(req.supabase!, req.user.id, id);
+    const data = await subtaskService.list(req.supabase, req.user.id, id);
 
     res.json({ success: true, data });
   },
@@ -99,12 +99,12 @@ router.put(
   "/tasks/:id/subtasks/:subtaskId",
   requireAuth,
   validate({ body: updateSubtaskBodySchema, params: updateSubtaskParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, subtaskId } = req.params;
     const updates = req.body;
 
     const data = await subtaskService.update(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       subtaskId,
@@ -119,10 +119,10 @@ router.delete(
   "/tasks/:id/subtasks/:subtaskId",
   requireAuth,
   validate({ params: subtaskParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, subtaskId } = req.params;
 
-    await subtaskService.delete(req.supabase!, req.user.id, id, subtaskId);
+    await subtaskService.delete(req.supabase, req.user.id, id, subtaskId);
 
     res.json({ success: true });
   },
@@ -132,12 +132,12 @@ router.post(
   "/tasks/:id/subtasks/:subtaskId/transition",
   requireAuth,
   validate({ body: transitionSubtaskBodySchema, params: transitionSubtaskParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, subtaskId } = req.params;
     const { to_state, mastery_level, reason } = req.body;
 
     const data = await subtaskService.transition(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       subtaskId,
@@ -159,12 +159,12 @@ router.patch(
       mastery_level: z.number().min(0).max(100),
     }),
   }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, subtaskId } = req.params;
     const { mastery_level } = req.body;
 
     const data = await subtaskService.updateMastery(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       subtaskId,
@@ -179,11 +179,11 @@ router.get(
   "/tasks/:id/subtasks/:subtaskId/valid-transitions",
   requireAuth,
   validate({ params: subtaskParamsSchema }),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { id, subtaskId } = req.params;
 
     const data = await subtaskService.getValidTransitions(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       id,
       subtaskId,

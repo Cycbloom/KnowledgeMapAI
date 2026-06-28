@@ -146,7 +146,7 @@ export class DatabaseManager {
     const tableDef = this.getTableDef(tableName);
 
     // Add sync_status and local_updated_at; generate id if not provided
-    const enrichedData = {
+    const enrichedData: Record<string, unknown> = {
       ...data,
       id: data.id ?? crypto.randomUUID(),
       sync_status: 'pending_push',
@@ -177,7 +177,7 @@ export class DatabaseManager {
     const oldRecord = this.findById(tableName, id) as Record<string, unknown> | null;
 
     // Add sync_status and local_updated_at
-    const enrichedData = {
+    const enrichedData: Record<string, unknown> = {
       ...data,
       sync_status: 'pending_push',
       local_updated_at: new Date().toISOString(),
@@ -250,7 +250,7 @@ export class DatabaseManager {
     const transaction = this.db!.transaction(() => {
       const results: T[] = [];
       for (const data of items) {
-        const enrichedData = {
+        const enrichedData: Record<string, unknown> = {
           ...data,
           sync_status: 'synced', // Batch create from sync uses 'synced'
           local_updated_at: new Date().toISOString(),
@@ -276,7 +276,7 @@ export class DatabaseManager {
     this.ensureReady();
     const tableDef = this.getTableDef(tableName);
 
-    const enrichedData = {
+    const enrichedData: Record<string, unknown> = {
       ...data,
       local_updated_at: new Date().toISOString(),
     };

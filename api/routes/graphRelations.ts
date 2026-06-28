@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { graphRelationsRouteService } from "../services/graph";
 import { z } from "zod";
@@ -37,10 +37,10 @@ const createRelationSchema = z.object({
 router.get(
   "/:graphId/relations",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const data = await graphRelationsRouteService.getRelationsWithDetails(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       graphId,
     );
@@ -52,11 +52,11 @@ router.post(
   "/:graphId/prerequisite-graph",
   requireAuth,
   validate(createPrerequisiteSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { topic, description, auto_generate } = req.body;
     const data = await graphRelationsRouteService.createPrerequisiteGraph(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       graphId,
       { topic, description, auto_generate },
@@ -69,11 +69,11 @@ router.post(
   "/:graphId/prerequisite-graphs/batch",
   requireAuth,
   validate(batchCreateSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const { topics, depth, style } = req.body;
     const data = await graphRelationsRouteService.batchCreatePrerequisiteGraphs(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       graphId,
       { topics, depth, style },
@@ -85,10 +85,10 @@ router.post(
 router.delete(
   "/:graphId/relations/:relationId",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { relationId } = req.params;
     await graphRelationsRouteService.deleteRelationWithCheck(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       relationId,
     );
@@ -100,11 +100,11 @@ router.post(
   "/relations",
   requireAuth,
   validate(createRelationSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { source_graph_id, target_graph_id, relation_type, context } =
       req.body;
     const data = await graphRelationsRouteService.createRelationWithChecks(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       { source_graph_id, target_graph_id, relation_type, context },
     );
@@ -115,10 +115,10 @@ router.post(
 router.delete(
   "/relations/:relationId",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { relationId } = req.params;
     await graphRelationsRouteService.deleteRelationWithCheck(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       relationId,
     );
@@ -141,7 +141,7 @@ router.post(
   "/:graphId/infinite-expand",
   requireAuth,
   validate(infiniteExpansionSchema),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthedRequest, res: Response) => {
     const { graphId } = req.params;
     const {
       max_depth,
@@ -151,7 +151,7 @@ router.post(
       node_depth,
     } = req.body;
     const data = await graphRelationsRouteService.startInfiniteExpansion(
-      req.supabase!,
+      req.supabase,
       req.user.id,
       graphId,
       { max_depth, max_graphs_per_level, relation_types, auto_generate_nodes, node_depth },

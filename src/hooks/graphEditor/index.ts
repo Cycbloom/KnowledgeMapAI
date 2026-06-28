@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { useSelectionState, SelectionState } from './useSelectionState';
 import { useSidebarState, SidebarState } from './useSidebarState';
 import { useExplorationState, ExplorationState } from './useExplorationState';
@@ -34,7 +34,7 @@ export { useGraphEditorPanelState } from './useGraphEditorPanelState';
 export { useFocusNode } from './useFocusNode';
 export { useBranchSelection } from './useBranchSelection';
 
-interface GraphRef {
+export interface GraphRef {
   centerNode?: (nodeId: string, options?: { forceRightPanelOpen?: boolean }) => void;
   captureScreenshot?: (options: { transparent: boolean; fitView: boolean; hideGrid: boolean }) => Promise<string>;
   getTransform?: () => { x: number; y: number; k: number };
@@ -59,7 +59,7 @@ export const useGraphEditorState = (): GraphEditorState => {
   const narrative = useNarrativeState();
   const misc = useMiscState();
 
-  return {
+  return useMemo(() => ({
     graphRef,
     ...selection,
     ...sidebar,
@@ -71,5 +71,17 @@ export const useGraphEditorState = (): GraphEditorState => {
     ...presentation,
     ...narrative,
     ...misc,
-  };
+  }), [
+    graphRef,
+    selection,
+    sidebar,
+    exploration,
+    focus,
+    modal,
+    form,
+    view,
+    presentation,
+    narrative,
+    misc,
+  ]);
 };

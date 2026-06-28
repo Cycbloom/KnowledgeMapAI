@@ -15,12 +15,15 @@ import {
   Layers,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAIPerformanceStore } from "@/store/useAIPerformanceStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "@/hooks/queries";
 import type { AIPerformanceLog, AIProviderType } from "@shared/types";
 
 interface PerformanceTabProps {
   isDark: boolean;
 }
+
+const EMPTY_LOGS: AIPerformanceLog[] = [];
 
 const formatDuration = (ms: number): string => {
   if (ms < 1000) return `${ms}ms`;
@@ -843,8 +846,7 @@ const LogDetailModal: React.FC<{
 
 export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   const { t } = useTranslation();
-  const { logs, stats, isLoading, error, fetchLogs, fetchStats, clearLogs } =
-    useAIPerformanceStore();
+  const queryClient = useQueryClient();
   const [selectedLog, setSelectedLog] = useState<AIPerformanceLog | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filterOperation, setFilterOperation] = useState<string>("");
@@ -878,24 +880,24 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
     }
   }, [timeRange]);
 
-  const loadData = useCallback(async () => {
-    const startTime = getTimeRangeTimestamp();
-    const query = {
-      startTime,
-      operation: filterOperation || undefined,
-      provider: filterProvider || undefined,
-      success: filterSuccess === "" ? undefined : filterSuccess === "true",
-      limit: 100,
-    };
-    await Promise.all([fetchLogs(query), fetchStats({ startTime })]);
-  }, [
-    getTimeRangeTimestamp,
-    filterOperation,
-    filterProvider,
-    filterSuccess,
-    fetchLogs,
-    fetchStats,
-  ]);
+  // 计算 query 参数
+  const startTime = getTimeRangeTimestamp();
+  const logsQuery = {
+    startTime,
+    operation: filterOperation || undefined,
+    provider: filterProvider || undefined,
+    success: filterSuccess === "" ? undefined : filterSuccess === "true",
+    limit: 100,
+  };
+  const { data: logsData, isLoading, error } = useAiPerformanceLogs(logsQuery);
+  const { data: stats } = useAiPerformanceStats({ startTime });
+  const { mutateAsync: clearLogsMutate } = useClearAiPerformanceLogs();
+  const logs = logsData?.logs ?? EMPTY_LOGS;
+
+  const loadData = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["aiPerformanceLogs"] });
+    queryClient.invalidateQueries({ queryKey: ["aiPerformanceStats"] });
+  }, [queryClient]);
 
   useEffect(() => {
     loadData();
@@ -903,10 +905,12 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
 
   const handleClearLogs = useCallback(async () => {
     if (window.confirm(t("console.performance.clearConfirm"))) {
-      await clearLogs();
-      loadData();
+      await clearLogsMutate(undefined);
+      // mutation 的 onSuccess 已自动失效缓存，无需手动 loadData
     }
-  }, [clearLogs, loadData, t]);
+  }, [clearLogsMutate, t]);
+
+  const errorMessage = error instanceof Error ? error.message : error ? "获取性能日志失败" : null;
 
   const uniqueOperations = Array.from(
     new Set(logs.map((log) => log.operation)),
@@ -1190,11 +1194,11 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
       )}
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {error && (
+        {errorMessage && (
           <div
             className={`p-4 text-center ${isDark ? "text-red-400" : "text-red-600"}`}
           >
-            {error}
+            {errorMessage}
           </div>
         )}
 

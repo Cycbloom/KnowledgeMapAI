@@ -8,3 +8,4 @@ export * from "./useLearningPathQueries";
 export * from "./useQuizQueries";
 export * from "./useActivityQueries";
 export * from "./useGraphVersionQueries";
+export { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "./useAiPerformanceQueries";

@@ -59,11 +59,9 @@ import type {
   LinkAnimation,
   NodeSizeMode,
   EdgeWidthMode,
-  ExtractedConcept,
   TutorExtractedConcept,
 } from "../types";
 import type {
-  CustomRegion,
   TemplateLayout,
 } from "@shared/types/graph";
 import { PresentationControls } from "../components/GraphEditor/toolbar/PresentationControls";
@@ -75,9 +73,11 @@ import {
   CommandItem,
 } from "../components/GraphEditor/shared/CommandPalette";
 import { ErrorBoundary, ShortcutHelpPanel } from "../components/common";
-import { learningPathsApi } from "../services/api/learningPaths";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCommandPalette } from "./GraphEditor/useCommandPalette";
+import { useLearningPathHandlers } from "./GraphEditor/hooks/useLearningPathHandlers";
+import { useRegionHandlers } from "./GraphEditor/hooks/useRegionHandlers";
+import { useConceptExtractionHandlers } from "./GraphEditor/hooks/useConceptExtractionHandlers";
 
 const TimelineView = lazy(() =>
   import("../components/GraphEditor/views/TimelineView").then((module) => ({
@@ -185,12 +185,6 @@ const Console = lazy(() =>
   })),
 );
 
-interface LearningPathNode {
-  knowledge_point_id?: string;
-  id?: string;
-  order_index?: number;
-}
-
 const ViewLoader = () => (
   <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
     <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
@@ -233,18 +227,22 @@ export const GraphEditor = () => {
     onOpenChat: () => panelState.setIsRAGChatOpen(true),
   });
   const [isSelectingParentNode, setIsSelectingParentNode] = useState(false);
-  const [selectedLearningPathId, setSelectedLearningPathId] = useState<
-    string | null
-  >(null);
-  const [learningPathNodeIds, setLearningPathNodeIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const [learningPathOrderMap, setLearningPathOrderMap] = useState<
-    Map<string, number>
-  >(new Map());
-  const [customRegions, setCustomRegions] = useState<CustomRegion[]>([]);
-  const [originPosition, setOriginPosition] = useState({ x: 400, y: 300 });
-  const [collapsedRegions, setCollapsedRegions] = useState<string[]>([]);
+
+  const {
+    customRegions,
+    originPosition,
+    collapsedRegions,
+    handleCreateRegion,
+    handleRegionToggle,
+    handleOriginMove,
+  } = useRegionHandlers();
+
+  const { handleLiteratureExtractComplete, handleConfirmConcepts } =
+    useConceptExtractionHandlers({
+      id,
+      panelState,
+      queryClient,
+    });
 
   const handleStartSelectingParent = useCallback(() => {
     setIsSelectingParentNode(true);
@@ -253,111 +251,6 @@ export const GraphEditor = () => {
   const handleCancelSelectingParent = useCallback(() => {
     setIsSelectingParentNode(false);
   }, []);
-
-  const handleSelectLearningPath = useCallback(
-    async (pathId: string | null) => {
-      if (!pathId) {
-        setSelectedLearningPathId(null);
-        setLearningPathNodeIds(new Set());
-        setLearningPathOrderMap(new Map());
-        return;
-      }
-
-      try {
-        const result = await learningPathsApi.get(pathId);
-        if (result && result.nodes) {
-          const nodeIds = new Set<string>();
-          const orderMap = new Map<string, number>();
-
-          result.nodes.forEach((node: LearningPathNode) => {
-          const knowledgePointId = node.knowledge_point_id || node.id;
-          if (knowledgePointId) {
-            nodeIds.add(knowledgePointId);
-            orderMap.set(knowledgePointId, node.order_index ?? 0);
-          }
-        });
-
-          setSelectedLearningPathId(pathId);
-          setLearningPathNodeIds(nodeIds);
-          setLearningPathOrderMap(orderMap);
-        }
-      } catch (error) {
-        console.error("Failed to fetch learning path:", error);
-        message.error("获取学习路径失败");
-      }
-    },
-    [],
-  );
-
-  const handleCreateRegion = useCallback(
-    (region: Omit<CustomRegion, "id" | "createdAt" | "updatedAt">) => {
-      const newRegion: CustomRegion = {
-        ...region,
-        id: `region-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setCustomRegions((prev) => [...prev, newRegion]);
-      message.success(`区域「${region.name}」创建成功`);
-    },
-    [],
-  );
-
-  const handleOriginMove = useCallback((position: { x: number; y: number }) => {
-    setOriginPosition(position);
-  }, []);
-
-  const handleRegionToggle = useCallback((regionId: string) => {
-    setCollapsedRegions((prev) => {
-      if (prev.includes(regionId)) {
-        return prev.filter((id) => id !== regionId);
-      } else {
-        return [...prev, regionId];
-      }
-    });
-  }, []);
-
-  const handleLiteratureExtractComplete = useCallback((result: { concepts?: ExtractedConcept[] }) => {
-    if (result.concepts && result.concepts.length > 0) {
-      panelState.setExtractedConcepts(result.concepts);
-      panelState.setIsConceptPreviewOpen(true);
-      panelState.setIsLiteratureExtractOpen(false);
-    } else {
-      message.info("未从文献中提取到概念");
-    }
-  }, []);
-
-  const handleConfirmConcepts = useCallback(
-    async (selectedConcepts: ExtractedConcept[]) => {
-      if (!id || selectedConcepts.length === 0) return;
-
-      try {
-        const { literatureApi } = await import("../services/api/literature");
-        const result = await literatureApi.applyConcepts({
-          graph_id: id,
-          concepts: selectedConcepts,
-          relations: [],
-          literature: selectedConcepts[0]?.source || {
-            title: "文献来源",
-            type: "document",
-            processedAt: new Date().toISOString(),
-          },
-        });
-
-        if (result.success) {
-          message.success(`已添加 ${result.addedCount} 个概念，合并 ${result.mergedCount} 个相似概念`);
-          await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
-        }
-      } catch (error) {
-        console.error("Failed to apply concepts:", error);
-        message.error("添加概念失败");
-      } finally {
-        panelState.setIsConceptPreviewOpen(false);
-        panelState.setExtractedConcepts([]);
-      }
-    },
-    [id, queryClient],
-  );
 
   // Command Palette Logic
   React.useEffect(() => {
@@ -445,10 +338,11 @@ export const GraphEditor = () => {
     viewMode === "semantic" && id ? id : ""
   );
 
+  const embeddingNodes = embeddingData?.nodes;
   const embeddingsMap = useMemo(() => {
-    if (!embeddingData?.nodes) return undefined;
+    if (!embeddingNodes) return undefined;
     const map = new Map<string, number[]>();
-    for (const node of embeddingData.nodes) {
+    for (const node of embeddingNodes) {
       let emb = node.embedding;
       // 容错：后端可能返回 pgvector 字符串格式
       if (typeof emb === 'string') {
@@ -459,7 +353,7 @@ export const GraphEditor = () => {
       }
     }
     return map.size > 0 ? map : undefined;
-  }, [embeddingData?.nodes]);
+  }, [embeddingNodes]);
 
   const handleSelectParentFromGraph = useCallback(
     (nodeId: string) => {
@@ -500,69 +394,30 @@ export const GraphEditor = () => {
     setForceShowTextIds,
   });
 
-  // Narrative mode handlers
-  const handleStartNarrative = useCallback(() => {
-    if (!selectedLearningPathId || learningPathNodeIds.size === 0) {
-      message.warning("请先选择学习路径");
-      return;
-    }
-
-    // Build ordered path from learning path
-    const orderedEntries = Array.from(learningPathOrderMap.entries())
-      .sort(([, a], [, b]) => a - b);
-    const path = orderedEntries.map(([nodeId]) => nodeId);
-
-    if (path.length === 0) {
-      message.warning("学习路径中没有节点");
-      return;
-    }
-
-    // Get current camera transform from canvas
-    const currentTransform = graphRef.current?.getTransform?.() ?? { x: 0, y: 0, k: 1 };
-
-    // Switch to mindmap view if not already
-    if (viewMode !== "mindmap") {
-      setViewMode("mindmap");
-    }
-
-    // Exit presentation mode if active
-    if (state.isPresentationMode) {
-      state.setIsPresentationMode(false);
-      state.setFocusedNodeId(null);
-      state.setFocusedNodeIds(new Set());
-      state.setFocusedLinkIds(new Set());
-    }
-
-    startNarrative(path, 'learningPath', currentTransform);
-  }, [selectedLearningPathId, learningPathNodeIds, learningPathOrderMap, viewMode, setViewMode, state, startNarrative, graphRef]);
-
-  const handleExitNarrative = useCallback(() => {
-    const saved = state.savedTransform;
-    exitNarrative();
-    // Restore camera position after exiting narrative mode
-    if (saved) {
-      graphRef.current?.animateToTransform?.(saved, 600);
-    }
-  }, [exitNarrative, state.savedTransform, graphRef]);
-
-  const handleLearningPathNodeClick = useCallback(
-    (nodeId: string) => {
-      const node = nodes.find((n) => n.id === nodeId);
-      if (!node) return;
-
-      focusNodeWithNode(node);
-
-      if (viewMode !== "mindmap") {
-        setViewMode("mindmap");
-      }
-    },
-    [
-      nodes,
-      focusNodeWithNode,
-      viewMode,
-      setViewMode,
-    ],
-  );
+  // Narrative mode + learning path handlers (extracted hook)
+  const {
+    selectedLearningPathId,
+    learningPathNodeIds,
+    learningPathOrderMap,
+    handleSelectLearningPath,
+    handleStartNarrative,
+    handleExitNarrative,
+    handleLearningPathNodeClick,
+  } = useLearningPathHandlers({
+    nodes,
+    viewMode,
+    setViewMode,
+    graphRef,
+    isPresentationMode: state.isPresentationMode,
+    setIsPresentationMode: state.setIsPresentationMode,
+    setFocusedNodeId: state.setFocusedNodeId,
+    setFocusedNodeIds: state.setFocusedNodeIds,
+    setFocusedLinkIds: state.setFocusedLinkIds,
+    savedTransform: state.savedTransform,
+    startNarrative,
+    exitNarrative,
+    focusNodeWithNode,
+  });
 
   // Presentation Mode Logic
   const presentationPath = useMemo(() => {

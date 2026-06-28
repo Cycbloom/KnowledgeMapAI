@@ -63,6 +63,19 @@ export const queryKeys = {
     ["graphBranches", graphId] as const,
   graphMergePreview: (graphId: string, branchGraphId: string) =>
     ["graphMergePreview", graphId, branchGraphId] as const,
+  aiPerformanceLogs: (query?: {
+    limit?: number;
+    offset?: number;
+    operation?: string;
+    provider?: string;
+    success?: boolean;
+    startTime?: number;
+    endTime?: number;
+  }) => ["aiPerformanceLogs", query] as const,
+  aiPerformanceStats: (query?: {
+    startTime?: number;
+    endTime?: number;
+  }) => ["aiPerformanceStats", query] as const,
 };
 
 export type { Node, Edge, Task, NodeLevel };

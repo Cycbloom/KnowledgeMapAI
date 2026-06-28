@@ -4,7 +4,7 @@ import type { CommandResult, CommandHistoryItem } from '@/services/console';
 
 export type ConfirmDialogType = 'warning' | 'danger';
 
-const MAX_HISTORY_ITEMS = 100;
+const MAX_HISTORY_ITEMS = 50;
 const MAX_OUTPUT_ITEMS = 200;
 
 export interface OutputItem {
@@ -140,7 +140,6 @@ export const useConsoleStore = create<ConsoleState>()(
         isOpen: state.isOpen,
         isMinimized: state.isMinimized,
         history: state.history,
-        output: state.output,
       }),
     }
   )

@@ -6,6 +6,7 @@ import type {
 import { pricingService } from "./pricingService";
 import { getSupabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
+import { cacheService, CacheTTL } from "../common/cacheService";
 
 const MAX_LOGS = 1000;
 
@@ -560,9 +561,26 @@ export async function enrichMetadata(
     actionName?: string;
   },
 ): Promise<EnrichedMetadata> {
+  const graphId = baseMetadata.graphId;
+  const userId = baseMetadata.userId;
+
   const [graphInfo, userInfo] = await Promise.all([
-    baseMetadata.graphId ? getGraphInfo(supabase, baseMetadata.graphId) : null,
-    baseMetadata.userId ? getUserInfo(supabase, baseMetadata.userId) : null,
+    graphId
+      ? cacheService.getOrSet(
+          `enrich:graph:${graphId}`,
+          () => getGraphInfo(supabase, graphId),
+          CacheTTL.DYNAMIC,
+          ["enrich", `graph:${graphId}`],
+        )
+      : Promise.resolve(null),
+    userId
+      ? cacheService.getOrSet(
+          `enrich:user:${userId}`,
+          () => getUserInfo(supabase, userId),
+          CacheTTL.DYNAMIC,
+          ["enrich", `user:${userId}`],
+        )
+      : Promise.resolve(null),
   ]);
 
   return {

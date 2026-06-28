@@ -4,7 +4,7 @@ import type { AIProviderType } from "@shared/types";
 import { requireAuth, type AuthRequest } from "../../middleware/auth";
 import { appSettingsService } from "../../services/core";
 import { aiConfigRouteService } from "../../services/ai";
-import { getEnvConfig } from "../../services/ai";
+import { getEnvConfig, clearProviderCache } from "../../services/ai";
 import { logger } from "../../utils/logger";
 import {
   getSupabaseAdmin,
@@ -196,6 +196,11 @@ router.put(
       }
 
       await appSettingsService.updateSetting("ai_provider_config", merged);
+
+      // 失效 provider 单例缓存：用户更新了 API key / baseURL / model 等配置后，
+      // 旧缓存中的 provider 实例（含已构造的 OpenAI HTTP client）需要被丢弃，
+      // 下次 getAIProvider 调用会基于新配置重新构造。
+      clearProviderCache();
 
       res.json({ success: true });
     } catch (error) {

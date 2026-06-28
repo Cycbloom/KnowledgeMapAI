@@ -1172,36 +1172,31 @@ export class PromptService {
     const cached = await cacheService.get<PromptTemplate>(cacheKey);
     if (cached) return cached;
 
-    // Fetch all relevant templates for this code
-    // We fetch system templates, user templates (if userId), and graph templates (if graphId)
-    const query = supabase
+    // Server-side OR filter: only fetch templates that are actually relevant.
+    // Matches: scope=system  OR  (scope=user AND user_id=userId)  OR  (scope=graph AND graph_id=graphId)
+    // This avoids pulling every template with the same code into memory and prevents
+    // returning other users' templates when a service-role (admin) client bypasses RLS.
+    // userId/graphId are UUIDs (hex + hyphens), so they are safe to interpolate into
+    // the PostgREST .or() string without injection risk.
+    const orConditions: string[] = ["scope.eq.system"];
+    if (userId) {
+      orConditions.push(`and(scope.eq.user,user_id.eq.${userId})`);
+    }
+    if (graphId) {
+      orConditions.push(`and(scope.eq.graph,graph_id.eq.${graphId})`);
+    }
+
+    const { data: templates, error } = await supabase
       .from("prompt_templates")
       .select("*")
-      .eq("code", code);
+      .eq("code", code)
+      .or(orConditions.join(","));
 
-    // Construct OR filter manually or just fetch more and filter in memory (usually few templates per code)
-    // Supabase OR with complex conditions can be tricky.
-    // Let's use a simple approach: fetch all with this code.
-    // CAUTION: This might return other users' templates if RLS is bypassed or not working.
-    // But since we pass `supabase` client which (usually) has user context, RLS should apply.
-    // If RLS applies, we only see: System + My User + My Graph.
-    // If we use service role (admin), we see ALL.
-    // So we MUST filter in memory to be safe if client is admin.
-
-    const { data: templates, error } = await query;
     if (error) throw error;
 
     if (!templates || templates.length === 0) return null;
 
-    // Filter relevant templates
-    const relevant = templates.filter((t) => {
-      if (t.scope === "system") return true;
-      if (t.scope === "user" && t.user_id === userId) return true;
-      if (t.scope === "graph" && t.graph_id === graphId) return true;
-      return false;
-    });
-
-    // Sort by priority: Graph > User > System
+    // Sort by priority: Graph > User > System (filtering is already done server-side)
     const getWeight = (t: PromptTemplate) => {
       if (t.scope === "graph" && t.graph_id === graphId) return 3;
       if (t.scope === "user" && t.user_id === userId) return 2;
@@ -1209,7 +1204,7 @@ export class PromptService {
       return 0;
     };
 
-    const sorted = relevant.sort((a, b) => getWeight(b) - getWeight(a));
+    const sorted = templates.sort((a, b) => getWeight(b) - getWeight(a));
     const bestMatch = sorted[0];
 
     // Cache the result (short TTL to allow quick updates, e.g. 60s)

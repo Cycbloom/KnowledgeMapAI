@@ -963,19 +963,40 @@ export class RAGService {
     ];
 
     try {
-      const completion = await withTimeoutAndRetry(
-        () =>
-          aiProvider.client.chat.completions.create({
-            messages,
-            model: model || aiProvider.model,
-            temperature: 0.7,
-            max_tokens: 2000,
-          }),
+      const completion = await withAIMonitoring(
         {
-          timeout: LONG_TIMEOUT,
-          maxRetries: 3,
-          initialDelay: 1000,
-          maxDelay: 10000,
+          operation: "rag_chat",
+          provider: aiProvider.providerType,
+          model: model || aiProvider.model,
+          sessionId: options.sessionId,
+          metadata: {
+            graphId,
+            userId,
+            currentNodeId,
+            searchMode,
+          },
+        },
+        async () => {
+          const result = await withTimeoutAndRetry(
+            () =>
+              aiProvider.client.chat.completions.create({
+                messages,
+                model: model || aiProvider.model,
+                temperature: 0.7,
+                max_tokens: 2000,
+              }),
+            {
+              timeout: LONG_TIMEOUT,
+              maxRetries: 3,
+              initialDelay: 1000,
+              maxDelay: 10000,
+            },
+          );
+
+          return {
+            result,
+            usage: result.usage ?? undefined,
+          };
         },
       );
 
@@ -1152,20 +1173,66 @@ export class RAGService {
     ];
 
     try {
-      const stream = await aiProvider.client.chat.completions.create({
-        messages,
-        model: model || aiProvider.model,
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: true,
-      });
+      await withAIMonitoring(
+        {
+          operation: "rag_stream_chat",
+          provider: aiProvider.providerType,
+          model: model || aiProvider.model,
+          sessionId: options.sessionId,
+          metadata: {
+            graphId,
+            userId,
+            currentNodeId,
+            searchMode,
+          },
+        },
+        async () => {
+          const stream = await aiProvider.client.chat.completions.create({
+            messages,
+            model: model || aiProvider.model,
+            temperature: 0.7,
+            max_tokens: 2000,
+            stream: true,
+            stream_options: { include_usage: true },
+          });
 
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          onChunk(content);
-        }
-      }
+          let promptTokens = 0;
+          let completionTokens = 0;
+          let cachedTokens = 0;
+
+          try {
+            // 最后一个 chunk 携带 usage；持续覆盖以保留最终值
+            for await (const chunk of stream) {
+              const content = chunk.choices[0]?.delta?.content || "";
+              if (content) {
+                onChunk(content);
+              }
+              if (chunk.usage) {
+                promptTokens = chunk.usage.prompt_tokens || 0;
+                completionTokens = chunk.usage.completion_tokens || 0;
+                cachedTokens =
+                  chunk.usage.prompt_tokens_details?.cached_tokens || 0;
+              }
+            }
+          } catch (error: unknown) {
+            // 已发送的 chunks 无法撤回：停止发送，向上抛错以触发 success: false 上报
+            const err = error as Error;
+            logger.error(
+              `RAG stream chat chunk iteration failed: ${err.message}`,
+            );
+            throw error;
+          }
+
+          return {
+            result: undefined,
+            usage: {
+              prompt_tokens: promptTokens,
+              completion_tokens: completionTokens,
+              prompt_tokens_details: { cached_tokens: cachedTokens },
+            },
+          };
+        },
+      );
 
       return sources.slice(0, 5);
     } catch (error: unknown) {

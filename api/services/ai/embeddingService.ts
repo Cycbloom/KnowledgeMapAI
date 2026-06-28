@@ -61,21 +61,26 @@ export class EmbeddingService {
         try {
           const embeddings = await aiService.generateEmbeddingsBatch(texts);
 
+          const upsertBatch: { id: string; embedding: number[] }[] = [];
           for (let j = 0; j < batch.length; j++) {
-            if (embeddings[j]) {
-              const { error: updateError } = await supabase
-                .from('knowledge_points')
-                .update({ embedding: embeddings[j] })
-                .eq('id', batch[j].id);
-
-              if (updateError) {
-                logger.error(`Failed to update embedding for ${batch[j].id}:`, updateError);
-                failed++;
-              } else {
-                processed++;
-              }
+            const embedding = embeddings[j];
+            if (embedding) {
+              upsertBatch.push({ id: batch[j].id, embedding });
             } else {
               failed++;
+            }
+          }
+
+          if (upsertBatch.length > 0) {
+            const { error: upsertError } = await supabase
+              .from('knowledge_points')
+              .upsert(upsertBatch, { onConflict: 'id' });
+
+            if (upsertError) {
+              logger.error(`Failed to upsert embeddings for batch starting at ${i}:`, upsertError);
+              failed += upsertBatch.length;
+            } else {
+              processed += upsertBatch.length;
             }
           }
 
@@ -146,21 +151,26 @@ export class EmbeddingService {
         try {
           const embeddings = await aiService.generateEmbeddingsBatch(texts);
 
+          const upsertBatch: { id: string; embedding: number[] }[] = [];
           for (let j = 0; j < batch.length; j++) {
-            if (embeddings[j]) {
-              const { error: updateError } = await supabase
-                .from('document_chunks')
-                .update({ embedding: embeddings[j] })
-                .eq('id', batch[j].id);
-
-              if (updateError) {
-                logger.error(`Failed to update chunk embedding for ${batch[j].id}:`, updateError);
-                failed++;
-              } else {
-                processed++;
-              }
+            const embedding = embeddings[j];
+            if (embedding) {
+              upsertBatch.push({ id: batch[j].id, embedding });
             } else {
               failed++;
+            }
+          }
+
+          if (upsertBatch.length > 0) {
+            const { error: upsertError } = await supabase
+              .from('document_chunks')
+              .upsert(upsertBatch, { onConflict: 'id' });
+
+            if (upsertError) {
+              logger.error(`Failed to upsert chunk embeddings for batch starting at ${i}:`, upsertError);
+              failed += upsertBatch.length;
+            } else {
+              processed += upsertBatch.length;
             }
           }
 

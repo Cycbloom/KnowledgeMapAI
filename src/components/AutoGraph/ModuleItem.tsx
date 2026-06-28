@@ -13,7 +13,7 @@ interface ModuleItemProps {
   disabled?: boolean;
 }
 
-export const ModuleItem: React.FC<ModuleItemProps> = ({
+const ModuleItemComponent: React.FC<ModuleItemProps> = ({
   module,
   index,
   onChange,
@@ -123,3 +123,5 @@ export const ModuleItem: React.FC<ModuleItemProps> = ({
     </div>
   );
 };
+
+export const ModuleItem = React.memo(ModuleItemComponent);

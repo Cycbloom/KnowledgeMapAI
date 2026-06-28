@@ -10,7 +10,7 @@ interface PresetCardProps {
   disabled?: boolean;
 }
 
-export const PresetCard: React.FC<PresetCardProps> = ({
+const PresetCardComponent: React.FC<PresetCardProps> = ({
   preset,
   selected,
   onClick,
@@ -76,3 +76,5 @@ export const PresetCard: React.FC<PresetCardProps> = ({
     </motion.button>
   );
 };
+
+export const PresetCard = React.memo(PresetCardComponent);

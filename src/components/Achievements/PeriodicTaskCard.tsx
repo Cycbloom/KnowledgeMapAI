@@ -30,7 +30,7 @@ const periodTypeLabels: Record<string, string> = {
   quarterly: '季度',
 };
 
-export const PeriodicTaskCard: React.FC<PeriodicTaskCardProps> = ({ task }) => {
+const PeriodicTaskCardComponent: React.FC<PeriodicTaskCardProps> = ({ task }) => {
   const config = taskTypeConfig[task.task_type];
   const Icon = config.icon;
   const progressPercent = Math.min(100, (task.progress / task.target) * 100);
@@ -97,3 +97,5 @@ export const PeriodicTaskCard: React.FC<PeriodicTaskCardProps> = ({ task }) => {
     </motion.div>
   );
 };
+
+export const PeriodicTaskCard = React.memo(PeriodicTaskCardComponent);

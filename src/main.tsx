@@ -8,6 +8,8 @@ import { registerServiceWorker } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
 import { initErrorReporter, destroyErrorReporter, setUserContext, clearUserContext } from './utils/errorReporter'
 import { initCsrf } from './services/api'
+import { preloadMobileApi } from './services/api/adapter'
+import { asyncConfirm } from './utils/asyncConfirm'
 import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
 import { useStore } from './store/useStore'
 import './store/storeIntegrations'
@@ -43,8 +45,14 @@ if (import.meta.env.PROD && !isElectron) {
   initErrorReporter()
   
   registerServiceWorker({
-    onUpdate: (registration) => {
-      if (confirm('发现新版本，是否立即更新？')) {
+    onUpdate: async (registration) => {
+      const shouldUpdate = await asyncConfirm({
+        title: '发现新版本',
+        message: '是否立即更新？',
+        confirmText: '立即更新',
+        cancelText: '稍后',
+      })
+      if (shouldUpdate) {
         registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
         window.location.reload()
       }
@@ -70,15 +78,18 @@ if (import.meta.hot) {
 const rootElement = document.getElementById('root');
 if (rootElement) {
   const Router = isElectron ? HashRouter : BrowserRouter;
-  createRoot(rootElement).render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <Router>
-            <App />
-          </Router>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </StrictMode>,
-  );
+  void (async () => {
+    await preloadMobileApi();
+    createRoot(rootElement).render(
+      <StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <Router>
+              <App />
+            </Router>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </StrictMode>,
+    );
+  })();
 }

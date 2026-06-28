@@ -1,11 +1,19 @@
 import { isCapacitorMobile, shouldUseSupabaseDirect } from "@/config/mobileApiConfig";
 import { api as webApi } from "./index";
-import { mobileApi } from "../mobile";
 import type { IApi } from "./contracts/IApi";
 
 let resolvedApi: IApi | null = null;
 let lastIsMobile: boolean | null = null;
 let lastUseSupabaseDirect: boolean | null = null;
+let mobileApiLoaded: IApi | null = null;
+
+export async function preloadMobileApi(): Promise<void> {
+  if (mobileApiLoaded !== null) return;
+  if (isCapacitorMobile() && shouldUseSupabaseDirect()) {
+    const m = await import("../mobile");
+    mobileApiLoaded = m.mobileApi;
+  }
+}
 
 function getResolvedApi(): IApi {
   const isMobile = isCapacitorMobile();
@@ -16,11 +24,16 @@ function getResolvedApi(): IApi {
     lastUseSupabaseDirect = useSupabaseDirect;
 
     if (isMobile && useSupabaseDirect) {
-      // Mobile: use mobileApi for Supabase-direct modules, fall back to webApi for others
-      resolvedApi = {
-        ...webApi,
-        ...mobileApi,
-      };
+      if (mobileApiLoaded !== null) {
+        // Mobile: use mobileApi for Supabase-direct modules, fall back to webApi for others
+        resolvedApi = {
+          ...webApi,
+          ...mobileApiLoaded,
+        };
+      } else {
+        // 防御性处理：未 preload 时 fallback 到 webApi
+        resolvedApi = webApi;
+      }
     } else {
       resolvedApi = webApi;
     }

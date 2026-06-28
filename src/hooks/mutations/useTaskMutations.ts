@@ -1,7 +1,10 @@
 import { api } from "../../services/api";
-import { createSimpleMutation, createInvalidationMutation } from "./mutationFactory";
+import { createInvalidationMutation } from "./mutationFactory";
 
-export const useCreateTaskMutation = createSimpleMutation(api.tasks.create);
+export const useCreateTaskMutation = createInvalidationMutation(
+  api.tasks.create,
+  [["tasks"]],
+);
 
 export const useRetryTaskMutation = createInvalidationMutation(
   api.tasks.retry,

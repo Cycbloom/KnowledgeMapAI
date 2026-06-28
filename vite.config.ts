@@ -4,7 +4,10 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 
 function getChunkStrategy(id: string): string | undefined {
-  if (!id.includes("node_modules")) return undefined;
+  if (!id.includes("node_modules")) {
+    if (id.includes("src/services/mobile")) return "mobile-only";
+    return undefined;
+  }
 
   if (
     id.includes("mermaid") ||

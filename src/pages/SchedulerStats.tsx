@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSchedulerStats, useHeatmap, useExecutions } from '../hooks';
 import type { ExecutionFilters, TaskExecution } from '@shared/types';
 import {
@@ -74,17 +75,18 @@ const GlowingMetricCard = ({
 };
 
 const QueueDistributionChart = ({ data }: { data: { q0: number; q1: number; q2: number } }) => {
+  const { t } = useTranslation();
   const chartData = [
-    { name: 'Q0 高优先', value: data.q0, color: QUEUE_COLORS.q0.main },
-    { name: 'Q1 中优先', value: data.q1, color: QUEUE_COLORS.q1.main },
-    { name: 'Q2 低优先', value: data.q2, color: QUEUE_COLORS.q2.main },
+    { name: t('schedulerStats.queueDistribution.q0'), value: data.q0, color: QUEUE_COLORS.q0.main },
+    { name: t('schedulerStats.queueDistribution.q1'), value: data.q1, color: QUEUE_COLORS.q1.main },
+    { name: t('schedulerStats.queueDistribution.q2'), value: data.q2, color: QUEUE_COLORS.q2.main },
   ];
 
   return (
     <TechCard className="p-6">
       <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
         <Zap size={20} className="text-primary-400" />
-        队列分布
+        {t('schedulerStats.queueDistribution.title')}
       </h3>
       <div className="flex items-center justify-center">
         <ResponsiveContainer width={200} height={200}>
@@ -125,110 +127,114 @@ const QueueDistributionChart = ({ data }: { data: { q0: number; q1: number; q2: 
   );
 };
 
-const DailyTrendChart = ({ data }: { data: { date: string; completed: number; duration: number }[] }) => (
-  <TechCard className="p-6">
-    <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-      <Activity size={20} className="text-emerald-400" />
-      每日完成趋势
-    </h3>
-    <div className="h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-          <defs>
-            <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(100, 116, 139, 0.2)" />
-          <XAxis 
-            dataKey="date" 
-            tickFormatter={(value) => `${new Date(value).getDate()}日`}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: '#64748b', fontSize: 12 }}
-            dy={10}
-          />
-          <YAxis 
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: '#64748b', fontSize: 12 }}
-          />
-          <RechartsTooltip 
-            contentStyle={{ 
-              backgroundColor: 'rgba(30, 41, 59, 0.95)', 
-              border: '1px solid rgba(100, 116, 139, 0.3)',
-              borderRadius: '8px',
-              color: '#fff'
-            }}
-            labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
-          />
-          <Area 
-            type="monotone" 
-            dataKey="completed" 
-            stroke="#10b981" 
-            strokeWidth={2}
-            fillOpacity={1} 
-            fill="url(#colorCompleted)" 
-            name="完成任务"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  </TechCard>
-);
+const DailyTrendChart = ({ data }: { data: { date: string; completed: number; duration: number }[] }) => {
+  const { t } = useTranslation();
+  return (
+    <TechCard className="p-6">
+      <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+        <Activity size={20} className="text-emerald-400" />
+        {t('schedulerStats.dailyTrend.title')}
+      </h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(100, 116, 139, 0.2)" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value) => t('schedulerStats.dailyTrend.dayLabel', { day: new Date(value).getDate() })}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+            />
+            <RechartsTooltip
+              contentStyle={{
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                border: '1px solid rgba(100, 116, 139, 0.3)',
+                borderRadius: '8px',
+                color: '#fff'
+              }}
+              labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
+            />
+            <Area
+              type="monotone"
+              dataKey="completed"
+              stroke="#10b981"
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorCompleted)"
+              name={t('schedulerStats.dailyTrend.completed')}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </TechCard>
+  );
+};
 
 const DurationTrendChart = ({ data }: { data: { date: string; completed: number; duration: number }[] }) => {
+  const { t } = useTranslation();
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes < 60) return t('schedulerStats.durations.minutes', { count: minutes });
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return `${hours}小时${remainingMinutes}分钟`;
+    return t('schedulerStats.durations.hoursAndMinutes', { hours, minutes: remainingMinutes });
   };
 
   return (
     <TechCard className="p-6">
       <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
         <Clock size={20} className="text-violet-400" />
-        执行时长趋势
+        {t('schedulerStats.durationTrend.title')}
       </h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(100, 116, 139, 0.2)" />
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={(value) => `${new Date(value).getDate()}日`}
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value) => t('schedulerStats.dailyTrend.dayLabel', { day: new Date(value).getDate() })}
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#64748b', fontSize: 12 }}
               dy={10}
             />
-            <YAxis 
+            <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#64748b', fontSize: 12 }}
               tickFormatter={(value) => `${Math.floor(value / 60)}m`}
             />
-            <RechartsTooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(30, 41, 59, 0.95)', 
+            <RechartsTooltip
+              contentStyle={{
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
                 border: '1px solid rgba(100, 116, 139, 0.3)',
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              formatter={(value) => value !== undefined ? [formatDuration(value as number), '执行时长'] : ['', '执行时长']}
+              formatter={(value) => value !== undefined ? [formatDuration(value as number), t('schedulerStats.durationTrend.duration')] : ['', t('schedulerStats.durationTrend.duration')]}
               labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
             />
-            <Line 
-              type="monotone" 
-              dataKey="duration" 
-              stroke="#8b5cf6" 
+            <Line
+              type="monotone"
+              dataKey="duration"
+              stroke="#8b5cf6"
               strokeWidth={2}
               dot={{ fill: '#8b5cf6', strokeWidth: 0, r: 4 }}
               activeDot={{ r: 6, fill: '#8b5cf6' }}
-              name="执行时长"
+              name={t('schedulerStats.durationTrend.duration')}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -244,6 +250,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
   onYearChange: (year: number) => void;
   onMonthChange: (month?: number) => void;
 }) => {
+  const { t } = useTranslation();
   const currentYear = year;
   const currentMonth = month;
 
@@ -288,20 +295,33 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
 
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes < 60) return t('schedulerStats.durations.minutes', { count: minutes });
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return `${hours}h${remainingMinutes}m`;
+    return t('schedulerStats.durations.compactHoursMinutes', { hours, minutes: remainingMinutes });
   };
 
-  const months = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+  const months = [
+    t('schedulerStats.heatmap.months.jan'),
+    t('schedulerStats.heatmap.months.feb'),
+    t('schedulerStats.heatmap.months.mar'),
+    t('schedulerStats.heatmap.months.apr'),
+    t('schedulerStats.heatmap.months.may'),
+    t('schedulerStats.heatmap.months.jun'),
+    t('schedulerStats.heatmap.months.jul'),
+    t('schedulerStats.heatmap.months.aug'),
+    t('schedulerStats.heatmap.months.sep'),
+    t('schedulerStats.heatmap.months.oct'),
+    t('schedulerStats.heatmap.months.nov'),
+    t('schedulerStats.heatmap.months.dec'),
+  ];
 
   return (
     <TechCard className="p-6" glow>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <Calendar size={20} className="text-primary-400" />
-          任务执行热力图
+          {t('schedulerStats.heatmap.title')}
         </h3>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -324,7 +344,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
             onChange={(e) => onMonthChange(e.target.value ? parseInt(e.target.value) : undefined)}
             className="bg-slate-700 text-white rounded-lg px-3 py-1 border border-slate-600 focus:outline-none focus:border-primary-500"
           >
-            <option value="">全年</option>
+            <option value="">{t('schedulerStats.heatmap.fullYear')}</option>
             {months.map((m, i) => (
               <option key={i} value={i + 1}>{m}</option>
             ))}
@@ -341,7 +361,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
             <div
               key={date}
               className={`w-3 h-3 rounded-sm ${getColor(count)} ${getGlow(count)} transition-all duration-200 hover:scale-125 cursor-pointer`}
-              title={`${date}: ${count} 次执行, ${formatDuration(duration)}`}
+              title={t('schedulerStats.heatmap.tooltip', { date, count, duration: formatDuration(duration) })}
             />
           );
         })}
@@ -349,7 +369,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span>活跃度:</span>
+          <span>{t('schedulerStats.heatmap.activityLevel')}</span>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-slate-700/50 rounded-sm"></div>
             <div className="w-3 h-3 bg-primary-900 rounded-sm"></div>
@@ -359,7 +379,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
           </div>
         </div>
         <div className="text-xs text-slate-500">
-          共 {data.reduce((sum, d) => sum + d.count, 0)} 次执行
+          {t('schedulerStats.heatmap.totalExecutions', { count: data.reduce<number>((sum, d) => sum + d.count, 0) })}
         </div>
       </div>
     </TechCard>
@@ -370,13 +390,14 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
   filters: ExecutionFilters;
   onFiltersChange: (filters: ExecutionFilters) => void;
 }) => {
+  const { t } = useTranslation();
   const { data, isLoading, refetch } = useExecutions(filters);
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return '-';
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}分${remainingSeconds}秒`;
+    return t('schedulerStats.durations.minutesSeconds', { minutes, seconds: remainingSeconds });
   };
 
   const formatDateTime = (dateStr: string) => {
@@ -389,20 +410,29 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
     });
   };
 
+  // 状态标签映射：根据执行状态返回对应的 i18n 文本
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'completed':
+        return t('schedulerStats.status.completed');
+      case 'interrupted':
+        return t('schedulerStats.status.interrupted');
+      case 'time_slice_ended':
+        return t('schedulerStats.status.timeSliceEnded');
+      default:
+        return status;
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       completed: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
       interrupted: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
       time_slice_ended: 'bg-primary-500/20 text-primary-400 border-primary-500/30',
     };
-    const labels: Record<string, string> = {
-      completed: '已完成',
-      interrupted: '已中断',
-      time_slice_ended: '时间片结束',
-    };
     return (
       <span className={`px-2 py-0.5 rounded-full text-xs border ${styles[status] || 'bg-slate-500/20 text-slate-400'}`}>
-        {labels[status] || status}
+        {getStatusLabel(status)}
       </span>
     );
   };
@@ -421,7 +451,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <ListTodo size={20} className="text-primary-400" />
-          执行历史
+          {t('schedulerStats.history.title')}
         </h3>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -431,10 +461,10 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
               onChange={(e) => onFiltersChange({ ...filters, status: e.target.value || undefined })}
               className="bg-slate-700 text-white rounded-lg px-3 py-1 border border-slate-600 focus:outline-none focus:border-primary-500 text-sm"
             >
-              <option value="">全部状态</option>
-              <option value="completed">已完成</option>
-              <option value="interrupted">已中断</option>
-              <option value="time_slice_ended">时间片结束</option>
+              <option value="">{t('schedulerStats.history.allStatus')}</option>
+              <option value="completed">{t('schedulerStats.status.completed')}</option>
+              <option value="interrupted">{t('schedulerStats.status.interrupted')}</option>
+              <option value="time_slice_ended">{t('schedulerStats.status.timeSliceEnded')}</option>
             </select>
           </div>
           <button
@@ -450,25 +480,25 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
         <table className="w-full">
           <thead>
             <tr className="border-b border-slate-700">
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">任务ID</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">开始时间</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">结束时间</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">执行时长</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">队列</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">状态</th>
+              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.taskId')}</th>
+              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.startedAt')}</th>
+              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.endedAt')}</th>
+              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.duration')}</th>
+              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.queue')}</th>
+              <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">{t('schedulerStats.history.columns.status')}</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-slate-400">
-                  加载中...
+                  {t('schedulerStats.history.loading')}
                 </td>
               </tr>
             ) : !data || data.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-slate-400">
-                  暂无执行记录
+                  {t('schedulerStats.history.empty')}
                 </td>
               </tr>
             ) : (
@@ -503,6 +533,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
 };
 
 const EfficiencyChart = ({ data }: { data: { date: string; completed: number; duration: number }[] }) => {
+  const { t } = useTranslation();
   const efficiencyData = useMemo(() => {
     return data.map(d => ({
       date: d.date,
@@ -514,42 +545,42 @@ const EfficiencyChart = ({ data }: { data: { date: string; completed: number; du
     <TechCard className="p-6">
       <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
         <TrendingUp size={20} className="text-amber-400" />
-        效率分析 (分钟/任务)
+        {t('schedulerStats.efficiency.title')}
       </h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={efficiencyData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(100, 116, 139, 0.2)" />
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={(value) => `${new Date(value).getDate()}日`}
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value) => t('schedulerStats.dailyTrend.dayLabel', { day: new Date(value).getDate() })}
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#64748b', fontSize: 12 }}
               dy={10}
             />
-            <YAxis 
+            <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#64748b', fontSize: 12 }}
               tickFormatter={(value) => `${value}m`}
             />
-            <RechartsTooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(30, 41, 59, 0.95)', 
+            <RechartsTooltip
+              contentStyle={{
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
                 border: '1px solid rgba(100, 116, 139, 0.3)',
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              formatter={(value) => value !== undefined ? [`${value} 分钟/任务`, '平均效率'] : ['', '平均效率']}
+              formatter={(value) => value !== undefined ? [t('schedulerStats.efficiency.value', { value }), t('schedulerStats.efficiency.label')] : ['', t('schedulerStats.efficiency.label')]}
               labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
             />
-            <Bar 
-              dataKey="efficiency" 
-              fill="#f59e0b" 
-              radius={[4, 4, 0, 0]} 
+            <Bar
+              dataKey="efficiency"
+              fill="#f59e0b"
+              radius={[4, 4, 0, 0]}
               barSize={20}
-              name="效率"
+              name={t('schedulerStats.efficiency.name')}
             />
           </BarChart>
         </ResponsiveContainer>
@@ -559,6 +590,7 @@ const EfficiencyChart = ({ data }: { data: { date: string; completed: number; du
 };
 
 export const SchedulerStats = () => {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('week');
   const [heatmapYear, setHeatmapYear] = useState(new Date().getFullYear());
   const [heatmapMonth, setHeatmapMonth] = useState<number | undefined>(undefined);
@@ -571,9 +603,9 @@ export const SchedulerStats = () => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     if (hours > 0) {
-      return `${hours}小时${minutes}分钟`;
+      return t('schedulerStats.durations.hoursAndMinutes', { hours, minutes });
     }
-    return `${minutes}分钟`;
+    return t('schedulerStats.durations.minutes', { count: minutes });
   };
 
   if (statsLoading) {
@@ -581,7 +613,7 @@ export const SchedulerStats = () => {
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">加载统计数据中...</p>
+          <p className="text-slate-400">{t('schedulerStats.loading')}</p>
         </div>
       </div>
     );
@@ -591,7 +623,7 @@ export const SchedulerStats = () => {
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center text-red-400">
-          <p>无法加载统计数据</p>
+          <p>{t('schedulerStats.loadFailed')}</p>
         </div>
       </div>
     );
@@ -599,17 +631,17 @@ export const SchedulerStats = () => {
 
   if (!stats) return null;
 
-  const completionRate = stats.total_tasks > 0 
-    ? Math.round((stats.completed_tasks / stats.total_tasks) * 100) 
+  const completionRate = stats.total_tasks > 0
+    ? Math.round((stats.completed_tasks / stats.total_tasks) * 100)
     : 0;
 
   return (
     <div className="h-full overflow-y-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2" style={{ textShadow: '0 0 30px rgba(6, 182, 212, 0.3)' }}>
-          调度器统计
+          {t('schedulerStats.title')}
         </h1>
-        <p className="text-slate-400">三层反馈队列任务调度系统运行数据</p>
+        <p className="text-slate-400">{t('schedulerStats.subtitle')}</p>
       </div>
 
       <div className="flex gap-2 mb-6">
@@ -623,37 +655,37 @@ export const SchedulerStats = () => {
                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
             }`}
           >
-            {p === 'day' ? '今日' : p === 'week' ? '本周' : p === 'month' ? '本月' : '本年'}
+            {t(`schedulerStats.periods.${p}`)}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <GlowingMetricCard
-          title="总任务数"
+          title={t('schedulerStats.metrics.totalTasks')}
           value={stats.total_tasks}
-          subtext="统计周期内创建"
+          subtext={t('schedulerStats.metrics.totalTasksSubtext')}
           icon={ListTodo}
           colorKey="q0"
         />
         <GlowingMetricCard
-          title="已完成任务"
+          title={t('schedulerStats.metrics.completedTasks')}
           value={stats.completed_tasks}
-          subtext={`完成率 ${completionRate}%`}
+          subtext={t('schedulerStats.metrics.completionRate', { rate: completionRate })}
           icon={CheckCircle2}
           colorKey="q1"
         />
         <GlowingMetricCard
-          title="总执行时长"
+          title={t('schedulerStats.metrics.totalDuration')}
           value={formatDuration(stats.total_duration)}
-          subtext="累计执行时间"
+          subtext={t('schedulerStats.metrics.totalDurationSubtext')}
           icon={Clock}
           colorKey="q2"
         />
         <GlowingMetricCard
-          title="平均执行时长"
+          title={t('schedulerStats.metrics.avgDuration')}
           value={stats.completed_tasks > 0 ? formatDuration(Math.round(stats.total_duration / stats.completed_tasks)) : '-'}
-          subtext="每个任务平均"
+          subtext={t('schedulerStats.metrics.avgDurationSubtext')}
           icon={TrendingUp}
           colorKey="q0"
         />

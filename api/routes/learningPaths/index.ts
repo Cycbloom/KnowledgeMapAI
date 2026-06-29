@@ -1,0 +1,18 @@
+// 学习路径路由聚合入口
+
+import { Router } from "express";
+import crudRoutes from "./crud";
+import nodesRoutes from "./nodes";
+import progressRoutes from "./progress";
+import plansRoutes from "./plans";
+import generationRoutes from "./generation";
+
+const router = Router();
+
+router.use("/", crudRoutes);
+router.use("/", nodesRoutes);
+router.use("/", progressRoutes);
+router.use("/", plansRoutes);
+router.use("/", generationRoutes);
+
+export default router;

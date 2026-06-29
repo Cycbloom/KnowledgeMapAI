@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, Link, Image as ImageIcon, WifiOff } from 'lucide-react';
 import { parseMarkdownToGraph } from '../../../utils/markdownParser';
 import { parseOpmlToGraph } from '../../../utils/opmlParser';
@@ -35,6 +36,7 @@ interface TextToGraphResult {
 }
 
 export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData, aiEnabled }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
   const [activeTab, setActiveTab] = useState<'text' | 'file' | 'url' | 'image'>('text');
   const [text, setText] = useState('');
@@ -83,11 +85,11 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
     if (activeTab === 'url') {
       if (!isOnline) {
-        frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法解析 URL' });
+        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlineUrlParse') });
         return;
       }
       if (!url.trim()) {
-        frontendEventBus.publish("message_show", { type: 'error', content: '请输入有效的 URL' });
+        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.invalidUrl') });
         return;
       }
       try {
@@ -96,33 +98,33 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         // Assuming we will implement this endpoint
         const res = await api.ai.urlToText(url);
         contentToAnalyze = res.text;
-        if (!contentToAnalyze) throw new Error('无法从该 URL 提取内容');
+        if (!contentToAnalyze) throw new Error(t('textToGraph.messages.urlExtractFailed'));
       } catch (err: unknown) {
         console.error(err);
-        frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : 'URL 解析失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : t('textToGraph.messages.urlParseFailed') });
         setIsUrlLoading(false);
         return;
       } finally {
         setIsUrlLoading(false);
       }
     } else if (!contentToAnalyze.trim()) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '请输入文本内容' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.emptyText') });
       return;
     }
     
     if (contentToAnalyze.length < 10) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '内容太短，至少需要10个字符' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.textTooShort') });
       return;
     }
 
     if (!isOnline) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法使用 AI 分析' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlineAiAnalysis') });
       return;
     }
 
     try {
       if (aiEnabled === false) {
-        frontendEventBus.publish("message_show", { type: 'warning', content: 'AI 未配置：本次将生成模拟预览' });
+        frontendEventBus.publish("message_show", { type: 'warning', content: t('textToGraph.messages.aiNotConfiguredSimulated') });
       }
       const result = await textToGraphMutation.mutateAsync({ 
         text: contentToAnalyze, 
@@ -135,44 +137,44 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
       }
       setStep('preview');
-      frontendEventBus.publish("message_show", { type: 'success', content: 'AI 分析完成，请确认生成内容' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.analysisCompleted') });
     } catch (error: unknown) {
       console.error(error);
-      frontendEventBus.publish("message_show", { type: 'error', content: error instanceof Error ? error.message : '分析失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: error instanceof Error ? error.message : t('textToGraph.messages.analysisFailed') });
     }
   };
 
   const processImage = async (file: File) => {
     if (!isOnline) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法使用图片识别' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlineImageRecognition') });
       return;
     }
 
     if (aiEnabled === false) {
-      frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未配置：图片识别需要配置 AI Key (推荐使用 Aliyun/Volcengine)' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.aiNotConfiguredImage') });
       return;
     }
 
-    frontendEventBus.publish("message_show", { type: 'info', content: '正在分析图片内容...' });
+    frontendEventBus.publish("message_show", { type: 'info', content: t('textToGraph.messages.analyzingImage') });
 
     try {
       const formData = new FormData();
       formData.append('file', file);
       // Optional: Pass provider preference if needed, but backend handles default
-      
+
       const result = await imageToGraphMutation.mutateAsync(formData);
 
       if (!result.nodes || result.nodes.length === 0) {
-        throw new Error('AI 未能从图片中识别出有效节点。');
+        throw new Error(t('textToGraph.messages.imageRecognitionFailed'));
       }
 
       setPreviewData(result as unknown as TextToGraphResult);
       setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
       setStep('preview');
-      frontendEventBus.publish("message_show", { type: 'success', content: '图片分析成功' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.imageAnalysisSuccess') });
     } catch (err: unknown) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : '分析失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : t('textToGraph.messages.imageAnalysisFailed') });
     }
   };
 
@@ -184,34 +186,34 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
     if (file.name.endsWith('.pdf')) {
         if (!isOnline) {
-          frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法解析 PDF' });
+          frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.offlinePdfParse') });
           return;
         }
 
         if (aiEnabled === false) {
-          frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未配置：PDF 解析不可用，请先配置 AI Key' });
+          frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.aiNotConfiguredPdf') });
           return;
         }
 
-        frontendEventBus.publish("message_show", { type: 'info', content: '正在解析 PDF 文档...' });
+        frontendEventBus.publish("message_show", { type: 'info', content: t('textToGraph.messages.parsingPdf') });
 
         try {
           const result = await documentToGraphMutation.mutateAsync({
             graph_id: graphId,
             file
           });
-          
+
           if (!result.nodes || result.nodes.length === 0) {
-            throw new Error('AI 未能从文档中解析出任何节点，请检查文档内容。');
+            throw new Error(t('textToGraph.messages.pdfParseFailed'));
           }
 
           setPreviewData(result as unknown as TextToGraphResult);
           setSelectedNodeIds(new Set((result.nodes as PreviewNode[]).map((n) => n.id)));
           setStep('preview');
-          frontendEventBus.publish("message_show", { type: 'success', content: '文档解析成功' });
+          frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.pdfParseSuccess') });
         } catch (err: unknown) {
           console.error(err);
-          frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : '解析失败' });
+          frontendEventBus.publish("message_show", { type: 'error', content: err instanceof Error ? err.message : t('textToGraph.messages.pdfParseError') });
         }
     } else {
        // Local parsing for MD/OPML/TXT
@@ -229,7 +231,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
              // TXT: Switch to text tab and fill content
              setText(content);
              setActiveTab('text');
-             frontendEventBus.publish("message_show", { type: 'success', content: '文本已导入编辑器' });
+             frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.textImported') });
              return;
            }
 
@@ -240,7 +242,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
              content: n.content,
              level: n.level || 'leaf'
            }));
-           
+
            const previewEdges = parsed.edges.map((e: any) => ({
              source: e.source,
              target: e.target,
@@ -250,10 +252,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
            setPreviewData({ nodes: previewNodes, edges: previewEdges });
            setSelectedNodeIds(new Set(previewNodes.map(n => n.id)));
            setStep('preview');
-           frontendEventBus.publish("message_show", { type: 'success', content: '文件解析成功' });
+           frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.fileParseSuccess') });
          } catch (err: any) {
            console.error(err);
-           frontendEventBus.publish("message_show", { type: 'error', content: `解析失败: ${  err.message}` });
+           frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.fileParseError', { message: err.message }) });
          }
        };
        reader.readAsText(file);
@@ -309,7 +311,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       const validExtensions = ['.pdf', '.txt', '.md', '.opml', '.png', '.jpg', '.jpeg', '.webp'];
       const isValid = validExtensions.some(type => file.name.toLowerCase().endsWith(type));
       if (!isValid) {
-        frontendEventBus.publish("message_show", { type: 'error', content: '不支持的文件格式。请上传 PDF, Markdown, OPML, TXT 或 图片文件。' });
+        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.unsupportedFileType') });
         return;
       }
       await processFile(file);
@@ -329,22 +331,22 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       );
 
       if (nodesToSave.length === 0) {
-        frontendEventBus.publish("message_show", { type: 'error', content: '请至少选择一个节点' });
+        frontendEventBus.publish("message_show", { type: 'error', content: t('textToGraph.messages.noNodeSelected') });
         return;
       }
 
-      await textToGraphMutation.mutateAsync({ 
-        graph_id: graphId, 
+      await textToGraphMutation.mutateAsync({
+        graph_id: graphId,
         action: 'save',
         nodes: nodesToSave,
         edges: edgesToSave
       });
 
-      frontendEventBus.publish("message_show", { type: 'success', content: `成功生成 ${nodesToSave.length} 个节点和 ${edgesToSave.length} 条关系！` });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('textToGraph.messages.generateSuccess', { nodes: nodesToSave.length, edges: edgesToSave.length }) });
       handleClose();
     } catch (error: any) {
       console.error(error);
-      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '保存失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: error.message || t('textToGraph.messages.saveFailed') });
     }
   };
 
@@ -378,11 +380,11 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
   };
 
   const levelLabels: Record<string, string> = {
-    root: '🟣 核心主题 (Root)',
-    core: '🔴 主要概念 (Core)',
-    sub: '🟠 细分知识 (Sub)',
-    normal: '🔵 具体内容 (Normal)',
-    leaf: '🟢 实例细节 (Leaf)'
+    root: t('textToGraph.levelLabels.root'),
+    core: t('textToGraph.levelLabels.core'),
+    sub: t('textToGraph.levelLabels.sub'),
+    normal: t('textToGraph.levelLabels.normal'),
+    leaf: t('textToGraph.levelLabels.leaf')
   };
 
   return (
@@ -395,7 +397,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
               <Wand2 size={20} />
             </div>
             <h2 className="text-lg font-bold">
-              {step === 'input' ? 'AI 知识图谱生成' : '预览与筛选生成的图谱'}
+              {step === 'input' ? t('textToGraph.title.input') : t('textToGraph.title.preview')}
             </h2>
           </div>
           <button 
@@ -419,7 +421,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   }`}
                 >
                   <FileText size={16} />
-                  <span>文本输入</span>
+                  <span>{t('textToGraph.tabs.text')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('file')}
@@ -428,7 +430,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   }`}
                 >
                   <Upload size={16} />
-                  <span>文件上传</span>
+                  <span>{t('textToGraph.tabs.file')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('image')}
@@ -437,7 +439,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   }`}
                 >
                   <ImageIcon size={16} />
-                  <span>图片识别</span>
+                  <span>{t('textToGraph.tabs.image')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('url')}
@@ -446,13 +448,13 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   }`}
                 >
                   <Globe size={16} />
-                  <span>网页链接</span>
+                  <span>{t('textToGraph.tabs.url')}</span>
                 </button>
               </div>
 
               {aiEnabled === false && (
                 <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
-                  AI 未配置：文本分析会生成模拟预览；文档上传与 URL 解析需要配置 AI Key。
+                  {t('textToGraph.aiNotConfiguredHint')}
                 </div>
               )}
               
@@ -462,12 +464,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     <textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
-                      placeholder="例如：太阳系是以太阳为中心，和所有受到太阳的引力约束天体的集合体。包括八大行星..."
+                      placeholder={t('textToGraph.textTab.placeholder')}
                       className="w-full h-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none text-base leading-relaxed transition-all group-hover:border-gray-300"
                       disabled={isAnalyzing}
                     />
                     <div className="absolute bottom-4 right-4 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                      {text.length} 字符
+                      {t('textToGraph.textTab.charCount', { count: text.length })}
                     </div>
                   </div>
                 )}
@@ -488,19 +490,19 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                       <Upload size={32} className={isDragging ? 'text-primary-500' : 'text-gray-400'} />
                     </div>
                     <h3 className="text-lg font-medium text-gray-700 mb-2">
-                      {isDragging ? '释放以解析文件' : '点击或拖拽文件到此处'}
+                      {isDragging ? t('textToGraph.fileTab.dragRelease') : t('textToGraph.fileTab.clickOrDrag')}
                     </h3>
                     <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
-                      支持 PDF 文档、Markdown 笔记、OPML 大纲或纯文本文件。
+                      {t('textToGraph.fileTab.supportedFiles')}
                       <br />
-                      <span className="text-xs opacity-70">AI 将自动提取内容并生成知识图谱。</span>
+                      <span className="text-xs opacity-70">{t('textToGraph.fileTab.aiExtractHint')}</span>
                     </p>
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-primary-600 transition-colors shadow-sm"
                       disabled={isAnalyzing}
                     >
-                      选择文件
+                      {t('textToGraph.fileTab.selectFile')}
                     </button>
                     <input 
                       type="file" 
@@ -528,19 +530,19 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                       <ImageIcon size={32} className={isDragging ? 'text-primary-500' : 'text-gray-400'} />
                     </div>
                     <h3 className="text-lg font-medium text-gray-700 mb-2">
-                      {isDragging ? '释放以识别图片' : '上传图片生成图谱'}
+                      {isDragging ? t('textToGraph.imageTab.dragRelease') : t('textToGraph.imageTab.uploadImage')}
                     </h3>
                     <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
-                      支持思维导图截图、流程图、板书照片或幻灯片。
+                      {t('textToGraph.imageTab.supportedImages')}
                       <br />
-                      <span className="text-xs opacity-70">支持 JPG, PNG, WebP 格式。</span>
+                      <span className="text-xs opacity-70">{t('textToGraph.imageTab.supportedFormats')}</span>
                     </p>
                     <button
                       onClick={() => imageInputRef.current?.click()}
                       className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-primary-600 transition-colors shadow-sm"
                       disabled={isAnalyzing}
                     >
-                      选择图片
+                      {t('textToGraph.imageTab.selectImage')}
                     </button>
                     <input 
                       type="file" 
@@ -557,8 +559,8 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                     {!isOnline ? (
                       <div className="text-center text-gray-500">
                         <WifiOff size={48} className="mx-auto mb-4 text-gray-400" />
-                        <p className="font-medium">离线模式不可用</p>
-                        <p className="text-sm mt-2">URL 解析需要网络连接</p>
+                        <p className="font-medium">{t('textToGraph.urlTab.offlineUnavailable')}</p>
+                        <p className="text-sm mt-2">{t('textToGraph.urlTab.offlineDesc')}</p>
                       </div>
                     ) : (
                     <div className="w-full max-w-md space-y-4">
@@ -566,8 +568,8 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                         <div className="bg-white p-3 rounded-full shadow-sm inline-block mb-3">
                           <Globe size={28} className="text-primary-500" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-800">输入网页链接</h3>
-                        <p className="text-sm text-gray-500">AI 将读取网页内容并转化为知识结构</p>
+                        <h3 className="text-lg font-medium text-gray-800">{t('textToGraph.urlTab.inputUrl')}</h3>
+                        <p className="text-sm text-gray-500">{t('textToGraph.urlTab.urlDesc')}</p>
                       </div>
                       
                       <div className="relative">
@@ -586,7 +588,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                       
                       <div className="bg-primary-50 p-3 rounded-lg text-xs text-primary-700 flex items-start gap-2">
                         <div className="mt-0.5"><Check size={12} /></div>
-                        <span>支持博客文章、新闻报道、维基百科条目等以文本为主的网页。</span>
+                        <span>{t('textToGraph.urlTab.supportedWebsites')}</span>
                       </div>
                     </div>
                     )}
@@ -598,13 +600,13 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
             <div className="space-y-6">
               <div className="flex justify-between items-center mb-2">
                  <p className="text-sm text-gray-500">
-                   共生成 {previewData?.nodes.length} 个节点。请勾选您想要保留的节点：
+                   {t('textToGraph.preview.nodesGenerated', { count: previewData?.nodes.length ?? 0 })}
                  </p>
-                 <button 
+                 <button
                    onClick={toggleAll}
                    className="text-sm text-primary-600 hover:text-primary-800 font-medium"
                  >
-                   {selectedNodeIds.size === previewData?.nodes.length ? '取消全选' : '全选'}
+                   {selectedNodeIds.size === previewData?.nodes.length ? t('textToGraph.preview.deselectAll') : t('textToGraph.preview.selectAll')}
                  </button>
               </div>
 
@@ -647,7 +649,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           <div>
             {step === 'preview' && (
                <div className="text-sm text-gray-500">
-                 已选择 <span className="font-bold text-primary-600">{selectedNodeIds.size}</span> / {previewData?.nodes.length} 个节点
+                 {t('textToGraph.preview.selectedCount', { selected: selectedNodeIds.size, total: previewData?.nodes.length ?? 0 })}
                </div>
             )}
           </div>
@@ -658,7 +660,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
                 disabled={textToGraphMutation.isPending}
               >
-                取消
+                {t('textToGraph.buttons.cancel')}
               </button>
             ) : (
               <button
@@ -667,7 +669,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 disabled={textToGraphMutation.isPending}
               >
                 <ArrowLeft size={18} className="mr-1" />
-                返回修改
+                {t('textToGraph.buttons.back')}
               </button>
             )}
 
@@ -680,12 +682,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 {isAnalyzing ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    <span>正在分析...</span>
+                    <span>{t('textToGraph.buttons.analyzing')}</span>
                   </>
                 ) : (
                   <>
                     <Wand2 size={18} />
-                    <span>开始分析</span>
+                    <span>{t('textToGraph.buttons.startAnalysis')}</span>
                   </>
                 )}
               </button>
@@ -698,12 +700,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 {textToGraphMutation.isPending ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    <span>正在保存...</span>
+                    <span>{t('textToGraph.buttons.saving')}</span>
                   </>
                 ) : (
                   <>
                     <Network size={18} />
-                    <span>生成图谱</span>
+                    <span>{t('textToGraph.buttons.generateGraph')}</span>
                   </>
                 )}
               </button>

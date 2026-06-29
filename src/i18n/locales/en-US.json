@@ -3791,5 +3791,390 @@
     "finding": "Finding",
     "trend": "Trend",
     "challenge": "Challenge"
+  },
+  "unifiedWorkbench": {
+    "title": "Unified Workbench",
+    "subtitle": "Task Scheduling · Knowledge Management · Study Progress",
+    "actions": {
+      "scheduler": "Task Scheduler",
+      "createNewTask": "New Task",
+      "retry": "Retry",
+      "pause": "Pause",
+      "complete": "Complete",
+      "start": "Start",
+      "edit": "Edit",
+      "delete": "Delete",
+      "linkKnowledgePoint": "Link Knowledge Point",
+      "viewAll": "View All",
+      "detailedStats": "Detailed Stats",
+      "addTask": "Add Task",
+      "viewMore": "View {{count}} more tasks"
+    },
+    "labels": {
+      "currentTask": "Current Task",
+      "taskBoard": "Task Board",
+      "feedbackQueue": "Three-Tier Feedback Queue",
+      "urgentQueue": "Urgent Queue",
+      "importantQueue": "Important Queue",
+      "todoQueue": "To-Do Queue",
+      "knowledgeOverview": "Knowledge Graph Overview",
+      "studyProgress": "Study Progress",
+      "recentStudy": "Recently Studied",
+      "toReviewKnowledge": "Knowledge Points to Review",
+      "todayStudy": "Today's Study",
+      "completedTasks": "Completed Tasks",
+      "reviewCompleted": "Reviews Completed",
+      "streakDays": "Streak Days",
+      "streakDaysValue": "{{count}} days",
+      "reviewProgress": "Review Task Progress",
+      "totalTasksValue": "Total Tasks: {{count}}",
+      "knowledgePointReview": "Knowledge Point Review",
+      "intervalDays": "Interval: {{count}} days",
+      "estimatedDuration": "Estimated Duration",
+      "taskCount": "{{count}} tasks",
+      "timeSliceMinutes": "{{count}} min"
+    },
+    "status": {
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "paused": "Paused",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "upcoming": "Due Soon",
+      "planned": "Planned",
+      "todayToReview": "To Review Today",
+      "daysLater": "in {{count}} days"
+    },
+    "messages": {
+      "taskCreateSuccess": "Task created successfully",
+      "taskCreateFailed": "Failed to create task",
+      "taskUpdateSuccess": "Task updated successfully",
+      "taskUpdateFailed": "Failed to update task",
+      "taskDeleted": "Task deleted",
+      "taskDeleteFailed": "Failed to delete task",
+      "taskStarted": "Task started",
+      "taskStartFailed": "Failed to start task",
+      "taskPaused": "Task paused",
+      "taskPauseFailed": "Failed to pause task",
+      "taskCompleted": "Task completed",
+      "taskCompleteFailed": "Failed to complete task",
+      "knowledgePointLinked": "Knowledge point linked successfully",
+      "knowledgePointLinkFailed": "Failed to link knowledge point",
+      "loadFailed": "Load failed: {{message}}",
+      "loadingWorkbench": "Loading workbench..."
+    },
+    "tips": {
+      "clickTaskHint": "Click a task card to view details and link knowledge points",
+      "quickCreateHint": "Supports quick task creation and knowledge point linking",
+      "noTasks": "No tasks",
+      "noRecentKnowledge": "No recently studied knowledge points",
+      "noToReviewKnowledge": "No knowledge points to review",
+      "searchKnowledgePlaceholder": "Search knowledge points...",
+      "searchKnowledgeHint": "Enter keywords to search knowledge points"
+    },
+    "durations": {
+      "zeroMinutes": "0 min",
+      "minutesWithValue": "{{count}} min",
+      "hoursAndMinutes": "{{hours}} h {{minutes}} min",
+      "hoursOnly": "{{count}} h"
+    }
+  },
+  "schedulerStats": {
+    "title": "Scheduler Stats",
+    "subtitle": "Three-tier feedback queue task scheduling system metrics",
+    "loading": "Loading statistics...",
+    "loadFailed": "Failed to load statistics",
+    "periods": {
+      "day": "Today",
+      "week": "This Week",
+      "month": "This Month",
+      "year": "This Year"
+    },
+    "metrics": {
+      "totalTasks": "Total Tasks",
+      "totalTasksSubtext": "Created in the period",
+      "completedTasks": "Completed Tasks",
+      "completionRate": "Completion rate {{rate}}%",
+      "totalDuration": "Total Duration",
+      "totalDurationSubtext": "Cumulative execution time",
+      "avgDuration": "Average Duration",
+      "avgDurationSubtext": "Average per task"
+    },
+    "queueDistribution": {
+      "title": "Queue Distribution",
+      "q0": "Q0 High Priority",
+      "q1": "Q1 Medium Priority",
+      "q2": "Q2 Low Priority"
+    },
+    "dailyTrend": {
+      "title": "Daily Completion Trend",
+      "dayLabel": "Day {{day}}",
+      "completed": "Completed Tasks"
+    },
+    "durationTrend": {
+      "title": "Execution Duration Trend",
+      "duration": "Duration"
+    },
+    "efficiency": {
+      "title": "Efficiency Analysis (min/task)",
+      "value": "{{value}} min/task",
+      "label": "Average Efficiency",
+      "name": "Efficiency"
+    },
+    "heatmap": {
+      "title": "Task Execution Heatmap",
+      "fullYear": "Full Year",
+      "activityLevel": "Activity:",
+      "totalExecutions": "{{count}} executions in total",
+      "tooltip": "{{date}}: {{count}} executions, {{duration}}",
+      "months": {
+        "jan": "January",
+        "feb": "February",
+        "mar": "March",
+        "apr": "April",
+        "may": "May",
+        "jun": "June",
+        "jul": "July",
+        "aug": "August",
+        "sep": "September",
+        "oct": "October",
+        "nov": "November",
+        "dec": "December"
+      }
+    },
+    "history": {
+      "title": "Execution History",
+      "allStatus": "All Statuses",
+      "loading": "Loading...",
+      "empty": "No execution records",
+      "columns": {
+        "taskId": "Task ID",
+        "startedAt": "Start Time",
+        "endedAt": "End Time",
+        "duration": "Duration",
+        "queue": "Queue",
+        "status": "Status"
+      }
+    },
+    "status": {
+      "completed": "Completed",
+      "interrupted": "Interrupted",
+      "timeSliceEnded": "Time Slice Ended"
+    },
+    "durations": {
+      "minutes": "{{count}} min",
+      "hoursAndMinutes": "{{hours}} h {{minutes}} min",
+      "minutesSeconds": "{{minutes}}m {{seconds}}s",
+      "hoursOnly": "{{count}} h",
+      "compactHoursMinutes": "{{hours}}h{{minutes}}m"
+    }
+  },
+  "combinedViewPage": {
+    "loadingGraphs": "Loading...",
+    "selectGraphsTitle": "Select graphs to combine",
+    "nodeCount": "{{count}} nodes",
+    "startCombinedView": "Start Combined View ({{count}} graphs)",
+    "loadingCombinedView": "Loading combined view...",
+    "reselectGraphs": "Reselect graphs",
+    "title": "Combined View",
+    "summary": "{{graphCount}} graphs | {{visibleNodes}} / {{totalNodes}} knowledge points",
+    "layouts": {
+      "grouped": "Grouped Layout",
+      "merged": "Merged Layout",
+      "network": "Network Layout"
+    },
+    "actions": {
+      "addRemoveGraphs": "Add/Remove graphs"
+    },
+    "graphLabel": "Graph {{id}}",
+    "hidden": "(hidden)",
+    "stats": {
+      "totalNodes": "Total nodes:",
+      "sharedNodes": "Shared nodes:",
+      "edgesCount": "Edges:"
+    },
+    "nodeDetail": {
+      "belongingGraphs": "Belonging graphs:",
+      "shared": "Shared knowledge point",
+      "independent": "Independent knowledge point"
+    }
+  },
+  "graphStyleSettings": {
+    "title": "Style Settings",
+    "tabs": {
+      "colors": "Color Scheme",
+      "links": "Link Style",
+      "animations": "Animation",
+      "nodes": "Node Size",
+      "edges": "Edge Width",
+      "edgeSettings": "Edge Settings"
+    },
+    "colorScheme": {
+      "selectTitle": "Choose a color scheme",
+      "currentScheme": "Current scheme",
+      "levelModeHint": "Currently in \"Structure\" coloring mode. Color schemes only take effect in \"Status\" mode.",
+      "heatmapModeHint": "Currently in \"Heatmap\" coloring mode. Color schemes only take effect in \"Status\" mode.",
+      "decayModeHint": "Currently in \"Decay\" coloring mode. Color schemes only take effect in \"Status\" mode."
+    },
+    "linkStyles": {
+      "curved": "Curved",
+      "straight": "Straight",
+      "step": "Step",
+      "bezier": "Bezier"
+    },
+    "linkAnimations": {
+      "none": "None",
+      "flow": "Flow",
+      "pulse": "Pulse",
+      "dash": "Dashed"
+    },
+    "animationDesc": {
+      "title": "Animation Description",
+      "flow": "The dashed line on the connection will flow continuously",
+      "pulse": "The connection will have a breathing-like brightening and dimming effect",
+      "dash": "Displayed as a dashed line style",
+      "none": "No animation effect is displayed"
+    },
+    "nodeSizeMode": {
+      "title": "Node Size Mode",
+      "fixed": {
+        "name": "Fixed Size",
+        "description": "All nodes use the same size"
+      },
+      "importance": {
+        "name": "By Importance",
+        "description": "Dynamically adjusted based on node importance"
+      },
+      "degree": {
+        "name": "By Degree",
+        "description": "Adjusted based on the number of connections"
+      },
+      "children": {
+        "name": "By Children Count",
+        "description": "Adjusted based on the number of child nodes"
+      }
+    },
+    "edgeWidthMode": {
+      "title": "Edge Width Mode",
+      "fixed": {
+        "name": "Fixed Width",
+        "description": "All edges use the same width"
+      },
+      "strength": {
+        "name": "By Connection Strength",
+        "description": "Dynamically adjusted based on connection strength"
+      },
+      "relationship": {
+        "name": "By Relationship Type",
+        "description": "Adjusted based on relationship type"
+      }
+    },
+    "edgeSettings": {
+      "showLabels": "Show Labels",
+      "showLabelsDesc": "Display relationship type or custom labels on edges",
+      "showArrows": "Show Arrows",
+      "showArrowsDesc": "Display arrows on directed relationships",
+      "relationshipTypeManagement": "Relationship Type Management",
+      "relationshipTypeManagementDesc": "Manage preset and custom relationship types",
+      "manage": "Manage",
+      "commonRelationshipTypes": "Common Relationship Types"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
+  },
+  "textToGraph": {
+    "title": {
+      "input": "AI Knowledge Graph Generation",
+      "preview": "Preview and Filter Generated Graph"
+    },
+    "tabs": {
+      "text": "Text Input",
+      "file": "File Upload",
+      "image": "Image Recognition",
+      "url": "Web URL"
+    },
+    "aiNotConfiguredHint": "AI not configured: text analysis will generate a simulated preview; document upload and URL parsing require an AI Key.",
+    "textTab": {
+      "placeholder": "e.g., The solar system is the collection of celestial bodies bound by the Sun's gravity, including the eight planets...",
+      "charCount": "{{count}} characters"
+    },
+    "fileTab": {
+      "dragRelease": "Release to parse file",
+      "clickOrDrag": "Click or drag a file here",
+      "supportedFiles": "Supports PDF documents, Markdown notes, OPML outlines, or plain text files.",
+      "aiExtractHint": "AI will automatically extract content and generate a knowledge graph.",
+      "selectFile": "Select File"
+    },
+    "imageTab": {
+      "dragRelease": "Release to recognize image",
+      "uploadImage": "Upload image to generate graph",
+      "supportedImages": "Supports mind map screenshots, flowcharts, whiteboard photos, or slides.",
+      "supportedFormats": "Supports JPG, PNG, WebP formats.",
+      "selectImage": "Select Image"
+    },
+    "urlTab": {
+      "offlineUnavailable": "Offline mode unavailable",
+      "offlineDesc": "URL parsing requires a network connection",
+      "inputUrl": "Enter a web URL",
+      "urlDesc": "AI will read the webpage content and convert it into a knowledge structure",
+      "supportedWebsites": "Supports blog articles, news reports, Wikipedia entries, and other text-based webpages."
+    },
+    "preview": {
+      "nodesGenerated": "Generated {{count}} nodes. Check the ones you want to keep:",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "selectedCount": "Selected {{selected}} / {{total}} nodes"
+    },
+    "levelLabels": {
+      "root": "🟣 Core Theme (Root)",
+      "core": "🔴 Main Concept (Core)",
+      "sub": "🟠 Sub-knowledge (Sub)",
+      "normal": "🔵 Specific Content (Normal)",
+      "leaf": "🟢 Instance Detail (Leaf)"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "back": "Back to Edit",
+      "analyzing": "Analyzing...",
+      "startAnalysis": "Start Analysis",
+      "saving": "Saving...",
+      "generateGraph": "Generate Graph"
+    },
+    "messages": {
+      "offlineUrlParse": "Cannot parse URL in offline mode",
+      "invalidUrl": "Please enter a valid URL",
+      "urlExtractFailed": "Unable to extract content from this URL",
+      "urlParseFailed": "URL parsing failed",
+      "emptyText": "Please enter text content",
+      "textTooShort": "Content is too short; at least 10 characters are required",
+      "offlineAiAnalysis": "AI analysis is not available in offline mode",
+      "aiNotConfiguredSimulated": "AI not configured: a simulated preview will be generated this time",
+      "analysisCompleted": "AI analysis completed. Please confirm the generated content",
+      "analysisFailed": "Analysis failed, please try again",
+      "offlineImageRecognition": "Image recognition is not available in offline mode",
+      "aiNotConfiguredImage": "AI not configured: image recognition requires an AI Key (Aliyun/Volcengine recommended)",
+      "analyzingImage": "Analyzing image content...",
+      "imageRecognitionFailed": "AI could not recognize any valid nodes from the image.",
+      "imageAnalysisSuccess": "Image analysis successful",
+      "imageAnalysisFailed": "Analysis failed",
+      "offlinePdfParse": "Cannot parse PDF in offline mode",
+      "aiNotConfiguredPdf": "AI not configured: PDF parsing is unavailable. Please configure an AI Key first",
+      "parsingPdf": "Parsing PDF document...",
+      "pdfParseFailed": "AI could not parse any nodes from the document. Please check the document content.",
+      "pdfParseSuccess": "Document parsed successfully",
+      "pdfParseError": "Parsing failed",
+      "textImported": "Text imported into editor",
+      "fileParseSuccess": "File parsed successfully",
+      "fileParseError": "Parsing failed: {{message}}",
+      "unsupportedFileType": "Unsupported file format. Please upload a PDF, Markdown, OPML, TXT, or image file.",
+      "noNodeSelected": "Please select at least one node",
+      "generateSuccess": "Successfully generated {{nodes}} nodes and {{edges}} relationships!",
+      "saveFailed": "Save failed, please try again"
+    }
   }
 }

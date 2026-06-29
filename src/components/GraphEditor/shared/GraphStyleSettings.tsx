@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ColorScheme, LinkStyle, LinkAnimation, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../../types';
 import { getColorSchemeNames, COLOR_SCHEMES } from '../../../config/learningStatusColors';
 import { PRESET_RELATIONSHIP_TYPES } from '../../../config/relationshipTypes';
@@ -62,6 +63,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   onShowArrowsChange,
   onOpenRelationshipTypeSettings
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges' | 'edgeSettings'>('colors');
 
   const commonRelationshipTypes = PRESET_RELATIONSHIP_TYPES.slice(0, 8);
@@ -70,16 +72,16 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
 
   const colorSchemes = getColorSchemeNames();
   const linkStyles: { key: LinkStyle; name: string }[] = [
-    { key: 'curved', name: '曲线' },
-    { key: 'straight', name: '直线' },
-    { key: 'step', name: '折线' },
-    { key: 'bezier', name: '贝塞尔' }
+    { key: 'curved', name: t('graphStyleSettings.linkStyles.curved') },
+    { key: 'straight', name: t('graphStyleSettings.linkStyles.straight') },
+    { key: 'step', name: t('graphStyleSettings.linkStyles.step') },
+    { key: 'bezier', name: t('graphStyleSettings.linkStyles.bezier') }
   ];
   const linkAnimations: { key: LinkAnimation; name: string }[] = [
-    { key: 'none', name: '无' },
-    { key: 'flow', name: '流动' },
-    { key: 'pulse', name: '脉冲' },
-    { key: 'dash', name: '虚线' }
+    { key: 'none', name: t('graphStyleSettings.linkAnimations.none') },
+    { key: 'flow', name: t('graphStyleSettings.linkAnimations.flow') },
+    { key: 'pulse', name: t('graphStyleSettings.linkAnimations.pulse') },
+    { key: 'dash', name: t('graphStyleSettings.linkAnimations.dash') }
   ];
 
   return (
@@ -89,7 +91,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">样式设置</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('graphStyleSettings.title')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -109,7 +111,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            配色方案
+            {t('graphStyleSettings.tabs.colors')}
           </button>
           <button
             onClick={() => setActiveTab('links')}
@@ -119,7 +121,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            连接线样式
+            {t('graphStyleSettings.tabs.links')}
           </button>
           <button
             onClick={() => setActiveTab('animations')}
@@ -129,7 +131,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            动画效果
+            {t('graphStyleSettings.tabs.animations')}
           </button>
           <button
             onClick={() => setActiveTab('nodes')}
@@ -139,7 +141,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            节点大小
+            {t('graphStyleSettings.tabs.nodes')}
           </button>
           <button
             onClick={() => setActiveTab('edges')}
@@ -149,7 +151,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            边粗细
+            {t('graphStyleSettings.tabs.edges')}
           </button>
           <button
             onClick={() => setActiveTab('edgeSettings')}
@@ -159,7 +161,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            边设置
+            {t('graphStyleSettings.tabs.edgeSettings')}
           </button>
         </div>
 
@@ -169,7 +171,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               {coloringMode === 'level' && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-3 mb-4">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    当前处于"结构"着色模式，配色方案仅在"状态"模式下生效。
+                    {t('graphStyleSettings.colorScheme.levelModeHint')}
                   </p>
                 </div>
               )}
@@ -177,7 +179,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               {coloringMode === 'heatmap' && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-lg p-3 mb-4">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    当前处于"热力图"着色模式，配色方案仅在"状态"模式下生效。
+                    {t('graphStyleSettings.colorScheme.heatmapModeHint')}
                   </p>
                 </div>
               )}
@@ -185,13 +187,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               {coloringMode === 'decay' && (
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-lg p-3 mb-4">
                   <p className="text-sm text-emerald-800 dark:text-emerald-200">
-                    当前处于"衰减"着色模式，配色方案仅在"状态"模式下生效。
+                    {t('graphStyleSettings.colorScheme.decayModeHint')}
                   </p>
                 </div>
               )}
               
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">选择配色方案</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.colorScheme.selectTitle')}</h3>
                 <div className="grid grid-cols-3 gap-3">
                   {colorSchemes.map((scheme) => {
                     // Get representative colors for the scheme
@@ -234,7 +236,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">当前方案</h4>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.colorScheme.currentScheme')}</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {colorSchemes.find(s => s.key === currentColorScheme)?.name}
                     </p>
@@ -265,7 +267,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           {activeTab === 'links' && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">连接线样式</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.tabs.links')}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {linkStyles.map((style) => (
                     <button
@@ -304,7 +306,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           {activeTab === 'animations' && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">连接线动画</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.tabs.animations')}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {linkAnimations.map((animation) => (
                     <button
@@ -336,12 +338,12 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
 
               <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
                 <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">动画说明</h4>
+                  <h4 className="text-sm font-medium text-primary-900 dark:text-primary-100 mb-2">{t('graphStyleSettings.animationDesc.title')}</h4>
                   <ul className="text-xs text-primary-800 dark:text-primary-200 space-y-1">
-                    <li>• <strong>流动</strong>: 连接线上的虚线会持续流动</li>
-                    <li>• <strong>脉冲</strong>: 连接线会有呼吸般的明暗变化</li>
-                    <li>• <strong>虚线</strong>: 显示为虚线样式</li>
-                    <li>• <strong>无</strong>: 不显示任何动画效果</li>
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.flow')}</strong>: {t('graphStyleSettings.animationDesc.flow')}</li>
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.pulse')}</strong>: {t('graphStyleSettings.animationDesc.pulse')}</li>
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.dash')}</strong>: {t('graphStyleSettings.animationDesc.dash')}</li>
+                    <li>• <strong>{t('graphStyleSettings.linkAnimations.none')}</strong>: {t('graphStyleSettings.animationDesc.none')}</li>
                   </ul>
                 </div>
               </div>
@@ -351,13 +353,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           {activeTab === 'nodes' && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">节点大小模式</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.nodeSizeMode.title')}</h3>
                 <div className="space-y-2">
                   {[
-                    { key: 'fixed' as NodeSizeMode, name: '固定大小', description: '所有节点使用相同大小' },
-                    { key: 'importance' as NodeSizeMode, name: '按重要性', description: '根据节点重要性动态调整' },
-                    { key: 'degree' as NodeSizeMode, name: '按连接度', description: '根据连接数调整大小' },
-                    { key: 'children' as NodeSizeMode, name: '按子节点数', description: '根据子节点数量调整大小' }
+                    { key: 'fixed' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.fixed.name'), description: t('graphStyleSettings.nodeSizeMode.fixed.description') },
+                    { key: 'importance' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.importance.name'), description: t('graphStyleSettings.nodeSizeMode.importance.description') },
+                    { key: 'degree' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.degree.name'), description: t('graphStyleSettings.nodeSizeMode.degree.description') },
+                    { key: 'children' as NodeSizeMode, name: t('graphStyleSettings.nodeSizeMode.children.name'), description: t('graphStyleSettings.nodeSizeMode.children.description') }
                   ].map((mode) => (
                     <button
                       key={mode.key}
@@ -380,12 +382,12 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
           {activeTab === 'edges' && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">边粗细模式</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.edgeWidthMode.title')}</h3>
                 <div className="space-y-2">
                   {[
-                    { key: 'fixed' as EdgeWidthMode, name: '固定粗细', description: '所有边使用相同粗细' },
-                    { key: 'strength' as EdgeWidthMode, name: '按连接强度', description: '根据连接强度动态调整' },
-                    { key: 'relationship' as EdgeWidthMode, name: '按关系类型', description: '根据关系类型调整粗细' }
+                    { key: 'fixed' as EdgeWidthMode, name: t('graphStyleSettings.edgeWidthMode.fixed.name'), description: t('graphStyleSettings.edgeWidthMode.fixed.description') },
+                    { key: 'strength' as EdgeWidthMode, name: t('graphStyleSettings.edgeWidthMode.strength.name'), description: t('graphStyleSettings.edgeWidthMode.strength.description') },
+                    { key: 'relationship' as EdgeWidthMode, name: t('graphStyleSettings.edgeWidthMode.relationship.name'), description: t('graphStyleSettings.edgeWidthMode.relationship.description') }
                   ].map((mode) => (
                     <button
                       key={mode.key}
@@ -409,8 +411,8 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">显示标签</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">在边上显示关系类型或自定义标签</div>
+                  <div className="font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.edgeSettings.showLabels')}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphStyleSettings.edgeSettings.showLabelsDesc')}</div>
                 </div>
                 <ToggleSwitch
                   checked={showLabels}
@@ -420,8 +422,8 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
               
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">显示箭头</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">在有向关系上显示箭头</div>
+                  <div className="font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.edgeSettings.showArrows')}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphStyleSettings.edgeSettings.showArrowsDesc')}</div>
                 </div>
                 <ToggleSwitch
                   checked={showArrows}
@@ -433,21 +435,21 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                 <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-white">关系类型管理</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">管理预设和自定义关系类型</div>
+                      <div className="font-medium text-gray-900 dark:text-white">{t('graphStyleSettings.edgeSettings.relationshipTypeManagement')}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{t('graphStyleSettings.edgeSettings.relationshipTypeManagementDesc')}</div>
                     </div>
                     <button
                       onClick={onOpenRelationshipTypeSettings}
                       className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                     >
-                      管理
+                      {t('graphStyleSettings.edgeSettings.manage')}
                     </button>
                   </div>
                 </div>
               )}
               
               <div>
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">常用关系类型</h4>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('graphStyleSettings.edgeSettings.commonRelationshipTypes')}</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {commonRelationshipTypes.map(type => (
                     <div
@@ -469,13 +471,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
-            取消
+            {t('graphStyleSettings.actions.cancel')}
           </button>
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
           >
-            确定
+            {t('graphStyleSettings.actions.confirm')}
           </button>
         </div>
       </div>

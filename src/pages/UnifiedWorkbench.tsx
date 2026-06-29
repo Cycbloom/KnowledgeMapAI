@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -93,45 +94,36 @@ const QUEUE_COLORS = {
 
 const STATUS_CONFIG = {
   pending: {
-    label: "待处理",
     color: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
   },
   in_progress: {
-    label: "进行中",
     color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
   },
   paused: {
-    label: "已暂停",
     color: "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
   },
   completed: {
-    label: "已完成",
     color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
   },
   cancelled: {
-    label: "已取消",
     color: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
   },
 };
 
 const URGENCY_CONFIG = {
   overdue: {
-    label: "已过期",
     color: "text-red-500 dark:text-red-400",
     bg: "bg-red-100 dark:bg-red-500/20",
   },
   today: {
-    label: "今天",
     color: "text-amber-500 dark:text-amber-400",
     bg: "bg-amber-100 dark:bg-amber-500/20",
   },
   upcoming: {
-    label: "即将到期",
     color: "text-primary-500 dark:text-primary-400",
     bg: "bg-primary-100 dark:bg-primary-500/20",
   },
   future: {
-    label: "计划中",
     color: "text-emerald-500 dark:text-emerald-400",
     bg: "bg-emerald-100 dark:bg-emerald-500/20",
   },
@@ -139,6 +131,42 @@ const URGENCY_CONFIG = {
 
 export const UnifiedWorkbench: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // 状态标签映射：根据任务状态返回对应的 i18n 文本
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case "pending":
+        return t("unifiedWorkbench.status.pending");
+      case "in_progress":
+        return t("unifiedWorkbench.status.inProgress");
+      case "paused":
+        return t("unifiedWorkbench.status.paused");
+      case "completed":
+        return t("unifiedWorkbench.status.completed");
+      case "cancelled":
+        return t("unifiedWorkbench.status.cancelled");
+      default:
+        return t("unifiedWorkbench.status.pending");
+    }
+  };
+
+  // 紧急度标签映射：根据复习紧急度返回对应的 i18n 文本
+  const getUrgencyLabel = (urgency: string): string => {
+    switch (urgency) {
+      case "overdue":
+        return t("unifiedWorkbench.status.overdue");
+      case "today":
+        return t("unifiedWorkbench.status.today");
+      case "upcoming":
+        return t("unifiedWorkbench.status.upcoming");
+      case "future":
+        return t("unifiedWorkbench.status.planned");
+      default:
+        return t("unifiedWorkbench.status.planned");
+    }
+  };
+
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<UserTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
@@ -281,10 +309,10 @@ export const UnifiedWorkbench: React.FC = () => {
   const handleCreateTask = async (data: CreateUserTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务创建成功" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskCreateSuccess") });
       setShowTaskForm(false);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "创建任务失败";
+      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskCreateFailed");
       frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
@@ -293,11 +321,11 @@ export const UnifiedWorkbench: React.FC = () => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      frontendEventBus.publish("message_show", { type: "success", content: "任务更新成功" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskUpdateSuccess") });
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "更新任务失败";
+      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskUpdateFailed");
       frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
@@ -305,9 +333,9 @@ export const UnifiedWorkbench: React.FC = () => {
   const handleDeleteTask = async (task: UserTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已删除" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskDeleted") });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "删除任务失败";
+      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskDeleteFailed");
       frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
@@ -315,9 +343,9 @@ export const UnifiedWorkbench: React.FC = () => {
   const handleStartTask = async (task: UserTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已开始" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskStarted") });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "开始任务失败";
+      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskStartFailed");
       frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
@@ -325,9 +353,9 @@ export const UnifiedWorkbench: React.FC = () => {
   const handlePauseTask = async (task: UserTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已暂停" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskPaused") });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "暂停任务失败";
+      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskPauseFailed");
       frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
@@ -335,9 +363,9 @@ export const UnifiedWorkbench: React.FC = () => {
   const handleCompleteTask = async (task: UserTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "任务已完成" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskCompleted") });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "完成任务失败";
+      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskCompleteFailed");
       frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
@@ -358,13 +386,13 @@ export const UnifiedWorkbench: React.FC = () => {
       await api.scheduler.addTaskKnowledgePoint(taskId, {
         knowledge_point_id: knowledgePointId,
       });
-      frontendEventBus.publish("message_show", { type: "success", content: "知识点关联成功" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.knowledgePointLinked") });
       setLinkingTaskId(null);
       setKnowledgePointSearch("");
       setSearchResults([]);
       refetchQueues();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "关联知识点失败";
+      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.knowledgePointLinkFailed");
       frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
@@ -385,11 +413,13 @@ export const UnifiedWorkbench: React.FC = () => {
   }, []);
 
   const formatDuration = (minutes: number) => {
-    if (minutes === 0) return "0分钟";
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes === 0) return t("unifiedWorkbench.durations.zeroMinutes");
+    if (minutes < 60) return t("unifiedWorkbench.durations.minutesWithValue", { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+    return mins > 0
+      ? t("unifiedWorkbench.durations.hoursAndMinutes", { hours, minutes: mins })
+      : t("unifiedWorkbench.durations.hoursOnly", { count: hours });
   };
 
   const formatDeadline = (date?: string) => {
@@ -399,10 +429,10 @@ export const UnifiedWorkbench: React.FC = () => {
     const diff = d.getTime() - now.getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
-    if (days < 0) return { text: "已过期", color: "text-red-500 dark:text-red-400" };
-    if (days === 0) return { text: "今天", color: "text-amber-500 dark:text-amber-400" };
-    if (days === 1) return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
-    if (days <= 7) return { text: `${days}天后`, color: "text-primary-500 dark:text-primary-400" };
+    if (days < 0) return { text: t("unifiedWorkbench.status.overdue"), color: "text-red-500 dark:text-red-400" };
+    if (days === 0) return { text: t("unifiedWorkbench.status.today"), color: "text-amber-500 dark:text-amber-400" };
+    if (days === 1) return { text: t("unifiedWorkbench.status.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
+    if (days <= 7) return { text: t("unifiedWorkbench.status.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
     return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
   };
 
@@ -433,7 +463,7 @@ export const UnifiedWorkbench: React.FC = () => {
               Q{task.queue_level}
             </span>
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}>
-              {statusConfig.label}
+              {getStatusLabel(task.status)}
             </span>
             {task.priority >= 3 && (
               <span className="text-red-500 dark:text-red-400 text-xs">★</span>
@@ -471,7 +501,7 @@ export const UnifiedWorkbench: React.FC = () => {
               <button
                 onClick={() => handleStartTask(task)}
                 className={`p-1.5 rounded-md transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
-                title="开始"
+                title={t("unifiedWorkbench.actions.start")}
               >
                 <Zap size={14} />
               </button>
@@ -481,7 +511,7 @@ export const UnifiedWorkbench: React.FC = () => {
               <button
                 onClick={() => handlePauseTask(task)}
                 className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
-                title="暂停"
+                title={t("unifiedWorkbench.actions.pause")}
               >
                 <Clock size={14} />
               </button>
@@ -491,7 +521,7 @@ export const UnifiedWorkbench: React.FC = () => {
               <button
                 onClick={() => handleCompleteTask(task)}
                 className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
-                title="完成"
+                title={t("unifiedWorkbench.actions.complete")}
               >
                 <CheckCircle2 size={14} />
               </button>
@@ -500,7 +530,7 @@ export const UnifiedWorkbench: React.FC = () => {
             <button
               onClick={() => openEditTaskForm(task)}
               className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
-              title="编辑"
+              title={t("unifiedWorkbench.actions.edit")}
             >
               <Target size={14} />
             </button>
@@ -508,7 +538,7 @@ export const UnifiedWorkbench: React.FC = () => {
             <button
               onClick={() => setLinkingTaskId(task.id)}
               className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
-              title="关联知识点"
+              title={t("unifiedWorkbench.actions.linkKnowledgePoint")}
             >
               <Link2 size={14} />
             </button>
@@ -516,7 +546,7 @@ export const UnifiedWorkbench: React.FC = () => {
             <button
               onClick={() => handleDeleteTask(task)}
               className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
-              title="删除"
+              title={t("unifiedWorkbench.actions.delete")}
             >
               <AlertCircle size={14} />
             </button>
@@ -547,11 +577,11 @@ export const UnifiedWorkbench: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className={`font-bold text-slate-900 dark:text-white`}>{title}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{tasks.length} 个任务</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.taskCount", { count: tasks.length })}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
               <Timer size={12} />
-              <span>{timeSlice}分钟</span>
+              <span>{t("unifiedWorkbench.labels.timeSliceMinutes", { count: timeSlice })}</span>
             </div>
           </div>
         </div>
@@ -560,7 +590,7 @@ export const UnifiedWorkbench: React.FC = () => {
           {tasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-slate-400 dark:text-slate-500">
               <Layers size={24} className="mb-2 opacity-50" />
-              <p className="text-xs">暂无任务</p>
+              <p className="text-xs">{t("unifiedWorkbench.tips.noTasks")}</p>
             </div>
           ) : (
             tasks.slice(0, 5).map((task) => renderTaskCard(task, level))
@@ -570,7 +600,7 @@ export const UnifiedWorkbench: React.FC = () => {
               onClick={() => navigate("/scheduler")}
               className="w-full py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-1"
             >
-              查看更多 {tasks.length - 5} 个任务
+              {t("unifiedWorkbench.actions.viewMore", { count: tasks.length - 5 })}
               <ChevronRight size={12} />
             </button>
           )}
@@ -582,7 +612,7 @@ export const UnifiedWorkbench: React.FC = () => {
             className={`w-full py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${queueStyle.bg} ${queueStyle.text} hover:opacity-80`}
           >
             <Plus size={14} />
-            添加任务
+            {t("unifiedWorkbench.actions.addTask")}
           </button>
         </div>
       </div>
@@ -612,7 +642,7 @@ export const UnifiedWorkbench: React.FC = () => {
               </p>
             )}
             <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-              <span>最近学习</span>
+              <span>{t("unifiedWorkbench.labels.recentStudy")}</span>
             </div>
           </div>
         </div>
@@ -635,16 +665,16 @@ export const UnifiedWorkbench: React.FC = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${urgencyConfig.bg} ${urgencyConfig.color}`}>
-                {urgencyConfig.label}
+                {getUrgencyLabel(review.urgency)}
               </span>
             </div>
             <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
-              知识点复习
+              {t("unifiedWorkbench.labels.knowledgePointReview")}
             </h4>
             <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
               <div className="flex items-center gap-1">
                 <Brain size={10} />
-                <span>间隔: {review.interval_days}天</span>
+                <span>{t("unifiedWorkbench.labels.intervalDays", { count: review.interval_days })}</span>
               </div>
               <div className="flex items-center gap-1">
                 <TrendingUp size={10} />
@@ -687,10 +717,10 @@ export const UnifiedWorkbench: React.FC = () => {
                   </div>
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-500 via-primary-500 to-pink-500 dark:from-primary-400 dark:via-primary-400 dark:to-pink-400 bg-clip-text text-transparent">
-                      统一工作台
+                      {t("unifiedWorkbench.title")}
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                      任务调度 · 知识管理 · 学习进度
+                      {t("unifiedWorkbench.subtitle")}
                     </p>
                   </div>
                 </motion.div>
@@ -704,7 +734,7 @@ export const UnifiedWorkbench: React.FC = () => {
                   className="p-2.5 sm:flex sm:items-center sm:gap-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                 >
                   <Zap size={18} />
-                  <span className="hidden sm:inline">任务调度器</span>
+                  <span className="hidden sm:inline">{t("unifiedWorkbench.actions.scheduler")}</span>
                 </motion.button>
 
                 <motion.button
@@ -714,7 +744,7 @@ export const UnifiedWorkbench: React.FC = () => {
                   className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all"
                 >
                   <Plus size={18} />
-                  <span className="hidden sm:inline">新建任务</span>
+                  <span className="hidden sm:inline">{t("unifiedWorkbench.actions.createNewTask")}</span>
                 </motion.button>
 
                 <button
@@ -735,22 +765,22 @@ export const UnifiedWorkbench: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">待处理</span>
+                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.pending")}</span>
                 <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.pending}</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">进行中</span>
+                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.inProgress")}</span>
                 <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.inProgress}</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">已完成</span>
+                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.completed")}</span>
                 <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">{taskStats.completed}</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <Clock size={14} className="text-slate-400" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">预计时长</span>
+                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.estimatedDuration")}</span>
                 <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{formatDuration(taskStats.totalEstimated)}</span>
               </div>
             </div>
@@ -761,12 +791,12 @@ export const UnifiedWorkbench: React.FC = () => {
           <div className="flex-shrink-0 p-4">
             <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
               <AlertCircle size={20} />
-              <span>加载失败: {(queuesError as Error).message}</span>
+              <span>{t("unifiedWorkbench.messages.loadFailed", { message: (queuesError as Error).message })}</span>
               <button
                 onClick={() => refetchQueues()}
                 className="ml-auto text-sm underline hover:text-red-500 dark:hover:text-red-300"
               >
-                重试
+                {t("unifiedWorkbench.actions.retry")}
               </button>
             </div>
           </div>
@@ -781,7 +811,7 @@ export const UnifiedWorkbench: React.FC = () => {
                     <Zap size={20} className="text-primary-500 dark:text-primary-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-primary-500 dark:text-primary-400 font-medium">当前任务</p>
+                    <p className="text-xs text-primary-500 dark:text-primary-400 font-medium">{t("unifiedWorkbench.labels.currentTask")}</p>
                     <h3 className="font-bold text-slate-900 dark:text-white">{activeTask.title}</h3>
                   </div>
                 </div>
@@ -790,13 +820,13 @@ export const UnifiedWorkbench: React.FC = () => {
                     onClick={() => handlePauseTask(activeTask)}
                     className="px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-medium hover:opacity-80 transition-opacity"
                   >
-                    暂停
+                    {t("unifiedWorkbench.actions.pause")}
                   </button>
                   <button
                     onClick={() => handleCompleteTask(activeTask)}
                     className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:opacity-80 transition-opacity"
                   >
-                    完成
+                    {t("unifiedWorkbench.actions.complete")}
                   </button>
                 </div>
               </div>
@@ -815,7 +845,7 @@ export const UnifiedWorkbench: React.FC = () => {
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500 dark:text-primary-400"
                   />
                 </div>
-                <p className="text-slate-500 dark:text-slate-400">加载工作台...</p>
+                <p className="text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.messages.loadingWorkbench")}</p>
               </div>
             </div>
           ) : (
@@ -828,16 +858,16 @@ export const UnifiedWorkbench: React.FC = () => {
                         <div className="p-1.5 rounded-lg bg-primary-500/20">
                           <Target size={16} className="text-primary-500 dark:text-primary-400" />
                         </div>
-                        <h2 className="font-bold text-slate-900 dark:text-white">任务看板</h2>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">三层反馈队列</span>
+                        <h2 className="font-bold text-slate-900 dark:text-white">{t("unifiedWorkbench.labels.taskBoard")}</h2>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.feedbackQueue")}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="h-[calc(100%-52px)] grid grid-cols-3 gap-px bg-slate-200 dark:bg-slate-800">
-                    {renderQueueColumn(0, "紧急队列", queues.q0)}
-                    {renderQueueColumn(1, "重要队列", queues.q1)}
-                    {renderQueueColumn(2, "待办队列", queues.q2)}
+                    {renderQueueColumn(0, t("unifiedWorkbench.labels.urgentQueue"), queues.q0)}
+                    {renderQueueColumn(1, t("unifiedWorkbench.labels.importantQueue"), queues.q1)}
+                    {renderQueueColumn(2, t("unifiedWorkbench.labels.todoQueue"), queues.q2)}
                   </div>
                 </div>
               </div>
@@ -850,13 +880,13 @@ export const UnifiedWorkbench: React.FC = () => {
                         <div className="p-1.5 rounded-lg bg-primary-500/20">
                           <BookOpen size={16} className="text-primary-500 dark:text-primary-400" />
                         </div>
-                        <h2 className="font-bold text-slate-900 dark:text-white">知识图谱概览</h2>
+                        <h2 className="font-bold text-slate-900 dark:text-white">{t("unifiedWorkbench.labels.knowledgeOverview")}</h2>
                       </div>
                       <button
                         onClick={() => navigate("/graphs")}
                         className="text-xs text-primary-500 dark:text-primary-400 hover:underline flex items-center gap-1"
                       >
-                        查看全部
+                        {t("unifiedWorkbench.actions.viewAll")}
                         <ChevronRight size={12} />
                       </button>
                     </div>
@@ -866,12 +896,12 @@ export const UnifiedWorkbench: React.FC = () => {
                     <div className="mb-3">
                       <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
                         <Clock size={12} />
-                        最近学习
+                        {t("unifiedWorkbench.labels.recentStudy")}
                       </h3>
                       {recentKnowledgePoints.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-6 text-slate-400 dark:text-slate-500">
                           <BookOpen size={20} className="mb-2 opacity-50" />
-                          <p className="text-xs">暂无最近学习的知识点</p>
+                          <p className="text-xs">{t("unifiedWorkbench.tips.noRecentKnowledge")}</p>
                         </div>
                       ) : (
                         recentKnowledgePoints.map((kp) => renderKnowledgePointCard(kp))
@@ -881,7 +911,7 @@ export const UnifiedWorkbench: React.FC = () => {
                     <div>
                       <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
                         <Brain size={12} />
-                        待复习知识点
+                        {t("unifiedWorkbench.labels.toReviewKnowledge")}
                         {reviewStats && (
                           <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px]">
                             {reviewStats.overdue + reviewStats.today}
@@ -891,7 +921,7 @@ export const UnifiedWorkbench: React.FC = () => {
                       {pendingReviews.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-6 text-slate-400 dark:text-slate-500">
                           <Brain size={20} className="mb-2 opacity-50" />
-                          <p className="text-xs">暂无待复习知识点</p>
+                          <p className="text-xs">{t("unifiedWorkbench.tips.noToReviewKnowledge")}</p>
                         </div>
                       ) : (
                         pendingReviews.map((review) => renderReviewCard(review))
@@ -907,13 +937,13 @@ export const UnifiedWorkbench: React.FC = () => {
                         <div className="p-1.5 rounded-lg bg-emerald-500/20">
                           <BarChart3 size={16} className="text-emerald-500 dark:text-emerald-400" />
                         </div>
-                        <h2 className="font-bold text-slate-900 dark:text-white">学习进度</h2>
+                        <h2 className="font-bold text-slate-900 dark:text-white">{t("unifiedWorkbench.labels.studyProgress")}</h2>
                       </div>
                       <button
                         onClick={() => navigate("/statistics")}
                         className="text-xs text-emerald-500 dark:text-emerald-400 hover:underline flex items-center gap-1"
                       >
-                        详细统计
+                        {t("unifiedWorkbench.actions.detailedStats")}
                         <ChevronRight size={12} />
                       </button>
                     </div>
@@ -924,7 +954,7 @@ export const UnifiedWorkbench: React.FC = () => {
                       <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-500/10 dark:from-primary-500/20 dark:to-primary-500/20 border border-primary-200 dark:border-primary-500/30">
                         <div className="flex items-center gap-2 mb-2">
                           <Timer size={14} className="text-primary-500 dark:text-primary-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">今日学习</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.todayStudy")}</span>
                         </div>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                           {formatDuration(todayStats.totalStudyTime)}
@@ -934,7 +964,7 @@ export const UnifiedWorkbench: React.FC = () => {
                       <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 border border-emerald-200 dark:border-emerald-500/30">
                         <div className="flex items-center gap-2 mb-2">
                           <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">完成任务</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.completedTasks")}</span>
                         </div>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                           {todayStats.completedTasks}
@@ -944,7 +974,7 @@ export const UnifiedWorkbench: React.FC = () => {
                       <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500/10 to-pink-500/10 dark:from-primary-500/20 dark:to-pink-500/20 border border-primary-200 dark:border-primary-500/30">
                         <div className="flex items-center gap-2 mb-2">
                           <Brain size={14} className="text-primary-500 dark:text-primary-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">复习完成</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.reviewCompleted")}</span>
                         </div>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                           {todayStats.reviewCompleted}
@@ -954,10 +984,10 @@ export const UnifiedWorkbench: React.FC = () => {
                       <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20 border border-amber-200 dark:border-amber-500/30">
                         <div className="flex items-center gap-2 mb-2">
                           <Flame size={14} className="text-amber-500 dark:text-amber-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">连续天数</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.streakDays")}</span>
                         </div>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {todayStats.streak} 天
+                          {t("unifiedWorkbench.labels.streakDaysValue", { count: todayStats.streak })}
                         </p>
                       </div>
                     </div>
@@ -966,23 +996,23 @@ export const UnifiedWorkbench: React.FC = () => {
                       <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                         <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1">
                           <TrendingUp size={12} />
-                          复习任务进度
+                          {t("unifiedWorkbench.labels.reviewProgress")}
                         </h3>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-red-500 dark:text-red-400">已过期</span>
+                            <span className="text-red-500 dark:text-red-400">{t("unifiedWorkbench.status.overdue")}</span>
                             <span className="font-bold text-slate-900 dark:text-white">{reviewStats.overdue}</span>
                           </div>
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-amber-500 dark:text-amber-400">今日待复习</span>
+                            <span className="text-amber-500 dark:text-amber-400">{t("unifiedWorkbench.status.todayToReview")}</span>
                             <span className="font-bold text-slate-900 dark:text-white">{reviewStats.today}</span>
                           </div>
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-primary-500 dark:text-primary-400">即将到期</span>
+                            <span className="text-primary-500 dark:text-primary-400">{t("unifiedWorkbench.status.upcoming")}</span>
                             <span className="font-bold text-slate-900 dark:text-white">{reviewStats.upcoming}</span>
                           </div>
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-emerald-500 dark:text-emerald-400">计划中</span>
+                            <span className="text-emerald-500 dark:text-emerald-400">{t("unifiedWorkbench.status.planned")}</span>
                             <span className="font-bold text-slate-900 dark:text-white">{reviewStats.future}</span>
                           </div>
                         </div>
@@ -998,12 +1028,12 @@ export const UnifiedWorkbench: React.FC = () => {
         <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800/50 bg-slate-50/80 dark:bg-slate-900/30 backdrop-blur-sm px-3 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-400 dark:text-slate-500">
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <span>点击任务卡片可查看详情和关联知识点</span>
+              <span>{t("unifiedWorkbench.tips.clickTaskHint")}</span>
               <span className="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
-              <span className="hidden sm:inline">支持快速创建任务和关联知识点</span>
+              <span className="hidden sm:inline">{t("unifiedWorkbench.tips.quickCreateHint")}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span>总任务: {taskStats.total}</span>
+              <span>{t("unifiedWorkbench.labels.totalTasksValue", { count: taskStats.total })}</span>
             </div>
           </div>
         </div>
@@ -1047,7 +1077,7 @@ export const UnifiedWorkbench: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Link2 size={18} className="text-primary-500 dark:text-primary-400" />
-                    <h3 className="font-bold text-slate-900 dark:text-white">关联知识点</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white">{t("unifiedWorkbench.actions.linkKnowledgePoint")}</h3>
                   </div>
                   <button
                     onClick={() => {
@@ -1073,7 +1103,7 @@ export const UnifiedWorkbench: React.FC = () => {
                       setKnowledgePointSearch(e.target.value);
                       searchKnowledgePoints(e.target.value);
                     }}
-                    placeholder="搜索知识点..."
+                    placeholder={t("unifiedWorkbench.tips.searchKnowledgePlaceholder")}
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     autoFocus
                   />
@@ -1084,7 +1114,7 @@ export const UnifiedWorkbench: React.FC = () => {
                   {searchResults.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-slate-400 dark:text-slate-500">
                       <BookOpen size={24} className="mb-2 opacity-50" />
-                      <p className="text-sm">输入关键词搜索知识点</p>
+                      <p className="text-sm">{t("unifiedWorkbench.tips.searchKnowledgeHint")}</p>
                     </div>
                   ) : (
                     searchResults.map((kp) => (

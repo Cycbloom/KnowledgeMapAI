@@ -3808,5 +3808,390 @@
     "finding": "发现",
     "trend": "趋势",
     "challenge": "挑战"
+  },
+  "unifiedWorkbench": {
+    "title": "统一工作台",
+    "subtitle": "任务调度 · 知识管理 · 学习进度",
+    "actions": {
+      "scheduler": "任务调度器",
+      "createNewTask": "新建任务",
+      "retry": "重试",
+      "pause": "暂停",
+      "complete": "完成",
+      "start": "开始",
+      "edit": "编辑",
+      "delete": "删除",
+      "linkKnowledgePoint": "关联知识点",
+      "viewAll": "查看全部",
+      "detailedStats": "详细统计",
+      "addTask": "添加任务",
+      "viewMore": "查看更多 {{count}} 个任务"
+    },
+    "labels": {
+      "currentTask": "当前任务",
+      "taskBoard": "任务看板",
+      "feedbackQueue": "三层反馈队列",
+      "urgentQueue": "紧急队列",
+      "importantQueue": "重要队列",
+      "todoQueue": "待办队列",
+      "knowledgeOverview": "知识图谱概览",
+      "studyProgress": "学习进度",
+      "recentStudy": "最近学习",
+      "toReviewKnowledge": "待复习知识点",
+      "todayStudy": "今日学习",
+      "completedTasks": "完成任务",
+      "reviewCompleted": "复习完成",
+      "streakDays": "连续天数",
+      "streakDaysValue": "{{count}} 天",
+      "reviewProgress": "复习任务进度",
+      "totalTasksValue": "总任务: {{count}}",
+      "knowledgePointReview": "知识点复习",
+      "intervalDays": "间隔: {{count}}天",
+      "estimatedDuration": "预计时长",
+      "taskCount": "{{count}} 个任务",
+      "timeSliceMinutes": "{{count}}分钟"
+    },
+    "status": {
+      "pending": "待处理",
+      "inProgress": "进行中",
+      "paused": "已暂停",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "overdue": "已过期",
+      "today": "今天",
+      "tomorrow": "明天",
+      "upcoming": "即将到期",
+      "planned": "计划中",
+      "todayToReview": "今日待复习",
+      "daysLater": "{{count}}天后"
+    },
+    "messages": {
+      "taskCreateSuccess": "任务创建成功",
+      "taskCreateFailed": "创建任务失败",
+      "taskUpdateSuccess": "任务更新成功",
+      "taskUpdateFailed": "更新任务失败",
+      "taskDeleted": "任务已删除",
+      "taskDeleteFailed": "删除任务失败",
+      "taskStarted": "任务已开始",
+      "taskStartFailed": "开始任务失败",
+      "taskPaused": "任务已暂停",
+      "taskPauseFailed": "暂停任务失败",
+      "taskCompleted": "任务已完成",
+      "taskCompleteFailed": "完成任务失败",
+      "knowledgePointLinked": "知识点关联成功",
+      "knowledgePointLinkFailed": "关联知识点失败",
+      "loadFailed": "加载失败: {{message}}",
+      "loadingWorkbench": "加载工作台..."
+    },
+    "tips": {
+      "clickTaskHint": "点击任务卡片可查看详情和关联知识点",
+      "quickCreateHint": "支持快速创建任务和关联知识点",
+      "noTasks": "暂无任务",
+      "noRecentKnowledge": "暂无最近学习的知识点",
+      "noToReviewKnowledge": "暂无待复习知识点",
+      "searchKnowledgePlaceholder": "搜索知识点...",
+      "searchKnowledgeHint": "输入关键词搜索知识点"
+    },
+    "durations": {
+      "zeroMinutes": "0分钟",
+      "minutesWithValue": "{{count}}分钟",
+      "hoursAndMinutes": "{{hours}}小时{{minutes}}分钟",
+      "hoursOnly": "{{count}}小时"
+    }
+  },
+  "schedulerStats": {
+    "title": "调度器统计",
+    "subtitle": "三层反馈队列任务调度系统运行数据",
+    "loading": "加载统计数据中...",
+    "loadFailed": "无法加载统计数据",
+    "periods": {
+      "day": "今日",
+      "week": "本周",
+      "month": "本月",
+      "year": "本年"
+    },
+    "metrics": {
+      "totalTasks": "总任务数",
+      "totalTasksSubtext": "统计周期内创建",
+      "completedTasks": "已完成任务",
+      "completionRate": "完成率 {{rate}}%",
+      "totalDuration": "总执行时长",
+      "totalDurationSubtext": "累计执行时间",
+      "avgDuration": "平均执行时长",
+      "avgDurationSubtext": "每个任务平均"
+    },
+    "queueDistribution": {
+      "title": "队列分布",
+      "q0": "Q0 高优先",
+      "q1": "Q1 中优先",
+      "q2": "Q2 低优先"
+    },
+    "dailyTrend": {
+      "title": "每日完成趋势",
+      "dayLabel": "{{day}}日",
+      "completed": "完成任务"
+    },
+    "durationTrend": {
+      "title": "执行时长趋势",
+      "duration": "执行时长"
+    },
+    "efficiency": {
+      "title": "效率分析 (分钟/任务)",
+      "value": "{{value}} 分钟/任务",
+      "label": "平均效率",
+      "name": "效率"
+    },
+    "heatmap": {
+      "title": "任务执行热力图",
+      "fullYear": "全年",
+      "activityLevel": "活跃度:",
+      "totalExecutions": "共 {{count}} 次执行",
+      "tooltip": "{{date}}: {{count}} 次执行, {{duration}}",
+      "months": {
+        "jan": "一月",
+        "feb": "二月",
+        "mar": "三月",
+        "apr": "四月",
+        "may": "五月",
+        "jun": "六月",
+        "jul": "七月",
+        "aug": "八月",
+        "sep": "九月",
+        "oct": "十月",
+        "nov": "十一月",
+        "dec": "十二月"
+      }
+    },
+    "history": {
+      "title": "执行历史",
+      "allStatus": "全部状态",
+      "loading": "加载中...",
+      "empty": "暂无执行记录",
+      "columns": {
+        "taskId": "任务ID",
+        "startedAt": "开始时间",
+        "endedAt": "结束时间",
+        "duration": "执行时长",
+        "queue": "队列",
+        "status": "状态"
+      }
+    },
+    "status": {
+      "completed": "已完成",
+      "interrupted": "已中断",
+      "timeSliceEnded": "时间片结束"
+    },
+    "durations": {
+      "minutes": "{{count}}分钟",
+      "hoursAndMinutes": "{{hours}}小时{{minutes}}分钟",
+      "minutesSeconds": "{{minutes}}分{{seconds}}秒",
+      "hoursOnly": "{{count}}小时",
+      "compactHoursMinutes": "{{hours}}h{{minutes}}m"
+    }
+  },
+  "combinedViewPage": {
+    "loadingGraphs": "加载中...",
+    "selectGraphsTitle": "选择要联立展示的图谱",
+    "nodeCount": "{{count}} 个节点",
+    "startCombinedView": "开始联立视图 ({{count}} 个图谱)",
+    "loadingCombinedView": "加载联立视图...",
+    "reselectGraphs": "重新选择图谱",
+    "title": "联立视图",
+    "summary": "{{graphCount}} 个图谱 | {{visibleNodes}} / {{totalNodes}} 个知识点",
+    "layouts": {
+      "grouped": "分组布局",
+      "merged": "融合布局",
+      "network": "网络布局"
+    },
+    "actions": {
+      "addRemoveGraphs": "添加/移除图谱"
+    },
+    "graphLabel": "图谱 {{id}}",
+    "hidden": "(隐藏)",
+    "stats": {
+      "totalNodes": "总知识点:",
+      "sharedNodes": "共享知识点:",
+      "edgesCount": "边数量:"
+    },
+    "nodeDetail": {
+      "belongingGraphs": "所属图谱:",
+      "shared": "共享知识点",
+      "independent": "独立知识点"
+    }
+  },
+  "graphStyleSettings": {
+    "title": "样式设置",
+    "tabs": {
+      "colors": "配色方案",
+      "links": "连接线样式",
+      "animations": "动画效果",
+      "nodes": "节点大小",
+      "edges": "边粗细",
+      "edgeSettings": "边设置"
+    },
+    "colorScheme": {
+      "selectTitle": "选择配色方案",
+      "currentScheme": "当前方案",
+      "levelModeHint": "当前处于\"结构\"着色模式，配色方案仅在\"状态\"模式下生效。",
+      "heatmapModeHint": "当前处于\"热力图\"着色模式，配色方案仅在\"状态\"模式下生效。",
+      "decayModeHint": "当前处于\"衰减\"着色模式，配色方案仅在\"状态\"模式下生效。"
+    },
+    "linkStyles": {
+      "curved": "曲线",
+      "straight": "直线",
+      "step": "折线",
+      "bezier": "贝塞尔"
+    },
+    "linkAnimations": {
+      "none": "无",
+      "flow": "流动",
+      "pulse": "脉冲",
+      "dash": "虚线"
+    },
+    "animationDesc": {
+      "title": "动画说明",
+      "flow": "连接线上的虚线会持续流动",
+      "pulse": "连接线会有呼吸般的明暗变化",
+      "dash": "显示为虚线样式",
+      "none": "不显示任何动画效果"
+    },
+    "nodeSizeMode": {
+      "title": "节点大小模式",
+      "fixed": {
+        "name": "固定大小",
+        "description": "所有节点使用相同大小"
+      },
+      "importance": {
+        "name": "按重要性",
+        "description": "根据节点重要性动态调整"
+      },
+      "degree": {
+        "name": "按连接度",
+        "description": "根据连接数调整大小"
+      },
+      "children": {
+        "name": "按子节点数",
+        "description": "根据子节点数量调整大小"
+      }
+    },
+    "edgeWidthMode": {
+      "title": "边粗细模式",
+      "fixed": {
+        "name": "固定粗细",
+        "description": "所有边使用相同粗细"
+      },
+      "strength": {
+        "name": "按连接强度",
+        "description": "根据连接强度动态调整"
+      },
+      "relationship": {
+        "name": "按关系类型",
+        "description": "根据关系类型调整粗细"
+      }
+    },
+    "edgeSettings": {
+      "showLabels": "显示标签",
+      "showLabelsDesc": "在边上显示关系类型或自定义标签",
+      "showArrows": "显示箭头",
+      "showArrowsDesc": "在有向关系上显示箭头",
+      "relationshipTypeManagement": "关系类型管理",
+      "relationshipTypeManagementDesc": "管理预设和自定义关系类型",
+      "manage": "管理",
+      "commonRelationshipTypes": "常用关系类型"
+    },
+    "actions": {
+      "cancel": "取消",
+      "confirm": "确定"
+    }
+  },
+  "textToGraph": {
+    "title": {
+      "input": "AI 知识图谱生成",
+      "preview": "预览与筛选生成的图谱"
+    },
+    "tabs": {
+      "text": "文本输入",
+      "file": "文件上传",
+      "image": "图片识别",
+      "url": "网页链接"
+    },
+    "aiNotConfiguredHint": "AI 未配置：文本分析会生成模拟预览；文档上传与 URL 解析需要配置 AI Key。",
+    "textTab": {
+      "placeholder": "例如：太阳系是以太阳为中心，和所有受到太阳的引力约束天体的集合体。包括八大行星...",
+      "charCount": "{{count}} 字符"
+    },
+    "fileTab": {
+      "dragRelease": "释放以解析文件",
+      "clickOrDrag": "点击或拖拽文件到此处",
+      "supportedFiles": "支持 PDF 文档、Markdown 笔记、OPML 大纲或纯文本文件。",
+      "aiExtractHint": "AI 将自动提取内容并生成知识图谱。",
+      "selectFile": "选择文件"
+    },
+    "imageTab": {
+      "dragRelease": "释放以识别图片",
+      "uploadImage": "上传图片生成图谱",
+      "supportedImages": "支持思维导图截图、流程图、板书照片或幻灯片。",
+      "supportedFormats": "支持 JPG, PNG, WebP 格式。",
+      "selectImage": "选择图片"
+    },
+    "urlTab": {
+      "offlineUnavailable": "离线模式不可用",
+      "offlineDesc": "URL 解析需要网络连接",
+      "inputUrl": "输入网页链接",
+      "urlDesc": "AI 将读取网页内容并转化为知识结构",
+      "supportedWebsites": "支持博客文章、新闻报道、维基百科条目等以文本为主的网页。"
+    },
+    "preview": {
+      "nodesGenerated": "共生成 {{count}} 个节点。请勾选您想要保留的节点：",
+      "selectAll": "全选",
+      "deselectAll": "取消全选",
+      "selectedCount": "已选择 {{selected}} / {{total}} 个节点"
+    },
+    "levelLabels": {
+      "root": "🟣 核心主题 (Root)",
+      "core": "🔴 主要概念 (Core)",
+      "sub": "🟠 细分知识 (Sub)",
+      "normal": "🔵 具体内容 (Normal)",
+      "leaf": "🟢 实例细节 (Leaf)"
+    },
+    "buttons": {
+      "cancel": "取消",
+      "back": "返回修改",
+      "analyzing": "正在分析...",
+      "startAnalysis": "开始分析",
+      "saving": "正在保存...",
+      "generateGraph": "生成图谱"
+    },
+    "messages": {
+      "offlineUrlParse": "离线模式下无法解析 URL",
+      "invalidUrl": "请输入有效的 URL",
+      "urlExtractFailed": "无法从该 URL 提取内容",
+      "urlParseFailed": "URL 解析失败",
+      "emptyText": "请输入文本内容",
+      "textTooShort": "内容太短，至少需要10个字符",
+      "offlineAiAnalysis": "离线模式下无法使用 AI 分析",
+      "aiNotConfiguredSimulated": "AI 未配置：本次将生成模拟预览",
+      "analysisCompleted": "AI 分析完成，请确认生成内容",
+      "analysisFailed": "分析失败，请重试",
+      "offlineImageRecognition": "离线模式下无法使用图片识别",
+      "aiNotConfiguredImage": "AI 未配置：图片识别需要配置 AI Key (推荐使用 Aliyun/Volcengine)",
+      "analyzingImage": "正在分析图片内容...",
+      "imageRecognitionFailed": "AI 未能从图片中识别出有效节点。",
+      "imageAnalysisSuccess": "图片分析成功",
+      "imageAnalysisFailed": "分析失败",
+      "offlinePdfParse": "离线模式下无法解析 PDF",
+      "aiNotConfiguredPdf": "AI 未配置：PDF 解析不可用，请先配置 AI Key",
+      "parsingPdf": "正在解析 PDF 文档...",
+      "pdfParseFailed": "AI 未能从文档中解析出任何节点，请检查文档内容。",
+      "pdfParseSuccess": "文档解析成功",
+      "pdfParseError": "解析失败",
+      "textImported": "文本已导入编辑器",
+      "fileParseSuccess": "文件解析成功",
+      "fileParseError": "解析失败: {{message}}",
+      "unsupportedFileType": "不支持的文件格式。请上传 PDF, Markdown, OPML, TXT 或 图片文件。",
+      "noNodeSelected": "请至少选择一个节点",
+      "generateSuccess": "成功生成 {{nodes}} 个节点和 {{edges}} 条关系！",
+      "saveFailed": "保存失败，请重试"
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { Edge, EdgeLineStyle } from '@/types';
+import type { Edge, EdgeLineStyle } from '@shared/types';
 import { softDelete, softDeleteBatch } from '../../utils/softDelete';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';

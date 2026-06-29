@@ -1,19 +1,10 @@
-import NodeCache from 'node-cache';
-import { LRUCache } from 'lru-cache';
 import crypto from 'crypto';
 import { logger } from '../../utils/logger';
-
-const MAX_CACHE_KEYS = 1000;
-const localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
-
-logger.info('📦 In-Memory Cache initialized');
-
-// LRU tracker: O(1) eviction via lru-cache, replacing O(N) Map scan.
-// Value stores the key itself so pop() returns the evicted key for O(1) cleanup.
-const lruTracker = new LRUCache<string, string>({ max: MAX_CACHE_KEYS });
-
-const tagIndex = new Map<string, Set<string>>();
-const keyTags = new Map<string, Set<string>>();
+import {
+  createCacheStore,
+  MemoryCacheStore,
+  type CacheInterface,
+} from './cacheStore';
 
 export const CacheKeys = {
   GRAPH_NODES: (userId: string, graphId: string) => `graph_nodes_${userId}_${graphId}`,
@@ -61,14 +52,15 @@ export const CacheTTL = {
 };
 
 const DEFAULT_TTL = CacheTTL.DYNAMIC;
-const pendingRequests = new Map<string, Promise<unknown>>();
+
+/**
+ * 注入的缓存后端实例。通过 createCacheStore 工厂根据 CACHE_BACKEND 选择实现。
+ * cacheService 的所有底层操作均委托给此实例，保持业务逻辑与存储后端解耦。
+ */
+const cacheStore: CacheInterface = createCacheStore();
+
 const lazyLoadQueue: Array<{ key: string; fetchFn: () => Promise<unknown>; ttl?: number }> = [];
 let lazyLoadInterval: ReturnType<typeof setInterval> | null = null;
-
-const stochasticTTL = (baseTTL: number): number => {
-  const variance = baseTTL * 0.2;
-  return Math.floor(baseTTL + (Math.random() * variance * 2 - variance));
-};
 
 const generateTags = (options?: { userId?: string; graphId?: string; templateId?: string }): string[] => {
   const tags: string[] = [];
@@ -80,50 +72,12 @@ const generateTags = (options?: { userId?: string; graphId?: string; templateId?
 
 export const cacheService = {
   get: async <T>(key: string): Promise<T | undefined> => {
-    const value = localCache.get<T>(key);
-    if (value !== undefined) {
-      // lru-cache get updates access order in O(1); re-add if evicted from tracker
-      if (lruTracker.get(key) === undefined) {
-        lruTracker.set(key, key);
-      }
-      logger.debug(`[Cache] HIT: ${key}`);
-    } else {
-      logger.debug(`[Cache] MISS: ${key}`);
-    }
-    return value;
+    return cacheStore.get<T>(key);
   },
 
   set: async <T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<boolean> => {
-    const effectiveTTL = stochasticTTL(ttl || DEFAULT_TTL);
-
-    // LRU eviction: O(1) via lruTracker.pop() instead of O(N) Map scan
-    lruTracker.set(key, key);
-    if (localCache.keys().length >= MAX_CACHE_KEYS && !localCache.has(key)) {
-      const poppedKey = lruTracker.pop();
-      if (poppedKey !== undefined) {
-        await cacheService.del(poppedKey);
-        logger.debug(`[Cache] LRU evicted: ${poppedKey}`);
-      }
-    }
-
-    const success = localCache.set(key, value, effectiveTTL);
-
-    if (success) {
-      if (tags && tags.length > 0) {
-        const tagSet = new Set(tags);
-        keyTags.set(key, tagSet);
-
-        for (const tag of tagSet) {
-          if (!tagIndex.has(tag)) {
-            tagIndex.set(tag, new Set());
-          }
-          tagIndex.get(tag)!.add(key);
-        }
-      }
-    }
-
-    logger.debug(`[Cache] SET: ${key} (TTL: ${effectiveTTL}s)`);
-    return success;
+    await cacheStore.set(key, value, ttl, tags);
+    return true;
   },
 
   setWithTags: async <T>(
@@ -138,85 +92,58 @@ export const cacheService = {
 
   del: async (key: string | string[]): Promise<number> => {
     const keys = Array.isArray(key) ? key : [key];
-
-    for (const k of keys) {
-      const tags = keyTags.get(k);
-      if (tags) {
-        for (const tag of tags) {
-          const tagKeys = tagIndex.get(tag);
-          if (tagKeys) {
-            tagKeys.delete(k);
-            if (tagKeys.size === 0) {
-              tagIndex.delete(tag);
-            }
-          }
-        }
-        keyTags.delete(k);
-      }
-      lruTracker.delete(k);
+    // MemoryCacheStore 支持批量同步删除并返回精确计数；其他后端回退到逐个删除
+    if (cacheStore instanceof MemoryCacheStore) {
+      return cacheStore.delMany(keys);
     }
-
-    return localCache.del(keys);
+    let count = 0;
+    for (const k of keys) {
+      if (await cacheStore.has(k)) {
+        count++;
+      }
+      await cacheStore.del(k);
+    }
+    return count;
   },
 
   /** @deprecated Use delByTags instead for better performance */
   delByPrefix: async (prefix: string): Promise<number> => {
-    const keys = localCache.keys();
-    const keysToDelete = keys.filter(key => key.startsWith(prefix));
+    const allKeys = await cacheStore.keys();
+    const keysToDelete = allKeys.filter(key => key.startsWith(prefix));
     if (keysToDelete.length > 0) {
-      return localCache.del(keysToDelete);
+      return cacheService.del(keysToDelete);
     }
     return 0;
   },
 
   flush: async (): Promise<void> => {
-    localCache.flushAll();
-    lruTracker.clear();
-    tagIndex.clear();
-    keyTags.clear();
+    await cacheStore.clear();
   },
-  
+
+  clear: async (): Promise<void> => {
+    await cacheStore.clear();
+  },
+
+  has: async (key: string): Promise<boolean> => {
+    return cacheStore.has(key);
+  },
+
+  keys: async (): Promise<string[]> => {
+    return cacheStore.keys();
+  },
+
   delByTags: async (tags: string | string[]): Promise<number> => {
     const tagList = Array.isArray(tags) ? tags : [tags];
-    const keysToDelete = new Set<string>();
-    
-    for (const tag of tagList) {
-      const keys = tagIndex.get(tag);
-      if (keys) {
-        for (const key of keys) {
-          keysToDelete.add(key);
-        }
-      }
+    // MemoryCacheStore 可返回精确删除计数；其他后端返回 0
+    if (cacheStore instanceof MemoryCacheStore) {
+      return cacheStore.delByTagsWithCount(tagList);
     }
-    
-    if (keysToDelete.size > 0) {
-      return await cacheService.del(Array.from(keysToDelete));
-    }
-    
+    await cacheStore.delByTags(tagList);
     return 0;
   },
   
   getOrSet: async <T>(key: string, fetchFn: () => Promise<T>, ttl?: number, tags?: string[]): Promise<T> => {
-    const cached = await cacheService.get<T>(key);
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    const pending = pendingRequests.get(key) as Promise<T> | undefined;
-    if (pending) {
-      return pending;
-    }
-
-    const fetchPromise = fetchFn();
-    pendingRequests.set(key, fetchPromise);
-
-    try {
-      const data = await fetchPromise;
-      await cacheService.set(key, data, ttl || DEFAULT_TTL, tags);
-      return data;
-    } finally {
-      pendingRequests.delete(key);
-    }
+    return cacheStore.getOrSet(key, fetchFn, ttl, tags);
   },
 
   warmup: async (keys: Array<{ key: string; fetchFn: () => Promise<unknown>; ttl?: number }>): Promise<void> => {
@@ -227,7 +154,7 @@ export const cacheService = {
         const cached = await cacheService.get(key);
         if (cached === undefined) {
           const data = await fetchFn();
-          await cacheService.set(key, data, ttl || DEFAULT_TTL);
+          await cacheService.set(key, data, ttl ?? DEFAULT_TTL);
           return { key, status: 'warmed' };
         }
         return { key, status: 'already_cached' };
@@ -292,7 +219,7 @@ export const cacheService = {
           const cached = await cacheService.get(item.key);
           if (cached === undefined) {
             const data = await item.fetchFn();
-            await cacheService.set(item.key, data, item.ttl || DEFAULT_TTL);
+            await cacheService.set(item.key, data, item.ttl ?? DEFAULT_TTL);
           }
         } catch (error) {
           logger.warn(`[Cache] Lazy load failed for key ${item.key}:`, error);
@@ -318,7 +245,7 @@ export const cacheService = {
   ): Promise<void> => {
     try {
       const data = await fetchFn();
-      await cacheService.set(key, data, ttl || DEFAULT_TTL);
+      await cacheService.set(key, data, ttl ?? DEFAULT_TTL);
       logger.debug(`[Cache] Background refresh complete for key: ${key}`);
     } catch (error) {
       logger.warn(`[Cache] Background refresh failed for key ${key}:`, error);
@@ -333,7 +260,11 @@ export const cacheService = {
   ): Promise<T> => {
     const cached = await cacheService.get<T>(key);
     if (cached !== undefined) {
-      const ttlRemaining = localCache.getTtl(key);
+      // 仅 MemoryCacheStore 暴露 getTtl；其他后端跳过刷新阈值检查
+      let ttlRemaining = 0;
+      if (cacheStore instanceof MemoryCacheStore) {
+        ttlRemaining = cacheStore.getTtl(key);
+      }
       const ttlTotal = ttl * 1000;
       
       if (ttlRemaining && (ttlRemaining - Date.now()) < ttlTotal * refreshThreshold) {
@@ -352,13 +283,17 @@ export const cacheService = {
     misses: number;
     kps: number;
   }> => {
-    const stats = localCache.getStats();
-    return {
-      keys: localCache.keys().length,
-      hits: stats.hits,
-      misses: stats.misses,
-      kps: 0,
-    };
+    if (cacheStore instanceof MemoryCacheStore) {
+      const stats = cacheStore.getStatsInternal();
+      return {
+        keys: stats.keys,
+        hits: stats.hits,
+        misses: stats.misses,
+        kps: 0,
+      };
+    }
+    const allKeys = await cacheStore.keys();
+    return { keys: allKeys.length, hits: 0, misses: 0, kps: 0 };
   },
 
   invalidateGraphCache: async (userId: string, graphId: string): Promise<void> => {
@@ -462,11 +397,18 @@ export const cacheService = {
     const stats = await cacheService.getStats();
     const totalRequests = stats.hits + stats.misses;
     
+    let tagCount = 0;
+    let pendingCount = 0;
+    if (cacheStore instanceof MemoryCacheStore) {
+      tagCount = cacheStore.getTagCount();
+      pendingCount = cacheStore.getPendingCount();
+    }
+    
     return {
       totalKeys: stats.keys,
       hitRate: totalRequests > 0 ? stats.hits / totalRequests : 0,
-      tagCount: tagIndex.size,
-      pendingRequests: pendingRequests.size,
+      tagCount,
+      pendingRequests: pendingCount,
       lazyLoadQueueSize: lazyLoadQueue.length,
     };
   },

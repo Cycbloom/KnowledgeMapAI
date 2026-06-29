@@ -20,8 +20,8 @@ describe('retry utilities', () => {
   });
 
   describe('DEFAULT_TIMEOUT', () => {
-    it('should have default timeout of 30000ms', () => {
-      expect(DEFAULT_TIMEOUT).toBe(30000);
+    it('should have default timeout of 60000ms', () => {
+      expect(DEFAULT_TIMEOUT).toBe(60000);
     });
   });
 
@@ -106,7 +106,7 @@ describe('retry utilities', () => {
 
     it('should use default timeout if not specified', async () => {
       const promise = new Promise((resolve) => {
-        setTimeout(() => resolve('late'), 40000);
+        setTimeout(() => resolve('late'), DEFAULT_TIMEOUT + 10000);
       });
       
       const timeoutPromise = withTimeout(promise);

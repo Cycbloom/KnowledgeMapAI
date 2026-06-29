@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { RelationshipTypeConfig, RelationshipCategory, EdgeLineStyle } from '@/types';
+import type { RelationshipTypeConfig, RelationshipCategory, EdgeLineStyle } from '@shared/types';
 import { logger } from '../../utils/logger';
 
 interface CreateRelationshipTypeData {

@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { logger } from '../utils/logger';
+import { createRateLimitStore, type RateLimitStore } from './rateLimitStore';
 
 const isRateLimitDisabled = () => {
   return process.env.DISABLE_RATE_LIMIT === 'true' || process.env.NODE_ENV === 'test';
@@ -13,25 +14,10 @@ interface RateLimitConfig {
   skipFailedRequests?: boolean;
 }
 
-const localStore = new Map<string, { count: number; resetTime: number }>();
-let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
-
-const cleanupLocalStore = () => {
-  const now = Date.now();
-  for (const [key, value] of localStore.entries()) {
-    if (value.resetTime < now) {
-      localStore.delete(key);
-    }
-  }
-};
-
-cleanupIntervalId = setInterval(cleanupLocalStore, 60000);
+const rateLimitStore: RateLimitStore = createRateLimitStore();
 
 export const destroyRateLimiter = (): void => {
-  if (cleanupIntervalId !== null) {
-    clearInterval(cleanupIntervalId);
-    cleanupIntervalId = null;
-  }
+  rateLimitStore.destroy();
 };
 
 export const createRateLimiter = (config: RateLimitConfig) => {
@@ -54,29 +40,23 @@ export const createRateLimiter = (config: RateLimitConfig) => {
     const key = userId ? `${keyPrefix}:user:${userId}` : `${keyPrefix}:ip:${ip}`;
 
     const now = Date.now();
-    const resetTime = now + windowMs;
 
     try {
-      const stored = localStore.get(key);
-      let count = 1;
+      const entry = await rateLimitStore.increment(key, windowMs);
+      const count = entry.count;
+      const resetTime = entry.resetTime;
 
-      if (stored && stored.resetTime > now) {
-        count = stored.count + 1;
-        if (count > maxRequests) {
-          const retryAfter = Math.ceil((stored.resetTime - now) / 1000);
-          res.setHeader('X-RateLimit-Limit', maxRequests.toString());
-          res.setHeader('X-RateLimit-Remaining', '0');
-          res.setHeader('X-RateLimit-Reset', retryAfter.toString());
-          
-          return res.status(429).json({
-            success: false,
-            error: message,
-            retryAfter,
-          });
-        }
-        stored.count = count;
-      } else {
-        localStore.set(key, { count: 1, resetTime });
+      if (count > maxRequests) {
+        const retryAfter = Math.ceil((resetTime - now) / 1000);
+        res.setHeader('X-RateLimit-Limit', maxRequests.toString());
+        res.setHeader('X-RateLimit-Remaining', '0');
+        res.setHeader('X-RateLimit-Reset', retryAfter.toString());
+
+        return res.status(429).json({
+          success: false,
+          error: message,
+          retryAfter,
+        });
       }
 
       res.setHeader('X-RateLimit-Limit', maxRequests.toString());
@@ -86,10 +66,9 @@ export const createRateLimiter = (config: RateLimitConfig) => {
       if (skipFailedRequests) {
         res.on('finish', () => {
           if (res.statusCode >= 400) {
-            const currentStored = localStore.get(key);
-            if (currentStored && currentStored.count > 0) {
-              currentStored.count--;
-            }
+            rateLimitStore
+              .decrement(key)
+              .catch((err) => logger.error('Rate limit decrement error:', err));
           }
         });
       }

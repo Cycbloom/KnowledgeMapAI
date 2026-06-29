@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { fsrs, Card, Rating, State, createEmptyCard, migrateParameters } from "ts-fsrs";
 import type { FSRSParameters } from "ts-fsrs";
-import type { StudyCard } from "@/types";
+import type { StudyCard } from '@shared/types';
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";
 import { AppError } from "../../middleware/errorHandler";

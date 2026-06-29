@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
 import { type Request, type Response, type NextFunction } from 'express';
 import { createRateLimiter, destroyRateLimiter } from '../../middleware/rateLimiter';
 
@@ -74,7 +74,7 @@ describe('rateLimiter middleware', () => {
   });
 
   describe('rate limit counting', () => {
-    it('should allow requests under the limit and call next()', () => {
+    it('should allow requests under the limit and call next()', async () => {
       const limiter = createRateLimiter({
         windowMs: 60000,
         maxRequests: 5,
@@ -85,14 +85,14 @@ describe('rateLimiter middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      limiter(req, res, next);
+      await limiter(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '5');
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '4');
     });
 
-    it('should return 429 when limit is exceeded', () => {
+    it('should return 429 when limit is exceeded', async () => {
       const limiter = createRateLimiter({
         windowMs: 60000,
         maxRequests: 2,
@@ -104,17 +104,17 @@ describe('rateLimiter middleware', () => {
 
       // First request - allowed
       const res1 = createMockRes();
-      limiter(req, res1, next);
+      await limiter(req, res1, next);
       expect(next).toHaveBeenCalledWith();
 
       // Second request - allowed
       const res2 = createMockRes();
-      limiter(req, res2, next);
+      await limiter(req, res2, next);
       expect(next).toHaveBeenCalledWith();
 
       // Third request - should be rate limited
       const res3 = createMockRes();
-      limiter(req, res3, next);
+      await limiter(req, res3, next);
 
       expect(res3.status).toHaveBeenCalledWith(429);
       expect(res3.json).toHaveBeenCalledWith(
@@ -126,7 +126,7 @@ describe('rateLimiter middleware', () => {
       expect(next).toHaveBeenCalledTimes(2); // Only first two called next()
     });
 
-    it('should set X-RateLimit-Remaining to 0 when limit exceeded', () => {
+    it('should set X-RateLimit-Remaining to 0 when limit exceeded', async () => {
       const limiter = createRateLimiter({
         windowMs: 60000,
         maxRequests: 1,
@@ -136,18 +136,18 @@ describe('rateLimiter middleware', () => {
       const req = createMockReq({ ip: '10.0.0.3' });
 
       // First request allowed
-      limiter(req, createMockRes(), createMockNext());
+      await limiter(req, createMockRes(), createMockNext());
 
       // Second request rate limited
       const res2 = createMockRes();
-      limiter(req, res2, createMockNext());
+      await limiter(req, res2, createMockNext());
 
       expect(res2.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '0');
     });
   });
 
   describe('window expiration', () => {
-    it('should reset counter after window expires', () => {
+    it('should reset counter after window expires', async () => {
       const limiter = createRateLimiter({
         windowMs: 1000, // 1 second window
         maxRequests: 1,
@@ -159,13 +159,13 @@ describe('rateLimiter middleware', () => {
       // First request allowed
       const res1 = createMockRes();
       const next1 = createMockNext();
-      limiter(req, res1, next1);
+      await limiter(req, res1, next1);
       expect(next1).toHaveBeenCalledWith();
 
       // Second request - rate limited
       const res2 = createMockRes();
       const next2 = createMockNext();
-      limiter(req, res2, next2);
+      await limiter(req, res2, next2);
       expect(res2.status).toHaveBeenCalledWith(429);
 
       // Advance time past the window
@@ -174,12 +174,12 @@ describe('rateLimiter middleware', () => {
       // Third request - should be allowed again (counter reset)
       const res3 = createMockRes();
       const next3 = createMockNext();
-      limiter(req, res3, next3);
+      await limiter(req, res3, next3);
       expect(next3).toHaveBeenCalledWith();
       expect(res3.status).not.toHaveBeenCalledWith(429);
     });
 
-    it('should not reset counter within the same window', () => {
+    it('should not reset counter within the same window', async () => {
       const limiter = createRateLimiter({
         windowMs: 10000,
         maxRequests: 1,
@@ -189,20 +189,20 @@ describe('rateLimiter middleware', () => {
       const req = createMockReq({ ip: '10.0.0.5' });
 
       // First request allowed
-      limiter(req, createMockRes(), createMockNext());
+      await limiter(req, createMockRes(), createMockNext());
 
       // Advance time but stay within window
       vi.advanceTimersByTime(5000);
 
       // Second request - should still be rate limited
       const res2 = createMockRes();
-      limiter(req, res2, createMockNext());
+      await limiter(req, res2, createMockNext());
       expect(res2.status).toHaveBeenCalledWith(429);
     });
   });
 
   describe('key isolation', () => {
-    it('should isolate rate limits by IP when no user', () => {
+    it('should isolate rate limits by IP when no user', async () => {
       const limiter = createRateLimiter({
         windowMs: 60000,
         maxRequests: 1,
@@ -214,21 +214,21 @@ describe('rateLimiter middleware', () => {
 
       // First IP - allowed
       const res1 = createMockRes();
-      limiter(req1, res1, createMockNext());
+      await limiter(req1, res1, createMockNext());
       expect(res1.status).not.toHaveBeenCalledWith(429);
 
       // Second IP - should also be allowed (different key)
       const res2 = createMockRes();
-      limiter(req2, res2, createMockNext());
+      await limiter(req2, res2, createMockNext());
       expect(res2.status).not.toHaveBeenCalledWith(429);
 
       // First IP again - should be rate limited
       const res3 = createMockRes();
-      limiter(req1, res3, createMockNext());
+      await limiter(req1, res3, createMockNext());
       expect(res3.status).toHaveBeenCalledWith(429);
     });
 
-    it('should isolate rate limits by user ID when user is present', () => {
+    it('should isolate rate limits by user ID when user is present', async () => {
       const limiter = createRateLimiter({
         windowMs: 60000,
         maxRequests: 1,
@@ -245,20 +245,20 @@ describe('rateLimiter middleware', () => {
       });
 
       // user-1 - allowed
-      limiter(req1, createMockRes(), createMockNext());
+      await limiter(req1, createMockRes(), createMockNext());
 
       // user-2 (same IP) - should be allowed (different key by user)
       const res2 = createMockRes();
-      limiter(req2, res2, createMockNext());
+      await limiter(req2, res2, createMockNext());
       expect(res2.status).not.toHaveBeenCalledWith(429);
 
       // user-1 again - should be rate limited
       const res3 = createMockRes();
-      limiter(req1, res3, createMockNext());
+      await limiter(req1, res3, createMockNext());
       expect(res3.status).toHaveBeenCalledWith(429);
     });
 
-    it('should isolate rate limits by different keyPrefix', () => {
+    it('should isolate rate limits by different keyPrefix', async () => {
       const limiter1 = createRateLimiter({
         windowMs: 60000,
         maxRequests: 1,
@@ -273,22 +273,22 @@ describe('rateLimiter middleware', () => {
       const req = createMockReq({ ip: '10.0.0.30' });
 
       // limiter1 - allowed
-      limiter1(req, createMockRes(), createMockNext());
+      await limiter1(req, createMockRes(), createMockNext());
 
       // limiter2 (same IP) - should be allowed (different keyPrefix)
       const res2 = createMockRes();
-      limiter2(req, res2, createMockNext());
+      await limiter2(req, res2, createMockNext());
       expect(res2.status).not.toHaveBeenCalledWith(429);
 
       // limiter1 again - should be rate limited
       const res3 = createMockRes();
-      limiter1(req, res3, createMockNext());
+      await limiter1(req, res3, createMockNext());
       expect(res3.status).toHaveBeenCalledWith(429);
     });
   });
 
   describe('rate limit disabled', () => {
-    it('should bypass rate limiting when NODE_ENV is test', () => {
+    it('should bypass rate limiting when NODE_ENV is test', async () => {
       process.env.NODE_ENV = 'test';
 
       const limiter = createRateLimiter({
@@ -300,17 +300,17 @@ describe('rateLimiter middleware', () => {
       const req = createMockReq({ ip: '10.0.0.40' });
 
       // Multiple requests should all pass
-      limiter(req, createMockRes(), createMockNext());
-      limiter(req, createMockRes(), createMockNext());
+      await limiter(req, createMockRes(), createMockNext());
+      await limiter(req, createMockRes(), createMockNext());
       const res3 = createMockRes();
       const next3 = createMockNext();
-      limiter(req, res3, next3);
+      await limiter(req, res3, next3);
 
       expect(next3).toHaveBeenCalledWith();
       expect(res3.status).not.toHaveBeenCalledWith(429);
     });
 
-    it('should bypass rate limiting when DISABLE_RATE_LIMIT is true', () => {
+    it('should bypass rate limiting when DISABLE_RATE_LIMIT is true', async () => {
       process.env.DISABLE_RATE_LIMIT = 'true';
 
       const limiter = createRateLimiter({
@@ -321,10 +321,10 @@ describe('rateLimiter middleware', () => {
 
       const req = createMockReq({ ip: '10.0.0.41' });
 
-      limiter(req, createMockRes(), createMockNext());
+      await limiter(req, createMockRes(), createMockNext());
       const res2 = createMockRes();
       const next2 = createMockNext();
-      limiter(req, res2, next2);
+      await limiter(req, res2, next2);
 
       expect(next2).toHaveBeenCalledWith();
       expect(res2.status).not.toHaveBeenCalledWith(429);
@@ -332,7 +332,7 @@ describe('rateLimiter middleware', () => {
   });
 
   describe('skipFailedRequests', () => {
-    it('should decrement count when response status >= 400', () => {
+    it('should decrement count when response status >= 400', async () => {
       const limiter = createRateLimiter({
         windowMs: 60000,
         maxRequests: 2,
@@ -345,7 +345,7 @@ describe('rateLimiter middleware', () => {
       // First request - allowed, but will finish with error status
       const res1 = createMockRes();
       const next1 = createMockNext();
-      limiter(req, res1, next1);
+      await limiter(req, res1, next1);
 
       // Simulate the response finishing with error status
       // The middleware registers a 'finish' listener on res
@@ -354,13 +354,17 @@ describe('rateLimiter middleware', () => {
       );
       expect(finishCall).toBeDefined();
       res1.statusCode = 500;
-      // Trigger the finish callback
-      finishCall?.[1]();
+      // Trigger the finish callback (decrement is async, but we don't need to
+      // await here since the next increment happens after the await below)
+      const finishCb = finishCall?.[1] as (() => void) | undefined;
+      finishCb?.();
+      // Allow the async decrement promise to flush
+      await Promise.resolve();
 
       // Second request - should still be allowed (count was decremented)
       const res2 = createMockRes();
       const next2 = createMockNext();
-      limiter(req, res2, next2);
+      await limiter(req, res2, next2);
 
       expect(next2).toHaveBeenCalledWith();
       expect(res2.status).not.toHaveBeenCalledWith(429);
@@ -368,7 +372,7 @@ describe('rateLimiter middleware', () => {
   });
 
   describe('retryAfter header', () => {
-    it('should calculate correct retryAfter based on remaining window time', () => {
+    it('should calculate correct retryAfter based on remaining window time', async () => {
       const limiter = createRateLimiter({
         windowMs: 60000, // 60 seconds
         maxRequests: 1,
@@ -378,14 +382,14 @@ describe('rateLimiter middleware', () => {
       const req = createMockReq({ ip: '10.0.0.60' });
 
       // First request allowed
-      limiter(req, createMockRes(), createMockNext());
+      await limiter(req, createMockRes(), createMockNext());
 
       // Advance time by 10 seconds
       vi.advanceTimersByTime(10000);
 
       // Second request - rate limited, should report ~50 seconds retryAfter
       const res2 = createMockRes();
-      limiter(req, res2, createMockNext());
+      await limiter(req, res2, createMockNext());
 
       expect(res2.json).toHaveBeenCalledWith(
         expect.objectContaining({

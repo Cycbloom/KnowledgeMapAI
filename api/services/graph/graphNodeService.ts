@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
-import type { GraphNode, GraphNodeWithKnowledgePoint, NodeLevel } from '@/types';
+import type { GraphNode, GraphNodeWithKnowledgePoint, NodeLevel } from '@shared/types';
 import { buildNodeFromGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
 import { softDelete, softDeleteBatch } from '../../utils/softDelete';
 import { logger } from '../../utils/logger';

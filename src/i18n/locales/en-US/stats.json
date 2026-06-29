@@ -1,0 +1,53 @@
+{
+  "task": {
+    "vsLastWeek": "vs last week",
+    "completionTrend": "Task Completion Trend (30 Days)",
+    "completed": "Completed",
+    "cumulative": "Cumulative",
+    "timeDistribution": "Time Distribution Heatmap",
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "completedCount": "{{count}} tasks",
+    "less": "Less",
+    "more": "More",
+    "queueEfficiency": "Queue Efficiency Analysis",
+    "focusQueue": "Focus Queue",
+    "standardQueue": "Standard Queue",
+    "backgroundQueue": "Background Queue",
+    "tasks": "tasks",
+    "avgDuration": "Avg Duration",
+    "minutes": "min",
+    "tagAnalysis": "Tag Analysis",
+    "completionRate": "Completion Rate",
+    "taskCount": "Tasks",
+    "priorityAnalysis": "Priority Analysis",
+    "smartInsights": "Smart Insights",
+    "generating": "Generating...",
+    "regenerate": "Regenerate",
+    "noInsights": "No insights yet, click generate to get AI analysis",
+    "noData": "No data yet, stats will appear after creating tasks",
+    "loadFailed": "Failed to load, please retry",
+    "loadingData": "Loading task statistics..."
+  },
+  "activity": {
+    "title": "Learning Activity",
+    "reviewCount": "{{count}} reviews",
+    "less": "Less",
+    "more": "More"
+  },
+  "metric": {
+    "todayCompleted": "Today Completed",
+    "weekCompleted": "This Week",
+    "monthCompleted": "This Month",
+    "avgDuration": "Avg Duration",
+    "tasks": "Tasks",
+    "minutes": "Minutes"
+  }
+}

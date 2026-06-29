@@ -1,0 +1,14 @@
+{
+  "availableVariables": "可用变量",
+  "placeholder": "在此输入提示词模板... 支持 Handlebars 语法，如 {{variable}} 和 {{#if condition}}...{{/if}}",
+  "optimizeInstruction": "AI 优化指令 (可选)",
+  "optimizePlaceholder": "例如：让它更具创造性，或更简洁...",
+  "optimizing": "优化中...",
+  "startOptimize": "开始优化",
+  "cancel": "取消",
+  "aiOptimize": "AI 智能优化",
+  "saving": "保存中...",
+  "saveChanges": "保存更改",
+  "optimizeFailed": "优化失败: {{message}}",
+  "saveFailed": "保存失败: {{message}}"
+}

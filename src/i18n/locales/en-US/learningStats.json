@@ -1,0 +1,80 @@
+{
+  "title": "Learning Statistics Center",
+  "subtitle": "Comprehensive overview of your learning progress and knowledge base status",
+  "loading": "Loading statistics...",
+  "error": "Unable to load statistics",
+  "chartNoData": "No data",
+  "cards": {
+    "totalCards": "Total Cards",
+    "totalCardsDesc": "Cumulative knowledge points created",
+    "dueToday": "Due Today",
+    "dueTodayDesc": "Key to maintaining memory",
+    "learning": "Mastered/Learning",
+    "learningDesc": "Knowledge being internalized",
+    "avgStability": "Avg Memory Stability",
+    "days": "days"
+  },
+  "focus": {
+    "title": "Focus Statistics",
+    "today": "Today's Focus",
+    "minutes": "min",
+    "sessions": "sessions",
+    "total": "Total Focus",
+    "hours": "hours",
+    "avgDuration": "Avg Duration",
+    "perSession": "Per session"
+  },
+  "forecast": {
+    "title": "7-Day Review Forecast",
+    "day": "",
+    "reviewCards": "Review Cards"
+  },
+  "forgettingCurve": {
+    "title": "Forgetting Curve & Memory Threshold",
+    "description": "Theoretical model based on FSRS algorithm (Avg stability:",
+    "daysUnit": " days)",
+    "retentionRate": "Retention Rate",
+    "day": "Day",
+    "target": "Target"
+  },
+  "growth": {
+    "title": "Knowledge Growth Trend (30 Days)",
+    "newCards": "New Cards"
+  },
+  "knowledgeHeatmap": {
+    "title": "Knowledge Mastery Heatmap",
+    "mastered": "Mastered",
+    "nodes": "nodes",
+    "noData": "No graph data"
+  },
+  "masteryDistribution": {
+    "title": "Knowledge Mastery Distribution",
+    "nodes": "nodes",
+    "noData": "No data"
+  },
+  "weakPoints": {
+    "title": "Weak Points Analysis",
+    "needAttention": "{{count}} need attention",
+    "reviewToday": "Due for review today, prioritize",
+    "reviewManyTimes": "Reviewed many times but not mastered, suggest relearning",
+    "lowStability": "Low memory stability, increase review frequency",
+    "needStrengthen": "Needs reinforcement",
+    "reviewCount": "{{count}} reviews",
+    "stability": "Stability: {{count}} days",
+    "noWeakPoints": "Great! No obvious weak points",
+    "unknownGraph": "Unknown graph"
+  },
+  "learningTimeTrend": {
+    "title": "Learning Time Trend",
+    "last7Days": "Last 7 days: {{hours}} hours total",
+    "learningTime": "Learning time",
+    "hours": "hours"
+  },
+  "quickStats": {
+    "totalNodes": "Total Knowledge Points",
+    "mastered": "Mastered",
+    "dueToday": "Due Today",
+    "streak": "Study Streak",
+    "days": "days"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "title": "自定义 AI 动作",
+  "createAction": "新建动作",
+  "newAction": "新动作",
+  "name": "名称",
+  "namePlaceholder": "例如：润色内容",
+  "mode": "模式",
+  "modes": {
+    "showResult": "显示结果",
+    "updateNode": "更新节点",
+    "spawnChildren": "生成子节点"
+  },
+  "description": "描述",
+  "descriptionPlaceholder": "描述该动作的功能...",
+  "contextVariables": "上下文变量配置",
+  "includeParent": "包含父节点",
+  "includeSiblings": "包含兄弟节点",
+  "includeChildren": "包含子节点",
+  "promptTemplate": "提示词模板",
+  "scopes": {
+    "system": "系统",
+    "user": "用户",
+    "graph": "图谱"
+  },
+  "noDescription": "无描述",
+  "edit": "编辑",
+  "delete": "删除",
+  "copy": "副本",
+  "copyToCurrentLevel": "复制到当前层级并编辑",
+  "noActions": "暂无自定义动作，点击右上角新建",
+  "confirmDelete": "确定要删除这个动作吗？",
+  "saveFailed": "保存失败"
+}

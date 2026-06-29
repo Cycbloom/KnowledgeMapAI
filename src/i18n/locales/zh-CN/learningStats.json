@@ -1,0 +1,80 @@
+{
+  "title": "学习统计中心",
+  "subtitle": "全面掌握您的学习进度和知识库状态",
+  "loading": "加载统计数据中...",
+  "error": "无法加载统计数据",
+  "chartNoData": "暂无数据",
+  "cards": {
+    "totalCards": "总卡片数",
+    "totalCardsDesc": "累计创建的知识点",
+    "dueToday": "今日待复习",
+    "dueTodayDesc": "保持记忆的关键",
+    "learning": "已掌握/学习中",
+    "learningDesc": "正在内化的知识",
+    "avgStability": "平均记忆稳定性",
+    "days": "天"
+  },
+  "focus": {
+    "title": "专注统计",
+    "today": "今日专注",
+    "minutes": "分钟",
+    "sessions": "次会话",
+    "total": "累计专注",
+    "hours": "小时",
+    "avgDuration": "平均时长",
+    "perSession": "每次会话"
+  },
+  "forecast": {
+    "title": "未来7天复习预测",
+    "day": "日",
+    "reviewCards": "复习卡片数"
+  },
+  "forgettingCurve": {
+    "title": "遗忘曲线与记忆阈值",
+    "description": "基于 FSRS 算法的理论模型 (平均稳定性:",
+    "daysUnit": "天)",
+    "retentionRate": "记忆保留率",
+    "day": "第",
+    "target": "目标"
+  },
+  "growth": {
+    "title": "知识积累趋势 (近30天)",
+    "newCards": "新增卡片"
+  },
+  "knowledgeHeatmap": {
+    "title": "知识掌握热力图",
+    "mastered": "已掌握",
+    "nodes": "节点",
+    "noData": "暂无图谱数据"
+  },
+  "masteryDistribution": {
+    "title": "知识点掌握分布",
+    "nodes": "个节点",
+    "noData": "暂无数据"
+  },
+  "weakPoints": {
+    "title": "薄弱知识点分析",
+    "needAttention": "{{count}} 个需关注",
+    "reviewToday": "今日需要复习，建议优先处理",
+    "reviewManyTimes": "复习次数较多但未掌握，建议重新学习内容",
+    "lowStability": "记忆稳定性较低，建议增加复习频率",
+    "needStrengthen": "需要加强学习",
+    "reviewCount": "复习 {{count}} 次",
+    "stability": "稳定性: {{count}}天",
+    "noWeakPoints": "太棒了！暂无明显薄弱知识点",
+    "unknownGraph": "未知图谱"
+  },
+  "learningTimeTrend": {
+    "title": "学习时间趋势",
+    "last7Days": "近7天共 {{hours}} 小时",
+    "learningTime": "学习时间",
+    "hours": "小时"
+  },
+  "quickStats": {
+    "totalNodes": "知识点总数",
+    "mastered": "已掌握",
+    "dueToday": "今日待复习",
+    "streak": "连续学习",
+    "days": "天"
+  }
+}

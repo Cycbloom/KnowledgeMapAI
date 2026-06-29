@@ -1,0 +1,67 @@
+{
+  "tabs": {
+    "daily": "Daily Tasks",
+    "periodic": "Periodic Tasks",
+    "pass": "Pass",
+    "achievements": "Lifetime Achievements"
+  },
+  "level": "Level",
+  "totalXpEarned": "Total XP Earned: {{xp}} XP",
+  "xpProgress": "{{current}} / {{needed}} XP",
+  "xpToNextLevel": "Earn {{xp}} more XP to reach Level {{level}}",
+  "unlockedCount": "Achievements Unlocked",
+  "taskTypes": {
+    "login": "Daily Login",
+    "study_cards": "Review Cards",
+    "focus_time": "Focus Time",
+    "create_node": "Create Knowledge"
+  },
+  "dailyTaskDesc": {
+    "login": "Log in to the app daily",
+    "study_cards": "Review {{target}} knowledge cards",
+    "focus_time": "Focus study for {{target}} minutes",
+    "create_node": "Create {{target}} new knowledge points",
+    "default": "Complete task"
+  },
+  "categories": {
+    "study": "Study Achievement",
+    "focus": "Focus Achievement",
+    "creation": "Creator",
+    "streak": "Streak Achievement",
+    "tasks": "Task Achievement",
+    "special": "Special Achievement"
+  },
+  "streak": {
+    "title": "Completion Streak",
+    "daily": "Daily Tasks Streak",
+    "weekly": "Weekly Tasks Streak",
+    "monthly": "Monthly Tasks Streak",
+    "quarterly": "Quarterly Tasks Streak",
+    "nextMilestone": "Next milestone: {{milestone}}"
+  },
+  "periodic": {
+    "weekly": "This Week's Tasks",
+    "monthly": "This Month's Tasks",
+    "quarterly": "This Quarter's Tasks"
+  },
+  "pass": {
+    "weekly": "Weekly Pass",
+    "monthly": "Monthly Pass",
+    "quarterly": "Quarterly Pass",
+    "level": "Level {{level}}",
+    "points": "Points {{current}}/{{max}}",
+    "levelShort": "Lv",
+    "noPassData": "No pass data available",
+    "claim": "Claim",
+    "claiming": "Claiming",
+    "pointsRequired": "{{points}} pts"
+  },
+  "dailyLogin": "Daily Login",
+  "reviewCards": "Review Cards",
+  "focusTime": "Focus Time",
+  "createKnowledge": "Create Knowledge",
+  "dailyTasks": "Daily Tasks",
+  "periodicTasks": "Periodic Tasks",
+  "passTitle": "Pass",
+  "lifetimeAchievements": "Lifetime Achievements"
+}

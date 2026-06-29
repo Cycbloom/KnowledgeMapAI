@@ -1,0 +1,186 @@
+{
+  "loading": "Loading...",
+  "title": "Study Center",
+  "mode": {
+    "singlePoint": "Single Point Review",
+    "pathTraining": "Path Training",
+    "fullReview": "Full Review"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "bank": "Question Bank",
+    "focus": "Focus Mode",
+    "quizzes": "Quizzes"
+  },
+  "questionBank": {
+    "searchPlaceholder": "Search questions or answers...",
+    "allTypes": "All Types",
+    "typeQA": "Q&A",
+    "typeChoice": "Choice",
+    "typeTrueFalse": "True/False",
+    "advancedFilter": "Advanced Filter",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "batchDelete": "Batch Delete",
+    "newQuestion": "New Question",
+    "reviewCount": "Review Count",
+    "nextReviewTime": "Next Review Time",
+    "learningStatus": "Learning Status",
+    "noQuestionsFound": "No matching questions found",
+    "deleteConfirm": "Are you sure you want to delete {{count}} selected questions?",
+    "deleteCardConfirm": "Delete this card?",
+    "pagination": "Showing {{start}} - {{end}} of {{total}}",
+    "fsrsStates": {
+      "new": "New",
+      "learning": "Learning",
+      "review": "Review",
+      "relearning": "Relearning"
+    }
+  },
+  "focusTimer": {
+    "focus": "Focus",
+    "shortBreak": "Short Break",
+    "longBreak": "Long Break",
+    "focusMode": "Focus Mode",
+    "mode": "Mode",
+    "inProgress": "In Progress",
+    "paused": "Paused",
+    "sessionsCompleted": "Completed {{count}} focus sessions",
+    "focusDuration": "Focus Duration (min)",
+    "breakDuration": "Break Duration (min)",
+    "shortBreakLabel": "Short",
+    "longBreakLabel": "Long",
+    "soundEnabled": "Sound",
+    "done": "Done",
+    "collapseToSide": "Collapse to Side",
+    "close": "Close"
+  },
+  "focusStats": {
+    "todayFocus": "Today's Focus",
+    "totalFocus": "Total Focus",
+    "avgDuration": "Average Duration",
+    "sessions": "{{count}} sessions",
+    "minutes": "{{count}} min",
+    "hours": "{{count}} hours",
+    "perSession": "Per session",
+    "weeklyTrend": "7-Day Focus Trend"
+  },
+  "quizList": {
+    "searchPlaceholder": "Search quiz title or description...",
+    "filter": "Filter",
+    "filterByGraph": "Filter by Graph",
+    "allGraphs": "All Graphs",
+    "allStatus": "All",
+    "statusDraft": "Draft",
+    "statusGenerating": "Generating",
+    "statusReady": "Ready",
+    "newQuiz": "New Quiz",
+    "loading": "Loading quiz list...",
+    "loadFailed": "Failed to load quiz list",
+    "retry": "Retry",
+    "noQuizzesFound": "No matching quizzes found",
+    "createFirstQuiz": "Create First Quiz",
+    "deleteConfirm": "Are you sure you want to delete quiz \"{{title}}\"? This action cannot be undone.",
+    "pagination": "Showing {{start}} - {{end}} of {{total}}"
+  },
+  "enterGraph": "Please select a knowledge graph first",
+  "stats": {
+    "totalCards": "Total Cards",
+    "mastered": "Mastered",
+    "due": "Due for Review",
+    "streak": "Streak",
+    "days": "days",
+    "weeklyStudy": "Weekly Study"
+  },
+  "todayDue": "Today's Due",
+  "fsrsDescription": "Intelligent review scheduling based on FSRS algorithm",
+  "startNow": "Start Review ({{count}} cards)",
+  "noReviewTasks": "No pending review tasks",
+  "freePractice": "Free Practice",
+  "freePracticeDescription": "Randomly practice from all cards",
+  "startSelfTest": "Start Self-Test ({{count}} cards)",
+  "noCards": "No cards available",
+  "weakPoints": {
+    "title": "Weak Points",
+    "empty": "No weak point data"
+  },
+  "priority": {
+    "high": "High Priority",
+    "medium": "Medium Priority",
+    "low": "Low Priority"
+  },
+  "predictions": {
+    "title": "Learning Predictions",
+    "empty": "No prediction data"
+  },
+  "days": {
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
+  },
+  "cardList": {
+    "title": "Card List",
+    "due": "Due",
+    "all": "All",
+    "searchPlaceholder": "Search cards...",
+    "noCardsFound": "No matching cards found"
+  },
+  "completed": {
+    "levelComplete": "Round Complete!",
+    "sessionComplete": "Session Complete!",
+    "levelCompleteDesc": "You have completed all tasks in this round.",
+    "sessionCompleteDesc": "Reviewed {{count}} cards this session, keep it up!",
+    "backToLearning": "Back to Study Center",
+    "backToCenter": "Back to Home",
+    "practiceAgain": "Practice Again"
+  },
+  "quiz": {
+    "exit": "Exit",
+    "mode": "Quiz Mode",
+    "swipeHint": "Swipe left/right to switch cards",
+    "nextCard": "Next Card",
+    "question": "Question",
+    "correct": "Correct",
+    "incorrect": "Incorrect",
+    "answer": "Answer",
+    "fillContent": "Fill in content",
+    "standardAnswer": "Standard Answer",
+    "explanation": "Explanation",
+    "showAnswer": "Show Answer",
+    "submitAnswer": "Submit Answer",
+    "selectOption": "Select an option",
+    "swipeInstruction": "← Swipe to reveal answer  |  → Swipe to skip",
+    "rateMemory": "Rate Memory"
+  },
+  "cardTypes": {
+    "new": "New",
+    "learning": "Learning",
+    "review": "Review",
+    "relearning": "Re-learning"
+  },
+  "cardType": {
+    "qa": "Q&A",
+    "choice": "Multiple Choice",
+    "multiChoice": "Multi-Choice",
+    "trueFalse": "True/False",
+    "fillBlank": "Fill in Blank",
+    "essay": "Essay"
+  },
+  "semantic": {
+    "similar": "Similar {{percent}}%"
+  },
+  "rating": {
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy"
+  },
+  "messages": {
+    "noCardsToReview": "No cards to review",
+    "saveProgressFailed": "Failed to save progress, please retry"
+  }
+}

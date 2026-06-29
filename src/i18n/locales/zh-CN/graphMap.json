@@ -1,0 +1,205 @@
+{
+  "title": "图谱地图",
+  "empty": {
+    "noGraphs": "暂无图谱",
+    "createFirst": "创建你的第一个知识图谱开始探索",
+    "loading": "正在加载图谱地图..."
+  },
+  "filter": {
+    "all": "全部",
+    "prerequisite": "前置知识",
+    "extension": "扩展知识",
+    "related": "相关知识",
+    "crossDomain": "跨学科"
+  },
+  "toolbar": {
+    "refresh": "刷新",
+    "createRelation": "创建关系",
+    "createGraph": "创建图谱",
+    "domainGenerate": "领域生成",
+    "manageDomains": "管理领域",
+    "manage": "管理"
+  },
+  "analysis": {
+    "title": "AI 分析",
+    "quick": "快速分析",
+    "quickDesc": "AI发现潜在关系和跨学科关联",
+    "deep": "深度分析",
+    "deepDesc": "渐进式获取信息，深度分析",
+    "custom": "自定义分析",
+    "customDesc": "自定义分析目标和参数"
+  },
+  "stats": {
+    "graphCount": "{{count}} 个图谱",
+    "relationCount": "{{count}} 个关系"
+  },
+  "graph": {
+    "openGraph": "打开图谱",
+    "addRelation": "添加关系",
+    "selectRelated": "选择关联图谱",
+    "setDomain": "设置领域",
+    "nodeCount": "{{count}} 个节点",
+    "relationCount": "{{count}} 个关系",
+    "quickCreate": "快速创建关联图谱",
+    "prerequisite": "前置知识",
+    "extension": "扩展知识",
+    "related": "相关知识",
+    "aiExpand": "AI 拓展",
+    "aiSmartExpand": "AI 智能拓展",
+    "aiExpandDesc": "生成知识点或相关知识网络",
+    "generateQuestions": "生成题目",
+    "generateQuestionsDesc": "为该图谱知识点生成学习题目",
+    "relatedGraphs": "相关图谱",
+    "expandMore": "展开更多",
+    "collapse": "收起"
+  },
+  "combinedView": {
+    "title": "联立视图模式",
+    "openCombined": "联立打开",
+    "cancelSelection": "取消选择"
+  },
+  "legend": {
+    "title": "关系类型图例",
+    "prerequisite": "前置知识",
+    "extension": "扩展知识",
+    "related": "相关知识",
+    "crossDomain": "跨学科"
+  },
+  "crossDomain": {
+    "analyze": "跨域分析",
+    "analyzing": "分析中...",
+    "title": "跨学科洞察分析",
+    "reanalyze": "重新分析",
+    "analyzeComplete": "跨域分析完成",
+    "analyzeFailed": "跨域分析失败"
+  },
+  "domainPicker": {
+    "title": "设置领域",
+    "noDomains": "暂无可用领域",
+    "batchTitle": "批量设置领域",
+    "batchDesc": "为选中的 {{count}} 个图谱设置领域",
+    "setSuccess": "领域设置成功",
+    "setFailed": "设置领域失败"
+  },
+  "batch": {
+    "selected": "已选择 {{count}} 个图谱",
+    "createRelation": "批量创建关系",
+    "analyze": "批量分析",
+    "setDomain": "设置领域",
+    "delete": "批量删除",
+    "clearSelection": "清除选择",
+    "deleteConfirm": "确定要删除选中的 {{count}} 个图谱吗？此操作不可撤销。",
+    "deleteSuccess": "成功删除 {{count}} 个图谱",
+    "deleteFailed": "批量删除失败",
+    "setDomainSuccess": "成功为 {{count}} 个图谱设置领域",
+    "setDomainPartial": "部分完成：{{success}} 个成功，{{fail}} 个失败",
+    "setDomainFailed": "批量设置领域失败"
+  },
+  "relation": {
+    "createSuccess": "关系创建成功",
+    "createFailed": "创建关系失败",
+    "deleteSuccess": "关系已删除",
+    "deleteFailed": "删除关系失败",
+    "discoveryFailed": "关系发现失败"
+  },
+  "graphCreation": {
+    "success": "图谱创建成功",
+    "failed": "创建图谱失败",
+    "generatingContent": "正在生成初始内容..."
+  },
+  "expansion": {
+    "started": "无限扩展任务已启动",
+    "startFailed": "启动扩展失败",
+    "depthFailed": "深度拓展失败",
+    "nodeExpandFailed": "展开节点失败"
+  },
+  "prompt": {
+    "fetchFailed": "获取提示词失败",
+    "saveSuccess": "提示词已保存",
+    "saveFailed": "保存提示词失败",
+    "graphInit": "图谱初始化 (auto_graph_init)",
+    "nodeExpand": "节点展开 (auto_graph_expand)",
+    "editInitPrompt": "编辑图谱初始化提示词",
+    "editExpandPrompt": "编辑节点展开提示词",
+    "editWidthPrompt": "编辑宽度拓展提示词"
+  },
+  "cards": {
+    "taskSubmitted": "题目自动生成任务已提交至后台",
+    "viewTasks": "查看任务",
+    "generateFailed": "题目生成失败",
+    "knowledgePoints": "{{count}} 个知识点"
+  },
+  "domainManager": {
+    "title": "领域管理",
+    "createDomain": "新建领域",
+    "noDomains": "暂无领域",
+    "noDomainsHint": "点击上方按钮创建第一个领域",
+    "nameRequired": "名称",
+    "descriptionOptional": "描述（可选）",
+    "descriptionPlaceholder": "描述这个知识领域...",
+    "colorRequired": "颜色",
+    "parentOptional": "父级领域（可选）",
+    "noParent": "无（顶级领域）",
+    "iconOptional": "图标（可选）",
+    "iconPlaceholder": "输入图标名称或 emoji...",
+    "aiRecommend": "AI 推荐",
+    "applyColor": "应用此颜色",
+    "tryAnother": "换一个",
+    "customColor": "自定义:",
+    "confirmDelete": "确定删除「{{name}}」？",
+    "hasChildren": "该领域包含 {{count}} 个子领域，将一并删除"
+  },
+  "agentAnalysis": {
+    "title": "Agent 分析",
+    "analyzing": "正在分析...",
+    "graphNumber": "图谱 {{number}}"
+  },
+  "analysisResult": {
+    "complete": "分析完成",
+    "copied": "已复制",
+    "copy": "复制",
+    "recommendedRelations": "推荐的图谱关联",
+    "selected": "已选择 {{count}} 项",
+    "applying": "应用中...",
+    "applySelected": "应用选中项 ({{count}})",
+    "relationTypes": {
+      "prerequisite": "前置依赖",
+      "extension": "扩展",
+      "related": "相关",
+      "crossDomain": "跨领域"
+    }
+  },
+  "analysisConfirm": {
+    "title": "确认分析",
+    "analysisType": "分析类型：",
+    "analysisGoal": "分析目标",
+    "analysisGoalPlaceholder": "描述你的分析目标，例如：分析这些图谱之间的知识关联，找出可以合并的重复内容...",
+    "enterAnalysisGoal": "请输入分析目标",
+    "analysisScope": "分析范围：已选择 {{count}} 个图谱",
+    "noGraphSelected": "未选中任何图谱",
+    "noGraphSelectedHint": "请在图谱地图上选择要分析的图谱，或将分析全部图谱（消耗较多 TOKEN）",
+    "estimatedConsumption": "预估消耗：",
+    "tokenRange": "约 {{min}} - {{max}} tokens",
+    "highTokenWarning": "建议减少图谱数量或选择快速分析模式",
+    "analyzing": "分析中...",
+    "startAnalysis": "开始分析",
+    "moreGraphs": "...还有 {{count}} 个图谱",
+    "mode": {
+      "quick": "快速分析",
+      "quickDesc": "快速扫描图谱，提供基础分析结果",
+      "deep": "深度分析",
+      "deepDesc": "渐进式获取信息，深度分析知识结构",
+      "custom": "自定义分析",
+      "customDesc": "根据自定义目标进行针对性分析"
+    }
+  },
+  "sessionLog": {
+    "analysisProcess": "分析过程",
+    "toolCalls": "{{count}} 个工具调用",
+    "callTool": "调用工具: {{tool}}"
+  },
+  "skillSelector": {
+    "selectedForAnalysis": "已选择 {{count}} 个图谱进行分析",
+    "selectType": "选择分析类型"
+  }
+}

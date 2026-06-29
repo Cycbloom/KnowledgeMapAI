@@ -1,0 +1,6 @@
+{
+  "enterToConfirm": "Please enter \"{{text}}\" to confirm",
+  "enterPlaceholder": "Enter {{text}}",
+  "cancel": "Cancel",
+  "confirm": "Confirm"
+}

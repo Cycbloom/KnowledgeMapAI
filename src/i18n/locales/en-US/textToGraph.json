@@ -1,0 +1,90 @@
+{
+  "title": {
+    "input": "AI Knowledge Graph Generation",
+    "preview": "Preview and Filter Generated Graph"
+  },
+  "tabs": {
+    "text": "Text Input",
+    "file": "File Upload",
+    "image": "Image Recognition",
+    "url": "Web URL"
+  },
+  "aiNotConfiguredHint": "AI not configured: text analysis will generate a simulated preview; document upload and URL parsing require an AI Key.",
+  "textTab": {
+    "placeholder": "e.g., The solar system is the collection of celestial bodies bound by the Sun's gravity, including the eight planets...",
+    "charCount": "{{count}} characters"
+  },
+  "fileTab": {
+    "dragRelease": "Release to parse file",
+    "clickOrDrag": "Click or drag a file here",
+    "supportedFiles": "Supports PDF documents, Markdown notes, OPML outlines, or plain text files.",
+    "aiExtractHint": "AI will automatically extract content and generate a knowledge graph.",
+    "selectFile": "Select File"
+  },
+  "imageTab": {
+    "dragRelease": "Release to recognize image",
+    "uploadImage": "Upload image to generate graph",
+    "supportedImages": "Supports mind map screenshots, flowcharts, whiteboard photos, or slides.",
+    "supportedFormats": "Supports JPG, PNG, WebP formats.",
+    "selectImage": "Select Image"
+  },
+  "urlTab": {
+    "offlineUnavailable": "Offline mode unavailable",
+    "offlineDesc": "URL parsing requires a network connection",
+    "inputUrl": "Enter a web URL",
+    "urlDesc": "AI will read the webpage content and convert it into a knowledge structure",
+    "supportedWebsites": "Supports blog articles, news reports, Wikipedia entries, and other text-based webpages."
+  },
+  "preview": {
+    "nodesGenerated": "Generated {{count}} nodes. Check the ones you want to keep:",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selectedCount": "Selected {{selected}} / {{total}} nodes"
+  },
+  "levelLabels": {
+    "root": "🟣 Core Theme (Root)",
+    "core": "🔴 Main Concept (Core)",
+    "sub": "🟠 Sub-knowledge (Sub)",
+    "normal": "🔵 Specific Content (Normal)",
+    "leaf": "🟢 Instance Detail (Leaf)"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "back": "Back to Edit",
+    "analyzing": "Analyzing...",
+    "startAnalysis": "Start Analysis",
+    "saving": "Saving...",
+    "generateGraph": "Generate Graph"
+  },
+  "messages": {
+    "offlineUrlParse": "Cannot parse URL in offline mode",
+    "invalidUrl": "Please enter a valid URL",
+    "urlExtractFailed": "Unable to extract content from this URL",
+    "urlParseFailed": "URL parsing failed",
+    "emptyText": "Please enter text content",
+    "textTooShort": "Content is too short; at least 10 characters are required",
+    "offlineAiAnalysis": "AI analysis is not available in offline mode",
+    "aiNotConfiguredSimulated": "AI not configured: a simulated preview will be generated this time",
+    "analysisCompleted": "AI analysis completed. Please confirm the generated content",
+    "analysisFailed": "Analysis failed, please try again",
+    "offlineImageRecognition": "Image recognition is not available in offline mode",
+    "aiNotConfiguredImage": "AI not configured: image recognition requires an AI Key (Aliyun/Volcengine recommended)",
+    "analyzingImage": "Analyzing image content...",
+    "imageRecognitionFailed": "AI could not recognize any valid nodes from the image.",
+    "imageAnalysisSuccess": "Image analysis successful",
+    "imageAnalysisFailed": "Analysis failed",
+    "offlinePdfParse": "Cannot parse PDF in offline mode",
+    "aiNotConfiguredPdf": "AI not configured: PDF parsing is unavailable. Please configure an AI Key first",
+    "parsingPdf": "Parsing PDF document...",
+    "pdfParseFailed": "AI could not parse any nodes from the document. Please check the document content.",
+    "pdfParseSuccess": "Document parsed successfully",
+    "pdfParseError": "Parsing failed",
+    "textImported": "Text imported into editor",
+    "fileParseSuccess": "File parsed successfully",
+    "fileParseError": "Parsing failed: {{message}}",
+    "unsupportedFileType": "Unsupported file format. Please upload a PDF, Markdown, OPML, TXT, or image file.",
+    "noNodeSelected": "Please select at least one node",
+    "generateSuccess": "Successfully generated {{nodes}} nodes and {{edges}} relationships!",
+    "saveFailed": "Save failed, please try again"
+  }
+}

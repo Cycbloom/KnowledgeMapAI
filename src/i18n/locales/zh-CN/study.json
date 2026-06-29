@@ -1,0 +1,186 @@
+{
+  "loading": "加载中...",
+  "title": "学习中心",
+  "mode": {
+    "singlePoint": "单点复习",
+    "pathTraining": "路径训练",
+    "fullReview": "全面复习"
+  },
+  "tabs": {
+    "overview": "概览",
+    "bank": "题库",
+    "focus": "专注模式",
+    "quizzes": "测验"
+  },
+  "questionBank": {
+    "searchPlaceholder": "搜索题目或答案...",
+    "allTypes": "所有题型",
+    "typeQA": "问答 (QA)",
+    "typeChoice": "单选 (Choice)",
+    "typeTrueFalse": "判断 (True/False)",
+    "advancedFilter": "高级筛选",
+    "selectAll": "全选当前页",
+    "deselectAll": "取消全选",
+    "batchDelete": "批量删除",
+    "newQuestion": "新建题目",
+    "reviewCount": "复习次数",
+    "nextReviewTime": "下次复习时间",
+    "learningStatus": "学习状态",
+    "noQuestionsFound": "没有找到符合条件的题目",
+    "deleteConfirm": "确定要删除选中的 {{count}} 个问题吗？",
+    "deleteCardConfirm": "删除此卡片?",
+    "pagination": "显示 {{start}} - {{end}} 条，共 {{total}} 条",
+    "fsrsStates": {
+      "new": "新卡片",
+      "learning": "学习中",
+      "review": "复习中",
+      "relearning": "重学中"
+    }
+  },
+  "focusTimer": {
+    "focus": "专注",
+    "shortBreak": "小憩",
+    "longBreak": "长休",
+    "focusMode": "专注模式",
+    "mode": "模式",
+    "inProgress": "进行中",
+    "paused": "已暂停",
+    "sessionsCompleted": "本次已完成 {{count}} 个专注时段",
+    "focusDuration": "专注时长 (分钟)",
+    "breakDuration": "休息时长 (分钟)",
+    "shortBreakLabel": "小憩",
+    "longBreakLabel": "长休",
+    "soundEnabled": "提示音",
+    "done": "完成",
+    "collapseToSide": "收起到侧边",
+    "close": "关闭"
+  },
+  "focusStats": {
+    "todayFocus": "今日专注",
+    "totalFocus": "累计专注",
+    "avgDuration": "平均时长",
+    "sessions": "{{count}} 次会话",
+    "minutes": "{{count}} 分钟",
+    "hours": "{{count}} 小时",
+    "perSession": "每次会话",
+    "weeklyTrend": "近7天专注趋势"
+  },
+  "quizList": {
+    "searchPlaceholder": "搜索测验标题或描述...",
+    "filter": "筛选",
+    "filterByGraph": "按图谱筛选",
+    "allGraphs": "所有图谱",
+    "allStatus": "全部",
+    "statusDraft": "草稿",
+    "statusGenerating": "生成中",
+    "statusReady": "就绪",
+    "newQuiz": "新建测验",
+    "loading": "正在加载测验列表...",
+    "loadFailed": "加载测验列表失败",
+    "retry": "重试",
+    "noQuizzesFound": "没有找到符合条件的测验",
+    "createFirstQuiz": "创建第一个测验",
+    "deleteConfirm": "确定要删除测验 \"{{title}}\" 吗？此操作不可恢复。",
+    "pagination": "显示 {{start}} - {{end}} 条，共 {{total}} 条"
+  },
+  "enterGraph": "请先选择一个知识图谱",
+  "stats": {
+    "totalCards": "总卡片数",
+    "mastered": "已掌握",
+    "due": "待复习",
+    "streak": "连续",
+    "days": "天",
+    "weeklyStudy": "本周学习"
+  },
+  "todayDue": "今日待复习",
+  "fsrsDescription": "基于 FSRS 算法的智能复习调度",
+  "startNow": "开始复习 ({{count}} 张)",
+  "noReviewTasks": "暂无待复习任务",
+  "freePractice": "自由练习",
+  "freePracticeDescription": "从所有卡片中随机抽取练习",
+  "startSelfTest": "开始自测 ({{count}} 张)",
+  "noCards": "暂无卡片",
+  "weakPoints": {
+    "title": "薄弱知识点",
+    "empty": "暂无薄弱点数据"
+  },
+  "priority": {
+    "high": "高优先级",
+    "medium": "中优先级",
+    "low": "低优先级"
+  },
+  "predictions": {
+    "title": "学习预测",
+    "empty": "暂无预测数据"
+  },
+  "days": {
+    "sun": "日",
+    "mon": "一",
+    "tue": "二",
+    "wed": "三",
+    "thu": "四",
+    "fri": "五",
+    "sat": "六"
+  },
+  "cardList": {
+    "title": "卡片列表",
+    "due": "待复习",
+    "all": "全部",
+    "searchPlaceholder": "搜索卡片...",
+    "noCardsFound": "未找到匹配的卡片"
+  },
+  "completed": {
+    "levelComplete": "本轮完成！",
+    "sessionComplete": "本次学习完成！",
+    "levelCompleteDesc": "您已完成本轮所有复习任务。",
+    "sessionCompleteDesc": "本次共复习 {{count}} 张卡片，继续加油！",
+    "backToLearning": "返回学习中心",
+    "backToCenter": "返回首页",
+    "practiceAgain": "再练一轮"
+  },
+  "quiz": {
+    "exit": "退出",
+    "mode": "答题模式",
+    "swipeHint": "左右滑动切换卡片",
+    "nextCard": "下一张",
+    "question": "题目",
+    "correct": "正确",
+    "incorrect": "错误",
+    "answer": "答案",
+    "fillContent": "填写内容",
+    "standardAnswer": "标准答案",
+    "explanation": "解析",
+    "showAnswer": "显示答案",
+    "submitAnswer": "提交答案",
+    "selectOption": "请选择选项",
+    "swipeInstruction": "← 滑动查看答案  |  → 滑动跳过",
+    "rateMemory": "记忆程度评价"
+  },
+  "cardTypes": {
+    "new": "新卡",
+    "learning": "学习中",
+    "review": "复习",
+    "relearning": "重新学习"
+  },
+  "cardType": {
+    "qa": "问答",
+    "choice": "单选",
+    "multiChoice": "多选",
+    "trueFalse": "判断",
+    "fillBlank": "填空",
+    "essay": "简答"
+  },
+  "semantic": {
+    "similar": "语义相近 {{percent}}%"
+  },
+  "rating": {
+    "again": "忘记",
+    "hard": "困难",
+    "good": "良好",
+    "easy": "简单"
+  },
+  "messages": {
+    "noCardsToReview": "没有需要复习的卡片",
+    "saveProgressFailed": "保存进度失败，请重试"
+  }
+}

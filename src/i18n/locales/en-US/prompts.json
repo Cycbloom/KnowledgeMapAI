@@ -1,0 +1,30 @@
+{
+  "categories": {
+    "templateGeneration": "Template Generation"
+  },
+  "scenarios": {
+    "templateGeneration": "Template Generation",
+    "templateGenerationDesc": "Customize AI generation guidance for each template type"
+  },
+  "templateNames": {
+    "template_generation": "Template Generation Base Prompt",
+    "template_type_knowledge_tree": "Knowledge Tree",
+    "template_type_skill_map": "Skill Map",
+    "template_type_concept_network": "Concept Network",
+    "template_type_learning_path": "Learning Path",
+    "template_type_topic_research": "Topic Research",
+    "template_type_project_lifecycle": "Project Lifecycle",
+    "template_type_dev_workflow": "Dev Workflow",
+    "template_type_task_breakdown": "Task Breakdown",
+    "template_type_sprint_planning": "Sprint Planning",
+    "template_type_root_cause": "Root Cause Analysis",
+    "template_type_swot": "SWOT Analysis",
+    "template_type_comparison": "Comparison",
+    "template_type_decision_tree": "Decision Tree",
+    "template_type_tech_ecosystem": "Tech Ecosystem",
+    "template_type_org_structure": "Org Structure",
+    "template_type_system_architecture": "System Architecture",
+    "template_type_knowledge_system": "Knowledge System",
+    "template_type_blank": "Blank Graph"
+  }
+}

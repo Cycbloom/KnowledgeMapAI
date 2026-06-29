@@ -1,0 +1,14 @@
+{
+  "availableVariables": "Available Variables",
+  "placeholder": "Enter your prompt template here... Supports Handlebars syntax like {{variable}} and {{#if condition}}...{{/if}}",
+  "optimizeInstruction": "AI Optimization Instructions (Optional)",
+  "optimizePlaceholder": "e.g., Make it more creative, or more concise...",
+  "optimizing": "Optimizing...",
+  "startOptimize": "Start Optimize",
+  "cancel": "Cancel",
+  "aiOptimize": "AI Optimize",
+  "saving": "Saving...",
+  "saveChanges": "Save Changes",
+  "optimizeFailed": "Optimization failed: {{message}}",
+  "saveFailed": "Save failed: {{message}}"
+}

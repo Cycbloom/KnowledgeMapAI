@@ -1,0 +1,22 @@
+{
+  "title": "创建图谱关系",
+  "sourceGraph": "源图谱",
+  "targetGraph": "目标图谱",
+  "relationType": "关系类型",
+  "prerequisite": "前置知识",
+  "prerequisiteDesc": "学习目标图谱前需要先掌握",
+  "extension": "扩展知识",
+  "extensionDesc": "掌握目标图谱后可深入学习",
+  "related": "相关知识",
+  "relatedDesc": "两个图谱有相关性",
+  "crossDomain": "跨学科",
+  "selectSource": "选择源图谱",
+  "selectTarget": "选择目标图谱",
+  "selectRelationType": "选择关系类型",
+  "contextOptional": "关系描述（可选）",
+  "contextPlaceholder": "描述这个关系的原因或背景...",
+  "create": "创建关系",
+  "creating": "创建中...",
+  "createSuccess": "关系创建成功",
+  "createFailed": "创建关系失败"
+}

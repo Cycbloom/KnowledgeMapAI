@@ -1,0 +1,17 @@
+{
+  "title": "选择节点",
+  "searchPlaceholder": "搜索节点...",
+  "selectAll": "全选",
+  "deselectAll": "取消全选",
+  "selected": "已选择 {{count}} 个节点",
+  "confirm": "确认选择",
+  "noNodes": "暂无节点",
+  "levelLabels": {
+    "root": "核心主题",
+    "core": "主要概念",
+    "sub": "细分知识",
+    "normal": "具体内容",
+    "leaf": "实例细节"
+  },
+  "unnamedNode": "未命名节点"
+}

@@ -1,0 +1,36 @@
+{
+  "title": "User Guide",
+  "subtitle": "Quickly master knowledge graph operations",
+  "gotIt": "Got It",
+  "mouseControls": {
+    "title": "Mouse Controls (3D View)",
+    "rotateView": "Rotate View",
+    "rotateViewShortcut": "Left-click Drag",
+    "panCanvas": "Pan Canvas",
+    "panCanvasShortcut": "Right-click Drag",
+    "zoomView": "Zoom View",
+    "zoomViewShortcut": "Scroll Wheel",
+    "selectNode": "Select Node",
+    "selectNodeShortcut": "Left-click",
+    "boxSelect": "Box Select",
+    "boxSelectShortcut": "Shift + Left-click Drag"
+  },
+  "keyboardShortcuts": {
+    "title": "Keyboard Shortcuts",
+    "undo": "Undo",
+    "redo": "Redo",
+    "focusModeToggle": "Toggle Focus Mode",
+    "exitMode": "Exit Mode"
+  },
+  "aiFeatures": {
+    "title": "AI Advanced Features",
+    "smartExpand": {
+      "title": "Smart Expand",
+      "description": "Select any node and click \"Smart Expand\". AI will automatically analyze the node content and generate related child nodes. Supports background batch processing, ideal for quickly building knowledge systems."
+    },
+    "autoQuestion": {
+      "title": "Auto Generate Questions",
+      "description": "AI can automatically generate various types of review cards including single-choice, multiple-choice, and Q&A based on node content, and automatically add them to the FSRS memory algorithm review queue."
+    }
+  }
+}

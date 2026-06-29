@@ -1,0 +1,11 @@
+{
+  "title": "注册",
+  "name": "姓名",
+  "email": "邮箱",
+  "password": "密码",
+  "submit": "注册",
+  "alreadyHaveAccount": "已有账号?",
+  "login": "登录",
+  "switchToLight": "切换到亮色模式",
+  "switchToDark": "切换到暗色模式"
+}

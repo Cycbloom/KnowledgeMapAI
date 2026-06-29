@@ -1,0 +1,89 @@
+{
+  "title": "Profile",
+  "subtitle": "Account Information & Security",
+  "logout": "Logout",
+  "loggingOut": "Logging out...",
+  "accountInfo": {
+    "title": "Account Information",
+    "loading": "Loading...",
+    "nickname": "Nickname",
+    "email": "Email",
+    "unnamedUser": "Unnamed User"
+  },
+  "systemSettings": {
+    "title": "System Settings",
+    "description": "Manage appearance, AI model configuration and learning algorithm parameters",
+    "goToSettings": "Go to Settings"
+  },
+  "promptManagement": {
+    "title": "AI Prompt Management",
+    "description": "Configure user-level AI prompt templates (User Scope)",
+    "managePrompts": "Manage Prompts"
+  },
+  "backup": {
+    "title": "Data Backup",
+    "description": "Export all knowledge graphs, nodes, study cards and progress data. Regular backups are recommended to prevent data loss.",
+    "exportBackup": "Export Backup",
+    "exporting": "Exporting...",
+    "importBackup": "Import Backup",
+    "importing": "Importing...",
+    "importMode": "Import Mode",
+    "snapshotRestore": "Snapshot Restore",
+    "snapshotRestoreHint": "(Clear existing data before import)",
+    "mergeImport": "Merge Import",
+    "mergeImportHint": "(Keep existing data)",
+    "tip": "Tip: ",
+    "tipContent": "Snapshot restore will delete all existing data before importing the backup, suitable for restoring to a historical state; merge import will keep existing data and add new data.",
+    "snapshotList": "Snapshot List",
+    "createSnapshot": "Create Snapshot",
+    "creating": "Creating...",
+    "noSnapshots": "No snapshots yet. System will create automatically or click the button above to create manually",
+    "graphsAndNodes": "{{graphs}} graphs, {{nodes}} nodes",
+    "restoreSnapshot": "Restore this snapshot",
+    "deleteSnapshot": "Delete this snapshot",
+    "snapshotTypes": {
+      "auto_30min": "30-min Auto",
+      "auto_5hour": "5-hour Auto",
+      "auto_1day": "Daily Auto",
+      "manual": "Manual"
+    }
+  },
+  "promptSettings": {
+    "title": "AI Personalization Settings",
+    "description": "Configure global prompts and custom actions (User Scope)",
+    "promptTemplates": "Prompt Templates",
+    "customActions": "Custom Actions",
+    "loading": "Loading templates...",
+    "edit": "Edit",
+    "customize": "Customize",
+    "reset": "Reset to Default",
+    "editTemplate": "Edit: {{name}} ({{scope}})",
+    "confirmReset": "Are you sure you want to reset to {{scope}} settings?",
+    "graphScope": "User/System Default",
+    "userScope": "System Default",
+    "categories": {
+      "graph_building": "Knowledge Graph Building",
+      "card_generation": "Card Generation",
+      "ai_chat": "AI Chat",
+      "task_scheduler": "Task Scheduler",
+      "template_generation": "Template Generation",
+      "other": "Other Tools"
+    }
+  },
+  "messages": {
+    "logoutSuccess": "Logged out successfully",
+    "exportSuccess": "Backup exported successfully",
+    "exportFailed": "Failed to export backup",
+    "importSuccess": "{{message}}: {{graphs}} graphs, {{nodes}} nodes, {{cards}} study cards",
+    "importFailed": "Failed to import backup",
+    "invalidBackupFormat": "Invalid backup file format",
+    "snapshotCreateSuccess": "Snapshot created successfully",
+    "snapshotCreateFailed": "Failed to create snapshot",
+    "snapshotRestoreSuccess": "{{message}}: {{graphs}} graphs, {{nodes}} nodes",
+    "snapshotRestoreFailed": "Failed to restore snapshot",
+    "snapshotDeleteSuccess": "Snapshot deleted",
+    "snapshotDeleteFailed": "Failed to delete snapshot",
+    "confirmRestore": "Are you sure you want to restore this snapshot? This will overwrite all current data.",
+    "confirmDelete": "Are you sure you want to delete this snapshot?"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "title": "快速创建图谱",
+  "promptConfig": "提示词配置",
+  "graphName": "图谱名称",
+  "namePlaceholder": "例如：JavaScript 核心概念",
+  "duplicateTopic": "主题重复",
+  "similarTo": "与现有图谱「{{title}}」相似度为 {{similarity}}%",
+  "descriptionOptional": "描述（可选）",
+  "descriptionPlaceholder": "简要描述该图谱的内容...",
+  "newGraph": "新图谱",
+  "relationType": "关系类型",
+  "relation": {
+    "prerequisite": "前置知识",
+    "prerequisiteDesc": "学习目标图谱前需要先掌握",
+    "extension": "扩展知识",
+    "extensionDesc": "掌握目标图谱后可深入学习",
+    "related": "相关知识",
+    "relatedDesc": "两个图谱有相关性"
+  },
+  "autoGenerate": "自动生成初始内容",
+  "aiRecommendDomains": "AI 推荐领域",
+  "ignore": "忽略",
+  "analyzing": "分析中...",
+  "noDomains": "暂无可用领域",
+  "domainsOptional": "所属领域（可选）",
+  "create": "创建"
+}

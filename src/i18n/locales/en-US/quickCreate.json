@@ -1,0 +1,27 @@
+{
+  "title": "Quick Create Graph",
+  "promptConfig": "Prompt Configuration",
+  "graphName": "Graph Name",
+  "namePlaceholder": "e.g., JavaScript Core Concepts",
+  "duplicateTopic": "Duplicate Topic",
+  "similarTo": "Similar to existing graph \"{{title}}\" with {{similarity}}% similarity",
+  "descriptionOptional": "Description (Optional)",
+  "descriptionPlaceholder": "Briefly describe the content of this graph...",
+  "newGraph": "New Graph",
+  "relationType": "Relation Type",
+  "relation": {
+    "prerequisite": "Prerequisite",
+    "prerequisiteDesc": "Must be mastered before learning the target graph",
+    "extension": "Extension",
+    "extensionDesc": "Can be learned in depth after mastering the target graph",
+    "related": "Related",
+    "relatedDesc": "The two graphs are related"
+  },
+  "autoGenerate": "Auto-generate initial content",
+  "aiRecommendDomains": "AI Recommended Domains",
+  "ignore": "Ignore",
+  "analyzing": "Analyzing...",
+  "noDomains": "No domains available",
+  "domainsOptional": "Domains (Optional)",
+  "create": "Create"
+}

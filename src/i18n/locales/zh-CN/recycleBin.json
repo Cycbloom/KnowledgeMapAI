@@ -1,0 +1,36 @@
+{
+  "title": "回收站",
+  "subtitle": "查看和管理已删除的图谱。您可以恢复它们，或永久删除。",
+  "loading": "正在加载回收站...",
+  "loadFailed": "加载回收站失败",
+  "searchPlaceholder": "搜索已删除图谱...",
+  "selectAll": "全选",
+  "deselectAll": "取消全选",
+  "selected": "已选择 {{count}} 项",
+  "batchRestore": "批量恢复",
+  "batchDelete": "批量删除",
+  "empty": "回收站为空",
+  "emptyHint": "最近删除的图谱将显示在这里。",
+  "noResults": "未找到相关图谱",
+  "noResultsHint": "尝试更换搜索关键词",
+  "noDescription": "暂无描述",
+  "deletedAt": "删除时间",
+  "restoreGraph": "恢复图谱",
+  "permanentDelete": "永久删除",
+  "confirmDelete": {
+    "title": "永久删除图谱",
+    "batchTitle": "批量永久删除图谱",
+    "message": "确定要永久删除{{target}}吗？此操作将无法撤销，所有数据将彻底丢失！",
+    "confirm": "永久删除"
+  },
+  "messages": {
+    "restoreSuccess": "图谱已恢复",
+    "restoreFailed": "恢复失败",
+    "batchRestoreSuccess": "已恢复 {{count}} 个图谱",
+    "batchRestoreFailed": "批量恢复失败",
+    "deleteSuccess": "图谱已永久删除",
+    "deleteFailed": "删除失败",
+    "batchDeleteSuccess": "已永久删除 {{count}} 个图谱",
+    "batchDeleteFailed": "批量删除失败"
+  }
+}

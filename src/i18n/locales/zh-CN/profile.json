@@ -1,0 +1,89 @@
+{
+  "title": "个人中心",
+  "subtitle": "账号信息与安全",
+  "logout": "退出登录",
+  "loggingOut": "退出中...",
+  "accountInfo": {
+    "title": "账号信息",
+    "loading": "加载中...",
+    "nickname": "昵称",
+    "email": "邮箱",
+    "unnamedUser": "未命名用户"
+  },
+  "systemSettings": {
+    "title": "系统设置",
+    "description": "管理外观、AI 模型配置及学习算法参数",
+    "goToSettings": "前往设置"
+  },
+  "promptManagement": {
+    "title": "AI 提示词管理",
+    "description": "配置用户全局 AI 提示词模板 (User Scope)",
+    "managePrompts": "管理提示词"
+  },
+  "backup": {
+    "title": "数据备份",
+    "description": "导出所有知识图谱、节点、学习卡片和进度数据。建议定期备份以防数据丢失。",
+    "exportBackup": "导出备份",
+    "exporting": "导出中...",
+    "importBackup": "导入备份",
+    "importing": "导入中...",
+    "importMode": "导入模式",
+    "snapshotRestore": "快照恢复",
+    "snapshotRestoreHint": "（清空现有数据后导入）",
+    "mergeImport": "合并导入",
+    "mergeImportHint": "（保留现有数据）",
+    "tip": "提示：",
+    "tipContent": "快照恢复会先删除所有现有数据再导入备份，适合恢复到某个历史状态；合并导入会保留现有数据并添加新数据。",
+    "snapshotList": "快照列表",
+    "createSnapshot": "创建快照",
+    "creating": "创建中...",
+    "noSnapshots": "暂无快照，系统会自动创建或点击上方按钮手动创建",
+    "graphsAndNodes": "{{graphs}} 个图谱，{{nodes}} 个节点",
+    "restoreSnapshot": "恢复此快照",
+    "deleteSnapshot": "删除此快照",
+    "snapshotTypes": {
+      "auto_30min": "30分钟自动",
+      "auto_5hour": "5小时自动",
+      "auto_1day": "每日自动",
+      "manual": "手动创建"
+    }
+  },
+  "promptSettings": {
+    "title": "AI 个性化设置",
+    "description": "配置全局提示词与自定义动作 (User Scope)",
+    "promptTemplates": "提示词模板",
+    "customActions": "自定义动作",
+    "loading": "加载模板中...",
+    "edit": "编辑",
+    "customize": "自定义",
+    "reset": "重置为默认",
+    "editTemplate": "编辑: {{name}} ({{scope}})",
+    "confirmReset": "确定要重置回{{scope}}设置吗？",
+    "graphScope": "用户/系统默认",
+    "userScope": "系统默认",
+    "categories": {
+      "graph_building": "知识图谱构建",
+      "card_generation": "卡片生成",
+      "ai_chat": "AI 对话",
+      "task_scheduler": "任务调度",
+      "template_generation": "模板生成",
+      "other": "其他工具"
+    }
+  },
+  "messages": {
+    "logoutSuccess": "已退出登录",
+    "exportSuccess": "备份导出成功",
+    "exportFailed": "导出备份失败",
+    "importSuccess": "{{message}}：{{graphs}} 个图谱，{{nodes}} 个节点，{{cards}} 张学习卡片",
+    "importFailed": "导入备份失败",
+    "invalidBackupFormat": "无效的备份文件格式",
+    "snapshotCreateSuccess": "快照创建成功",
+    "snapshotCreateFailed": "创建快照失败",
+    "snapshotRestoreSuccess": "{{message}}：{{graphs}} 个图谱，{{nodes}} 个节点",
+    "snapshotRestoreFailed": "恢复快照失败",
+    "snapshotDeleteSuccess": "快照已删除",
+    "snapshotDeleteFailed": "删除快照失败",
+    "confirmRestore": "确定要恢复此快照吗？这将覆盖当前所有数据。",
+    "confirmDelete": "确定要删除此快照吗？"
+  }
+}

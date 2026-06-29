@@ -1,0 +1,11 @@
+{
+  "title": "Register",
+  "name": "Name",
+  "email": "Email",
+  "password": "Password",
+  "submit": "Register",
+  "alreadyHaveAccount": "Already have an account?",
+  "login": "Login",
+  "switchToLight": "Switch to Light Mode",
+  "switchToDark": "Switch to Dark Mode"
+}

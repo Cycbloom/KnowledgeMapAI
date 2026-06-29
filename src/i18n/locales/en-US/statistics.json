@@ -1,0 +1,30 @@
+{
+  "title": "Learning Statistics Analysis",
+  "subtitle": "Comprehensive overview of your learning progress and knowledge base status",
+  "tabs": {
+    "learning": "Learning Statistics",
+    "tasks": "Task Statistics"
+  },
+  "overview": "Overview",
+  "graphAnalysis": "Graph Analysis",
+  "totalCards": "Total Cards",
+  "totalCardsSubtext": "Cumulative knowledge points created",
+  "dueToday": "Due Today",
+  "dueTodaySubtext": "Key to memory retention",
+  "masteredOrLearning": "Mastered/Learning",
+  "masteredOrLearningSubtext": "Knowledge being internalized",
+  "avgStability": "Average Memory Stability",
+  "avgStabilitySubtext": "days (FSRS algorithm estimate)",
+  "sevenDayForecast": "7-Day Review Forecast",
+  "reviewCards": "Review Cards",
+  "knowledgeAccumulation": "Knowledge Accumulation Trend (Last 30 Days)",
+  "newCards": "New Cards",
+  "forgettingCurve": "Forgetting Curve & Memory Threshold",
+  "forgettingCurveDesc": "Theoretical model based on FSRS algorithm (average stability: {{stability}} days)",
+  "memoryRetention": "Memory Retention",
+  "dayN": "Day {{day}}",
+  "knowledgeDistribution": "Knowledge Mastery Distribution",
+  "target": "Target",
+  "loadingStats": "Loading statistics...",
+  "loadStatsFailed": "Failed to load statistics"
+}

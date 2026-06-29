@@ -1,0 +1,22 @@
+{
+  "title": "Create Graph Relation",
+  "sourceGraph": "Source Graph",
+  "targetGraph": "Target Graph",
+  "relationType": "Relation Type",
+  "prerequisite": "Prerequisite",
+  "prerequisiteDesc": "Must be mastered before learning target graph",
+  "extension": "Extension",
+  "extensionDesc": "Can be learned after mastering target graph",
+  "related": "Related",
+  "relatedDesc": "Two graphs are related to each other",
+  "crossDomain": "Cross-Domain",
+  "selectSource": "Select Source Graph",
+  "selectTarget": "Select Target Graph",
+  "selectRelationType": "Select Relation Type",
+  "contextOptional": "Context (Optional)",
+  "contextPlaceholder": "Describe the reason or background for this relation...",
+  "create": "Create Relation",
+  "creating": "Creating...",
+  "createSuccess": "Relation created successfully",
+  "createFailed": "Failed to create relation"
+}

@@ -1,0 +1,33 @@
+{
+  "title": "Custom AI Actions",
+  "createAction": "Create Action",
+  "newAction": "New Action",
+  "name": "Name",
+  "namePlaceholder": "e.g., Polish Content",
+  "mode": "Mode",
+  "modes": {
+    "showResult": "Show Result",
+    "updateNode": "Update Node",
+    "spawnChildren": "Spawn Children"
+  },
+  "description": "Description",
+  "descriptionPlaceholder": "Describe the function of this action...",
+  "contextVariables": "Context Variables Configuration",
+  "includeParent": "Include Parent Node",
+  "includeSiblings": "Include Sibling Nodes",
+  "includeChildren": "Include Child Nodes",
+  "promptTemplate": "Prompt Template",
+  "scopes": {
+    "system": "System",
+    "user": "User",
+    "graph": "Graph"
+  },
+  "noDescription": "No description",
+  "edit": "Edit",
+  "delete": "Delete",
+  "copy": "Copy",
+  "copyToCurrentLevel": "Copy to current level and edit",
+  "noActions": "No custom actions yet, click the top right to create",
+  "confirmDelete": "Are you sure you want to delete this action?",
+  "saveFailed": "Save failed"
+}

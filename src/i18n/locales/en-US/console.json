@@ -1,0 +1,131 @@
+{
+  "tabs": {
+    "console": "Console",
+    "performance": "Performance"
+  },
+  "toolbar": {
+    "history": "History",
+    "expand": "Expand",
+    "minimize": "Minimize",
+    "close": "Close"
+  },
+  "confirm": {
+    "cancelled": "❌ Operation cancelled",
+    "dangerTitle": "⚠️ Dangerous Operation Confirmation",
+    "dangerDesc": "You are about to execute: \"{{command}}\"\nThis operation may cause irreversible data changes or deletion.",
+    "warningTitle": "⚠️ Operation Confirmation",
+    "warningDesc": "You are about to execute: \"{{command}}\"",
+    "prompt": "Enter y to confirm, n to cancel."
+  },
+  "input": {
+    "searchHistory": "Search History:",
+    "searchPlaceholder": "Enter search keywords...",
+    "confirmPlaceholder": "Enter y to confirm / n to cancel",
+    "commandPlaceholder": "Enter command... (Tab for autocomplete, Ctrl+R to search history)"
+  },
+  "output": {
+    "clear": "Clear Output",
+    "helpHint": "Enter help to see available commands",
+    "shortcutHint": "Tab for autocomplete · Ctrl+R to search history · Esc to close",
+    "scrollMore": "Scroll up to view more history ({{count}} entries)"
+  },
+  "performance": {
+    "title": "AI Performance Monitor",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "clearLogs": "Clear Logs",
+    "clearConfirm": "Are you sure you want to clear all performance logs? This action cannot be undone.",
+    "timeRange": {
+      "today": "Today",
+      "week": "Last Week",
+      "month": "Last Month",
+      "all": "All"
+    },
+    "allOperations": "All Operations",
+    "showEmbedding": "Show Embedding",
+    "allProviders": "All Providers",
+    "allStatus": "All Status",
+    "success": "Success",
+    "failed": "Failed",
+    "stats": {
+      "totalRequests": "Total Requests",
+      "tokens": "Tokens",
+      "cost": "Cost",
+      "duration": "Duration"
+    },
+    "loading": "Loading...",
+    "noData": "No performance data",
+    "noDataHint": "Data will be recorded automatically when using AI features",
+    "noLogs": "No performance logs",
+    "showEmbeddingOps": "Show Embedding Operations",
+    "requests": "requests",
+    "standaloneRequests": "Standalone Requests",
+    "detail": {
+      "title": "Request Details",
+      "operation": "Operation Type",
+      "model": "Model",
+      "provider": "Provider",
+      "sessionId": "Session ID",
+      "status": "Status",
+      "totalTokens": "Total Tokens",
+      "estimatedCost": "Estimated Cost",
+      "duration": "Duration",
+      "time": "Time",
+      "tokenAnalysis": "📊 Token Analysis (Three-tier Pricing)",
+      "cachedInput": "🟢 Input Tokens (Cache Hit)",
+      "uncachedInput": "🔵 Input Tokens (Cache Miss)",
+      "outputToken": "🟣 Output Tokens",
+      "cacheHitRate": "Cache Hit Rate",
+      "cacheSaved": "💰 Saved by Cache",
+      "reasoningToken": "🧠 Reasoning Tokens (DeepSeek Reasoner)",
+      "errorMessage": "Error Message",
+      "metadata": "Metadata"
+    },
+    "operations": {
+      "generate-content": "Generate Content",
+      "expand-knowledge": "Expand Knowledge",
+      "annotate-terms": "Annotate Terms",
+      "generate-cards": "Generate Cards",
+      "chat": "Chat",
+      "tutor-chat": "Tutor Chat",
+      "extract-concepts": "Extract Concepts",
+      "text-to-graph": "Text to Graph",
+      "document-to-graph": "Document to Graph",
+      "branch-suggestions": "Branch Suggestions",
+      "cross-graph-connections": "Cross-Graph Connections",
+      "podcast-script": "Podcast Script",
+      "auto_graph_init": "Graph Initialization",
+      "auto_graph_expand": "Node Expansion",
+      "auto_graph_optimize_prompt": "Prompt Optimization",
+      "generateLearningMaterial": "Generate Learning Material",
+      "extractConcepts": "Extract Concepts",
+      "analyzeCrossGraphConnections": "Cross-Graph Connections Analysis",
+      "generateTaskDetails": "Generate Task Details",
+      "getBranchSuggestions": "Get Branch Suggestions",
+      "generateGraphFromImage": "Generate Graph From Image",
+      "suggestNextTopic": "Suggest Next Topic",
+      "extractMetadata": "Extract Metadata",
+      "literature_extract": "Literature Extract",
+      "tutorChat": "Tutor Chat",
+      "generateCards": "Generate Cards",
+      "expandKnowledge": "Expand Knowledge",
+      "classifyConcept": "Classify Concept",
+      "locateBackboneModule": "Locate Backbone Module",
+      "detectLiteratureType": "Detect Literature Type",
+      "backbone_generation": "Backbone Generation",
+      "backbone_validation": "Backbone Validation",
+      "rag_suggest_questions": "RAG Suggest Questions",
+      "generate_embedding": "Generate Embedding",
+      "generate_embedding_batch": "Batch Generate Embedding",
+      "generate_podcast_script": "Generate Podcast Script",
+      "text_to_graph": "Text to Graph",
+      "document_to_graph": "Document to Graph",
+      "image_to_graph": "Image to Graph"
+    },
+    "providers": {
+      "deepseek": "DeepSeek",
+      "volcengine": "Volcengine",
+      "aliyun": "Alibaba Cloud"
+    }
+  }
+}

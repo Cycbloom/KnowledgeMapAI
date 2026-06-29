@@ -1,0 +1,90 @@
+{
+  "title": "调度器统计",
+  "subtitle": "三层反馈队列任务调度系统运行数据",
+  "loading": "加载统计数据中...",
+  "loadFailed": "无法加载统计数据",
+  "periods": {
+    "day": "今日",
+    "week": "本周",
+    "month": "本月",
+    "year": "本年"
+  },
+  "metrics": {
+    "totalTasks": "总任务数",
+    "totalTasksSubtext": "统计周期内创建",
+    "completedTasks": "已完成任务",
+    "completionRate": "完成率 {{rate}}%",
+    "totalDuration": "总执行时长",
+    "totalDurationSubtext": "累计执行时间",
+    "avgDuration": "平均执行时长",
+    "avgDurationSubtext": "每个任务平均"
+  },
+  "queueDistribution": {
+    "title": "队列分布",
+    "q0": "Q0 高优先",
+    "q1": "Q1 中优先",
+    "q2": "Q2 低优先"
+  },
+  "dailyTrend": {
+    "title": "每日完成趋势",
+    "dayLabel": "{{day}}日",
+    "completed": "完成任务"
+  },
+  "durationTrend": {
+    "title": "执行时长趋势",
+    "duration": "执行时长"
+  },
+  "efficiency": {
+    "title": "效率分析 (分钟/任务)",
+    "value": "{{value}} 分钟/任务",
+    "label": "平均效率",
+    "name": "效率"
+  },
+  "heatmap": {
+    "title": "任务执行热力图",
+    "fullYear": "全年",
+    "activityLevel": "活跃度:",
+    "totalExecutions": "共 {{count}} 次执行",
+    "tooltip": "{{date}}: {{count}} 次执行, {{duration}}",
+    "months": {
+      "jan": "一月",
+      "feb": "二月",
+      "mar": "三月",
+      "apr": "四月",
+      "may": "五月",
+      "jun": "六月",
+      "jul": "七月",
+      "aug": "八月",
+      "sep": "九月",
+      "oct": "十月",
+      "nov": "十一月",
+      "dec": "十二月"
+    }
+  },
+  "history": {
+    "title": "执行历史",
+    "allStatus": "全部状态",
+    "loading": "加载中...",
+    "empty": "暂无执行记录",
+    "columns": {
+      "taskId": "任务ID",
+      "startedAt": "开始时间",
+      "endedAt": "结束时间",
+      "duration": "执行时长",
+      "queue": "队列",
+      "status": "状态"
+    }
+  },
+  "status": {
+    "completed": "已完成",
+    "interrupted": "已中断",
+    "timeSliceEnded": "时间片结束"
+  },
+  "durations": {
+    "minutes": "{{count}}分钟",
+    "hoursAndMinutes": "{{hours}}小时{{minutes}}分钟",
+    "minutesSeconds": "{{minutes}}分{{seconds}}秒",
+    "hoursOnly": "{{count}}小时",
+    "compactHoursMinutes": "{{hours}}h{{minutes}}m"
+  }
+}

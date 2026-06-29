@@ -1,0 +1,67 @@
+{
+  "tabs": {
+    "daily": "每日任务",
+    "periodic": "周期任务",
+    "pass": "通行证",
+    "achievements": "终身成就"
+  },
+  "level": "等级",
+  "totalXpEarned": "总获得经验: {{xp}} XP",
+  "xpProgress": "{{current}} / {{needed}} XP",
+  "xpToNextLevel": "再获得 {{xp}} XP 升级到 Level {{level}}",
+  "unlockedCount": "已解锁成就",
+  "taskTypes": {
+    "login": "每日登录",
+    "study_cards": "复习卡片",
+    "focus_time": "专注时刻",
+    "create_node": "创造知识"
+  },
+  "dailyTaskDesc": {
+    "login": "每日登录应用",
+    "study_cards": "复习 {{target}} 张知识卡片",
+    "focus_time": "专注学习 {{target}} 分钟",
+    "create_node": "创建 {{target}} 个新知识点",
+    "default": "完成任务"
+  },
+  "categories": {
+    "study": "学习成就",
+    "focus": "专注成就",
+    "creation": "创造者",
+    "streak": "连续成就",
+    "tasks": "任务成就",
+    "special": "特殊成就"
+  },
+  "streak": {
+    "title": "连续完成记录",
+    "daily": "每日任务连续",
+    "weekly": "周任务连续",
+    "monthly": "月任务连续",
+    "quarterly": "季度任务连续",
+    "nextMilestone": "下个里程碑: {{milestone}}"
+  },
+  "periodic": {
+    "weekly": "本周任务",
+    "monthly": "本月任务",
+    "quarterly": "本季度任务"
+  },
+  "pass": {
+    "weekly": "周通行证",
+    "monthly": "月通行证",
+    "quarterly": "季度通行证",
+    "level": "等级 {{level}}",
+    "points": "积分 {{current}}/{{max}}",
+    "levelShort": "级",
+    "noPassData": "暂无通行证数据",
+    "claim": "领取",
+    "claiming": "领取中",
+    "pointsRequired": "{{points}}分"
+  },
+  "dailyLogin": "每日登录",
+  "reviewCards": "复习卡片",
+  "focusTime": "专注时刻",
+  "createKnowledge": "创造知识",
+  "dailyTasks": "每日任务",
+  "periodicTasks": "周期任务",
+  "passTitle": "通行证",
+  "lifetimeAchievements": "终身成就"
+}

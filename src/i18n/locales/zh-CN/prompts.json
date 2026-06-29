@@ -1,0 +1,30 @@
+{
+  "categories": {
+    "templateGeneration": "模板生成"
+  },
+  "scenarios": {
+    "templateGeneration": "模板生成",
+    "templateGenerationDesc": "自定义各模板类型的 AI 生成指导文本"
+  },
+  "templateNames": {
+    "template_generation": "模板生成基础提示词",
+    "template_type_knowledge_tree": "知识树",
+    "template_type_skill_map": "技能图谱",
+    "template_type_concept_network": "概念网络",
+    "template_type_learning_path": "学习路径",
+    "template_type_topic_research": "专题研究",
+    "template_type_project_lifecycle": "项目生命周期",
+    "template_type_dev_workflow": "开发流程",
+    "template_type_task_breakdown": "任务分解",
+    "template_type_sprint_planning": "迭代规划",
+    "template_type_root_cause": "根因分析",
+    "template_type_swot": "SWOT 分析",
+    "template_type_comparison": "对比分析",
+    "template_type_decision_tree": "决策树",
+    "template_type_tech_ecosystem": "技术生态",
+    "template_type_org_structure": "组织架构",
+    "template_type_system_architecture": "系统架构",
+    "template_type_knowledge_system": "知识体系",
+    "template_type_blank": "空白图谱"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "title": "样式设置",
+  "tabs": {
+    "colors": "配色方案",
+    "links": "连接线样式",
+    "animations": "动画效果",
+    "nodes": "节点大小",
+    "edges": "边粗细",
+    "edgeSettings": "边设置"
+  },
+  "colorScheme": {
+    "selectTitle": "选择配色方案",
+    "currentScheme": "当前方案",
+    "levelModeHint": "当前处于\"结构\"着色模式，配色方案仅在\"状态\"模式下生效。",
+    "heatmapModeHint": "当前处于\"热力图\"着色模式，配色方案仅在\"状态\"模式下生效。",
+    "decayModeHint": "当前处于\"衰减\"着色模式，配色方案仅在\"状态\"模式下生效。"
+  },
+  "linkStyles": {
+    "curved": "曲线",
+    "straight": "直线",
+    "step": "折线",
+    "bezier": "贝塞尔"
+  },
+  "linkAnimations": {
+    "none": "无",
+    "flow": "流动",
+    "pulse": "脉冲",
+    "dash": "虚线"
+  },
+  "animationDesc": {
+    "title": "动画说明",
+    "flow": "连接线上的虚线会持续流动",
+    "pulse": "连接线会有呼吸般的明暗变化",
+    "dash": "显示为虚线样式",
+    "none": "不显示任何动画效果"
+  },
+  "nodeSizeMode": {
+    "title": "节点大小模式",
+    "fixed": {
+      "name": "固定大小",
+      "description": "所有节点使用相同大小"
+    },
+    "importance": {
+      "name": "按重要性",
+      "description": "根据节点重要性动态调整"
+    },
+    "degree": {
+      "name": "按连接度",
+      "description": "根据连接数调整大小"
+    },
+    "children": {
+      "name": "按子节点数",
+      "description": "根据子节点数量调整大小"
+    }
+  },
+  "edgeWidthMode": {
+    "title": "边粗细模式",
+    "fixed": {
+      "name": "固定粗细",
+      "description": "所有边使用相同粗细"
+    },
+    "strength": {
+      "name": "按连接强度",
+      "description": "根据连接强度动态调整"
+    },
+    "relationship": {
+      "name": "按关系类型",
+      "description": "根据关系类型调整粗细"
+    }
+  },
+  "edgeSettings": {
+    "showLabels": "显示标签",
+    "showLabelsDesc": "在边上显示关系类型或自定义标签",
+    "showArrows": "显示箭头",
+    "showArrowsDesc": "在有向关系上显示箭头",
+    "relationshipTypeManagement": "关系类型管理",
+    "relationshipTypeManagementDesc": "管理预设和自定义关系类型",
+    "manage": "管理",
+    "commonRelationshipTypes": "常用关系类型"
+  },
+  "actions": {
+    "cancel": "取消",
+    "confirm": "确定"
+  }
+}

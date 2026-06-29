@@ -1,0 +1,30 @@
+{
+  "loadingGraphs": "Loading...",
+  "selectGraphsTitle": "Select graphs to combine",
+  "nodeCount": "{{count}} nodes",
+  "startCombinedView": "Start Combined View ({{count}} graphs)",
+  "loadingCombinedView": "Loading combined view...",
+  "reselectGraphs": "Reselect graphs",
+  "title": "Combined View",
+  "summary": "{{graphCount}} graphs | {{visibleNodes}} / {{totalNodes}} knowledge points",
+  "layouts": {
+    "grouped": "Grouped Layout",
+    "merged": "Merged Layout",
+    "network": "Network Layout"
+  },
+  "actions": {
+    "addRemoveGraphs": "Add/Remove graphs"
+  },
+  "graphLabel": "Graph {{id}}",
+  "hidden": "(hidden)",
+  "stats": {
+    "totalNodes": "Total nodes:",
+    "sharedNodes": "Shared nodes:",
+    "edgesCount": "Edges:"
+  },
+  "nodeDetail": {
+    "belongingGraphs": "Belonging graphs:",
+    "shared": "Shared knowledge point",
+    "independent": "Independent knowledge point"
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "title": "Graph Map",
+  "empty": {
+    "noGraphs": "No Graphs",
+    "createFirst": "Create your first knowledge graph to start exploring",
+    "loading": "Loading graph map..."
+  },
+  "filter": {
+    "all": "All",
+    "prerequisite": "Prerequisite",
+    "extension": "Extension",
+    "related": "Related",
+    "crossDomain": "Cross-Domain"
+  },
+  "toolbar": {
+    "refresh": "Refresh",
+    "createRelation": "Create Relation",
+    "createGraph": "Create Graph",
+    "domainGenerate": "Domain Generate",
+    "manageDomains": "Manage Domains",
+    "manage": "Manage"
+  },
+  "analysis": {
+    "title": "AI Analysis",
+    "quick": "Quick Analysis",
+    "quickDesc": "AI discovers potential relations and cross-domain connections",
+    "deep": "Deep Analysis",
+    "deepDesc": "Progressive information gathering with deep analysis",
+    "custom": "Custom Analysis",
+    "customDesc": "Customize analysis goals and parameters"
+  },
+  "stats": {
+    "graphCount": "{{count}} graphs",
+    "relationCount": "{{count}} relations"
+  },
+  "graph": {
+    "openGraph": "Open Graph",
+    "addRelation": "Add Relation",
+    "selectRelated": "Select Related Graphs",
+    "setDomain": "Set Domain",
+    "nodeCount": "{{count}} nodes",
+    "relationCount": "{{count}} relations",
+    "quickCreate": "Quick Create Related Graph",
+    "prerequisite": "Prerequisite",
+    "extension": "Extension",
+    "related": "Related",
+    "aiExpand": "AI Expand",
+    "aiSmartExpand": "AI Smart Expand",
+    "aiExpandDesc": "Generate knowledge points or related knowledge network",
+    "generateQuestions": "Generate Questions",
+    "generateQuestionsDesc": "Generate learning questions for this graph's knowledge points",
+    "relatedGraphs": "Related Graphs",
+    "expandMore": "Expand More",
+    "collapse": "Collapse"
+  },
+  "combinedView": {
+    "title": "Combined View Mode",
+    "openCombined": "Open Combined",
+    "cancelSelection": "Cancel Selection"
+  },
+  "legend": {
+    "title": "Relation Type Legend",
+    "prerequisite": "Prerequisite",
+    "extension": "Extension",
+    "related": "Related",
+    "crossDomain": "Cross-Domain"
+  },
+  "crossDomain": {
+    "analyze": "Cross-Domain Analysis",
+    "analyzing": "Analyzing...",
+    "title": "Cross-Domain Insights Analysis",
+    "reanalyze": "Re-analyze"
+  },
+  "domainPicker": {
+    "title": "Set Domain",
+    "noDomains": "No available domains",
+    "batchTitle": "Batch Set Domain",
+    "batchDesc": "Set domain for {{count}} selected graphs"
+  },
+  "batch": {
+    "selected": "{{count}} graphs selected",
+    "createRelation": "Batch Create Relations",
+    "analyze": "Batch Analyze",
+    "setDomain": "Set Domain",
+    "delete": "Batch Delete",
+    "clearSelection": "Clear Selection",
+    "deleteConfirm": "Are you sure you want to delete {{count}} selected graphs? This action cannot be undone.",
+    "deleteSuccess": "Successfully deleted {{count}} graphs",
+    "deleteFailed": "Batch delete failed",
+    "setDomainSuccess": "Successfully set domain for {{count}} graphs",
+    "setDomainPartial": "Partial completion: {{success}} succeeded, {{fail}} failed",
+    "setDomainFailed": "Batch set domain failed"
+  },
+  "relation": {
+    "createSuccess": "Relation created successfully",
+    "createFailed": "Failed to create relation",
+    "deleteSuccess": "Relation deleted",
+    "deleteFailed": "Failed to delete relation",
+    "discoveryFailed": "Relation discovery failed"
+  },
+  "graphCreation": {
+    "success": "Graph created successfully",
+    "failed": "Failed to create graph",
+    "generatingContent": "Generating initial content..."
+  },
+  "expansion": {
+    "started": "Infinite expansion task started",
+    "startFailed": "Failed to start expansion",
+    "depthFailed": "Depth expansion failed",
+    "nodeExpandFailed": "Failed to expand node"
+  },
+  "prompt": {
+    "fetchFailed": "Failed to fetch prompt",
+    "saveSuccess": "Prompt saved",
+    "saveFailed": "Failed to save prompt",
+    "graphInit": "Graph Initialization (auto_graph_init)",
+    "nodeExpand": "Node Expansion (auto_graph_expand)",
+    "editInitPrompt": "Edit Graph Initialization Prompt",
+    "editExpandPrompt": "Edit Node Expansion Prompt",
+    "editWidthPrompt": "Edit Width Expansion Prompt"
+  },
+  "cards": {
+    "taskSubmitted": "Question generation task submitted to background",
+    "viewTasks": "View Tasks",
+    "generateFailed": "Failed to generate questions",
+    "knowledgePoints": "{{count}} knowledge points"
+  },
+  "domainManager": {
+    "title": "Domain Management",
+    "createDomain": "Create Domain",
+    "noDomains": "No domains",
+    "noDomainsHint": "Click the button above to create your first domain",
+    "nameRequired": "Name",
+    "descriptionOptional": "Description (Optional)",
+    "descriptionPlaceholder": "Describe this knowledge domain...",
+    "colorRequired": "Color",
+    "parentOptional": "Parent Domain (Optional)",
+    "noParent": "None (Top-level domain)",
+    "iconOptional": "Icon (Optional)",
+    "iconPlaceholder": "Enter icon name or emoji...",
+    "aiRecommend": "AI Recommend",
+    "applyColor": "Apply This Color",
+    "tryAnother": "Try Another",
+    "customColor": "Custom:",
+    "confirmDelete": "Delete \"{{name}}\"?",
+    "hasChildren": "This domain contains {{count}} sub-domains that will be deleted together"
+  },
+  "agentAnalysis": {
+    "title": "Agent Analysis",
+    "analyzing": "Analyzing...",
+    "graphNumber": "Graph {{number}}"
+  },
+  "analysisResult": {
+    "complete": "Analysis Complete",
+    "copied": "Copied",
+    "copy": "Copy",
+    "recommendedRelations": "Recommended Graph Relations",
+    "selected": "{{count}} items selected",
+    "applying": "Applying...",
+    "applySelected": "Apply Selected ({{count}})",
+    "relationTypes": {
+      "prerequisite": "Prerequisite",
+      "extension": "Extension",
+      "related": "Related",
+      "crossDomain": "Cross-Domain"
+    }
+  },
+  "analysisConfirm": {
+    "title": "Confirm Analysis",
+    "analysisType": "Analysis Type:",
+    "analysisGoal": "Analysis Goal",
+    "analysisGoalPlaceholder": "Describe your analysis goal, e.g., analyze knowledge relations between these graphs, find duplicate content to merge...",
+    "enterAnalysisGoal": "Please enter analysis goal",
+    "analysisScope": "Analysis Scope: {{count}} graphs selected",
+    "noGraphSelected": "No graphs selected",
+    "noGraphSelectedHint": "Please select graphs on the graph map to analyze, or analyze all graphs (will consume more TOKENS)",
+    "estimatedConsumption": "Estimated Consumption:",
+    "tokenRange": "Approx. {{min}} - {{max}} tokens",
+    "highTokenWarning": "Consider reducing graph count or selecting quick analysis mode",
+    "analyzing": "Analyzing...",
+    "startAnalysis": "Start Analysis",
+    "moreGraphs": "...{{count}} more graphs",
+    "mode": {
+      "quick": "Quick Analysis",
+      "quickDesc": "Quick scan of graphs with basic analysis results",
+      "deep": "Deep Analysis",
+      "deepDesc": "Progressive information gathering with deep knowledge structure analysis",
+      "custom": "Custom Analysis",
+      "customDesc": "Targeted analysis based on custom goals"
+    }
+  },
+  "sessionLog": {
+    "analysisProcess": "Analysis Process",
+    "toolCalls": "{{count}} tool calls",
+    "callTool": "Call tool: {{tool}}"
+  },
+  "skillSelector": {
+    "selectedForAnalysis": "{{count}} graphs selected for analysis",
+    "selectType": "Select Analysis Type"
+  }
+}

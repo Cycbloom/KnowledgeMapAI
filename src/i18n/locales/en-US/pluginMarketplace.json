@@ -1,0 +1,19 @@
+{
+  "title": "Plugin Marketplace",
+  "browse": "Browse Plugins",
+  "installed": "Installed",
+  "searchPlaceholder": "Search plugins...",
+  "allCategories": "All Categories",
+  "loading": "Loading...",
+  "noPlugins": "No plugins found",
+  "noInstalledPlugins": "No plugins installed yet. Browse the marketplace to find plugins!",
+  "install": "Install",
+  "installing": "Installing...",
+  "uninstall": "Uninstall",
+  "activate": "Activate",
+  "deactivate": "Deactivate",
+  "stateActive": "Active",
+  "stateInactive": "Inactive",
+  "stateError": "Error",
+  "unknownPlugin": "Unknown Plugin"
+}

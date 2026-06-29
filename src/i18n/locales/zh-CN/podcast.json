@@ -1,0 +1,10 @@
+{
+  "title": "AI 知识播客",
+  "deepDive": "为您深度解读 \"{{title}}\"",
+  "generating": "正在为您撰写播客脚本...",
+  "generatingHint": "AI 正在分析图谱结构，提取核心概念，并生成一段生动的语音讲解。",
+  "noScript": "暂无脚本内容",
+  "clickToGenerate": "点击生成",
+  "regenerate": "重新生成脚本",
+  "stopPlayback": "停止播放"
+}

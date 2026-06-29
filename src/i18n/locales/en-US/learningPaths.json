@@ -1,0 +1,61 @@
+{
+  "title": "Learning Paths",
+  "subtitle": "Manage your learning plans",
+  "status": {
+    "all": "All",
+    "active": "In Progress",
+    "completed": "Completed",
+    "paused": "Paused",
+    "archived": "Archived"
+  },
+  "actions": {
+    "newPath": "New Path",
+    "createPath": "Create Learning Path",
+    "delete": "Delete",
+    "pause": "Pause",
+    "complete": "Complete",
+    "continue": "Continue Learning"
+  },
+  "search": {
+    "placeholder": "Search learning paths..."
+  },
+  "empty": {
+    "noResults": "No matching learning paths found",
+    "noPaths": "No learning paths yet",
+    "tryDifferent": "Try different search criteria",
+    "createFirst": "Click the button above to create your first learning path"
+  },
+  "card": {
+    "noDescription": "No description",
+    "progress": "Learning Progress",
+    "nodes": "{{count}} nodes",
+    "dailyMinutes": "{{count}} min daily"
+  },
+  "time": {
+    "minutes": "{{count}} min",
+    "hours": "{{count}} hr",
+    "hoursMinutes": "{{hours}}h {{minutes}}m"
+  },
+  "createDialog": {
+    "title": "Create Learning Path",
+    "pathName": "Path Name",
+    "pathNamePlaceholder": "e.g., Advanced React Learning",
+    "description": "Description",
+    "descriptionPlaceholder": "Briefly describe this learning path...",
+    "goal": "Learning Goal",
+    "goalPlaceholder": "e.g., Master React Hooks and State Management",
+    "dailyStudyTime": "Daily Study Time",
+    "targetDate": "Target Completion Date",
+    "creating": "Creating...",
+    "createNow": "Create Now"
+  },
+  "messages": {
+    "createSuccess": "Learning path created successfully!",
+    "createFailed": "Failed to create learning path",
+    "deleteConfirm": "Are you sure you want to delete the learning path \"{{title}}\"?",
+    "deleteSuccess": "Learning path deleted",
+    "deleteFailed": "Failed to delete learning path",
+    "statusUpdated": "Status updated",
+    "statusUpdateFailed": "Failed to update status"
+  }
+}

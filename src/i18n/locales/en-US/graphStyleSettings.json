@@ -1,0 +1,85 @@
+{
+  "title": "Style Settings",
+  "tabs": {
+    "colors": "Color Scheme",
+    "links": "Link Style",
+    "animations": "Animation",
+    "nodes": "Node Size",
+    "edges": "Edge Width",
+    "edgeSettings": "Edge Settings"
+  },
+  "colorScheme": {
+    "selectTitle": "Choose a color scheme",
+    "currentScheme": "Current scheme",
+    "levelModeHint": "Currently in \"Structure\" coloring mode. Color schemes only take effect in \"Status\" mode.",
+    "heatmapModeHint": "Currently in \"Heatmap\" coloring mode. Color schemes only take effect in \"Status\" mode.",
+    "decayModeHint": "Currently in \"Decay\" coloring mode. Color schemes only take effect in \"Status\" mode."
+  },
+  "linkStyles": {
+    "curved": "Curved",
+    "straight": "Straight",
+    "step": "Step",
+    "bezier": "Bezier"
+  },
+  "linkAnimations": {
+    "none": "None",
+    "flow": "Flow",
+    "pulse": "Pulse",
+    "dash": "Dashed"
+  },
+  "animationDesc": {
+    "title": "Animation Description",
+    "flow": "The dashed line on the connection will flow continuously",
+    "pulse": "The connection will have a breathing-like brightening and dimming effect",
+    "dash": "Displayed as a dashed line style",
+    "none": "No animation effect is displayed"
+  },
+  "nodeSizeMode": {
+    "title": "Node Size Mode",
+    "fixed": {
+      "name": "Fixed Size",
+      "description": "All nodes use the same size"
+    },
+    "importance": {
+      "name": "By Importance",
+      "description": "Dynamically adjusted based on node importance"
+    },
+    "degree": {
+      "name": "By Degree",
+      "description": "Adjusted based on the number of connections"
+    },
+    "children": {
+      "name": "By Children Count",
+      "description": "Adjusted based on the number of child nodes"
+    }
+  },
+  "edgeWidthMode": {
+    "title": "Edge Width Mode",
+    "fixed": {
+      "name": "Fixed Width",
+      "description": "All edges use the same width"
+    },
+    "strength": {
+      "name": "By Connection Strength",
+      "description": "Dynamically adjusted based on connection strength"
+    },
+    "relationship": {
+      "name": "By Relationship Type",
+      "description": "Adjusted based on relationship type"
+    }
+  },
+  "edgeSettings": {
+    "showLabels": "Show Labels",
+    "showLabelsDesc": "Display relationship type or custom labels on edges",
+    "showArrows": "Show Arrows",
+    "showArrowsDesc": "Display arrows on directed relationships",
+    "relationshipTypeManagement": "Relationship Type Management",
+    "relationshipTypeManagementDesc": "Manage preset and custom relationship types",
+    "manage": "Manage",
+    "commonRelationshipTypes": "Common Relationship Types"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  }
+}

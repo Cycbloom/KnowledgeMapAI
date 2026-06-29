@@ -1,0 +1,36 @@
+{
+  "title": "Trash",
+  "subtitle": "View and manage deleted graphs. You can restore them or permanently delete.",
+  "loading": "Loading trash...",
+  "loadFailed": "Failed to load trash",
+  "searchPlaceholder": "Search deleted graphs...",
+  "selectAll": "Select All",
+  "deselectAll": "Deselect All",
+  "selected": "{{count}} items selected",
+  "batchRestore": "Batch Restore",
+  "batchDelete": "Batch Delete",
+  "empty": "Trash is empty",
+  "emptyHint": "Recently deleted graphs will appear here.",
+  "noResults": "No matching graphs found",
+  "noResultsHint": "Try different search keywords",
+  "noDescription": "No description",
+  "deletedAt": "Deleted At",
+  "restoreGraph": "Restore Graph",
+  "permanentDelete": "Permanent Delete",
+  "confirmDelete": {
+    "title": "Permanently Delete Graph",
+    "batchTitle": "Batch Permanently Delete Graphs",
+    "message": "Are you sure you want to permanently delete {{target}}? This action cannot be undone and all data will be lost!",
+    "confirm": "Permanently Delete"
+  },
+  "messages": {
+    "restoreSuccess": "Graph restored",
+    "restoreFailed": "Restore failed",
+    "batchRestoreSuccess": "{{count}} graphs restored",
+    "batchRestoreFailed": "Batch restore failed",
+    "deleteSuccess": "Graph permanently deleted",
+    "deleteFailed": "Delete failed",
+    "batchDeleteSuccess": "{{count}} graphs permanently deleted",
+    "batchDeleteFailed": "Batch delete failed"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "task": {
+    "vsLastWeek": "较上周",
+    "completionTrend": "任务完成趋势（近30天）",
+    "completed": "完成数",
+    "cumulative": "累计完成",
+    "timeDistribution": "时间分布热力图",
+    "days": {
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六",
+      "sun": "周日"
+    },
+    "completedCount": "{{count}} 个任务",
+    "less": "少",
+    "more": "多",
+    "queueEfficiency": "队列效率分析",
+    "focusQueue": "专注队列",
+    "standardQueue": "标准队列",
+    "backgroundQueue": "后台队列",
+    "tasks": "任务",
+    "avgDuration": "平均时长",
+    "minutes": "分钟",
+    "tagAnalysis": "标签分析",
+    "completionRate": "完成率",
+    "taskCount": "任务数",
+    "priorityAnalysis": "优先级分析",
+    "smartInsights": "智能洞察",
+    "generating": "生成中...",
+    "regenerate": "重新生成",
+    "noInsights": "暂无洞察数据，点击生成按钮获取 AI 分析",
+    "noData": "暂无数据，开始创建任务后将显示统计信息",
+    "loadFailed": "加载失败，请重试",
+    "loadingData": "正在加载任务统计数据..."
+  },
+  "activity": {
+    "title": "学习活跃度",
+    "reviewCount": "{{count}} 次复习",
+    "less": "少",
+    "more": "多"
+  },
+  "metric": {
+    "todayCompleted": "今日完成",
+    "weekCompleted": "本周完成",
+    "monthCompleted": "本月完成",
+    "avgDuration": "平均时长",
+    "tasks": "任务",
+    "minutes": "分钟"
+  }
+}

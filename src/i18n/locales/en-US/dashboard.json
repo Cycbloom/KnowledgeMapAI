@@ -1,0 +1,78 @@
+{
+  "title": "My Knowledge Graphs",
+  "subtitle": "Build, visualize, and explore your personalized knowledge network.",
+  "stats": {
+    "graphs": "graphs",
+    "nodes": "nodes",
+    "created": "You have created",
+    "graphsUnit": "knowledge graphs",
+    "contains": "containing",
+    "nodesUnit": "nodes",
+    "keepGoing": ". Keep it up, build your knowledge system!",
+    "statistics": "Statistics"
+  },
+  "search": {
+    "placeholder": "Search graphs and nodes...",
+    "keyword": "Keyword",
+    "semantic": "Semantic"
+  },
+  "view": {
+    "cardView": "Card View",
+    "listView": "List View"
+  },
+  "actions": {
+    "select": "Select",
+    "cancelSelect": "Cancel Selection",
+    "cancel": "Cancel",
+    "import": "Import",
+    "importing": "Importing...",
+    "graphMap": "Graph Map",
+    "aiGenerate": "AI Generate"
+  },
+  "create": {
+    "title": "Create New Graph",
+    "fromTemplate": "Create from Template",
+    "nodeCount": "{{count}} nodes",
+    "noDescription": "No description",
+    "graphName": "Graph Name",
+    "namePlaceholder": "e.g., JavaScript Core Concepts",
+    "duplicateTopic": "Duplicate Topic",
+    "similarTo": "{{similarity}}% similar to existing graph \"{{title}}\"",
+    "description": "Description",
+    "optional": "optional",
+    "descriptionPlaceholder": "Briefly describe the content of this graph...",
+    "creating": "Creating...",
+    "createNow": "Create Now"
+  },
+  "batch": {
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selected": "{{count}} items selected",
+    "deleting": "Deleting...",
+    "batchDelete": "Batch Delete"
+  },
+  "empty": {
+    "noResults": "No matching graphs found",
+    "startJourney": "Start Your Knowledge Journey",
+    "tryDifferent": "Try different search keywords",
+    "createOrImport": "Create a new knowledge graph, or import existing Markdown/JSON/OPML files.",
+    "createFirst": "Create First Graph"
+  },
+  "list": {
+    "title": "Title",
+    "description": "Description",
+    "nodes": "Nodes",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "actions": "Actions"
+  },
+  "card": {
+    "noDescription": "No description",
+    "nodes": "nodes",
+    "openMindMap": "Open Mind Map",
+    "favorite": "Favorite Graph",
+    "unfavorite": "Unfavorite",
+    "delete": "Delete Graph",
+    "enterOutline": "Enter Outline"
+  }
+}

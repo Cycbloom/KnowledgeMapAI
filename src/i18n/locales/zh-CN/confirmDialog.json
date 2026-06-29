@@ -1,0 +1,6 @@
+{
+  "enterToConfirm": "请输入 \"{{text}}\" 以确认操作",
+  "enterPlaceholder": "输入 {{text}}",
+  "cancel": "取消",
+  "confirm": "确认"
+}

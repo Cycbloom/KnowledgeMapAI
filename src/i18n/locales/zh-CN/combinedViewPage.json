@@ -1,0 +1,30 @@
+{
+  "loadingGraphs": "加载中...",
+  "selectGraphsTitle": "选择要联立展示的图谱",
+  "nodeCount": "{{count}} 个节点",
+  "startCombinedView": "开始联立视图 ({{count}} 个图谱)",
+  "loadingCombinedView": "加载联立视图...",
+  "reselectGraphs": "重新选择图谱",
+  "title": "联立视图",
+  "summary": "{{graphCount}} 个图谱 | {{visibleNodes}} / {{totalNodes}} 个知识点",
+  "layouts": {
+    "grouped": "分组布局",
+    "merged": "融合布局",
+    "network": "网络布局"
+  },
+  "actions": {
+    "addRemoveGraphs": "添加/移除图谱"
+  },
+  "graphLabel": "图谱 {{id}}",
+  "hidden": "(隐藏)",
+  "stats": {
+    "totalNodes": "总知识点:",
+    "sharedNodes": "共享知识点:",
+    "edgesCount": "边数量:"
+  },
+  "nodeDetail": {
+    "belongingGraphs": "所属图谱:",
+    "shared": "共享知识点",
+    "independent": "独立知识点"
+  }
+}

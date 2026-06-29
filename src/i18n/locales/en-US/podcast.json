@@ -1,0 +1,10 @@
+{
+  "title": "AI Knowledge Podcast",
+  "deepDive": "Deep dive into \"{{title}}\"",
+  "generating": "Writing podcast script...",
+  "generatingHint": "AI is analyzing the graph structure, extracting core concepts, and generating an engaging audio explanation.",
+  "noScript": "No script content",
+  "clickToGenerate": "Click to generate",
+  "regenerate": "Regenerate script",
+  "stopPlayback": "Stop playback"
+}

@@ -1,0 +1,12 @@
+{
+  "method": "Method",
+  "mechanism": "Mechanism",
+  "operation": "Operation",
+  "concept": "Concept",
+  "technology": "Technology",
+  "tool": "Tool",
+  "theory": "Theory",
+  "finding": "Finding",
+  "trend": "Trend",
+  "challenge": "Challenge"
+}

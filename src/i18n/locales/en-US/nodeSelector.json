@@ -1,0 +1,17 @@
+{
+  "title": "Select Nodes",
+  "searchPlaceholder": "Search nodes...",
+  "selectAll": "Select All",
+  "deselectAll": "Deselect All",
+  "selected": "{{count}} nodes selected",
+  "confirm": "Confirm Selection",
+  "noNodes": "No nodes",
+  "levelLabels": {
+    "root": "Core Topic",
+    "core": "Main Concept",
+    "sub": "Sub Knowledge",
+    "normal": "Specific Content",
+    "leaf": "Example Details"
+  },
+  "unnamedNode": "Unnamed Node"
+}

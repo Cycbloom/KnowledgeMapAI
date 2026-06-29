@@ -23,6 +23,7 @@ import {
 import { UserTask, TaskSubtask } from "@shared/types";
 import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
+import { formatDurationMinutes } from "../../utils/formatters";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 interface TaskCardProps {
@@ -183,14 +184,6 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return "--";
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
   };
 
   const formatDeadline = (date?: string) => {
@@ -465,7 +458,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
           {task.estimated_duration && (
             <div className="flex items-center gap-1">
               <Clock size={12} className={queueStyle.text} />
-              <span>{formatDuration(task.estimated_duration)}</span>
+              <span>{formatDurationMinutes(task.estimated_duration)}</span>
             </div>
           )}
 

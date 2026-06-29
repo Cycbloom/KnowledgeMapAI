@@ -2,21 +2,12 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
 import type { TimerMode } from "@shared/types";
-import { DEFAULT_SETTINGS } from "./useFocusStore";
+import { DEFAULT_SETTINGS, useFocusStore } from "./useFocusStore";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 
 // ---------------------------------------------------------------------------
 // State & Actions
 // ---------------------------------------------------------------------------
-
-interface FocusSettings {
-  focusDuration: number;
-  shortBreakDuration: number;
-  longBreakDuration: number;
-  longBreakInterval: number;
-  autoStartBreak: boolean;
-  autoStartPomodoro: boolean;
-}
 
 interface TimerState {
   taskId: string | null;
@@ -32,7 +23,6 @@ interface TimerState {
   progress: number; // 0-100, derived from totalTime & timeLeft
   /** 每次 focus 番茄完成时回调，传入本次 focus 的已跑秒数 */
   onFocusSessionComplete?: (elapsedSeconds: number) => void;
-  focusSettings: FocusSettings;
 }
 
 interface TimerActions {
@@ -64,7 +54,6 @@ interface TimerActions {
   setOnFocusSessionComplete: (
     cb: ((elapsedSeconds: number) => void) | undefined,
   ) => void;
-  syncFocusSettings: (settings: Partial<FocusSettings>) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,7 +92,6 @@ function clearTimerInterval(): void {
 function transitionToNextMode(
   completedMode: TimerMode,
   completedSessions: number,
-  settings: FocusSettings,
 ): Partial<TimerState> {
   const {
     shortBreakDuration,
@@ -112,7 +100,7 @@ function transitionToNextMode(
     longBreakInterval,
     autoStartBreak,
     autoStartPomodoro,
-  } = settings;
+  } = useFocusStore.getState();
 
   if (completedMode === "focus") {
     const isLongBreak =
@@ -162,7 +150,6 @@ const initialState: TimerState = {
   completedSessions: 0,
   startTimeRef: null,
   progress: 0,
-  focusSettings: { ...DEFAULT_SETTINGS },
 };
 
 // ---------------------------------------------------------------------------
@@ -247,7 +234,6 @@ const useTimerStore = create<TimerState & TimerActions>()(
         const transition = transitionToNextMode(
           completedMode,
           newCompletedSessions,
-          get().focusSettings,
         );
 
         clearTimerInterval();
@@ -287,7 +273,7 @@ const useTimerStore = create<TimerState & TimerActions>()(
         const newCompletedSessions =
           mode === "focus" ? completedSessions + 1 : completedSessions;
 
-        const transition = transitionToNextMode(mode, newCompletedSessions, get().focusSettings);
+        const transition = transitionToNextMode(mode, newCompletedSessions);
 
         clearTimerInterval();
 
@@ -328,7 +314,7 @@ const useTimerStore = create<TimerState & TimerActions>()(
           focusDuration: fd,
           shortBreakDuration: sbd,
           longBreakDuration: lbd,
-        } = get().focusSettings;
+        } = useFocusStore.getState();
         let duration = fd;
         if (newMode === "shortBreak") duration = sbd;
         if (newMode === "longBreak") duration = lbd;
@@ -350,7 +336,7 @@ const useTimerStore = create<TimerState & TimerActions>()(
 
         const { mode } = get();
         const { focusDuration, shortBreakDuration, longBreakDuration } =
-          get().focusSettings;
+          useFocusStore.getState();
         let duration = focusDuration;
         if (mode === "shortBreak") duration = shortBreakDuration;
         if (mode === "longBreak") duration = longBreakDuration;
@@ -369,12 +355,6 @@ const useTimerStore = create<TimerState & TimerActions>()(
 
       setSubtask: (subtaskId) => {
         set({ subtaskId });
-      },
-
-      syncFocusSettings: (settings) => {
-        set((state) => ({
-          focusSettings: { ...state.focusSettings, ...settings },
-        }));
       },
 
       setOnFocusSessionComplete: (cb) => {

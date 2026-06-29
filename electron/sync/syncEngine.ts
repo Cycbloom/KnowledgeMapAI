@@ -3,6 +3,7 @@ import { DatabaseManager } from '../db/database';
 import { TABLES } from '../db/schema';
 import type { SyncStatus } from '../../shared/types/ipc';
 import { mergeOperations as sharedMergeOperations } from '../../shared/sync/operationMerger';
+import { withRetry } from '../../shared/utils/retry';
 import { logger } from '../utils/logger';
 
 interface SyncConfig {
@@ -153,7 +154,7 @@ export class SyncEngine {
       const port = this.apiPort;
       if (!port) return;
 
-      const response = await this.retryWithBackoff(async () => {
+      const response = await withRetry(async () => {
         const resp = await fetch(`http://localhost:${port}/api/sync/pull`, {
           method: 'POST',
           headers: {
@@ -171,6 +172,14 @@ export class SyncEngine {
         }
 
         return resp;
+      }, {
+        maxRetries: this.config.maxRetries,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        shouldRetry: (err) => this.isRetryableError(err),
+        onRetry: (attempt, err) => {
+          logger.warn(`[SyncEngine] 重试 ${attempt}/${this.config.maxRetries}：${err.message}`);
+        },
       });
 
       const result = (await response.json()) as { data: Record<string, { records: unknown[]; timestamp: string }> };
@@ -259,7 +268,7 @@ export class SyncEngine {
           return mergedOp?.id ?? op.id;
         });
 
-        const response = await this.retryWithBackoff(async () => {
+        const response = await withRetry(async () => {
           const resp = await fetch(`http://localhost:${port}/api/sync/push`, {
             method: 'POST',
             headers: {
@@ -277,6 +286,14 @@ export class SyncEngine {
           }
 
           return resp;
+        }, {
+          maxRetries: this.config.maxRetries,
+          initialDelay: 1000,
+          maxDelay: 10000,
+          shouldRetry: (err) => this.isRetryableError(err),
+          onRetry: (attempt, err) => {
+            logger.warn(`[SyncEngine] 重试 ${attempt}/${this.config.maxRetries}：${err.message}`);
+          },
         });
 
         const result = (await response.json()) as {
@@ -386,32 +403,6 @@ export class SyncEngine {
     } catch (error) {
       logger.error('[SyncEngine] 清理操作日志失败', error);
     }
-  }
-
-  // Retry a function with exponential backoff. Retries only on retryable errors
-  // (network/timeout/5xx); 4xx errors fail immediately. Uses config.maxRetries by default.
-  private async retryWithBackoff<T>(
-    fn: () => Promise<T>,
-    maxRetries?: number,
-    initialDelay: number = 1000
-  ): Promise<T> {
-    const retries = maxRetries ?? this.config.maxRetries;
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        return await fn();
-      } catch (error) {
-        const lastError = error instanceof Error ? error : new Error(String(error));
-        const isRetryable = this.isRetryableError(error);
-        if (!isRetryable || attempt === retries) {
-          throw lastError;
-        }
-        const delay = initialDelay * Math.pow(2, attempt);
-        logger.warn(`[SyncEngine] 重试 ${attempt + 1}/${retries}，等待 ${delay}ms: ${lastError.message}`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-    // Unreachable: loop always returns or throws
-    throw new Error('retryWithBackoff: exhausted retries unexpectedly');
   }
 
   // Determine if an error is retryable. Network/timeout/5xx are retryable; 4xx are not.

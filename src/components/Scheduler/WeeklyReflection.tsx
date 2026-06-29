@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { taskReviewApi, TaskReview, Mood } from '../../services/api/review';
 import { api } from '../../services/api';
+import { formatDuration } from '../../utils/formatters';
 import type {UserTaskStats} from '@shared/types';
 
 interface WeeklyReflectionProps {
@@ -124,15 +125,6 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
     }
   };
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-    }
-    return `${mins}分钟`;
-  };
-
   const getMoodDistribution = () => {
     const distribution: Record<Mood, number> = {
       great: 0, good: 0, neutral: 0, tired: 0, stressed: 0
@@ -217,7 +209,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
                     <div className="text-3xl font-bold text-emerald-500">
-                      {formatDuration(weekStats?.total_duration || 0)}
+                      {formatDuration(weekStats?.total_duration || 0, { emptyText: "0分钟" })}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">专注时长</div>
                   </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TEMPLATE_CATEGORIES, getCategoryBgClass, getCategoryTextClass } from '../../services/api/template';
+import { TEMPLATE_CATEGORIES, getCategoryBgClass, getCategoryTextClass } from '../../services/api/taskTemplates';
 
 interface TemplateCategoryProps {
   selectedCategory: string | null;

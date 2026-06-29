@@ -17,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "@/hooks/queries";
+import { formatDurationMs as formatDuration } from "@/utils/formatters";
 import type { AIPerformanceLog, AIProviderType } from "@shared/types";
 
 interface PerformanceTabProps {
@@ -24,12 +25,6 @@ interface PerformanceTabProps {
 }
 
 const EMPTY_LOGS: AIPerformanceLog[] = [];
-
-const formatDuration = (ms: number): string => {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${(ms / 60000).toFixed(1)}min`;
-};
 
 const formatCost = (cost: number): string => {
   if (cost < 0.01) return `¥${cost.toFixed(4)}`;

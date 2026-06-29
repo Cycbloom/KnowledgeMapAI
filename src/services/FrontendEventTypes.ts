@@ -118,15 +118,6 @@ export interface AchievementUnlockedPayload {
   icon?: string;
 }
 
-export interface FocusSettingsChangedPayload {
-  focusDuration: number;
-  shortBreakDuration: number;
-  longBreakDuration: number;
-  longBreakInterval: number;
-  autoStartBreak: boolean;
-  autoStartPomodoro: boolean;
-}
-
 export interface FocusSessionCompletedPayload {
   taskId: string | null;
   startTimeRef: Date | null;
@@ -158,6 +149,5 @@ export interface FrontendEventMap extends Record<string, unknown> {
   message_show: MessageShowPayload;
   message_hide: MessageHidePayload;
   achievement_unlocked: AchievementUnlockedPayload;
-  focus_settings_changed: FocusSettingsChangedPayload;
   focus_session_completed: FocusSessionCompletedPayload;
 }

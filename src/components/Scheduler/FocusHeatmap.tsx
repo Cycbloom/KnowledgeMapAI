@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { api } from '../../services/api';
+import { formatDuration } from '../../utils/formatters';
 import type {HeatmapData} from '@shared/types';
 
 interface FocusHeatmapProps {
@@ -34,15 +35,6 @@ const getColorForDuration = (duration: number, maxDuration: number): string => {
   if (intensity < 0.5) return "bg-emerald-400 dark:bg-emerald-700";
   if (intensity < 0.75) return "bg-emerald-500 dark:bg-emerald-600";
   return "bg-emerald-600 dark:bg-emerald-500";
-};
-
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}小时${minutes > 0 ? `${minutes}分钟` : ""}`;
-  }
-  return `${minutes}分钟`;
 };
 
 interface DayCellProps {
@@ -99,7 +91,7 @@ const DayCell: React.FC<DayCellProps> = ({
               {duration > 0 ? (
                 <>
                   <p className="text-emerald-400">
-                    {formatDuration(duration)} 专注
+                    {formatDuration(duration, { emptyText: "0分钟" })} 专注
                   </p>
                   <p className="text-slate-400">{count} 次会话</p>
                 </>

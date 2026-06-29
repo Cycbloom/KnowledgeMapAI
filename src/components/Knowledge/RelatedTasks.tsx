@@ -14,6 +14,7 @@ import {
   ListTodo,
 } from "lucide-react";
 import { useSchedulerTasks } from "../../hooks";
+import { formatDurationMinutes } from "../../utils/formatters";
 import type { UserTask, UserTaskStatus } from "@shared/types";
 
 interface RelatedTasksProps {
@@ -76,14 +77,6 @@ const QUEUE_COLORS = {
     badge:
       "bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-500/20 dark:text-tertiary-300",
   },
-};
-
-const formatDuration = (minutes?: number): string => {
-  if (!minutes) return "--";
-  if (minutes < 60) return `${minutes}分钟`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
 };
 
 const formatDeadline = (date?: string): { text: string; color: string } | null => {
@@ -317,7 +310,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
                       {task.estimated_duration && (
                         <div className="flex items-center gap-1">
                           <Clock size={12} className={queueStyle.text} />
-                          <span>{formatDuration(task.estimated_duration)}</span>
+                          <span>{formatDurationMinutes(task.estimated_duration)}</span>
                         </div>
                       )}
 

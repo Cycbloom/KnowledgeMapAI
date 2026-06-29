@@ -15,14 +15,14 @@ import {
   Plus,
 } from "lucide-react";
 import {
-  templateApi,
+  taskTemplatesApi,
   TaskTemplate,
   TemplateCategory,
   extractPlaceholders,
   applyTemplatePlaceholders,
   getCategoryBgClass,
   getCategoryTextClass,
-} from "../../services/api/template";
+} from "../../services/api/taskTemplates";
 import { useTheme } from "../../hooks";
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -81,7 +81,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      const response = await templateApi.getTemplates();
+      const response = await taskTemplatesApi.getTemplates();
       if (response.success) {
         setTemplates(response.data || []);
       }
@@ -94,7 +94,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   const loadCategories = async () => {
     try {
-      const response = await templateApi.getCategories();
+      const response = await taskTemplatesApi.getCategories();
       if (response.data) {
         setCategories(response.data);
       }

@@ -412,6 +412,7 @@ export const UnifiedWorkbench: React.FC = () => {
     }
   }, []);
 
+  // 保留本地实现：依赖 i18n 翻译键，无法直接使用 @/utils/formatters
   const formatDuration = (minutes: number) => {
     if (minutes === 0) return t("unifiedWorkbench.durations.zeroMinutes");
     if (minutes < 60) return t("unifiedWorkbench.durations.minutesWithValue", { count: minutes });

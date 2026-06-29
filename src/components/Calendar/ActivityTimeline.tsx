@@ -2,6 +2,7 @@ import React from "react";
 import { Brain, RotateCcw, Route, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../hooks";
+import { formatDuration } from "../../utils/formatters";
 import { ActivityEvent, ACTIVITY_TYPE_CONFIG } from "../../types/calendar";
 
 interface ActivityTimelineProps {
@@ -41,17 +42,6 @@ const COLOR_MAP: Record<
     dot: "bg-indigo-500",
   },
 };
-
-function formatDuration(seconds?: number): string {
-  if (!seconds) return "";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}分钟`;
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0
-    ? `${hours}小时${remainingMinutes}分钟`
-    : `${hours}小时`;
-}
 
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString("zh-CN", {
@@ -118,7 +108,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                   <span
                     className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
                   >
-                    {formatDuration(activity.duration)}
+                    {formatDuration(activity.duration, { emptyText: "" })}
                   </span>
                 )}
               </div>

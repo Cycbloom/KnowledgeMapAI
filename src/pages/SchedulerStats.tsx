@@ -185,6 +185,7 @@ const DailyTrendChart = ({ data }: { data: { date: string; completed: number; du
 
 const DurationTrendChart = ({ data }: { data: { date: string; completed: number; duration: number }[] }) => {
   const { t } = useTranslation();
+  // 保留本地实现：依赖 i18n 翻译键，无法直接使用 @/utils/formatters
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return t('schedulerStats.durations.minutes', { count: minutes });
@@ -293,6 +294,7 @@ const SchedulerHeatmap = ({ data, year, month, onYearChange, onMonthChange }: {
     return 'shadow-[0_0_15px_rgba(6,182,212,0.9)]';
   };
 
+  // 保留本地实现：依赖 i18n 翻译键，无法直接使用 @/utils/formatters
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return t('schedulerStats.durations.minutes', { count: minutes });
@@ -393,6 +395,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
   const { t } = useTranslation();
   const { data, isLoading, refetch } = useExecutions(filters);
 
+  // 保留本地实现：依赖 i18n 翻译键，输出分秒格式
   const formatDuration = (seconds?: number) => {
     if (!seconds) return '-';
     const minutes = Math.floor(seconds / 60);
@@ -599,6 +602,7 @@ export const SchedulerStats = () => {
   const { data: stats, isLoading: statsLoading, error: statsError } = useSchedulerStats(period);
   const { data: heatmapData } = useHeatmap(heatmapYear, heatmapMonth);
 
+  // 保留本地实现：依赖 i18n 翻译键，无法直接使用 @/utils/formatters
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);

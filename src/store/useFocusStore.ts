@@ -72,16 +72,6 @@ export const useFocusStore = createPersistedStore<FocusState>(
         const newState = { ...state, ...settings };
         return newState;
       });
-      // Notify subscribers of settings change
-      const current = get();
-      frontendEventBus.publish("focus_settings_changed", {
-        focusDuration: current.focusDuration,
-        shortBreakDuration: current.shortBreakDuration,
-        longBreakDuration: current.longBreakDuration,
-        longBreakInterval: current.longBreakInterval,
-        autoStartBreak: current.autoStartBreak,
-        autoStartPomodoro: current.autoStartPomodoro,
-      });
     },
 
     enterFocusMode: (nodeId) =>

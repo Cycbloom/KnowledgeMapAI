@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Clock, Tag, AlertTriangle } from 'lucide-react';
+import { formatDurationMinutes } from '../../utils/formatters';
 import { UserTaskDetail } from '../../types';
 
 interface BasicInfoSectionProps {
@@ -13,13 +14,6 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
       month: 'long',
       day: 'numeric',
     });
-  };
-
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes} 分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`;
   };
 
   return (
@@ -47,7 +41,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
             <div>
               <label className="text-xs text-gray-500 dark:text-gray-400">总时长</label>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                {formatDuration(task.total_duration)}
+                {formatDurationMinutes(task.total_duration, { format: 'zh-spaced', emptyText: '0 分钟' })}
               </p>
             </div>
           </div>
@@ -59,7 +53,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
             <div>
               <label className="text-xs text-gray-500 dark:text-gray-400">预计时长</label>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                {formatDuration(task.estimated_duration)}
+                {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced', emptyText: '0 分钟' })}
               </p>
             </div>
           </div>

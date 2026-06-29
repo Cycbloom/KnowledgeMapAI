@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Calendar } from "lucide-react";
 import { api } from '../../services/api';
+import { formatDuration } from '../../utils/formatters';
 import type {UserTaskStats} from '@shared/types';
 
 interface EfficiencyTrendProps {
@@ -35,12 +36,6 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   const getChartData = () => {
@@ -124,7 +119,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
                     initial={{ height: 0 }}
                     animate={{ height: `${Math.max(height, 2)}%` }}
                     transition={{ delay: i * 0.03, duration: 0.3 }}
-                    title={`${formatDuration(data.duration)}`}
+                    title={`${formatDuration(data.duration, { format: 'compact', emptyText: '0m' })}`}
                   />
                 </motion.div>
               );
@@ -135,13 +130,13 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
             <div className="text-slate-500">
               平均:{" "}
               <span className="font-medium text-primary-500">
-                {formatDuration(avgDuration)}
+                {formatDuration(avgDuration, { format: 'compact', emptyText: '0m' })}
               </span>
             </div>
             <div className="text-slate-500">
               总计:{" "}
               <span className="font-medium text-emerald-500">
-                {formatDuration(stats?.total_duration || 0)}
+                {formatDuration(stats?.total_duration || 0, { format: 'compact', emptyText: '0m' })}
               </span>
             </div>
           </div>

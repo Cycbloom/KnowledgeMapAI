@@ -94,6 +94,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
 
   const distribution = getDistribution();
 
+  // 保留本地实现：< 60 分钟使用中文，>= 60 分钟使用带空格紧凑格式 "Xh Ym"，混合格式无法直接复用 @/utils/formatters
   const formatDuration = (minutes: number) => {
     if (minutes < 60) return `${minutes}分钟`;
     const hours = Math.floor(minutes / 60);

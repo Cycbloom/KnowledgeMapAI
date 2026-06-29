@@ -6,7 +6,7 @@ import {
   CreateTemplateData,
   UpdateTemplateData,
   TEMPLATE_CATEGORIES,
-} from '../../services/api/template';
+} from '../../services/api/taskTemplates';
 
 interface TemplateFormProps {
   template?: TaskTemplate;

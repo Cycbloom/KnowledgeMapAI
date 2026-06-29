@@ -34,6 +34,7 @@ import {
   useStartUserTaskMutation,
 } from "../hooks";
 import { message } from "../utils/messageHelper";
+import { formatDurationMinutes } from "../utils/formatters";
 import { useTimerStore } from "../store/useTimerStore";
 import type { UserTask, TaskSettings } from "@shared/types";
 
@@ -71,14 +72,6 @@ const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
-
-const formatDuration = (minutes?: number): string => {
-  if (!minutes) return "--";
-  if (minutes < 60) return `${minutes}分钟`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
 };
 
 const getTimeSlice = (
@@ -563,7 +556,7 @@ export const CurrentTask: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Clock size={14} className={queueConfig.textClass} />
                     <span>
-                      预计 {formatDuration(currentTask.estimated_duration)}
+                      预计 {formatDurationMinutes(currentTask.estimated_duration)}
                     </span>
                   </div>
                 )}

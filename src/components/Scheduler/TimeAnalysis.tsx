@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Sun, Moon, Coffee, Sunset } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatDuration } from '../../utils/formatters';
 import type {TaskExecution} from '@shared/types';
 
 interface TimeAnalysisProps {
@@ -94,14 +95,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
   const periodStats = getPeriodStats();
   const maxDuration = Math.max(...hourlyData.map(d => d.duration), 1);
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) return `${hours}h ${mins}m`;
-    return mins > 0 ? `${mins}m` : '0m';
-  };
-
-  const peakPeriod = periodStats.reduce((max, p) => 
+  const peakPeriod = periodStats.reduce((max, p) =>
     p.totalDuration > max.totalDuration ? p : max
   , periodStats[0]);
 
@@ -155,7 +149,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
                       transition={{ delay: i * 0.01, duration: 0.2 }}
                     />
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                      {data.label}: {formatDuration(data.duration)}
+                      {data.label}: {formatDuration(data.duration, { format: 'compact', emptyText: '0m' })}
                     </div>
                   </motion.div>
                 );
@@ -196,7 +190,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
                     {period.name}
                   </div>
                   <div className="text-xs text-slate-400 mt-0.5">
-                    {formatDuration(period.totalDuration)}
+                    {formatDuration(period.totalDuration, { format: 'compact', emptyText: '0m' })}
                   </div>
                 </motion.div>
               );

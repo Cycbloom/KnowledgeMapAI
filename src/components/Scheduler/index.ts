@@ -77,7 +77,7 @@ export type {
   TemplateFilters,
   ApplyTemplateData,
   TemplateCategory as TemplateCategoryType,
-} from "../../services/api/template";
+} from "../../services/api/taskTemplates";
 export type {
   FocusSession,
   CreateFocusSessionData,

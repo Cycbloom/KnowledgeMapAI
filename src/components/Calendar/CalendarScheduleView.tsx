@@ -8,6 +8,7 @@ import {
   Move,
 } from "lucide-react";
 import { useTheme } from "../../hooks";
+import { formatDurationMinutes } from "../../utils/formatters";
 import {
   CalendarEvent,
   ExecutionEvent,
@@ -158,13 +159,6 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
     }
   };
 
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-  };
-
   const handleDragStart = (e: React.DragEvent, event: CalendarEvent) => {
     setDraggedEvent(event);
     const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -312,7 +306,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <span
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                计划: {formatDuration(scheduleData.stats.plannedMinutes)}
+                计划: {formatDurationMinutes(scheduleData.stats.plannedMinutes, { emptyText: "0分钟" })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -320,7 +314,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <span
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
-                实际: {formatDuration(scheduleData.stats.executedMinutes)}
+                实际: {formatDurationMinutes(scheduleData.stats.executedMinutes, { emptyText: "0分钟" })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -350,13 +344,14 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                 className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
                 总时长:{" "}
-                {formatDuration(
+                {formatDurationMinutes(
                   Math.round(
                     dailyActivities.reduce(
                       (acc, a) => acc + (a.duration || 0),
                       0,
                     ) / 60,
                   ),
+                  { emptyText: "0分钟" },
                 )}
               </span>
             </div>

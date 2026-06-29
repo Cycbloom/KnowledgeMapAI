@@ -9,6 +9,7 @@ import {
   Zap,
 } from "lucide-react";
 import { api } from '../../services/api';
+import { formatDuration } from '../../utils/formatters';
 import type {DailyFocusStats} from '@shared/types';
 
 interface DailyStatsProps {
@@ -49,15 +50,6 @@ const StatCard: React.FC<{
     </div>
   </motion.div>
 );
-
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-};
 
 const formatDurationDetailed = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
@@ -165,7 +157,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
         <StatCard
           icon={<Clock size={20} className="text-primary-500" />}
           label="专注时长"
-          value={formatDuration(stats.total_duration)}
+          value={formatDuration(stats.total_duration, { format: 'compact', emptyText: '0m' })}
           subValue={formatDurationDetailed(stats.total_duration)}
           color="bg-primary-500"
           delay={0.1}
@@ -182,7 +174,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
           icon={<Target size={20} className="text-violet-500" />}
           label="专注次数"
           value={stats.session_count}
-          subValue={`平均 ${formatDuration(stats.avg_session_duration)}`}
+          subValue={`平均 ${formatDuration(stats.avg_session_duration, { format: 'compact', emptyText: '0m' })}`}
           color="bg-violet-500"
           delay={0.3}
         />

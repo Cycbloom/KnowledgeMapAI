@@ -18,11 +18,11 @@ import {
   Check,
 } from "lucide-react";
 import {
-  templateApi,
+  taskTemplatesApi,
   TaskTemplate,
   applyTemplatePlaceholders,
   extractPlaceholders,
-} from "../../services/api/template";
+} from "../../services/api/taskTemplates";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useTheme } from "../../hooks";
 import { useTemplateForm } from "../../hooks/templates/useTemplateForm";
@@ -88,7 +88,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     }
 
     try {
-      await templateApi.createTemplate({
+      await taskTemplatesApi.createTemplate({
         name: formData.name,
         description: formData.description,
         category: formData.category as never,
@@ -113,7 +113,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     if (!editingTemplate) return;
 
     try {
-      await templateApi.updateTemplate(editingTemplate.id, {
+      await taskTemplatesApi.updateTemplate(editingTemplate.id, {
         name: formData.name,
         description: formData.description,
         category: formData.category as never,
@@ -142,7 +142,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     if (!confirm(`${t("common.confirm")}${t("common.delete")} "${template.name}"?`)) return;
 
     try {
-      await templateApi.deleteTemplate(template.id);
+      await taskTemplatesApi.deleteTemplate(template.id);
       frontendEventBus.publish("message_show", { type: "success", content: t("templates.message.deleteSuccess") });
       loadTemplates();
     } catch (error: unknown) {
@@ -153,7 +153,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
 
   const handleDuplicateTemplate = async (template: TaskTemplate) => {
     try {
-      await templateApi.duplicateTemplate(
+      await taskTemplatesApi.duplicateTemplate(
         template.id,
         `${template.name} (${t("templates.button.duplicate")})`,
       );
@@ -169,7 +169,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     if (!applyingTemplate) return;
 
     try {
-      await templateApi.applyTemplate(applyingTemplate.id, {
+      await taskTemplatesApi.applyTemplate(applyingTemplate.id, {
         placeholders: placeholderValues,
       });
       frontendEventBus.publish("message_show", { type: "success", content: t("templates.message.applySuccess") });

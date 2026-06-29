@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { UserTaskDetail } from "../../../types";
+import { formatDurationMinutes } from "../../../utils/formatters";
 import { message as messageHelper } from "../../../utils/messageHelper";
 import { SubtaskList } from "./SubtaskList";
 import { TaskLinks } from "./TaskLinks";
@@ -204,14 +205,6 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     };
   };
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return "未设置";
-    if (minutes < 60) return `${minutes} 分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`;
-  };
-
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "未设置";
     return new Date(dateStr).toLocaleDateString("zh-CN", {
@@ -351,7 +344,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 <span className="text-xs">预计时长</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDuration(task.estimated_duration)}
+                {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced', emptyText: '未设置' })}
               </p>
             </div>
 
@@ -361,7 +354,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 <span className="text-xs">实际时长</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDuration(task.actual_duration)}
+                {formatDurationMinutes(task.actual_duration, { format: 'zh-spaced', emptyText: '未设置' })}
               </p>
             </div>
 
@@ -371,7 +364,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 <span className="text-xs">总时长</span>
               </div>
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDuration(task.total_duration)}
+                {formatDurationMinutes(task.total_duration, { format: 'zh-spaced', emptyText: '未设置' })}
               </p>
             </div>
 

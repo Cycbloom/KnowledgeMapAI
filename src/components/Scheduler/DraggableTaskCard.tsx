@@ -120,6 +120,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
     width: "180px",
   };
 
+  // 保留本地实现：< 60 分钟使用中文，>= 60 分钟使用无空格紧凑格式 "XhYm"，混合格式无法直接复用 @/utils/formatters
   const formatDuration = (minutes?: number) => {
     if (!minutes) return "--";
     if (minutes < 60) return `${minutes}分钟`;

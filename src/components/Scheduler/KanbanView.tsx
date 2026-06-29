@@ -132,6 +132,7 @@ export const KanbanView: React.FC<{
     return columnTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
   };
 
+  // 保留本地实现：compact 格式在 mins === 0 时省略 "0m"（返回 "Xh" 而非 "Xh 0m"），与 @/utils/formatters 的 compact 格式行为不一致
   const formatDuration = (minutes: number) => {
     if (minutes === 0) return "0h";
     if (minutes < 60) return `${minutes}m`;

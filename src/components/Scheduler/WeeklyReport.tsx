@@ -11,21 +11,13 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatDuration } from '../../utils/formatters';
 import type {WeeklyFocusStats} from '@shared/types';
 
 interface WeeklyReportProps {
   weekStart?: string;
   className?: string;
 }
-
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-};
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
@@ -204,7 +196,7 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                {formatDuration(stats.best_day.duration)}
+                {formatDuration(stats.best_day.duration, { format: 'compact', emptyText: '0m' })}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">专注时长</p>
             </div>

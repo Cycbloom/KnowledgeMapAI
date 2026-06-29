@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TaskTemplate, extractPlaceholders } from "../../services/api/template";
+import { TaskTemplate, extractPlaceholders } from "../../services/api/taskTemplates";
 
 interface ModalState {
   isCreating: boolean;

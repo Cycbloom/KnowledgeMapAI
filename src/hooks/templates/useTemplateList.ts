@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { templateApi, TaskTemplate } from "../../services/api/template";
+import { taskTemplatesApi, TaskTemplate } from "../../services/api/taskTemplates";
 
 interface TemplateListState {
   templates: TaskTemplate[];
@@ -21,7 +21,7 @@ export function useTemplateList() {
   const loadTemplates = async () => {
     setState((prev) => ({ ...prev, loading: true }));
     try {
-      const response = await templateApi.getTemplates();
+      const response = await taskTemplatesApi.getTemplates();
       if (response.success) {
         setState((prev) => ({ ...prev, templates: response.data || [] }));
       }

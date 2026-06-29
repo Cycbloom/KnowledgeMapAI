@@ -12,6 +12,7 @@ import {
   Brain,
 } from "lucide-react";
 import { taskReviewApi, TaskReview } from "../../services/api/review";
+import { formatDurationMinutes } from "../../utils/formatters";
 import { UserTask } from "@shared/types";
 
 interface TaskRetrospectProps {
@@ -94,14 +95,6 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
     }
   };
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return "--";
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-  };
-
   if (!task) return null;
 
   return (
@@ -150,7 +143,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   <div className="flex items-center gap-1">
                     <Clock size={14} />
                     <span>
-                      实际用时: {formatDuration(task.actual_duration)}
+                      实际用时: {formatDurationMinutes(task.actual_duration)}
                     </span>
                   </div>
                   {task.tags && task.tags.length > 0 && (

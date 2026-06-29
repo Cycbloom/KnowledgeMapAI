@@ -17,6 +17,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { UserTask, TaskExecution } from "@shared/types";
+import { formatDurationMinutes } from "../../utils/formatters";
 
 interface TaskDetailProps {
   task: UserTask;
@@ -98,14 +99,6 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
     QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
     QUEUE_CONFIG[2];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return "--";
-    if (minutes < 60) return `${minutes} 分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`;
-  };
 
   const formatDateTime = (dateStr?: string) => {
     if (!dateStr) return "--";
@@ -195,7 +188,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   <span className="text-sm">预计时长</span>
                 </div>
                 <p className="text-lg font-semibold text-white">
-                  {formatDuration(task.estimated_duration)}
+                  {formatDurationMinutes(task.estimated_duration, { format: 'zh-spaced' })}
                 </p>
               </div>
 
@@ -205,7 +198,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   <span className="text-sm">实际用时</span>
                 </div>
                 <p className="text-lg font-semibold text-white">
-                  {formatDuration(task.actual_duration)}
+                  {formatDurationMinutes(task.actual_duration, { format: 'zh-spaced' })}
                 </p>
               </div>
 

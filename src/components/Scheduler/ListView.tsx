@@ -309,6 +309,7 @@ export const ListView: React.FC<ListViewProps> = ({
     }
   };
 
+  // 保留本地实现：分钟部分使用 i18n，小时部分使用紧凑格式，混合格式无法直接复用 @/utils/formatters
   const formatDuration = (minutes?: number) => {
     if (!minutes) return "--";
     if (minutes < 60) return t("scheduler.minutes", { count: minutes });

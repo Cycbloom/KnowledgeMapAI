@@ -70,7 +70,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
   { value: 'custom', label: '自定义', icon: '⭐', color: 'amber', count: 0 },
 ];
 
-export const templateApi = {
+export const taskTemplatesApi = {
   getTemplates: (filters?: TemplateFilters) => {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
@@ -112,12 +112,12 @@ export const templateApi = {
 export function extractPlaceholders(template: TaskTemplate): string[] {
   const titlePlaceholders = template.title_template.match(/\{\{([^}]+)\}\}/g) || [];
   const descPlaceholders = template.description_template?.match(/\{\{([^}]+)\}\}/g) || [];
-  
+
   const allPlaceholders = [...titlePlaceholders, ...descPlaceholders];
   const uniqueKeys = new Set(
     allPlaceholders.map(p => p.slice(2, -2).trim())
   );
-  
+
   return Array.from(uniqueKeys);
 }
 

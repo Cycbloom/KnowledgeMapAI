@@ -11,7 +11,7 @@ import {
   Clock,
   Tag,
 } from "lucide-react";
-import { templateApi } from "../../services/api/template";
+import { taskTemplatesApi } from "../../services/api/taskTemplates";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useTheme } from "../../hooks";
 
@@ -94,7 +94,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
 
     setLoading(true);
     try {
-      await templateApi.createTemplate({
+      await taskTemplatesApi.createTemplate({
         name,
         description,
         category,

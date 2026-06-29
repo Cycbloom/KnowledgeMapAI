@@ -10,6 +10,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { api } from "../../../services/api";
+import { formatDuration } from "../../../utils/formatters";
 import { TaskExecution } from "../../../types";
 
 interface ExecutionRecordsProps {
@@ -78,15 +79,6 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const formatDuration = (seconds?: number): string => {
-    if (!seconds) return "未知";
-    const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
   };
 
   const getStatusIcon = (status: string) => {
@@ -166,7 +158,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {formatDuration(totalDuration)}
+            {formatDuration(totalDuration, { emptyText: "未知", round: true })}
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400">总时长</p>
         </div>
@@ -256,7 +248,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-medium text-slate-900 dark:text-white">
-                              {formatDuration(exec.duration)}
+                              {formatDuration(exec.duration, { emptyText: "未知", round: true })}
                             </p>
                           </div>
                         </div>

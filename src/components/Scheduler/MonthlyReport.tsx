@@ -12,6 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { api } from '../../services/api';
+import { formatDuration } from '../../utils/formatters';
 import type {MonthlyFocusStats} from '@shared/types';
 
 interface MonthlyReportProps {
@@ -19,15 +20,6 @@ interface MonthlyReportProps {
   month?: number;
   className?: string;
 }
-
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-};
 
 const MONTHS = [
   "一月",
@@ -265,7 +257,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
-                {formatDuration(stats.best_day.duration)}
+                {formatDuration(stats.best_day.duration, { format: 'compact', emptyText: '0m' })}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 专注时长

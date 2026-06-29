@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { taskReviewApi, TaskReview, Mood } from "../../services/api/review";
 import { api } from "../../services/api";
+import { formatDurationMinutes } from "../../utils/formatters";
 import type { UserTask } from "@shared/types";
 
 interface DailyReviewProps {
@@ -145,14 +146,6 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
     }
   };
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return "--";
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-  };
-
   const totalDuration = completedTasks.reduce(
     (sum, t) => sum + (t.actual_duration || 0),
     0,
@@ -218,7 +211,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     </div>
                     <div className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
                       <div className="text-2xl font-bold text-emerald-500">
-                        {formatDuration(totalDuration)}
+                        {formatDurationMinutes(totalDuration)}
                       </div>
                       <div className="text-xs text-slate-500">专注时长</div>
                     </div>

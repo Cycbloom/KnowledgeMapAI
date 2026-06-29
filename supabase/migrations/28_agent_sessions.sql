@@ -91,7 +91,9 @@ COMMENT ON COLUMN agent_pending_actions.executed_at IS '执行时间';
 CREATE INDEX IF NOT EXISTS idx_agent_sessions_user_id ON agent_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_agent_sessions_status ON agent_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_agent_messages_session_id ON agent_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_agent_messages_session_ts ON agent_messages(session_id, timestamp ASC);
 CREATE INDEX IF NOT EXISTS idx_agent_tool_calls_session_id ON agent_tool_calls(session_id);
+CREATE INDEX IF NOT EXISTS idx_agent_tool_calls_session_ts ON agent_tool_calls(session_id, timestamp ASC);
 CREATE INDEX IF NOT EXISTS idx_agent_pending_actions_session_id ON agent_pending_actions(session_id);
 CREATE INDEX IF NOT EXISTS idx_agent_pending_actions_status ON agent_pending_actions(status);
 

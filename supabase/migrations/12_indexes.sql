@@ -300,8 +300,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_session_id ON ai_performance_logs(se
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_user_id ON ai_performance_logs(user_id);
 
 -- Composite indexes for session-based queries with timestamp ordering
-CREATE INDEX IF NOT EXISTS idx_agent_messages_session_ts ON agent_messages(session_id, timestamp ASC);
-CREATE INDEX IF NOT EXISTS idx_agent_tool_calls_session_ts ON agent_tool_calls(session_id, timestamp ASC);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_session_ts ON ai_performance_logs(session_id, timestamp DESC);
 
 

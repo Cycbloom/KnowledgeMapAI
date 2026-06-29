@@ -126,27 +126,25 @@ npm run dev
 
 ### 增量检查机制
 
-项目已启用 TypeScript 增量编译和 ESLint 缓存，大幅提升检查速度：
+项目已启用 TypeScript Project References build mode 和 ESLint 缓存，大幅提升检查速度：
 
-- **TypeScript 增量编译**：通过 `.tsbuildinfo` 文件缓存类型信息
+- **TypeScript build mode**：`tsc --build` 通过 `.tsbuildinfo` 文件自动跳过未变更子项目，本身就是增量的
 - **ESLint 缓存**：缓存检查结果到 `node_modules/.cache/eslint`
-- **增量检查脚本**：只检查 Git 变更的文件
 
 ### 检查命令
 
 | 命令 | 用途 | 场景 |
 |------|------|------|
-| `npm run check:incremental` | 增量检查修改文件 | **开发时推荐** |
-| `npm run check` | 标准类型检查 | 提交前检查 |
-| `npm run check:full` | 强制全量检查 | CI/疑难问题排查 |
+| `npm run check` | 增量类型检查（build mode 自动跳过未变更子项目） | **开发时推荐** |
+| `npm run check:full` | 强制全量检查（`--force` 忽略 .tsbuildinfo） | CI/疑难问题排查 |
 | `npm run lint` | 带 ESLint 缓存检查 | 提交前检查 |
 | `npm run lint:full` | 全量 ESLint 检查 | CI |
 
 ### 开发流程建议
 
 ```bash
-# 开发过程中快速检查
-npm run check:incremental
+# 开发过程中快速检查（增量）
+npm run check
 
 # 提交前完整检查
 npm run check && npm run lint

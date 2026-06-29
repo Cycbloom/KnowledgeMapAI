@@ -18,6 +18,9 @@ release
 node_modules/.cache/
 node_modules/.tmp/
 
+# TypeScript build info files (project references incremental cache)
+*.tsbuildinfo
+
 # TypeScript 编译产物 (api 目录)
 api/**/*.js
 api/**/*.js.map

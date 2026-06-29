@@ -1,11 +1,8 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "types": ["node", "express"],
-    "typeRoots": ["./node_modules/@types", "./api/types"]
-  },
-  "include": ["src", "api", "shared"],
-  "exclude": ["**/*.test.ts"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.shared.json" },
+    { "path": "./tsconfig.api.json" },
+    { "path": "./tsconfig.src.json" }
+  ]
 }

@@ -1,5 +1,4 @@
-import { create } from "zustand";
-import { persist, devtools } from "zustand/middleware";
+import { createPersistedStore } from "./createPersistedStore";
 
 export type WhiteNoiseType =
   | "rain"
@@ -62,90 +61,85 @@ interface NoiseState {
   setActivePresetId: (id: string | null) => void;
 }
 
-export const useNoiseStore = create<NoiseState>()(
-  devtools(
-    persist(
-      (set, get) => ({
-        selectedNoise: "none" as WhiteNoiseType,
-        noiseVolume: 0.5,
-        mixedNoises: [],
-        customPresets: [],
-        activePresetId: null,
+export const useNoiseStore = createPersistedStore<NoiseState>(
+  "noise",
+  (set, get) => ({
+    selectedNoise: "none" as WhiteNoiseType,
+    noiseVolume: 0.5,
+    mixedNoises: [],
+    customPresets: [],
+    activePresetId: null,
 
-        setNoise: (noise) => set({ selectedNoise: noise }),
+    setNoise: (noise) => set({ selectedNoise: noise }),
 
-        setNoiseVolume: (volume) => set({ noiseVolume: volume }),
+    setNoiseVolume: (volume) => set({ noiseVolume: volume }),
 
-        addMixedNoise: (noise) =>
-          set((state) => {
-            const exists = state.mixedNoises.find((n) => n.type === noise.type);
-            if (exists) {
-              return {
-                mixedNoises: state.mixedNoises.map((n) =>
-                  n.type === noise.type ? noise : n,
-                ),
-              };
-            }
-            return { mixedNoises: [...state.mixedNoises, noise] };
-          }),
-
-        removeMixedNoise: (type) =>
-          set((state) => ({
-            mixedNoises: state.mixedNoises.filter((n) => n.type !== type),
-          })),
-
-        updateMixedNoiseVolume: (type, volume) =>
-          set((state) => ({
+    addMixedNoise: (noise) =>
+      set((state) => {
+        const exists = state.mixedNoises.find((n) => n.type === noise.type);
+        if (exists) {
+          return {
             mixedNoises: state.mixedNoises.map((n) =>
-              n.type === type ? { ...n, volume } : n,
+              n.type === noise.type ? noise : n,
             ),
-          })),
-
-        clearMixedNoises: () => set({ mixedNoises: [], activePresetId: null }),
-
-        saveCustomPreset: (name) => {
-          const { mixedNoises, customPresets } = get();
-          if (mixedNoises.length === 0) return;
-
-          const newPreset: NoisePreset = {
-            id: `preset_${Date.now()}`,
-            name,
-            noises: [...mixedNoises],
-            isBuiltIn: false,
           };
-
-          set({
-            customPresets: [...customPresets, newPreset],
-            activePresetId: newPreset.id,
-          });
-        },
-
-        deleteCustomPreset: (id) =>
-          set((state) => ({
-            customPresets: state.customPresets.filter((p) => p.id !== id),
-            activePresetId:
-              state.activePresetId === id ? null : state.activePresetId,
-          })),
-
-        loadPreset: (preset) =>
-          set({
-            mixedNoises: [...preset.noises],
-            activePresetId: preset.id,
-          }),
-
-        setActivePresetId: (id) => set({ activePresetId: id }),
+        }
+        return { mixedNoises: [...state.mixedNoises, noise] };
       }),
-      {
-        name: "noise-storage",
-        partialize: (state) => ({
-          selectedNoise: state.selectedNoise,
-          noiseVolume: state.noiseVolume,
-          mixedNoises: state.mixedNoises,
-          customPresets: state.customPresets,
-          activePresetId: state.activePresetId,
-        }),
-      },
-    ),
-    { name: "NoiseStore" },
-  ),
+
+    removeMixedNoise: (type) =>
+      set((state) => ({
+        mixedNoises: state.mixedNoises.filter((n) => n.type !== type),
+      })),
+
+    updateMixedNoiseVolume: (type, volume) =>
+      set((state) => ({
+        mixedNoises: state.mixedNoises.map((n) =>
+          n.type === type ? { ...n, volume } : n,
+        ),
+      })),
+
+    clearMixedNoises: () => set({ mixedNoises: [], activePresetId: null }),
+
+    saveCustomPreset: (name) => {
+      const { mixedNoises, customPresets } = get();
+      if (mixedNoises.length === 0) return;
+
+      const newPreset: NoisePreset = {
+        id: `preset_${Date.now()}`,
+        name,
+        noises: [...mixedNoises],
+        isBuiltIn: false,
+      };
+
+      set({
+        customPresets: [...customPresets, newPreset],
+        activePresetId: newPreset.id,
+      });
+    },
+
+    deleteCustomPreset: (id) =>
+      set((state) => ({
+        customPresets: state.customPresets.filter((p) => p.id !== id),
+        activePresetId:
+          state.activePresetId === id ? null : state.activePresetId,
+      })),
+
+    loadPreset: (preset) =>
+      set({
+        mixedNoises: [...preset.noises],
+        activePresetId: preset.id,
+      }),
+
+    setActivePresetId: (id) => set({ activePresetId: id }),
+  }),
+  {
+    partialize: (state) => ({
+      selectedNoise: state.selectedNoise,
+      noiseVolume: state.noiseVolume,
+      mixedNoises: state.mixedNoises,
+      customPresets: state.customPresets,
+      activePresetId: state.activePresetId,
+    }),
+  },
 );

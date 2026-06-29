@@ -11,7 +11,7 @@ const router = Router();
 
 const getSystemTasksQuerySchema = z.object({
   status: z
-    .enum(["pending", "in_progress", "completed", "failed", "cancelled"])
+    .enum(["pending", "in_progress", "running", "completed", "failed", "cancelled"])
     .optional(),
   limit: z.coerce.number().int().min(1).max(100).optional().default(50),
 });

@@ -14,6 +14,7 @@ import { bootstrapKernel } from "./services/kernel/bootstrap";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 import { graphTaskEventHandler } from "./services/scheduler/graphTaskEventHandler";
+import { asyncTaskService } from "./services/asyncTaskService";
 
 import { errorHandler } from "./middleware/errorHandler";
 import { csrfProtection, getCsrfToken } from "./middleware/csrf";
@@ -150,6 +151,11 @@ export function createApp(kernel?: Kernel): express.Express {
     startAutoBackupScheduler();
     syncExistingBackups();
     graphTaskEventHandler.initialize();
+
+    // 启动恢复：恢复因进程崩溃/重启而滞留的 pending 任务（非阻塞）
+    asyncTaskService.initialize().catch((err) => {
+      logger.error("Failed to initialize asyncTaskService during startup:", err);
+    });
   }
 
   /**

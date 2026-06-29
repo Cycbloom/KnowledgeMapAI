@@ -1,5 +1,4 @@
 import { request } from "../services/api/client";
-import { useStore } from "../store/useStore";
 
 interface ErrorReport {
   message: string;
@@ -11,6 +10,7 @@ interface ErrorReport {
   timestamp: string;
   userAgent: string;
   userId?: string;
+  email?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -20,6 +20,8 @@ const FLUSH_INTERVAL = 5000;
 
 let flushIntervalId: ReturnType<typeof setInterval> | null = null;
 let originalConsoleError: typeof console.error | null = null;
+let currentUserId: string | undefined;
+let currentEmail: string | undefined;
 
 const flushErrors = async (): Promise<void> => {
   if (errorQueue.length === 0) return;
@@ -38,21 +40,7 @@ const flushErrors = async (): Promise<void> => {
 };
 
 const getUserId = (): string | undefined => {
-  const storeUser = useStore.getState().user;
-  if (storeUser?.id) {
-    return storeUser.id;
-  }
-
-  try {
-    const ctxStr = localStorage.getItem("errorContext");
-    if (ctxStr) {
-      const ctx = JSON.parse(ctxStr) as { userId?: string };
-      return ctx.userId;
-    }
-  } catch {
-    return undefined;
-  }
-  return undefined;
+  return currentUserId;
 };
 
 const reportError = (error: ErrorReport): void => {
@@ -81,6 +69,7 @@ export const initErrorReporter = (): void => {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       userId: getUserId(),
+      email: currentEmail,
     });
 
     return false;
@@ -96,6 +85,7 @@ export const initErrorReporter = (): void => {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       userId: getUserId(),
+      email: currentEmail,
       metadata: {
         type: "unhandledrejection",
       },
@@ -123,6 +113,7 @@ export const initErrorReporter = (): void => {
           timestamp: new Date().toISOString(),
           userAgent: navigator.userAgent,
           userId: getUserId(),
+          email: currentEmail,
           metadata: { type: "console.error" },
         });
       }
@@ -154,6 +145,7 @@ export const captureException = (
     timestamp: new Date().toISOString(),
     userAgent: navigator.userAgent,
     userId: getUserId(),
+    email: currentEmail,
     metadata,
   });
 };
@@ -168,24 +160,19 @@ export const captureMessage = (
     timestamp: new Date().toISOString(),
     userAgent: navigator.userAgent,
     userId: getUserId(),
+    email: currentEmail,
     metadata,
   });
 };
 
 export const setUserContext = (userId: string, email?: string): void => {
-  try {
-    localStorage.setItem("errorContext", JSON.stringify({ userId, email }));
-  } catch {
-    // Ignore storage errors
-  }
+  currentUserId = userId;
+  currentEmail = email;
 };
 
 export const clearUserContext = (): void => {
-  try {
-    localStorage.removeItem("errorContext");
-  } catch {
-    // Ignore storage errors
-  }
+  currentUserId = undefined;
+  currentEmail = undefined;
 };
 
 export const getErrorQueue = (): ErrorReport[] => {

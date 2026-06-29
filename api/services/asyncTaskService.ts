@@ -6,7 +6,7 @@ import { getPaginationParams, PaginationOptions } from "../utils/pagination";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { Task } from "../../shared/types/common";
-import type { SystemTaskType } from "../../shared/types/scheduler";
+import type { SystemTaskType, SystemTask } from "../../shared/types/scheduler";
 import "./taskProcessors/batchGenerateCardsProcessor.js";
 import "./taskProcessors/recursiveGraphProcessor.js";
 import "./taskProcessors/infiniteExpansionProcessor.js";
@@ -61,6 +61,9 @@ try {
 }
 
 export class AsyncTaskService {
+  private static readonly MAX_CONCURRENT = 3;
+  private activeCount = 0;
+
   private mapTaskTypeToSystemTaskType(type: string): SystemTaskType {
     const typeMap: Record<string, SystemTaskType> = {
       "generate_questions": "ai_generation",
@@ -71,6 +74,79 @@ export class AsyncTaskService {
       "embedding_generation": "knowledge_sync",
     };
     return typeMap[type] || "ai_generation";
+  }
+
+  /**
+   * 启动恢复：查询滞留的 pending 任务（created_at 早于 5 分钟前）并恢复执行。
+   *
+   * 用于进程重启后恢复因崩溃/重启而中断的 pending 任务。非阻塞调用，
+   * 内部错误被捕获并记录，不影响主进程启动。
+   */
+  async initialize(): Promise<void> {
+    try {
+      const supabase = defaultClient;
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+      const { data, error } = await supabase
+        .from("system_tasks")
+        .select("*")
+        .eq("status", "pending")
+        .lt("created_at", fiveMinAgo.toISOString())
+        .order("created_at", { ascending: true })
+        .limit(20);
+
+      if (error) {
+        logger.error("asyncTaskService.initialize: failed to fetch stalled tasks:", error);
+        return;
+      }
+
+      const stalledTasks = (data as SystemTask[] | null) ?? [];
+      if (stalledTasks.length === 0) {
+        logger.info("asyncTaskService.initialize: no stalled tasks to recover");
+        return;
+      }
+
+      logger.info(`asyncTaskService.initialize: recovering ${stalledTasks.length} stalled task(s)`);
+
+      for (const task of stalledTasks) {
+        const originalType = this.getOriginalTaskType(task.task_type);
+        const payload = (task.input_data as Record<string, unknown>) ?? {};
+        this.processTaskAsync(task.id, task.user_id, originalType, payload).catch((err) => {
+          logger.error(`asyncTaskService.initialize: failed to recover task ${task.id}:`, err);
+        });
+      }
+    } catch (error) {
+      logger.error("asyncTaskService.initialize: unexpected error:", error);
+    }
+  }
+
+  /**
+   * 乐观锁 claim：原子地将任务从 pending → running。
+   *
+   * 使用 `UPDATE ... WHERE id = ? AND status = 'pending' RETURNING *` 模式，
+   * 多实例并发时仅一者能 claim 成功（返回非空数组），其余返回空数组并跳过。
+   *
+   * @returns claim 成功返回 true，失败（已被其他实例处理或不存在）返回 false
+   */
+  private async claimTask(taskId: string): Promise<boolean> {
+    const supabase = defaultClient;
+    const { data, error } = await supabase
+      .from("system_tasks")
+      .update({
+        status: "running",
+        claimed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", taskId)
+      .eq("status", "pending")
+      .select();
+
+    if (error) {
+      logger.error(`claimTask: failed to claim task ${taskId}:`, error);
+      return false;
+    }
+
+    return Array.isArray(data) && data.length > 0;
   }
 
   async createTask(userId: string, type: string, payload?: Record<string, unknown>, name?: string) {
@@ -99,16 +175,40 @@ export class AsyncTaskService {
     return data as Task;
   }
 
+  /**
+   * 异步处理任务：先通过 claimTask 原子抢占，再执行 processTask。
+   *
+   * 并发控制：全局 MAX_CONCURRENT=3 信号量，超过上限的任务保留 pending
+   * 状态等待下次轮询（initialize 或 createTask 触发）。
+   *
+   * 注意：activeCount 必须在 await 之前同步递增，否则在 for 循环中并发调用
+   * processTaskAsync 时所有任务都会通过并发检查，导致信号量失效。
+   */
   private async processTaskAsync(
     taskId: string,
     userId: string,
     type: string,
     payload: Record<string, unknown>,
   ) {
+    this.activeCount += 1;
+    if (this.activeCount > AsyncTaskService.MAX_CONCURRENT) {
+      this.activeCount -= 1;
+      logger.info(`processTaskAsync: concurrency limit reached, skipping task ${taskId} (will retry on next poll)`);
+      return;
+    }
+
     try {
+      const claimed = await this.claimTask(taskId);
+      if (!claimed) {
+        logger.info(`processTaskAsync: task ${taskId} already claimed by another instance, skipping`);
+        return;
+      }
+
       await this.processTask(taskId, userId, type, payload);
     } catch (error) {
       logger.error(`Error in async task processing for task ${taskId}:`, error);
+    } finally {
+      this.activeCount -= 1;
     }
   }
 

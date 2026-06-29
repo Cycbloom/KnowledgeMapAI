@@ -82,6 +82,7 @@ npx supabase status       # 查看状态
 - **测试用户**：`test@example.com` / `test123456`（每次 `npx supabase db reset` 后自动创建）
 - **迁移文件管理**：所有变更直接修改对应的模块化文件，不创建新的增量迁移文件
 - **迁移文件命名**：`{两位序号}_{业务域}.sql`，序号确保执行顺序
+- **类型生成**：schema 变更后必须运行 `npm run db:gen-types` 重新生成 `shared/types/database.generated.ts`
 
 ### 开发环境配置
 

@@ -6,12 +6,13 @@ import App from './App'
 import { ThemeProvider } from './hooks'
 import { registerServiceWorker } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
-import { initErrorReporter, destroyErrorReporter, setUserContext, clearUserContext } from './utils/errorReporter'
+import { initErrorReporter, destroyErrorReporter, setUserContext } from './utils/errorReporter'
 import { initCsrf } from './services/api'
 import { preloadMobileApi } from './services/api/adapter'
 import { asyncConfirm } from './utils/asyncConfirm'
 import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
 import { useStore } from './store/useStore'
+import { migrateLegacyKeys } from './store/createPersistedStore'
 import './store/storeIntegrations'
 import './index.css'
 import 'katex/dist/katex.min.css'
@@ -26,18 +27,15 @@ export const queryClient = new QueryClient({
   },
 })
 
+migrateLegacyKeys()
+
+const restoredUser = useStore.getState().user
+if (restoredUser?.id) {
+  setUserContext(restoredUser.id, restoredUser.email ?? undefined)
+}
+
 initCsrf()
 initializeEventSubscribers(queryClient)
-
-useStore.subscribe((state, prevState) => {
-  if (state.user !== prevState.user) {
-    if (state.user) {
-      setUserContext(state.user.id, state.user.email)
-    } else {
-      clearUserContext()
-    }
-  }
-})
 
 const isElectron = navigator.userAgent.toLowerCase().includes('electron')
 

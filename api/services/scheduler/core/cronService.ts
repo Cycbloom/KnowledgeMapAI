@@ -101,7 +101,9 @@ class SchedulerCronService {
 
     const { data: dueSchedules, error } = await getSupabaseAdmin()
       .from("task_schedules")
-      .select("id, user_id, schedule_type, schedule_config, task_template_id")
+      .select(
+        "id, user_id, schedule_type, schedule_config, task_template_id, next_run_at",
+      )
       .eq("is_active", true)
       .lte("next_run_at", now)
       .limit(50);
@@ -116,8 +118,66 @@ class SchedulerCronService {
     logger.info(`[CronService] Processing ${dueSchedules.length} due schedules`);
 
     for (const schedule of dueSchedules) {
+      const originalNextRun = schedule.next_run_at as
+        | string
+        | null
+        | undefined;
+
       try {
-        const taskCreated = await this.executeSchedule(getSupabaseAdmin(), schedule);
+        // Calculate the next run time before claiming so the claim can
+        // atomically advance next_run_at (preventing duplicate execution
+        // across multiple instances).
+        const newNextRun = this.calculateNextRun(
+          schedule.schedule_type,
+          schedule.schedule_config,
+        );
+
+        // Atomic claim: UPDATE ... WHERE id = ? AND next_run_at = ? AND
+        // is_active = true RETURNING *. If RETURNING is empty, another
+        // instance already claimed this schedule.
+        const { data: claimed, error: claimError } = await getSupabaseAdmin()
+          .from("task_schedules")
+          .update({
+            last_run_at: now,
+            next_run_at: newNextRun,
+          })
+          .eq("id", schedule.id)
+          .eq("next_run_at", originalNextRun ?? "")
+          .eq("is_active", true)
+          .select();
+
+        if (claimError) {
+          logger.error(
+            `[CronService] Failed to claim schedule ${schedule.id}:`,
+            claimError,
+          );
+          continue;
+        }
+
+        if (!claimed || claimed.length === 0) {
+          logger.debug(
+            `[CronService] Schedule ${schedule.id} already claimed by another instance, skipping`,
+          );
+          continue;
+        }
+
+        // Claim succeeded - execute the schedule. Rollback next_run_at only
+        // when executeSchedule itself fails (not when event publishing fails,
+        // since the task has already been created at that point).
+        let taskCreated: string | undefined;
+        try {
+          taskCreated = await this.executeSchedule(
+            getSupabaseAdmin(),
+            schedule,
+          );
+        } catch (execError) {
+          logger.error(
+            `[CronService] Failed to execute schedule ${schedule.id}:`,
+            execError,
+          );
+          await this.rollbackScheduleNextRun(schedule.id, originalNextRun);
+          continue;
+        }
 
         appEventBus.publish<ScheduleExecutedPayload>(
           "schedule_executed",
@@ -129,11 +189,29 @@ class SchedulerCronService {
           schedule.user_id,
           "cron_service",
         );
-
-        await this.updateScheduleNextRun(getSupabaseAdmin(), schedule);
       } catch (error) {
-        logger.error(`[CronService] Failed to execute schedule ${schedule.id}:`, error);
+        logger.error(
+          `[CronService] Failed to process schedule ${schedule.id}:`,
+          error,
+        );
       }
+    }
+  }
+
+  private async rollbackScheduleNextRun(
+    scheduleId: string,
+    originalNextRun: string | null | undefined,
+  ) {
+    try {
+      await getSupabaseAdmin()
+        .from("task_schedules")
+        .update({ next_run_at: originalNextRun ?? null })
+        .eq("id", scheduleId);
+    } catch (rollbackError) {
+      logger.error(
+        `[CronService] Failed to rollback next_run_at for schedule ${scheduleId}:`,
+        rollbackError,
+      );
     }
   }
 
@@ -188,29 +266,6 @@ class SchedulerCronService {
     }
 
     return task?.id;
-  }
-
-  private async updateScheduleNextRun(
-    supabase: SupabaseClient,
-    schedule: {
-      id: string;
-      user_id: string;
-      schedule_type: string;
-      schedule_config: Record<string, unknown>;
-    },
-  ) {
-    const nextRunAt = this.calculateNextRun(
-      schedule.schedule_type,
-      schedule.schedule_config,
-    );
-
-    await supabase
-      .from("task_schedules")
-      .update({
-        last_run_at: new Date().toISOString(),
-        next_run_at: nextRunAt,
-      })
-      .eq("id", schedule.id);
   }
 
   private calculateNextRun(

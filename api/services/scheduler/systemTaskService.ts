@@ -361,6 +361,7 @@ export class SystemTaskService {
     total: number;
     pending: number;
     in_progress: number;
+    running: number;
     completed: number;
     failed: number;
     cancelled: number;
@@ -380,6 +381,7 @@ export class SystemTaskService {
       total: tasks?.length ?? 0,
       pending: 0,
       in_progress: 0,
+      running: 0,
       completed: 0,
       failed: 0,
       cancelled: 0,

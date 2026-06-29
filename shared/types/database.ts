@@ -1,97 +1,14 @@
 import type { Graph, Domain, GraphDomain } from './graph';
 import type { User } from './user';
 import type { UserTask } from './scheduler';
+import type { Database } from './database.generated';
 
-export interface KnowledgeGraphRow {
-  id: string;
-  title: string;
-  description?: string | null;
-  domain?: string | null;
-  user_id?: string | null;
-  settings?: Record<string, unknown> | null;
-  is_favorite?: boolean;
-  is_public?: boolean;
-  template_type?: string | null;
-  podcast_script?: string | null;
-  reference_books?: Record<string, unknown>[] | null;
-  external_links?: Record<string, unknown>[] | null;
-  learning_guide?: string | null;
-  parent_graph_id?: string | null;
-  last_used_at?: string | null;
-  task_id?: string | null;
-  nodes_count?: number;
-  deleted_at?: string | null;
-  created_at: string;
-  updated_at?: string | null;
-}
-
-export interface GraphNodeRow {
-  id: string;
-  graph_id: string;
-  knowledge_point_id: string;
-  x_position: number;
-  y_position: number;
-  level: string;
-  is_accepted: boolean;
-  deleted_at?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface StudyCardRow {
-  id: string;
-  user_id: string;
-  knowledge_point_id: string;
-  graph_id: string;
-  source_graph_id?: string;
-  question: string;
-  answer: string;
-  explanation?: string | null;
-  card_type: string;
-  options?: string[] | null;
-  correct_indices?: number[] | null;
-  last_reviewed?: string | null;
-  next_review: string;
-  difficulty: number;
-  fsrs_state: string;
-  fsrs_stability: number;
-  fsrs_difficulty: number;
-  fsrs_elapsed_days: number;
-  fsrs_scheduled_days: number;
-  fsrs_retrievability: number;
-  fsrs_last_review?: string | null;
-  review_count?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface GraphRelationRow {
-  id: string;
-  source_graph_id: string;
-  target_graph_id: string;
-  relation_type: string;
-  context?: string | null;
-  metadata?: Record<string, unknown> | null;
-  confidence?: number;
-  source?: string | null;
-  shared_concepts?: string[] | null;
-  created_at: string;
-}
-
-export interface DomainRow {
-  id: string;
-  name: string;
-  description?: string | null;
-  color: string;
-  icon?: string | null;
-  parent_id?: string | null;
-  sort_order: number;
-  user_id?: string | null;
-  is_system: boolean;
-  deleted_at?: string | null;
-  created_at: string;
-  updated_at?: string | null;
-}
+// 5 个高频 Row 类型改为引用 supabase 自动生成的类型（保留原类型名作为别名以保持下游引用兼容）
+export type KnowledgeGraphRow = Database['public']['Tables']['knowledge_graphs']['Row'];
+export type GraphNodeRow = Database['public']['Tables']['graph_nodes']['Row'];
+export type StudyCardRow = Database['public']['Tables']['study_cards']['Row'];
+export type GraphRelationRow = Database['public']['Tables']['graph_relations']['Row'];
+export type DomainRow = Database['public']['Tables']['domains']['Row'];
 
 export interface GraphDomainRow {
   id: string;

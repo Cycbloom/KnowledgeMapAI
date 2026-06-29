@@ -16,8 +16,8 @@ router.get('/logs', async (req, res) => {
     startTime: req.query.startTime ? parseInt(req.query.startTime as string) : undefined,
     endTime: req.query.endTime ? parseInt(req.query.endTime as string) : undefined,
   };
-  
-  const result = performanceMonitor.getLogs(query);
+
+  const result = await performanceMonitor.getLogs(query);
   res.json(result);
 });
 
@@ -48,22 +48,22 @@ router.get('/database-stats', async (_req, res) => {
   }
 });
 
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   const query: GetPerformanceLogsQuery = {
     startTime: req.query.startTime ? parseInt(req.query.startTime as string) : undefined,
     endTime: req.query.endTime ? parseInt(req.query.endTime as string) : undefined,
   };
-  
-  const stats = performanceMonitor.getStats(query);
+
+  const stats = await performanceMonitor.getStats(query);
   res.json(stats);
 });
 
 router.delete('/logs', async (req, res) => {
-  const beforeTimestamp = req.query.beforeTimestamp 
-    ? parseInt(req.query.beforeTimestamp as string) 
+  const beforeTimestamp = req.query.beforeTimestamp
+    ? parseInt(req.query.beforeTimestamp as string)
     : undefined;
-  
-  const deletedCount = performanceMonitor.clearLogs(beforeTimestamp);
+
+  const deletedCount = await performanceMonitor.clearLogs(beforeTimestamp);
   
   // 返回数据库统计信息
   let dbStats = null;

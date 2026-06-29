@@ -38,6 +38,7 @@ export type SystemTaskType =
 export type SystemTaskStatus =
   | "pending"
   | "in_progress"
+  | "running"
   | "completed"
   | "failed"
   | "cancelled";
@@ -94,6 +95,7 @@ export interface SystemTask {
   max_retries: number;
   scheduled_at?: string;
   started_at?: string;
+  claimed_at?: string;
   completed_at?: string;
   created_at: string;
   updated_at: string;

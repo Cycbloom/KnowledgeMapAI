@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage, devtools } from 'zustand/middleware';
 import { User } from '../types';
+import { createPersistedStore } from './createPersistedStore';
+import { setUserContext, clearUserContext } from '../utils/errorReporter';
 
 interface AppState {
   user: User | null;
@@ -10,41 +10,38 @@ interface AppState {
   clearAuth: () => void;
 }
 
-export const useStore = create<AppState>()(
-  devtools(
-    persist(
-      (set) => ({
+export const useStore = createPersistedStore<AppState>(
+  'auth',
+  (set) => ({
+    user: null,
+    token: null,
+    refreshToken: null,
+    setUser: (user, token, refreshToken = null) => {
+      if (user) {
+        setUserContext(user.id, user.email);
+      } else {
+        clearUserContext();
+      }
+      set({
+        user,
+        token,
+        ...(refreshToken !== undefined ? { refreshToken } : {})
+      });
+    },
+    clearAuth: () => {
+      clearUserContext();
+      set({
         user: null,
         token: null,
         refreshToken: null,
-        setUser: (user, token, refreshToken = null) => {
-          set({ 
-            user, 
-            token, 
-            ...(refreshToken !== undefined ? { refreshToken } : {}) 
-          });
-        },
-        clearAuth: () => {
-          set({ 
-            user: null, 
-            token: null, 
-            refreshToken: null,
-          });
-        },
-      }),
-      {
-        name: 'knowledge-map-auth',
-        storage: createJSONStorage(() => localStorage),
-        partialize: (state) => ({ 
-          user: state.user,
-          token: state.token,
-          refreshToken: state.refreshToken,
-        }),
-        onRehydrateStorage: () => {
-          return () => {};
-        }
-      }
-    ),
-    { name: 'AuthStore' }
-  )
+      });
+    },
+  }),
+  {
+    partialize: (state) => ({
+      user: state.user,
+      token: state.token,
+      refreshToken: state.refreshToken,
+    }),
+  }
 );

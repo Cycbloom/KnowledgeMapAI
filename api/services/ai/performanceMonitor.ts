@@ -32,64 +32,46 @@ interface DatabaseLogRow {
   metadata?: object | null;
 }
 
+/**
+ * 将数据库行映射为 AIPerformanceLog。
+ * 抽出此 helper 以避免 getLogs / getHistoricalLogs / getLogsBySession 重复实现。
+ */
+const mapRowToLog = (row: DatabaseLogRow): AIPerformanceLog => ({
+  id: row.id,
+  timestamp: row.timestamp,
+  operation: row.operation,
+  sessionId: row.session_id || undefined,
+  model: row.model,
+  provider: row.provider as AIPerformanceLog["provider"],
+  inputTokens: row.input_tokens,
+  outputTokens: row.output_tokens,
+  totalTokens: row.total_tokens,
+  estimatedCost: parseFloat(String(row.estimated_cost)),
+  duration: row.duration,
+  success: row.success,
+  errorMessage: row.error_message || undefined,
+  cachedInputTokens: row.cached_input_tokens || undefined,
+  uncachedInputTokens: row.uncached_input_tokens || undefined,
+  reasoningTokens: row.reasoning_tokens || undefined,
+  cacheHitRate: row.cache_hit_rate
+    ? parseFloat(String(row.cache_hit_rate))
+    : undefined,
+  costBreakdown: row.cost_breakdown as AIPerformanceLog["costBreakdown"],
+  metadata: row.metadata as AIPerformanceLog["metadata"],
+});
+
 class PerformanceMonitor {
-  private logs: AIPerformanceLog[] = [];
   private initialized = false;
 
+  /**
+   * 多实例化改造后不再预加载内存 buffer。
+   * 此方法保留为生命周期钩子，仅做最小化初始化标记，
+   * 所有读取操作改为按需查询 DB（避免多实例间内存状态不一致）。
+   */
   async initialize(): Promise<void> {
     if (this.initialized) return;
-
-    try {
-      await this.loadFromDatabase();
-      this.initialized = true;
-      logger.info(
-        `[PerformanceMonitor] Loaded ${this.logs.length} logs from database`,
-      );
-    } catch (error) {
-      logger.error(
-        "[PerformanceMonitor] Failed to load logs from database:",
-        error,
-      );
-      this.initialized = true;
-    }
-  }
-
-  private async loadFromDatabase(): Promise<void> {
-    const { data, error } = await getSupabaseAdmin()
-      .from("ai_performance_logs")
-      .select("*")
-      .order("timestamp", { ascending: false })
-      .limit(MAX_LOGS);
-
-    if (error) {
-      throw error;
-    }
-
-    if (data && data.length > 0) {
-      this.logs = (data as DatabaseLogRow[]).map((row: DatabaseLogRow) => ({
-        id: row.id,
-        timestamp: row.timestamp,
-        operation: row.operation,
-        sessionId: row.session_id || undefined,
-        model: row.model,
-        provider: row.provider as AIPerformanceLog["provider"],
-        inputTokens: row.input_tokens,
-        outputTokens: row.output_tokens,
-        totalTokens: row.total_tokens,
-        estimatedCost: parseFloat(String(row.estimated_cost)),
-        duration: row.duration,
-        success: row.success,
-        errorMessage: row.error_message || undefined,
-        cachedInputTokens: row.cached_input_tokens || undefined,
-        uncachedInputTokens: row.uncached_input_tokens || undefined,
-        reasoningTokens: row.reasoning_tokens || undefined,
-        cacheHitRate: row.cache_hit_rate
-          ? parseFloat(String(row.cache_hit_rate))
-          : undefined,
-        costBreakdown: row.cost_breakdown as AIPerformanceLog["costBreakdown"],
-        metadata: row.metadata as AIPerformanceLog["metadata"],
-      }));
-    }
+    this.initialized = true;
+    logger.info("[PerformanceMonitor] Initialized (DB-backed, no in-memory buffer)");
   }
 
   async recordLog(
@@ -114,19 +96,15 @@ class PerformanceMonitor {
       estimatedCost,
     };
 
-    // 内存存储（用于快速查询）
-    this.logs.unshift(fullLog);
-    if (this.logs.length > MAX_LOGS) {
-      this.logs = this.logs.slice(0, MAX_LOGS);
-    }
-
-    // 异步持久化到数据库（不阻塞主流程）
-    this.persistToDatabase(fullLog).catch((err: Error) => {
+    // 同步持久化到数据库（多实例下 DB 为唯一真实状态）
+    try {
+      await this.persistToDatabase(fullLog);
+    } catch (err: unknown) {
       logger.warn(
         "[PerformanceMonitor] Failed to persist log to database:",
         err,
       );
-    });
+    }
   }
 
   private async persistToDatabase(log: AIPerformanceLog): Promise<void> {
@@ -164,35 +142,56 @@ class PerformanceMonitor {
     }
   }
 
-  getLogs(query: GetPerformanceLogsQuery = {}): {
+  /**
+   * 直接查 DB（多实例化改造：原内存 buffer 已移除）。
+   * 应用 operation / provider / success / startTime / endTime 过滤，
+   * 按 timestamp DESC 排序，limit/offset 分页。
+   */
+  async getLogs(query: GetPerformanceLogsQuery = {}): Promise<{
     logs: AIPerformanceLog[];
     total: number;
-  } {
-    let filtered = [...this.logs];
+  }> {
+    let dbQuery = getSupabaseAdmin()
+      .from("ai_performance_logs")
+      .select("*", { count: "exact" })
+      .order("timestamp", { ascending: false });
 
     if (query.operation) {
-      filtered = filtered.filter((l) => l.operation === query.operation);
+      dbQuery = dbQuery.eq("operation", query.operation);
     }
     if (query.provider) {
-      filtered = filtered.filter((l) => l.provider === query.provider);
+      dbQuery = dbQuery.eq("provider", query.provider);
     }
     if (query.success !== undefined) {
-      filtered = filtered.filter((l) => l.success === query.success);
+      dbQuery = dbQuery.eq("success", query.success);
     }
-    if (query.startTime) {
-      filtered = filtered.filter((l) => l.timestamp >= query.startTime!);
+    if (query.startTime !== undefined) {
+      dbQuery = dbQuery.gte("timestamp", query.startTime);
     }
-    if (query.endTime) {
-      filtered = filtered.filter((l) => l.timestamp <= query.endTime!);
+    if (query.endTime !== undefined) {
+      dbQuery = dbQuery.lte("timestamp", query.endTime);
     }
 
-    const total = filtered.length;
     const offset = query.offset || 0;
     const limit = query.limit || 50;
 
+    const { data, count, error } = await dbQuery.range(
+      offset,
+      offset + limit - 1,
+    );
+
+    if (error) {
+      logger.error("[PerformanceMonitor] Failed to fetch logs from DB:", error);
+      return { logs: [], total: 0 };
+    }
+
+    const logs: AIPerformanceLog[] = ((data || []) as DatabaseLogRow[]).map(
+      mapRowToLog,
+    );
+
     return {
-      logs: filtered.slice(offset, offset + limit),
-      total,
+      logs,
+      total: count || 0,
     };
   }
 
@@ -238,29 +237,7 @@ class PerformanceMonitor {
     }
 
     const logs: AIPerformanceLog[] = ((data || []) as DatabaseLogRow[]).map(
-      (row: DatabaseLogRow) => ({
-        id: row.id,
-        timestamp: row.timestamp,
-        operation: row.operation,
-        sessionId: row.session_id || undefined,
-        model: row.model,
-        provider: row.provider as AIPerformanceLog["provider"],
-        inputTokens: row.input_tokens,
-        outputTokens: row.output_tokens,
-        totalTokens: row.total_tokens,
-        estimatedCost: parseFloat(String(row.estimated_cost)),
-        duration: row.duration,
-        success: row.success,
-        errorMessage: row.error_message || undefined,
-        cachedInputTokens: row.cached_input_tokens || undefined,
-        uncachedInputTokens: row.uncached_input_tokens || undefined,
-        reasoningTokens: row.reasoning_tokens || undefined,
-        cacheHitRate: row.cache_hit_rate
-          ? parseFloat(String(row.cache_hit_rate))
-          : undefined,
-        costBreakdown: row.cost_breakdown as AIPerformanceLog["costBreakdown"],
-        metadata: row.metadata as AIPerformanceLog["metadata"],
-      }),
+      mapRowToLog,
     );
 
     return {
@@ -269,8 +246,12 @@ class PerformanceMonitor {
     };
   }
 
-  getStats(query: GetPerformanceLogsQuery = {}): AIPerformanceStats {
-    const { logs } = this.getLogs({ ...query, limit: MAX_LOGS });
+  /**
+   * 聚合统计：从 DB 拉取匹配行（限制 MAX_LOGS），内存计算 stats。
+   * 数据源由原内存 buffer 改为 DB 查询，保证多实例一致性。
+   */
+  async getStats(query: GetPerformanceLogsQuery = {}): Promise<AIPerformanceStats> {
+    const { logs } = await this.getLogs({ ...query, limit: MAX_LOGS });
 
     const totalCachedInputTokens = logs.reduce(
       (sum: number, l: AIPerformanceLog) => sum + (l.cachedInputTokens || 0),
@@ -373,8 +354,26 @@ class PerformanceMonitor {
     return stats;
   }
 
-  getLogsBySession(sessionId: string): AIPerformanceLog[] {
-    return this.logs.filter((l) => l.sessionId === sessionId);
+  /**
+   * 按 sessionId 查询日志（多实例化改造：改为 DB 查询）。
+   */
+  async getLogsBySession(sessionId: string): Promise<AIPerformanceLog[]> {
+    const { data, error } = await getSupabaseAdmin()
+      .from("ai_performance_logs")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("timestamp", { ascending: false })
+      .limit(MAX_LOGS);
+
+    if (error) {
+      logger.error(
+        "[PerformanceMonitor] Failed to fetch logs by session:",
+        error,
+      );
+      return [];
+    }
+
+    return ((data || []) as DatabaseLogRow[]).map(mapRowToLog);
   }
 
   async getSessionStats(sessionId: string): Promise<{
@@ -399,54 +398,42 @@ class PerformanceMonitor {
     };
   }
 
-  clearLogs(beforeTimestamp?: number): number {
-    if (beforeTimestamp) {
-      const beforeCount = this.logs.length;
-      this.logs = this.logs.filter((l) => l.timestamp >= beforeTimestamp);
+  /**
+   * 清理日志（多实例化改造：内存 buffer 已移除，直接基于 DB 删除并返回删除条数）。
+   * - 传 beforeTimestamp：删除该时间戳之前的日志
+   * - 不传：删除 30 天前的日志（保留最近 30 天）
+   */
+  async clearLogs(beforeTimestamp?: number): Promise<number> {
+    const cutoff =
+      beforeTimestamp ?? Date.now() - 30 * 24 * 60 * 60 * 1000;
 
-      // 异步清理数据库
-      (async () => {
-        try {
-          await getSupabaseAdmin()
-            .from("ai_performance_logs")
-            .delete()
-            .lt("timestamp", beforeTimestamp);
-          logger.info(
-            `[PerformanceMonitor] Cleared database logs before ${new Date(beforeTimestamp).toISOString()}`,
-          );
-        } catch (error) {
-          logger.error(
-            "[PerformanceMonitor] Failed to clear database logs:",
-            error,
-          );
-        }
-      })();
+    try {
+      const { data, error } = await getSupabaseAdmin()
+        .from("ai_performance_logs")
+        .delete()
+        .lt("timestamp", cutoff)
+        .select("id");
 
-      return beforeCount - this.logs.length;
-    }
-    const count = this.logs.length;
-    this.logs = [];
-
-    // 清理所有数据库记录（可选：只清理30天前的）
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    (async () => {
-      try {
-        await getSupabaseAdmin()
-          .from("ai_performance_logs")
-          .delete()
-          .lt("timestamp", thirtyDaysAgo);
-        logger.info(
-          `[PerformanceMonitor] Cleared old logs from database (kept last 30 days)`,
-        );
-      } catch (error) {
+      if (error) {
         logger.error(
-          "[PerformanceMonitor] Failed to clear old database logs:",
+          "[PerformanceMonitor] Failed to clear database logs:",
           error,
         );
+        return 0;
       }
-    })();
 
-    return count;
+      const deletedCount = (data || []).length;
+      logger.info(
+        `[PerformanceMonitor] Cleared ${deletedCount} logs before ${new Date(cutoff).toISOString()}`,
+      );
+      return deletedCount;
+    } catch (error) {
+      logger.error(
+        "[PerformanceMonitor] Failed to clear database logs:",
+        error,
+      );
+      return 0;
+    }
   }
 
   async getDatabaseStats(): Promise<{

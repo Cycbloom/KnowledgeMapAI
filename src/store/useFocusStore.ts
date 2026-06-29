@@ -1,7 +1,5 @@
-import { create } from "zustand";
-import { persist, devtools } from "zustand/middleware";
-
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
+import { createPersistedStore } from "./createPersistedStore";
 
 interface FocusState {
   focusDuration: number;
@@ -52,74 +50,69 @@ const DEFAULT_SETTINGS = {
 
 export { DEFAULT_SETTINGS };
 
-export const useFocusStore = create<FocusState>()(
-  devtools(
-    persist(
-      (set, get) => ({
-        focusDuration: DEFAULT_SETTINGS.focusDuration,
-        shortBreakDuration: DEFAULT_SETTINGS.shortBreakDuration,
-        longBreakDuration: DEFAULT_SETTINGS.longBreakDuration,
-        longBreakInterval: DEFAULT_SETTINGS.longBreakInterval,
-        autoStartBreak: DEFAULT_SETTINGS.autoStartBreak,
-        autoStartPomodoro: DEFAULT_SETTINGS.autoStartPomodoro,
-        soundEnabled: DEFAULT_SETTINGS.soundEnabled,
-        notificationEnabled: DEFAULT_SETTINGS.notificationEnabled,
+export const useFocusStore = createPersistedStore<FocusState>(
+  "focus",
+  (set, get) => ({
+    focusDuration: DEFAULT_SETTINGS.focusDuration,
+    shortBreakDuration: DEFAULT_SETTINGS.shortBreakDuration,
+    longBreakDuration: DEFAULT_SETTINGS.longBreakDuration,
+    longBreakInterval: DEFAULT_SETTINGS.longBreakInterval,
+    autoStartBreak: DEFAULT_SETTINGS.autoStartBreak,
+    autoStartPomodoro: DEFAULT_SETTINGS.autoStartPomodoro,
+    soundEnabled: DEFAULT_SETTINGS.soundEnabled,
+    notificationEnabled: DEFAULT_SETTINGS.notificationEnabled,
 
-        isInFocusMode: false,
-        highlightEnabled: false,
-        highlightIntensity: 0.5,
-        currentNodeId: null,
+    isInFocusMode: false,
+    highlightEnabled: false,
+    highlightIntensity: 0.5,
+    currentNodeId: null,
 
-        updateSettings: (settings) => {
-          set((state) => {
-            const newState = { ...state, ...settings };
-            return newState;
-          });
-          // Notify subscribers of settings change
-          const current = get();
-          frontendEventBus.publish("focus_settings_changed", {
-            focusDuration: current.focusDuration,
-            shortBreakDuration: current.shortBreakDuration,
-            longBreakDuration: current.longBreakDuration,
-            longBreakInterval: current.longBreakInterval,
-            autoStartBreak: current.autoStartBreak,
-            autoStartPomodoro: current.autoStartPomodoro,
-          });
-        },
+    updateSettings: (settings) => {
+      set((state) => {
+        const newState = { ...state, ...settings };
+        return newState;
+      });
+      // Notify subscribers of settings change
+      const current = get();
+      frontendEventBus.publish("focus_settings_changed", {
+        focusDuration: current.focusDuration,
+        shortBreakDuration: current.shortBreakDuration,
+        longBreakDuration: current.longBreakDuration,
+        longBreakInterval: current.longBreakInterval,
+        autoStartBreak: current.autoStartBreak,
+        autoStartPomodoro: current.autoStartPomodoro,
+      });
+    },
 
-        enterFocusMode: (nodeId) =>
-          set({
-            isInFocusMode: true,
-            currentNodeId: nodeId || null,
-          }),
-
-        exitFocusMode: () => {
-          const nodeId = get().currentNodeId;
-          set({ isInFocusMode: false });
-          frontendEventBus.publish("focus_exit", { nodeId: nodeId ?? undefined });
-        },
-
-        setHighlightEnabled: (enabled) => set({ highlightEnabled: enabled }),
-
-        setHighlightIntensity: (intensity) =>
-          set({ highlightIntensity: intensity }),
+    enterFocusMode: (nodeId) =>
+      set({
+        isInFocusMode: true,
+        currentNodeId: nodeId || null,
       }),
-      {
-        name: "focus-storage",
-        partialize: (state) => ({
-          focusDuration: state.focusDuration,
-          shortBreakDuration: state.shortBreakDuration,
-          longBreakDuration: state.longBreakDuration,
-          longBreakInterval: state.longBreakInterval,
-          autoStartBreak: state.autoStartBreak,
-          autoStartPomodoro: state.autoStartPomodoro,
-          soundEnabled: state.soundEnabled,
-          notificationEnabled: state.notificationEnabled,
-          highlightEnabled: state.highlightEnabled,
-          highlightIntensity: state.highlightIntensity,
-        }),
-      },
-    ),
-    { name: "FocusStore" },
-  ),
+
+    exitFocusMode: () => {
+      const nodeId = get().currentNodeId;
+      set({ isInFocusMode: false });
+      frontendEventBus.publish("focus_exit", { nodeId: nodeId ?? undefined });
+    },
+
+    setHighlightEnabled: (enabled) => set({ highlightEnabled: enabled }),
+
+    setHighlightIntensity: (intensity) =>
+      set({ highlightIntensity: intensity }),
+  }),
+  {
+    partialize: (state) => ({
+      focusDuration: state.focusDuration,
+      shortBreakDuration: state.shortBreakDuration,
+      longBreakDuration: state.longBreakDuration,
+      longBreakInterval: state.longBreakInterval,
+      autoStartBreak: state.autoStartBreak,
+      autoStartPomodoro: state.autoStartPomodoro,
+      soundEnabled: state.soundEnabled,
+      notificationEnabled: state.notificationEnabled,
+      highlightEnabled: state.highlightEnabled,
+      highlightIntensity: state.highlightIntensity,
+    }),
+  },
 );

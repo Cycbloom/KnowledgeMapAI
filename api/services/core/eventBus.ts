@@ -4,6 +4,10 @@ import type {
   AppEvent,
   AppEventHandler,
 } from "../../../shared/types/events";
+import {
+  createEventBusBackend,
+  type EventBusBackend,
+} from "./eventBusBackend";
 
 export interface DeadLetterEntry {
   eventId: string;
@@ -16,26 +20,17 @@ export interface DeadLetterEntry {
 }
 
 class AppEventBus {
-  private handlers: Map<string, Set<AppEventHandler>> = new Map();
+  private backend: EventBusBackend = createEventBusBackend();
   private deadLetterQueue: DeadLetterEntry[] = [];
   private readonly maxDeadLetterQueueSize = 100;
   private readonly maxRetries = 3;
 
   subscribe(eventType: AppEventType, handler: AppEventHandler): void {
-    if (!this.handlers.has(eventType)) {
-      this.handlers.set(eventType, new Set());
-    }
-    this.handlers.get(eventType)!.add(handler);
+    this.backend.subscribe(eventType, handler);
   }
 
   unsubscribe(eventType: AppEventType, handler: AppEventHandler): void {
-    const handlers = this.handlers.get(eventType);
-    if (handlers) {
-      handlers.delete(handler);
-      if (handlers.size === 0) {
-        this.handlers.delete(eventType);
-      }
-    }
+    this.backend.unsubscribe(eventType, handler);
   }
 
   publish<T = unknown>(
@@ -53,7 +48,7 @@ class AppEventBus {
       source,
     };
 
-    const handlers = this.handlers.get(eventType);
+    const handlers = this.backend.getHandlers(eventType);
     if (!handlers || handlers.size === 0) {
       logger.debug(`[AppEventBus] No subscribers for ${eventType}`);
       return;
@@ -161,17 +156,17 @@ class AppEventBus {
 
   getHandlerCount(eventType?: AppEventType): number {
     if (eventType) {
-      return this.handlers.get(eventType)?.size ?? 0;
+      return this.backend.getHandlers(eventType)?.size ?? 0;
     }
     let total = 0;
-    for (const handlers of this.handlers.values()) {
-      total += handlers.size;
+    for (const et of this.backend.getEventTypes()) {
+      total += this.backend.getHandlers(et)?.size ?? 0;
     }
     return total;
   }
 
   clear(): void {
-    this.handlers.clear();
+    this.backend.clear();
   }
 }
 

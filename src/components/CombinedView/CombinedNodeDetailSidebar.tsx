@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Node, Edge } from "../../types";
 import { levelLabels } from "../../config/graphConfig";
 import { getLevel } from "../../lib/graphUtils";
-import { preprocessMarkdown } from "../../utils/markdownUtils";
+import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { TermTooltip } from "../common";
 import { CodeBlock, Mermaid } from "../common";
 import ReactMarkdown from "react-markdown";

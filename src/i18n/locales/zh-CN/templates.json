@@ -148,7 +148,8 @@
     "sub": "子节点",
     "normal": "普通节点",
     "leaf": "叶节点",
-    "level": "级别"
+    "level": "级别",
+    "needsRefinement": "待完善"
   },
   "edge": {
     "sourceNode": "选择源节点",

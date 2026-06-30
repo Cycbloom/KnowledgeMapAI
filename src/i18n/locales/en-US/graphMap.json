@@ -69,13 +69,17 @@
     "analyze": "Cross-Domain Analysis",
     "analyzing": "Analyzing...",
     "title": "Cross-Domain Insights Analysis",
-    "reanalyze": "Re-analyze"
+    "reanalyze": "Re-analyze",
+    "analyzeComplete": "Cross-domain analysis complete",
+    "analyzeFailed": "Cross-domain analysis failed"
   },
   "domainPicker": {
     "title": "Set Domain",
     "noDomains": "No available domains",
     "batchTitle": "Batch Set Domain",
-    "batchDesc": "Set domain for {{count}} selected graphs"
+    "batchDesc": "Set domain for {{count}} selected graphs",
+    "setSuccess": "Domain set successfully",
+    "setFailed": "Failed to set domain"
   },
   "batch": {
     "selected": "{{count}} graphs selected",

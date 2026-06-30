@@ -6,7 +6,7 @@ import rehypeKatex from "rehype-katex";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, Info } from "lucide-react";
 import { CodeBlock, TermTooltip } from "../common";
-import { preprocessMarkdown } from "../../utils/markdownUtils";
+import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { useFocusStore } from "../../store/useFocusStore";
 
 interface HighlightRange {

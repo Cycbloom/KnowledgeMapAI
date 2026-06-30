@@ -7,7 +7,7 @@ import {
   getStatusColors,
 } from "../../../config/learningStatusColors";
 import { getLevel } from "../../../lib/graphUtils";
-import { preprocessMarkdown } from "../../../utils/markdownUtils";
+import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
 import { TermTooltip, CodeBlock, Mermaid } from "../../common";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

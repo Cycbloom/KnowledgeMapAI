@@ -49,7 +49,38 @@
     "paused": "已暂停",
     "sessionsCompleted": "本次已完成 {{count}} 个专注时段",
     "lock": "锁定",
-    "unlock": "解锁"
+    "unlock": "解锁",
+    "noiseCategories": {
+      "nature": "自然",
+      "environment": "环境",
+      "meditation": "冥想"
+    },
+    "noiseOptions": {
+      "rain": "雨声",
+      "thunder": "雷声",
+      "ocean": "海浪",
+      "stream": "溪流",
+      "wind": "风声",
+      "forest": "森林",
+      "fire": "篝火",
+      "cafe": "咖啡馆",
+      "library": "图书馆",
+      "night": "夜晚",
+      "train": "火车",
+      "airplane": "飞机",
+      "singing_bowl": "颂钵",
+      "wind_chime": "风铃",
+      "breathing": "呼吸引导",
+      "white_noise": "白噪音",
+      "pink_noise": "粉噪音"
+    },
+    "presetNames": {
+      "rainy-reading": "雨天阅读",
+      "late-night-work": "深夜工作",
+      "forest-meditation": "森林冥想",
+      "beach-relax": "海滩放松"
+    },
+    "timer": "计时器"
   },
   "overview": {
     "title": "图谱大纲",

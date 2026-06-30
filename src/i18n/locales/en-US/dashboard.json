@@ -27,6 +27,7 @@
     "import": "Import",
     "importing": "Importing...",
     "graphMap": "Graph Map",
+    "newGraph": "New Graph",
     "aiGenerate": "AI Generate"
   },
   "create": {

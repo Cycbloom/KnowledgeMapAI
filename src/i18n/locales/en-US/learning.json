@@ -565,6 +565,7 @@
     "levelLeaf": "Leaf",
     "parentLabel": "Parent Node",
     "noParent": "No Parent",
+    "needsRefinement": "Needs Refinement",
     "cancel": "Cancel",
     "createButton": "Create Node"
   },

@@ -1,0 +1,8 @@
+- [x] `scripts/check-i18n-keys.ts` 存在，运行后 en-US/zh-CN key 零差异
+- [x] `statistics.json` zh-CN key 数量与 en-US 一致
+- [x] `useQuadrantViewState.ts` 已删除，`hooks/index.ts` 中无对应 export
+- [x] `src/utils/markdownPreprocessor.ts` 存在，3个导入文件路径已更新
+- [x] `src/utils/markdownUtils.ts` 不存在
+- [x] `package.json` 包含 `check:i18n` 脚本命令
+- [x] `npm run check:full` 通过
+- [x] `npm run lint:full` 通过

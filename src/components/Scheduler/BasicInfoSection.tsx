@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, Clock, Tag, AlertTriangle } from 'lucide-react';
-import { formatDurationMinutes } from '../../utils/formatters';
+import { formatDurationMinutes, formatDate as formatDateUtil } from '../../utils/formatters';
 import { UserTaskDetail } from '../../types';
 
 interface BasicInfoSectionProps {
@@ -9,11 +9,7 @@ interface BasicInfoSectionProps {
 
 export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ task }) => {
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    return formatDateUtil(date);
   };
 
   return (

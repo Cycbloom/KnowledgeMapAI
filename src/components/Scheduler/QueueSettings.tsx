@@ -4,6 +4,7 @@ import {
   X, Plus, Trash2, Clock, Palette, AlertTriangle,
   GripVertical, Check, Loader2
 } from 'lucide-react';
+import { QUEUE_NAME_COLORS, type QueueColorName } from '@/constants/scheduler';
 
 export interface Queue {
   id: string;
@@ -13,7 +14,7 @@ export interface Queue {
   order: number;
 }
 
-export type QueueColor = 'cyan' | 'blue' | 'emerald' | 'amber' | 'orange' | 'purple' | 'pink' | 'red';
+export type QueueColor = QueueColorName;
 
 export interface CreateQueueData {
   name: string;
@@ -35,65 +36,6 @@ interface QueueSettingsProps {
   onReorder: (queueIds: string[]) => Promise<void>;
   onClose: () => void;
 }
-
-const QUEUE_COLORS: Record<QueueColor, { bg: string; text: string; border: string; ring: string; gradient: string }> = {
-  cyan: {
-    bg: 'bg-primary-100 dark:bg-primary-500/20',
-    text: 'text-primary-700 dark:text-primary-300',
-    border: 'border-primary-300 dark:border-primary-500/50',
-    ring: 'ring-primary-500',
-    gradient: 'from-primary-500 to-primary-600',
-  },
-  blue: {
-    bg: 'bg-primary-100 dark:bg-primary-500/20',
-    text: 'text-primary-700 dark:text-primary-300',
-    border: 'border-primary-300 dark:border-primary-500/50',
-    ring: 'ring-primary-500',
-    gradient: 'from-primary-500 to-primary-600',
-  },
-  emerald: {
-    bg: 'bg-emerald-100 dark:bg-emerald-500/20',
-    text: 'text-emerald-700 dark:text-emerald-300',
-    border: 'border-emerald-300 dark:border-emerald-500/50',
-    ring: 'ring-emerald-500',
-    gradient: 'from-emerald-500 to-emerald-600',
-  },
-  amber: {
-    bg: 'bg-amber-100 dark:bg-amber-500/20',
-    text: 'text-amber-700 dark:text-amber-300',
-    border: 'border-amber-300 dark:border-amber-500/50',
-    ring: 'ring-amber-500',
-    gradient: 'from-amber-500 to-amber-600',
-  },
-  orange: {
-    bg: 'bg-orange-100 dark:bg-orange-500/20',
-    text: 'text-orange-700 dark:text-orange-300',
-    border: 'border-orange-300 dark:border-orange-500/50',
-    ring: 'ring-orange-500',
-    gradient: 'from-orange-500 to-orange-600',
-  },
-  purple: {
-    bg: 'bg-primary-100 dark:bg-primary-500/20',
-    text: 'text-primary-700 dark:text-primary-300',
-    border: 'border-primary-300 dark:border-primary-500/50',
-    ring: 'ring-primary-500',
-    gradient: 'from-primary-500 to-primary-600',
-  },
-  pink: {
-    bg: 'bg-pink-100 dark:bg-pink-500/20',
-    text: 'text-pink-700 dark:text-pink-300',
-    border: 'border-pink-300 dark:border-pink-500/50',
-    ring: 'ring-pink-500',
-    gradient: 'from-pink-500 to-pink-600',
-  },
-  red: {
-    bg: 'bg-red-100 dark:bg-red-500/20',
-    text: 'text-red-700 dark:text-red-300',
-    border: 'border-red-300 dark:border-red-500/50',
-    ring: 'ring-red-500',
-    gradient: 'from-red-500 to-red-600',
-  },
-};
 
 const TIME_SLICE_OPTIONS = [
   { value: 15, label: '15 分钟' },
@@ -183,7 +125,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
     setLoading(true);
     try {
       const usedColors = localQueues.map(q => q.color);
-      const availableColor = (Object.keys(QUEUE_COLORS) as QueueColor[]).find(
+      const availableColor = (Object.keys(QUEUE_NAME_COLORS) as QueueColor[]).find(
         c => !usedColors.includes(c)
       ) || 'cyan';
       
@@ -229,19 +171,19 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
     onChange: (color: QueueColor) => void;
   }> = ({ value, onChange }) => (
     <div className="flex flex-wrap gap-2">
-      {(Object.keys(QUEUE_COLORS) as QueueColor[]).map(color => (
+      {(Object.keys(QUEUE_NAME_COLORS) as QueueColor[]).map(color => (
         <button
           key={color}
           type="button"
           onClick={() => onChange(color)}
           className={`
             w-8 h-8 rounded-lg transition-all relative
-            ${QUEUE_COLORS[color].bg} ${QUEUE_COLORS[color].border} border-2
-            ${value === color ? `ring-2 ${QUEUE_COLORS[color].ring} ring-offset-2 dark:ring-offset-slate-800` : 'hover:scale-110'}
+            ${QUEUE_NAME_COLORS[color].bg} ${QUEUE_NAME_COLORS[color].border} border-2
+            ${value === color ? `ring-2 ${QUEUE_NAME_COLORS[color].ring} ring-offset-2 dark:ring-offset-slate-800` : 'hover:scale-110'}
           `}
         >
           {value === color && (
-            <Check size={14} className={`absolute inset-0 m-auto ${QUEUE_COLORS[color].text}`} />
+            <Check size={14} className={`absolute inset-0 m-auto ${QUEUE_NAME_COLORS[color].text}`} />
           )}
         </button>
       ))}
@@ -250,7 +192,7 @@ export const QueueSettings: React.FC<QueueSettingsProps> = ({
 
   const QueueItem: React.FC<{ queue: Queue; index: number }> = ({ queue, index }) => {
     const isEditing = editingId === queue.id;
-    const colorStyle = QUEUE_COLORS[isEditing ? (editData.color || queue.color) : queue.color];
+    const colorStyle = QUEUE_NAME_COLORS[isEditing ? (editData.color || queue.color) : queue.color];
 
     if (isEditing) {
       return (

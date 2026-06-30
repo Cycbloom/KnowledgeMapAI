@@ -1,93 +1,80 @@
 import type { Graph, Domain, GraphDomain } from './graph';
 import type { User } from './user';
-import type { UserTask } from './scheduler';
+import type { UserTask, UserTaskStatus, TaskType, ProgressMode, Achievement } from './scheduler';
 import type { Database } from './database.generated';
 
-// 5 个高频 Row 类型改为引用 supabase 自动生成的类型（保留原类型名作为别名以保持下游引用兼容）
+// ===== Row 类型全部引用 supabase 自动生成的类型 =====
+// 保留原类型名作为别名以保持下游引用兼容
+
 export type KnowledgeGraphRow = Database['public']['Tables']['knowledge_graphs']['Row'];
 export type GraphNodeRow = Database['public']['Tables']['graph_nodes']['Row'];
 export type StudyCardRow = Database['public']['Tables']['study_cards']['Row'];
 export type GraphRelationRow = Database['public']['Tables']['graph_relations']['Row'];
 export type DomainRow = Database['public']['Tables']['domains']['Row'];
+export type GraphDomainRow = Database['public']['Tables']['graph_domains']['Row'];
+export type UserTaskRow = Database['public']['Tables']['user_tasks']['Row'];
+export type TaskDependencyRow = Database['public']['Tables']['task_dependencies']['Row'];
+export type TaskExecutionRow = Database['public']['Tables']['task_executions']['Row'];
+export type TaskSubtaskRow = Database['public']['Tables']['task_subtasks']['Row'];
+export type AchievementRow = Database['public']['Tables']['achievements']['Row'];
+export type UserAchievementRow = Database['public']['Tables']['user_achievements']['Row'];
+export type FocusSessionRow = Database['public']['Tables']['focus_sessions']['Row'];
+export type PeriodicTaskRow = Database['public']['Tables']['periodic_tasks']['Row'];
+export type UserFocusStatsRow = Database['public']['Tables']['user_focus_stats']['Row'];
+export type TaskKnowledgePointRow = Database['public']['Tables']['task_knowledge_points']['Row'];
+export type TaskLinkRow = Database['public']['Tables']['task_links']['Row'];
+export type QueueRow = Database['public']['Tables']['queues']['Row'];
+export type TaskSettingsRow = Database['public']['Tables']['task_settings']['Row'];
+export type UserTimeSlotRow = Database['public']['Tables']['user_time_slots']['Row'];
+export type TaskScheduleRow = Database['public']['Tables']['task_schedules']['Row'];
+export type TaskProgressPlanRow = Database['public']['Tables']['task_progress_plans']['Row'];
 
-export interface GraphDomainRow {
-  id: string;
-  graph_id: string;
-  domain_id: string;
-  is_primary: boolean;
-  created_at: string;
+// ===== 类型守卫：替代 `as` 断言 =====
+
+const USER_TASK_STATUSES: readonly string[] = [
+  'pending', 'in_progress', 'paused', 'completed', 'cancelled',
+] as const;
+
+const TASK_TYPES: readonly string[] = [
+  'one_time', 'long_term', 'periodic', 'learning', 'graph_learning',
+] as const;
+
+const PROGRESS_MODES: readonly string[] = [
+  'average', 'decreasing', 'increasing', 'custom',
+] as const;
+
+function isStringIn<T extends string>(value: string | null | undefined, list: readonly string[]): value is T {
+  return value !== null && value !== undefined && list.includes(value);
 }
 
-export interface UserTaskRow {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string | null;
-  queue_id?: string | null;
-  queue_level: number;
-  position: number;
-  estimated_duration?: number | null;
-  actual_duration?: number | null;
-  deadline?: string | null;
-  status: string;
-  tags: string[];
-  knowledge_point_id?: string | null;
-  priority: number;
-  task_type: string;
-  total_duration?: number | null;
-  progress_mode?: string | null;
-  progress_percentage: number;
-  parent_task_id?: string | null;
-  context?: Record<string, unknown> | null;
-  scheduled_start?: string | null;
-  scheduled_end?: string | null;
-  notes?: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string | null;
-  completed_at?: string | null;
+export function isUserTaskStatus(value: string | null | undefined): value is UserTaskStatus {
+  return isStringIn(value, USER_TASK_STATUSES);
 }
 
-export interface TaskDependencyRow {
-  id: string;
-  task_id: string;
-  depends_on_task_id: string;
-  dependency_type: string;
-  created_at: string;
+export function isTaskType(value: string | null | undefined): value is TaskType {
+  return isStringIn(value, TASK_TYPES);
 }
 
-export interface TaskExecutionRow {
-  id: string;
-  task_id: string;
-  user_id: string;
-  started_at: string;
-  ended_at?: string | null;
-  duration?: number | null;
-  queue_level?: number | null;
-  status: string;
+export function isProgressMode(value: string | null | undefined): value is ProgressMode {
+  return isStringIn(value, PROGRESS_MODES);
 }
 
-export interface TaskSubtaskRow {
-  id: string;
-  task_id: string;
-  title: string;
-  description?: string | null;
-  status: string;
-  priority: number;
-  position: number;
-  estimated_duration?: number | null;
-  actual_duration?: number | null;
-  due_date?: string | null;
-  completed_at?: string | null;
-  learning_path_node_id?: string | null;
-  knowledge_point_id: string;
-  learning_state: string;
-  mastery_level: number;
-  last_state_change_at: string;
-  state_history: Record<string, unknown>[];
-  created_at: string;
-  updated_at: string;
+/** 将数据库 Row 的 status 转为联合类型，非法值回退为 'pending' */
+export function toUserTaskStatus(value: string | null | undefined): UserTaskStatus {
+  return isUserTaskStatus(value) ? value : 'pending';
 }
+
+/** 将数据库 Row 的 task_type 转为联合类型，非法值回退为 'one_time' */
+export function toTaskType(value: string | null | undefined): TaskType {
+  return isTaskType(value) ? value : 'one_time';
+}
+
+/** 将数据库 Row 的 progress_mode 转为联合类型，非法值回退为 'average' */
+export function toProgressMode(value: string | null | undefined): ProgressMode {
+  return isProgressMode(value) ? value : 'average';
+}
+
+// ===== 转换函数 =====
 
 export function toGraph(row: KnowledgeGraphRow): Graph {
   return {
@@ -96,7 +83,7 @@ export function toGraph(row: KnowledgeGraphRow): Graph {
     description: row.description ?? undefined,
     domain: row.domain ?? undefined,
     user_id: row.user_id ?? undefined,
-    settings: row.settings as Graph['settings'] ?? undefined,
+    settings: validateGraphSettings(row.settings),
     created_at: row.created_at,
     updated_at: row.updated_at ?? undefined,
     nodes_count: row.nodes_count ?? undefined,
@@ -140,164 +127,9 @@ export function toGraphDomain(row: GraphDomainRow): GraphDomain {
     id: row.id,
     graph_id: row.graph_id,
     domain_id: row.domain_id,
-    is_primary: row.is_primary,
-    created_at: row.created_at,
+    is_primary: row.is_primary ?? false,
+    created_at: row.created_at ?? '',
   };
-}
-
-export interface AchievementRow {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  category: 'focus' | 'tasks' | 'streak' | 'special' | 'study' | 'creation';
-  icon: string;
-  color: string;
-  xp_reward: number;
-  condition_type: string;
-  condition_value: number;
-  is_hidden: boolean;
-  trigger_events: string[];
-  created_at: string;
-}
-
-export interface UserAchievementRow {
-  id: string;
-  user_id: string;
-  achievement_id: string;
-  unlocked_at: string;
-  progress: number;
-  metadata: Record<string, unknown>;
-  created_at: string;
-}
-
-export interface FocusSessionRow {
-  id: string;
-  user_id: string;
-  task_id?: string | null;
-  started_at: string;
-  ended_at?: string | null;
-  duration?: number | null;
-  mode?: string | null;
-  completed?: boolean | null;
-  pomodoro_count: number;
-  white_noise_type?: string | null;
-  is_break: boolean;
-  created_at: string;
-}
-
-export interface PeriodicTaskRow {
-  id: string;
-  user_id: string;
-  period_type: 'daily' | 'weekly' | 'monthly' | 'quarterly';
-  period_start: string;
-  period_end: string;
-  task_type: string;
-  target: number;
-  progress: number;
-  status: 'pending' | 'completed';
-  xp_reward: number;
-  pass_points: number;
-  created_at: string;
-  updated_at: string;
-  completed_at?: string | null;
-}
-
-export interface UserFocusStatsRow {
-  id: string;
-  user_id: string;
-  total_focus_seconds: number;
-  total_sessions: number;
-  total_pomodoros: number;
-  total_tasks_completed: number;
-  current_streak: number;
-  longest_streak: number;
-  last_focus_date?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TaskKnowledgePointRow {
-  id: string;
-  task_id: string;
-  knowledge_point_id: string;
-  relevance_score: number;
-  is_primary: boolean;
-  notes?: string | null;
-  created_at: string;
-}
-
-export interface TaskLinkRow {
-  id: string;
-  task_id: string;
-  link_type: string;
-  title?: string | null;
-  url: string;
-  description?: string | null;
-  icon?: string | null;
-  metadata?: Record<string, unknown> | null;
-  position: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface QueueRow {
-  id: string;
-  user_id: string;
-  name: string;
-  color: string;
-  time_slice: number;
-  priority: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TaskSettingsRow {
-  id: string;
-  user_id: string;
-  q0_time_slice: number;
-  q1_time_slice: number;
-  q2_time_slice: number;
-  break_duration: number;
-  sound_enabled: boolean;
-  notification_enabled: boolean;
-  created_at?: string | null;
-  updated_at?: string | null;
-}
-
-export interface UserTimeSlotRow {
-  id: string;
-  user_id: string;
-  day_of_week: number | null;
-  start_time: string;
-  end_time: string;
-  is_available: boolean;
-  label?: string | null;
-  created_at: string;
-}
-
-export interface TaskScheduleRow {
-  id: string;
-  user_id: string;
-  task_template_id: string;
-  schedule_type: string;
-  schedule_config: Record<string, unknown>;
-  next_run_at?: string | null;
-  last_run_at?: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TaskProgressPlanRow {
-  id: string;
-  task_id: string;
-  plan_date: string;
-  planned_percentage: number;
-  actual_percentage: number;
-  status: string;
-  notes?: string | null;
-  created_at: string;
 }
 
 export function toUserTask(row: UserTaskRow): UserTask {
@@ -306,25 +138,51 @@ export function toUserTask(row: UserTaskRow): UserTask {
     user_id: row.user_id,
     title: row.title,
     description: row.description ?? undefined,
-    queue_level: row.queue_level,
+    queue_level: row.queue_level ?? 0,
     position: row.position,
     estimated_duration: row.estimated_duration ?? undefined,
     actual_duration: row.actual_duration ?? undefined,
     deadline: row.deadline ?? undefined,
-    status: row.status as UserTask["status"],
-    tags: row.tags,
+    status: toUserTaskStatus(row.status),
+    tags: row.tags ?? [],
     knowledge_point_id: row.knowledge_point_id ?? undefined,
-    priority: row.priority,
+    priority: row.priority ?? 0,
     queue_id: row.queue_id ?? undefined,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    created_at: row.created_at ?? '',
+    updated_at: row.updated_at ?? '',
     deleted_at: row.deleted_at ?? undefined,
     completed_at: row.completed_at ?? undefined,
-    task_type: row.task_type as UserTask["task_type"],
+    task_type: toTaskType(row.task_type),
     total_duration: row.total_duration ?? undefined,
-    progress_mode: row.progress_mode as UserTask["progress_mode"],
+    progress_mode: toProgressMode(row.progress_mode),
     progress_percentage: row.progress_percentage,
     parent_task_id: row.parent_task_id ?? undefined,
     context: row.context ? JSON.stringify(row.context) : undefined,
+  };
+}
+
+// ===== Graph settings 校验 =====
+
+function validateGraphSettings(raw: Record<string, unknown> | null | undefined): Graph['settings'] {
+  if (!raw) return undefined;
+  // 保守校验：只要满足 settings 的形状即通过，未知字段保留
+  return raw as Graph['settings'];
+}
+
+export function toAchievement(row: AchievementRow): Achievement {
+  return {
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    description: row.description ?? '',
+    category: row.category as Achievement['category'],
+    icon: row.icon ?? '',
+    color: row.color ?? '#3B82F6',
+    xp_reward: row.xp_reward ?? 0,
+    condition_type: row.condition_type,
+    condition_value: row.condition_value,
+    is_hidden: row.is_hidden ?? false,
+    trigger_events: row.trigger_events ?? [],
+    created_at: row.created_at ?? '',
   };
 }

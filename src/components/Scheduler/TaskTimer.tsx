@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Check, Coffee } from 'lucide-react';
+import { formatTimeFromSeconds } from '../../utils/formatters';
 
 interface TaskTimerProps {
   duration: number;
@@ -49,13 +50,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
   const circumference = 2 * Math.PI * 90;
   const strokeDashoffset = circumference * (1 - progress);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const progressColor = isBreak 
+  const progressColor = isBreak
     ? '#10B981' 
     : progress < 0.5 
       ? '#06b6d4'
@@ -130,12 +125,12 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
           <motion.div
             className="text-4xl font-mono font-bold tracking-wider"
             style={{ color: progressColor }}
-            key={formatTime(remaining)}
+            key={formatTimeFromSeconds(remaining)}
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.2 }}
           >
-            {formatTime(remaining)}
+            {formatTimeFromSeconds(remaining)}
           </motion.div>
           
           <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
@@ -204,11 +199,11 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
       <div className="mt-4 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400" />
-          <span>已用: {formatTime(displayTime)}</span>
+          <span>已用: {formatTimeFromSeconds(displayTime)}</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
-          <span>总计: {formatTime(duration)}</span>
+          <span>总计: {formatTimeFromSeconds(duration)}</span>
         </div>
       </div>
     </div>

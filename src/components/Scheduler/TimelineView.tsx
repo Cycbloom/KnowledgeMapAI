@@ -3,6 +3,7 @@ import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { UserTask } from '@shared/types';
+import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 import { TaskCard } from './TaskCard';
 
 interface TimelineViewProps {
@@ -10,12 +11,6 @@ interface TimelineViewProps {
   onTaskClick?: (task: UserTask) => void;
   onTaskMove?: (taskId: string, newDeadline: string) => void;
 }
-
-const QUEUE_COLORS = {
-  0: { border: 'border-primary-400 dark:border-primary-400', glow: 'shadow-primary-500/30', bg: 'bg-primary-100 dark:bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400' },
-  1: { border: 'border-secondary-400 dark:border-secondary-400', glow: 'shadow-secondary-500/30', bg: 'bg-secondary-100 dark:bg-secondary-500/10', text: 'text-secondary-600 dark:text-secondary-400' },
-  2: { border: 'border-tertiary-400 dark:border-tertiary-400', glow: 'shadow-tertiary-500/30', bg: 'bg-tertiary-100 dark:bg-tertiary-500/10', text: 'text-tertiary-600 dark:text-tertiary-400' },
-};
 
 export const TimelineView: React.FC<TimelineViewProps> = ({
   tasks,
@@ -239,7 +234,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                      QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
+                      QUEUE_COLORS[task.queue_level as QueueLevel]?.bg || 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
                     }`}>
                       Q{task.queue_level}
                     </span>

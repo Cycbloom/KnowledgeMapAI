@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useFocusStore } from "../../store/useFocusStore";
-import type { TimerMode } from "@shared/types";
 import { useTimerStore } from "../../store/useTimerStore";
 import { PomodoroCycleBar } from "./PomodoroCycleBar";
 import {
@@ -15,35 +14,8 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-
-const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
-
-const getModeColor = (m: TimerMode) => {
-  switch (m) {
-    case "focus":
-      return {
-        primary: "#3b82f6",
-        secondary: "#1d4ed8",
-        bg: "rgba(59, 130, 246, 0.15)",
-      };
-    case "shortBreak":
-      return {
-        primary: "#10b981",
-        secondary: "#059669",
-        bg: "rgba(16, 185, 129, 0.15)",
-      };
-    case "longBreak":
-      return {
-        primary: "#8b5cf6",
-        secondary: "#7c3aed",
-        bg: "rgba(139, 92, 246, 0.15)",
-      };
-  }
-};
+import { formatTimeFromSeconds } from "@/utils/formatters";
+import { getModeLabel, TIMER_MODE_COLORS } from "@/constants/timer";
 
 const BALL_SIZE = 52;
 const COLLAPSED_WIDTH = 28;
@@ -70,17 +42,6 @@ export const MobileFocusTimer: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const lastTapRef = useRef<number>(0);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
-
-  const getModeLabel = (m: TimerMode) => {
-    switch (m) {
-      case "focus":
-        return t("focusTimer.focus");
-      case "shortBreak":
-        return t("focusTimer.shortBreak");
-      case "longBreak":
-        return t("focusTimer.longBreak");
-    }
-  };
 
   useEffect(() => {
     const saved = localStorage.getItem("mobileFocusTimerState");
@@ -198,7 +159,7 @@ export const MobileFocusTimer: React.FC = () => {
     return null;
   }
 
-  const colors = getModeColor(mode);
+  const colors = TIMER_MODE_COLORS[mode];
   const progressValue = progress;
   const circumference = 2 * Math.PI * 22;
   const strokeDashoffset = circumference * (1 - progressValue / 100);
@@ -234,7 +195,7 @@ export const MobileFocusTimer: React.FC = () => {
                   className="text-sm font-semibold"
                   style={{ color: colors.primary }}
                 >
-                  {getModeLabel(mode)}
+                  {getModeLabel(mode, t)}
                   {t("focusTimer.mode")}
                 </span>
               </div>
@@ -274,7 +235,7 @@ export const MobileFocusTimer: React.FC = () => {
                 className="block text-center text-xs font-medium mb-3"
                 style={{ color: colors.primary }}
               >
-                {getModeLabel(mode)}
+                {getModeLabel(mode, t)}
               </span>
 
               <div className="relative w-32 h-32 mx-auto mb-4">
@@ -308,7 +269,7 @@ export const MobileFocusTimer: React.FC = () => {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-2xl font-bold font-mono text-gray-800 dark:text-white">
-                    {formatTime(timeLeft)}
+                    {formatTimeFromSeconds(timeLeft)}
                   </span>
                   <span className="text-xs text-gray-400 mt-1">
                     {isRunning
@@ -455,7 +416,7 @@ export const MobileFocusTimer: React.FC = () => {
                     className="text-[8px] font-mono font-bold mt-0.5"
                     style={{ color: colors.primary }}
                   >
-                    {formatTime(timeLeft).slice(3)}
+                    {formatTimeFromSeconds(timeLeft).slice(3)}
                   </span>
                 </div>
               </div>
@@ -517,7 +478,7 @@ export const MobileFocusTimer: React.FC = () => {
                     className="text-[10px] font-mono font-bold mt-0.5"
                     style={{ color: colors.primary }}
                   >
-                    {formatTime(timeLeft)}
+                    {formatTimeFromSeconds(timeLeft)}
                   </span>
                 </div>
               </div>

@@ -34,7 +34,7 @@ import {
   useStartUserTaskMutation,
 } from "../hooks";
 import { message } from "../utils/messageHelper";
-import { formatDurationMinutes } from "../utils/formatters";
+import { formatDurationMinutes, formatTimeFromSeconds } from "../utils/formatters";
 import { useTimerStore } from "../store/useTimerStore";
 import type { UserTask, TaskSettings } from "@shared/types";
 
@@ -66,12 +66,6 @@ const QUEUE_CONFIG = {
     borderClass: "border-amber-200 dark:border-amber-500/30",
     glowColor: "rgba(245, 158, 11, 0.4)",
   },
-};
-
-const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
 const getTimeSlice = (
@@ -429,12 +423,12 @@ export const CurrentTask: React.FC = () => {
                 <motion.div
                   className="text-6xl font-mono font-bold tracking-wider"
                   style={{ color: progressColor }}
-                  key={formatTime(remaining)}
+                  key={formatTimeFromSeconds(remaining)}
                   initial={{ scale: 1.1 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {formatTime(remaining)}
+                  {formatTimeFromSeconds(remaining)}
                 </motion.div>
 
                 <div className="text-sm text-slate-400 dark:text-slate-500 mt-2">
@@ -504,11 +498,11 @@ export const CurrentTask: React.FC = () => {
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: queueConfig.color }}
                 />
-                <span>已用: {formatTime(totalTime - timeLeft)}</span>
+                <span>已用: {formatTimeFromSeconds(totalTime - timeLeft)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
-                <span>总计: {formatTime(totalTime)}</span>
+                <span>总计: {formatTimeFromSeconds(totalTime)}</span>
               </div>
             </div>
           </motion.div>

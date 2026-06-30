@@ -1,6 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { RefreshCcw, AlertTriangle, Home, Bug, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { RefreshCcw, AlertTriangle, Home, Bug } from 'lucide-react';
+import { CopyButton } from './CopyButton';
 
 interface Props {
   children: ReactNode;
@@ -13,7 +13,6 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
-  copied: boolean;
 }
 
 const reportError = async (error: Error, errorInfo: ErrorInfo): Promise<void> => {
@@ -37,36 +36,11 @@ const reportError = async (error: Error, errorInfo: ErrorInfo): Promise<void> =>
   }
 };
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      console.error('Failed to copy');
-    }
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors"
-      title="复制错误信息"
-    >
-      {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-gray-600" />}
-    </button>
-  );
-}
-
 export class ErrorBoundary extends Component<Props, State> {
   override state: State = {
     hasError: false,
     error: null,
     errorInfo: null,
-    copied: false,
   };
 
   public static getDerivedStateFromError(error: Error): Partial<State> {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle, Circle, Clock } from 'lucide-react';
 import { TaskProgressPlan } from '../../types';
+import { formatDate as formatDateUtil } from '../../utils/formatters';
 
 interface ProgressSectionProps {
   progressPlans: TaskProgressPlan[];
@@ -13,8 +14,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({
   progressPercentage,
 }) => {
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    return formatDateUtil(dateStr, 'short');
   };
 
   const sortedPlans = [...progressPlans].sort((a, b) => 

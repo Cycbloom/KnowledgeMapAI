@@ -322,7 +322,7 @@ export const mobilePeriodicTasksApi: IPeriodicTasksApi = {
         if (currentPass) {
           await client
             .from("periodic_passes")
-            .update({ total_points: (currentPass as { total_points: number }).total_points + taskRow.pass_points })
+            .update({ total_points: (currentPass as { total_points: number }).total_points + (taskRow.pass_points ?? 0) })
             .eq("user_id", user.id)
             .eq("period_type", periodType)
             .eq("period_start", start);

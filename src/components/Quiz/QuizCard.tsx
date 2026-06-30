@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Edit2, Trash2, Clock, Layers, FileText, Loader2 } from 'lucide-react';
 import type { QuizSet } from '@shared/types/quiz';
+import { formatDate as formatDateUtil } from '../../utils/formatters';
 
 interface QuizCardProps {
   quiz: QuizSet;
@@ -49,13 +50,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   const isReady = quiz.status === 'ready';
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('zh-CN', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return formatDateUtil(dateStr, 'short-datetime');
   };
 
   const getDifficultyLabel = (difficulty: string) => {

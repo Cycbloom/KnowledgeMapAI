@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { UserTaskDetail } from "../../../types";
-import { formatDurationMinutes } from "../../../utils/formatters";
+import { formatDurationMinutes, formatDate as formatDateUtil } from "../../../utils/formatters";
 import { message as messageHelper } from "../../../utils/messageHelper";
 import { SubtaskList } from "./SubtaskList";
 import { TaskLinks } from "./TaskLinks";
@@ -207,13 +207,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "未设置";
-    return new Date(dateStr).toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateUtil(dateStr, 'full-datetime');
   };
 
   const tabs: { id: WorkTab; label: string; icon: React.ReactNode }[] = [

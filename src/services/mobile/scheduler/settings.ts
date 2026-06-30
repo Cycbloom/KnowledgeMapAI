@@ -23,10 +23,23 @@ export const getSettings = async (): Promise<TaskSettings> => {
       throw new Error(error.message);
     }
 
-    return (data as TaskSettingsRow) ?? {
-      id: "",
-      user_id: userId,
-      ...DEFAULT_TASK_SETTINGS,
+    const row = data as TaskSettingsRow | null;
+    if (!row) {
+      return {
+        id: "",
+        user_id: userId,
+        ...DEFAULT_TASK_SETTINGS,
+      };
+    }
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      q0_time_slice: row.q0_time_slice ?? DEFAULT_TASK_SETTINGS.q0_time_slice,
+      q1_time_slice: row.q1_time_slice ?? DEFAULT_TASK_SETTINGS.q1_time_slice,
+      q2_time_slice: row.q2_time_slice ?? DEFAULT_TASK_SETTINGS.q2_time_slice,
+      break_duration: row.break_duration ?? DEFAULT_TASK_SETTINGS.break_duration,
+      sound_enabled: row.sound_enabled ?? DEFAULT_TASK_SETTINGS.sound_enabled,
+      notification_enabled: row.notification_enabled ?? DEFAULT_TASK_SETTINGS.notification_enabled,
     };
   });
 };

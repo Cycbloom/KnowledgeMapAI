@@ -233,8 +233,30 @@ export function isValidationError(error: unknown): error is ValidationError {
   return false;
 }
 
+/** 可重试的 HTTP 状态码 */
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504] as const;
+
+export class ApiError extends Error {
+  public readonly status: number;
+  public readonly code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function isApiError(error: unknown): error is ApiError {
+  return error instanceof ApiError;
+}
+
 export function getErrorMessage(error: unknown): string {
   if (isAppError(error)) {
+    return error.message;
+  }
+  if (isApiError(error)) {
     return error.message;
   }
   if (error instanceof Error) {
@@ -244,6 +266,62 @@ export function getErrorMessage(error: unknown): string {
     return error;
   }
   return "未知错误";
+}
+
+/**
+ * 判断错误是否可重试。
+ * 合并了 retryFetch.ts（HTTP 状态码 + 网络错误）和 shared/utils/retry.ts（消息关键词）的逻辑。
+ */
+export function isRetryableError(error: unknown): boolean {
+  // 1. AppError：根据 statusCode 判断
+  if (isAppError(error)) {
+    return (RETRYABLE_STATUS_CODES as readonly number[]).includes(error.statusCode);
+  }
+  // 2. ApiError：根据 status 判断
+  if (isApiError(error)) {
+    return (RETRYABLE_STATUS_CODES as readonly number[]).includes(error.status);
+  }
+  // 3. 普通 Error：根据消息关键词和网络特征判断
+  if (error instanceof Error) {
+    // AbortError（超时中断）
+    if (error.name === "AbortError") {
+      return true;
+    }
+    const msg = error.message.toLowerCase();
+    // 网络类错误
+    if (
+      msg.includes("failed to fetch") ||
+      msg.includes("networkerror") ||
+      msg.includes("network") ||
+      msg.includes("econnreset") ||
+      msg.includes("enotfound") ||
+      msg.includes("econnrefused") ||
+      msg.includes("etimedout") ||
+      msg.includes("eai_again")
+    ) {
+      return true;
+    }
+    // 超时
+    if (msg.includes("timeout")) {
+      return true;
+    }
+    // 限流 / 5xx（消息中包含状态码）
+    if (
+      msg.includes("rate limit") ||
+      msg.includes("429") ||
+      msg.includes("500") ||
+      msg.includes("502") ||
+      msg.includes("503")
+    ) {
+      return true;
+    }
+    // 带有 status 属性的 fetch 错误
+    const fetchError = error as Error & { status?: number };
+    if (fetchError.status !== undefined) {
+      return (RETRYABLE_STATUS_CODES as readonly number[]).includes(fetchError.status);
+    }
+  }
+  return false;
 }
 
 export function getErrorCode(error: unknown): ErrorCode {

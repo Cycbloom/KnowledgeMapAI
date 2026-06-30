@@ -26,7 +26,7 @@ interface GraphSettings {
   [key: string]: unknown;
 }
 
-interface GraphWithSettings extends KnowledgeGraphRow {
+interface GraphWithSettings extends Omit<KnowledgeGraphRow, 'settings'> {
   settings?: GraphSettings | null;
 }
 
@@ -142,7 +142,8 @@ export const mobileGraphsApi: IGraphsApi = {
       const cardGroups = new Map<string, { stabilitySum: number; retrievabilitySum: number; reviewCountSum: number; count: number; firstCard: StudyCardRow }>();
 
       ((cards || []) as StudyCardRow[]).forEach((card) => {
-        const kpId = card.knowledge_point_id;
+        const kpId = card.knowledge_point_id ?? '';
+        if (!kpId) return;
         if (!cardGroups.has(kpId)) {
           cardGroups.set(kpId, { stabilitySum: 0, retrievabilitySum: 0, reviewCountSum: 0, count: 0, firstCard: card });
         }

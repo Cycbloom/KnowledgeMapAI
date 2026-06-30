@@ -16,68 +16,13 @@ import {
 import { useSchedulerTasks } from "../../hooks";
 import { formatDurationMinutes } from "../../utils/formatters";
 import type { UserTask, UserTaskStatus } from "@shared/types";
+import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 
 interface RelatedTasksProps {
   knowledgePointId: string;
   onTaskClick?: (taskId: string) => void;
   onCreateTask?: () => void;
 }
-
-const STATUS_CONFIG: Record<
-  UserTaskStatus,
-  { label: string; color: string; bgColor: string; borderColor: string }
-> = {
-  pending: {
-    label: "待处理",
-    color: "text-slate-600 dark:text-slate-400",
-    bgColor: "bg-slate-100 dark:bg-slate-700/50",
-    borderColor: "border-slate-200 dark:border-slate-600",
-  },
-  in_progress: {
-    label: "进行中",
-    color: "text-primary-600 dark:text-primary-400",
-    bgColor: "bg-primary-100 dark:bg-primary-500/20",
-    borderColor: "border-primary-200 dark:border-primary-500/50",
-  },
-  paused: {
-    label: "已暂停",
-    color: "text-amber-600 dark:text-amber-400",
-    bgColor: "bg-amber-100 dark:bg-amber-500/20",
-    borderColor: "border-amber-200 dark:border-amber-500/50",
-  },
-  completed: {
-    label: "已完成",
-    color: "text-emerald-600 dark:text-emerald-400",
-    bgColor: "bg-emerald-100 dark:bg-emerald-500/20",
-    borderColor: "border-emerald-200 dark:border-emerald-500/50",
-  },
-  cancelled: {
-    label: "已取消",
-    color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-red-100 dark:bg-red-500/20",
-    borderColor: "border-red-200 dark:border-red-500/50",
-  },
-};
-
-const QUEUE_COLORS = {
-  0: {
-    accent: "bg-primary-500",
-    text: "text-primary-600 dark:text-primary-400",
-    badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
-  },
-  1: {
-    accent: "bg-secondary-500",
-    text: "text-secondary-600 dark:text-secondary-400",
-    badge:
-      "bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-300",
-  },
-  2: {
-    accent: "bg-tertiary-500",
-    text: "text-tertiary-600 dark:text-tertiary-400",
-    badge:
-      "bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-500/20 dark:text-tertiary-300",
-  },
-};
 
 const formatDeadline = (date?: string): { text: string; color: string } | null => {
   if (!date) return null;
@@ -235,9 +180,9 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
         ) : (
           <div className="space-y-2">
             {relatedTasks.map((task: UserTask, index: number) => {
-              const statusConfig = STATUS_CONFIG[task.status];
+              const statusConfig = STATUS_CONFIG[task.status as UserTaskStatus] || STATUS_CONFIG.pending;
               const queueStyle =
-                QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] ||
+                QUEUE_COLORS[task.queue_level as QueueLevel] ||
                 QUEUE_COLORS[0];
               const deadlineInfo = formatDeadline(task.deadline);
 
@@ -269,7 +214,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
                         Q{task.queue_level}
                       </span>
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.bgColor} ${statusConfig.color}`}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.bgColor} ${statusConfig.textColor}`}
                       >
                         {statusConfig.label}
                       </span>

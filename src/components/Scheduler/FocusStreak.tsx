@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Trophy, Star, Zap, Target, Clock } from "lucide-react";
 import type { TimerMode } from "@shared/types";
+import { formatDurationMinutes } from "../../utils/formatters";
 
 interface StreakMilestone {
   minutes: number;
@@ -109,13 +110,6 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
       100
     : 100;
 
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-  };
-
   return (
     <div className="relative">
       <motion.div
@@ -154,7 +148,7 @@ export const FocusStreak: React.FC<FocusStreakProps> = ({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-2xl font-bold text-white">
-                {formatTime(displayMinutes)}
+                {formatDurationMinutes(displayMinutes, { emptyText: '0分钟' })}
               </span>
               {isActivelyFocusing && (
                 <motion.span

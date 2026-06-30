@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskProgressPlan } from "../../../types";
+import { formatDate as formatDateUtil } from "../../../utils/formatters";
 
 interface ProgressDetailProps {
   taskId: string;
@@ -148,10 +149,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
   };
 
   const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleDateString("zh-CN", {
-      month: "short",
-      day: "numeric",
-    });
+    return formatDateUtil(dateStr, 'short');
   };
 
   const getStatusIcon = (status: string) => {

@@ -3,8 +3,10 @@
 // chatService 与 aiService 均单向依赖 contextBuilder，无运行时环。
 import { chatService } from "./chatService";
 import { bindChatService } from "./aiService";
+import { graphService } from "../graph";
 
 bindChatService(chatService);
+chatService.setGraphQueryService(graphService);
 
 export {
   aiService,
@@ -96,3 +98,4 @@ export type { LiteratureMetadata, LiteratureType, ExtractMetadataOptions } from 
 export { annotationService, AnnotationService } from "./annotationService";
 export type { Term } from "./annotationService";
 export { documentParsingService, DocumentParsingService } from "./documentParsingService";
+export type { IGraphQueryService } from "./types";

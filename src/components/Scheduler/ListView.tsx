@@ -23,9 +23,11 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { UserTask, TaskSubtask, LearningState } from "@shared/types";
+import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 import { api } from "../../services/api";
 import { LearningStateBadge } from "./LearningStateBadge";
 import { MasteryProgressBar } from "./MasteryProgressBar";
+import { formatDate as formatDateUtil } from "../../utils/formatters";
 
 interface ListViewProps {
   tasks: UserTask[];
@@ -47,24 +49,6 @@ type SortField =
   | "created_at"
   | "estimated_duration";
 type SortDirection = "asc" | "desc";
-
-const QUEUE_COLORS = {
-  0: {
-    bg: "bg-primary-100 dark:bg-primary-500/20",
-    text: "text-primary-600 dark:text-primary-400",
-    border: "border-primary-300 dark:border-primary-500/30",
-  },
-  1: {
-    bg: "bg-secondary-100 dark:bg-secondary-500/20",
-    text: "text-secondary-600 dark:text-secondary-400",
-    border: "border-secondary-300 dark:border-secondary-500/30",
-  },
-  2: {
-    bg: "bg-tertiary-100 dark:bg-tertiary-500/20",
-    text: "text-tertiary-600 dark:text-tertiary-400",
-    border: "border-tertiary-300 dark:border-tertiary-500/30",
-  },
-};
 
 const SUBTASK_TYPE_COLORS: Record<LearningState, { bg: string; text: string }> =
   {
@@ -98,30 +82,26 @@ export const ListView: React.FC<ListViewProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const STATUS_CONFIG = {
+  const I18N_STATUS_CONFIG = {
     pending: {
       label: t("scheduler.pending"),
-      color:
-        "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
+      color: STATUS_CONFIG.pending.color,
     },
     in_progress: {
       label: t("scheduler.inProgress"),
-      color:
-        "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
+      color: STATUS_CONFIG.in_progress.color,
     },
     paused: {
       label: t("scheduler.kanban.paused"),
-      color:
-        "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+      color: STATUS_CONFIG.paused.color,
     },
     completed: {
       label: t("scheduler.completed"),
-      color:
-        "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+      color: STATUS_CONFIG.completed.color,
     },
     cancelled: {
       label: t("scheduler.kanban.cancelled"),
-      color: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
+      color: STATUS_CONFIG.cancelled.color,
     },
   };
 
@@ -320,8 +300,7 @@ export const ListView: React.FC<ListViewProps> = ({
 
   const formatDate = (date?: string) => {
     if (!date) return "--";
-    const d = new Date(date);
-    return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+    return formatDateUtil(date, 'short');
   };
 
   const formatDeadline = (date?: string) => {
@@ -427,7 +406,7 @@ export const ListView: React.FC<ListViewProps> = ({
                   {t("scheduler.listView.status")}:
                 </span>
                 <div className="flex gap-1">
-                  {Object.entries(STATUS_CONFIG).map(([status, config]) => (
+                  {Object.entries(I18N_STATUS_CONFIG).map(([status, config]) => (
                     <button
                       key={status}
                       onClick={() =>
@@ -465,10 +444,10 @@ export const ListView: React.FC<ListViewProps> = ({
                         px-2 py-1 rounded text-xs font-medium transition-all
                         ${
                           filterQueue === level
-                            ? QUEUE_COLORS[level as keyof typeof QUEUE_COLORS]
+                            ? QUEUE_COLORS[level as QueueLevel]
                                 .bg +
                               " " +
-                              QUEUE_COLORS[level as keyof typeof QUEUE_COLORS]
+                              QUEUE_COLORS[level as QueueLevel]
                                 .text
                             : "bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                         }
@@ -540,10 +519,10 @@ export const ListView: React.FC<ListViewProps> = ({
                   filteredAndSortedTasks.map((task, index) => {
                     const queueStyle =
                       QUEUE_COLORS[
-                        task.queue_level as keyof typeof QUEUE_COLORS
+                        task.queue_level as QueueLevel
                       ] || QUEUE_COLORS[2];
                     const statusConfig =
-                      STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
+                      I18N_STATUS_CONFIG[task.status] || I18N_STATUS_CONFIG.pending;
                     const deadlineInfo = formatDeadline(task.deadline);
                     const isExpanded = expandedTasks.has(task.id);
                     const hasSubtasks =

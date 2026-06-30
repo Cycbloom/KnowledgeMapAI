@@ -36,6 +36,7 @@ import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useError } from "../hooks";
+import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 
 interface LearningPathNode {
   id: string;
@@ -451,19 +452,7 @@ const LearningPathDetailPage: React.FC = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+    return formatDateUtil(dateStr);
   };
 
   const progressPercentage = useMemo(() => {
@@ -689,12 +678,13 @@ const LearningPathDetailPage: React.FC = () => {
               <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span>
                   预计时间：
-                  {formatTime(pathDetail.progress.estimated_total_time)}
+                  {formatDurationMinutes(pathDetail.progress.estimated_total_time, { emptyText: '0分钟' })}
                 </span>
                 <span>
                   已学习：
-                  {formatTime(
+                  {formatDurationMinutes(
                     Math.round(pathDetail.progress.total_time_spent / 60),
+                    { emptyText: '0分钟' },
                   )}
                 </span>
               </div>

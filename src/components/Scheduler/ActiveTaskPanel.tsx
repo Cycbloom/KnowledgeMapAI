@@ -14,6 +14,7 @@ import { UserTask } from "@shared/types";
 import { api } from "../../services/api";
 import { useTimerStore } from "../../store/useTimerStore";
 import { useFocusStore } from "../../store/useFocusStore";
+import { formatTimeFromSeconds } from "../../utils/formatters";
 
 interface ActiveTaskPanelProps {
   task: UserTask;
@@ -158,12 +159,6 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     ? subtasks.findIndex((s) => s.id === activeSubtaskId)
     : -1;
   const totalSubtasks = subtasks.length;
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
 
   const handlePauseResume = () => {
     if (isActive && !isPaused) {
@@ -328,7 +323,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 <span
                   className={`text-2xl font-mono font-bold ${config.accentColor}`}
                 >
-                  {formatTime(timeLeft)}
+                  {formatTimeFromSeconds(timeLeft)}
                 </span>
               </div>
               <p className="text-xs text-slate-400 dark:text-slate-500">

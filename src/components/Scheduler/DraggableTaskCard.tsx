@@ -12,6 +12,7 @@ import {
   Info,
 } from "lucide-react";
 import { UserTask } from "@shared/types";
+import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 
 interface DraggableTaskCardProps {
   task: UserTask;
@@ -23,64 +24,6 @@ interface DraggableTaskCardProps {
   onViewTaskDetail?: (task: UserTask) => void;
 }
 
-const QUEUE_COLORS = {
-  0: {
-    border: "border-primary-300 dark:border-primary-400",
-    glow: "shadow-primary-500/30",
-    bg: "bg-primary-100 dark:bg-primary-500/10",
-    text: "text-primary-600 dark:text-primary-400",
-    badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
-    accent: "bg-primary-500",
-    gradient: "from-primary-500 to-primary-600",
-  },
-  1: {
-    border: "border-secondary-300 dark:border-secondary-400",
-    glow: "shadow-secondary-500/30",
-    bg: "bg-secondary-100 dark:bg-secondary-500/10",
-    text: "text-secondary-600 dark:text-secondary-400",
-    badge:
-      "bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-300",
-    accent: "bg-secondary-500",
-    gradient: "from-secondary-500 to-secondary-600",
-  },
-  2: {
-    border: "border-tertiary-300 dark:border-tertiary-400",
-    glow: "shadow-tertiary-500/30",
-    bg: "bg-tertiary-100 dark:bg-tertiary-500/10",
-    text: "text-tertiary-600 dark:text-tertiary-400",
-    badge:
-      "bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-500/20 dark:text-tertiary-300",
-    accent: "bg-tertiary-500",
-    gradient: "from-tertiary-500 to-tertiary-600",
-  },
-};
-
-const STATUS_CONFIG = {
-  pending: {
-    label: "待处理",
-    color:
-      "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
-  },
-  in_progress: {
-    label: "进行中",
-    color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
-  },
-  paused: {
-    label: "已暂停",
-    color:
-      "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-  },
-  completed: {
-    label: "已完成",
-    color:
-      "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-  },
-  cancelled: {
-    label: "已取消",
-    color: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
-  },
-};
-
 const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
   task,
   onEditTask,
@@ -91,7 +34,7 @@ const DraggableTaskCardInner: React.FC<DraggableTaskCardProps> = ({
   onViewTaskDetail,
 }) => {
   const queueStyle =
-    QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] ||
+    QUEUE_COLORS[task.queue_level as QueueLevel] ||
     QUEUE_COLORS[0];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
   const [showDragTip, setShowDragTip] = useState(false);

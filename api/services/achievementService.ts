@@ -17,6 +17,7 @@ import type {
   FocusSessionRow,
   UserTaskRow,
 } from '@shared/types/database';
+import { toAchievement } from '@shared/types/database';
 
 export class AchievementService {
   async initDailyTasks(userId: string): Promise<void> {
@@ -112,7 +113,7 @@ export class AchievementService {
     );
 
     return (allAchievements as AchievementRow[]).map((ach) => ({
-      ...ach,
+      ...toAchievement(ach),
       unlocked_at: unlockedMap.get(ach.id) || null
     }));
   }
@@ -162,7 +163,7 @@ export class AchievementService {
           // UPDATE users xp
           let totalXp = 0;
           for (const ach of newUnlocks) {
-            totalXp += ach.xp_reward;
+            totalXp += ach.xp_reward ?? 0;
           }
 
           if (totalXp > 0) {
@@ -190,7 +191,7 @@ export class AchievementService {
           }
         });
 
-        return newUnlocks;
+        return newUnlocks.map(toAchievement);
       } catch (txError) {
         logger.warn('Transaction failed in checkAndUnlock, falling back to non-transactional operations', { error: txError });
       }
@@ -213,14 +214,14 @@ export class AchievementService {
 
     let totalXp = 0;
     for (const ach of newUnlocks) {
-      totalXp += ach.xp_reward;
+      totalXp += ach.xp_reward ?? 0;
     }
 
     if (totalXp > 0) {
       await this.addXp(userId, totalXp);
     }
 
-    return newUnlocks;
+    return newUnlocks.map(toAchievement);
   }
 
   async addXp(userId: string, amount: number): Promise<{ newLevel: number, newXp: number, levelUp: boolean }> {

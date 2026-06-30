@@ -11,6 +11,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useTimerStore } from '../../store/useTimerStore';
+import { formatTimeFromSeconds } from '../../utils/formatters';
 
 interface BreakTimerProps {
   isOpen: boolean;
@@ -61,12 +62,6 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
       return () => clearInterval(suggestionInterval);
     }
   }, [isOpen, isRunning]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const circumference = 2 * Math.PI * 120;
   const strokeDashoffset = circumference * (1 - progress / 100);
@@ -167,7 +162,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.2 }}
                   >
-                    {formatTime(timeLeft)}
+                    {formatTimeFromSeconds(timeLeft)}
                   </motion.div>
                   <div className="text-emerald-300/60 text-sm mt-2">
                     {isRunning ? '休息中...' : '已暂停'}

@@ -2,6 +2,9 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../utils/logger";
 import { graphTaskService } from "./graphTaskService";
 import { notDeleted } from '../common/softDeleteHelper';
+import { appEventBus } from "../core/eventBus";
+import { getSupabaseAdmin } from "../../supabase";
+import type { AppEvent, GraphCreatedPayload } from "../../../shared/types/events";
 
 export interface LinkedTaskResult {
   taskId: string;
@@ -279,6 +282,34 @@ class SmartTaskLinker {
       learningState: s.learning_state,
     }));
   }
+
+  /**
+   * 订阅 graph_created 事件，为新创建的图谱自动关联学习任务。
+   * 此方法将原来在 GraphService 中的直接调用改为事件驱动，
+   * 消除 graph→scheduler 的循环依赖。
+   */
+  subscribeToGraphCreatedEvents(): void {
+    appEventBus.subscribe("graph_created", async (event: AppEvent) => {
+      const payload = event.payload as GraphCreatedPayload;
+      try {
+        const supabase = getSupabaseAdmin();
+        const taskInfo = await this.getOrCreateTaskForGraph(
+          supabase,
+          payload.userId,
+          payload.graphId,
+        );
+        logger.info("[SmartTaskLinker] Created task for new graph via event:", {
+          graphId: payload.graphId,
+          taskId: taskInfo.mainTaskId,
+        });
+      } catch (taskError) {
+        logger.warn("[SmartTaskLinker] Failed to create task for graph via event:", taskError);
+      }
+    });
+  }
 }
 
 export const smartTaskLinker = new SmartTaskLinker();
+
+// Subscribe to graph_created events at module load time
+smartTaskLinker.subscribeToGraphCreatedEvents();

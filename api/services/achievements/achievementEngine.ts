@@ -28,13 +28,13 @@ export class AchievementEngine {
       .select("achievement_id, progress")
       .eq("user_id", userId)
 
-    const existingMap = new Map(
+    const existingMap = new Map<string, number>(
       (userAchievements ?? []).map(
-        (ua: Pick<UserAchievementRow, 'achievement_id' | 'progress'>) => [
-          ua.achievement_id,
-          ua.progress as number,
+        (ua: Pick<UserAchievementRow, 'achievement_id' | 'progress'>): [string, number] => [
+          ua.achievement_id ?? '',
+          ua.progress ?? 0,
         ]
-      )
+      ).filter(([id]) => id !== '')
     )
 
     const unlocked: Achievement[] = []

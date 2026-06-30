@@ -22,7 +22,7 @@ import {
   dedupedRequest,
   generateRequestKey,
 } from "./aiUtils";
-import { graphService } from "../graph";
+import type { IGraphQueryService } from "./types";
 import {
   buildGraphContext,
   buildTutorContext,
@@ -35,6 +35,15 @@ import {
 } from "../../routes/ai/utils";
 
 export class ChatService {
+  private graphQueryService: IGraphQueryService | null = null;
+
+  /**
+   * 注入图谱查询服务，用于解耦 ai 层对 graph 层的直接依赖。
+   * 应在 ChatService 实例化后、使用前调用。
+   */
+  setGraphQueryService(service: IGraphQueryService): void {
+    this.graphQueryService = service;
+  }
   async chat(
     messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
     options: {
@@ -339,7 +348,7 @@ export class ChatService {
         return;
       }
 
-      const { nodes, edges } = await graphService.getGraphNodes(
+      const { nodes, edges } = await this.graphQueryService!.getGraphNodes(
         supabase,
         req.user.id,
         options.graphId,
@@ -440,7 +449,7 @@ export class ChatService {
           sendStreamError(res, "未授权", ErrorCodes.AUTH_UNAUTHORIZED);
           return;
         }
-        const { nodes } = await graphService.getGraphNodes(
+        const { nodes } = await this.graphQueryService!.getGraphNodes(
           supabase,
           req.user.id,
           options.graphId,

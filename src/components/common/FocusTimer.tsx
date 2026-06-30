@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useFocusStore } from "../../store/useFocusStore";
-import type { TimerMode } from "@shared/types";
 import { useTimerStore } from "../../store/useTimerStore";
 import { PomodoroCycleBar } from "./PomodoroCycleBar";
 import {
@@ -18,12 +17,8 @@ import {
   SkipForward,
 } from "lucide-react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
-
-const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
+import { formatTimeFromSeconds } from "@/utils/formatters";
+import { getModeLabel } from "@/constants/timer";
 
 export const FocusTimer: React.FC = () => {
   const { t } = useTranslation();
@@ -50,17 +45,6 @@ export const FocusTimer: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const dragControls = useDragControls();
   const isDragging = useRef(false);
-
-  const getModeLabel = (m: TimerMode) => {
-    switch (m) {
-      case "focus":
-        return t("focusTimer.focus");
-      case "shortBreak":
-        return t("focusTimer.shortBreak");
-      case "longBreak":
-        return t("focusTimer.longBreak");
-    }
-  };
 
   const handleStartPause = () => {
     if (isRunning) {
@@ -134,7 +118,7 @@ export const FocusTimer: React.FC = () => {
             </div>
             <div className="flex flex-col pr-2">
               <span className="text-sm font-bold font-mono text-gray-800 dark:text-gray-200 select-none">
-                {formatTime(timeLeft)}
+                {formatTimeFromSeconds(timeLeft)}
               </span>
               {isRunning && (
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 select-none">
@@ -273,7 +257,7 @@ export const FocusTimer: React.FC = () => {
 
                 {/* Current Mode Label */}
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">
-                  {getModeLabel(mode)}
+                  {getModeLabel(mode, t)}
                 </span>
 
                 {/* Timer Display */}
@@ -308,7 +292,7 @@ export const FocusTimer: React.FC = () => {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-4xl font-bold font-mono text-gray-800 dark:text-white">
-                      {formatTime(timeLeft)}
+                      {formatTimeFromSeconds(timeLeft)}
                     </span>
                     <span className="text-sm text-gray-400 mt-1">
                       {isRunning

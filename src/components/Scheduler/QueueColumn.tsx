@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { UserTask } from "@shared/types";
 import { TaskCard } from "./TaskCard";
+import { formatDurationMinutes } from "../../utils/formatters";
 
 interface QueueColumnProps {
   level: number;
@@ -100,13 +101,6 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
     data: { queueLevel: level, type: "queue" },
   });
 
-  const formatTimeSlice = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
-
   const totalEstimatedTime = tasks.reduce(
     (sum, t) => sum + (t.estimated_duration || 0),
     0,
@@ -174,7 +168,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
             <span>
               时间片:{" "}
               <span className={config.accentColor}>
-                {formatTimeSlice(timeSlice)}
+                {formatDurationMinutes(timeSlice, { format: 'compact' })}
               </span>
             </span>
           </div>
@@ -191,7 +185,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
               <span>
                 预计:{" "}
                 <span className="text-slate-900 dark:text-white font-medium">
-                  {formatTimeSlice(totalEstimatedTime)}
+                  {formatDurationMinutes(totalEstimatedTime, { format: 'compact' })}
                 </span>
               </span>
             </div>

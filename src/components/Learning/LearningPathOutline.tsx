@@ -16,6 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useLearningPath } from "../../hooks/queries/useLearningPathQueries";
 import { NodeStatus } from "../../services/api/learningPaths";
+import { formatDurationMinutes } from "../../utils/formatters";
 
 interface LearningPathNodeItem {
   id: string;
@@ -127,16 +128,6 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
     completed_nodes: 0,
     total_nodes: nodes.length,
     progress_percentage: 0,
-  };
-
-  const formatTime = (minutes: number) => {
-    if (!minutes) return t("learning.pathOutline.unknown");
-    if (minutes < 60) return t("learning.pathOutline.minutesOnly", { minutes });
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 
-      ? t("learning.pathOutline.hoursAndMinutes", { hours, minutes: mins }) 
-      : t("learning.pathOutline.hoursOnly", { hours });
   };
 
   return (
@@ -303,7 +294,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                       {estimatedTime && (
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {formatTime(estimatedTime)}
+                          {formatDurationMinutes(estimatedTime, { emptyText: t("learning.pathOutline.unknown") })}
                         </span>
                       )}
                       {node.difficulty_level && (

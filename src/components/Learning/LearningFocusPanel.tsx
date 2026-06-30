@@ -44,6 +44,7 @@ import { useActivityTracker } from "../../hooks/useActivityTracker";
 import { AudioVisualizer } from "../common/AudioVisualizer";
 import { PomodoroCycleBar } from "../common/PomodoroCycleBar";
 import { NOISE_OPTIONS, NOISE_CATEGORIES } from "../../utils/audioSynthesis";
+import { formatTimeFromSeconds } from "../../utils/formatters";
 import type { Keyword } from "../../../shared/types/graph";
 
 const getIcon = (iconName: string): React.ReactNode => {
@@ -66,12 +67,6 @@ const getIcon = (iconName: string): React.ReactNode => {
     Radio: <Radio size={18} />,
   };
   return icons[iconName] || <Volume2 size={18} />;
-};
-
-const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
 interface LearningFocusPanelProps {
@@ -476,7 +471,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <span className="text-xl font-bold font-mono text-slate-800 dark:text-white">
-                              {formatTime(timeLeft)}
+                              {formatTimeFromSeconds(timeLeft)}
                             </span>
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">
                               {isActive

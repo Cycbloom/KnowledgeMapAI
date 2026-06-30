@@ -25,7 +25,6 @@ import {
   ACADEMIC_RESEARCH,
 } from "@shared/constants/backboneModulePresets";
 import { appEventBus } from "../core/eventBus";
-import { smartTaskLinker } from "../scheduler/smartTaskLinker";
 import { graphVersionService } from "./graphVersionService";
 import { transactionExecutor } from "../../database/transactionExecutor";
 import { graphDomainService } from "./graphDomainService";
@@ -509,19 +508,12 @@ export class GraphService {
       }
     }
 
-    try {
-      const taskInfo = await smartTaskLinker.getOrCreateTaskForGraph(
-        supabase,
-        userId,
-        data.id,
-      );
-      logger.info("[GraphService] Created task for new graph:", {
-        graphId: data.id,
-        taskId: taskInfo.mainTaskId,
-      });
-    } catch (taskError) {
-      logger.warn("[GraphService] Failed to create task for graph:", taskError);
-    }
+    // Task creation is now handled by the scheduler layer
+    // subscribing to the "graph_created" event (see smartTaskLinker.subscribeToGraphCreatedEvents).
+    logger.info("[GraphService] Graph created, task will be linked via event:", {
+      graphId: data.id,
+      userId,
+    });
 
     await cacheService.invalidateUserGraphsCache(userId);
 
@@ -1419,7 +1411,8 @@ export class GraphService {
         const cardGroups = new Map<string, { cards: CardPick[]; stabilitySum: number; weightedRetrievabilitySum: number; reviewCountSum: number }>();
 
         (cards || []).forEach((card: CardPick) => {
-          const kpId = card.knowledge_point_id;
+          const kpId = card.knowledge_point_id ?? '';
+          if (!kpId) return;
           if (!cardGroups.has(kpId)) {
             cardGroups.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
           }

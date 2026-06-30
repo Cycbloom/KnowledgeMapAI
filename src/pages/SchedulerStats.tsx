@@ -10,14 +10,7 @@ import {
   CheckCircle2, Clock, ListTodo, TrendingUp, Zap, Activity,
   Calendar, ChevronLeft, ChevronRight, Filter, RefreshCw
 } from 'lucide-react';
-
-const QUEUE_COLORS = {
-  q0: { main: '#06b6d4', glow: 'rgba(6, 182, 212, 0.3)', bg: 'bg-primary-500' },
-  q1: { main: '#10b981', glow: 'rgba(16, 185, 129, 0.3)', bg: 'bg-secondary-500' },
-  q2: { main: '#f59e0b', glow: 'rgba(245, 158, 11, 0.3)', bg: 'bg-tertiary-500' },
-};
-
-
+import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 
 const TechCard = ({ children, className = '', glow = false }: { children: React.ReactNode; className?: string; glow?: boolean }) => (
   <div className={`
@@ -34,14 +27,14 @@ const GlowingMetricCard = ({
   value, 
   subtext, 
   icon: Icon, 
-  colorKey = 'q0',
+  colorKey = 0 as QueueLevel,
   trend
 }: { 
   title: string; 
   value: string | number; 
   subtext?: string; 
   icon: React.ElementType; 
-  colorKey?: 'q0' | 'q1' | 'q2';
+  colorKey?: QueueLevel;
   trend?: number;
 }) => {
   const colors = QUEUE_COLORS[colorKey];
@@ -50,11 +43,11 @@ const GlowingMetricCard = ({
     <TechCard className="p-6 relative overflow-hidden group" glow>
       <div 
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: `radial-gradient(circle at top right, ${colors.glow}, transparent 70%)` }}
+        style={{ background: `radial-gradient(circle at top right, ${colors.hexGlow}, transparent 70%)` }}
       />
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-lg ${colors.bg} shadow-lg`} style={{ boxShadow: `0 0 20px ${colors.glow}` }}>
+          <div className={`p-3 rounded-lg ${colors.accent} shadow-lg`} style={{ boxShadow: `0 0 20px ${colors.hexGlow}` }}>
             <Icon size={24} className="text-white" />
           </div>
           {trend !== undefined && (
@@ -64,7 +57,7 @@ const GlowingMetricCard = ({
             </div>
           )}
         </div>
-        <h3 className="text-3xl font-bold text-white mb-1" style={{ textShadow: `0 0 20px ${colors.glow}` }}>
+        <h3 className="text-3xl font-bold text-white mb-1" style={{ textShadow: `0 0 20px ${colors.hexGlow}` }}>
           {value}
         </h3>
         <p className="text-slate-400 text-sm">{title}</p>
@@ -77,9 +70,9 @@ const GlowingMetricCard = ({
 const QueueDistributionChart = ({ data }: { data: { q0: number; q1: number; q2: number } }) => {
   const { t } = useTranslation();
   const chartData = [
-    { name: t('schedulerStats.queueDistribution.q0'), value: data.q0, color: QUEUE_COLORS.q0.main },
-    { name: t('schedulerStats.queueDistribution.q1'), value: data.q1, color: QUEUE_COLORS.q1.main },
-    { name: t('schedulerStats.queueDistribution.q2'), value: data.q2, color: QUEUE_COLORS.q2.main },
+    { name: t('schedulerStats.queueDistribution.q0'), value: data.q0, color: QUEUE_COLORS[0].hex },
+    { name: t('schedulerStats.queueDistribution.q1'), value: data.q1, color: QUEUE_COLORS[1].hex },
+    { name: t('schedulerStats.queueDistribution.q2'), value: data.q2, color: QUEUE_COLORS[2].hex },
   ];
 
   return (
@@ -670,28 +663,28 @@ export const SchedulerStats = () => {
           value={stats.total_tasks}
           subtext={t('schedulerStats.metrics.totalTasksSubtext')}
           icon={ListTodo}
-          colorKey="q0"
+          colorKey={0}
         />
         <GlowingMetricCard
           title={t('schedulerStats.metrics.completedTasks')}
           value={stats.completed_tasks}
           subtext={t('schedulerStats.metrics.completionRate', { rate: completionRate })}
           icon={CheckCircle2}
-          colorKey="q1"
+          colorKey={1}
         />
         <GlowingMetricCard
           title={t('schedulerStats.metrics.totalDuration')}
           value={formatDuration(stats.total_duration)}
           subtext={t('schedulerStats.metrics.totalDurationSubtext')}
           icon={Clock}
-          colorKey="q2"
+          colorKey={2}
         />
         <GlowingMetricCard
           title={t('schedulerStats.metrics.avgDuration')}
           value={stats.completed_tasks > 0 ? formatDuration(Math.round(stats.total_duration / stats.completed_tasks)) : '-'}
           subtext={t('schedulerStats.metrics.avgDurationSubtext')}
           icon={TrendingUp}
-          colorKey="q0"
+          colorKey={0}
         />
       </div>
 

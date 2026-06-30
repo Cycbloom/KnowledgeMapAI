@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Clock, Plus, Zap, Target, ListTodo } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { UserTask } from "@shared/types";
+import { formatDurationMinutes } from "../../utils/formatters";
 import { DraggableTaskCard } from "./DraggableTaskCard";
 
 interface HorizontalQueueProps {
@@ -89,13 +90,6 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
     data: { queueLevel: level, type: "queue" },
   });
 
-  const formatTimeSlice = (minutes: number) => {
-    if (minutes < 60) return t("scheduler.minutes", { count: minutes });
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
-
   const totalEstimatedTime = tasks.reduce(
     (sum, t) => sum + (t.estimated_duration || 0),
     0,
@@ -164,7 +158,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
               <span>
                 {t("scheduler.queue.timeSlice")}:{" "}
                 <span className={config.accentColor}>
-                  {formatTimeSlice(timeSlice)}
+                  {formatDurationMinutes(timeSlice, { format: 'compact' })}
                 </span>
               </span>
             </div>
@@ -181,7 +175,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                 <span>
                   {t("scheduler.queue.estimated")}:{" "}
                   <span className="text-slate-900 dark:text-white font-medium">
-                    {formatTimeSlice(totalEstimatedTime)}
+                    {formatDurationMinutes(totalEstimatedTime, { format: 'compact' })}
                   </span>
                 </span>
               </div>

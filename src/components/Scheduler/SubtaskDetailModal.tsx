@@ -18,6 +18,7 @@ import { subtasksApi, type ValidTransitionsResult } from "../../services/api/mod
 import { knowledgePointsApi, type TaskKnowledgePoint } from "../../services/api/modules/scheduler/knowledgePoints";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useTheme } from "../../hooks";
+import { formatDate as formatDateUtil } from "../../utils/formatters";
 import type {
   TaskSubtask,
   LearningState,
@@ -157,14 +158,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
   }, [subtask, taskId, masteryLevel, isSaving, onMasteryUpdate]);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateUtil(dateString, 'full-datetime');
   };
 
   const getMasteryColor = (level: number): string => {

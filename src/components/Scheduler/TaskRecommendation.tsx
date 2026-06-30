@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertTriangle, CheckCircle, Zap, TrendingUp, Calendar, Tag } from 'lucide-react';
 import { TaskRecommendation as TaskRecommendationType } from '../../services/api/taskRecommendation';
 import { UserTask } from '@shared/types';
+import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 
 interface TaskRecommendationProps {
   recommendations: TaskRecommendationType[];
@@ -40,12 +41,6 @@ const URGENCY_CONFIG = {
     border: 'border-slate-300 dark:border-slate-500/50',
     icon: Clock,
   },
-};
-
-const QUEUE_COLORS = {
-  0: 'bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300',
-  1: 'bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-300',
-  2: 'bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-500/20 dark:text-tertiary-300',
 };
 
 export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
@@ -106,7 +101,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${QUEUE_COLORS[rec.task.queue_level as keyof typeof QUEUE_COLORS]}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${QUEUE_COLORS[rec.task.queue_level as QueueLevel].badge}`}>
                       Q{rec.task.queue_level}
                     </span>
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${urgencyConfig.bg} ${urgencyConfig.color}`}>

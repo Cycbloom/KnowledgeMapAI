@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { UserTask, TaskExecution } from "@shared/types";
 import { formatDurationMinutes } from "../../utils/formatters";
+import { TASK_DETAIL_QUEUE_CONFIG, TASK_DETAIL_STATUS_CONFIG } from "@/constants/scheduler";
 
 interface TaskDetailProps {
   task: UserTask;
@@ -29,43 +30,6 @@ interface TaskDetailProps {
   onComplete?: () => void;
   onClose: () => void;
 }
-
-const QUEUE_CONFIG = {
-  0: {
-    label: "Q0 紧急队列",
-    color: "text-primary-400",
-    bg: "bg-primary-500/20",
-    border: "border-primary-500/30",
-  },
-  1: {
-    label: "Q1 重要队列",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/20",
-    border: "border-emerald-500/30",
-  },
-  2: {
-    label: "Q2 待办队列",
-    color: "text-amber-400",
-    bg: "bg-amber-500/20",
-    border: "border-amber-500/30",
-  },
-};
-
-const STATUS_CONFIG = {
-  pending: { label: "待处理", color: "text-slate-400", bg: "bg-slate-500/20" },
-  in_progress: {
-    label: "进行中",
-    color: "text-primary-400",
-    bg: "bg-primary-500/20",
-  },
-  paused: { label: "已暂停", color: "text-amber-400", bg: "bg-amber-500/20" },
-  completed: {
-    label: "已完成",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/20",
-  },
-  cancelled: { label: "已取消", color: "text-red-400", bg: "bg-red-500/20" },
-};
 
 const EXECUTION_STATUS_CONFIG = {
   completed: {
@@ -96,9 +60,9 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
   onClose,
 }) => {
   const queueConfig =
-    QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
-    QUEUE_CONFIG[2];
-  const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
+    TASK_DETAIL_QUEUE_CONFIG[task.queue_level as keyof typeof TASK_DETAIL_QUEUE_CONFIG] ||
+    TASK_DETAIL_QUEUE_CONFIG[2];
+  const statusConfig = TASK_DETAIL_STATUS_CONFIG[task.status as keyof typeof TASK_DETAIL_STATUS_CONFIG] || TASK_DETAIL_STATUS_CONFIG.pending;
 
   const formatDateTime = (dateStr?: string) => {
     if (!dateStr) return "--";

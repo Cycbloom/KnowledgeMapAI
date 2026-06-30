@@ -2,6 +2,13 @@ export { taskStatService } from "./taskStatService";
 export { taskExecutionService } from "./taskExecutionService";
 export { taskSettingService } from "./taskSettingService";
 
+// 注入 aiService 到 subtaskQuizIntegrationService，
+// 拆解 scheduler→ai 运行时循环依赖。
+import { aiService } from "../ai/index";
+import { subtaskQuizIntegrationService } from "./subtaskQuizIntegration";
+
+subtaskQuizIntegrationService.setAIProviderService(aiService);
+
 export { taskService, TaskService } from "./taskService";
 export { executionService, ExecutionService } from "./executionService";
 export { focusService, FocusService } from "./focusService";
@@ -150,3 +157,4 @@ export type { AutoTaskResult } from "./autoTaskGenerator";
 export { smartTaskLinker } from "./smartTaskLinker";
 export type { LinkedTaskResult, GraphTaskInfo } from "./smartTaskLinker";
 export { systemTaskService, SystemTaskService } from "./systemTaskService";
+export type { IAIProviderService } from "./types";

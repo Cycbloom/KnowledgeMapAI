@@ -20,10 +20,10 @@ export interface BackupGraphItem {
   title: string;
   description?: string | null;
   domain?: string | null;
-  is_favorite?: boolean;
+  is_favorite?: boolean | null;
   template_type?: string | null;
   settings?: Record<string, unknown> | null;
-  is_public?: boolean;
+  is_public?: boolean | null;
   reference_books?: Record<string, unknown>[] | null;
   external_links?: Record<string, unknown>[] | null;
   learning_guide?: string | null;
@@ -70,23 +70,23 @@ export interface BackupEdgeItem {
 
 export interface BackupStudyCardItem {
   id: string;
-  graph_id: string;
-  knowledge_point_id: string;
+  graph_id: string | null;
+  knowledge_point_id: string | null;
   question: string;
   answer: string;
   explanation?: string | null;
-  card_type: string;
-  options?: string[] | null;
-  difficulty: number;
+  card_type?: string | null;
+  options?: unknown | null;
+  difficulty?: number | null;
   last_reviewed?: string | null;
-  next_review: string;
-  review_count?: number;
-  fsrs_state: string;
-  fsrs_stability: number;
-  fsrs_difficulty: number;
-  fsrs_elapsed_days: number;
-  fsrs_scheduled_days: number;
-  fsrs_retrievability: number;
+  next_review?: string | null;
+  review_count?: number | null;
+  fsrs_state?: string | null;
+  fsrs_stability?: number | null;
+  fsrs_difficulty?: number | null;
+  fsrs_elapsed_days?: number | null;
+  fsrs_scheduled_days?: number | null;
+  fsrs_retrievability?: number | null;
   fsrs_last_review?: string | null;
   created_at: string;
 }
@@ -511,10 +511,10 @@ export class BackupService {
         title: string;
         description?: string | null;
         domain?: string | null;
-        is_favorite?: boolean;
+        is_favorite?: boolean | null;
         template_type?: string | null;
         settings?: Record<string, unknown> | null;
-        is_public?: boolean;
+        is_public?: boolean | null;
         reference_books?: Record<string, unknown>[] | null;
         external_links?: Record<string, unknown>[] | null;
         learning_guide?: string | null;
@@ -553,23 +553,23 @@ export class BackupService {
         show_arrow?: boolean | null;
       }>;
       study_cards?: Array<{
-        graph_id: string;
-        knowledge_point_id: string;
+        graph_id: string | null;
+        knowledge_point_id: string | null;
         question: string;
         answer: string;
         explanation?: string | null;
-        card_type?: string;
-        options?: string[] | null;
-        difficulty?: number;
+        card_type?: string | null;
+        options?: unknown | null;
+        difficulty?: number | null;
         last_reviewed?: string | null;
-        next_review?: string;
-        review_count?: number;
-        fsrs_state?: string;
-        fsrs_stability?: number;
-        fsrs_difficulty?: number;
-        fsrs_elapsed_days?: number;
-        fsrs_scheduled_days?: number;
-        fsrs_retrievability?: number;
+        next_review?: string | null;
+        review_count?: number | null;
+        fsrs_state?: string | null;
+        fsrs_stability?: number | null;
+        fsrs_difficulty?: number | null;
+        fsrs_elapsed_days?: number | null;
+        fsrs_scheduled_days?: number | null;
+        fsrs_retrievability?: number | null;
         fsrs_last_review?: string | null;
       }>;
       study_progress?: Array<{
@@ -581,31 +581,31 @@ export class BackupService {
       }>;
       focus_sessions?: Array<{
         task_id?: string | null;
-        started_at?: string;
+        started_at?: string | null;
         ended_at?: string | null;
         duration?: number | null;
         mode?: string | null;
         completed?: boolean | null;
-        pomodoro_count?: number;
+        pomodoro_count?: number | null;
         white_noise_type?: string | null;
-        is_break?: boolean;
+        is_break?: boolean | null;
       }>;
       user_achievements?: Array<{
-        achievement_id: string;
-        progress?: number;
-        metadata?: Record<string, unknown>;
-        unlocked_at?: string;
+        achievement_id: string | null;
+        progress?: number | null;
+        metadata?: Record<string, unknown> | null;
+        unlocked_at?: string | null;
       }>;
       periodic_tasks?: Array<{
-        period_type: string;
-        period_start: string;
-        period_end: string;
-        task_type: string;
-        target: number;
-        progress?: number;
-        status?: string;
-        xp_reward?: number;
-        pass_points?: number;
+        period_type: string | null;
+        period_start: string | null;
+        period_end: string | null;
+        task_type: string | null;
+        target: number | null;
+        progress?: number | null;
+        status?: string | null;
+        xp_reward?: number | null;
+        pass_points?: number | null;
       }>;
       backbone_modules?: Array<{
         graph_id: string;
@@ -774,8 +774,8 @@ export class BackupService {
     if (data.study_cards && data.study_cards.length > 0) {
       const cardsToInsert = data.study_cards
         .map((c) => {
-          const graphId = oldToNewGraphIds.get(c.graph_id);
-          const kpId = oldToNewKnowledgePointIds.get(c.knowledge_point_id);
+          const graphId = c.graph_id ? oldToNewGraphIds.get(c.graph_id) : undefined;
+          const kpId = c.knowledge_point_id ? oldToNewKnowledgePointIds.get(c.knowledge_point_id) : undefined;
           if (!graphId || !kpId) return null;
           return {
             user_id: userId,
@@ -872,13 +872,15 @@ export class BackupService {
     }
 
     if (data.user_achievements && data.user_achievements.length > 0) {
-      const achievementsToInsert = data.user_achievements.map((ua) => ({
-        user_id: userId,
-        achievement_id: ua.achievement_id,
-        progress: ua.progress || 0,
-        metadata: ua.metadata || {},
-        unlocked_at: ua.unlocked_at || new Date().toISOString(),
-      }));
+      const achievementsToInsert = data.user_achievements
+        .filter((ua) => ua.achievement_id != null)
+        .map((ua) => ({
+          user_id: userId,
+          achievement_id: ua.achievement_id as string,
+          progress: ua.progress ?? 0,
+          metadata: ua.metadata ?? {},
+          unlocked_at: ua.unlocked_at ?? new Date().toISOString(),
+        }));
 
       if (achievementsToInsert.length > 0) {
         const { error } = await supabase
@@ -894,18 +896,20 @@ export class BackupService {
     }
 
     if (data.periodic_tasks && data.periodic_tasks.length > 0) {
-      const tasksToInsert = data.periodic_tasks.map((pt) => ({
-        user_id: userId,
-        period_type: pt.period_type,
-        period_start: pt.period_start,
-        period_end: pt.period_end,
-        task_type: pt.task_type,
-        target: pt.target,
-        progress: pt.progress || 0,
-        status: pt.status || 'pending',
-        xp_reward: pt.xp_reward || 0,
-        pass_points: pt.pass_points || 10,
-      }));
+      const tasksToInsert = data.periodic_tasks
+        .filter((pt) => pt.period_type != null && pt.period_start != null && pt.period_end != null && pt.task_type != null && pt.target != null)
+        .map((pt) => ({
+          user_id: userId,
+          period_type: pt.period_type as string,
+          period_start: pt.period_start as string,
+          period_end: pt.period_end as string,
+          task_type: pt.task_type as string,
+          target: pt.target as number,
+          progress: pt.progress ?? 0,
+          status: pt.status ?? 'pending',
+          xp_reward: pt.xp_reward ?? 0,
+          pass_points: pt.pass_points ?? 10,
+        }));
 
       if (tasksToInsert.length > 0) {
         const { error } = await supabase

@@ -43,6 +43,7 @@ import type {
   ReviewTaskStats,
   KnowledgePoint,
 } from "@shared/types";
+import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 
 const DEFAULT_TIME_SLICES = {
   q0: 25,
@@ -64,51 +65,6 @@ interface TodayStats {
   reviewCompleted: number;
   streak: number;
 }
-
-const QUEUE_COLORS = {
-  0: {
-    border: "border-primary-300 dark:border-primary-400",
-    glow: "shadow-primary-500/30",
-    bg: "bg-primary-100 dark:bg-primary-500/10",
-    text: "text-primary-600 dark:text-primary-400",
-    badge: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
-    accent: "bg-primary-500",
-  },
-  1: {
-    border: "border-secondary-300 dark:border-secondary-400",
-    glow: "shadow-secondary-500/30",
-    bg: "bg-secondary-100 dark:bg-secondary-500/10",
-    text: "text-secondary-600 dark:text-secondary-400",
-    badge: "bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-300",
-    accent: "bg-secondary-500",
-  },
-  2: {
-    border: "border-tertiary-300 dark:border-tertiary-400",
-    glow: "shadow-tertiary-500/30",
-    bg: "bg-tertiary-100 dark:bg-tertiary-500/10",
-    text: "text-tertiary-600 dark:text-tertiary-400",
-    badge: "bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-500/20 dark:text-tertiary-300",
-    accent: "bg-tertiary-500",
-  },
-};
-
-const STATUS_CONFIG = {
-  pending: {
-    color: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
-  },
-  in_progress: {
-    color: "bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400",
-  },
-  paused: {
-    color: "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-  },
-  completed: {
-    color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-  },
-  cancelled: {
-    color: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
-  },
-};
 
 const URGENCY_CONFIG = {
   overdue: {
@@ -438,7 +394,7 @@ export const UnifiedWorkbench: React.FC = () => {
   };
 
   const renderTaskCard = (task: UserTask, queueLevel: number) => {
-    const queueStyle = QUEUE_COLORS[queueLevel as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
+    const queueStyle = QUEUE_COLORS[queueLevel as QueueLevel] || QUEUE_COLORS[0];
     const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
     const deadlineInfo = formatDeadline(task.deadline);
 
@@ -569,7 +525,7 @@ export const UnifiedWorkbench: React.FC = () => {
   };
 
   const renderQueueColumn = (level: number, title: string, tasks: UserTask[]) => {
-    const queueStyle = QUEUE_COLORS[level as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
+    const queueStyle = QUEUE_COLORS[level as QueueLevel] || QUEUE_COLORS[0];
     const timeSlice = timeSlices[`q${level}` as keyof typeof timeSlices];
 
     return (

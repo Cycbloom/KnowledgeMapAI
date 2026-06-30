@@ -7,7 +7,7 @@ import type { LearningState } from "../../../shared/types/scheduler";
 import type { QuizSet, QuizSetConfig } from "../../../shared/types/quiz";
 import { subtaskStateMachine } from "./subtaskStateMachine";
 import { subtaskKnowledgeSyncService } from "./subtaskKnowledgeSync";
-import { aiService, type CardDifficulty } from "../ai/index";
+import type { IAIProviderService, CardDifficulty } from "./types";
 import { studyService } from "../study/studyService";
 import { notDeleted } from '../common/softDeleteHelper';
 
@@ -105,6 +105,16 @@ const PRACTICE_RESULTS_TABLE = "practice_results";
 const QUIZ_RESULTS_TABLE = "quiz_results";
 
 export class SubtaskQuizIntegrationService {
+  private aiProviderService: IAIProviderService | null = null;
+
+  /**
+   * 注入 AI 服务，用于解耦 scheduler 层对 ai 层的直接运行时依赖。
+   * 应在 SubtaskQuizIntegrationService 实例化后、使用前调用。
+   */
+  setAIProviderService(service: IAIProviderService): void {
+    this.aiProviderService = service;
+  }
+
   async getPracticeCards(
     supabase: SupabaseClient,
     knowledgePointId: string,
@@ -630,7 +640,7 @@ export class SubtaskQuizIntegrationService {
     );
 
     try {
-      const aiResult = await aiService.generateCards(
+      const aiResult = await this.aiProviderService!.generateCards(
         knowledgePoint.title,
         knowledgePoint.content || "",
         {
@@ -758,7 +768,7 @@ export class SubtaskQuizIntegrationService {
         mixed: "mixed",
       };
 
-      const aiResult = await aiService.generateCards(
+      const aiResult = await this.aiProviderService!.generateCards(
         knowledgePoint.title,
         knowledgePoint.content || "",
         {

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TimerMode } from "@shared/types";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { TIMER_MODE_COLORS, getModeLabel } from "@/constants/timer";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -89,28 +90,6 @@ function generateVisibleStations(
   return { stations, currentIdx };
 }
 
-function getStationColor(type: TimerMode): string {
-  switch (type) {
-    case "focus":
-      return "#3b82f6";
-    case "shortBreak":
-      return "#10b981";
-    case "longBreak":
-      return "#8b5cf6";
-  }
-}
-
-function getStationBg(type: TimerMode): string {
-  switch (type) {
-    case "focus":
-      return "rgba(59,130,246,0.12)";
-    case "shortBreak":
-      return "rgba(16,185,129,0.12)";
-    case "longBreak":
-      return "rgba(139,92,246,0.12)";
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -153,17 +132,6 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
       });
     }
   }, [currentIdx]);
-
-  const getLabel = (type: TimerMode) => {
-    switch (type) {
-      case "focus":
-        return t("focusTimer.focus");
-      case "shortBreak":
-        return t("focusTimer.shortBreak");
-      case "longBreak":
-        return t("focusTimer.longBreak");
-    }
-  };
 
   const getIcon = (type: TimerMode) => {
     switch (type) {
@@ -245,7 +213,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
             const isCurrent = idx === currentIdx;
             const isNearFuture = idx > currentIdx && idx <= currentIdx + 2;
             const isFarFuture = idx > currentIdx + 2;
-            const color = getStationColor(station.type);
+            const color = TIMER_MODE_COLORS[station.type].primary;
 
             // Opacity for depth effect
             const opacity = isFarFuture ? 0.3 : isNearFuture ? 0.6 : 1;
@@ -288,7 +256,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                         ? "#10b981"
                         : isCurrent
                           ? color
-                          : getStationBg(station.type),
+                          : TIMER_MODE_COLORS[station.type].bgLight,
                       border: isCompleted
                         ? "none"
                         : isCurrent
@@ -366,7 +334,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                     )}
                     style={{ top: isCurrent ? dotD + 6 : dotD + 4 }}
                   >
-                    {getLabel(station.type)}
+                    {getModeLabel(station.type, t)}
                   </span>
                 </div>
               </React.Fragment>

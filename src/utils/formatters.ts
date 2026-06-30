@@ -98,6 +98,81 @@ export function formatDurationMs(ms: number): string {
 }
 
 /**
+ * 将秒数格式化为 MM:SS 格式，用于计时器显示。
+ *
+ * @param seconds - 时长（秒）
+ * @returns MM:SS 格式字符串
+ *
+ * @example
+ *   formatTimeFromSeconds(0)    // "00:00"
+ *   formatTimeFromSeconds(65)   // "01:05"
+ *   formatTimeFromSeconds(3661) // "61:01"
+ */
+export function formatTimeFromSeconds(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+/** 日期输出格式 */
+export type DateFormat = 'short' | 'full' | 'relative' | 'short-datetime' | 'full-datetime';
+
+/**
+ * 将日期字符串或时间戳格式化为可读的日期/时间字符串。
+ *
+ * @param dateStr - ISO 日期字符串或时间戳（毫秒）
+ * @param format - 输出格式，默认 'full'
+ * @returns 格式化后的日期字符串
+ *
+ * @example
+ *   formatDate('2024-03-15T14:30:00Z', 'short')          // "3月15日"
+ *   formatDate('2024-03-15T14:30:00Z', 'full')           // "2024年3月15日"
+ *   formatDate('2024-03-15T14:30:00Z', 'relative')       // "2天前"（取决于当前时间）
+ *   formatDate('2024-03-15T14:30:00Z', 'short-datetime') // "3月15日 14:30"
+ *   formatDate('2024-03-15T14:30:00Z', 'full-datetime')  // "2024年3月15日 14:30"
+ */
+export function formatDate(dateStr: string | number, format: DateFormat = 'full'): string {
+  const date = typeof dateStr === 'number' ? new Date(dateStr) : new Date(dateStr);
+
+  if (isNaN(date.getTime())) return '--';
+
+  if (format === 'relative') {
+    const now = Date.now();
+    const diff = now - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return '刚刚';
+    if (minutes < 60) return `${minutes}分钟前`;
+    if (hours < 24) return `${hours}小时前`;
+    if (days < 7) return `${days}天前`;
+    // 超过7天，回退到完整日期
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  }
+
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hour = date.getHours().toString().padStart(2, '0');
+  const minute = date.getMinutes().toString().padStart(2, '0');
+  const timePart = ` ${hour}:${minute}`;
+
+  switch (format) {
+    case 'short':
+      return `${month}月${day}日`;
+    case 'short-datetime':
+      return `${month}月${day}日${timePart}`;
+    case 'full':
+      return `${year}年${month}月${day}日`;
+    case 'full-datetime':
+      return `${year}年${month}月${day}日${timePart}`;
+    default:
+      return `${year}年${month}月${day}日`;
+  }
+}
+
+/**
  * 内部：根据分钟数和格式输出字符串。
  * 调用前需保证 minutes > 0。
  */

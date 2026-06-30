@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
+import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 
 type PathStatus = LearningPathStatus | "all";
 
@@ -171,22 +172,8 @@ export const LearningPaths = () => {
     navigate(`/learning-paths/${pathId}`);
   };
 
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return t("learningPaths.time.minutes", { count: minutes });
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 
-      ? t("learningPaths.time.hoursMinutes", { hours, minutes: mins }) 
-      : t("learningPaths.time.hours", { count: hours });
-  };
-
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return formatDateUtil(dateStr);
   };
 
   const getProgressColor = (percentage: number) => {
@@ -378,7 +365,7 @@ export const LearningPaths = () => {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Clock size={14} />
-                    <span>{formatTime(path.total_estimated_time)}</span>
+                    <span>{formatDurationMinutes(path.total_estimated_time, { emptyText: '0分钟' })}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <TrendingUp size={14} />

@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import { api } from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { quizQueryKeys } from '../hooks/queries/useQuizQueries';
 import type { StudyCard } from '@shared/types/common';
+import { formatDate as formatDateUtil } from '../utils/formatters';
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; darkBg: string; darkColor: string }> = {
   draft: {
@@ -76,17 +77,6 @@ export const QuizPreview: React.FC = () => {
     if (!quizSet?.cards) return [];
     return quizSet.cards as StudyCard[];
   }, [quizSet]);
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const handleDeleteQuiz = async () => {
     if (!quizSet) return;
@@ -262,7 +252,7 @@ export const QuizPreview: React.FC = () => {
                   </div>
                   <div className={`flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                     <Clock size={16} className="text-amber-400" />
-                    <span>创建于 {formatDate(quizSet.created_at)}</span>
+                    <span>创建于 {formatDateUtil(quizSet.created_at, 'full-datetime')}</span>
                   </div>
                 </div>
               </div>

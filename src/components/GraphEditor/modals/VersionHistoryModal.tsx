@@ -3,6 +3,7 @@ import { X, History, RotateCcw, GitCompare, Loader2, ChevronLeft, ChevronRight, 
 import { knowledgePointsApi } from '../../../services/api/knowledgePoints';
 import type { KnowledgePointVersionWithDiff, KnowledgePointVersionDiff } from '../../../types';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { formatDate as formatDateUtil } from '../../../utils/formatters';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -102,14 +103,7 @@ export const VersionHistoryModal = ({
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return formatDateUtil(dateStr, 'full-datetime');
   };
 
   const renderDiffItem = (diff: KnowledgePointVersionDiff) => {

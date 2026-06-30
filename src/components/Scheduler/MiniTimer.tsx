@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Check, Maximize2, X, GripVertical } from 'lucide-react';
+import { formatTimeFromSeconds } from '../../utils/formatters';
+import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 
 interface MiniTimerProps {
   taskTitle: string;
@@ -15,12 +17,6 @@ interface MiniTimerProps {
   onExpand?: () => void;
   onClose?: () => void;
 }
-
-const QUEUE_COLORS = {
-  0: { bg: 'from-primary-500 to-primary-600', progress: '#06b6d4' },
-  1: { bg: 'from-secondary-500 to-secondary-600', progress: '#10b981' },
-  2: { bg: 'from-tertiary-500 to-tertiary-600', progress: '#f59e0b' },
-};
 
 export const MiniTimer: React.FC<MiniTimerProps> = ({
   taskTitle,
@@ -41,13 +37,7 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
 
   const remaining = Math.max(0, duration - elapsed);
   const progress = duration > 0 ? Math.min(1, elapsed / duration) : 0;
-  const queueColor = QUEUE_COLORS[queueLevel as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const queueColor = QUEUE_COLORS[queueLevel as QueueLevel] || QUEUE_COLORS[0];
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -106,7 +96,7 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
         onMouseDown={handleMouseDown}
         className={`
           w-64 rounded-2xl overflow-hidden
-          bg-gradient-to-r ${isBreak ? 'from-emerald-500 to-teal-500' : queueColor.bg}
+          bg-gradient-to-r ${isBreak ? 'from-emerald-500 to-teal-500' : queueColor.gradient}
           shadow-2xl shadow-black/30
           backdrop-blur-sm
         `}
@@ -137,7 +127,7 @@ export const MiniTimer: React.FC<MiniTimerProps> = ({
         <div className="p-3 text-white">
           <div className="flex items-center justify-between mb-2">
             <div className="text-2xl font-mono font-bold">
-              {formatTime(remaining)}
+              {formatTimeFromSeconds(remaining)}
             </div>
             <div className="flex items-center gap-1">
               {isRunning ? (

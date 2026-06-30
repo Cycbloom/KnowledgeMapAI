@@ -263,12 +263,12 @@ function FilterChip({
   );
 }
 
-export const DiffDetailPanel: React.FC<DiffDetailPanelProps> = ({
+export const DiffDetailPanel = React.memo(function DiffDetailPanel({
   graphId,
   sourceSnapshotId,
   targetSnapshotId,
   onClose,
-}) => {
+}: DiffDetailPanelProps) {
   const [diff, setDiff] = useState<DiffResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -583,4 +583,4 @@ export const DiffDetailPanel: React.FC<DiffDetailPanelProps> = ({
       </div>
     </div>
   );
-};
+});

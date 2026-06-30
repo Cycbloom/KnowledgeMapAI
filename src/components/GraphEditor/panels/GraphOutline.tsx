@@ -73,7 +73,7 @@ interface GraphOutlineProps {
   graphId?: string;
 }
 
-export const GraphOutline: React.FC<GraphOutlineProps> = ({
+export const GraphOutline = React.memo(function GraphOutline({
   nodes,
   edges = [],
   onNodeClick,
@@ -88,7 +88,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   isReadOnly = false,
   templateType,
   graphId,
-}) => {
+}: GraphOutlineProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(
@@ -1604,4 +1604,4 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       />
     </div>
   );
-};
+});

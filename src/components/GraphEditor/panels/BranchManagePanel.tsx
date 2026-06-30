@@ -42,11 +42,11 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString("zh-CN");
 }
 
-export const BranchManagePanel: React.FC<BranchManagePanelProps> = ({
+export const BranchManagePanel = React.memo(function BranchManagePanel({
   graphId,
   onClose,
   hideHeader,
-}) => {
+}: BranchManagePanelProps) {
   const navigate = useNavigate();
   const { data: branches, isLoading } = useBranches(graphId);
   const mergeBranchMutation = useMergeBranch(graphId);
@@ -274,7 +274,7 @@ export const BranchManagePanel: React.FC<BranchManagePanelProps> = ({
       )}
     </div>
   );
-};
+});
 
 interface BranchItemProps {
   branch: BranchInfo;

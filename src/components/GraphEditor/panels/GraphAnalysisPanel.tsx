@@ -40,14 +40,14 @@ interface GraphAnalysisPanelProps {
   onCreateConnection?: (sourceId: string, targetId: string) => void;
 }
 
-export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
+export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   graphId,
   isOpen,
   onClose,
   nodes,
   onNodeClick,
   onCreateConnection
-}) => {
+}: GraphAnalysisPanelProps) {
   const [analysis, setAnalysis] = useState<GraphAnalysis | null>(null);
   const [missingConnections, setMissingConnections] = useState<MissingConnection[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -366,4 +366,4 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
       )}
     </AnimatePresence>
   );
-};
+});

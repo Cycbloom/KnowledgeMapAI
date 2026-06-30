@@ -190,7 +190,90 @@ interface GraphToolbarProps {
   onRegionToggle?: (regionId: string) => void;
 }
 
-export const GraphToolbar: React.FC<GraphToolbarProps> = ({
+function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
+  // 1. Deep comparison for complex types where shallow equality is insufficient
+
+  // selectedNodeIds: Set<string> - new Set instance may have same values
+  if (prev.selectedNodeIds !== next.selectedNodeIds) {
+    if (prev.selectedNodeIds.size !== next.selectedNodeIds.size) return false;
+    for (const id of prev.selectedNodeIds) {
+      if (!next.selectedNodeIds.has(id)) return false;
+    }
+  }
+
+  // pathfindingState: object with nested values
+  if (prev.pathfindingState !== next.pathfindingState) {
+    if (
+      prev.pathfindingState.startNode !== next.pathfindingState.startNode ||
+      prev.pathfindingState.endNode !== next.pathfindingState.endNode ||
+      prev.pathfindingState.pathLength !== next.pathfindingState.pathLength ||
+      prev.pathfindingState.reset !== next.pathfindingState.reset
+    )
+      return false;
+  }
+
+  // exportActions: object with function properties
+  if (prev.exportActions !== next.exportActions) {
+    if (
+      prev.exportActions.onMarkdown !== next.exportActions.onMarkdown ||
+      prev.exportActions.onPDF !== next.exportActions.onPDF ||
+      prev.exportActions.onJSON !== next.exportActions.onJSON ||
+      prev.exportActions.onImage !== next.exportActions.onImage ||
+      prev.exportActions.onAnki !== next.exportActions.onAnki ||
+      prev.exportActions.onDeleteGraph !== next.exportActions.onDeleteGraph
+    )
+      return false;
+  }
+
+  // regions: array of objects
+  if (prev.regions !== next.regions) {
+    const p = prev.regions;
+    const n = next.regions;
+    if (!p || !n) return p === n;
+    if (p.length !== n.length) return false;
+    for (let i = 0; i < p.length; i++) {
+      if (p[i] !== n[i]) {
+        if (
+          p[i].id !== n[i].id ||
+          p[i].name !== n[i].name ||
+          p[i].color !== n[i].color ||
+          p[i].nodes !== n[i].nodes
+        )
+          return false;
+      }
+    }
+  }
+
+  // collapsedRegions: string[]
+  if (prev.collapsedRegions !== next.collapsedRegions) {
+    const p = prev.collapsedRegions;
+    const n = next.collapsedRegions;
+    if (!p || !n) return p === n;
+    if (p.length !== n.length) return false;
+    for (let i = 0; i < p.length; i++) {
+      if (p[i] !== n[i]) return false;
+    }
+  }
+
+  // 2. Shallow comparison for all remaining props (primitives & stable references)
+  const specialKeys = new Set([
+    "selectedNodeIds",
+    "pathfindingState",
+    "exportActions",
+    "regions",
+    "collapsedRegions",
+  ]);
+
+  const keys = Object.keys(prev) as (keyof GraphToolbarProps)[];
+  for (const key of keys) {
+    if (specialKeys.has(key)) continue;
+    if (prev[key] !== next[key]) return false;
+  }
+
+  return true;
+}
+
+const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onBack,
   onUndo,
   onRedo,
@@ -1713,3 +1796,5 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     </div>
   );
 };
+
+export const GraphToolbar = React.memo(GraphToolbarBase, areEqual);

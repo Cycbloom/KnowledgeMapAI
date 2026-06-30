@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+
 import { useTranslation } from "react-i18next";
 import { Edit2, Trash2, Layers } from "lucide-react";
 import type { Node, CustomRegion, RegionInfo } from "@shared/types/graph";
@@ -15,13 +16,13 @@ interface RegionManagePanelProps {
   onCreateRegion: () => void;
 }
 
-export const RegionManagePanel: React.FC<RegionManagePanelProps> = ({
+export const RegionManagePanel = React.memo(function RegionManagePanel({
   nodes,
   customRegions,
   onEditRegion,
   onDeleteRegion,
   onCreateRegion,
-}) => {
+}: RegionManagePanelProps) {
   const { t } = useTranslation();
 
   const backboneRegions = useMemo(() => {
@@ -176,4 +177,4 @@ export const RegionManagePanel: React.FC<RegionManagePanelProps> = ({
       </div>
     </div>
   );
-};
+});

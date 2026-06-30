@@ -1483,18 +1483,135 @@ export class GraphService {
     userId: string,
     graphIds: string[],
   ): Promise<Record<string, Record<string, NodeStatus>>> {
-    const results = await Promise.all(
+    // 1. 尝试从缓存中获取每个图谱的状态
+    const cachedMap: Record<string, Record<string, NodeStatus>> = {};
+    const uncachedGraphIds: string[] = [];
+
+    const cacheEntries = await Promise.all(
       graphIds.map(async (graphId) => {
-        const status = await this.getGraphNodeStatus(supabase, userId, graphId);
-        return { graphId, status };
+        const cacheKey = CacheKeys.GRAPH_NODE_STATUS(userId, graphId);
+        const cached = await cacheService.get<Record<string, NodeStatus>>(cacheKey);
+        return { graphId, cached };
       }),
     );
 
-    const resultMap: Record<string, Record<string, NodeStatus>> = {};
-    for (const { graphId, status } of results) {
-      resultMap[graphId] = status;
+    for (const { graphId, cached } of cacheEntries) {
+      if (cached !== undefined) {
+        cachedMap[graphId] = cached;
+      } else {
+        uncachedGraphIds.push(graphId);
+      }
     }
-    return resultMap;
+
+    // 2. 全部命中缓存，直接返回
+    if (uncachedGraphIds.length === 0) {
+      return cachedMap;
+    }
+
+    // 3. 对未命中的图谱执行单次批量 SQL 查询
+    const { data: cards, error } = await supabase
+      .from("study_cards")
+      .select(
+        "graph_id, knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, fsrs_retrievability, review_count",
+      )
+      .eq("user_id", userId)
+      .in("graph_id", uncachedGraphIds);
+
+    if (error) {
+      logger.error("batchGetGraphNodeStatus error:", error);
+      // 查询失败时，对未缓存图谱返回空对象
+      for (const graphId of uncachedGraphIds) {
+        cachedMap[graphId] = {};
+      }
+      return cachedMap;
+    }
+
+    // 4. 按 graph_id 分组，再按 knowledge_point_id 聚合 FSRS 数据
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    type CardRow = Pick<StudyCardRow, 'graph_id' | 'knowledge_point_id' | 'next_review' | 'fsrs_stability' | 'fsrs_retrievability' | 'review_count'>;
+    type CardGroup = { cards: CardRow[]; stabilitySum: number; weightedRetrievabilitySum: number; reviewCountSum: number };
+
+    const graphGroups = new Map<string, Map<string, CardGroup>>();
+
+    (cards || []).forEach((card: CardRow) => {
+      const gId = card.graph_id ?? '';
+      const kpId = card.knowledge_point_id ?? '';
+      if (!gId || !kpId) return;
+
+      if (!graphGroups.has(gId)) {
+        graphGroups.set(gId, new Map());
+      }
+      const kpMap = graphGroups.get(gId)!;
+
+      if (!kpMap.has(kpId)) {
+        kpMap.set(kpId, { cards: [], stabilitySum: 0, weightedRetrievabilitySum: 0, reviewCountSum: 0 });
+      }
+      const group = kpMap.get(kpId)!;
+      group.cards.push(card);
+      const stability = card.fsrs_stability ?? 0;
+      const retrievability = card.fsrs_retrievability ?? 0;
+
+      if (stability > 0) {
+        group.stabilitySum += stability;
+        group.weightedRetrievabilitySum += retrievability * stability;
+      } else {
+        group.stabilitySum += 1;
+        group.weightedRetrievabilitySum += retrievability;
+      }
+      group.reviewCountSum += card.review_count || 0;
+    });
+
+    // 5. 为每个图谱计算状态映射，并回填单图谱缓存
+    const freshMap: Record<string, Record<string, NodeStatus>> = {};
+
+    for (const graphId of uncachedGraphIds) {
+      const kpMap = graphGroups.get(graphId);
+      const statusMap: Record<string, NodeStatus> = {};
+
+      if (kpMap) {
+        kpMap.forEach((group, kpId) => {
+          const card = group.cards[0];
+          const nextReview = card.next_review ? new Date(card.next_review) : null;
+          const isDue = nextReview && nextReview <= now;
+          const isDueToday =
+            nextReview &&
+            nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+          const weightedRetrievability = group.stabilitySum > 0
+            ? group.weightedRetrievabilitySum / group.stabilitySum
+            : 0;
+          const avgStability = group.cards.length > 0
+            ? group.cards.reduce((sum, c) => sum + (c.fsrs_stability ?? 0), 0) / group.cards.length
+            : 0;
+          const isMastered = avgStability > 21;
+
+          statusMap[kpId] = {
+            mastered: isMastered,
+            locked: false,
+            review_count: group.reviewCountSum,
+            next_review: card.next_review ?? undefined,
+            due: !!isDue,
+            due_today: !!isDueToday,
+            fsrs_stability: avgStability,
+            fsrs_retrievability: weightedRetrievability,
+          };
+        });
+      }
+
+      freshMap[graphId] = statusMap;
+
+      // 回填单图谱缓存，保持与 getGraphNodeStatus 缓存兼容
+      await cacheService.set(
+        CacheKeys.GRAPH_NODE_STATUS(userId, graphId),
+        statusMap,
+        CacheTTL.NODE_STATUS,
+        [`graph:${graphId}`, 'status'],
+      );
+    }
+
+    // 6. 合并缓存和新查询结果
+    return { ...cachedMap, ...freshMap };
   }
 
   /**

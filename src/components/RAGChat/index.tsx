@@ -78,7 +78,7 @@ interface RAGChatPanelProps {
   onNavigateToNode?: (nodeId: string) => void;
 }
 
-export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
+export const RAGChatPanel = React.memo(function RAGChatPanel({
   graphId,
   currentNodeId,
   currentNodeTitle,
@@ -108,7 +108,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   enableTermTooltip = false,
   enableSTT = false,
   onNavigateToNode,
-}) => {
+}: RAGChatPanelProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const chatState = useChatState();
@@ -848,7 +848,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
       )}
     </motion.div>
   );
-};
+});
 
 interface RAGChatButtonWrapperProps extends RAGChatPanelProps {
   onOpenChange?: (open: boolean) => void;
@@ -895,7 +895,7 @@ const SimpleChatButton: React.FC<{
   );
 };
 
-export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
+export const RAGChatButtonWrapper = React.memo(function RAGChatButtonWrapper({
   graphId,
   currentNodeId,
   currentNodeTitle,
@@ -923,7 +923,7 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
   onLearningPathNodeClick,
   onStartNarrative,
   enableSTT,
-}) => {
+}: RAGChatButtonWrapperProps) {
   const { isDark } = useTheme();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
 
@@ -990,6 +990,6 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
       </AnimatePresence>
     </>
   );
-};
+});
 
 export default RAGChatPanel;

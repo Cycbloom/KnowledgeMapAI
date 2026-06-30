@@ -63,6 +63,42 @@ const EMPTY_NUMBER_MAP = new Map<string, number>();
 const EMPTY_STRING_ARRAY: string[] = [];
 const EMPTY_ALTERNATIVE_BRANCHES: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[] = [];
 
+/** Props that affect rendering, compared by reference or value.
+ *  Skipped: sidebarMode, isRightPanelOpen (prefixed with _ in component, unused in render output). */
+const COMPARED_PROPS: readonly (keyof MindMapCanvasProps)[] = [
+  // Core data (stable from React Query / state)
+  'nodes', 'edges', 'nodeStatus',
+  // Selection & focus state
+  'selectedNodeId', 'focusedNodeId', 'focusedNodeIds', 'focusedLinkIds', 'forceShowTextIds', 'highlightedPathNodeId',
+  // Visual configuration
+  'colorScheme', 'linkStyle', 'linkAnimation', 'coloringMode', 'nodeSizeMode', 'edgeWidthMode', 'templateLayout', 'layoutMode',
+  // Layout & sizing
+  'width', 'height', 'rightPanelWidth', 'leftPanelWidth',
+  // Mode flags
+  'isExplorationMode', 'isSelectingParent', 'isMobilePreviewMode', 'isNarrativeMode',
+  // Narrative mode
+  'narrativeRevealedNodeIds', 'narrativeCurrentNodeId',
+  // Branch exploration
+  'branchSuggestions', 'selectedNodeForBranch', 'historicalAlternativeBranches',
+  // Parent selection
+  'currentNodeId', 'selectedParentIds',
+  // Learning path
+  'learningPathNodeIds', 'learningPathOrderMap',
+  // Semantic layout
+  'embeddings',
+  // Identifiers & misc
+  'graphId', 'previewDelay',
+  // Callbacks (stable from useCallback in parent)
+  'onNodeClick', 'onCanvasClick', 'onSelectBranch', 'onSwitchBranch',
+  'onNodeContextMenu', 'onEdgeContextMenu', 'onEdgeUpdate', 'onEdgeDelete',
+  'onLayoutUpdate', 'onSelectParent', 'onNavigateToGraphMap',
+  'onMarkNodeMastered', 'onNodeLongPress', 'onOpenDetail',
+];
+
+function areEqual(prev: MindMapCanvasProps, next: MindMapCanvasProps): boolean {
+  return COMPARED_PROPS.every(key => Object.is(prev[key], next[key]));
+}
+
 interface MindMapCanvasProps {
   nodes: Node[];
   edges: Edge[];
@@ -125,7 +161,8 @@ interface MindMapCanvasProps {
   embeddings?: Map<string, number[]>;
 }
 
-export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
+export const MindMapCanvas = React.memo(
+  forwardRef<any, MindMapCanvasProps>(
   (
     {
       nodes,
@@ -1156,4 +1193,6 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       </div>
     );
   },
+  ),
+  areEqual,
 );

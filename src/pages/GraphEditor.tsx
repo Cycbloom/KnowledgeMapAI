@@ -316,6 +316,38 @@ export const GraphEditor = () => {
     setHistoricalAlternativeBranches,
     isAnalysisPanelOpen,
     setIsAnalysisPanelOpen,
+    // Presentation state
+    isPresentationMode,
+    setIsPresentationMode,
+    presentationStep,
+    setPresentationStep,
+    // Layout
+    sidebarWidth,
+    // Node form
+    nodeForm,
+    setNodeForm,
+    // Pathfinding
+    pathStartNode,
+    setPathStartNode,
+    pathEndNode,
+    setPathEndNode,
+    highlightedPath,
+    setHighlightedPath,
+    // Export
+    isExportMenuOpen,
+    setIsExportMenuOpen,
+    setIsExportImageModalOpen,
+    // Tutor
+    isTutorMode,
+    tutorMode,
+    setTutorMode,
+    suggestedNextTopics,
+    // Modal setters
+    setIsTextToGraphOpen,
+    setIsSettingsOpen,
+    setIsHelpOpen,
+    setIsShareModalOpen,
+    setIsPodcastModalOpen,
     // Narrative state
     isNarrativeMode: isNarrativeModeState,
     isPlaying: isNarrativePlaying,
@@ -358,7 +390,7 @@ export const GraphEditor = () => {
   const handleSelectParentFromGraph = useCallback(
     (nodeId: string) => {
       if (selectedNode?.id === nodeId) return;
-      state.setNodeForm((prev) => {
+      setNodeForm((prev) => {
         const currentIds = prev.parentNodeIds;
         if (currentIds.includes(nodeId)) {
           return {
@@ -370,7 +402,7 @@ export const GraphEditor = () => {
         }
       });
     },
-    [selectedNode, state],
+    [selectedNode, setNodeForm],
   );
 
   useLayoutEffect(() => {
@@ -408,11 +440,11 @@ export const GraphEditor = () => {
     viewMode,
     setViewMode,
     graphRef,
-    isPresentationMode: state.isPresentationMode,
-    setIsPresentationMode: state.setIsPresentationMode,
-    setFocusedNodeId: state.setFocusedNodeId,
-    setFocusedNodeIds: state.setFocusedNodeIds,
-    setFocusedLinkIds: state.setFocusedLinkIds,
+    isPresentationMode,
+    setIsPresentationMode,
+    setFocusedNodeId,
+    setFocusedNodeIds,
+    setFocusedLinkIds,
     savedTransform: state.savedTransform,
     startNarrative,
     exitNarrative,
@@ -434,7 +466,7 @@ export const GraphEditor = () => {
       const node = nodes.find((n) => n.id === nodeId);
       // Visibility check based on mode
       if (!node) return;
-      if (!state.isExplorationMode && node.is_accepted === false) return;
+      if (!isExplorationMode && node.is_accepted === false) return;
 
       visited.add(nodeId);
       path.push(nodeId);
@@ -448,12 +480,12 @@ export const GraphEditor = () => {
 
     if (root) dfs(root.id);
     return path;
-  }, [nodes, edges, state.isExplorationMode]);
+  }, [nodes, edges, isExplorationMode]);
 
   // Sync focused node when step changes
   React.useEffect(() => {
-    if (state.isPresentationMode && presentationPath.length > 0) {
-      const nodeId = presentationPath[state.presentationStep];
+    if (isPresentationMode && presentationPath.length > 0) {
+      const nodeId = presentationPath[presentationStep];
       if (nodeId) {
         focusNode(nodeId);
         // Sync sidebar selection
@@ -461,8 +493,8 @@ export const GraphEditor = () => {
       }
     }
   }, [
-    state.isPresentationMode,
-    state.presentationStep,
+    isPresentationMode,
+    presentationStep,
     presentationPath,
     focusNode,
     setSelectedNodeIds,
@@ -635,20 +667,20 @@ export const GraphEditor = () => {
       "setViewMode:quadrant": () => setViewMode("quadrant"),
       goHome: () => navigate("/"),
       presentationNext: () => {
-        if (state.isPresentationMode) {
-          state.setPresentationStep((p) =>
+        if (isPresentationMode) {
+          setPresentationStep((p) =>
             Math.min(p + 1, presentationPath.length - 1),
           );
         }
       },
       presentationPrev: () => {
-        if (state.isPresentationMode) {
-          state.setPresentationStep((p) => Math.max(p - 1, 0));
+        if (isPresentationMode) {
+          setPresentationStep((p) => Math.max(p - 1, 0));
         }
       },
     },
     context: {
-      presentationMode: state.isPresentationMode,
+      presentationMode: isPresentationMode,
     },
   });
 
@@ -707,8 +739,8 @@ export const GraphEditor = () => {
   const handleGetBranchSuggestions = useCallback(async () => {
     if (!selectedNode || !id) return;
     const suggestions = await aiOps.handleGetBranchSuggestions();
-    state.setBranchSuggestions(suggestions);
-  }, [selectedNode, id, aiOps, state]);
+    setBranchSuggestions(suggestions);
+  }, [selectedNode, id, aiOps, setBranchSuggestions]);
 
   const handleCanvasClick = useCallback(() => {
     clearFocus();
@@ -733,6 +765,215 @@ export const GraphEditor = () => {
     setMobileActionNodeId(node.id);
     setMobileActionMenuOpen(true);
   }, []);
+
+  // --- Extracted callbacks for child components ---
+
+  const handleLayoutUpdate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["graphData", id] });
+  }, [queryClient, id]);
+
+  const handleMarkNodeMastered = useCallback(async (_nodeId: string) => {
+    try {
+      await queryClient.invalidateQueries({
+        queryKey: ["graphNodeStatus", id],
+      });
+      message.success("节点状态已更新");
+    } catch (err) {
+      console.error("Failed to update node status:", err);
+    }
+  }, [queryClient, id]);
+
+  const handleOpenDetail = useCallback(() => {
+    setSidebarMode("detail");
+  }, [setSidebarMode]);
+
+  const handleNavigateToGraphMap = useCallback(() => {
+    navigate(`/graph-map?from=${id}`);
+  }, [navigate, id]);
+
+  const handleBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  const handleTogglePresentation = useCallback(() => {
+    if (isPresentationMode) {
+      setIsPresentationMode(false);
+      setFocusedNodeId(null);
+      setFocusedNodeIds(new Set());
+      setFocusedLinkIds(new Set());
+    } else {
+      setIsPresentationMode(true);
+      setPresentationStep(0);
+    }
+  }, [isPresentationMode, setIsPresentationMode, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, setPresentationStep]);
+
+  const handlePresentationNext = useCallback(() => {
+    setPresentationStep((p) => Math.min(p + 1, presentationPath.length - 1));
+  }, [setPresentationStep, presentationPath]);
+
+  const handlePresentationPrev = useCallback(() => {
+    setPresentationStep((p) => Math.max(p - 1, 0));
+  }, [setPresentationStep]);
+
+  const handlePresentationExit = useCallback(() => {
+    setIsPresentationMode(false);
+    setFocusedNodeId(null);
+    setFocusedNodeIds(new Set());
+    setFocusedLinkIds(new Set());
+  }, [setIsPresentationMode, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds]);
+
+  const handleTimelineGoToIndex = useCallback((index: number) => {
+    explorationPathOps.goToPathIndex(index);
+    const pathItem = explorationPathOps.explorationPath[index];
+    if (pathItem) {
+      focusNode(pathItem.nodeId);
+    }
+  }, [explorationPathOps, focusNode]);
+
+  const handleTimelineGoBack = useCallback(() => {
+    explorationPathOps.goBack();
+    const pathItem = explorationPathOps.getCurrentPathItem();
+    if (pathItem) {
+      focusNode(pathItem.nodeId);
+    }
+  }, [explorationPathOps, focusNode]);
+
+  const handleTimelineGoForward = useCallback(() => {
+    explorationPathOps.goForward();
+    const pathItem = explorationPathOps.getCurrentPathItem();
+    if (pathItem) {
+      focusNode(pathItem.nodeId);
+    }
+  }, [explorationPathOps, focusNode]);
+
+  const handleTimelineSwitchBranch = useCallback(async (pathItem: Parameters<typeof switchBranch>[0], selectedSuggestion: Parameters<typeof switchBranch>[1]) => {
+    const parentNode = nodes.find((n) => n.id === pathItem.parentNodeId);
+    if (parentNode) switchBranch(pathItem, selectedSuggestion, parentNode);
+  }, [nodes, switchBranch]);
+
+  const handleTimelineToggleCollapse = useCallback(() => {
+    setIsTimelineVisible(!isTimelineVisible);
+  }, [isTimelineVisible, setIsTimelineVisible]);
+
+  const handleOpenOutlineSidebar = useCallback(() => {
+    setSidebarMode("outline");
+  }, [setSidebarMode]);
+
+  const handleOpenRelationshipTypeSettings = useCallback(() => {
+    panelState.setIsStyleSettingsOpen(false);
+    panelState.setIsRelationshipTypeSettingsOpen(true);
+  }, [panelState]);
+
+  const handleAnalysisNodeClick = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (node) handleNodeClick(node);
+  }, [nodes, handleNodeClick]);
+
+  const handleCommandPaletteNodeSelect = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (node) {
+      handleNodeClick(node);
+      if (viewMode !== "mindmap") {
+        setViewMode("mindmap");
+      }
+    }
+  }, [nodes, handleNodeClick, viewMode, setViewMode]);
+
+  const handleRAGChatNodeClick = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (node) handleNodeClick(node);
+  }, [nodes, handleNodeClick]);
+
+  const handleMobileActionClose = useCallback(() => {
+    setMobileActionMenuOpen(false);
+    setMobileActionNodeId(null);
+  }, [setMobileActionMenuOpen, setMobileActionNodeId]);
+
+  const handleMobileEdit = useCallback(() => {
+    const node = nodes.find((n) => n.id === mobileActionNodeId);
+    if (node) {
+      setSelectedNode(node);
+      setSidebarMode("edit");
+    }
+  }, [nodes, mobileActionNodeId, setSelectedNode, setSidebarMode]);
+
+  const handleMobileAIExpand = useCallback(() => {
+    const node = nodes.find((n) => n.id === mobileActionNodeId);
+    if (node) {
+      setSelectedNode(node);
+      aiOps.handleAIExpand();
+    }
+  }, [nodes, mobileActionNodeId, setSelectedNode, aiOps]);
+
+  const handleMobileGenerateContent = useCallback(() => {
+    const node = nodes.find((n) => n.id === mobileActionNodeId);
+    if (node) {
+      setSelectedNode(node);
+      setIsTextToGraphOpen(true);
+    }
+  }, [nodes, mobileActionNodeId, setSelectedNode, setIsTextToGraphOpen]);
+
+  const handleMobileGenerateCards = useCallback(() => {
+    const node = nodes.find((n) => n.id === mobileActionNodeId);
+    if (node) {
+      setSelectedNode(node);
+    }
+  }, [nodes, mobileActionNodeId, setSelectedNode]);
+
+  const handleMobileStartLearning = useCallback(() => {
+    const node = nodes.find((n) => n.id === mobileActionNodeId);
+    if (node) {
+      setSelectedNode(node);
+      tutorOps.handleToggleTutorMode();
+    }
+  }, [nodes, mobileActionNodeId, setSelectedNode, tutorOps]);
+
+  const handleMobileDelete = useCallback(() => {
+    const node = nodes.find((n) => n.id === mobileActionNodeId);
+    if (node) {
+      nodeOps.handleDeleteNode(node);
+    }
+  }, [nodes, mobileActionNodeId, nodeOps]);
+
+  const handleConceptsSaved = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["graphData", id],
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["graphNodeStatus", id],
+    });
+  }, [queryClient, id]);
+
+  const handleDiffSelect = useCallback((sourceSnapshotId: string, targetSnapshotId?: string) => {
+    panelState.setSelectedDiff({ sourceSnapshotId, targetSnapshotId: targetSnapshotId ?? "" });
+  }, [panelState]);
+
+  const handleConceptPreviewClose = useCallback(() => {
+    panelState.setIsConceptPreviewOpen(false);
+    panelState.setExtractedConcepts([]);
+  }, [panelState]);
+
+  // --- Extracted inline objects as useMemo ---
+
+  const pathfindingState = useMemo(() => ({
+    startNode: pathStartNode,
+    endNode: pathEndNode,
+    pathLength: highlightedPath?.nodes.size || 0,
+    reset: () => {
+      setPathStartNode(null);
+      setPathEndNode(null);
+      setHighlightedPath(null);
+    },
+  }), [pathStartNode, pathEndNode, highlightedPath, setPathStartNode, setPathEndNode, setHighlightedPath]);
+
+  const exportActions = useMemo(() => ({
+    onMarkdown: exportOps.handleExportMarkdown,
+    onPDF: exportOps.handleExportPDF,
+    onJSON: exportOps.handleExportJSON,
+    onImage: () => setIsExportImageModalOpen(true),
+    onAnki: exportOps.handleExportAnki,
+    onDeleteGraph: exportOps.handleDeleteGraph,
+  }), [exportOps, setIsExportImageModalOpen]);
 
   const commands: CommandItem[] = useCommandPalette({
     sidebarMode,
@@ -851,30 +1092,19 @@ export const GraphEditor = () => {
               coloringMode={coloringMode}
               onNodeContextMenu={handleNodeContextMenu}
               isRightPanelOpen={sidebarMode !== "none"}
-              rightPanelWidth={sidebarMode !== "none" ? state.sidebarWidth : 0}
+              rightPanelWidth={sidebarMode !== "none" ? sidebarWidth : 0}
               graphId={id}
-              onLayoutUpdate={(_positions) => {
-                queryClient.invalidateQueries({ queryKey: ["graphData", id] });
-              }}
+              onLayoutUpdate={handleLayoutUpdate}
               isSelectingParent={isSelectingParentNode}
               onSelectParent={handleSelectParentFromGraph}
               currentNodeId={selectedNode?.id}
-              selectedParentIds={state.nodeForm.parentNodeIds}
+              selectedParentIds={nodeForm.parentNodeIds}
               leftPanelWidth={panelState.isRAGChatOpen ? panelState.ragChatWidth : 0}
-              onNavigateToGraphMap={() => navigate(`/graph-map?from=${id}`)}
-              onMarkNodeMastered={async (_nodeId: string) => {
-                try {
-                  await queryClient.invalidateQueries({
-                    queryKey: ["graphNodeStatus", id],
-                  });
-                  message.success("节点状态已更新");
-                } catch (err) {
-                  console.error("Failed to update node status:", err);
-                }
-              }}
+              onNavigateToGraphMap={handleNavigateToGraphMap}
+              onMarkNodeMastered={handleMarkNodeMastered}
               onNodeLongPress={isMobile ? handleNodeLongPress : undefined}
               isMobilePreviewMode={isMobile && isMobilePreviewMode}
-              onOpenDetail={() => setSidebarMode("detail")}
+              onOpenDetail={handleOpenDetail}
               learningPathNodeIds={learningPathNodeIds}
               learningPathOrderMap={learningPathOrderMap}
               highlightedPathNodeId={
@@ -909,7 +1139,7 @@ export const GraphEditor = () => {
                 coloringMode={coloringMode}
                 isRightPanelOpen={sidebarMode !== "none"}
                 rightPanelWidth={
-                  sidebarMode !== "none" ? state.sidebarWidth : 0
+                  sidebarMode !== "none" ? sidebarWidth : 0
                 }
               />
             </Suspense>
@@ -935,12 +1165,7 @@ export const GraphEditor = () => {
                 branchSuggestions={branchSuggestions}
                 selectedNodeForBranch={selectedNode}
                 onSelectBranch={selectBranch}
-                onSwitchBranch={async (pathItem, selectedSuggestion) => {
-                  const parentNode = nodes.find(
-                    (n) => n.id === pathItem.parentNodeId,
-                  );
-                  if (parentNode) switchBranch(pathItem, selectedSuggestion, parentNode);
-                }}
+                onSwitchBranch={handleTimelineSwitchBranch}
                 historicalAlternativeBranches={historicalAlternativeBranches}
               />
             </Suspense>
@@ -984,7 +1209,7 @@ export const GraphEditor = () => {
       </div>
 
       <GraphToolbar
-        onBack={() => navigate(-1)}
+        onBack={handleBack}
         onUndo={undo}
         onRedo={redo}
         canUndo={canUndo}
@@ -997,26 +1222,17 @@ export const GraphEditor = () => {
         isFocusMode={isFocusMode}
         setIsFocusMode={setIsFocusMode}
         aiEnabled={aiEnabled}
-        onTextToGraph={() => state.setIsTextToGraphOpen(true)}
+        onTextToGraph={() => setIsTextToGraphOpen(true)}
         onAIExpand={aiOps.handleAIExpand}
         onBranchExplore={handleGetBranchSuggestions}
         onBackgroundTask={aiOps.handleBackgroundTask}
         isChatOpen={panelState.isRAGChatOpen}
         setIsChatOpen={panelState.setIsRAGChatOpen}
-        isTutorMode={state.isTutorMode}
+        isTutorMode={isTutorMode}
         onToggleTutorMode={tutorOps.handleToggleTutorMode}
         isPathfindingMode={isPathfindingMode}
         setIsPathfindingMode={setIsPathfindingMode}
-        pathfindingState={{
-          startNode: state.pathStartNode,
-          endNode: state.pathEndNode,
-          pathLength: state.highlightedPath?.nodes.size || 0,
-          reset: () => {
-            state.setPathStartNode(null);
-            state.setPathEndNode(null);
-            state.setHighlightedPath(null);
-          },
-        }}
+        pathfindingState={pathfindingState}
         onAddNode={nodeOps.handleStartCreate}
         isDeleteMode={isDeleteMode}
         setIsDeleteMode={setIsDeleteMode}
@@ -1032,21 +1248,14 @@ export const GraphEditor = () => {
         setLinkStyle={setLinkStyle}
         linkAnimation={linkAnimation}
         setLinkAnimation={setLinkAnimation}
-        onOpenSettings={() => state.setIsSettingsOpen(true)}
-        isExportMenuOpen={state.isExportMenuOpen}
-        setIsExportMenuOpen={state.setIsExportMenuOpen}
-        exportActions={{
-          onMarkdown: exportOps.handleExportMarkdown,
-          onPDF: exportOps.handleExportPDF,
-          onJSON: exportOps.handleExportJSON,
-          onImage: () => state.setIsExportImageModalOpen(true),
-          onAnki: exportOps.handleExportAnki,
-          onDeleteGraph: exportOps.handleDeleteGraph,
-        }}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        isExportMenuOpen={isExportMenuOpen}
+        setIsExportMenuOpen={setIsExportMenuOpen}
+        exportActions={exportActions}
         onRefresh={() => window.location.reload()}
-        onOpenHelp={() => state.setIsHelpOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
         onOpenShortcutSettings={() => panelState.setIsShortcutHelpOpen(true)}
-        onShare={() => state.setIsShareModalOpen(true)}
+        onShare={() => setIsShareModalOpen(true)}
         onOpenAnalysis={() => setIsAnalysisPanelOpen(true)}
         onOpenConceptAggregation={() => panelState.setIsConceptAggregationOpen(true)}
         viewMode={viewMode}
@@ -1057,19 +1266,8 @@ export const GraphEditor = () => {
         setColoringMode={setColoringMode}
         isTimelineVisible={isTimelineVisible}
         setIsTimelineVisible={setIsTimelineVisible}
-        onTogglePresentation={() => {
-          if (state.isPresentationMode) {
-            state.setIsPresentationMode(false);
-            // Reset focus state when exiting presentation mode
-            state.setFocusedNodeId(null);
-            state.setFocusedNodeIds(new Set());
-            state.setFocusedLinkIds(new Set());
-          } else {
-            state.setIsPresentationMode(true);
-            state.setPresentationStep(0);
-          }
-        }}
-        onTogglePodcast={() => state.setIsPodcastModalOpen(true)}
+        onTogglePresentation={handleTogglePresentation}
+        onTogglePodcast={() => setIsPodcastModalOpen(true)}
         isMobilePreviewMode={isMobilePreviewMode}
         setIsMobilePreviewMode={setIsMobilePreviewMode}
         isRAGChatOpen={panelState.isRAGChatOpen}
@@ -1088,23 +1286,13 @@ export const GraphEditor = () => {
         onRegionToggle={handleRegionToggle}
       />
 
-      {state.isPresentationMode && (
+      {isPresentationMode && (
         <PresentationControls
-          currentStep={state.presentationStep}
+          currentStep={presentationStep}
           totalSteps={presentationPath.length}
-          onNext={() =>
-            state.setPresentationStep((p) =>
-              Math.min(p + 1, presentationPath.length - 1),
-            )
-          }
-          onPrev={() => state.setPresentationStep((p) => Math.max(p - 1, 0))}
-          onExit={() => {
-            state.setIsPresentationMode(false);
-            // Reset focus state when exiting presentation mode
-            state.setFocusedNodeId(null);
-            state.setFocusedNodeIds(new Set());
-            state.setFocusedLinkIds(new Set());
-          }}
+          onNext={handlePresentationNext}
+          onPrev={handlePresentationPrev}
+          onExit={handlePresentationExit}
         />
       )}
 
@@ -1130,46 +1318,21 @@ export const GraphEditor = () => {
           explorationPath={explorationPathOps.explorationPath}
           currentPathIndex={explorationPathOps.currentPathIndex}
           sidebarMode={sidebarMode}
-          onGoToIndex={(index) => {
-            explorationPathOps.goToPathIndex(index);
-            const pathItem = explorationPathOps.explorationPath[index];
-            if (pathItem) {
-              focusNode(pathItem.nodeId);
-            }
-          }}
-          onGoBack={() => {
-            explorationPathOps.goBack();
-            const pathItem = explorationPathOps.getCurrentPathItem();
-            if (pathItem) {
-              focusNode(pathItem.nodeId);
-            }
-          }}
-          onGoForward={() => {
-            explorationPathOps.goForward();
-            const pathItem = explorationPathOps.getCurrentPathItem();
-            if (pathItem) {
-              focusNode(pathItem.nodeId);
-            }
-          }}
-          onSwitchBranch={async (pathItem, selectedSuggestion) => {
-            const parentNode = nodes.find(
-              (n) => n.id === pathItem.parentNodeId,
-            );
-            if (parentNode) switchBranch(pathItem, selectedSuggestion, parentNode);
-          }}
+          onGoToIndex={handleTimelineGoToIndex}
+          onGoBack={handleTimelineGoBack}
+          onGoForward={handleTimelineGoForward}
+          onSwitchBranch={handleTimelineSwitchBranch}
           canGoBack={explorationPathOps.canGoBack()}
           canGoForward={explorationPathOps.canGoForward()}
           isDark={isDark}
           isCollapsed={!isTimelineVisible}
-          onToggleCollapse={() =>
-            state.setIsTimelineVisible(!isTimelineVisible)
-          }
+          onToggleCollapse={handleTimelineToggleCollapse}
         />
       )}
 
       {sidebarMode === "none" && !isMobile && (
         <button
-          onClick={() => setSidebarMode("outline")}
+          onClick={handleOpenOutlineSidebar}
           className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-l-xl shadow-lg border-y border-l border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary-600 transition-all hover:pr-4"
         >
           <ArrowLeft size={20} />
@@ -1206,10 +1369,7 @@ export const GraphEditor = () => {
         edgeWidthMode={edgeWidthMode}
         onEdgeWidthModeChange={setEdgeWidthMode}
         coloringMode={coloringMode}
-        onOpenRelationshipTypeSettings={() => {
-          panelState.setIsStyleSettingsOpen(false);
-          panelState.setIsRelationshipTypeSettingsOpen(true);
-        }}
+        onOpenRelationshipTypeSettings={handleOpenRelationshipTypeSettings}
       />
 
       <RelationshipTypeSettings
@@ -1249,25 +1409,8 @@ export const GraphEditor = () => {
           isOpen={isAnalysisPanelOpen}
           onClose={() => setIsAnalysisPanelOpen(false)}
           nodes={nodes}
-          onNodeClick={(nodeId) => {
-            const node = nodes.find((n) => n.id === nodeId);
-            if (node) handleNodeClick(node);
-          }}
-          onCreateConnection={async (sourceId, targetId) => {
-            try {
-              await mutations.createEdgeMutation.mutateAsync({
-                source_knowledge_point_id: sourceId,
-                target_knowledge_point_id: targetId,
-                graphId: id || "",
-                relationship_type: "contains",
-              });
-              message.success("连接已创建");
-            } catch (error: unknown) {
-              const errorMessage =
-                error instanceof Error ? error.message : "未知错误";
-              message.error(`创建连接失败: ${errorMessage}`);
-            }
-          }}
+          onNodeClick={handleAnalysisNodeClick}
+          onCreateConnection={handleConnectNodes}
         />
       </Suspense>
 
@@ -1284,15 +1427,7 @@ export const GraphEditor = () => {
         onClose={() => panelState.setIsCommandPaletteOpen(false)}
         commands={commands}
         nodes={nodes}
-        onNodeSelect={(nodeId) => {
-          const node = nodes.find((n) => n.id === nodeId);
-          if (node) {
-            handleNodeClick(node);
-            if (viewMode !== "mindmap") {
-              setViewMode("mindmap");
-            }
-          }
-        }}
+        onNodeSelect={handleCommandPaletteNodeSelect}
       />
 
       <ShortcutHelpPanel
@@ -1305,24 +1440,21 @@ export const GraphEditor = () => {
           graphId={id}
           currentNodeId={selectedNode?.id}
           currentNodeTitle={selectedNode?.title}
-          onNodeClick={(nodeId) => {
-            const node = nodes.find((n) => n.id === nodeId);
-            if (node) handleNodeClick(node);
-          }}
+          onNodeClick={handleRAGChatNodeClick}
           isOpen={panelState.isRAGChatOpen}
           onOpenChange={panelState.setIsRAGChatOpen}
           selectedNodeIds={Array.from(selectedNodeIds)}
           aiEnabled={aiEnabled}
-          isTutorMode={state.isTutorMode}
-          tutorMode={state.tutorMode}
+          isTutorMode={isTutorMode}
+          tutorMode={tutorMode}
           extractedConcepts={panelState.extractedConcepts as unknown as TutorExtractedConcept[]}
           onToggleTutorMode={tutorOps.handleToggleTutorMode}
-          onSwitchTutorMode={state.setTutorMode}
+          onSwitchTutorMode={setTutorMode}
           onExtractConcepts={tutorOps.handleExtractConcepts}
           onAddConceptToGraph={tutorOps.handleAddConceptToGraph}
           onAddAllConcepts={tutorOps.handleAddAllConcepts}
           onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
-          suggestedNextTopics={state.suggestedNextTopics}
+          suggestedNextTopics={suggestedNextTopics}
           onTutorChat={tutorOps.handleTutorChat}
           width={panelState.ragChatWidth}
           onWidthChange={panelState.setRagChatWidth}
@@ -1340,52 +1472,15 @@ export const GraphEditor = () => {
       {isMobile && (
         <MobileNodeActionMenu
           isOpen={mobileActionMenuOpen}
-          onClose={() => {
-            setMobileActionMenuOpen(false);
-            setMobileActionNodeId(null);
-          }}
+          onClose={handleMobileActionClose}
           nodeId={mobileActionNodeId}
           nodeTitle={nodes.find((n) => n.id === mobileActionNodeId)?.title}
-          onEdit={() => {
-            const node = nodes.find((n) => n.id === mobileActionNodeId);
-            if (node) {
-              setSelectedNode(node);
-              setSidebarMode("edit");
-            }
-          }}
-          onAIExpand={() => {
-            const node = nodes.find((n) => n.id === mobileActionNodeId);
-            if (node) {
-              setSelectedNode(node);
-              aiOps.handleAIExpand();
-            }
-          }}
-          onGenerateContent={() => {
-            const node = nodes.find((n) => n.id === mobileActionNodeId);
-            if (node) {
-              setSelectedNode(node);
-              state.setIsTextToGraphOpen(true);
-            }
-          }}
-          onGenerateCards={() => {
-            const node = nodes.find((n) => n.id === mobileActionNodeId);
-            if (node) {
-              setSelectedNode(node);
-            }
-          }}
-          onStartLearning={() => {
-            const node = nodes.find((n) => n.id === mobileActionNodeId);
-            if (node) {
-              setSelectedNode(node);
-              tutorOps.handleToggleTutorMode();
-            }
-          }}
-          onDelete={() => {
-            const node = nodes.find((n) => n.id === mobileActionNodeId);
-            if (node) {
-              nodeOps.handleDeleteNode(node);
-            }
-          }}
+          onEdit={handleMobileEdit}
+          onAIExpand={handleMobileAIExpand}
+          onGenerateContent={handleMobileGenerateContent}
+          onGenerateCards={handleMobileGenerateCards}
+          onStartLearning={handleMobileStartLearning}
+          onDelete={handleMobileDelete}
         />
       )}
       {user?.id && (
@@ -1406,14 +1501,7 @@ export const GraphEditor = () => {
             <LiteratureExtractPanel
               graphId={id}
               onExtractComplete={handleLiteratureExtractComplete}
-              onConceptsSaved={async () => {
-                await queryClient.invalidateQueries({
-                  queryKey: ["graphData", id],
-                });
-                await queryClient.invalidateQueries({
-                  queryKey: ["graphNodeStatus", id],
-                });
-              }}
+              onConceptsSaved={handleConceptsSaved}
               onClose={() => panelState.setIsLiteratureExtractOpen(false)}
             />
           </div>
@@ -1444,9 +1532,7 @@ export const GraphEditor = () => {
             <VersionHistoryPanel
               graphId={id}
               onClose={() => panelState.setIsVersionHistoryOpen(false)}
-              onDiffSelect={(sourceSnapshotId, targetSnapshotId) => {
-                panelState.setSelectedDiff({ sourceSnapshotId, targetSnapshotId });
-              }}
+              onDiffSelect={handleDiffSelect}
             />
           </div>
         </Suspense>
@@ -1470,10 +1556,7 @@ export const GraphEditor = () => {
           <ConceptPreviewList
             concepts={panelState.extractedConcepts}
             isOpen={panelState.isConceptPreviewOpen}
-            onClose={() => {
-              panelState.setIsConceptPreviewOpen(false);
-              panelState.setExtractedConcepts([]);
-            }}
+            onClose={handleConceptPreviewClose}
             onConfirm={handleConfirmConcepts}
           />
         </Suspense>

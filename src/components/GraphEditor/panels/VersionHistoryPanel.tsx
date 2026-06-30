@@ -70,11 +70,11 @@ function formatRelativeTime(dateStr: string): string {
 
 type DialogType = "createSnapshot" | "rollback" | "createBranch" | null;
 
-export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
+export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
   graphId,
   onClose,
   onDiffSelect,
-}) => {
+}: VersionHistoryPanelProps) {
   const [page, setPage] = useState(1);
   const [dialog, setDialog] = useState<DialogType>(null);
   const [selectedSnapshot, setSelectedSnapshot] = useState<GraphSnapshot | null>(null);
@@ -333,7 +333,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
       )}
     </div>
   );
-};
+});
 
 interface SnapshotItemProps {
   snapshot: GraphSnapshot;

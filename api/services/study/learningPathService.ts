@@ -7,6 +7,9 @@ import { transactionExecutor } from "../../database/transactionExecutor";
 import { buildProgressMap, buildDependencyMaps, generateRulePath, generateAIPath, buildTodayPlan, calculateWeeklyProgress, type LearningPathStage } from "./learningPathAlgorithms";
 import { LearningPathTaskIntegration } from "./learningPathTaskIntegration";
 import { LearningPathDailyPlan } from "./learningPathDailyPlan";
+import { LearningPathNodeService } from "./learningPathNodeService";
+import { LearningPathProgressService } from "./learningPathProgressService";
+import { LearningPathPlanService } from "./learningPathPlanService";
 
 export interface LearningPath {
   id: string;
@@ -168,13 +171,22 @@ export interface LearningPathResult {
 }
 
 export class LearningPathService {
-  private dailyPlan: LearningPathDailyPlan;
+  private nodeService: LearningPathNodeService;
+  private progressService: LearningPathProgressService;
+  private planService: LearningPathPlanService;
   private taskIntegration: LearningPathTaskIntegration;
 
   constructor() {
-    this.dailyPlan = new LearningPathDailyPlan(this);
+    this.progressService = new LearningPathProgressService();
+    this.nodeService = new LearningPathNodeService(this.progressService);
+
+    // Create dailyPlan and planService after 'this' is fully initialized
+    const dailyPlan = new LearningPathDailyPlan(this);
+    this.planService = new LearningPathPlanService(dailyPlan);
     this.taskIntegration = new LearningPathTaskIntegration(this);
   }
+
+  // ── Core CRUD ──────────────────────────────────────────────
 
   async createLearningPath(
     supabase: SupabaseClient,
@@ -517,48 +529,15 @@ export class LearningPathService {
     }
   }
 
+  // ── Delegated to NodeService ───────────────────────────────
+
   async addNodeToPath(
     supabase: SupabaseClient,
     pathId: string,
     userId: string,
     input: CreateLearningPathNodeInput,
   ): Promise<LearningPathNode> {
-    const { data: path, error: pathError } = await supabase
-      .from("learning_paths")
-      .select("id")
-      .eq("id", pathId)
-      .eq("user_id", userId)
-      .single();
-
-    if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
-    }
-
-    const { data: node, error } = await supabase
-      .from("learning_path_nodes")
-      .insert({
-        path_id: pathId,
-        knowledge_point_id: input.knowledge_point_id || null,
-        graph_id: input.graph_id || null,
-        order_index: input.order_index,
-        title: input.title,
-        description: input.description || null,
-        estimated_time: input.estimated_time || 30,
-        is_milestone: input.is_milestone || false,
-        prerequisites: input.prerequisites || [],
-        status: "pending",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("addNodeToPath error:", error);
-      throw error;
-    }
-
-    await this.recalculateTotalTime(supabase, pathId);
-
-    return node;
+    return this.nodeService.addNodeToPath(supabase, pathId, userId, input);
   }
 
   async updateNodeStatus(
@@ -568,264 +547,7 @@ export class LearningPathService {
     userId: string,
     input: UpdateNodeStatusInput,
   ): Promise<LearningPathNode> {
-    const { data: node, error: nodeError } = await supabase
-      .from("learning_path_nodes")
-      .select("id, path_id, started_at")
-      .eq("id", nodeId)
-      .eq("path_id", pathId)
-      .single();
-
-    if (nodeError || !node) {
-      throw new AppError("节点不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
-    }
-
-    const { data: path, error: pathError } = await supabase
-      .from("learning_paths")
-      .select("id")
-      .eq("id", pathId)
-      .eq("user_id", userId)
-      .single();
-
-    if (pathError || !path) {
-      throw new AppError("学习路径不存在或无权访问", 403, ErrorCodes.AUTH_FORBIDDEN);
-    }
-
-    const now = new Date().toISOString();
-    const nodeUpdateData: Record<string, unknown> = {
-      status: input.status,
-      updated_at: now,
-    };
-
-    if (input.status === "in_progress" && !node.started_at) {
-      nodeUpdateData.started_at = now;
-    }
-
-    if (input.status === "completed") {
-      nodeUpdateData.completed_at = now;
-    }
-
-    // Transactional path
-    if (transactionExecutor.isAvailable()) {
-      try {
-        await transactionExecutor.executeInTransaction(async (client) => {
-          // Step 1: UPDATE learning_path_nodes status
-          const setClauses: string[] = ['status = $1', 'updated_at = $2'];
-          const params: unknown[] = [input.status, now];
-          let paramIdx = params.length;
-
-          if (input.status === "in_progress" && !node.started_at) {
-            paramIdx++;
-            setClauses.push(`started_at = $${paramIdx}`);
-            params.push(now);
-          }
-
-          if (input.status === "completed") {
-            paramIdx++;
-            setClauses.push(`completed_at = $${paramIdx}`);
-            params.push(now);
-          }
-
-          paramIdx++;
-          const nodeIdParam = paramIdx;
-          params.push(nodeId);
-
-          await client.query(
-            `UPDATE learning_path_nodes SET ${setClauses.join(', ')} WHERE id = $${nodeIdParam}`,
-            params,
-          );
-
-          // Step 2: UPSERT learning_path_progress
-          const progressSetClauses: string[] = [
-            'status = $1',
-            'updated_at = $2',
-          ];
-          const progressParams: unknown[] = [input.status, now];
-          let progressParamIdx = progressParams.length;
-
-          if (input.notes !== undefined) {
-            progressParamIdx++;
-            progressSetClauses.push(`notes = $${progressParamIdx}`);
-            progressParams.push(input.notes);
-          }
-          if (input.time_spent !== undefined) {
-            progressParamIdx++;
-            progressSetClauses.push(`time_spent = $${progressParamIdx}`);
-            progressParams.push(input.time_spent);
-          }
-          if (input.progress_percentage !== undefined) {
-            progressParamIdx++;
-            progressSetClauses.push(`progress_percentage = $${progressParamIdx}`);
-            progressParams.push(input.progress_percentage);
-          }
-          if (input.status === "in_progress") {
-            progressParamIdx++;
-            progressSetClauses.push(`started_at = $${progressParamIdx}`);
-            progressParams.push(now);
-          }
-          if (input.status === "completed") {
-            progressParamIdx++;
-            progressSetClauses.push(`completed_at = $${progressParamIdx}`);
-            progressParams.push(now);
-            progressParamIdx++;
-            progressSetClauses.push(`progress_percentage = $${progressParamIdx}`);
-            progressParams.push(100);
-          }
-
-          progressParamIdx++;
-          const userIdParam = progressParamIdx;
-          progressParams.push(userId);
-          progressParamIdx++;
-          const pathIdParam = progressParamIdx;
-          progressParams.push(pathId);
-          progressParamIdx++;
-          const nodeIdParam2 = progressParamIdx;
-          progressParams.push(nodeId);
-
-          await client.query(
-            `INSERT INTO learning_path_progress (user_id, path_id, node_id, ${progressSetClauses.map(c => c.split(' = ')[0]).join(', ')})
-             VALUES ($${userIdParam}, $${pathIdParam}, $${nodeIdParam2}, ${progressParams.slice(0, progressSetClauses.length).map((_, i) => `$${i + 1}`).join(', ')})
-             ON CONFLICT (user_id, path_id, node_id) DO UPDATE SET ${progressSetClauses.join(', ')}`,
-            progressParams,
-          );
-
-          // Step 3: Check and UPDATE learning_paths completion status
-          const { rows: nodesResult } = await client.query(
-            `SELECT id, status FROM learning_path_nodes WHERE path_id = $1`,
-            [pathId],
-          );
-
-          const totalNodes = nodesResult.length;
-          const completedNodes = nodesResult.filter((n: { status: string }) => n.status === 'completed').length;
-
-          if (totalNodes > 0 && completedNodes === totalNodes) {
-            await client.query(
-              `UPDATE learning_paths SET status = 'completed', updated_at = $1 WHERE id = $2`,
-              [now, pathId],
-            );
-          }
-        });
-      } catch (txError) {
-        logger.warn('Transaction failed in updateNodeStatus, falling back to non-transactional operations', { error: txError });
-
-        // Non-transactional fallback
-        const { data: updatedNode, error } = await supabase
-          .from("learning_path_nodes")
-          .update(nodeUpdateData)
-          .eq("id", nodeId)
-          .select()
-          .single();
-
-        if (error) {
-          logger.error("updateNodeStatus error:", error);
-          throw error;
-        }
-
-        const progressData: Record<string, unknown> = {
-          user_id: userId,
-          path_id: pathId,
-          node_id: nodeId,
-          status: input.status,
-          updated_at: now,
-        };
-
-        if (input.notes !== undefined) {
-          progressData.notes = input.notes;
-        }
-        if (input.time_spent !== undefined) {
-          progressData.time_spent = input.time_spent;
-        }
-        if (input.progress_percentage !== undefined) {
-          progressData.progress_percentage = input.progress_percentage;
-        }
-
-        if (input.status === "in_progress") {
-          progressData.started_at = now;
-        }
-        if (input.status === "completed") {
-          progressData.completed_at = now;
-          progressData.progress_percentage = 100;
-        }
-
-        const { error: upsertError } = await supabase
-          .from("learning_path_progress")
-          .upsert(progressData, { onConflict: "user_id,path_id,node_id" });
-
-        if (upsertError) {
-          logger.error("updateNodeStatus progress upsert error:", upsertError);
-        }
-
-        await this.checkAndUpdatePathCompletion(supabase, pathId, userId);
-
-        return updatedNode;
-      }
-
-      // After successful transaction, fetch the updated node
-      const { data: updatedNode, error: fetchError } = await supabase
-        .from("learning_path_nodes")
-        .select("*")
-        .eq("id", nodeId)
-        .single();
-
-      if (fetchError) {
-        logger.error("updateNodeStatus fetch error:", fetchError);
-        throw fetchError;
-      }
-
-      return updatedNode as LearningPathNode;
-    }
-
-    logger.warn('TransactionExecutor not available, using non-transactional path for updateNodeStatus');
-
-    // Non-transactional fallback when transactionExecutor is not available
-    const { data: updatedNode, error } = await supabase
-      .from("learning_path_nodes")
-      .update(nodeUpdateData)
-      .eq("id", nodeId)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("updateNodeStatus error:", error);
-      throw error;
-    }
-
-    const progressData: Record<string, unknown> = {
-      user_id: userId,
-      path_id: pathId,
-      node_id: nodeId,
-      status: input.status,
-      updated_at: now,
-    };
-
-    if (input.notes !== undefined) {
-      progressData.notes = input.notes;
-    }
-    if (input.time_spent !== undefined) {
-      progressData.time_spent = input.time_spent;
-    }
-    if (input.progress_percentage !== undefined) {
-      progressData.progress_percentage = input.progress_percentage;
-    }
-
-    if (input.status === "in_progress") {
-      progressData.started_at = now;
-    }
-    if (input.status === "completed") {
-      progressData.completed_at = now;
-      progressData.progress_percentage = 100;
-    }
-
-    const { error: upsertError } = await supabase
-      .from("learning_path_progress")
-      .upsert(progressData, { onConflict: "user_id,path_id,node_id" });
-
-    if (upsertError) {
-      logger.error("updateNodeStatus progress upsert error:", upsertError);
-    }
-
-    await this.checkAndUpdatePathCompletion(supabase, pathId, userId);
-
-    return updatedNode;
+    return this.nodeService.updateNodeStatus(supabase, pathId, nodeId, userId, input);
   }
 
   async reorderNodes(
@@ -834,36 +556,7 @@ export class LearningPathService {
     userId: string,
     nodeOrders: { id: string; order_index: number }[],
   ): Promise<void> {
-    const { data: path, error: pathError } = await supabase
-      .from("learning_paths")
-      .select("id")
-      .eq("id", pathId)
-      .eq("user_id", userId)
-      .single();
-
-    if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
-    }
-
-    const updates = nodeOrders.map((item) =>
-      supabase
-        .from("learning_path_nodes")
-        .update({
-          order_index: item.order_index,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", item.id)
-        .eq("path_id", pathId),
-    );
-
-    const results = await Promise.all(updates);
-
-    for (const result of results) {
-      if (result.error) {
-        logger.error("reorderNodes error:", result.error);
-        throw result.error;
-      }
-    }
+    return this.nodeService.reorderNodes(supabase, pathId, userId, nodeOrders);
   }
 
   async removeNodeFromPath(
@@ -872,30 +565,10 @@ export class LearningPathService {
     nodeId: string,
     userId: string,
   ): Promise<void> {
-    const { data: path, error: pathError } = await supabase
-      .from("learning_paths")
-      .select("id")
-      .eq("id", pathId)
-      .eq("user_id", userId)
-      .single();
-
-    if (pathError || !path) {
-      throw new AppError("学习路径不存在", 404, ErrorCodes.RESOURCE_NOT_FOUND);
-    }
-
-    const { error } = await supabase
-      .from("learning_path_nodes")
-      .delete()
-      .eq("id", nodeId)
-      .eq("path_id", pathId);
-
-    if (error) {
-      logger.error("removeNodeFromPath error:", error);
-      throw error;
-    }
-
-    await this.recalculateTotalTime(supabase, pathId);
+    return this.nodeService.removeNodeFromPath(supabase, pathId, nodeId, userId);
   }
+
+  // ── Delegated to ProgressService ───────────────────────────
 
   async updateProgress(
     supabase: SupabaseClient,
@@ -908,55 +581,7 @@ export class LearningPathService {
       notes?: string;
     },
   ): Promise<LearningPathProgress> {
-    const { data: existing, error: checkError } = await supabase
-      .from("learning_path_progress")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("path_id", pathId)
-      .eq("node_id", nodeId)
-      .maybeSingle();
-
-    if (checkError) {
-      logger.error("updateProgress check error:", checkError);
-      throw checkError;
-    }
-
-    const now = new Date().toISOString();
-    const updateData: Record<string, unknown> = {
-      user_id: userId,
-      path_id: pathId,
-      node_id: nodeId,
-      updated_at: now,
-    };
-
-    if (input.progress_percentage !== undefined) {
-      updateData.progress_percentage = input.progress_percentage;
-    }
-    if (input.time_spent !== undefined) {
-      updateData.time_spent = existing
-        ? (existing.time_spent || 0) + input.time_spent
-        : input.time_spent;
-    }
-    if (input.notes !== undefined) {
-      updateData.notes = input.notes;
-    }
-
-    if (!existing) {
-      updateData.started_at = now;
-    }
-
-    const { data, error } = await supabase
-      .from("learning_path_progress")
-      .upsert(updateData, { onConflict: "user_id,path_id,node_id" })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("updateProgress error:", error);
-      throw error;
-    }
-
-    return data;
+    return this.progressService.updateProgress(supabase, pathId, nodeId, userId, input);
   }
 
   async getPathProgress(
@@ -964,78 +589,10 @@ export class LearningPathService {
     pathId: string,
     userId: string,
   ): Promise<LearningPathProgressSummary> {
-    const { data: nodes, error: nodesError } = await supabase
-      .from("learning_path_nodes")
-      .select("id, status, estimated_time")
-      .eq("path_id", pathId);
-
-    if (nodesError) {
-      logger.error("getPathProgress nodes error:", nodesError);
-      throw nodesError;
-    }
-
-    if (!nodes || nodes.length === 0) {
-      return {
-        total_nodes: 0,
-        completed_nodes: 0,
-        in_progress_nodes: 0,
-        pending_nodes: 0,
-        skipped_nodes: 0,
-        total_time_spent: 0,
-        progress_percentage: 0,
-      };
-    }
-
-    const { data: progressData, error: progressError } = await supabase
-      .from("learning_path_progress")
-      .select("time_spent")
-      .eq("user_id", userId)
-      .eq("path_id", pathId);
-
-    if (progressError) {
-      logger.error("getPathProgress progress error:", progressError);
-    }
-
-    const totalTimeSpent = (progressData || []).reduce(
-      (sum, p) => sum + (p.time_spent || 0),
-      0,
-    );
-
-    const stats = {
-      total_nodes: nodes.length,
-      completed_nodes: 0,
-      in_progress_nodes: 0,
-      pending_nodes: 0,
-      skipped_nodes: 0,
-    };
-
-    nodes.forEach((node) => {
-      switch (node.status) {
-        case "completed":
-          stats.completed_nodes++;
-          break;
-        case "in_progress":
-          stats.in_progress_nodes++;
-          break;
-        case "skipped":
-          stats.skipped_nodes++;
-          break;
-        default:
-          stats.pending_nodes++;
-      }
-    });
-
-    const progressPercentage =
-      stats.total_nodes > 0
-        ? Math.round((stats.completed_nodes / stats.total_nodes) * 100)
-        : 0;
-
-    return {
-      ...stats,
-      total_time_spent: totalTimeSpent,
-      progress_percentage: progressPercentage,
-    };
+    return this.progressService.getPathProgress(supabase, pathId, userId);
   }
+
+  // ── Delegated to PlanService ───────────────────────────────
 
   async createDailyPlan(
     supabase: SupabaseClient,
@@ -1048,7 +605,7 @@ export class LearningPathService {
       notes?: string;
     },
   ): Promise<LearningPlan> {
-    return this.dailyPlan.createDailyPlan(supabase, pathId, userId, input);
+    return this.planService.createDailyPlan(supabase, pathId, userId, input);
   }
 
   async getDailyPlan(
@@ -1057,7 +614,7 @@ export class LearningPathService {
     userId: string,
     planDate: string,
   ): Promise<LearningPlan | null> {
-    return this.dailyPlan.getDailyPlan(supabase, pathId, userId, planDate);
+    return this.planService.getDailyPlan(supabase, pathId, userId, planDate);
   }
 
   async getDailyPlans(
@@ -1067,7 +624,7 @@ export class LearningPathService {
     startDate?: string,
     endDate?: string,
   ): Promise<LearningPlan[]> {
-    return this.dailyPlan.getDailyPlans(supabase, pathId, userId, startDate, endDate);
+    return this.planService.getDailyPlans(supabase, pathId, userId, startDate, endDate);
   }
 
   async updatePlanStatus(
@@ -1081,54 +638,22 @@ export class LearningPathService {
       progress_percentage?: number;
     },
   ): Promise<LearningPlan> {
-    return this.dailyPlan.updatePlanStatus(supabase, planId, userId, input);
+    return this.planService.updatePlanStatus(supabase, planId, userId, input);
   }
 
-  private async recalculateTotalTime(
-    supabase: SupabaseClient,
-    pathId: string,
-  ): Promise<void> {
-    const { data: nodes, error } = await supabase
-      .from("learning_path_nodes")
-      .select("estimated_time")
-      .eq("path_id", pathId);
-
-    if (error) {
-      logger.error("recalculateTotalTime error:", error);
-      return;
-    }
-
-    const totalTime = (nodes || []).reduce(
-      (sum, n) => sum + (n.estimated_time || 0),
-      0,
-    );
-
-    await supabase
-      .from("learning_paths")
-      .update({ total_estimated_time: totalTime })
-      .eq("id", pathId);
-  }
-
-  private async checkAndUpdatePathCompletion(
+  async generateDailyPlans(
     supabase: SupabaseClient,
     pathId: string,
     userId: string,
-  ): Promise<void> {
-    const progress = await this.getPathProgress(supabase, pathId, userId);
-
-    if (
-      progress.total_nodes > 0 &&
-      progress.completed_nodes === progress.total_nodes
-    ) {
-      await supabase
-        .from("learning_paths")
-        .update({
-          status: "completed",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", pathId);
-    }
+    options?: {
+      start_date?: string;
+      respect_prerequisites?: boolean;
+    },
+  ): Promise<LearningPlan[]> {
+    return this.planService.generateDailyPlans(supabase, pathId, userId, options);
   }
+
+  // ── Core: Goal & Estimation ────────────────────────────────
 
   async setLearningGoal(
     supabase: SupabaseClient,
@@ -1206,18 +731,6 @@ export class LearningPathService {
       ...result!,
       total_estimated_time: totalEstimatedTime,
     } as LearningPath & { daily_node_count?: number };
-  }
-
-  async generateDailyPlans(
-    supabase: SupabaseClient,
-    pathId: string,
-    userId: string,
-    options?: {
-      start_date?: string;
-      respect_prerequisites?: boolean;
-    },
-  ): Promise<LearningPlan[]> {
-    return this.dailyPlan.generateDailyPlans(supabase, pathId, userId, options);
   }
 
   async estimateLearningTime(
@@ -1358,6 +871,8 @@ export class LearningPathService {
 
     return estimates;
   }
+
+  // ── Core: Recommendations ─────────────────────────────────
 
   async getLearningRecommendations(
     supabase: SupabaseClient,
@@ -1536,6 +1051,8 @@ export class LearningPathService {
     return recommendations.slice(0, 10);
   }
 
+  // ── Delegated to TaskIntegration ───────────────────────────
+
   async createLearningPathMainTask(
     supabase: SupabaseClient,
     pathId: string,
@@ -1599,6 +1116,8 @@ export class LearningPathService {
   }> {
     return this.taskIntegration.syncProgressWithTask(supabase, taskId, userId);
   }
+
+  // ── Core: Cross-graph & Generation ─────────────────────────
 
   async getCrossGraphProgress(
     supabase: SupabaseClient,

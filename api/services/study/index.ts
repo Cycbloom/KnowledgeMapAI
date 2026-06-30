@@ -3,6 +3,9 @@ export { studyProgressService } from "./studyProgressService";
 export { reviewService } from "./reviewService";
 export { learningPathService } from "./learningPathService";
 export type { LearningPath, LearningPathResult } from "./learningPathService";
+export { LearningPathNodeService } from "./learningPathNodeService";
+export { LearningPathProgressService, learningPathProgressService } from "./learningPathProgressService";
+export { LearningPathPlanService } from "./learningPathPlanService";
 export type { LearningPathStage } from "./learningPathAlgorithms";
 export {
   buildProgressMap,

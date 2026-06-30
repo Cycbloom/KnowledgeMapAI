@@ -1,12 +1,8 @@
 import type { AIProviderType } from "@shared/types";
 import type {
-  TemplateNode,
-  TemplateEdge,
-  TemplateDifficulty,
   TemplateCategory,
   TemplateType,
   LayoutSuggestion,
-  NodeLevel,
 } from "@shared/types/graph";
 import {
   BackboneModule,
@@ -30,29 +26,22 @@ import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";
 import { backboneNetworkService } from "./backboneNetworkService";
 import { backboneValidatorService } from "./backboneValidatorService";
+import {
+  validateTemplate,
+} from "./templateValidationService";
+import type {
+  GeneratedTemplateNode,
+  GeneratedTemplateEdge,
+  GeneratedTemplateScheme,
+} from "./templateValidationService";
+import { storyTemplateService } from "./storyTemplateService";
 
-export interface GeneratedTemplateNode extends TemplateNode {
-  suggestedContent?: string;
-  backboneModule?: BackboneModule;
-  needsRefinement?: boolean;
-}
-
-export interface GeneratedTemplateEdge extends TemplateEdge {
-  description?: string;
-}
-
-export interface GeneratedTemplateScheme {
-  id: string;
-  name: string;
-  description: string;
-  nodes: GeneratedTemplateNode[];
-  edges: GeneratedTemplateEdge[];
-  layoutSuggestion: LayoutSuggestion;
-  estimatedNodes: number;
-  difficulty: TemplateDifficulty;
-  tags: string[];
-  reasoning: string;
-}
+// Re-export types for backward compatibility
+export type {
+  GeneratedTemplateNode,
+  GeneratedTemplateEdge,
+  GeneratedTemplateScheme,
+};
 
 export interface GenerateTemplatesOptions {
   topic: string;
@@ -144,19 +133,6 @@ Return a JSON object with the following structure:
 5. Consider the topic's nature when choosing structures
 6. Provide clear reasoning for each template choice
 7. Respond in Chinese for all descriptions and content`;
-
-const TEMPLATE_VALIDATION_RULES = {
-  minNodes: 3,
-  maxNodes: 50,
-  validLevels: ["root", "core", "sub", "normal", "leaf"] as NodeLevel[],
-  validDifficulties: ["easy", "medium", "hard"] as TemplateDifficulty[],
-  validLayouts: [
-    "radial",
-    "tree",
-    "network",
-    "hierarchical",
-  ] as LayoutSuggestion[],
-};
 
 function generateTopicResearchBackboneNodes(
   topic: string,
@@ -262,187 +238,6 @@ function generateTopicResearchBackboneEdges(): GeneratedTemplateEdge[] {
   return edges;
 }
 
-function validateNode(
-  node: unknown,
-  index: number,
-): GeneratedTemplateNode | null {
-  if (typeof node !== "object" || node === null) {
-    logger.warn(
-      `[Template Generator] Invalid node at index ${index}: not an object`,
-    );
-    return null;
-  }
-
-  const n = node as Record<string, unknown>;
-
-  if (typeof n.id !== "string" || !n.id.trim()) {
-    logger.warn(
-      `[Template Generator] Invalid node at index ${index}: missing id`,
-    );
-    return null;
-  }
-
-  if (typeof n.title !== "string" || !n.title.trim()) {
-    logger.warn(
-      `[Template Generator] Invalid node at index ${index}: missing title`,
-    );
-    return null;
-  }
-
-  const level = n.level as NodeLevel;
-  if (!TEMPLATE_VALIDATION_RULES.validLevels.includes(level)) {
-    logger.warn(
-      `[Template Generator] Invalid node at index ${index}: invalid level "${level}"`,
-    );
-    return null;
-  }
-
-  return {
-    id: n.id as string,
-    title: n.title as string,
-    description: n.description as string | undefined,
-    summary: n.summary as string | undefined,
-    level,
-    parentId: n.parentId as string | undefined,
-    aiPrompt: n.aiPrompt as string | undefined,
-    color: n.color as string | undefined,
-    suggestedContent: n.suggestedContent as string | undefined,
-    backboneModule: n.backboneModule as BackboneModule | undefined,
-    needsRefinement: n.needsRefinement as boolean | undefined,
-  };
-}
-
-function validateEdge(
-  edge: unknown,
-  validNodeIds: Set<string>,
-  index: number,
-): GeneratedTemplateEdge | null {
-  if (typeof edge !== "object" || edge === null) {
-    logger.warn(
-      `[Template Generator] Invalid edge at index ${index}: not an object`,
-    );
-    return null;
-  }
-
-  const e = edge as Record<string, unknown>;
-
-  if (typeof e.source !== "string" || !validNodeIds.has(e.source)) {
-    logger.warn(
-      `[Template Generator] Invalid edge at index ${index}: invalid source "${e.source}"`,
-    );
-    return null;
-  }
-
-  if (typeof e.target !== "string" || !validNodeIds.has(e.target)) {
-    logger.warn(
-      `[Template Generator] Invalid edge at index ${index}: invalid target "${e.target}"`,
-    );
-    return null;
-  }
-
-  return {
-    source: e.source as string,
-    target: e.target as string,
-    relationship_type: e.relationship_type as string | undefined,
-    description: e.description as string | undefined,
-  };
-}
-
-function validateTemplate(
-  template: unknown,
-  index: number,
-): GeneratedTemplateScheme | null {
-  if (typeof template !== "object" || template === null) {
-    logger.warn(
-      `[Template Generator] Invalid template at index ${index}: not an object`,
-    );
-    return null;
-  }
-
-  const t = template as Record<string, unknown>;
-
-  if (typeof t.name !== "string" || !t.name.trim()) {
-    logger.warn(
-      `[Template Generator] Invalid template at index ${index}: missing name`,
-    );
-    return null;
-  }
-
-  if (
-    !Array.isArray(t.nodes) ||
-    t.nodes.length < TEMPLATE_VALIDATION_RULES.minNodes
-  ) {
-    logger.warn(
-      `[Template Generator] Invalid template at index ${index}: insufficient nodes`,
-    );
-    return null;
-  }
-
-  const validNodes: GeneratedTemplateNode[] = [];
-  for (let i = 0; i < t.nodes.length; i++) {
-    const validatedNode = validateNode(t.nodes[i], i);
-    if (validatedNode) {
-      validNodes.push(validatedNode);
-    }
-  }
-
-  if (validNodes.length < TEMPLATE_VALIDATION_RULES.minNodes) {
-    logger.warn(
-      `[Template Generator] Template "${t.name}" has too few valid nodes`,
-    );
-    return null;
-  }
-
-  const validNodeIds = new Set(validNodes.map((n) => n.id));
-
-  const validEdges: GeneratedTemplateEdge[] = [];
-  if (Array.isArray(t.edges)) {
-    for (let i = 0; i < t.edges.length; i++) {
-      const validatedEdge = validateEdge(t.edges[i], validNodeIds, i);
-      if (validatedEdge) {
-        validEdges.push(validatedEdge);
-      }
-    }
-  }
-
-  const layoutSuggestion = t.layoutSuggestion as LayoutSuggestion;
-  const validLayout = TEMPLATE_VALIDATION_RULES.validLayouts.includes(
-    layoutSuggestion,
-  )
-    ? layoutSuggestion
-    : "radial";
-
-  const difficulty = t.difficulty as TemplateDifficulty;
-  const validDifficulty = TEMPLATE_VALIDATION_RULES.validDifficulties.includes(
-    difficulty,
-  )
-    ? difficulty
-    : "medium";
-
-  const tags = Array.isArray(t.tags)
-    ? (t.tags as string[]).filter((tag) => typeof tag === "string").slice(0, 10)
-    : [];
-
-  return {
-    id: (t.id as string) || `template-${index + 1}`,
-    name: t.name as string,
-    description: (t.description as string) || "",
-    nodes: validNodes,
-    edges: validEdges,
-    layoutSuggestion: validLayout,
-    estimatedNodes: Math.min(
-      TEMPLATE_VALIDATION_RULES.maxNodes,
-      Math.max(
-        TEMPLATE_VALIDATION_RULES.minNodes,
-        (t.estimatedNodes as number) || validNodes.length,
-      ),
-    ),
-    difficulty: validDifficulty,
-    tags,
-    reasoning: (t.reasoning as string) || "",
-  };
-}
-
 function getMockTemplates(
   topic: string,
   templateType?: TemplateType,
@@ -477,127 +272,10 @@ function getMockTemplates(
   }
 
   if (templateType === "story_creation") {
-    const storyCreationTemplate: GeneratedTemplateScheme = {
-      id: "story-creation-backbone",
-      name: `${topic} - 故事创作骨架`,
-      description:
-        "采用三幕式故事结构，包含铺垫、对抗、解决三大幕及关键情节节拍",
-      nodes: [
-        {
-          id: "root",
-          title: topic,
-          description: `${topic}的故事结构`,
-          level: "root",
-          suggestedContent: `${topic}的故事整体概述`,
-          needsRefinement: false,
-        },
-        {
-          id: "act-1",
-          title: "第一幕：铺垫",
-          description: "介绍平凡世界、角色现状和核心问题",
-          level: "core",
-          parentId: "root",
-          suggestedContent: "铺垫阶段（0-25%）",
-          needsRefinement: true,
-        },
-        {
-          id: "seq-1-1",
-          title: "冒险召唤",
-          description: "打破日常的事件发生",
-          level: "sub",
-          parentId: "act-1",
-          suggestedContent: "第一幕序列",
-        },
-        {
-          id: "seq-1-2",
-          title: "跨越门槛",
-          description: "主角决定踏上旅程",
-          level: "sub",
-          parentId: "act-1",
-          suggestedContent: "第一幕序列",
-        },
-        {
-          id: "act-2",
-          title: "第二幕：对抗",
-          description: "试炼、盟友、敌人，逐渐接近目标",
-          level: "core",
-          parentId: "root",
-          suggestedContent: "对抗阶段（25-75%）",
-          needsRefinement: true,
-        },
-        {
-          id: "seq-2-1",
-          title: "上升动作",
-          description: "一系列挑战和考验",
-          level: "sub",
-          parentId: "act-2",
-          suggestedContent: "第二幕序列",
-        },
-        {
-          id: "seq-2-2",
-          title: "中点转折",
-          description: "重大转折点，信息揭露或方向改变",
-          level: "sub",
-          parentId: "act-2",
-          suggestedContent: "第二幕序列",
-        },
-        {
-          id: "seq-2-3",
-          title: "危机时刻",
-          description: "看似失败的低谷时刻",
-          level: "sub",
-          parentId: "act-2",
-          suggestedContent: "第二幕序列",
-        },
-        {
-          id: "act-3",
-          title: "第三幕：解决",
-          description: "最终对决、变革和新的平衡",
-          level: "core",
-          parentId: "root",
-          suggestedContent: "解决阶段（75-100%）",
-          needsRefinement: true,
-        },
-        {
-          id: "seq-3-1",
-          title: "高潮",
-          description: "最大的冲突和转折",
-          level: "sub",
-          parentId: "act-3",
-          suggestedContent: "第三幕序列",
-        },
-        {
-          id: "seq-3-2",
-          title: "尾声",
-          description: "收尾和新常态",
-          level: "sub",
-          parentId: "act-3",
-          suggestedContent: "第三幕序列",
-        },
-      ],
-      edges: [
-        { source: "root", target: "act-1", relationship_type: "contains" },
-        { source: "root", target: "act-2", relationship_type: "contains" },
-        { source: "root", target: "act-3", relationship_type: "contains" },
-        { source: "act-1", target: "seq-1-1", relationship_type: "contains" },
-        { source: "act-1", target: "seq-1-2", relationship_type: "contains" },
-        { source: "act-2", target: "seq-2-1", relationship_type: "contains" },
-        { source: "act-2", target: "seq-2-2", relationship_type: "contains" },
-        { source: "act-2", target: "seq-2-3", relationship_type: "contains" },
-        { source: "act-3", target: "seq-3-1", relationship_type: "contains" },
-        { source: "act-3", target: "seq-3-2", relationship_type: "contains" },
-        { source: "act-1", target: "act-2", relationship_type: "prerequisite" },
-        { source: "act-2", target: "act-3", relationship_type: "prerequisite" },
-      ],
-      layoutSuggestion: "hierarchical",
-      estimatedNodes: 11,
-      difficulty: "medium",
-      tags: ["故事创作", "三幕式", "叙事结构", topic],
-      reasoning: "采用经典三幕式故事结构，帮助系统化组织故事情节和角色发展",
-    };
+    const storyTemplate = storyTemplateService.getStoryCreationMockTemplate(topic);
 
     return {
-      templates: [storyCreationTemplate],
+      templates: [storyTemplate as GeneratedTemplateScheme],
       metadata: {
         topic,
         generatedAt: new Date().toISOString(),
@@ -1236,221 +914,14 @@ export class TemplateGeneratorService {
     root: { title: string; content: string; summary?: string };
     coreNodes: Array<{ title: string; content?: string; summary?: string }>;
   }> {
-    // Build story-specific prompt
-    const genreText = storyConfig?.genre ? `题材: ${storyConfig.genre}` : "";
-    const conflictText = storyConfig?.coreConflict
-      ? `核心冲突: ${storyConfig.coreConflict}`
-      : "";
-    const characterText = storyConfig?.characterHints
-      ? `角色提示: ${storyConfig.characterHints}`
-      : "";
-
-    const userPrompt = `请为以下故事创建结构骨架：
-
-故事标题: ${topic}
-${genreText}
-${conflictText}
-${characterText}
-
-请生成三幕式故事结构，包含：
-1. Story根节点（故事整体）
-2. 3个Act节点（第一幕：铺垫、第二幕：对抗、第三幕：解决）
-3. 每个Act下2-3个Sequence节点（关键情节节拍）
-${characterText ? "4. 根据角色提示，在coreNodes末尾包含主要角色节点（每个角色一个节点，summary标注为'角色'）" : ""}
-
-请以JSON格式返回，格式如下：
-{
-  "root": { "title": "故事标题", "content": "故事整体概述", "summary": "简短摘要" },
-  "coreNodes": [
-    { "title": "第一幕：铺垫", "content": "第一幕的描述", "summary": "铺垫阶段" },
-    { "title": "冒险召唤", "content": "打破日常的事件", "summary": "第一幕序列1" },
-    ...
-  ]
-}
-
-注意：coreNodes中的节点按层级排列，Act节点在前，Sequence节点在后。`;
-
-    // Try to use AI generation
-    try {
-      const provider = await getAIProviderForTask("text");
-
-      if (!provider.hasKey) {
-        logger.info(
-          "[Template Generator] No API key configured, using story creation fallback",
-        );
-        return this.generateStoryCreationFallback(topic, storyConfig);
-      }
-
-      const systemPrompt = await this.buildSystemPrompt(
-        undefined,
-        "story_creation" as TemplateType,
-        undefined,
-        userId,
-        graphId,
-      );
-
-      const model = provider.model;
-      const client = provider.client as {
-        chat: {
-          completions: {
-            create: (params: {
-              messages: Array<{ role: string; content: string }>;
-              model: string;
-              response_format?: { type: string };
-              max_tokens?: number;
-            }) => Promise<{
-              choices: Array<{ message: { content: string | null } }>;
-            }>;
-          };
-        };
-      };
-
-      const completion = await withTimeoutAndRetry(
-        () =>
-          client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            model,
-            response_format: { type: "json_object" },
-            max_tokens: 4000,
-          }),
-        {
-          timeout: LONG_TIMEOUT,
-          maxRetries: 3,
-          onRetry: (attempt, error) => {
-            logger.warn(
-              `[Template Generator] Story creation retry attempt ${attempt}: ${error.message}`,
-            );
-          },
-        },
-      );
-
-      const content = completion.choices[0].message.content;
-
-      if (!content) {
-        logger.warn(
-          "[Template Generator] Empty AI response for story creation, using fallback",
-        );
-        return this.generateStoryCreationFallback(topic, storyConfig);
-      }
-
-      // Parse AI response
-      const parsed = this.parseStoryCreationResponse(content);
-      return parsed;
-    } catch (error) {
-      logger.warn(
-        "[Template Generator] Story creation AI error, using fallback:",
-        error,
-      );
-      return this.generateStoryCreationFallback(topic, storyConfig);
-    }
-  }
-
-  private parseStoryCreationResponse(aiResult: string): {
-    root: { title: string; content: string; summary?: string };
-    coreNodes: Array<{ title: string; content?: string; summary?: string }>;
-  } {
-    try {
-      // Try to extract JSON from AI response
-      const jsonMatch = aiResult.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.root && parsed.coreNodes) {
-          return parsed;
-        }
-      }
-    } catch {
-      // Fall through to default
-    }
-
-    // Return a basic structure if parsing fails
-    return {
-      root: { title: "故事", content: "故事结构", summary: "故事结构骨架" },
-      coreNodes: [
-        {
-          title: "第一幕：铺垫",
-          content: "介绍平凡世界和角色",
-          summary: "铺垫",
-        },
-        { title: "第二幕：对抗", content: "试炼与挑战", summary: "对抗" },
-        {
-          title: "第三幕：解决",
-          content: "最终对决与新的平衡",
-          summary: "解决",
-        },
-      ],
-    };
-  }
-
-  private generateStoryCreationFallback(
-    topic: string,
-    storyConfig?: {
-      genre?: string;
-      coreConflict?: string;
-      characterHints?: string;
-    },
-  ): {
-    root: { title: string; content: string; summary?: string };
-    coreNodes: Array<{ title: string; content?: string; summary?: string }>;
-  } {
-    const genreDesc = storyConfig?.genre ? `（${storyConfig.genre}题材）` : "";
-    const conflictDesc = storyConfig?.coreConflict
-      ? ` 核心冲突：${storyConfig.coreConflict}`
-      : "";
-
-    return {
-      root: {
-        title: topic,
-        content: `${topic}${genreDesc}的故事结构。${conflictDesc}`,
-        summary: `${topic} - 故事结构骨架`,
-      },
-      coreNodes: [
-        {
-          title: "第一幕：铺垫",
-          content: "介绍平凡世界、角色现状和核心问题",
-          summary: "铺垫阶段（0-25%）",
-        },
-        {
-          title: "冒险召唤",
-          content: "打破日常的事件发生",
-          summary: "第一幕序列",
-        },
-        {
-          title: "跨越门槛",
-          content: "主角决定踏上旅程",
-          summary: "第一幕序列",
-        },
-        {
-          title: "第二幕：对抗",
-          content: "试炼、盟友、敌人，逐渐接近目标",
-          summary: "对抗阶段（25-75%）",
-        },
-        {
-          title: "上升动作",
-          content: "一系列挑战和考验",
-          summary: "第二幕序列",
-        },
-        {
-          title: "中点转折",
-          content: "重大转折点，信息揭露或方向改变",
-          summary: "第二幕序列",
-        },
-        {
-          title: "危机时刻",
-          content: "看似失败的低谷时刻",
-          summary: "第二幕序列",
-        },
-        {
-          title: "第三幕：解决",
-          content: "最终对决、变革和新的平衡",
-          summary: "解决阶段（75-100%）",
-        },
-        { title: "高潮", content: "最大的冲突和转折", summary: "第三幕序列" },
-        { title: "尾声", content: "收尾和新常态", summary: "第三幕序列" },
-      ],
-    };
+    return storyTemplateService.generateStoryCreationStructure(
+      topic,
+      storyConfig,
+      userId,
+      graphId,
+      async (category, templateType, preferredLayout, uid, gid) =>
+        this.buildSystemPrompt(category, templateType, preferredLayout, uid, gid),
+    );
   }
 }
 

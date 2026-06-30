@@ -1,49 +1,39 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
-  Plus,
-  RefreshCw,
-  Clock,
-  Zap,
   AlertCircle,
+  Zap,
   Sparkles,
   BookOpen,
   Target,
-  TrendingUp,
   Brain,
-  Link2,
-  CheckCircle2,
-  Calendar,
-  Layers,
-  BarChart3,
+  Clock,
   ChevronRight,
-  Timer,
-  Flame,
 } from "lucide-react";
 import {
   useSchedulerQueues,
-  useCreateUserTaskMutation,
-  useUpdateUserTaskMutation,
-  useDeleteUserTaskMutation,
-  useStartUserTaskMutation,
-  usePauseUserTaskMutation,
-  useCompleteUserTaskMutation,
   useSchedulerSettings,
+  useTaskActions,
 } from "../hooks";
-import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { TaskForm } from "../components/Scheduler/TaskForm";
+import {
+  QueueColumn,
+  KnowledgePointCard,
+  ReviewCard,
+  KnowledgePointLinkModal,
+  StudyProgressPanel,
+  WorkbenchHeader,
+} from "../components/Workbench";
+import type { KnowledgePointWithStatus } from "../components/Workbench/KnowledgePointCard";
 import { api } from "../services/api";
 import type {
-  UserTask,
-  CreateUserTaskData,
   QueueData,
   PendingReviewTask,
   ReviewTaskStats,
   KnowledgePoint,
 } from "@shared/types";
-import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 
 const DEFAULT_TIME_SLICES = {
   q0: 25,
@@ -53,12 +43,6 @@ const DEFAULT_TIME_SLICES = {
 
 const QueueDataDefault: QueueData = { q0: [], q1: [], q2: [] };
 
-interface KnowledgePointWithStatus extends KnowledgePoint {
-  lastStudiedAt?: string;
-  studyCount?: number;
-  masteryLevel?: number;
-}
-
 interface TodayStats {
   totalStudyTime: number;
   completedTasks: number;
@@ -66,31 +50,11 @@ interface TodayStats {
   streak: number;
 }
 
-const URGENCY_CONFIG = {
-  overdue: {
-    color: "text-red-500 dark:text-red-400",
-    bg: "bg-red-100 dark:bg-red-500/20",
-  },
-  today: {
-    color: "text-amber-500 dark:text-amber-400",
-    bg: "bg-amber-100 dark:bg-amber-500/20",
-  },
-  upcoming: {
-    color: "text-primary-500 dark:text-primary-400",
-    bg: "bg-primary-100 dark:bg-primary-500/20",
-  },
-  future: {
-    color: "text-emerald-500 dark:text-emerald-400",
-    bg: "bg-emerald-100 dark:bg-emerald-500/20",
-  },
-};
-
 export const UnifiedWorkbench: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // 状态标签映射：根据任务状态返回对应的 i18n 文本
-  const getStatusLabel = (status: string): string => {
+  const getStatusLabel = useCallback((status: string): string => {
     switch (status) {
       case "pending":
         return t("unifiedWorkbench.status.pending");
@@ -105,10 +69,9 @@ export const UnifiedWorkbench: React.FC = () => {
       default:
         return t("unifiedWorkbench.status.pending");
     }
-  };
+  }, [t]);
 
-  // 紧急度标签映射：根据复习紧急度返回对应的 i18n 文本
-  const getUrgencyLabel = (urgency: string): string => {
+  const getUrgencyLabel = useCallback((urgency: string): string => {
     switch (urgency) {
       case "overdue":
         return t("unifiedWorkbench.status.overdue");
@@ -121,14 +84,7 @@ export const UnifiedWorkbench: React.FC = () => {
       default:
         return t("unifiedWorkbench.status.planned");
     }
-  };
-
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [editingTask, setEditingTask] = useState<UserTask | null>(null);
-  const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
-  const [linkingTaskId, setLinkingTaskId] = useState<string | null>(null);
-  const [knowledgePointSearch, setKnowledgePointSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<KnowledgePoint[]>([]);
+  }, [t]);
 
   const {
     data: queuesData,
@@ -139,12 +95,7 @@ export const UnifiedWorkbench: React.FC = () => {
   } = useSchedulerQueues();
   const { data: settings } = useSchedulerSettings();
 
-  const createTaskMutation = useCreateUserTaskMutation();
-  const updateTaskMutation = useUpdateUserTaskMutation();
-  const deleteTaskMutation = useDeleteUserTaskMutation();
-  const startTaskMutation = useStartUserTaskMutation();
-  const pauseTaskMutation = usePauseUserTaskMutation();
-  const completeTaskMutation = useCompleteUserTaskMutation();
+  const taskActions = useTaskActions(refetchQueues);
 
   const [reviewStats, setReviewStats] = useState<ReviewTaskStats | null>(null);
   const [pendingReviews, setPendingReviews] = useState<PendingReviewTask[]>([]);
@@ -176,25 +127,14 @@ export const UnifiedWorkbench: React.FC = () => {
     [settings],
   );
 
-  const allTasks = useMemo(() => {
-    return [...queues.q0, ...queues.q1, ...queues.q2];
-  }, [queues]);
+  const allTasks = useMemo(() => [...queues.q0, ...queues.q1, ...queues.q2], [queues]);
 
   const taskStats = useMemo(() => {
     const pending = allTasks.filter((t) => t.status === "pending").length;
     const inProgress = allTasks.filter((t) => t.status === "in_progress").length;
     const completed = allTasks.filter((t) => t.status === "completed").length;
-    const totalEstimated = allTasks.reduce(
-      (sum, t) => sum + (t.estimated_duration || 0),
-      0,
-    );
-    return {
-      total: allTasks.length,
-      pending,
-      inProgress,
-      completed,
-      totalEstimated,
-    };
+    const totalEstimated = allTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
+    return { total: allTasks.length, pending, inProgress, completed, totalEstimated };
   }, [allTasks]);
 
   const activeTask = useMemo(() => {
@@ -240,11 +180,7 @@ export const UnifiedWorkbench: React.FC = () => {
       try {
         const statsResult = await api.scheduler.getStats("day");
         if (statsResult) {
-          const stats = statsResult as {
-            total_tasks?: number;
-            completed_tasks?: number;
-            total_duration?: number;
-          };
+          const stats = statsResult as { total_tasks?: number; completed_tasks?: number; total_duration?: number };
           setTodayStats({
             totalStudyTime: stats.total_duration || 0,
             completedTasks: stats.completed_tasks || 0,
@@ -262,114 +198,7 @@ export const UnifiedWorkbench: React.FC = () => {
     loadTodayStats();
   }, []);
 
-  const handleCreateTask = async (data: CreateUserTaskData) => {
-    try {
-      await createTaskMutation.mutateAsync(data);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskCreateSuccess") });
-      setShowTaskForm(false);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskCreateFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
-    }
-  };
-
-  const handleUpdateTask = async (data: CreateUserTaskData) => {
-    if (!editingTask) return;
-    try {
-      await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskUpdateSuccess") });
-      setEditingTask(null);
-      setShowTaskForm(false);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskUpdateFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
-    }
-  };
-
-  const handleDeleteTask = async (task: UserTask) => {
-    try {
-      await deleteTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskDeleted") });
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskDeleteFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
-    }
-  };
-
-  const handleStartTask = async (task: UserTask) => {
-    try {
-      await startTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskStarted") });
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskStartFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
-    }
-  };
-
-  const handlePauseTask = async (task: UserTask) => {
-    try {
-      await pauseTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskPaused") });
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskPauseFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
-    }
-  };
-
-  const handleCompleteTask = async (task: UserTask) => {
-    try {
-      await completeTaskMutation.mutateAsync(task.id);
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskCompleted") });
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.taskCompleteFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
-    }
-  };
-
-  const openAddTaskForm = (queueLevel: number = 2) => {
-    setDefaultQueueLevel(queueLevel);
-    setEditingTask(null);
-    setShowTaskForm(true);
-  };
-
-  const openEditTaskForm = (task: UserTask) => {
-    setEditingTask(task);
-    setShowTaskForm(true);
-  };
-
-  const handleLinkKnowledgePoint = async (taskId: string, knowledgePointId: string) => {
-    try {
-      await api.scheduler.addTaskKnowledgePoint(taskId, {
-        knowledge_point_id: knowledgePointId,
-      });
-      frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.knowledgePointLinked") });
-      setLinkingTaskId(null);
-      setKnowledgePointSearch("");
-      setSearchResults([]);
-      refetchQueues();
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("unifiedWorkbench.messages.knowledgePointLinkFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
-    }
-  };
-
-  const searchKnowledgePoints = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    try {
-      const result = await api.knowledgePoints.searchSimilar({ query, limit: 5 });
-      if (result && Array.isArray(result)) {
-        setSearchResults(result as unknown as KnowledgePoint[]);
-      }
-    } catch (err) {
-      console.error("Failed to search knowledge points:", err);
-    }
-  }, []);
-
-  // 保留本地实现：依赖 i18n 翻译键，无法直接使用 @/utils/formatters
-  const formatDuration = (minutes: number) => {
+  const formatDuration = useCallback((minutes: number) => {
     if (minutes === 0) return t("unifiedWorkbench.durations.zeroMinutes");
     if (minutes < 60) return t("unifiedWorkbench.durations.minutesWithValue", { count: minutes });
     const hours = Math.floor(minutes / 60);
@@ -377,9 +206,9 @@ export const UnifiedWorkbench: React.FC = () => {
     return mins > 0
       ? t("unifiedWorkbench.durations.hoursAndMinutes", { hours, minutes: mins })
       : t("unifiedWorkbench.durations.hoursOnly", { count: hours });
-  };
+  }, [t]);
 
-  const formatDeadline = (date?: string) => {
+  const formatDeadline = useCallback((date?: string) => {
     if (!date) return null;
     const d = new Date(date);
     const now = new Date();
@@ -391,258 +220,31 @@ export const UnifiedWorkbench: React.FC = () => {
     if (days === 1) return { text: t("unifiedWorkbench.status.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
     if (days <= 7) return { text: t("unifiedWorkbench.status.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
     return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
-  };
+  }, [t]);
 
-  const renderTaskCard = (task: UserTask, queueLevel: number) => {
-    const queueStyle = QUEUE_COLORS[queueLevel as QueueLevel] || QUEUE_COLORS[0];
-    const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
-    const deadlineInfo = formatDeadline(task.deadline);
+  const handleKnowledgePointSearchChange = useCallback((value: string) => {
+    taskActions.setKnowledgePointSearch(value);
+    taskActions.searchKnowledgePoints(value);
+  }, [taskActions]);
 
-    return (
-      <motion.div
-        key={task.id}
-        layout
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className={`
-          group relative rounded-xl border transition-all duration-200
-          ${queueStyle.border} hover:shadow-lg
-          bg-white dark:bg-slate-900/80 backdrop-blur-sm
-          overflow-hidden
-        `}
-      >
-        <div className={`absolute left-0 top-0 bottom-0 w-1 ${queueStyle.accent}`} />
+  const closeLinkModal = useCallback(() => {
+    taskActions.setLinkingTaskId(null);
+    taskActions.setKnowledgePointSearch("");
+    taskActions.setSearchResults([]);
+  }, [taskActions]);
 
-        <div className="p-3 pl-4">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${queueStyle.badge}`}>
-              Q{task.queue_level}
-            </span>
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}>
-              {getStatusLabel(task.status)}
-            </span>
-            {task.priority >= 3 && (
-              <span className="text-red-500 dark:text-red-400 text-xs">★</span>
-            )}
-          </div>
-
-          <h4 className="font-medium text-slate-900 dark:text-white mb-1 truncate pr-2">
-            {task.title}
-          </h4>
-
-          {task.description && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">
-              {task.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
-            {task.estimated_duration && (
-              <div className="flex items-center gap-1">
-                <Clock size={12} className={queueStyle.text} />
-                <span>{formatDuration(task.estimated_duration)}</span>
-              </div>
-            )}
-
-            {deadlineInfo && (
-              <div className="flex items-center gap-1">
-                <Calendar size={12} className={deadlineInfo.color} />
-                <span className={deadlineInfo.color}>{deadlineInfo.text}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            {task.status === "pending" && (
-              <button
-                onClick={() => handleStartTask(task)}
-                className={`p-1.5 rounded-md transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
-                title={t("unifiedWorkbench.actions.start")}
-              >
-                <Zap size={14} />
-              </button>
-            )}
-
-            {task.status === "in_progress" && (
-              <button
-                onClick={() => handlePauseTask(task)}
-                className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
-                title={t("unifiedWorkbench.actions.pause")}
-              >
-                <Clock size={14} />
-              </button>
-            )}
-
-            {(task.status === "pending" || task.status === "in_progress" || task.status === "paused") && (
-              <button
-                onClick={() => handleCompleteTask(task)}
-                className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
-                title={t("unifiedWorkbench.actions.complete")}
-              >
-                <CheckCircle2 size={14} />
-              </button>
-            )}
-
-            <button
-              onClick={() => openEditTaskForm(task)}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
-              title={t("unifiedWorkbench.actions.edit")}
-            >
-              <Target size={14} />
-            </button>
-
-            <button
-              onClick={() => setLinkingTaskId(task.id)}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110"
-              title={t("unifiedWorkbench.actions.linkKnowledgePoint")}
-            >
-              <Link2 size={14} />
-            </button>
-
-            <button
-              onClick={() => handleDeleteTask(task)}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
-              title={t("unifiedWorkbench.actions.delete")}
-            >
-              <AlertCircle size={14} />
-            </button>
-          </div>
-        </div>
-
-        {task.status === "in_progress" && (
-          <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}>
-            <motion.div
-              className={`h-full ${queueStyle.accent}`}
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
-  const renderQueueColumn = (level: number, title: string, tasks: UserTask[]) => {
-    const queueStyle = QUEUE_COLORS[level as QueueLevel] || QUEUE_COLORS[0];
-    const timeSlice = timeSlices[`q${level}` as keyof typeof timeSlices];
-
-    return (
-      <div className="flex flex-col h-full">
-        <div className={`flex-shrink-0 p-3 rounded-t-xl ${queueStyle.bg} border-b ${queueStyle.border}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className={`font-bold text-slate-900 dark:text-white`}>{title}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.taskCount", { count: tasks.length })}</span>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-              <Timer size={12} />
-              <span>{t("unifiedWorkbench.labels.timeSliceMinutes", { count: timeSlice })}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-2 space-y-2 bg-slate-50/50 dark:bg-slate-900/30">
-          {tasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-slate-400 dark:text-slate-500">
-              <Layers size={24} className="mb-2 opacity-50" />
-              <p className="text-xs">{t("unifiedWorkbench.tips.noTasks")}</p>
-            </div>
-          ) : (
-            tasks.slice(0, 5).map((task) => renderTaskCard(task, level))
-          )}
-          {tasks.length > 5 && (
-            <button
-              onClick={() => navigate("/scheduler")}
-              className="w-full py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-1"
-            >
-              {t("unifiedWorkbench.actions.viewMore", { count: tasks.length - 5 })}
-              <ChevronRight size={12} />
-            </button>
-          )}
-        </div>
-
-        <div className="flex-shrink-0 p-2 border-t border-slate-200 dark:border-slate-800/50">
-          <button
-            onClick={() => openAddTaskForm(level)}
-            className={`w-full py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${queueStyle.bg} ${queueStyle.text} hover:opacity-80`}
-          >
-            <Plus size={14} />
-            {t("unifiedWorkbench.actions.addTask")}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderKnowledgePointCard = (kp: KnowledgePointWithStatus) => {
-    return (
-      <motion.div
-        key={kp.id}
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="group p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:shadow-md transition-all cursor-pointer"
-        onClick={() => navigate(`/knowledge/${kp.id}`)}
-      >
-        <div className="flex items-start gap-2">
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
-            <BookOpen size={14} className="text-primary-500 dark:text-primary-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
-              {kp.title}
-            </h4>
-            {kp.content && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                {kp.content}
-              </p>
-            )}
-            <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-              <span>{t("unifiedWorkbench.labels.recentStudy")}</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
-  const renderReviewCard = (review: PendingReviewTask) => {
-    const urgencyConfig = URGENCY_CONFIG[review.urgency] || URGENCY_CONFIG.future;
-
-    return (
-      <motion.div
-        key={review.id}
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="group p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:shadow-md transition-all cursor-pointer"
-        onClick={() => navigate("/study")}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${urgencyConfig.bg} ${urgencyConfig.color}`}>
-                {getUrgencyLabel(review.urgency)}
-              </span>
-            </div>
-            <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
-              {t("unifiedWorkbench.labels.knowledgePointReview")}
-            </h4>
-            <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
-              <div className="flex items-center gap-1">
-                <Brain size={10} />
-                <span>{t("unifiedWorkbench.labels.intervalDays", { count: review.interval_days })}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <TrendingUp size={10} />
-                <span>EF: {(review.ease_factor ?? 2.5).toFixed(1)}</span>
-              </div>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:text-primary-500 transition-colors" />
-        </div>
-      </motion.div>
-    );
+  const queueColumnProps = {
+    getStatusLabel,
+    formatDuration,
+    formatDeadline,
+    onStartTask: taskActions.handleStartTask,
+    onPauseTask: taskActions.handlePauseTask,
+    onCompleteTask: taskActions.handleCompleteTask,
+    onEditTask: taskActions.openEditTaskForm,
+    onDeleteTask: taskActions.handleDeleteTask,
+    onLinkKnowledgePoint: taskActions.setLinkingTaskId,
+    onAddTask: taskActions.openAddTaskForm,
+    onViewMore: () => navigate("/scheduler"),
   };
 
   return (
@@ -657,92 +259,14 @@ export const UnifiedWorkbench: React.FC = () => {
       </div>
 
       <div className="relative z-10 h-full flex flex-col">
-        <header className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl">
-          <div className="px-3 sm:px-6 py-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="flex items-center gap-3"
-                >
-                  <div className="relative">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30">
-                      <Layers size={24} className="text-white" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-500 via-primary-500 to-pink-500 dark:from-primary-400 dark:via-primary-400 dark:to-pink-400 bg-clip-text text-transparent">
-                      {t("unifiedWorkbench.title")}
-                    </h1>
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                      {t("unifiedWorkbench.subtitle")}
-                    </p>
-                  </div>
-                </motion.div>
-              </div>
-
-              <div className="flex items-center gap-2 sm:gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate("/scheduler")}
-                  className="p-2.5 sm:flex sm:items-center sm:gap-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                >
-                  <Zap size={18} />
-                  <span className="hidden sm:inline">{t("unifiedWorkbench.actions.scheduler")}</span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => openAddTaskForm(2)}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all"
-                >
-                  <Plus size={18} />
-                  <span className="hidden sm:inline">{t("unifiedWorkbench.actions.createNewTask")}</span>
-                </motion.button>
-
-                <button
-                  onClick={() => {
-                    refetchQueues();
-                  }}
-                  disabled={isFetchingQueues}
-                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 transition-all disabled:opacity-50 min-h-[44px] min-w-[44px]"
-                >
-                  <RefreshCw
-                    size={18}
-                    className={isFetchingQueues ? "animate-spin" : ""}
-                  />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.pending")}</span>
-                <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.pending}</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.inProgress")}</span>
-                <span className="text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400">{taskStats.inProgress}</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.status.completed")}</span>
-                <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">{taskStats.completed}</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.estimatedDuration")}</span>
-                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{formatDuration(taskStats.totalEstimated)}</span>
-              </div>
-            </div>
-          </div>
-        </header>
+        <WorkbenchHeader
+          taskStats={taskStats}
+          isFetchingQueues={isFetchingQueues}
+          formatDuration={formatDuration}
+          onNavigateScheduler={() => navigate("/scheduler")}
+          onAddTask={() => taskActions.openAddTaskForm(2)}
+          onRefetch={refetchQueues}
+        />
 
         {queuesError && (
           <div className="flex-shrink-0 p-4">
@@ -774,13 +298,13 @@ export const UnifiedWorkbench: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handlePauseTask(activeTask)}
+                    onClick={() => taskActions.handlePauseTask(activeTask)}
                     className="px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-medium hover:opacity-80 transition-opacity"
                   >
                     {t("unifiedWorkbench.actions.pause")}
                   </button>
                   <button
-                    onClick={() => handleCompleteTask(activeTask)}
+                    onClick={() => taskActions.handleCompleteTask(activeTask)}
                     className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:opacity-80 transition-opacity"
                   >
                     {t("unifiedWorkbench.actions.complete")}
@@ -822,9 +346,9 @@ export const UnifiedWorkbench: React.FC = () => {
                   </div>
 
                   <div className="h-[calc(100%-52px)] grid grid-cols-3 gap-px bg-slate-200 dark:bg-slate-800">
-                    {renderQueueColumn(0, t("unifiedWorkbench.labels.urgentQueue"), queues.q0)}
-                    {renderQueueColumn(1, t("unifiedWorkbench.labels.importantQueue"), queues.q1)}
-                    {renderQueueColumn(2, t("unifiedWorkbench.labels.todoQueue"), queues.q2)}
+                    <QueueColumn level={0} title={t("unifiedWorkbench.labels.urgentQueue")} tasks={queues.q0} timeSlice={timeSlices.q0} {...queueColumnProps} />
+                    <QueueColumn level={1} title={t("unifiedWorkbench.labels.importantQueue")} tasks={queues.q1} timeSlice={timeSlices.q1} {...queueColumnProps} />
+                    <QueueColumn level={2} title={t("unifiedWorkbench.labels.todoQueue")} tasks={queues.q2} timeSlice={timeSlices.q2} {...queueColumnProps} />
                   </div>
                 </div>
               </div>
@@ -861,7 +385,9 @@ export const UnifiedWorkbench: React.FC = () => {
                           <p className="text-xs">{t("unifiedWorkbench.tips.noRecentKnowledge")}</p>
                         </div>
                       ) : (
-                        recentKnowledgePoints.map((kp) => renderKnowledgePointCard(kp))
+                        recentKnowledgePoints.map((kp) => (
+                          <KnowledgePointCard key={kp.id} kp={kp} onClick={(id) => navigate(`/knowledge/${id}`)} />
+                        ))
                       )}
                     </div>
 
@@ -881,102 +407,20 @@ export const UnifiedWorkbench: React.FC = () => {
                           <p className="text-xs">{t("unifiedWorkbench.tips.noToReviewKnowledge")}</p>
                         </div>
                       ) : (
-                        pendingReviews.map((review) => renderReviewCard(review))
+                        pendingReviews.map((review) => (
+                          <ReviewCard key={review.id} review={review} getUrgencyLabel={getUrgencyLabel} onClick={() => navigate("/study")} />
+                        ))
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="min-h-0 flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl overflow-hidden">
-                  <div className="flex-shrink-0 p-3 border-b border-slate-200 dark:border-slate-800/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-emerald-500/20">
-                          <BarChart3 size={16} className="text-emerald-500 dark:text-emerald-400" />
-                        </div>
-                        <h2 className="font-bold text-slate-900 dark:text-white">{t("unifiedWorkbench.labels.studyProgress")}</h2>
-                      </div>
-                      <button
-                        onClick={() => navigate("/statistics")}
-                        className="text-xs text-emerald-500 dark:text-emerald-400 hover:underline flex items-center gap-1"
-                      >
-                        {t("unifiedWorkbench.actions.detailedStats")}
-                        <ChevronRight size={12} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3">
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-500/10 dark:from-primary-500/20 dark:to-primary-500/20 border border-primary-200 dark:border-primary-500/30">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Timer size={14} className="text-primary-500 dark:text-primary-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.todayStudy")}</span>
-                        </div>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {formatDuration(todayStats.totalStudyTime)}
-                        </p>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 border border-emerald-200 dark:border-emerald-500/30">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.completedTasks")}</span>
-                        </div>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {todayStats.completedTasks}
-                        </p>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500/10 to-pink-500/10 dark:from-primary-500/20 dark:to-pink-500/20 border border-primary-200 dark:border-primary-500/30">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Brain size={14} className="text-primary-500 dark:text-primary-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.reviewCompleted")}</span>
-                        </div>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {todayStats.reviewCompleted}
-                        </p>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20 border border-amber-200 dark:border-amber-500/30">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Flame size={14} className="text-amber-500 dark:text-amber-400" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.labels.streakDays")}</span>
-                        </div>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {t("unifiedWorkbench.labels.streakDaysValue", { count: todayStats.streak })}
-                        </p>
-                      </div>
-                    </div>
-
-                    {reviewStats && (
-                      <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                        <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1">
-                          <TrendingUp size={12} />
-                          {t("unifiedWorkbench.labels.reviewProgress")}
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-red-500 dark:text-red-400">{t("unifiedWorkbench.status.overdue")}</span>
-                            <span className="font-bold text-slate-900 dark:text-white">{reviewStats.overdue}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-amber-500 dark:text-amber-400">{t("unifiedWorkbench.status.todayToReview")}</span>
-                            <span className="font-bold text-slate-900 dark:text-white">{reviewStats.today}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-primary-500 dark:text-primary-400">{t("unifiedWorkbench.status.upcoming")}</span>
-                            <span className="font-bold text-slate-900 dark:text-white">{reviewStats.upcoming}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-emerald-500 dark:text-emerald-400">{t("unifiedWorkbench.status.planned")}</span>
-                            <span className="font-bold text-slate-900 dark:text-white">{reviewStats.future}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <StudyProgressPanel
+                  todayStats={todayStats}
+                  reviewStats={reviewStats}
+                  formatDuration={formatDuration}
+                  onViewStats={() => navigate("/statistics")}
+                />
               </div>
             </>
           )}
@@ -997,104 +441,27 @@ export const UnifiedWorkbench: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {showTaskForm && (
+        {taskActions.showTaskForm && (
           <TaskForm
-            task={editingTask || undefined}
-            onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
+            task={taskActions.editingTask || undefined}
+            onSubmit={taskActions.editingTask ? taskActions.handleUpdateTask : taskActions.handleCreateTask}
             onCancel={() => {
-              setShowTaskForm(false);
-              setEditingTask(null);
+              taskActions.setShowTaskForm(false);
+              taskActions.setEditingTask(null);
             }}
-            defaultQueueLevel={defaultQueueLevel}
+            defaultQueueLevel={taskActions.defaultQueueLevel}
           />
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {linkingTaskId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            onClick={() => {
-              setLinkingTaskId(null);
-              setKnowledgePointSearch("");
-              setSearchResults([]);
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Link2 size={18} className="text-primary-500 dark:text-primary-400" />
-                    <h3 className="font-bold text-slate-900 dark:text-white">{t("unifiedWorkbench.actions.linkKnowledgePoint")}</h3>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setLinkingTaskId(null);
-                      setKnowledgePointSearch("");
-                      setSearchResults([]);
-                    }}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={knowledgePointSearch}
-                    onChange={(e) => {
-                      setKnowledgePointSearch(e.target.value);
-                      searchKnowledgePoints(e.target.value);
-                    }}
-                    placeholder={t("unifiedWorkbench.tips.searchKnowledgePlaceholder")}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    autoFocus
-                  />
-                  <BookOpen size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                </div>
-
-                <div className="mt-4 max-h-64 overflow-y-auto custom-scrollbar space-y-2">
-                  {searchResults.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-slate-400 dark:text-slate-500">
-                      <BookOpen size={24} className="mb-2 opacity-50" />
-                      <p className="text-sm">{t("unifiedWorkbench.tips.searchKnowledgeHint")}</p>
-                    </div>
-                  ) : (
-                    searchResults.map((kp) => (
-                      <button
-                        key={kp.id}
-                        onClick={() => handleLinkKnowledgePoint(linkingTaskId, kp.id)}
-                        className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-500/50 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-all text-left"
-                      >
-                        <h4 className="font-medium text-slate-900 dark:text-white">{kp.title}</h4>
-                        {kp.content && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                            {kp.content}
-                          </p>
-                        )}
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <KnowledgePointLinkModal
+        linkingTaskId={taskActions.linkingTaskId}
+        knowledgePointSearch={taskActions.knowledgePointSearch}
+        searchResults={taskActions.searchResults}
+        onSearchChange={handleKnowledgePointSearchChange}
+        onLink={taskActions.handleLinkKnowledgePoint}
+        onClose={closeLinkModal}
+      />
     </div>
   );
 };

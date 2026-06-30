@@ -1,4 +1,6 @@
 export { graphService, GraphService } from './graphService';
+export { graphQueryService, GraphQueryService } from './graphQueryService';
+export { graphBatchService, GraphBatchService } from './graphBatchService';
 export { graphNodeService, GraphNodeService } from './graphNodeService';
 export { graphRelationService, GraphRelationService } from './graphRelationService';
 export type { GraphRelationType, GraphRelation, CreateRelationData } from './graphRelationService';
@@ -13,8 +15,12 @@ export type { ListVersionsOptions, PaginatedVersionsResult } from './knowledgePo
 export { relationshipTypeService, RelationshipTypeService } from './relationshipTypeService';
 export { autoGraphService, AutoGraphService } from './autoGraphService';
 export type { AINodeData, CreateEdgeData, ProcessAINodesResult, InitGraphParams, InitGraphResult, ExpandNodeParams, ExpandNodeResult, CalculateNodePositionsResult, ApplyTemplateParams, ApplyTemplateResult } from './autoGraphService';
+export { autoGraphMergeService, AutoGraphMergeService } from './autoGraphMergeService';
 export { relationDiscoveryService, RelationDiscoveryService } from './relationDiscoveryService';
 export type { DiscoveredRelation, CrossDomainInsight, DiscoveryResult, IntelligentSuggestion, CreateRelationFromDiscoveryData } from './relationDiscoveryService';
+export { crossDomainAnalysisService, CrossDomainAnalysisService } from './crossDomainAnalysisService';
+export { conceptSimilarityService, ConceptSimilarityService } from './conceptSimilarityService';
+export { conceptEmbeddingService, ConceptEmbeddingService } from './conceptEmbeddingService';
 export { networkAnalysisService } from "./networkAnalysisService";
 export type { NetworkAnalysisResult } from "@shared/types/graph";
 export { conceptAggregationService, ConceptAggregationService } from "./conceptAggregationService";
@@ -38,6 +44,7 @@ export { analysisRouteService } from './analysisRouteService';
 export { autoGraphRouteService } from './autoGraphRouteService';
 export { dataService, DataService } from './dataService';
 export { nodesService, NodesService } from './nodesService';
+export { nodeBatchService, NodeBatchService } from './nodeBatchService';
 export { regionService } from './regionService';
 export { graphExpansionService } from './graphExpansionService';
 export type { CustomRegion, CreateRegionData, UpdateRegionData } from './regionService';

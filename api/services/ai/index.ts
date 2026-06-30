@@ -38,7 +38,12 @@ export {
   type RAGContext,
   type RAGSearchResult,
   type RAGResponse,
+  type GraphRAGSearchResult,
+  type TraversalResult,
+  type TraversalFunction,
 } from "./ragService";
+export { ragSearchService, RAGSearchService } from "./ragSearchService";
+export { ragChatService, RAGChatService } from "./ragChatService";
 export {
   searchService,
   SearchService,
@@ -61,6 +66,13 @@ export {
   type GenerateTemplatesOptions,
   type GenerateTemplatesResult,
 } from "./templateGeneratorService";
+export {
+  validateNode,
+  validateEdge,
+  validateTemplate,
+  TEMPLATE_VALIDATION_RULES,
+} from "./templateValidationService";
+export { storyTemplateService, StoryTemplateService } from "./storyTemplateService";
 export {
   conceptExtractorService,
   ConceptExtractorService,

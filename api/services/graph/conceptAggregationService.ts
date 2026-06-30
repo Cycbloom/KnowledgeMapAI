@@ -3,6 +3,12 @@ import { aiService } from "../ai/aiService";
 import { logger } from "../../utils/logger";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { notDeleted } from '../common/softDeleteHelper';
+import { conceptSimilarityService } from "./conceptSimilarityService";
+import type {
+  SimilarityResult,
+  ConceptWithEmbedding,
+} from "./conceptSimilarityService";
+import { conceptEmbeddingService } from "./conceptEmbeddingService";
 import type {
   NodeLevel,
   ConceptSource,
@@ -14,7 +20,6 @@ const SIMILARITY_THRESHOLD = parseFloat(
 );
 const CORE_LEVEL_THRESHOLD = 2;
 const ROOT_LEVEL_THRESHOLD = 5;
-const BATCH_SIZE = 50;
 
 const HALF_WIDTH_MAP: Record<string, string> = {
   "！": "!",
@@ -131,12 +136,8 @@ export function normalizeTitle(title: string): string {
   return normalized;
 }
 
-export interface SimilarityResult {
-  knowledgePointId: string;
-  title: string;
-  similarity: number;
-  sources: ConceptSource[];
-}
+// Re-export types from sub-services for backward compatibility
+export type { SimilarityResult, ConceptWithEmbedding };
 
 export interface AggregationResult {
   mergedCount: number;
@@ -152,15 +153,6 @@ export interface AggregationResult {
     sourceIds: string[];
     mergedSourceCount: number;
   }>;
-}
-
-export interface ConceptWithEmbedding {
-  id: string;
-  title: string;
-  content?: string;
-  embedding: number[];
-  sources?: ConceptSource[];
-  level?: NodeLevel;
 }
 
 export interface HierarchySuggestion {
@@ -181,28 +173,6 @@ export interface BatchMergeResult {
     sourceIds: string[];
     error: string;
   }>;
-}
-
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) {
-    return 0;
-  }
-
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-
-  if (normA === 0 || normB === 0) {
-    return 0;
-  }
-
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
 function determineNewLevel(
@@ -249,11 +219,13 @@ function mergeSources(
 }
 
 export class ConceptAggregationService {
+  // ── Delegated to conceptSimilarityService ──
+
   async calculateSimilarity(
     embedding1: number[],
     embedding2: number[],
   ): Promise<number> {
-    return cosineSimilarity(embedding1, embedding2);
+    return conceptSimilarityService.calculateSimilarity(embedding1, embedding2);
   }
 
   async findSimilarConcepts(
@@ -266,75 +238,7 @@ export class ConceptAggregationService {
       graphId?: string;
     } = {},
   ): Promise<SimilarityResult[]> {
-    const threshold = options.threshold ?? SIMILARITY_THRESHOLD;
-    const limit = options.limit ?? 10;
-
-    const { data: kp, error: kpError } = await supabase
-      .from("knowledge_points")
-      .select("id, title, embedding, properties")
-      .eq("id", knowledgePointId)
-      .single();
-
-    if (kpError || !kp || !kp.embedding) {
-      logger.error(
-        `Knowledge point not found or no embedding: ${knowledgePointId}`,
-      );
-      return [];
-    }
-
-    const embedding = kp.embedding as number[];
-
-    let query = supabase
-      .from("knowledge_points")
-      .select("id, title, embedding, properties")
-      .not("id", "eq", knowledgePointId)
-      .not("embedding", "is", null);
-
-    if (options.excludeSameGraph && options.graphId) {
-      const { data: graphNodes } = await supabase
-        .from("graph_nodes")
-        .select("knowledge_point_id")
-        .eq("graph_id", options.graphId);
-
-      if (graphNodes && graphNodes.length > 0) {
-        const excludeIds = graphNodes.map((gn) => gn.knowledge_point_id);
-        query = query.not("id", "in", `(${excludeIds.join(",")})`);
-      }
-    }
-
-    const { data: candidates, error: candidatesError } =
-      await query.limit(1000);
-
-    if (candidatesError || !candidates) {
-      logger.error(
-        "Failed to fetch candidate knowledge points:",
-        candidatesError,
-      );
-      return [];
-    }
-
-    const results: SimilarityResult[] = [];
-
-    for (const candidate of candidates) {
-      const candidateEmbedding = candidate.embedding as number[];
-      const similarity = cosineSimilarity(embedding, candidateEmbedding);
-
-      if (similarity >= threshold) {
-        const properties = candidate.properties as {
-          sources?: ConceptSource[];
-        } | null;
-        results.push({
-          knowledgePointId: candidate.id,
-          title: candidate.title,
-          similarity,
-          sources: properties?.sources || [],
-        });
-      }
-    }
-
-    results.sort((a, b) => b.similarity - a.similarity);
-
-    return results.slice(0, limit);
+    return conceptSimilarityService.findSimilarConcepts(supabase, knowledgePointId, options);
   }
 
   async findSimilarConceptsByTitle(
@@ -345,49 +249,7 @@ export class ConceptAggregationService {
       limit?: number;
     } = {},
   ): Promise<SimilarityResult[]> {
-    const threshold = options.threshold ?? SIMILARITY_THRESHOLD;
-    const limit = options.limit ?? 10;
-
-    const embedding = await aiService.generateEmbedding(title);
-
-    if (!embedding) {
-      logger.error("Failed to generate embedding for title:", title);
-      return [];
-    }
-
-    const { data: candidates, error } = await supabase
-      .from("knowledge_points")
-      .select("id, title, embedding, properties")
-      .not("embedding", "is", null)
-      .limit(1000);
-
-    if (error || !candidates) {
-      logger.error("Failed to fetch candidate knowledge points:", error);
-      return [];
-    }
-
-    const results: SimilarityResult[] = [];
-
-    for (const candidate of candidates) {
-      const candidateEmbedding = candidate.embedding as number[];
-      const similarity = cosineSimilarity(embedding, candidateEmbedding);
-
-      if (similarity >= threshold) {
-        const properties = candidate.properties as {
-          sources?: ConceptSource[];
-        } | null;
-        results.push({
-          knowledgePointId: candidate.id,
-          title: candidate.title,
-          similarity,
-          sources: properties?.sources || [],
-        });
-      }
-    }
-
-    results.sort((a, b) => b.similarity - a.similarity);
-
-    return results.slice(0, limit);
+    return conceptSimilarityService.findSimilarConceptsByTitle(supabase, title, options);
   }
 
   async findSimilarByVector(
@@ -400,92 +262,7 @@ export class ConceptAggregationService {
     } = {},
     userId?: string,
   ): Promise<SimilarityResult[]> {
-    const threshold = options.threshold ?? SIMILARITY_THRESHOLD;
-    const limit = options.limit ?? 10;
-
-    const { data: kp, error: kpError } = await supabase
-      .from("knowledge_points")
-      .select("id, title, embedding, properties")
-      .eq("id", knowledgePointId)
-      .single();
-
-    if (kpError || !kp || !kp.embedding) {
-      logger.error(
-        `Knowledge point not found or no embedding: ${knowledgePointId}`,
-      );
-      return [];
-    }
-
-    const embedding = kp.embedding as number[];
-
-    try {
-      const { data, error } = await supabase.rpc("match_knowledge_points", {
-        query_embedding: embedding,
-        match_threshold: threshold,
-        match_count: limit + 1,
-        p_user_id: userId ?? undefined,
-      });
-
-      if (error) {
-        logger.warn(
-          "pgvector RPC failed, falling back to in-memory search:",
-          error,
-        );
-        if (options.graphId) {
-          return this.findSimilarConcepts(supabase, knowledgePointId, {
-            threshold,
-            limit,
-            graphId: options.graphId,
-          });
-        }
-        return this.findSimilarConcepts(supabase, knowledgePointId, {
-          threshold,
-          limit,
-        });
-      }
-
-      if (!data || !Array.isArray(data)) {
-        return [];
-      }
-
-      const results: SimilarityResult[] = [];
-
-      for (const row of data) {
-        if (row.id === knowledgePointId) continue;
-
-        const { data: kpData } = await supabase
-          .from("knowledge_points")
-          .select("properties")
-          .eq("id", row.id)
-          .single();
-
-        const properties = kpData?.properties as {
-          sources?: ConceptSource[];
-        } | null;
-
-        results.push({
-          knowledgePointId: row.id,
-          title: row.title,
-          similarity: row.similarity,
-          sources: properties?.sources || [],
-        });
-      }
-
-      return results.slice(0, limit);
-    } catch (error) {
-      logger.warn("pgvector search failed, falling back to in-memory:", error);
-      if (options.graphId) {
-        return this.findSimilarConcepts(supabase, knowledgePointId, {
-          threshold,
-          limit,
-          graphId: options.graphId,
-        });
-      }
-      return this.findSimilarConcepts(supabase, knowledgePointId, {
-        threshold,
-        limit,
-      });
-    }
+    return conceptSimilarityService.findSimilarByVector(supabase, knowledgePointId, options, userId);
   }
 
   async findCrossGraphSimilar(
@@ -509,120 +286,33 @@ export class ConceptAggregationService {
       }>
     >
   > {
-    const threshold = options.threshold ?? SIMILARITY_THRESHOLD;
-    const limit = options.limit ?? 5;
-
-    const { data: userGraphs, error: graphsError } = await supabase
-      .from("graphs")
-      .select("id, title")
-      .eq("user_id", userId)
-      .neq("id", graphId);
-
-    if (graphsError || !userGraphs || userGraphs.length === 0) {
-      return {};
-    }
-
-    const otherGraphIds = userGraphs.map((g) => g.id);
-    const graphTitleMap = new Map(
-      userGraphs.map((g) => [g.id, g.title || g.id]),
-    );
-
-    const { data: graphNodes, error: gnError } = await notDeleted(supabase
-      .from("graph_nodes")
-      .select(
-        `
-        graph_id,
-        knowledge_point_id,
-        knowledge_points (
-          id,
-          title,
-          embedding
-        )
-      `,
-      )
-      .in("graph_id", otherGraphIds)
-      );
-
-    if (gnError || !graphNodes) {
-      logger.error("Failed to fetch cross-graph nodes:", gnError);
-      return {};
-    }
-
-    const candidates: Array<{
-      kpId: string;
-      kpTitle: string;
-      graphId: string;
-      graphTitle: string;
-      embedding: number[];
-    }> = [];
-
-    for (const gn of graphNodes) {
-      const kp = gn.knowledge_points as unknown as {
-        id: string;
-        title: string;
-        embedding?: number[];
-      };
-      if (kp && kp.embedding) {
-        candidates.push({
-          kpId: kp.id,
-          kpTitle: kp.title,
-          graphId: gn.graph_id,
-          graphTitle: graphTitleMap.get(gn.graph_id) || gn.graph_id,
-          embedding: kp.embedding,
-        });
-      }
-    }
-
-    if (candidates.length === 0) {
-      return {};
-    }
-
-    const result: Record<
-      string,
-      Array<{
-        kpId: string;
-        kpTitle: string;
-        graphTitle: string;
-        graphId: string;
-        similarity: number;
-      }>
-    > = {};
-
-    for (const concept of conceptEmbeddings) {
-      const matchList: Array<{
-        kpId: string;
-        kpTitle: string;
-        graphTitle: string;
-        graphId: string;
-        similarity: number;
-      }> = [];
-
-      for (const candidate of candidates) {
-        const similarity = cosineSimilarity(
-          concept.embedding,
-          candidate.embedding,
-        );
-
-        if (similarity >= threshold) {
-          matchList.push({
-            kpId: candidate.kpId,
-            kpTitle: candidate.kpTitle,
-            graphTitle: candidate.graphTitle,
-            graphId: candidate.graphId,
-            similarity: Math.round(similarity * 10000) / 10000,
-          });
-        }
-      }
-
-      matchList.sort((a, b) => b.similarity - a.similarity);
-
-      if (matchList.length > 0) {
-        result[concept.title] = matchList.slice(0, limit);
-      }
-    }
-
-    return result;
+    return conceptSimilarityService.findCrossGraphSimilar(supabase, userId, graphId, conceptEmbeddings, options);
   }
+
+  async batchCalculateSimilarity(
+    supabase: SupabaseClient,
+    knowledgePointIds: string[],
+  ): Promise<Map<string, SimilarityResult[]>> {
+    return conceptSimilarityService.batchCalculateSimilarity(supabase, knowledgePointIds);
+  }
+
+  // ── Delegated to conceptEmbeddingService ──
+
+  async generateEmbeddingForConcept(
+    supabase: SupabaseClient,
+    knowledgePointId: string,
+  ): Promise<boolean> {
+    return conceptEmbeddingService.generateEmbeddingForConcept(supabase, knowledgePointId);
+  }
+
+  async generateEmbeddingsBatch(
+    supabase: SupabaseClient,
+    knowledgePointIds: string[],
+  ): Promise<{ processed: number; failed: number }> {
+    return conceptEmbeddingService.generateEmbeddingsBatch(supabase, knowledgePointIds);
+  }
+
+  // ── Retained in conceptAggregationService ──
 
   async aggregateConcepts(
     supabase: SupabaseClient,
@@ -712,7 +402,7 @@ export class ConceptAggregationService {
           continue;
         }
 
-        const similarity = cosineSimilarity(node1.embedding, node2.embedding);
+        const similarity = await conceptSimilarityService.calculateSimilarity(node1.embedding, node2.embedding);
 
         if (similarity >= threshold) {
           duplicates.push(node2);
@@ -862,8 +552,8 @@ export class ConceptAggregationService {
       {};
     const existingSources = properties.sources || [];
 
-    const mergedSources = mergeSources(existingSources, newSources);
-    const totalSourceCount = mergedSources.length;
+    const mergedSourcesList = mergeSources(existingSources, newSources);
+    const totalSourceCount = mergedSourcesList.length;
 
     const oldLevel = (kp.level as NodeLevel) || "normal";
     const newLevel = determineNewLevel(oldLevel, totalSourceCount);
@@ -873,7 +563,7 @@ export class ConceptAggregationService {
       .update({
         properties: {
           ...properties,
-          sources: mergedSources,
+          sources: mergedSourcesList,
           sourceCount: totalSourceCount,
         },
         level: newLevel,
@@ -898,165 +588,6 @@ export class ConceptAggregationService {
       newLevel,
       totalSourceCount,
     };
-  }
-
-  async batchCalculateSimilarity(
-    supabase: SupabaseClient,
-    knowledgePointIds: string[],
-  ): Promise<Map<string, SimilarityResult[]>> {
-    const result = new Map<string, SimilarityResult[]>();
-
-    const { data: kps, error } = await supabase
-      .from("knowledge_points")
-      .select("id, title, embedding, properties")
-      .in("id", knowledgePointIds)
-      .not("embedding", "is", null);
-
-    if (error || !kps) {
-      logger.error(
-        "Failed to fetch knowledge points for batch similarity:",
-        error,
-      );
-      return result;
-    }
-
-    const embeddingMap = new Map<
-      string,
-      { embedding: number[]; title: string; sources: ConceptSource[] }
-    >();
-
-    for (const kp of kps) {
-      const embedding = kp.embedding as number[];
-      const properties = kp.properties as { sources?: ConceptSource[] } | null;
-      embeddingMap.set(kp.id, {
-        embedding,
-        title: kp.title,
-        sources: properties?.sources || [],
-      });
-    }
-
-    for (const id1 of knowledgePointIds) {
-      const data1 = embeddingMap.get(id1);
-      if (!data1) {
-        result.set(id1, []);
-        continue;
-      }
-
-      const similarities: SimilarityResult[] = [];
-
-      for (const [id2, data2] of embeddingMap) {
-        if (id1 === id2) continue;
-
-        const similarity = cosineSimilarity(data1.embedding, data2.embedding);
-
-        if (similarity >= SIMILARITY_THRESHOLD) {
-          similarities.push({
-            knowledgePointId: id2,
-            title: data2.title,
-            similarity,
-            sources: data2.sources,
-          });
-        }
-      }
-
-      similarities.sort((a, b) => b.similarity - a.similarity);
-      result.set(id1, similarities);
-    }
-
-    return result;
-  }
-
-  async generateEmbeddingForConcept(
-    supabase: SupabaseClient,
-    knowledgePointId: string,
-  ): Promise<boolean> {
-    const { data: kp, error } = await supabase
-      .from("knowledge_points")
-      .select("title, content")
-      .eq("id", knowledgePointId)
-      .single();
-
-    if (error || !kp) {
-      logger.error(`Knowledge point not found: ${knowledgePointId}`);
-      return false;
-    }
-
-    const textToEmbed = kp.content
-      ? `${kp.title}: ${kp.content.slice(0, 500)}`
-      : kp.title;
-
-    const embedding = await aiService.generateEmbedding(textToEmbed);
-
-    if (!embedding) {
-      logger.error(`Failed to generate embedding for ${knowledgePointId}`);
-      return false;
-    }
-
-    const { error: updateError } = await supabase
-      .from("knowledge_points")
-      .update({ embedding })
-      .eq("id", knowledgePointId);
-
-    if (updateError) {
-      logger.error(
-        `Failed to update embedding for ${knowledgePointId}:`,
-        updateError,
-      );
-      return false;
-    }
-
-    return true;
-  }
-
-  async generateEmbeddingsBatch(
-    supabase: SupabaseClient,
-    knowledgePointIds: string[],
-  ): Promise<{ processed: number; failed: number }> {
-    let processed = 0;
-    let failed = 0;
-
-    for (let i = 0; i < knowledgePointIds.length; i += BATCH_SIZE) {
-      const batch = knowledgePointIds.slice(i, i + BATCH_SIZE);
-
-      const { data: kps, error } = await supabase
-        .from("knowledge_points")
-        .select("id, title, content")
-        .in("id", batch);
-
-      if (error || !kps) {
-        failed += batch.length;
-        continue;
-      }
-
-      const texts = kps.map((kp) =>
-        kp.content ? `${kp.title}: ${kp.content.slice(0, 500)}` : kp.title,
-      );
-
-      const embeddings = await aiService.generateEmbeddingsBatch(texts);
-
-      for (let j = 0; j < kps.length; j++) {
-        if (embeddings[j]) {
-          const { error: updateError } = await supabase
-            .from("knowledge_points")
-            .update({ embedding: embeddings[j] })
-            .eq("id", kps[j].id);
-
-          if (updateError) {
-            failed++;
-          } else {
-            processed++;
-          }
-        } else {
-          failed++;
-        }
-      }
-    }
-
-    logger.info(
-      `Batch embedding generation: ${processed} processed, ${failed} failed`,
-    );
-
-    return { processed, failed };
   }
 
   async detectNewModuleNeeds(
@@ -1229,7 +760,7 @@ export class ConceptAggregationService {
 
         for (const node1 of nodes1) {
           for (const node2 of nodes2) {
-            const similarity = await this.calculateSimilarity(
+            const similarity = await conceptSimilarityService.calculateSimilarity(
               node1.embedding,
               node2.embedding,
             );

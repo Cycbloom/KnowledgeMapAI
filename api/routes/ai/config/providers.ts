@@ -4,6 +4,7 @@ import type { AIProviderType } from "@shared/types";
 import { requireAuth, type AuthRequest } from "../../../middleware/auth";
 import { appSettingsService } from "../../../services/core";
 import { getEnvConfig, clearProviderCache } from "../../../services/ai";
+import { providerRegistry } from "../../../services/ai/providerRegistry";
 import { logger } from "../../../utils/logger";
 import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
@@ -22,14 +23,7 @@ router.get(
         >("ai_provider_config");
 
       const providers: Record<string, Record<string, unknown>> = {};
-      const allProviderTypes: AIProviderType[] = [
-        "deepseek",
-        "volcengine",
-        "aliyun",
-        "openai",
-        "zhipu",
-        "moonshot",
-      ];
+      const allProviderTypes = providerRegistry.getRegisteredTypes();
 
       for (const provider of allProviderTypes) {
         const dbConfig = allConfigs?.[provider];

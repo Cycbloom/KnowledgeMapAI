@@ -104,6 +104,7 @@ export type { EnrichedMetadata } from "./performanceMonitor";
 export { enrichMetadata } from "./performanceMonitor";
 export { pricingService } from "./pricingService";
 export { getAIProvider, getAIProviderForTask, clearProviderCache } from "./factory";
+export { providerRegistry } from "./providerRegistry";
 export { getEnvConfig, getProviderConfig, getDefaultProvider, getProviderForTask } from "./config";
 export { literatureMetadataService, LiteratureMetadataService } from "./literatureMetadataService";
 export type { LiteratureMetadata, LiteratureType, ExtractMetadataOptions } from "./literatureMetadataService";

@@ -11,6 +11,7 @@ import { getSupabaseClient, resetSupabaseClient } from "../lib/supabase";
 import { useStore } from "../store/useStore";
 import { useTheme } from "../hooks";
 import { isElectron } from "../config/electronConfig";
+import type { AIProviderType } from "@shared/types/ai";
 import {
   Database,
   Bot,
@@ -32,14 +33,6 @@ import {
   RefreshCw,
   ExternalLink,
 } from "lucide-react";
-
-type AIProviderType =
-  | "deepseek"
-  | "volcengine"
-  | "aliyun"
-  | "openai"
-  | "zhipu"
-  | "moonshot";
 
 interface MigrationResult {
   name: string;

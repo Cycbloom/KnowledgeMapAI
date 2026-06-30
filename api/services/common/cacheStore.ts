@@ -8,6 +8,17 @@ import { logger } from '../../utils/logger';
  * 定义一套与底层存储无关的缓存操作契约，便于在内存（MemoryCacheStore）
  * 与未来 Redis 后端之间切换。cacheService 通过此接口委托所有底层操作。
  */
+export interface CacheStats {
+  keys: number;
+  hits: number;
+  misses: number;
+}
+
+export interface CacheHealthInfo {
+  tagCount: number;
+  pendingCount: number;
+}
+
 export interface CacheInterface {
   get<T>(key: string): Promise<T | undefined>;
   set<T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<void>;
@@ -17,9 +28,19 @@ export interface CacheInterface {
   clear(): Promise<void>;
   keys(): Promise<string[]>;
   getOrSet<T>(key: string, fetchFn: () => Promise<T>, ttl?: number, tags?: string[]): Promise<T>;
+  /** 批量删除多个 key，返回实际删除条目数 */
+  delMany(keys: string[]): Promise<number>;
+  /** 按 tag 批量删除并返回删除条目数 */
+  delByTagsWithCount(tags: string[]): Promise<number>;
+  /** 返回 key 的剩余 TTL 毫秒数，0 表示无 TTL 或不存在 */
+  getRemainingTTL(key: string): Promise<number>;
+  /** 返回缓存命中/未命中统计 */
+  getStats(): Promise<CacheStats>;
+  /** 返回 tag 索引和 pending 请求数量 */
+  getHealthInfo(): Promise<CacheHealthInfo>;
 }
 
-const MAX_CACHE_KEYS = 1000;
+const MAX_CACHE_KEYS = 5000;
 const DEFAULT_TTL = 300;
 
 /**
@@ -136,9 +157,8 @@ export class MemoryCacheStore implements CacheInterface {
 
   /**
    * 批量删除多个 key，返回实际删除条目数。
-   * 不属于 CacheInterface；供 cacheService.del 向后兼容返回计数。
    */
-  delMany(keys: string[]): number {
+  async delMany(keys: string[]): Promise<number> {
     let count = 0;
     for (const k of keys) {
       count += this.delInternal(k);
@@ -147,14 +167,13 @@ export class MemoryCacheStore implements CacheInterface {
   }
 
   async delByTags(tags: string[]): Promise<void> {
-    this.delByTagsWithCount(tags);
+    await this.delByTagsWithCount(tags);
   }
 
   /**
    * 按 tag 批量删除并返回删除条目数。
-   * 不属于 CacheInterface；供 cacheService.delByTags 向后兼容返回计数。
    */
-  delByTagsWithCount(tags: string[]): number {
+  async delByTagsWithCount(tags: string[]): Promise<number> {
     const keysToDelete = new Set<string>();
 
     for (const tag of tags) {
@@ -216,7 +235,29 @@ export class MemoryCacheStore implements CacheInterface {
     }
   }
 
-  // ---- 内省方法（不属于 CacheInterface，仅供 cacheService 通过 instanceof 调用） ----
+  async getRemainingTTL(key: string): Promise<number> {
+    const ttl = this.localCache.getTtl(key);
+    if (ttl === undefined) return 0;
+    return Math.max(0, ttl - Date.now());
+  }
+
+  async getStats(): Promise<CacheStats> {
+    const stats = this.localCache.getStats();
+    return {
+      keys: this.localCache.keys().length,
+      hits: stats.hits,
+      misses: stats.misses,
+    };
+  }
+
+  async getHealthInfo(): Promise<CacheHealthInfo> {
+    return {
+      tagCount: this.tagIndex.size,
+      pendingCount: this.pendingRequests.size,
+    };
+  }
+
+  // ---- 向后兼容方法（保留供外部直接调用） ----
 
   /**
    * 返回 key 的 TTL 到期时间戳（ms）。0 表示无 TTL 或不存在。

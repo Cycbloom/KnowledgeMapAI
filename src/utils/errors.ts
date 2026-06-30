@@ -5,8 +5,16 @@ import {
 
 import type { ErrorCode as SharedErrorCode } from "../../shared/types/errorCodes";
 
+import {
+  AppErrorBase,
+  type ErrorContext,
+  type ErrorSerialization,
+} from "@shared/types/appError";
+
 export { SharedErrorCodes, SharedErrorCodeMessages };
 export type { SharedErrorCode };
+// Re-export ErrorContext from shared for consumers of this module
+export type { ErrorContext };
 
 export type FrontendErrorCode =
   | "NETWORK_ERROR"
@@ -21,16 +29,8 @@ export const FrontendErrorCodes = {
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
 } as const;
 
-export interface ErrorContext {
-  [key: string]: unknown;
-}
-
-export class AppError extends Error {
-  public readonly code: ErrorCode;
-  public readonly statusCode: number;
-  public readonly context?: ErrorContext;
-  public readonly timestamp: Date;
-  public readonly isOperational: boolean;
+export class AppError extends AppErrorBase {
+  declare readonly code: ErrorCode;
 
   constructor(
     message: string,
@@ -39,38 +39,28 @@ export class AppError extends Error {
     context?: ErrorContext,
     isOperational: boolean = true,
   ) {
-    super(message);
-    this.name = "AppError";
-    this.code = code;
-    this.statusCode = statusCode;
-    this.context = context;
-    this.timestamp = new Date();
-    this.isOperational = isOperational;
-
+    super(message, code, statusCode, context, isOperational);
     Object.setPrototypeOf(this, AppError.prototype);
   }
 
-  toJSON() {
+  toJSON(): ErrorSerialization {
     return {
-      name: this.name,
-      message: this.message,
       code: this.code,
+      message: this.message,
       statusCode: this.statusCode,
-      context: this.context,
+      ...(this.context && Object.keys(this.context).length > 0 && { context: this.context }),
       timestamp: this.timestamp.toISOString(),
-      isOperational: this.isOperational,
     };
   }
 
-  static fromJSON(data: ReturnType<AppError["toJSON"]>): AppError {
-    const error = new AppError(
+  static fromJSON(data: ErrorSerialization & { isOperational?: boolean }): AppError {
+    return new AppError(
       data.message,
-      data.code,
+      data.code as ErrorCode,
       data.statusCode,
       data.context,
-      data.isOperational,
+      data.isOperational ?? true,
     );
-    return error;
   }
 }
 
@@ -131,7 +121,7 @@ export class ValidationError extends AppError {
     this.details = details;
   }
 
-  override toJSON() {
+  override toJSON(): ErrorSerialization & { details?: Array<{ field: string; message: string }> } {
     return {
       ...super.toJSON(),
       details: this.details,
@@ -172,7 +162,7 @@ export class RateLimitError extends AppError {
     this.retryAfter = retryAfter;
   }
 
-  override toJSON() {
+  override toJSON(): ErrorSerialization & { retryAfter?: number } {
     return {
       ...super.toJSON(),
       retryAfter: this.retryAfter,
@@ -384,7 +374,7 @@ export function createErrorFromResponse(response: {
     case 504:
       return new ServerError(message);
     default:
-      return new AppError(message, "UNKNOWN_ERROR", status);
+      return new AppError(message, (data?.code as ErrorCode) ?? "UNKNOWN_ERROR", status);
   }
 }
 

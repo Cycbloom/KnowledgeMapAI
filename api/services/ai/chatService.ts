@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import { getAIProviderForTask, getAIProvider } from "./factory";
-import type { AIProviderType, AIProvider } from "@shared/types";
+import type { AIProviderType, AIProvider, ChatCompletionChunk } from "@shared/types";
 import type { AuthRequest } from "../../middleware/auth";
 import { promptService } from "./promptService";
 import { getSupabaseAdmin } from "../../supabase";
@@ -10,11 +10,11 @@ import {
   getMockResponse,
 } from "./mock";
 import {
-  withTimeout,
   withTimeoutAndRetry,
   TimeoutError,
   RetryError,
   DEFAULT_TIMEOUT,
+  LONG_TIMEOUT,
 } from "../../../shared/utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
@@ -265,23 +265,45 @@ export class ChatService {
       async () => {
         // 建立流连接：仅 timeout，不 retry
         // 流式响应不可重试——若首 chunk 后失败，retry 会重新发起请求并再次发送重复内容
-        const stream = await withTimeout(
-          provider.client.chat.completions.create({
+        // 通过手动迭代 AsyncIterable + Promise.race 实现逐 chunk 超时保护
+        const CHUNK_TIMEOUT_MS = 30000; // 单个 chunk 间隔超时
+        const stream = provider.client.chat.completions.create({
             messages,
             model,
             stream: true,
             stream_options: { include_usage: true },
-          }),
-          DEFAULT_TIMEOUT,
-        );
+          });
 
         let inputTokens = 0;
         let outputTokens = 0;
         let cachedInputTokens = 0;
 
         try {
-          // 接收 chunks 阶段不可 retry
-          for await (const chunk of stream) {
+          // 手动迭代 + 逐 chunk 超时保护
+          const iterator = stream[Symbol.asyncIterator]();
+          let firstChunk = true;
+          while (true) {
+            const timeoutMs = firstChunk ? LONG_TIMEOUT : CHUNK_TIMEOUT_MS;
+            let result: IteratorResult<ChatCompletionChunk>;
+            try {
+              result = await Promise.race([
+                iterator.next(),
+                new Promise<IteratorResult<never>>((_, reject) =>
+                  setTimeout(() => reject(new TimeoutError(timeoutMs)), timeoutMs)
+                ),
+              ]);
+            } catch (raceError: unknown) {
+              if (raceError instanceof TimeoutError) {
+                logger.warn(`${options.operation} stream timed out after ${timeoutMs}ms`);
+                res.end();
+                throw raceError;
+              }
+              throw raceError;
+            }
+            firstChunk = false;
+            if (result.done) break;
+            const chunk = result.value;
+
             const content = chunk.choices[0]?.delta?.content || "";
             if (content) {
               sendStreamChunk(res, content);

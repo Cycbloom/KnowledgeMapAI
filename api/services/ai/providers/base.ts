@@ -1,9 +1,9 @@
 import OpenAI from 'openai';
-import type { AIProvider, AIProviderConfig, AIProviderType } from '@shared/types';
+import type { AIProvider, AIProviderClient, AIProviderConfig, AIProviderType } from '@shared/types';
 import { logger } from '../../../utils/logger';
 
 export abstract class BaseAIProvider implements AIProvider {
-  public client: OpenAI;
+  public client: AIProviderClient;
   public model: string;
   public embeddingModel?: string;
   public providerType: AIProviderType;
@@ -11,10 +11,10 @@ export abstract class BaseAIProvider implements AIProvider {
 
   constructor(providerType: AIProviderType, config: AIProviderConfig) {
     this.providerType = providerType;
-    this.model = config.model;
+    this.model = config.model ?? '';
     this.embeddingModel = config.embeddingModel;
     this.hasKey = !!config.apiKey;
-    
+
     // Warning: Don't log API keys
     if (!config.apiKey) {
       logger.warn(`[AI] ${providerType} API Key is missing. Functionality may be limited.`);
@@ -23,6 +23,6 @@ export abstract class BaseAIProvider implements AIProvider {
     this.client = new OpenAI({
       apiKey: config.apiKey || 'dummy',
       baseURL: config.baseURL,
-    });
+    }) as unknown as AIProviderClient;
   }
 }

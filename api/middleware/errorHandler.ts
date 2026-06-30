@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { ErrorCodes, type ErrorCode, ErrorCodeMessages, ErrorCodeStatus } from '../../shared/types/errorCodes';
+import { AppErrorBase, type ErrorSerialization } from '../../shared/types/appError';
 import { logger } from '../utils/logger';
 
 const SENSITIVE_FIELDS = [
@@ -92,12 +93,9 @@ export interface AppErrorOptions {
   context?: AppErrorContext;
 }
 
-export class AppError extends Error {
-  statusCode: number;
-  isOperational: boolean;
-  code: ErrorCode;
-  context: AppErrorContext;
-  timestamp: Date;
+export class AppError extends AppErrorBase {
+  declare readonly code: ErrorCode;
+  declare readonly context: AppErrorContext;
   details?: AppErrorDetails;
 
   constructor(code: ErrorCode, options?: AppErrorOptions);
@@ -120,14 +118,8 @@ export class AppError extends Error {
       details = optionsOrStatusCode?.details;
       context = optionsOrStatusCode?.context;
     }
-    
-    super(message);
-    
-    this.code = errorCode;
-    this.statusCode = statusCode;
-    this.isOperational = true;
-    this.timestamp = new Date();
-    this.context = context ?? {};
+
+    super(message, errorCode, statusCode, context ?? {}, true);
     this.details = details;
 
     Error.captureStackTrace(this, this.constructor);
@@ -147,14 +139,14 @@ export class AppError extends Error {
     return this;
   }
 
-  toJSON() {
+  toJSON(): ErrorSerialization {
     return {
       code: this.code,
       message: this.message,
       statusCode: this.statusCode,
-      timestamp: this.timestamp.toISOString(),
       ...(Object.keys(this.context).length > 0 && { context: this.context }),
       ...(this.details && { details: this.details }),
+      timestamp: this.timestamp.toISOString(),
     };
   }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
@@ -9,23 +9,12 @@ import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import {
   LogOut,
   BookOpen,
-  User,
   ChevronLeft,
   ChevronRight,
-  ListChecks,
   HelpCircle,
-  GraduationCap,
-  Trash2,
-  Sparkles,
-  Trophy,
-  Network,
-  BarChart3,
   Sun,
   Moon,
   LucideIcon,
-  Zap,
-  Calendar,
-  Route,
   AlertTriangle,
 } from "lucide-react";
 import {
@@ -49,6 +38,8 @@ import { api } from "../../services/api";
 import { Console } from "../Console/Console";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { apiClient } from "../../services/api/createApiClient";
+import { frontendKernel } from "../../App";
+import { iconMap } from "../../utils/iconMap";
 
 /**
  * Shape of the user_metadata stored on the Supabase User object.
@@ -226,6 +217,8 @@ export const Layout = () => {
     return unsubscribe;
   }, [navigate, t]);
 
+  const navItems = useMemo(() => frontendKernel.getNavItems(), [frontendKernel]);
+
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -263,102 +256,23 @@ export const Layout = () => {
             </div>
 
             <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar" aria-label={t('layout.mainNavigation')}>
-              <SidebarLink
-                to="/"
-                icon={BookOpen}
-                label={t('layout.myGraphs')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname === "/"}
-              />
-              <SidebarLink
-                to="/graph-map"
-                icon={Network}
-                label={t('layout.graphMap')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/graph-map")}
-              />
-              <SidebarLink
-                to="/study"
-                icon={GraduationCap}
-                label={t('layout.studyCenter')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/study")}
-              />
-              <SidebarLink
-                to="/learning-paths"
-                icon={Route}
-                label={t('layout.learningPaths')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/learning-paths")}
-              />
-              <SidebarLink
-                to="/statistics"
-                icon={BarChart3}
-                label={t('layout.statistics')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/statistics")}
-              />
-              <SidebarLink
-                to="/calendar"
-                icon={Calendar}
-                label={t('layout.calendar')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/calendar")}
-              />
-              <SidebarLink
-                to="/achievements"
-                icon={Trophy}
-                label={t('layout.achievements')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/achievements")}
-              />
-              <SidebarLink
-                to="/templates"
-                icon={Sparkles}
-                label={t('layout.templates')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/templates")}
-              />
-              <SidebarLink
-                to="/tasks"
-                icon={ListChecks}
-                label={t('layout.tasks')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/tasks")}
-              />
-              <SidebarLink
-                to="/scheduler"
-                icon={Zap}
-                label={t('layout.scheduler')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/scheduler")}
-              />
-              <SidebarLink
-                to="/profile"
-                icon={User}
-                label={t('layout.profile')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/profile")}
-              />
-              <SidebarLink
-                to="/trash"
-                icon={Trash2}
-                label={t('layout.trash')}
-                isCollapsed={isCollapsed}
-                isDark={isDark}
-                isActive={location.pathname.startsWith("/trash")}
-              />
+              {navItems.map((item) => {
+                const Icon = (item.icon ? iconMap[item.icon] : undefined) ?? BookOpen;
+                const isActive = item.path === "/"
+                  ? location.pathname === "/"
+                  : location.pathname.startsWith(item.path);
+                return (
+                  <SidebarLink
+                    key={item.path}
+                    to={item.path}
+                    icon={Icon}
+                    label={t(item.label)}
+                    isCollapsed={isCollapsed}
+                    isDark={isDark}
+                    isActive={isActive}
+                  />
+                );
+              })}
             </nav>
 
             <div className="p-4 border-t border-slate-700 pb-[var(--safe-area-inset-bottom)]">

@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AIProviderType } from "@shared/types";
+import type { AIProviderType } from "@shared/types/ai";
 
 export interface AIProviderConfig {
   apiKey: string;

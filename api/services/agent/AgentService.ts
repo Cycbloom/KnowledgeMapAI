@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type OpenAI from "openai";
+import type { AIProviderClient } from "@shared/types/ai";
 import type { Response } from "express";
 import { ToolRegistry } from "./ToolRegistry";
 import { SessionManager } from "./SessionManager";
@@ -131,7 +131,7 @@ export class AgentService {
     const userPrompt =
       customPrompt || this.getUserPrompt(skill, session.graphIds);
 
-    const messages: OpenAI.ChatCompletionMessageParam[] = [
+    const messages: Array<{ role: "system" | "user" | "assistant" | "tool"; content: string | null; tool_call_id?: string; tool_calls?: unknown }> = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ];
@@ -196,7 +196,7 @@ export class AgentService {
     }
 
     // Rebuild LLM context from session messages
-    const messages: OpenAI.ChatCompletionMessageParam[] = [];
+    const messages: Array<{ role: "system" | "user" | "assistant" | "tool"; content: string | null; tool_call_id?: string; tool_calls?: unknown }> = [];
 
     for (const msg of session.messages) {
       if (msg.role === "system") {
@@ -255,10 +255,10 @@ export class AgentService {
 
   private async runReActLoop(
     sessionId: string,
-    messages: OpenAI.ChatCompletionMessageParam[],
+    messages: Array<{ role: "system" | "user" | "assistant" | "tool"; content: string | null; tool_call_id?: string; tool_calls?: unknown }>,
     context: ToolContext,
     _skill: SkillDefinition | null,
-    aiProvider: { client: OpenAI; model: string },
+    aiProvider: { client: AIProviderClient; model: string },
     filteredTools: ReturnType<ToolRegistry["getToolDefinitions"]>,
     res: Response,
     maxIterations: number,

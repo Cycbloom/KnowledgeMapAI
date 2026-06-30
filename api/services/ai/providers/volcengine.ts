@@ -1,5 +1,6 @@
 import { BaseAIProvider } from './base';
 import type { AIProviderConfig } from '@shared/types';
+import { providerRegistry } from '../providerRegistry';
 import { logger } from '../../../utils/logger';
 import { AppError } from '../../../middleware/errorHandler';
 import { ErrorCodes } from '../../../../shared/types/errorCodes';
@@ -21,13 +22,19 @@ export class VolcengineProvider extends BaseAIProvider {
 
     // Fallback to standard OpenAI compatible endpoint for other models
     try {
-      const response = await this.client.embeddings.create({
+      const response = await this.client.embeddings?.create({
         model: this.embeddingModel,
         input: text,
         encoding_format: 'float',
-        dimensions: 1024, 
+        dimensions: 1024,
       });
-      return response.data[0].embedding;
+      if (!response) {
+        throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
+          message: 'Embeddings not supported by this provider',
+        });
+      }
+      const data = response as { data: Array<{ embedding: number[] }> };
+      return data.data[0].embedding;
     } catch (error) {
       logger.error('Volcengine embedding error:', error);
       throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
@@ -81,10 +88,10 @@ export class VolcengineProvider extends BaseAIProvider {
       const data = await response.json() as {
         data?: { embedding?: number[] } | Array<{ embedding?: number[] }>;
       };
-      
+
       if (data && data.data && !Array.isArray(data.data) && data.data.embedding) {
         return data.data.embedding;
-      } 
+      }
       else if (data && data.data && Array.isArray(data.data) && data.data.length > 0 && data.data[0].embedding) {
         return data.data[0].embedding;
       }
@@ -103,3 +110,10 @@ export class VolcengineProvider extends BaseAIProvider {
     }
   }
 }
+
+providerRegistry.register('volcengine', VolcengineProvider, {
+  apiKey: process.env.VOLCENGINE_API_KEY ?? '',
+  baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
+  model: process.env.VOLCENGINE_MODEL ?? 'doubao-seed-1-8-251228',
+  embeddingModel: process.env.VOLCENGINE_EMBEDDING_MODEL ?? 'doubao-embedding-vision-251215',
+});

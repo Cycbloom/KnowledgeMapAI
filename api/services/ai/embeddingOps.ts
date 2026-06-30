@@ -49,10 +49,13 @@ export class EmbeddingOps {
               model: provider.embeddingModel || provider.model,
             },
             async () => {
-              const response = await provider.client.embeddings.create({
+              const response = await provider.client.embeddings?.create({
                 model: provider.embeddingModel || provider.model,
                 input: text,
               });
+              if (!response) {
+                throw new Error('Embeddings not supported by this provider');
+              }
               return {
                 result: response.data[0].embedding as number[],
                 tokenCount: text.length,
@@ -135,10 +138,13 @@ export class EmbeddingOps {
           metadata: { batchCount: texts.length },
         },
         async () => {
-          const response = await provider.client.embeddings.create({
+          const response = await provider.client.embeddings?.create({
             model: provider.embeddingModel || provider.model,
             input: texts,
           });
+          if (!response) {
+            throw new Error('Embeddings not supported by this provider');
+          }
 
           const results: (number[] | null)[] = new Array(texts.length).fill(
             null,

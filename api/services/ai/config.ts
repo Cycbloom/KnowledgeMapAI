@@ -67,7 +67,7 @@ export const getProviderConfig = async (
 
   try {
     const allConfigs =
-      await appSettingsService.getSetting<Record<string, any>>(
+      await appSettingsService.getSetting<Record<string, AIProviderConfig>>(
         "ai_provider_config",
       );
 

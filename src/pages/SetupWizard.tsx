@@ -22,8 +22,7 @@ import { apiClient } from "../services/api/createApiClient";
 import { updateSupabaseConfig } from "../config/authConfig";
 import { resetSupabaseClient } from "../lib/supabase";
 import { isElectron } from "../config/electronConfig";
-
-type AIProviderType = "deepseek" | "volcengine" | "aliyun" | "openai" | "zhipu" | "moonshot";
+import type { AIProviderType } from "@shared/types/ai";
 
 interface MigrationResult {
   name: string;

@@ -1,5 +1,6 @@
 import { BaseAIProvider } from "./base";
 import type { AIProviderConfig } from "@shared/types";
+import { providerRegistry } from "../providerRegistry";
 import { logger } from "../../../utils/logger";
 import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
@@ -349,3 +350,9 @@ export class AliyunProvider extends BaseAIProvider {
     });
   }
 }
+
+providerRegistry.register('aliyun', AliyunProvider, {
+  apiKey: process.env.ALIYUN_API_KEY ?? '',
+  baseURL: process.env.ALIYUN_BASE_URL ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  model: process.env.ALIYUN_MODEL ?? 'qwen-long-latest',
+});

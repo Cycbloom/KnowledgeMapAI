@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import { logger } from '../../utils/logger';
 import {
   createCacheStore,
-  MemoryCacheStore,
   type CacheInterface,
 } from './cacheStore';
 
@@ -92,18 +91,7 @@ export const cacheService = {
 
   del: async (key: string | string[]): Promise<number> => {
     const keys = Array.isArray(key) ? key : [key];
-    // MemoryCacheStore 支持批量同步删除并返回精确计数；其他后端回退到逐个删除
-    if (cacheStore instanceof MemoryCacheStore) {
-      return cacheStore.delMany(keys);
-    }
-    let count = 0;
-    for (const k of keys) {
-      if (await cacheStore.has(k)) {
-        count++;
-      }
-      await cacheStore.del(k);
-    }
-    return count;
+    return cacheStore.delMany(keys);
   },
 
   /** @deprecated Use delByTags instead for better performance */
@@ -134,12 +122,7 @@ export const cacheService = {
 
   delByTags: async (tags: string | string[]): Promise<number> => {
     const tagList = Array.isArray(tags) ? tags : [tags];
-    // MemoryCacheStore 可返回精确删除计数；其他后端返回 0
-    if (cacheStore instanceof MemoryCacheStore) {
-      return cacheStore.delByTagsWithCount(tagList);
-    }
-    await cacheStore.delByTags(tagList);
-    return 0;
+    return cacheStore.delByTagsWithCount(tagList);
   },
   
   getOrSet: async <T>(key: string, fetchFn: () => Promise<T>, ttl?: number, tags?: string[]): Promise<T> => {
@@ -260,11 +243,7 @@ export const cacheService = {
   ): Promise<T> => {
     const cached = await cacheService.get<T>(key);
     if (cached !== undefined) {
-      // 仅 MemoryCacheStore 暴露 getTtl；其他后端跳过刷新阈值检查
-      let ttlRemaining = 0;
-      if (cacheStore instanceof MemoryCacheStore) {
-        ttlRemaining = cacheStore.getTtl(key);
-      }
+      const ttlRemaining = await cacheStore.getRemainingTTL(key);
       const ttlTotal = ttl * 1000;
       
       if (ttlRemaining && (ttlRemaining - Date.now()) < ttlTotal * refreshThreshold) {
@@ -283,17 +262,13 @@ export const cacheService = {
     misses: number;
     kps: number;
   }> => {
-    if (cacheStore instanceof MemoryCacheStore) {
-      const stats = cacheStore.getStatsInternal();
-      return {
-        keys: stats.keys,
-        hits: stats.hits,
-        misses: stats.misses,
-        kps: 0,
-      };
-    }
-    const allKeys = await cacheStore.keys();
-    return { keys: allKeys.length, hits: 0, misses: 0, kps: 0 };
+    const stats = await cacheStore.getStats();
+    return {
+      keys: stats.keys,
+      hits: stats.hits,
+      misses: stats.misses,
+      kps: 0,
+    };
   },
 
   invalidateGraphCache: async (userId: string, graphId: string): Promise<void> => {
@@ -343,10 +318,16 @@ export const cacheService = {
   },
 
   invalidateAllGraphRelated: async (userId: string, graphId: string): Promise<void> => {
+    // 显式删除用户级缓存（不携带 graph tag，不会被标签失效覆盖）
+    const userKeys = [
+      CacheKeys.USER_GRAPHS(userId),
+      CacheKeys.USER_FAVORITES(userId),
+      CacheKeys.USER_RECENT_GRAPHS(userId),
+    ];
+    // 按 graph tag 删除所有与 graphId 关联的缓存（覆盖 GRAPH_NODES/GRAPH/LEARNING_PATH/STUDY_CARDS/GRAPH_COLLABORATORS 等）
     await Promise.all([
-      cacheService.invalidateGraphCache(userId, graphId),
-      cacheService.invalidateUserGraphsCache(userId),
-      cacheService.invalidateByGraphId(graphId),
+      cacheService.del(userKeys),
+      cacheService.delByTags([`graph:${graphId}`]),
     ]);
     logger.info(`[Cache] Invalidated all graph-related cache for user ${userId}, graph ${graphId}`);
   },
@@ -373,15 +354,15 @@ export const cacheService = {
    * 包括：GRAPH_NODES + GRAPH_NODE_STATUS + GRAPH_MAP + GRAPH_TAGS + GRAPH_DOMAINS + GRAPH_LITERATURE
    */
   invalidateStructureCache: async (userId: string, graphId: string): Promise<void> => {
-    const keys = [
-      CacheKeys.GRAPH_NODES(userId, graphId),
-      CacheKeys.GRAPH_NODE_STATUS(userId, graphId),
+    // 用户级 key（不携带 graph tag，不会被标签失效覆盖）
+    const userKeys = [
       CacheKeys.GRAPH_MAP(userId),
       CacheKeys.GRAPH_TAGS(userId),
       CacheKeys.GRAPH_DOMAINS(userId),
     ];
+    // graph 级 key 通过标签失效覆盖（GRAPH_NODES/GRAPH_NODE_STATUS 等）
     await Promise.all([
-      cacheService.del(keys),
+      cacheService.del(userKeys),
       cacheService.delByTags([`graph:${graphId}`]),
     ]);
     logger.debug(`[Cache] Invalidated structure cache for user ${userId}, graph ${graphId}`);
@@ -395,20 +376,14 @@ export const cacheService = {
     lazyLoadQueueSize: number;
   }> => {
     const stats = await cacheService.getStats();
+    const healthInfo = await cacheStore.getHealthInfo();
     const totalRequests = stats.hits + stats.misses;
-    
-    let tagCount = 0;
-    let pendingCount = 0;
-    if (cacheStore instanceof MemoryCacheStore) {
-      tagCount = cacheStore.getTagCount();
-      pendingCount = cacheStore.getPendingCount();
-    }
     
     return {
       totalKeys: stats.keys,
       hitRate: totalRequests > 0 ? stats.hits / totalRequests : 0,
-      tagCount,
-      pendingRequests: pendingCount,
+      tagCount: healthInfo.tagCount,
+      pendingRequests: healthInfo.pendingCount,
       lazyLoadQueueSize: lazyLoadQueue.length,
     };
   },

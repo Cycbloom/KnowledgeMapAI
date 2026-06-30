@@ -169,7 +169,10 @@ export function createApp(kernel?: Kernel): express.Express {
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
       success: false,
-      error: "API not found",
+      code: "NOT_FOUND",
+      message: "API not found",
+      requestId: _req.requestId ?? "unknown",
+      timestamp: new Date().toISOString(),
     });
   });
 

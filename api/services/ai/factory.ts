@@ -1,11 +1,14 @@
 import type { AIProvider, AIProviderType } from '@shared/types';
-import { DeepseekProvider } from './providers/deepseek';
-import { VolcengineProvider } from './providers/volcengine';
-import { AliyunProvider } from './providers/aliyun';
-import { OpenAIProvider } from './providers/openai';
-import { ZhipuProvider } from './providers/zhipu';
-import { MoonshotProvider } from './providers/moonshot';
+import { providerRegistry } from './providerRegistry';
 import { getDefaultProvider, getProviderForTask, getProviderConfig } from './config';
+
+// Ensure all providers are imported so they register themselves
+import './providers/deepseek';
+import './providers/volcengine';
+import './providers/aliyun';
+import './providers/openai';
+import './providers/zhipu';
+import './providers/moonshot';
 
 // 单例缓存：避免每次调用 getAIProvider 都重新构造 provider 实例（构造函数内会 new OpenAI HTTP client）
 const providerCache = new Map<AIProviderType, AIProvider>();
@@ -20,29 +23,7 @@ export const getAIProvider = async (type?: AIProviderType): Promise<AIProvider> 
 
   const config = await getProviderConfig(targetType);
 
-  let provider: AIProvider;
-  switch (targetType) {
-    case 'deepseek':
-      provider = new DeepseekProvider(config);
-      break;
-    case 'volcengine':
-      provider = new VolcengineProvider(config);
-      break;
-    case 'aliyun':
-      provider = new AliyunProvider(config);
-      break;
-    case 'openai':
-      provider = new OpenAIProvider(config);
-      break;
-    case 'zhipu':
-      provider = new ZhipuProvider(config);
-      break;
-    case 'moonshot':
-      provider = new MoonshotProvider(config);
-      break;
-    default:
-      throw new Error(`Unsupported AI Provider: ${targetType}`);
-  }
+  const provider = providerRegistry.create(targetType, config);
 
   providerCache.set(targetType, provider);
   return provider;

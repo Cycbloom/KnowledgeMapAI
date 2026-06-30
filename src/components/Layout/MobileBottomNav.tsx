@@ -1,23 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
-  Network,
-  GraduationCap,
-  BarChart3,
   MoreHorizontal,
-  Route,
-  Calendar,
-  Trophy,
-  Sparkles,
-  ListChecks,
-  Zap,
-  User,
-  Trash2,
   LucideIcon,
 } from "lucide-react";
+import { frontendKernel } from "../../App";
+import { iconMap } from "../../utils/iconMap";
 
 interface NavItem {
   to: string;
@@ -29,24 +20,6 @@ interface MobileBottomNavProps {
   isDark: boolean;
   currentPath: string;
 }
-
-const mainNavItems: NavItem[] = [
-  { to: "/", icon: BookOpen, labelKey: "layout.myGraphs" },
-  { to: "/graph-map", icon: Network, labelKey: "layout.graphMap" },
-  { to: "/study", icon: GraduationCap, labelKey: "layout.studyCenter" },
-  { to: "/statistics", icon: BarChart3, labelKey: "layout.statistics" },
-];
-
-const moreNavItems: NavItem[] = [
-  { to: "/learning-paths", icon: Route, labelKey: "layout.learningPaths" },
-  { to: "/calendar", icon: Calendar, labelKey: "layout.calendar" },
-  { to: "/achievements", icon: Trophy, labelKey: "layout.achievements" },
-  { to: "/templates", icon: Sparkles, labelKey: "layout.templates" },
-  { to: "/tasks", icon: ListChecks, labelKey: "layout.tasks" },
-  { to: "/scheduler", icon: Zap, labelKey: "layout.scheduler" },
-  { to: "/profile", icon: User, labelKey: "layout.profile" },
-  { to: "/trash", icon: Trash2, labelKey: "layout.trash" },
-];
 
 const navItemVariants = {
   initial: { scale: 0.95, opacity: 0.8 },
@@ -96,6 +69,29 @@ const backdropVariants = {
   exit: { opacity: 0, transition: { duration: 0.15 } },
 };
 
+function useKernelNavItems() {
+  return useMemo(() => {
+    const allItems = frontendKernel.getNavItems();
+    const mainItems: NavItem[] = [];
+    const moreItems: NavItem[] = [];
+
+    for (const item of allItems) {
+      const navEntry: NavItem = {
+        to: item.path,
+        icon: (item.icon ? iconMap[item.icon] : undefined) ?? BookOpen,
+        labelKey: item.label,
+      };
+      if (item.category === "main") {
+        mainItems.push(navEntry);
+      } else {
+        moreItems.push(navEntry);
+      }
+    }
+
+    return { mainNavItems: mainItems, moreNavItems: moreItems };
+  }, [frontendKernel]);
+}
+
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   isDark,
   currentPath,
@@ -104,6 +100,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const { mainNavItems, moreNavItems } = useKernelNavItems();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

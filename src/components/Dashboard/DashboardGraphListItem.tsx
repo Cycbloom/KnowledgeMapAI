@@ -76,6 +76,7 @@ interface DashboardGraphListItemProps {
   onDelete: (id: string, title: string) => void;
   onToggleFavorite: (id: string, currentFavorite: boolean) => void;
   onPrefetch: (id: string) => void;
+  onContextMenu: (e: React.MouseEvent, graph: Graph) => void;
   variant: "desktop" | "mobile";
 }
 
@@ -89,6 +90,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
   onDelete,
   onToggleFavorite,
   onPrefetch,
+  onContextMenu,
   variant,
 }) => {
   const { t } = useTranslation();
@@ -96,6 +98,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
   if (variant === "mobile") {
     return (
       <div
+        onContextMenu={(e) => onContextMenu(e, graph)}
         className={`p-3 sm:p-4 transition-colors ${
           isSelectMode && isSelected
             ? isDark
@@ -222,6 +225,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
   return (
     <tr
       onMouseEnter={() => onPrefetch(graph.id)}
+      onContextMenu={(e) => onContextMenu(e, graph)}
       className={`border-b transition-colors cursor-pointer ${
         isDark
           ? "border-slate-700 hover:bg-slate-700/50"

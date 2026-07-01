@@ -8,3 +8,7 @@ export { MobileAISettings } from "./MobileAISettings";
 export { StudyStrategySettings } from "./StudyStrategySettings";
 export type { StudyStrategySettingsRef } from "./StudyStrategySettings";
 export { StudyAlgorithmSettings } from "./StudyAlgorithmSettings";
+export { GraphEditorSettings } from "./GraphEditorSettings";
+export type { GraphEditorPreferences } from "./GraphEditorSettings";
+export { NotificationSettings } from "./NotificationSettings";
+export { MUTED_NOTIFICATION_TYPES_KEY } from "./NotificationSettings";

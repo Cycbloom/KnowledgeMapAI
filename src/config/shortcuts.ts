@@ -322,6 +322,15 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     icon: 'Expand'
   },
   {
+    id: 'fit-selection',
+    name: '适应选中',
+    description: '自动调整视图以居中显示选中的节点',
+    category: 'view',
+    defaultKeys: { key: 'f', shift: true },
+    action: 'fitSelection',
+    icon: 'Focus'
+  },
+  {
     id: 'command-palette',
     name: '命令面板',
     description: '打开命令面板',

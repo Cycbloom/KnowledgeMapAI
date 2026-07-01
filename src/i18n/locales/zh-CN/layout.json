@@ -59,5 +59,9 @@
   "schemaEmpty": "数据库为空，需要初始化表结构才能正常使用。",
   "schemaPartial": "数据库部分初始化，请完成数据库迁移。",
   "schemaNeedsUpgrade": "数据库需要升级，有新的迁移待执行。",
-  "goToSettings": "前往设置"
+  "goToSettings": "前往设置",
+  "dropZone": {
+    "title": "拖入文件以创建图谱",
+    "subtitle": "支持 JSON、Markdown、OPML 格式"
+  }
 }

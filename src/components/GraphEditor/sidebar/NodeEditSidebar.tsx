@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { Node as GraphNode, NodeLevel } from "../../../types";
 import { getLevelColor, getLevelLabel } from "../../../lib/graphUtils";
 import {
@@ -11,12 +11,24 @@ import {
   Circle,
   MousePointer2,
   Check,
+  Bold,
+  Italic,
+  Heading,
+  Link as LinkIcon,
+  Code,
+  Eye,
+  Pencil,
 } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
 import type { BackboneModule } from "@shared/types/graph";
 import { BACKBONE_MODULE_LABELS } from "@shared/types/graph";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
 
 interface NodeFormState {
   title: string;
@@ -65,6 +77,78 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [contentViewMode, setContentViewMode] = useState<"edit" | "preview">("edit");
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-save state
+  const [autoSaveStatus, setAutoSaveStatus] = useState<
+    "idle" | "saving" | "saved"
+  >("idle");
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const isAutoSavingRef = useRef(false);
+  const onSaveRef = useRef(onSave);
+  const loadingRef = useRef(loading);
+  useEffect(() => {
+    onSaveRef.current = onSave;
+    loadingRef.current = loading;
+  }, [onSave, loading]);
+
+  // Clear auto-save timer (used by manual save)
+  const clearAutoSaveTimer = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+  }, []);
+
+  // Auto-save on form change (3-second debounce)
+  useEffect(() => {
+    if (loadingRef.current) return;
+    if (!nodeForm.title.trim()) return;
+    if (mode === "create") return; // Don't auto-save for new nodes
+
+    clearAutoSaveTimer();
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      isAutoSavingRef.current = true;
+      setAutoSaveStatus("saving");
+      onSaveRef.current();
+    }, 3000);
+
+    return () => {
+      clearAutoSaveTimer();
+    };
+  }, [nodeForm, mode, clearAutoSaveTimer]);
+
+  // Watch loading to update auto-save status
+  useEffect(() => {
+    if (!loading && isAutoSavingRef.current) {
+      isAutoSavingRef.current = false;
+      setAutoSaveStatus("saved");
+      if (autoSaveResetTimerRef.current) {
+        clearTimeout(autoSaveResetTimerRef.current);
+      }
+      autoSaveResetTimerRef.current = setTimeout(() => {
+        setAutoSaveStatus("idle");
+      }, 1500);
+    }
+    return () => {
+      if (autoSaveResetTimerRef.current) {
+        clearTimeout(autoSaveResetTimerRef.current);
+      }
+    };
+  }, [loading]);
+
+  // Manual save: clear auto-save timer to avoid double-saving
+  const handleManualSave = useCallback(() => {
+    clearAutoSaveTimer();
+    isAutoSavingRef.current = false;
+    setAutoSaveStatus("idle");
+    onSave();
+  }, [clearAutoSaveTimer, onSave]);
 
   const currentNode = useMemo(() => {
     return currentNodeId ? nodes.find((n) => n.id === currentNodeId) : null;
@@ -141,6 +225,58 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     setParentSearch("");
     inputRef.current?.focus();
   };
+
+  // Markdown formatting helpers: wrap selected text or insert at cursor.
+  const wrapSelection = useCallback(
+    (before: string, after: string, placeholder: string) => {
+      const textarea = contentTextareaRef.current;
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = nodeForm.content;
+      const selected = value.slice(start, end) || placeholder;
+      const newValue =
+        value.slice(0, start) + before + selected + after + value.slice(end);
+      setNodeForm({ ...nodeForm, content: newValue });
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const selStart = start + before.length;
+        textarea.setSelectionRange(selStart, selStart + selected.length);
+      });
+    },
+    [nodeForm, setNodeForm],
+  );
+
+  const insertAtLineStart = useCallback(
+    (prefix: string) => {
+      const textarea = contentTextareaRef.current;
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = nodeForm.content;
+      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+      const newValue = value.slice(0, lineStart) + prefix + value.slice(lineStart);
+      setNodeForm({ ...nodeForm, content: newValue });
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const offset = prefix.length;
+        textarea.setSelectionRange(start + offset, end + offset);
+      });
+    },
+    [nodeForm, setNodeForm],
+  );
+
+  const handleBold = useCallback(() => wrapSelection("**", "**", "粗体文本"), [wrapSelection]);
+  const handleItalic = useCallback(() => wrapSelection("*", "*", "斜体文本"), [wrapSelection]);
+  const handleHeading = useCallback(() => insertAtLineStart("## "), [insertAtLineStart]);
+  const handleLink = useCallback(
+    () => wrapSelection("[", "](https://)", "链接文本"),
+    [wrapSelection],
+  );
+  const handleCodeBlock = useCallback(
+    () => wrapSelection("```\n", "\n```", "代码"),
+    [wrapSelection],
+  );
 
   const getLevelBadgeStyle = (level: NodeLevel, isDark: boolean = false) => {
     const styles = {
@@ -495,25 +631,144 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
         </div>
 
         <div>
-          <label
-            className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
-          >
-            内容
-          </label>
-          <textarea
-            value={nodeForm.content}
-            onChange={(e) =>
-              setNodeForm({ ...nodeForm, content: e.target.value })
-            }
-            className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "h-48 px-4 py-3 text-base" : "h-64 px-3 py-2 text-sm"}`}
-            placeholder="支持 Markdown 格式..."
-          />
+          <div className="flex items-center justify-between mb-1">
+            <label
+              className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base" : "text-sm"}`}
+            >
+              内容
+            </label>
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setContentViewMode("edit")}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                  contentViewMode === "edit"
+                    ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+                title="编辑模式"
+              >
+                <Pencil size={12} />
+                编辑
+              </button>
+              <button
+                type="button"
+                onClick={() => setContentViewMode("preview")}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                  contentViewMode === "preview"
+                    ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+                title="预览模式"
+              >
+                <Eye size={12} />
+                预览
+              </button>
+            </div>
+          </div>
+
+          {contentViewMode === "edit" ? (
+            <>
+              {/* Formatting toolbar */}
+              <div className="flex items-center gap-1 mb-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleBold}
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  title="加粗"
+                >
+                  <Bold size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleItalic}
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  title="斜体"
+                >
+                  <Italic size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleHeading}
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  title="标题"
+                >
+                  <Heading size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLink}
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  title="链接"
+                >
+                  <LinkIcon size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCodeBlock}
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  title="代码块"
+                >
+                  <Code size={14} />
+                </button>
+              </div>
+              <textarea
+                ref={contentTextareaRef}
+                value={nodeForm.content}
+                onChange={(e) =>
+                  setNodeForm({ ...nodeForm, content: e.target.value })
+                }
+                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "h-48 px-4 py-3 text-base" : "h-64 px-3 py-2 text-sm"}`}
+                placeholder="支持 Markdown 格式..."
+              />
+            </>
+          ) : (
+            <div
+              className={`w-full border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 overflow-y-auto ${isMobile ? "h-48 p-4" : "h-64 p-3"}`}
+            >
+              {nodeForm.content.trim() ? (
+                <div className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    urlTransform={(url) => url}
+                  >
+                    {preprocessMarkdown(nodeForm.content)}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-gray-400 dark:text-gray-500 text-sm italic">
+                  暂无内容，请先在编辑模式输入...
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <div
         className={`border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 z-10 ${isMobile ? "fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]" : "mt-6 pt-4 sticky bottom-0"}`}
       >
+        {/* Auto-save indicator */}
+        {mode === "edit" && autoSaveStatus !== "idle" && (
+          <div
+            className={`text-center text-xs mb-2 transition-opacity duration-500 ${
+              autoSaveStatus === "saved" ? "text-green-500 dark:text-green-400" : "text-gray-400 dark:text-gray-500"
+            }`}
+          >
+            {autoSaveStatus === "saving" ? (
+              <span className="flex items-center justify-center gap-1">
+                <Loader2 className="animate-spin" size={12} />
+                自动保存中...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-1">
+                <Check size={12} />
+                已自动保存
+              </span>
+            )}
+          </div>
+        )}
         {isMobile ? (
           <div className="flex gap-3">
             <button
@@ -523,7 +778,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               取消
             </button>
             <button
-              onClick={onSave}
+              onClick={handleManualSave}
               disabled={loading || !nodeForm.title.trim()}
               className={`flex-1 py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all min-h-[48px] ${
                 loading || !nodeForm.title.trim()
@@ -546,7 +801,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
           </div>
         ) : (
           <button
-            onClick={onSave}
+            onClick={handleManualSave}
             disabled={loading || !nodeForm.title.trim()}
             className={`w-full py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all ${
               loading || !nodeForm.title.trim()

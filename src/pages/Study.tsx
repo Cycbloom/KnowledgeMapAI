@@ -1,6 +1,6 @@
 import { useLayoutEffect, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useStudyCards, useSemanticGroups } from "../hooks/queries";
+import { useStudyCards, useSemanticGroups, useReviewForecast } from "../hooks/queries";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
 import { FocusStats } from "../components/Study/FocusStats";
@@ -37,6 +37,7 @@ export const Study = () => {
     scopeParams ? { ...scopeParams, due: true } : { due: true },
   );
   const { data: semanticGroupsData } = useSemanticGroups(graphId ?? undefined);
+  const { data: forecastData } = useReviewForecast(scopeParams);
 
   const [semanticSimilarityMap, setSemanticSimilarityMap] = useState<Map<string, Map<string, number>>>(new Map());
 
@@ -75,6 +76,23 @@ export const Study = () => {
     isMobile: isMobile ?? false,
   });
 
+  // Compute current options for keyboard shortcuts (UX2-03)
+  const currentOptions: string[] = useMemo(() => {
+    if (!cardReview.currentCard?.options) return [];
+    if (Array.isArray(cardReview.currentCard.options))
+      return cardReview.currentCard.options;
+    try {
+      if (typeof cardReview.currentCard.options === "string") {
+        return JSON.parse(cardReview.currentCard.options);
+      }
+    } catch (e) {
+      console.error("Failed to parse card options:", e);
+    }
+    return [];
+  }, [cardReview.currentCard]);
+
+  const isMultiChoice = cardReview.currentCard?.card_type === "multi_choice";
+
   // Quiz logic hook
   const quizLogic = useQuizLogic({
     showAnswer: cardReview.showAnswer,
@@ -83,6 +101,8 @@ export const Study = () => {
     setShowAnswer: cardReview.setShowAnswer,
     setViewState,
     startCardReview: cardReview.startCardReview,
+    currentOptions,
+    isMultiChoice,
   });
 
   // Health data
@@ -219,6 +239,7 @@ export const Study = () => {
               weeklyStudyTime={weeklyStudyTime}
               weakPoints={weakPoints}
               predictions={predictions}
+              forecast={forecastData ?? undefined}
               onStartQuiz={(mode) => quizLogic.handleStartQuiz(mode, allCards, dueCards)}
               onPracticeCard={handlePracticeCard}
             />
@@ -248,6 +269,9 @@ export const Study = () => {
         nodeId={nodeId}
         from={from}
         quizCardsLength={cardReview.quizCards.length}
+        reviewedCount={cardReview.reviewedCount}
+        correctCount={cardReview.correctCount}
+        sessionDuration={cardReview.sessionDuration}
         onBackToDashboard={handleBackToDashboard}
         onRestart={cardReview.handleRestart}
       />

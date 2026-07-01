@@ -27,6 +27,7 @@ interface UseCanvasInteractionOptions {
   isSelectingParent?: boolean;
   onSelectParent?: (nodeId: string) => void;
   currentNodeId?: string;
+  onMarqueeSelect?: (nodeIds: string[], additive: boolean) => void;
 }
 
 export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
@@ -50,11 +51,19 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
     isSelectingParent = false,
     onSelectParent,
     currentNodeId,
+    onMarqueeSelect,
   } = options;
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Marquee (box) multi-select state. Rect is stored in canvas coordinates
+  // so it aligns with nodes inside the transformed <g> group.
+  const [marqueeRect, setMarqueeRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const isMarqueeingRef = useRef(false);
+  const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const marqueeRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const [touchPressedNodeId, setTouchPressedNodeId] = useState<string | null>(null);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -176,6 +185,21 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
     (e: React.MouseEvent<SVGSVGElement>) => {
       if (e.target === svgRef.current) {
         hasUserInteracted.current = true;
+        // Shift + drag on empty canvas starts a marquee (box) selection
+        // instead of panning.
+        if (e.shiftKey) {
+          const svgRect = svgRef.current?.getBoundingClientRect();
+          if (svgRect) {
+            const t = transformRef.current;
+            const canvasX = (e.clientX - svgRect.left - t.x) / t.k;
+            const canvasY = (e.clientY - svgRect.top - t.y) / t.k;
+            isMarqueeingRef.current = true;
+            marqueeStartRef.current = { x: canvasX, y: canvasY };
+            marqueeRectRef.current = { x: canvasX, y: canvasY, width: 0, height: 0 };
+            setMarqueeRect(marqueeRectRef.current);
+          }
+          return;
+        }
         setIsDragging(true);
         setDragStart({
           x: e.clientX - transformRef.current.x,
@@ -189,6 +213,24 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
+      if (isMarqueeingRef.current && marqueeStartRef.current) {
+        const svgRect = svgRef.current?.getBoundingClientRect();
+        if (svgRect) {
+          const t = transformRef.current;
+          const canvasX = (e.clientX - svgRect.left - t.x) / t.k;
+          const canvasY = (e.clientY - svgRect.top - t.y) / t.k;
+          const start = marqueeStartRef.current;
+          const next = {
+            x: Math.min(start.x, canvasX),
+            y: Math.min(start.y, canvasY),
+            width: Math.abs(canvasX - start.x),
+            height: Math.abs(canvasY - start.y),
+          };
+          marqueeRectRef.current = next;
+          setMarqueeRect(next);
+        }
+        return;
+      }
       if (isDragging) {
         const newTransform = {
           x: e.clientX - dragStart.x,
@@ -204,11 +246,33 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
         updateTransformState(newTransform);
       }
     },
-    [isDragging, dragStart, transformRef, updateTransformDOM, updateTransformState, scheduleViewportUpdate],
+    [isDragging, dragStart, transformRef, updateTransformDOM, updateTransformState, scheduleViewportUpdate, svgRef],
   );
 
   const handleMouseUp = useCallback(
     (e: React.MouseEvent) => {
+      // Finalize marquee selection
+      if (isMarqueeingRef.current) {
+        const rect = marqueeRectRef.current;
+        if (rect && layout && onMarqueeSelect) {
+          const intersectingIds = layout.nodes
+            .filter((n) =>
+              n.x >= rect.x &&
+              n.x <= rect.x + rect.width &&
+              n.y >= rect.y &&
+              n.y <= rect.y + rect.height,
+            )
+            .map((n) => n.id);
+          onMarqueeSelect(intersectingIds, e.shiftKey);
+        }
+        isMarqueeingRef.current = false;
+        marqueeStartRef.current = null;
+        marqueeRectRef.current = null;
+        setMarqueeRect(null);
+        setIsDragging(false);
+        mouseDownPosRef.current = null;
+        return;
+      }
       if (isDragging && mouseDownPosRef.current && onCanvasClick) {
         const dx = Math.abs(e.clientX - mouseDownPosRef.current.x);
         const dy = Math.abs(e.clientY - mouseDownPosRef.current.y);
@@ -221,7 +285,7 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
       setIsDragging(false);
       mouseDownPosRef.current = null;
     },
-    [isDragging, onCanvasClick],
+    [isDragging, onCanvasClick, layout, onMarqueeSelect],
   );
 
   const getTouchDistance = (touches: React.TouchList): number => {
@@ -630,6 +694,7 @@ export const useCanvasInteraction = (options: UseCanvasInteractionOptions) => {
 
   return {
     isDragging,
+    marqueeRect,
     touchPressedNodeId,
     hoveredNodeId,
     previewNode,

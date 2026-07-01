@@ -45,6 +45,19 @@ export const queryKeys = {
         : "none",
       params?.due ? "due" : "all",
     ] as const,
+  reviewForecast: (params?: {
+    graph_id?: string;
+    knowledge_point_id?: string;
+    knowledge_point_ids?: string[];
+  }) =>
+    [
+      "reviewForecast",
+      params?.graph_id || "all",
+      params?.knowledge_point_id || "all",
+      params?.knowledge_point_ids
+        ? params.knowledge_point_ids.join(",")
+        : "none",
+    ] as const,
   user: ["user"] as const,
   dashboardStats: ["dashboardStats"] as const,
   tasks: (status?: string, limit?: number, offset?: number) =>

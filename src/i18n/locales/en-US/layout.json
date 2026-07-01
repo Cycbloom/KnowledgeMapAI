@@ -59,5 +59,9 @@
   "schemaEmpty": "Database is empty. Schema initialization is required.",
   "schemaPartial": "Database is partially initialized. Please complete database migration.",
   "schemaNeedsUpgrade": "Database needs upgrade. New migrations are pending.",
-  "goToSettings": "Go to Settings"
+  "goToSettings": "Go to Settings",
+  "dropZone": {
+    "title": "Drop files to create graph",
+    "subtitle": "Supports JSON, Markdown, OPML formats"
+  }
 }

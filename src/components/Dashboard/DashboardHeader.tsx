@@ -13,9 +13,15 @@ import {
   LayoutGrid,
   List,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import { SearchResults } from "../common";
-import type { UseDashboardFiltersReturn } from "../../hooks/useDashboardFilters";
+import type {
+  UseDashboardFiltersReturn,
+  SortBy,
+  StatusFilter,
+  TimeRangeFilter,
+} from "../../hooks/useDashboardFilters";
 import type { Graph } from "@shared/types";
 
 interface DashboardHeaderProps {
@@ -46,7 +52,34 @@ interface DashboardHeaderProps {
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImportClick: () => void;
   onOpenAIGenerator: () => void;
+  // Sort & Filter
+  sortBy: SortBy;
+  setSortBy: (sortBy: SortBy) => void;
+  statusFilter: StatusFilter;
+  setStatusFilter: (filter: StatusFilter) => void;
+  timeRangeFilter: TimeRangeFilter;
+  setTimeRangeFilter: (filter: TimeRangeFilter) => void;
 }
+
+const SORT_OPTIONS: { value: SortBy; labelKey: string }[] = [
+  { value: "updatedAt", labelKey: "dashboard.sort.updatedAt" },
+  { value: "createdAt", labelKey: "dashboard.sort.createdAt" },
+  { value: "title", labelKey: "dashboard.sort.title" },
+  { value: "nodeCount", labelKey: "dashboard.sort.nodeCount" },
+];
+
+const STATUS_OPTIONS: { value: StatusFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "dashboard.filter.statusAll" },
+  { value: "active", labelKey: "dashboard.filter.statusActive" },
+  { value: "archived", labelKey: "dashboard.filter.statusArchived" },
+];
+
+const TIME_RANGE_OPTIONS: { value: TimeRangeFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "dashboard.filter.rangeAll" },
+  { value: "today", labelKey: "dashboard.filter.rangeToday" },
+  { value: "week", labelKey: "dashboard.filter.rangeWeek" },
+  { value: "month", labelKey: "dashboard.filter.rangeMonth" },
+];
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isDark,
@@ -75,6 +108,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onFileChange,
   onImportClick,
   onOpenAIGenerator,
+  sortBy,
+  setSortBy,
+  statusFilter,
+  setStatusFilter,
+  timeRangeFilter,
+  setTimeRangeFilter,
 }) => {
   const { t } = useTranslation();
 
@@ -488,6 +527,90 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
           </div>
         )}
+
+      {/* Row 3: Sort + Filter Chips */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {/* Sort Dropdown */}
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+            aria-label={t("dashboard.sort.label")}
+            className={`appearance-none pl-3 pr-9 py-2 rounded-xl border text-sm font-medium transition-all outline-none focus:ring-2 focus:ring-primary-500 min-h-[40px] ${
+              isDark
+                ? "bg-slate-800 border-slate-700 text-slate-200"
+                : "bg-white border-gray-200 text-gray-700 shadow-sm"
+            }`}
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {t(opt.labelKey)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${
+              isDark ? "text-slate-400" : "text-gray-400"
+            }`}
+            aria-hidden="true"
+          />
+        </div>
+
+        {/* Status Filter Chips */}
+        <div
+          className="flex items-center gap-1"
+          role="group"
+          aria-label={t("dashboard.filter.statusLabel")}
+        >
+          {STATUS_OPTIONS.map((opt) => {
+            const active = statusFilter === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setStatusFilter(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[36px] ${
+                  active
+                    ? "bg-primary-500 text-white"
+                    : isDark
+                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 shadow-sm"
+                }`}
+                aria-pressed={active}
+              >
+                {t(opt.labelKey)}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Time Range Filter Chips */}
+        <div
+          className="flex items-center gap-1"
+          role="group"
+          aria-label={t("dashboard.filter.rangeLabel")}
+        >
+          {TIME_RANGE_OPTIONS.map((opt) => {
+            const active = timeRangeFilter === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setTimeRangeFilter(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[36px] ${
+                  active
+                    ? "bg-primary-500 text-white"
+                    : isDark
+                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 shadow-sm"
+                }`}
+                aria-pressed={active}
+              >
+                {t(opt.labelKey)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       </div>
     </div>
   );

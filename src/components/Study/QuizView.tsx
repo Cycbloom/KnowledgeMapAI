@@ -11,9 +11,13 @@ import {
   ThumbsUp,
   ThumbsDown,
   AlertTriangle,
+  Clock,
+  Target,
+  Layers,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUpdateCardProgressMutation } from "../../hooks/mutations";
+import { formatTimeFromSeconds } from "../../utils/formatters";
 
 type UpdateProgressMutation = ReturnType<typeof useUpdateCardProgressMutation>;
 
@@ -23,6 +27,9 @@ interface QuizViewFinishedProps {
   nodeId: string | null;
   from: string | null;
   quizCardsLength: number;
+  reviewedCount: number;
+  correctCount: number;
+  sessionDuration: number;
   onBackToDashboard: () => void;
   onRestart: () => void;
 }
@@ -33,10 +40,15 @@ export const QuizViewFinished = ({
   nodeId,
   from,
   quizCardsLength,
+  reviewedCount,
+  correctCount,
+  sessionDuration,
   onBackToDashboard,
   onRestart,
 }: QuizViewFinishedProps) => {
   const { t } = useTranslation();
+  const accuracy =
+    reviewedCount > 0 ? Math.round((correctCount / reviewedCount) * 100) : 0;
 
   return (
     <div
@@ -66,6 +78,78 @@ export const QuizViewFinished = ({
                 count: quizCardsLength,
               })}
         </p>
+
+        {/* Session summary stats (UX2-09) */}
+        <div
+          className={`grid grid-cols-3 gap-2 md:gap-3 mb-6 md:mb-8 ${isMobile ? "" : ""}`}
+        >
+          <div
+            className={`p-3 md:p-4 rounded-xl ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
+          >
+            <Layers
+              size={isMobile ? 16 : 18}
+              className={`mx-auto mb-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            />
+            <div
+              className={`${isMobile ? "text-xl" : "text-2xl"} font-black ${isDark ? "text-slate-100" : "text-gray-900"}`}
+            >
+              {reviewedCount}
+            </div>
+            <div
+              className={`text-[10px] md:text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {t("study.completed.cardsReviewed")}
+            </div>
+          </div>
+          <div
+            className={`p-3 md:p-4 rounded-xl ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
+          >
+            <Clock
+              size={isMobile ? 16 : 18}
+              className={`mx-auto mb-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            />
+            <div
+              className={`${isMobile ? "text-xl" : "text-2xl"} font-black ${isDark ? "text-slate-100" : "text-gray-900"}`}
+            >
+              {formatTimeFromSeconds(sessionDuration)}
+            </div>
+            <div
+              className={`text-[10px] md:text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {t("study.completed.timeSpent")}
+            </div>
+          </div>
+          <div
+            className={`p-3 md:p-4 rounded-xl ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
+          >
+            <Target
+              size={isMobile ? 16 : 18}
+              className={`mx-auto mb-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            />
+            <div
+              className={`${isMobile ? "text-xl" : "text-2xl"} font-black ${
+                accuracy >= 80
+                  ? isDark
+                    ? "text-emerald-400"
+                    : "text-emerald-600"
+                  : accuracy >= 60
+                    ? isDark
+                      ? "text-amber-400"
+                      : "text-amber-600"
+                    : isDark
+                      ? "text-red-400"
+                      : "text-red-600"
+              }`}
+            >
+              {accuracy}%
+            </div>
+            <div
+              className={`text-[10px] md:text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {t("study.completed.accuracy")}
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-3">
           <button
@@ -845,13 +929,18 @@ export const QuizViewActive = ({
                       >
                         <button
                           onClick={() => onRate(1)}
-                          className={`flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
+                          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
                             isDark
                               ? "bg-red-900/20 text-red-400 hover:bg-red-900/40"
                               : "bg-red-50 text-red-700 hover:bg-red-100"
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
+                          <span
+                            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
+                          >
+                            1
+                          </span>
                           <ThumbsDown
                             size={isMobile ? 16 : 16}
                             className={isMobile ? "mb-1" : "mb-1"}
@@ -862,26 +951,36 @@ export const QuizViewActive = ({
                         </button>
                         <button
                           onClick={() => onRate(2)}
-                          className={`flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
+                          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
                             isDark
                               ? "bg-orange-900/20 text-orange-400 hover:bg-orange-900/40"
                               : "bg-orange-50 text-orange-700 hover:bg-orange-100"
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
+                          <span
+                            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
+                          >
+                            2
+                          </span>
                           <span className={isMobile ? "text-xs" : "text-xs"}>
                             {t("study.rating.hard")}
                           </span>
                         </button>
                         <button
                           onClick={() => onRate(3)}
-                          className={`flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
+                          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
                             isDark
                               ? "bg-primary-900/20 text-primary-400 hover:bg-primary-900/40"
                               : "bg-primary-50 text-primary-700 hover:bg-primary-100"
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
+                          <span
+                            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
+                          >
+                            3
+                          </span>
                           <ThumbsUp
                             size={isMobile ? 16 : 16}
                             className={isMobile ? "mb-1" : "mb-1"}
@@ -892,13 +991,18 @@ export const QuizViewActive = ({
                         </button>
                         <button
                           onClick={() => onRate(4)}
-                          className={`flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
+                          className={`relative flex flex-col items-center justify-center ${isMobile ? "py-2.5 px-1" : "py-3"} rounded-xl font-bold transition-all ${
                             isDark
                               ? "bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
                               : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
+                          <span
+                            className={`absolute top-1 right-1 ${isMobile ? "text-[9px]" : "text-[10px]"} font-bold opacity-60 px-1 rounded ${isDark ? "bg-slate-900/40" : "bg-white/60"}`}
+                          >
+                            4
+                          </span>
                           <span className={isMobile ? "text-xs" : "text-xs"}>
                             {t("study.rating.easy")}
                           </span>

@@ -6,6 +6,7 @@ import { StudyCardDetailModal } from "./StudyCardDetailModal";
 import { StatsOverview } from "../Statistics/StatsOverview";
 import { WeakPointAnalysis } from "./WeakPointAnalysis";
 import type { WeakPoint, Prediction } from "./WeakPointAnalysis";
+import type { ReviewForecast } from "../../hooks/queries/useStudyQueries";
 import {
   Trophy,
   Clock,
@@ -18,6 +19,7 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
+  Calendar,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -43,6 +45,7 @@ interface CardReviewViewProps {
   weeklyStudyTime: number;
   weakPoints: WeakPoint[];
   predictions: Prediction[];
+  forecast?: ReviewForecast;
   onStartQuiz: (mode: "all" | "due") => void;
   onPracticeCard: (card: StudyCard) => void;
 }
@@ -57,6 +60,7 @@ export const CardReviewView = ({
   weeklyStudyTime,
   weakPoints,
   predictions,
+  forecast,
   onStartQuiz,
   onPracticeCard,
 }: CardReviewViewProps) => {
@@ -374,6 +378,135 @@ export const CardReviewView = ({
               </div>
             </motion.button>
           </div>
+
+          {/* Review Forecast */}
+          {forecast && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
+              className={`p-4 md:p-5 rounded-2xl border ${
+                isDark
+                  ? "bg-slate-800 border-slate-700"
+                  : "bg-white border-gray-100 shadow-sm"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar
+                  size={isMobile ? 16 : 18}
+                  className={
+                    isDark ? "text-primary-400" : "text-primary-600"
+                  }
+                />
+                <h3
+                  className={`text-sm md:text-base font-bold ${
+                    isDark ? "text-slate-200" : "text-gray-800"
+                  }`}
+                >
+                  {t("study.forecast.title")}
+                </h3>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs md:text-sm ${
+                      isDark ? "text-slate-400" : "text-gray-500"
+                    }`}
+                  >
+                    {t("study.forecast.tomorrow")}
+                  </span>
+                  <span
+                    className={`text-lg md:text-xl font-black ${
+                      forecast.tomorrow > 0
+                        ? isDark
+                          ? "text-amber-400"
+                          : "text-amber-600"
+                        : isDark
+                          ? "text-slate-500"
+                          : "text-gray-400"
+                    }`}
+                  >
+                    {forecast.tomorrow}
+                  </span>
+                  <span
+                    className={`text-xs ${
+                      isDark ? "text-slate-500" : "text-gray-400"
+                    }`}
+                  >
+                    {t("study.forecast.cards")}
+                  </span>
+                </div>
+                <div
+                  className={`h-6 w-px ${isDark ? "bg-slate-700" : "bg-gray-200"}`}
+                />
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs md:text-sm ${
+                      isDark ? "text-slate-400" : "text-gray-500"
+                    }`}
+                  >
+                    {t("study.forecast.thisWeek")}
+                  </span>
+                  <span
+                    className={`text-lg md:text-xl font-black ${
+                      isDark ? "text-primary-400" : "text-primary-600"
+                    }`}
+                  >
+                    {forecast.thisWeek}
+                  </span>
+                  <span
+                    className={`text-xs ${
+                      isDark ? "text-slate-500" : "text-gray-400"
+                    }`}
+                  >
+                    {t("study.forecast.cards")}
+                  </span>
+                </div>
+              </div>
+              {/* 7-day bar summary */}
+              {forecast.thisWeek > 0 && (
+                <div className="flex items-end gap-1 mt-3 h-12">
+                  {forecast.daily.map((count, idx) => {
+                    const maxCount = Math.max(...forecast.daily, 1);
+                    const heightPct = Math.max(
+                      (count / maxCount) * 100,
+                      count > 0 ? 8 : 2,
+                    );
+                    return (
+                      <div
+                        key={idx}
+                        className="flex-1 flex flex-col items-center gap-1"
+                        title={t("study.forecast.dayTooltip", {
+                          day: idx + 1,
+                          count,
+                        })}
+                      >
+                        <div
+                          className={`w-full rounded-t transition-all ${
+                            count > 0
+                              ? isDark
+                                ? "bg-primary-500"
+                                : "bg-primary-400"
+                              : isDark
+                                ? "bg-slate-700"
+                                : "bg-gray-100"
+                          }`}
+                          style={{ height: `${heightPct}%` }}
+                        />
+                        <span
+                          className={`text-[9px] md:text-[10px] ${
+                            isDark ? "text-slate-500" : "text-gray-400"
+                          }`}
+                        >
+                          {count > 0 ? count : ""}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
 
         {/* Chart */}

@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { useUser } from "../../hooks/queries";
-import { useLogoutMutation } from "../../hooks/mutations";
+import { useLogoutMutation, useImportGraphMutation } from "../../hooks/mutations";
 import { useTaskEvents, useConsole } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import {
@@ -16,6 +16,7 @@ import {
   Moon,
   LucideIcon,
   AlertTriangle,
+  Upload,
 } from "lucide-react";
 import {
   ErrorBoundary,
@@ -40,6 +41,9 @@ import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { apiClient } from "../../services/api/createApiClient";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
+import { parseMarkdownToGraph } from "../../utils/markdownParser";
+import { parseOpmlToGraph } from "../../utils/opmlParser";
+import { message } from "../../utils/messageHelper";
 
 /**
  * Shape of the user_metadata stored on the Supabase User object.
@@ -90,6 +94,9 @@ export const Layout = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const importGraphMutation = useImportGraphMutation();
+  const dragCounterRef = useRef(0);
 
   const isFullScreenPage =
     location.pathname.startsWith("/graph/") ||
@@ -159,6 +166,81 @@ export const Layout = () => {
     setUser(null, null);
     navigate("/login");
   }, [logoutMutation, setUser, navigate]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (dragCounterRef.current === 1) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    // Navigate to dashboard first
+    navigate("/");
+
+    for (const file of files) {
+      try {
+        const content = await file.text();
+        let importData;
+
+        if (file.name.endsWith(".md")) {
+          const parsed = parseMarkdownToGraph(content);
+          importData = {
+            graph_title: parsed.graph_title || file.name.replace(".md", ""),
+            nodes: parsed.nodes,
+            edges: parsed.edges,
+          };
+        } else if (file.name.endsWith(".opml")) {
+          const parsed = parseOpmlToGraph(content);
+          importData = {
+            graph_title: parsed.graph_title || file.name.replace(".opml", ""),
+            nodes: parsed.nodes,
+            edges: parsed.edges,
+          };
+        } else {
+          const data = JSON.parse(content);
+          importData = {
+            graph_title:
+              data.graph?.title ||
+              data.graph_title ||
+              file.name.replace(".json", ""),
+            nodes: data.nodes || [],
+            edges: data.edges || [],
+          };
+        }
+
+        await importGraphMutation.mutateAsync(importData);
+        message.success(`导入成功: ${importData.graph_title}`);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "格式错误";
+        message.error(`导入失败: ${errorMessage}`);
+      }
+    }
+  }, [navigate, importGraphMutation]);
 
   const hasSetUserRef = useRef(false);
 
@@ -230,7 +312,23 @@ export const Layout = () => {
   return (
     <div
       className={`flex h-screen flex-col ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
+      {/* Global Drop Zone Overlay */}
+      {isDragOver && (
+        <div className="fixed inset-0 z-[9999] bg-primary-500/10 border-2 border-dashed border-primary-400 flex flex-col items-center justify-center backdrop-blur-sm">
+          <Upload className="w-16 h-16 text-primary-500 mb-4" />
+          <p className={`text-xl font-semibold ${isDark ? "text-primary-400" : "text-primary-600"}`}>
+            {t("layout.dropZone.title")}
+          </p>
+          <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+            {t("layout.dropZone.subtitle")}
+          </p>
+        </div>
+      )}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {!isFullScreenPage && !isMobile && (
           <div

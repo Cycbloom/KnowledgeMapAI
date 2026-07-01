@@ -75,5 +75,39 @@
     "unfavorite": "取消收藏",
     "delete": "删除图谱",
     "enterOutline": "进入大纲"
+  },
+  "contextMenu": {
+    "copyId": "复制图谱 ID",
+    "copiedId": "已复制图谱ID",
+    "copyFailed": "复制失败",
+    "openInNewWindow": "在新窗口打开",
+    "toggleFavorite": "切换收藏",
+    "moveToTrash": "移至回收站"
+  },
+  "recent": {
+    "title": "最近编辑",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前",
+    "monthsAgo": "{{count}}个月前"
+  },
+  "sort": {
+    "label": "排序方式",
+    "updatedAt": "最近更新",
+    "createdAt": "最近创建",
+    "title": "标题",
+    "nodeCount": "节点数量"
+  },
+  "filter": {
+    "statusLabel": "状态筛选",
+    "rangeLabel": "时间范围筛选",
+    "statusAll": "全部",
+    "statusActive": "活跃",
+    "statusArchived": "已归档",
+    "rangeAll": "全部",
+    "rangeToday": "今天",
+    "rangeWeek": "本周",
+    "rangeMonth": "本月"
   }
 }

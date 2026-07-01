@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export interface Message {
   id: string;
@@ -18,6 +18,11 @@ export interface Source {
   hopDistance?: number;
 }
 
+export interface ChatHistoryItem {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface ChatState {
   messages: Message[];
   input: string;
@@ -26,6 +31,11 @@ export interface ChatState {
   currentSpeakingMessageId: string | null;
   isResizing: boolean;
   sessionId: string;
+}
+
+export interface EditAndResendResult {
+  newContent: string;
+  history: ChatHistoryItem[];
 }
 
 export const useChatState = () => {
@@ -39,6 +49,8 @@ export const useChatState = () => {
   const [isResizing, setIsResizing] = useState(false);
   const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID());
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const addMessage = useCallback((message: Message) => {
     setMessages((prev) => [...prev, message]);
   }, []);
@@ -47,6 +59,10 @@ export const useChatState = () => {
     setMessages((prev) =>
       prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg)),
     );
+  }, []);
+
+  const removeMessage = useCallback((id: string) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
   }, []);
 
   const clearInput = useCallback(() => {
@@ -63,6 +79,30 @@ export const useChatState = () => {
     setSuggestedQuestions(questions);
   }, []);
 
+  const stopGeneration = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+  }, []);
+
+  const editAndResend = useCallback(
+    (messageId: string, newContent: string): EditAndResendResult | null => {
+      const idx = messages.findIndex((m) => m.id === messageId);
+      if (idx === -1) return null;
+      const history: ChatHistoryItem[] = messages
+        .slice(0, idx)
+        .map((m) => ({ role: m.role, content: m.content }));
+      setMessages((prev) => {
+        const i = prev.findIndex((m) => m.id === messageId);
+        if (i === -1) return prev;
+        return prev
+          .map((m) => (m.id === messageId ? { ...m, content: newContent } : m))
+          .slice(0, i + 1);
+      });
+      return { newContent, history };
+    },
+    [messages],
+  );
+
   return {
     messages,
     input,
@@ -76,9 +116,13 @@ export const useChatState = () => {
     isResizing,
     setIsResizing,
     sessionId,
+    abortControllerRef,
     addMessage,
     updateMessage,
+    removeMessage,
     clearInput,
     clearMessages,
+    stopGeneration,
+    editAndResend,
   };
 };

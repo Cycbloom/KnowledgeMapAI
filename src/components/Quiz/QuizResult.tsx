@@ -9,8 +9,17 @@ import {
   AlertTriangle,
   BarChart3,
   BookOpen,
+  Clock,
+  Zap,
+  Coffee,
 } from 'lucide-react';
 import type { StudyCard } from '@shared/types/common';
+import { formatTimeFromSeconds } from '../../utils/formatters';
+
+interface QuestionTiming {
+  cardId: string;
+  duration: number;
+}
 
 interface QuizResultProps {
   quizSetId: string;
@@ -19,6 +28,11 @@ interface QuizResultProps {
     correct: number;
     byType: Record<string, { correct: number; total: number }>;
     wrongCards: StudyCard[];
+    totalTime?: number;
+    avgTime?: number;
+    fastest?: QuestionTiming;
+    slowest?: QuestionTiming;
+    cards?: StudyCard[];
   };
   onRetry: () => void;
   onRetryWrong: () => void;
@@ -153,6 +167,57 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               />
             </div>
           </motion.div>
+
+          {/* Time statistics (UX2-12) */}
+          {results.totalTime !== undefined && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65 }}
+              className="mb-8"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Clock size={18} className="text-primary-500" />
+                <h3 className="font-bold text-gray-900 dark:text-white">时间统计</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-700/50">
+                  <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">总耗时</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    {formatTimeFromSeconds(results.totalTime)}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-700/50">
+                  <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">平均每题</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    {formatTimeFromSeconds(results.avgTime ?? 0)}
+                  </div>
+                </div>
+              </div>
+              {results.fastest && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 mb-2">
+                  <Zap size={16} className="text-emerald-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-emerald-600/70 dark:text-emerald-400/70">最快 · {formatTimeFromSeconds(results.fastest.duration)}</div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                      {results.cards?.find((c) => c.id === results.fastest?.cardId)?.question ?? '—'}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {results.slowest && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30">
+                  <Coffee size={16} className="text-amber-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-amber-600/70 dark:text-amber-400/70">最慢 · {formatTimeFromSeconds(results.slowest.duration)}</div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                      {results.cards?.find((c) => c.id === results.slowest?.cardId)?.question ?? '—'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
 
           {Object.keys(results.byType).length > 0 && (
             <motion.div

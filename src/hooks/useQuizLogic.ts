@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyCard } from "@shared/types";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
@@ -10,6 +10,8 @@ interface UseQuizLogicParams {
   setShowAnswer: (show: boolean) => void;
   setViewState: (state: "dashboard" | "quiz" | "bank" | "focus" | "quizzes") => void;
   startCardReview: (cards: StudyCard[]) => void;
+  currentOptions: string[];
+  isMultiChoice: boolean;
 }
 
 export const useQuizLogic = ({
@@ -19,6 +21,8 @@ export const useQuizLogic = ({
   setShowAnswer,
   setViewState,
   startCardReview,
+  currentOptions,
+  isMultiChoice,
 }: UseQuizLogicParams) => {
   const { t } = useTranslation();
 
@@ -60,6 +64,42 @@ export const useQuizLogic = ({
     },
     [showAnswer, selectedOption, setSelectedOption],
   );
+
+  // Quiz option keyboard shortcuts (UX2-03)
+  const canSelectWithKeyboard = !showAnswer && currentOptions.length > 0;
+
+  useEffect(() => {
+    if (!canSelectWithKeyboard) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+      if (isInput) return;
+
+      let optionIndex = -1;
+      const key = event.key.toLowerCase();
+      if (key === "a" || key === "1") optionIndex = 0;
+      else if (key === "b" || key === "2") optionIndex = 1;
+      else if (key === "c" || key === "3") optionIndex = 2;
+      else if (key === "d" || key === "4") optionIndex = 3;
+
+      if (optionIndex < 0 || optionIndex >= currentOptions.length) return;
+
+      event.preventDefault();
+      const option = currentOptions[optionIndex];
+      if (isMultiChoice) {
+        handleMultiOptionClick(option);
+      } else {
+        handleOptionClick(option);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canSelectWithKeyboard, currentOptions, isMultiChoice, handleOptionClick, handleMultiOptionClick]);
 
   return {
     handleStartQuiz,

@@ -22,6 +22,12 @@ export function createPersistedStore<T>(
         ),
         partialize: options?.partialize as ((state: T) => T) | undefined,
         version: options?.version ?? 1,
+        migrate: (persistedState: unknown, version: number) => {
+          if (version < (options?.version ?? 1)) {
+            return persistedState as T;
+          }
+          return persistedState as T;
+        },
       }),
       { name: persistKey },
     ),

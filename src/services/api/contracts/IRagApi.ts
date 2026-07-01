@@ -29,6 +29,7 @@ export interface IRagApi {
     },
     onChunk: (content: string) => void,
     onSources?: (sources: Array<{ id: string; title: string; content: string; similarity: number }>) => void,
+    signal?: AbortSignal,
   ): Promise<void>;
 
   search(data: {

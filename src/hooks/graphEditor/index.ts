@@ -39,6 +39,12 @@ export interface GraphRef {
   captureScreenshot?: (options: { transparent: boolean; fitView: boolean; hideGrid: boolean }) => Promise<string>;
   getTransform?: () => { x: number; y: number; k: number };
   animateToTransform?: (transform: { x: number; y: number; k: number }, duration?: number) => void;
+  fitView?: () => void;
+  fitSelection?: (nodeIds?: string[]) => void;
+  zoomIn?: () => void;
+  zoomOut?: () => void;
+  resetZoom?: () => void;
+  getZoom?: () => number;
 }
 
 export type GraphEditorState = {

@@ -251,51 +251,31 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
     chatState.setCurrentSpeakingMessageId(null);
   };
 
-  const handleSend = async (messageText?: string) => {
-    const text = messageText || chatState.input.trim();
-    if (!text || chatState.isLoading) return;
-
-    let aiMessage = text;
-    if (quotes.length > 0) {
-      const quotesText = quotes.map((q, i) => `[引用 #${i + 1}]\n${q.text}`).join('\n\n');
-      aiMessage = `${quotesText}\n\n[用户问题]\n${text}`;
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: text,
+  const streamAssistantResponse = async (
+    messageForApi: string,
+    history: Array<{ role: "user" | "assistant"; content: string }>,
+  ) => {
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
       timestamp: new Date(),
+      isStreaming: true,
     };
-
-    chatState.addMessage(userMessage);
-    chatState.clearInput();
+    chatState.addMessage(assistantMessage);
     chatState.setIsLoading(true);
     chatState.setSuggestedQuestions([]);
-    setQuotes([]);
 
-    const assistantMessageId = (Date.now() + 1).toString();
+    const controller = new AbortController();
+    chatState.abortControllerRef.current = controller;
+
+    let fullResponse = "";
+    let sources: Source[] = [];
 
     try {
-      const history = chatState.messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-      let fullResponse = "";
-      let sources: Source[] = [];
-
-      const assistantMessage: Message = {
-        id: assistantMessageId,
-        role: "assistant",
-        content: "",
-        timestamp: new Date(),
-        isStreaming: true,
-      };
-      chatState.addMessage(assistantMessage);
-
       if (isTutorMode && onTutorChat) {
-        await onTutorChat(aiMessage, history, (chunk) => {
+        await onTutorChat(messageForApi, history, (chunk) => {
           fullResponse += chunk;
           chatState.updateMessage(assistantMessageId, {
             content: fullResponse,
@@ -304,7 +284,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
       } else {
         await api.rag.chatStream(
           {
-            message: aiMessage,
+            message: messageForApi,
             graph_id: graphId,
             current_node_id: currentNodeId,
             history,
@@ -322,6 +302,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
           (s: Source[]) => {
             sources = s;
           },
+          controller.signal,
         );
       }
 
@@ -346,19 +327,94 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
         );
       }
     } catch (error: unknown) {
-      console.error("RAG Chat Error:", error);
-      const errorMessage = error instanceof Error ? error.message : t("aiChat.errorOccurred");
-      frontendEventBus.publish("message_show", {
-        type: "error",
-        content: errorMessage,
-      });
-      chatState.updateMessage(assistantMessageId, {
-        content: t("aiChat.errorOccurred"),
-        isStreaming: false,
-      });
+      const isAborted =
+        controller.signal.aborted ||
+        (error instanceof Error && error.name === "AbortError");
+      if (isAborted) {
+        if (fullResponse) {
+          chatState.updateMessage(assistantMessageId, { isStreaming: false });
+        } else {
+          chatState.removeMessage(assistantMessageId);
+        }
+      } else {
+        console.error("RAG Chat Error:", error);
+        const errorMessage = error instanceof Error ? error.message : t("aiChat.errorOccurred");
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: errorMessage,
+        });
+        chatState.updateMessage(assistantMessageId, {
+          content: t("aiChat.errorOccurred"),
+          isStreaming: false,
+        });
+      }
     } finally {
       chatState.setIsLoading(false);
+      chatState.abortControllerRef.current = null;
     }
+  };
+
+  const handleSend = async (messageText?: string) => {
+    const text = messageText || chatState.input.trim();
+    if (!text || chatState.isLoading) return;
+
+    let aiMessage = text;
+    if (quotes.length > 0) {
+      const quotesText = quotes.map((q, i) => `[引用 #${i + 1}]\n${q.text}`).join('\n\n');
+      aiMessage = `${quotesText}\n\n[用户问题]\n${text}`;
+    }
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: text,
+      timestamp: new Date(),
+    };
+
+    chatState.addMessage(userMessage);
+    chatState.clearInput();
+    setQuotes([]);
+
+    const history = chatState.messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    await streamAssistantResponse(aiMessage, history);
+  };
+
+  const handleRegenerate = async () => {
+    if (chatState.isLoading) return;
+    const messages = chatState.messages;
+    let lastAiIdx = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant" && !messages[i].isStreaming) {
+        lastAiIdx = i;
+        break;
+      }
+    }
+    if (lastAiIdx === -1) return;
+    let userIdx = -1;
+    for (let i = lastAiIdx - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        userIdx = i;
+        break;
+      }
+    }
+    if (userIdx === -1) return;
+    const userContent = messages[userIdx].content;
+    const history = messages
+      .slice(0, userIdx)
+      .map((m) => ({ role: m.role, content: m.content }));
+    chatState.removeMessage(messages[lastAiIdx].id);
+    await streamAssistantResponse(userContent, history);
+  };
+
+  const handleEditAndResend = async (messageId: string, newContent: string) => {
+    if (chatState.isLoading) return;
+    const result = chatState.editAndResend(messageId, newContent);
+    if (!result) return;
+    await streamAssistantResponse(result.newContent, result.history);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -724,7 +780,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
               </div>
             )}
 
-            {chatState.messages.map((message) => (
+            {chatState.messages.map((message, index) => (
               <ChatMessage
                 key={message.id}
                 message={message}
@@ -732,6 +788,10 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
                 isTutorMode={isTutorMode}
                 onNodeClick={nodeClickHandler}
                 enableTermTooltip={enableTermTooltip}
+                isLast={index === chatState.messages.length - 1}
+                isLoading={chatState.isLoading}
+                onRegenerate={handleRegenerate}
+                onEditAndResend={handleEditAndResend}
                 voiceControl={
                   hasSupport && !message.isStreaming && message.content ? (
                     <VoiceControl
@@ -844,6 +904,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
           showQuoteTip={showQuoteTip}
           onDismissQuoteTip={dismissQuoteTip}
           enableSTT={enableSTT}
+          onStopGeneration={chatState.stopGeneration}
         />
       )}
     </motion.div>

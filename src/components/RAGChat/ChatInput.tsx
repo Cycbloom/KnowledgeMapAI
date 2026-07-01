@@ -13,6 +13,7 @@ import {
   Mic,
   MicOff,
   Cloud,
+  Square,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,6 +49,7 @@ interface ChatInputProps {
   showQuoteTip?: boolean;
   onDismissQuoteTip?: () => void;
   enableSTT?: boolean;
+  onStopGeneration?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -74,6 +76,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   showQuoteTip = false,
   onDismissQuoteTip,
   enableSTT = false,
+  onStopGeneration,
 }) => {
   const { t } = useTranslation();
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
@@ -528,25 +531,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </button>
             </>
           )}
-          <button
-            onClick={onSend}
-            disabled={!input.trim() || isLoading}
-            className={`p-2 rounded-lg transition-all ${
-              input.trim() && !isLoading
-                ? isTutorMode
-                  ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/25"
-                  : "bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/25"
-                : isDark
-                  ? "bg-slate-700/60 text-slate-500 cursor-not-allowed"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {isLoading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
+          {isLoading && onStopGeneration ? (
+            <button
+              onClick={onStopGeneration}
+              className={`p-2 rounded-lg transition-all bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/25`}
+              title={t("aiChat.stopGeneration")}
+            >
+              <Square size={14} className="fill-current" />
+            </button>
+          ) : (
+            <button
+              onClick={onSend}
+              disabled={!input.trim() || isLoading}
+              className={`p-2 rounded-lg transition-all ${
+                input.trim() && !isLoading
+                  ? isTutorMode
+                    ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/25"
+                    : "bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/25"
+                  : isDark
+                    ? "bg-slate-700/60 text-slate-500 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }`}
+            >
               <Send size={16} />
-            )}
-          </button>
+            </button>
+          )}
         </div>
       </div>
 

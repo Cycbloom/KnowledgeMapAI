@@ -1,6 +1,17 @@
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Bot, User, BookOpen, Loader2, Network, Quote } from "lucide-react";
+import {
+  Bot,
+  User,
+  BookOpen,
+  Loader2,
+  Network,
+  Quote,
+  Copy,
+  Check,
+  RotateCcw,
+  Pencil,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -22,6 +33,10 @@ interface ChatMessageProps {
   onNodeClick?: (nodeId: string) => void;
   voiceControl?: React.ReactNode;
   enableTermTooltip?: boolean;
+  isLast?: boolean;
+  isLoading?: boolean;
+  onRegenerate?: () => void;
+  onEditAndResend?: (messageId: string, newContent: string) => void;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -31,15 +46,75 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onNodeClick,
   voiceControl,
   enableTermTooltip,
+  isLast = false,
+  isLoading = false,
+  onRegenerate,
+  onEditAndResend,
 }) => {
   const { t } = useTranslation();
   const messageRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.content);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      editTextareaRef.current.focus();
+      editTextareaRef.current.setSelectionRange(
+        editText.length,
+        editText.length,
+      );
+    }
+  }, [isEditing, editText.length]);
 
   const handleQuoteMessage = useCallback(() => {
     if (message.content && !message.isStreaming) {
       addQuote(message.content);
     }
   }, [message.content, message.isStreaming]);
+
+  const handleCopyMessage = useCallback(async () => {
+    if (!message.content) return;
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy message:", err);
+    }
+  }, [message.content]);
+
+  const startEditing = useCallback(() => {
+    if (isLoading) return;
+    setEditText(message.content);
+    setIsEditing(true);
+  }, [isLoading, message.content]);
+
+  const cancelEditing = useCallback(() => {
+    setIsEditing(false);
+    setEditText(message.content);
+  }, [message.content]);
+
+  const saveEditing = useCallback(() => {
+    const trimmed = editText.trim();
+    if (!trimmed || !onEditAndResend) {
+      setIsEditing(false);
+      return;
+    }
+    setIsEditing(false);
+    onEditAndResend(message.id, trimmed);
+  }, [editText, onEditAndResend, message.id]);
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      saveEditing();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancelEditing();
+    }
+  };
 
   const renderCodeBlock = ({
     className,
@@ -191,8 +266,45 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-pulse align-middle opacity-50" />
               )}
             </div>
+          ) : isEditing ? (
+            <div className="flex flex-col gap-2 min-w-[200px]">
+              <textarea
+                ref={editTextareaRef}
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                rows={2}
+                className="w-full bg-transparent resize-none outline-none text-sm leading-relaxed text-white"
+                style={{ minHeight: "40px", maxHeight: "160px" }}
+              />
+              <div className="flex items-center justify-end gap-1.5">
+                <button
+                  onClick={cancelEditing}
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                    isDark
+                      ? "bg-slate-600/60 text-slate-200 hover:bg-slate-600"
+                      : "bg-white/20 text-white hover:bg-white/30"
+                  }`}
+                >
+                  {t("aiChat.cancelEdit")}
+                </button>
+                <button
+                  onClick={saveEditing}
+                  disabled={!editText.trim()}
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                    editText.trim()
+                      ? isDark
+                        ? "bg-primary-600 text-white hover:bg-primary-500"
+                        : "bg-white text-primary-600 hover:bg-primary-50"
+                      : "bg-slate-500/40 text-slate-300 cursor-not-allowed"
+                  }`}
+                >
+                  {t("aiChat.saveEdit")}
+                </button>
+              </div>
+            </div>
           ) : (
-            <span className="text-white">{message.content}</span>
+            <span className="text-white whitespace-pre-wrap">{message.content}</span>
           )}
 
         </div>
@@ -200,17 +312,48 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         {message.role === "assistant" && (
           <div className="flex items-center gap-2 mt-1">
             {!message.isStreaming && message.content && (
-              <button
-                onClick={handleQuoteMessage}
-                className={`p-1.5 rounded-md transition-colors ${
-                  isDark
-                    ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
-                    : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                }`}
-                title={t("aiChat.quoteThisMessage")}
-              >
-                <Quote size={14} />
-              </button>
+              <>
+                <button
+                  onClick={handleQuoteMessage}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    isDark
+                      ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+                      : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                  }`}
+                  title={t("aiChat.quoteThisMessage")}
+                >
+                  <Quote size={14} />
+                </button>
+                <button
+                  onClick={handleCopyMessage}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    isDark
+                      ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+                      : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                  }`}
+                  title={copied ? t("aiChat.copiedMessage") : t("aiChat.copyMessage")}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+                {isLast && onRegenerate && (
+                  <button
+                    onClick={onRegenerate}
+                    disabled={isLoading}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      isLoading
+                        ? isDark
+                          ? "text-slate-600 cursor-not-allowed"
+                          : "text-gray-300 cursor-not-allowed"
+                        : isDark
+                          ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+                          : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                    }`}
+                    title={t("aiChat.regenerateResponse")}
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                )}
+              </>
             )}
 
             {message.sources && message.sources.length > 0 && (
@@ -255,6 +398,27 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             )}
 
             {voiceControl}
+          </div>
+        )}
+
+        {message.role === "user" && !isEditing && onEditAndResend && (
+          <div className="flex items-center gap-2 mt-1 justify-end">
+            <button
+              onClick={startEditing}
+              disabled={isLoading}
+              className={`p-1.5 rounded-md transition-colors ${
+                isLoading
+                  ? isDark
+                    ? "text-slate-600 cursor-not-allowed"
+                    : "text-gray-300 cursor-not-allowed"
+                  : isDark
+                    ? "hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+                    : "hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+              }`}
+              title={t("aiChat.editMessage")}
+            >
+              <Pencil size={14} />
+            </button>
           </div>
         )}
       </div>

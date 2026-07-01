@@ -1,5 +1,6 @@
 import type { Node, Edge, Graph } from '../../types';
 import { GraphEditorState } from './index';
+import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../../utils/exportUtils';
@@ -26,6 +27,7 @@ export const useGraphExportOperations = ({
   mutations,
   navigate
 }: UseGraphExportOperationsProps) => {
+  const { t } = useTranslation();
   const { 
     setConfirmModal,
     setLoading,
@@ -138,17 +140,18 @@ export const useGraphExportOperations = ({
   const confirmExportImage = async () => {
     try {
       if (!graphRef.current?.captureScreenshot) {
-        frontendEventBus.publish("message_show", { content: '当前视图不支持图片导出', type: 'error' });
+        frontendEventBus.publish("message_show", { content: t('graphEditor.export.notSupported'), type: 'error' });
         setIsExportImageModalOpen(false);
         return;
       }
       const dataUrl = await graphRef.current.captureScreenshot(exportImageOptions);
-      downloadImage(dataUrl, `${graphMeta?.title || 'graph'}_snapshot.png`);
+      const safeTitle = (graphMeta?.title || 'graph').replace(/[^a-z0-9\u4e00-\u9fff]/gi, '_').toLowerCase();
+      downloadImage(dataUrl, `${safeTitle}-graph.png`);
       setIsExportImageModalOpen(false);
-      frontendEventBus.publish("message_show", { content: '图片导出成功', type: 'success' });
+      frontendEventBus.publish("message_show", { content: t('graphEditor.export.success'), type: 'success' });
     } catch (error) {
       console.error('Export image failed:', error);
-      frontendEventBus.publish("message_show", { content: '图片导出失败', type: 'error' });
+      frontendEventBus.publish("message_show", { content: t('graphEditor.export.failed'), type: 'error' });
     }
   };
 

@@ -136,7 +136,10 @@
     "sessionCompleteDesc": "Reviewed {{count}} cards this session, keep it up!",
     "backToLearning": "Back to Study Center",
     "backToCenter": "Back to Home",
-    "practiceAgain": "Practice Again"
+    "practiceAgain": "Practice Again",
+    "cardsReviewed": "Cards Reviewed",
+    "timeSpent": "Time Spent",
+    "accuracy": "Accuracy"
   },
   "quiz": {
     "exit": "Exit",
@@ -182,5 +185,12 @@
   "messages": {
     "noCardsToReview": "No cards to review",
     "saveProgressFailed": "Failed to save progress, please retry"
+  },
+  "forecast": {
+    "title": "Upcoming Reviews",
+    "tomorrow": "Tomorrow",
+    "thisWeek": "Next 7 days",
+    "cards": "cards",
+    "dayTooltip": "Day {{day}}: {{count}} cards"
   }
 }

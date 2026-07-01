@@ -64,6 +64,7 @@ interface MindMapNodeProps {
   isInLearningPath?: boolean;
   learningPathHighlighted?: boolean;
   isNarrativeCurrent?: boolean;
+  isSearchHighlight?: boolean;
   semanticZoomLevel?: SemanticZoomLevel;
   showContentPreview?: boolean;
   showLearningStatus?: boolean;
@@ -144,6 +145,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   isInLearningPath = false,
   learningPathHighlighted = false,
   isNarrativeCurrent = false,
+  isSearchHighlight = false,
   semanticZoomLevel,
   showContentPreview = false,
   showLearningStatus = false,
@@ -614,6 +616,37 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
             values="0.5;0.9;0.5"
             dur="1.5s"
             repeatCount="indefinite"
+          />
+        </circle>
+      )}
+      {isSearchHighlight && (
+        <circle
+          r={styleConfig.baseRadius + 4}
+          fill="none"
+          stroke="rgba(99, 102, 241, 0.7)"
+          strokeWidth={3}
+          opacity={0}
+        >
+          <animate
+            attributeName="r"
+            values={`${styleConfig.baseRadius + 4};${styleConfig.baseRadius + 20};${styleConfig.baseRadius + 4}`}
+            dur="1s"
+            repeatCount="3"
+            begin="0s"
+          />
+          <animate
+            attributeName="opacity"
+            values="0.7;0;0.7"
+            dur="1s"
+            repeatCount="3"
+            begin="0s"
+          />
+          <animate
+            attributeName="strokeWidth"
+            values="3;0;3"
+            dur="1s"
+            repeatCount="3"
+            begin="0s"
           />
         </circle>
       )}

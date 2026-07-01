@@ -13,7 +13,14 @@
     "generating": "Generating...",
     "download": "Generate and Download PDF",
     "success": "Export successful!",
-    "failed": "Export failed, please retry"
+    "failed": "Export failed, please retry",
+    "imageTitle": "Export as PNG Image",
+    "transparent": "Transparent background",
+    "fitView": "Fit view",
+    "hideGrid": "Hide grid",
+    "exporting": "Exporting...",
+    "exportBtn": "Export",
+    "notSupported": "Current view does not support image export"
   },
   "graphMap": {
     "relationDiscovery": {
@@ -117,6 +124,10 @@
     "exportJSON": "JSON Backup",
     "exportImage": "Image (PNG)",
     "deleteGraph": "Delete This Graph Permanently"
+  },
+  "switcher": {
+    "placeholder": "Switch Graph",
+    "noRecent": "No recent graphs"
   },
   "researchProgress": {
     "title": "Research Progress",
@@ -235,5 +246,25 @@
     "createSuccess": "Region created successfully",
     "updateSuccess": "Region updated successfully",
     "deleteSuccess": "Region deleted"
+  },
+  "canvasContextMenu": {
+    "createNode": "Create Node",
+    "paste": "Paste",
+    "selectAll": "Select All",
+    "fitView": "Fit View"
+  },
+  "onboarding": {
+    "step1Title": "Canvas Area",
+    "step1Desc": "This is your knowledge graph canvas, where you organize and connect knowledge nodes",
+    "step2Title": "Toolbar",
+    "step2Desc": "Use the toolbar to switch view modes, search nodes, and access AI assistant",
+    "step3Title": "Sidebar",
+    "step3Desc": "Edit content, view details, and manage knowledge points here after selecting a node",
+    "step4Title": "Keyboard Shortcuts",
+    "step4Desc": "Press ? to view all keyboard shortcuts at any time",
+    "next": "Next",
+    "prev": "Previous",
+    "finish": "Get Started",
+    "skip": "Skip"
   }
 }

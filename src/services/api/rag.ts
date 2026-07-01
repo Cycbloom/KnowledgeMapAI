@@ -43,9 +43,10 @@ export const ragApi = {
       use_graph_context?: boolean;
       graph_hops?: number;
       search_mode?: 'semantic' | 'keyword' | 'hybrid';
-    }, 
+    },
     onChunk: (content: string) => void,
-    onSources?: (sources: Source[]) => void
+    onSources?: (sources: Source[]) => void,
+    signal?: AbortSignal
   ) => {
     const config = getAIConfig('text');
     const payload = { ...data, language: data.language || getAILanguage() };
@@ -60,7 +61,8 @@ export const ragApi = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      ...(signal ? { signal } : {}),
     });
 
     if (!response.ok) {
@@ -79,11 +81,11 @@ export const ragApi = {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
+
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n\n');
       buffer = lines.pop() || '';
-      
+
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const dataStr = line.replace('data: ', '');
@@ -94,6 +96,9 @@ export const ragApi = {
             if (parsed.sources && onSources) onSources(parsed.sources as Source[]);
             if (parsed.error) throw new Error(parsed.error);
           } catch (e) {
+            if (signal?.aborted) {
+              throw e;
+            }
             console.error('Stream parse error:', e);
           }
         }

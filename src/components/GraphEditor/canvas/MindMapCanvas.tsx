@@ -69,7 +69,7 @@ const COMPARED_PROPS: readonly (keyof MindMapCanvasProps)[] = [
   // Core data (stable from React Query / state)
   'nodes', 'edges', 'nodeStatus',
   // Selection & focus state
-  'selectedNodeId', 'focusedNodeId', 'focusedNodeIds', 'focusedLinkIds', 'forceShowTextIds', 'highlightedPathNodeId',
+  'selectedNodeId', 'focusedNodeId', 'focusedNodeIds', 'focusedLinkIds', 'forceShowTextIds', 'highlightedPathNodeId', 'multiSelectedNodeIds',
   // Visual configuration
   'colorScheme', 'linkStyle', 'linkAnimation', 'coloringMode', 'nodeSizeMode', 'edgeWidthMode', 'templateLayout', 'layoutMode',
   // Layout & sizing
@@ -86,13 +86,21 @@ const COMPARED_PROPS: readonly (keyof MindMapCanvasProps)[] = [
   'learningPathNodeIds', 'learningPathOrderMap',
   // Semantic layout
   'embeddings',
+  // Search highlight
+  'searchHighlightNodeId',
   // Identifiers & misc
   'graphId', 'previewDelay',
   // Callbacks (stable from useCallback in parent)
   'onNodeClick', 'onCanvasClick', 'onSelectBranch', 'onSwitchBranch',
-  'onNodeContextMenu', 'onEdgeContextMenu', 'onEdgeUpdate', 'onEdgeDelete',
+  'onNodeContextMenu', 'onEdgeContextMenu', 'onCanvasContextMenu', 'onEdgeUpdate', 'onEdgeDelete',
   'onLayoutUpdate', 'onSelectParent', 'onNavigateToGraphMap',
   'onMarkNodeMastered', 'onNodeLongPress', 'onOpenDetail',
+  // External UI reporting
+  'onZoomChange',
+  // Edge display mode
+  'edgeDisplayMode',
+  // Marquee multi-select
+  'onMarqueeSelect',
 ];
 
 function areEqual(prev: MindMapCanvasProps, next: MindMapCanvasProps): boolean {
@@ -159,6 +167,18 @@ interface MindMapCanvasProps {
   // Semantic layout mode
   layoutMode?: "force" | "semantic";
   embeddings?: Map<string, number[]>;
+  // Canvas context menu
+  onCanvasContextMenu?: (event: React.MouseEvent, canvasPosition: { x: number; y: number }) => void;
+  // Search highlight
+  searchHighlightNodeId?: string | null;
+  // Zoom level reporting for external UI (e.g. toolbar indicator)
+  onZoomChange?: (zoom: number) => void;
+  // Edge display mode: full (default), simplified (no labels, thinner), hidden (no edges)
+  edgeDisplayMode?: 'full' | 'simplified' | 'hidden';
+  // Multi-selected node ids (for marquee/box selection visual highlight)
+  multiSelectedNodeIds?: Set<string>;
+  // Marquee (box) selection callback; additive=true means union with existing selection
+  onMarqueeSelect?: (nodeIds: string[], additive: boolean) => void;
 }
 
 export const MindMapCanvas = React.memo(
@@ -218,6 +238,12 @@ export const MindMapCanvas = React.memo(
       narrativeCurrentNodeId = null,
       layoutMode: _layoutMode = "force",
       embeddings,
+      onCanvasContextMenu,
+      searchHighlightNodeId = null,
+      onZoomChange,
+      edgeDisplayMode = 'full',
+      multiSelectedNodeIds,
+      onMarqueeSelect,
     },
     ref,
   ) => {
@@ -395,6 +421,7 @@ export const MindMapCanvas = React.memo(
       isSelectingParent,
       onSelectParent,
       currentNodeId,
+      onMarqueeSelect,
     });
 
     const edgeMgmt = useEdgeManagement({
@@ -539,18 +566,98 @@ export const MindMapCanvas = React.memo(
     const visualCenterY = interaction.visualCenterY;
 
     useImperativeHandle(ref, () => ({
-      captureScreenshot: async (options?: any) => {
+      captureScreenshot: async (options?: {
+        backgroundColor?: string | null;
+        transparent?: boolean;
+        fitView?: boolean;
+        hideGrid?: boolean;
+      }) => {
         if (!svgRef.current) return null;
         try {
+          // If fitView, temporarily adjust transform to fit all nodes
+          let savedTransform: { x: number; y: number; k: number } | null = null;
+          if (options?.fitView && layout && layout.nodes.length > 0) {
+            savedTransform = { ...transformRef.current };
+            const padding = 60;
+            const effectiveRightWidth = rightPanelWidth || 0;
+            const effectiveLeftWidth = leftPanelWidth || 0;
+            const availableWidth =
+              containerSize.width - effectiveRightWidth - effectiveLeftWidth - padding * 2;
+            const availableHeight = containerSize.height - padding * 2;
+
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            layout.nodes.forEach((node) => {
+              minX = Math.min(minX, node.x);
+              maxX = Math.max(maxX, node.x);
+              minY = Math.min(minY, node.y);
+              maxY = Math.max(maxY, node.y);
+            });
+
+            const contentWidth = maxX - minX + 200;
+            const contentHeight = maxY - minY + 200;
+            const scaleK = Math.min(
+              availableWidth / contentWidth,
+              availableHeight / contentHeight,
+              1.5,
+            );
+            const clampedK = Math.max(0.1, Math.min(scaleK, 2));
+
+            const centerX =
+              (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
+            const centerY = containerSize.height / 2;
+            const contentCenterX = (minX + maxX) / 2;
+            const contentCenterY = (minY + maxY) / 2;
+
+            const fitTransform = {
+              x: centerX - contentCenterX * clampedK,
+              y: centerY - contentCenterY * clampedK,
+              k: clampedK,
+            };
+            transformRef.current = fitTransform;
+            updateTransformDOM(fitTransform);
+          }
+
+          // If hideGrid, temporarily hide the canvas-layout elements
+          const gridElements = svgRef.current.querySelectorAll('.canvas-layout');
+          if (options?.hideGrid) {
+            gridElements.forEach((el) => {
+              (el as SVGElement).setAttribute('data-was-visible', 'true');
+              (el as SVGElement).style.display = 'none';
+            });
+          }
+
+          // Wait a frame for DOM updates to take effect
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+
           const element = svgRef.current.parentElement as HTMLElement;
           const canvas = await html2canvas(element, {
-            backgroundColor:
-              options?.backgroundColor || (isDark ? "#0f172a" : "#ffffff"),
+            backgroundColor: options?.transparent
+              ? null
+              : (options?.backgroundColor || (isDark ? "#0f172a" : "#ffffff")),
             scale: 2,
             logging: false,
             useCORS: true,
-            ignoreElements: (element) => element.tagName === "BUTTON",
+            ignoreElements: (el) => el.tagName === "BUTTON",
           });
+
+          // Restore grid elements
+          if (options?.hideGrid) {
+            gridElements.forEach((el) => {
+              const svgEl = el as SVGElement;
+              if (svgEl.getAttribute('data-was-visible') === 'true') {
+                svgEl.style.display = '';
+                svgEl.removeAttribute('data-was-visible');
+              }
+            });
+          }
+
+          // Restore transform
+          if (savedTransform) {
+            transformRef.current = savedTransform;
+            updateTransformDOM(savedTransform);
+            updateTransformState(savedTransform);
+          }
+
           return canvas.toDataURL("image/png");
         } catch (error) {
           console.error("Screenshot failed:", error);
@@ -601,6 +708,21 @@ export const MindMapCanvas = React.memo(
           (centerY - transformRef.current.y) * (newK / transformRef.current.k);
         animateCamera(newX, newY, newK, 300);
       },
+      resetZoom: () => {
+        const newK = 1;
+        const centerX = containerSize.width / 2;
+        const centerY = containerSize.height / 2;
+        const newX =
+          centerX -
+          (centerX - transformRef.current.x) * (newK / transformRef.current.k);
+        const newY =
+          centerY -
+          (centerY - transformRef.current.y) * (newK / transformRef.current.k);
+        animateCamera(newX, newY, newK, 300);
+      },
+      getZoom: () => {
+        return transformRef.current.k;
+      },
       fitView: () => {
         if (!layout || layout.nodes.length === 0) return;
 
@@ -645,6 +767,104 @@ export const MindMapCanvas = React.memo(
         const targetY = centerY - contentCenterY * clampedK;
 
         animateCamera(targetX, targetY, clampedK, 500);
+      },
+      fitSelection: (nodeIds?: string[]) => {
+        if (!layout || layout.nodes.length === 0) return;
+
+        // Fall back to fitView when no selection
+        if (!nodeIds || nodeIds.length === 0) {
+          // Reuse the fitView logic above
+          const padding = 60;
+          const effectiveRightWidth = rightPanelWidth || 0;
+          const effectiveLeftWidth = leftPanelWidth || 0;
+          const availableWidth =
+            containerSize.width -
+            effectiveRightWidth -
+            effectiveLeftWidth -
+            padding * 2;
+          const availableHeight = containerSize.height - padding * 2;
+
+          let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
+          layout.nodes.forEach((node) => {
+            minX = Math.min(minX, node.x);
+            maxX = Math.max(maxX, node.x);
+            minY = Math.min(minY, node.y);
+            maxY = Math.max(maxY, node.y);
+          });
+
+          const contentWidth = maxX - minX + 200;
+          const contentHeight = maxY - minY + 200;
+          const scaleK = Math.min(
+            availableWidth / contentWidth,
+            availableHeight / contentHeight,
+            1.5,
+          );
+          const clampedK = Math.max(0.1, Math.min(scaleK, 2));
+          const centerX =
+            (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
+          const centerY = containerSize.height / 2;
+          const contentCenterX = (minX + maxX) / 2;
+          const contentCenterY = (minY + maxY) / 2;
+          animateCamera(
+            centerX - contentCenterX * clampedK,
+            centerY - contentCenterY * clampedK,
+            clampedK,
+            500,
+          );
+          return;
+        }
+
+        const idSet = new Set(nodeIds);
+        const selectedNodes = layout.nodes.filter((n) => idSet.has(n.id));
+        if (selectedNodes.length === 0) return;
+
+        const padding = 80;
+        const effectiveRightWidth = rightPanelWidth || 0;
+        const effectiveLeftWidth = leftPanelWidth || 0;
+        const availableWidth =
+          containerSize.width -
+          effectiveRightWidth -
+          effectiveLeftWidth -
+          padding * 2;
+        const availableHeight = containerSize.height - padding * 2;
+
+        let minX = Infinity,
+          maxX = -Infinity,
+          minY = Infinity,
+          maxY = -Infinity;
+        // Account for node visual radius so the whole node fits in view
+        const nodeRadius = 80;
+        selectedNodes.forEach((node) => {
+          minX = Math.min(minX, node.x - nodeRadius);
+          maxX = Math.max(maxX, node.x + nodeRadius);
+          minY = Math.min(minY, node.y - nodeRadius);
+          maxY = Math.max(maxY, node.y + nodeRadius);
+        });
+
+        const contentWidth = Math.max(maxX - minX, 1);
+        const contentHeight = Math.max(maxY - minY, 1);
+        const scaleK = Math.min(
+          availableWidth / contentWidth,
+          availableHeight / contentHeight,
+          2,
+        );
+        const clampedK = Math.max(0.1, Math.min(scaleK, 2));
+
+        const centerX =
+          (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
+        const centerY = containerSize.height / 2;
+        const contentCenterX = (minX + maxX) / 2;
+        const contentCenterY = (minY + maxY) / 2;
+
+        animateCamera(
+          centerX - contentCenterX * clampedK,
+          centerY - contentCenterY * clampedK,
+          clampedK,
+          500,
+        );
       },
       resetView: () => {
         if (!layout || layout.nodes.length === 0) return;
@@ -733,6 +953,11 @@ export const MindMapCanvas = React.memo(
       }
     }, [focusedNodeId, layout, containerSize.width, rightPanelWidth, interaction.visualCenterY, animateCamera]);
 
+    // Report zoom level changes to parent (for toolbar zoom indicator)
+    useEffect(() => {
+      onZoomChange?.(transform.k);
+    }, [transform.k, onZoomChange]);
+
     const nodeMap = useMemo(() => new Map((layout?.nodes ?? []).map((n) => [n.id, n])), [layout?.nodes]);
 
     if (!layout) {
@@ -807,7 +1032,15 @@ export const MindMapCanvas = React.memo(
           onTouchStart={interaction.handleTouchStart}
           onTouchMove={interaction.handleTouchMove}
           onTouchEnd={interaction.handleTouchEnd}
-          onContextMenu={(e) => e.preventDefault()}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            if (onCanvasContextMenu && e.target === svgRef.current) {
+              const transform = transformRef.current;
+              const canvasX = (e.clientX - transform.x) / transform.k;
+              const canvasY = (e.clientY - transform.y) / transform.k;
+              onCanvasContextMenu(e, { x: canvasX, y: canvasY });
+            }
+          }}
         >
           <g ref={contentRef}>
             <CanvasLayout
@@ -815,7 +1048,7 @@ export const MindMapCanvas = React.memo(
               width={containerSize.width}
               height={containerSize.height}
             />
-            {narrativeFilteredLinks.map((link) => {
+            {edgeDisplayMode !== 'hidden' && narrativeFilteredLinks.map((link) => {
               const linkSourceId = typeof link.source === 'string' ? link.source : link.source.id;
               const linkTargetId = typeof link.target === 'string' ? link.target : link.target.id;
               const isNarrativeEdge = isNarrativeMode && (linkSourceId === narrativeCurrentNodeId || linkTargetId === narrativeCurrentNodeId);
@@ -835,6 +1068,7 @@ export const MindMapCanvas = React.memo(
                 allNodes={nodes}
                 allEdges={edges}
                 onContextMenu={edgeMgmt.handleEdgeContextMenu}
+                edgeDisplayMode={edgeDisplayMode}
               />
               );
             })}
@@ -857,6 +1091,7 @@ export const MindMapCanvas = React.memo(
                   edges={edges}
                   nodeStatus={nodeStatus}
                   selected={node.id === selectedNodeId}
+                  multiSelected={multiSelectedNodeIds?.has(node.id) ?? false}
                   isDark={isDark}
                   zoomLevel={transform.k}
                   onClick={() => interaction.handleNodeClick(node)}
@@ -881,6 +1116,7 @@ export const MindMapCanvas = React.memo(
                   learningOrder={learningOrder}
                   learningPathHighlighted={learningPathHighlighted}
                   isNarrativeCurrent={isNarrativeMode && node.id === narrativeCurrentNodeId}
+                  isSearchHighlight={node.id === searchHighlightNodeId}
                   semanticZoomLevel={semanticLevel}
                   showContentPreview={semanticStrategy?.showContentPreview ?? false}
                   showLearningStatus={semanticStrategy?.showLearningStatus ?? false}
@@ -927,6 +1163,19 @@ export const MindMapCanvas = React.memo(
                   />
                 );
               })}
+            {interaction.marqueeRect && (
+              <rect
+                x={interaction.marqueeRect.x}
+                y={interaction.marqueeRect.y}
+                width={interaction.marqueeRect.width}
+                height={interaction.marqueeRect.height}
+                fill="rgba(59, 130, 246, 0.15)"
+                stroke="rgba(59, 130, 246, 0.9)"
+                strokeWidth={1 / transform.k}
+                strokeDasharray={`${4 / transform.k} ${2 / transform.k}`}
+                pointerEvents="none"
+              />
+            )}
           </g>
         </svg>
 

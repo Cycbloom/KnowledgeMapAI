@@ -71,11 +71,9 @@ self.addEventListener('fetch', (event) => {
 
   if (request.destination === 'document') {
     event.respondWith((async () => {
-      // 优先消费 navigation preload（若浏览器已发起），避免 preload 被取消的警告
-      const preloaded = await event.preloadResponse;
-      if (preloaded) {
-        return preloaded;
-      }
+      // navigation preload 已在 activate 阶段显式禁用，这里不再等待 preloadResponse。
+      // 若仍等待 event.preloadResponse，Electron 中本地资源加载极快，preload 请求
+      // 会在 settle 前被取消，触发 "navigation preload request was cancelled" 警告。
       try {
         return await fetch(request);
       } catch {

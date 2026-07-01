@@ -13,7 +13,14 @@
     "generating": "生成中...",
     "download": "生成并下载 PDF",
     "success": "导出成功！",
-    "failed": "导出失败，请重试"
+    "failed": "导出失败，请重试",
+    "imageTitle": "导出为 PNG 图片",
+    "transparent": "透明背景",
+    "fitView": "自适应视图",
+    "hideGrid": "隐藏网格",
+    "exporting": "正在导出...",
+    "exportBtn": "导出",
+    "notSupported": "当前视图不支持图片导出"
   },
   "graphMap": {
     "relationDiscovery": {
@@ -117,6 +124,10 @@
     "exportJSON": "JSON 备份",
     "exportImage": "图片 (PNG)",
     "deleteGraph": "彻底删除此图谱"
+  },
+  "switcher": {
+    "placeholder": "切换图谱",
+    "noRecent": "无最近图谱"
   },
   "researchProgress": {
     "title": "研究进度",
@@ -235,5 +246,25 @@
     "createSuccess": "区域创建成功",
     "updateSuccess": "区域更新成功",
     "deleteSuccess": "区域已删除"
+  },
+  "canvasContextMenu": {
+    "createNode": "新建节点",
+    "paste": "粘贴",
+    "selectAll": "全选",
+    "fitView": "适应画布"
+  },
+  "onboarding": {
+    "step1Title": "画布区域",
+    "step1Desc": "这是你的知识图谱画布，在这里组织和连接知识节点",
+    "step2Title": "工具栏",
+    "step2Desc": "使用工具栏切换视图模式、搜索节点、调用AI助手",
+    "step3Title": "侧边栏",
+    "step3Desc": "选中节点后在此编辑内容、查看详情、管理知识点",
+    "step4Title": "快捷键帮助",
+    "step4Desc": "按 ? 键随时查看所有快捷键",
+    "next": "下一步",
+    "prev": "上一步",
+    "finish": "开始使用",
+    "skip": "跳过"
   }
 }

@@ -42,6 +42,7 @@ import {
   useTutorOperations,
   useQuoteShortcut,
 } from "../hooks";
+import { useRecentGraphs } from "../hooks/useRecentGraphs";
 import { computeRegions } from "../lib/graph";
 import {
   useGraph,
@@ -68,6 +69,7 @@ import { PresentationControls } from "../components/GraphEditor/toolbar/Presenta
 import { NarrativeControls } from "../components/GraphEditor/canvas/NarrativeControls";
 import { ActionResultModal } from "../components/GraphEditor/modals/ActionResultModal";
 import { NodeContextMenu } from "../components/GraphEditor/context-menu/NodeContextMenu";
+import { CanvasContextMenu } from "../components/GraphEditor/context-menu/CanvasContextMenu";
 import {
   CommandPalette,
   CommandItem,
@@ -118,6 +120,10 @@ const RAGChatButton = lazy(() =>
 );
 
 import { addQuote } from "../components/RAGChat";
+import {
+  OnboardingGuide,
+  isOnboardingComplete,
+} from "../components/GraphEditor/OnboardingGuide";
 
 const LiteratureExtractPanel = lazy(() =>
   import("../components/LiteratureExtract/LiteratureExtractPanel").then(
@@ -207,6 +213,7 @@ export const GraphEditor = () => {
     null,
   );
   const [isMobilePreviewMode, setIsMobilePreviewMode] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(!isOnboardingComplete());
 
   const panelState = useGraphEditorPanelState({ userId: user?.id || "" });
   const [contextMenu, setContextMenu] = useState<{
@@ -214,12 +221,21 @@ export const GraphEditor = () => {
     y: number;
     nodeId: string;
   } | null>(null);
+  const [canvasContextMenu, setCanvasContextMenu] = useState<{
+    x: number;
+    y: number;
+    canvasX: number;
+    canvasY: number;
+  } | null>(null);
+  const [clipboard] = useState<string[]>([]);
   const [colorScheme, setColorScheme] = useState<ColorScheme>("default");
   const [linkStyle, setLinkStyle] = useState<LinkStyle>("curved");
   const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>("none");
   const [nodeSizeMode, setNodeSizeMode] = useState<NodeSizeMode>("fixed");
   const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>("fixed");
   const [coloringMode, setColoringMode] = useState<GraphColorMode>("level"); // Default to level (structure) as requested
+  const [edgeDisplayMode, setEdgeDisplayMode] = useState<'full' | 'simplified' | 'hidden'>('full');
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   useQuoteShortcut({
     onAddQuote: addQuote,
@@ -265,8 +281,21 @@ export const GraphEditor = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const { addRecentGraph } = useRecentGraphs();
   const { data: graphMeta } = useGraph(id || "");
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || "");
+
+  // Record graph access for recent graphs quick access
+  useEffect(() => {
+    if (graphMeta && id) {
+      addRecentGraph({
+        id,
+        topic: graphMeta.title,
+        updated_at: graphMeta.updated_at,
+        is_favorite: graphMeta.is_favorite,
+      });
+    }
+  }, [graphMeta, id, addRecentGraph]);
   const nodeStatus = graphData?.nodeStatus ?? {};
   const { data: aiStatus } = useAIStatus(!!token);
   const aiEnabled = aiStatus?.enabled ?? true;
@@ -666,6 +695,15 @@ export const GraphEditor = () => {
       "setViewMode:planet": () => setViewMode("planet"),
       "setViewMode:quadrant": () => setViewMode("quadrant"),
       goHome: () => navigate("/"),
+      fitView: () => graphRef.current?.fitView?.(),
+      fitSelection: () => {
+        if (graphRef.current?.fitSelection) {
+          graphRef.current.fitSelection(Array.from(selectedNodeIds));
+        }
+      },
+      zoomIn: () => graphRef.current?.zoomIn?.(),
+      zoomOut: () => graphRef.current?.zoomOut?.(),
+      zoomReset: () => graphRef.current?.resetZoom?.(),
       presentationNext: () => {
         if (isPresentationMode) {
           setPresentationStep((p) =>
@@ -744,6 +782,8 @@ export const GraphEditor = () => {
 
   const handleCanvasClick = useCallback(() => {
     clearFocus();
+    setContextMenu(null);
+    setCanvasContextMenu(null);
     if (sidebarMode !== "none" && sidebarMode !== "outline") {
       setSidebarMode("none");
     }
@@ -753,13 +793,105 @@ export const GraphEditor = () => {
     setSidebarMode,
   ]);
 
+  // Marquee (box) multi-select handler. Shift+drag on empty canvas triggers it;
+  // when additive (Shift held at mouseup) the new selection is unioned with the
+  // existing selection, otherwise it replaces it.
+  const handleMarqueeSelect = useCallback(
+    (ids: string[], additive: boolean) => {
+      if (additive) {
+        setSelectedNodeIds((prev) => new Set([...prev, ...ids]));
+      } else {
+        setSelectedNodeIds(new Set(ids));
+        if (ids.length === 1) {
+          const node = nodes.find((n) => n.id === ids[0]);
+          if (node) {
+            setSelectedNode(node);
+          }
+        } else if (ids.length === 0) {
+          setSelectedNode(null);
+        }
+      }
+    },
+    [setSelectedNodeIds, setSelectedNode, nodes],
+  );
+
   const handleNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: GraphNode) => {
       event.preventDefault();
+      setCanvasContextMenu(null);
       setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
     },
     [],
   );
+
+  const handleCanvasContextMenu = useCallback(
+    (event: React.MouseEvent, canvasPosition: { x: number; y: number }) => {
+      event.preventDefault();
+      setContextMenu(null);
+      setCanvasContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        canvasX: canvasPosition.x,
+        canvasY: canvasPosition.y,
+      });
+    },
+    [],
+  );
+
+  const handleCreateNodeAtPosition = useCallback(async () => {
+    if (!id || !canvasContextMenu) return;
+    try {
+      const newNode = await mutations.createNodeMutation.mutateAsync({
+        graph_id: id,
+        title: '新节点',
+        x_position: Math.round(canvasContextMenu.canvasX),
+        y_position: Math.round(canvasContextMenu.canvasY),
+        level: 'leaf',
+        properties: {},
+      });
+      record({ type: 'CREATE_NODE', payload: newNode });
+      setSelectedNode(newNode);
+      setSidebarMode('edit');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      message.error(`创建节点失败: ${errorMessage}`);
+    }
+  }, [id, canvasContextMenu, mutations.createNodeMutation, record, setSelectedNode, setSidebarMode]);
+
+  const handlePasteNodes = useCallback(() => {
+    // Paste is a placeholder - copies clipboard nodes as new nodes at offset position
+    if (!id || clipboard.length === 0) return;
+    // No-op for now until full copy/paste is implemented
+  }, [id, clipboard]);
+
+  const handleSelectAllNodes = useCallback(() => {
+    const allNodeIds = new Set(nodes.map((n) => n.id));
+    setSelectedNodeIds(allNodeIds);
+  }, [nodes, setSelectedNodeIds]);
+
+  const handleCanvasFitView = useCallback(() => {
+    if (graphRef.current?.fitView) {
+      graphRef.current.fitView();
+    }
+  }, [graphRef]);
+
+  const handleCanvasZoomIn = useCallback(() => {
+    if (graphRef.current?.zoomIn) {
+      graphRef.current.zoomIn();
+    }
+  }, [graphRef]);
+
+  const handleCanvasZoomOut = useCallback(() => {
+    if (graphRef.current?.zoomOut) {
+      graphRef.current.zoomOut();
+    }
+  }, [graphRef]);
+
+  const handleCanvasZoomReset = useCallback(() => {
+    if (graphRef.current?.resetZoom) {
+      graphRef.current.resetZoom();
+    }
+  }, [graphRef]);
 
   const handleNodeLongPress = useCallback((node: GraphNode) => {
     setMobileActionNodeId(node.id);
@@ -869,6 +1001,8 @@ export const GraphEditor = () => {
     if (node) handleNodeClick(node);
   }, [nodes, handleNodeClick]);
 
+  const [searchHighlightNodeId, setSearchHighlightNodeId] = useState<string | null>(null);
+
   const handleCommandPaletteNodeSelect = useCallback((nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);
     if (node) {
@@ -876,6 +1010,9 @@ export const GraphEditor = () => {
       if (viewMode !== "mindmap") {
         setViewMode("mindmap");
       }
+      // Trigger search highlight animation
+      setSearchHighlightNodeId(nodeId);
+      setTimeout(() => setSearchHighlightNodeId(null), 3000);
     }
   }, [nodes, handleNodeClick, viewMode, setViewMode]);
 
@@ -1062,7 +1199,19 @@ export const GraphEditor = () => {
           />
         )}
 
-        <div className="h-full w-full bg-white dark:bg-slate-900 relative">
+        {canvasContextMenu && (
+          <CanvasContextMenu
+            position={{ x: canvasContextMenu.x, y: canvasContextMenu.y }}
+            onClose={() => setCanvasContextMenu(null)}
+            onCreateNode={handleCreateNodeAtPosition}
+            onPaste={handlePasteNodes}
+            onSelectAll={handleSelectAllNodes}
+            onFitView={handleCanvasFitView}
+            canPaste={clipboard.length > 0}
+          />
+        )}
+
+        <div className="h-full w-full bg-white dark:bg-slate-900 relative" data-tour="canvas">
           {(viewMode === "mindmap" || viewMode === "semantic") && (
             <ErrorBoundary>
               <MindMapCanvas
@@ -1119,7 +1268,13 @@ export const GraphEditor = () => {
               }
               layoutMode={viewMode === "semantic" ? "semantic" : "force"}
               embeddings={viewMode === "semantic" ? embeddingsMap : undefined}
-            />
+              onCanvasContextMenu={handleCanvasContextMenu}
+                searchHighlightNodeId={searchHighlightNodeId}
+                onZoomChange={setZoomLevel}
+                edgeDisplayMode={edgeDisplayMode}
+                multiSelectedNodeIds={selectedNodeIds}
+                onMarqueeSelect={handleMarqueeSelect}
+              />
               </ErrorBoundary>
           )}
           {viewMode === "timeline" && (
@@ -1208,6 +1363,7 @@ export const GraphEditor = () => {
         </div>
       </div>
 
+      <div data-tour="toolbar">
       <GraphToolbar
         onBack={handleBack}
         onUndo={undo}
@@ -1284,7 +1440,16 @@ export const GraphEditor = () => {
         regions={regions}
         collapsedRegions={collapsedRegions}
         onRegionToggle={handleRegionToggle}
+        currentGraphId={id}
+        currentGraphTitle={graphMeta?.title}
+        zoomLevel={zoomLevel}
+        onZoomIn={handleCanvasZoomIn}
+        onZoomOut={handleCanvasZoomOut}
+        onZoomReset={handleCanvasZoomReset}
+        edgeDisplayMode={edgeDisplayMode}
+        setEdgeDisplayMode={setEdgeDisplayMode}
       />
+      </div>
 
       {isPresentationMode && (
         <PresentationControls
@@ -1377,6 +1542,7 @@ export const GraphEditor = () => {
         onClose={() => panelState.setIsRelationshipTypeSettingsOpen(false)}
       />
 
+      <div data-tour="sidebar">
       <Suspense fallback={<ViewLoader />}>
         <ErrorBoundary>
           <GraphSidebarManager
@@ -1402,6 +1568,7 @@ export const GraphEditor = () => {
           />
         </ErrorBoundary>
       </Suspense>
+      </div>
 
       <Suspense fallback={<ViewLoader />}>
         <GraphAnalysisPanel
@@ -1430,10 +1597,12 @@ export const GraphEditor = () => {
         onNodeSelect={handleCommandPaletteNodeSelect}
       />
 
+      <div data-tour="help">
       <ShortcutHelpPanel
         isOpen={panelState.isShortcutHelpOpen}
         onClose={() => panelState.setIsShortcutHelpOpen(false)}
       />
+      </div>
 
       <Suspense fallback={<ViewLoader />}>
         <RAGChatButton
@@ -1560,6 +1729,10 @@ export const GraphEditor = () => {
             onConfirm={handleConfirmConcepts}
           />
         </Suspense>
+      )}
+
+      {showOnboarding && (
+        <OnboardingGuide onComplete={() => setShowOnboarding(false)} />
       )}
     </div>
   );

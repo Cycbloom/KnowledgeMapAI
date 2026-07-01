@@ -11,7 +11,7 @@ import {
   useBatchDeleteGraphsMutation,
 } from "../hooks/mutations";
 import { useQueryClient } from "@tanstack/react-query";
-import { Network } from "lucide-react";
+import { Network, Star, Clock } from "lucide-react";
 import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
@@ -19,6 +19,7 @@ import { ConfirmationModal } from "../components/common";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
 import { useDashboardFilters } from "../hooks/useDashboardFilters";
+import { useRecentGraphs } from "../hooks/useRecentGraphs";
 import {
   DashboardHeader,
   TagCloudSection,
@@ -27,7 +28,32 @@ import {
   DashboardBatchActions,
   DashboardPagination,
   DashboardMobileFAB,
+  DashboardCardContextMenu,
 } from "../components/Dashboard";
+import type { Graph } from "@shared/types";
+
+function formatRelativeTime(dateStr: string, t: (key: string, options?: Record<string, unknown>) => string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+
+  if (diffMs < 0) return t("dashboard.recent.justNow");
+
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return t("dashboard.recent.justNow");
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return t("dashboard.recent.minutesAgo", { count: minutes });
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return t("dashboard.recent.hoursAgo", { count: hours });
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return t("dashboard.recent.daysAgo", { count: days });
+
+  const months = Math.floor(days / 30);
+  return t("dashboard.recent.monthsAgo", { count: months });
+}
 
 export const Dashboard = () => {
   const { t } = useTranslation();
@@ -43,6 +69,8 @@ export const Dashboard = () => {
   const batchDeleteGraphsMutation = useBatchDeleteGraphsMutation();
   const prefetchGraph = usePrefetchGraph();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { getRecentGraphs } = useRecentGraphs();
+  const recentGraphs = useMemo(() => getRecentGraphs(), [getRecentGraphs]);
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
@@ -55,6 +83,12 @@ export const Dashboard = () => {
   });
 
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
+
+  const [contextMenuGraph, setContextMenuGraph] = useState<Graph | null>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const graphs = useMemo(
     () => (Array.isArray(graphsData) ? graphsData : []),
@@ -194,6 +228,27 @@ export const Dashboard = () => {
     navigate(`/learning?graph_id=${graphId}`);
   };
 
+  const handleContextMenu = (e: React.MouseEvent, graph: Graph) => {
+    e.preventDefault();
+    setContextMenuGraph(graph);
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleContextMenuClose = () => {
+    setContextMenuGraph(null);
+    setContextMenuPosition(null);
+  };
+
+  const handleContextMenuToggleFavorite = (id: string) => {
+    const graph = graphs.find((g) => g.id === id);
+    handleToggleFavorite(id, graph?.is_favorite ?? false);
+  };
+
+  const handleContextMenuDelete = (id: string) => {
+    const graph = graphs.find((g) => g.id === id);
+    handleDeleteGraph(id, graph?.title ?? "");
+  };
+
   if (isLoading)
     return (
       <div
@@ -242,7 +297,48 @@ export const Dashboard = () => {
           onFileChange={handleFileChange}
           onImportClick={handleImportClick}
           onOpenAIGenerator={handleOpenAIGenerator}
+          sortBy={filters.sortBy}
+          setSortBy={filters.setSortBy}
+          statusFilter={filters.statusFilter}
+          setStatusFilter={filters.setStatusFilter}
+          timeRangeFilter={filters.timeRangeFilter}
+          setTimeRangeFilter={filters.setTimeRangeFilter}
         />
+
+        {/* Recently Edited Section */}
+        {recentGraphs.length > 0 && (
+          <div>
+            <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+              <Clock size={16} />
+              {t("dashboard.recent.title")}
+            </h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+              {recentGraphs.map((graph) => (
+                <button
+                  key={graph.id}
+                  onClick={() => navigate(`/graph/${graph.id}`)}
+                  className={`flex-shrink-0 min-w-[160px] max-w-[220px] p-3 rounded-xl border text-left transition-all hover:shadow-md ${
+                    isDark
+                      ? "bg-slate-800 border-slate-700 hover:border-primary-500/50"
+                      : "bg-white border-gray-200 hover:border-primary-400"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    {graph.is_favorite && (
+                      <Star size={12} className="text-amber-400 fill-amber-400 shrink-0" />
+                    )}
+                    <span className={`text-sm font-medium truncate ${isDark ? "text-slate-200" : "text-gray-900"}`}>
+                      {graph.topic}
+                    </span>
+                  </div>
+                  <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                    {formatRelativeTime(graph.updated_at, t)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tag Cloud Section */}
         <TagCloudSection
@@ -401,6 +497,7 @@ export const Dashboard = () => {
                         onDelete={handleDeleteGraph}
                         onToggleFavorite={handleToggleFavorite}
                         onPrefetch={prefetchGraph}
+                        onContextMenu={handleContextMenu}
                         variant="desktop"
                       />
                     ))}
@@ -422,6 +519,7 @@ export const Dashboard = () => {
                       onDelete={handleDeleteGraph}
                       onToggleFavorite={handleToggleFavorite}
                       onPrefetch={prefetchGraph}
+                      onContextMenu={handleContextMenu}
                       variant="mobile"
                     />
                   ))}
@@ -442,6 +540,7 @@ export const Dashboard = () => {
                 onDelete={handleDeleteGraph}
                 onToggleFavorite={handleToggleFavorite}
                 onPrefetch={prefetchGraph}
+                onContextMenu={handleContextMenu}
               />
             ))
           )}
@@ -477,6 +576,17 @@ export const Dashboard = () => {
           onImportClick={handleImportClick}
           isImporting={importGraphMutation.isPending}
           fabMenuRef={filters.fabMenuRef}
+        />
+      )}
+
+      {/* Context Menu */}
+      {contextMenuGraph && contextMenuPosition && (
+        <DashboardCardContextMenu
+          graph={contextMenuGraph}
+          position={contextMenuPosition}
+          onClose={handleContextMenuClose}
+          onToggleFavorite={handleContextMenuToggleFavorite}
+          onDelete={handleContextMenuDelete}
         />
       )}
     </div>

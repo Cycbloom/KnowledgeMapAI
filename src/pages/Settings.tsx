@@ -24,6 +24,8 @@ import {
   MobileAISettings,
   StudyStrategySettings,
   StudyAlgorithmSettings,
+  GraphEditorSettings,
+  NotificationSettings,
 } from "../components/Settings";
 import type { StudyStrategySettingsRef } from "../components/Settings";
 import type { DatabaseConfig } from "../components/Settings/settingsConstants";
@@ -170,6 +172,8 @@ export const Settings = () => {
           settings={settings}
         />
         <StudyAlgorithmSettings />
+        <GraphEditorSettings />
+        <NotificationSettings />
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">

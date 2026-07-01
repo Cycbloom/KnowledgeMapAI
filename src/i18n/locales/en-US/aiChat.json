@@ -57,5 +57,12 @@
   "charCount": "{{count}} chars",
   "quoteTip": "Tip: Select text and press Ctrl+U to quickly quote it",
   "startRecording": "Start voice input",
-  "stopRecording": "Stop voice input"
+  "stopRecording": "Stop voice input",
+  "copyMessage": "Copy",
+  "copiedMessage": "Copied!",
+  "regenerateResponse": "Regenerate",
+  "stopGeneration": "Stop generating",
+  "editMessage": "Edit",
+  "saveEdit": "Save",
+  "cancelEdit": "Cancel"
 }

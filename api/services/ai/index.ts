@@ -3,10 +3,10 @@
 // chatService 与 aiService 均单向依赖 contextBuilder，无运行时环。
 import { chatService } from "./chatService";
 import { bindChatService } from "./aiService";
-import { graphService } from "../graph";
+import { graphQueryService } from "../graph/graphQueryService";
 
 bindChatService(chatService);
-chatService.setGraphQueryService(graphService);
+chatService.setGraphQueryService(graphQueryService);
 
 export {
   aiService,

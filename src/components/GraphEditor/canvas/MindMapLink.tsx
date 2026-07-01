@@ -22,6 +22,7 @@ interface MindMapLinkProps {
   showArrows?: boolean;
   relationshipTypeConfig?: RelationshipTypeConfig;
   onContextMenu?: (event: React.MouseEvent, link: LayoutLink) => void;
+  edgeDisplayMode?: 'full' | 'simplified' | 'hidden';
 }
 
 const normalizeId = (id: string | number) => String(id).trim();
@@ -56,6 +57,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   showArrows = true,
   relationshipTypeConfig,
   onContextMenu,
+  edgeDisplayMode = 'full',
 }) => {
   const sourceId = typeof link.source === 'string' ? normalizeId(link.source) : normalizeId(link.source.id);
   const targetId = typeof link.target === 'string' ? normalizeId(link.target) : normalizeId(link.target.id);
@@ -152,14 +154,20 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
       opacity = isTargetAccepted ? 0.1 : 0.05;
     }
 
+    // Simplified mode: thinner strokes and lower opacity, no arrows
+    if (edgeDisplayMode === 'simplified') {
+      strokeWidth = Math.max(0.5, strokeWidth * 0.5);
+      opacity = Math.min(opacity, 0.25);
+    }
+
     return { 
       strokeColor, 
       strokeWidth, 
       opacity, 
       strokeDasharray,
-      showArrow: shouldShowArrow,
+      showArrow: edgeDisplayMode === 'simplified' ? false : shouldShowArrow,
     };
-  }, [colors, hasFocusMode, focused, highlighted, target, dynamicWidth, customColor, link.custom_color, link.custom_line_style, relationshipConfig, shouldShowArrow]);
+  }, [colors, hasFocusMode, focused, highlighted, target, dynamicWidth, customColor, link.custom_color, link.custom_line_style, relationshipConfig, shouldShowArrow, edgeDisplayMode]);
 
   const pathData = useMemo(() => {
     if (!source || !target) return '';
@@ -296,7 +304,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
         markerEnd={linkStyleConfig.showArrow ? `url(#${arrowId})` : undefined}
         onContextMenu={handleContextMenu}
       />
-      {showLabels && edgeLabel && (
+      {showLabels && edgeDisplayMode !== 'simplified' && edgeLabel && (
         <g>
           <rect
             x={midX - edgeLabel.length * 3 - 4}
@@ -351,6 +359,7 @@ export const MindMapLink = React.memo(MindMapLinkComponent, (prevProps, nextProp
     prevProps.showLabels === nextProps.showLabels &&
     prevProps.showArrows === nextProps.showArrows &&
     prevProps.customColor === nextProps.customColor &&
+    prevProps.edgeDisplayMode === nextProps.edgeDisplayMode &&
     relationshipConfigEqual &&
     prevProps.link.show_arrow === nextProps.link.show_arrow &&
     prevProps.link.custom_label === nextProps.link.custom_label &&

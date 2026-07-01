@@ -33,6 +33,23 @@ const formatTimeAgo = (dateString: string): string => {
   return date.toLocaleDateString('zh-CN');
 };
 
+const MUTED_TYPES_KEY = 'mutedNotificationTypes';
+
+const readMutedTypes = (): Set<string> => {
+  try {
+    const stored = localStorage.getItem(MUTED_TYPES_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as unknown;
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.filter((item): item is string => typeof item === 'string'));
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read muted notification types:', error);
+  }
+  return new Set();
+};
+
 export const NotificationCenter: React.FC = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -40,6 +57,7 @@ export const NotificationCenter: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [mutedTypes, setMutedTypes] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadNotifications = useCallback(async () => {
@@ -70,6 +88,7 @@ export const NotificationCenter: React.FC = () => {
   useEffect(() => {
     loadNotifications();
     loadUnreadCount();
+    setMutedTypes(readMutedTypes());
 
     const unsubNotificationNew = frontendEventBus.subscribe("notification_new", () => {
       loadUnreadCount();
@@ -153,13 +172,19 @@ export const NotificationCenter: React.FC = () => {
     setIsOpen(false);
   };
 
-  const unreadNotifications = notifications.filter(n => !n.read_at);
-  const readNotifications = notifications.filter(n => n.read_at);
+  const visibleNotifications = mutedTypes.size > 0
+    ? notifications.filter(n => !mutedTypes.has(n.type))
+    : notifications;
+  const unreadNotifications = visibleNotifications.filter(n => !n.read_at);
+  const readNotifications = visibleNotifications.filter(n => n.read_at);
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setMutedTypes(readMutedTypes());
+          setIsOpen(!isOpen);
+        }}
         className={`relative p-2 rounded-lg transition-colors ${
           isDark
             ? 'hover:bg-slate-700 text-slate-400 hover:text-white'
@@ -238,7 +263,7 @@ export const NotificationCenter: React.FC = () => {
                 <div className="flex items-center justify-center py-10">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                 </div>
-              ) : notifications.length === 0 ? (
+              ) : visibleNotifications.length === 0 ? (
                 <div className={`text-center py-10 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                   <Bell size={32} className="mx-auto mb-2 opacity-50" />
                   <p>暂无通知</p>
@@ -348,7 +373,7 @@ export const NotificationCenter: React.FC = () => {
             </div>
 
             {/* Footer */}
-            {notifications.length > 0 && (
+            {visibleNotifications.length > 0 && (
               <div className={`px-4 py-2 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
                 <button
                   onClick={() => {

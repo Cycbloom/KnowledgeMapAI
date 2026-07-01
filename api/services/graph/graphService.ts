@@ -5,7 +5,7 @@ import { logger } from "../../utils/logger";
 import {
   checkDuplicateGraphTopic,
 } from "../../utils/similaritySearch";
-import { aiService } from "../ai/index";
+import { aiService } from "../ai/aiService";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { getSupabaseAdmin } from "../../supabase";

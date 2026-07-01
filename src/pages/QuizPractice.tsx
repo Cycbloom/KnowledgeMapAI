@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Flag,
 } from 'lucide-react';
 import { useTheme } from '../hooks';
 import { useQuizSet } from '../hooks/queries';
@@ -48,6 +49,14 @@ export const QuizPractice: React.FC = () => {
   const [isFinished, setIsFinished] = useState(false);
   const [practiceCards, setPracticeCards] = useState<StudyCard[] | null>(null);
 
+  // Session timing (UX2-04, UX2-12)
+  const [sessionStartTime] = useState<number>(() => Date.now());
+  const [questionStartTime, setQuestionStartTime] = useState<number>(() => Date.now());
+  const [questionTimings, setQuestionTimings] = useState<Array<{ cardId: string; duration: number }>>([]);
+
+  // Flagged questions (UX2-11)
+  const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set());
+
   const cards = useMemo(() => {
     if (practiceCards) return practiceCards;
     if (!quizSetData?.cards) return [];
@@ -85,6 +94,43 @@ export const QuizPractice: React.FC = () => {
   const isFillBlank = currentCard?.card_type === 'fill_in_the_blank';
   const isEssay = currentCard?.card_type === 'essay';
 
+  // Options used for keyboard shortcuts (UX2-03): true_false uses hardcoded options
+  const keyboardOptions = useMemo(() => {
+    if (isTrueFalse) return ['True', 'False'];
+    return currentOptions;
+  }, [isTrueFalse, currentOptions]);
+
+  // Record per-question timing (UX2-12)
+  const recordQuestionTime = useCallback(
+    (cardId: string) => {
+      const duration = Math.floor((Date.now() - questionStartTime) / 1000);
+      setQuestionTimings((prev) => {
+        const filtered = prev.filter((t) => t.cardId !== cardId);
+        return [...filtered, { cardId, duration }];
+      });
+    },
+    [questionStartTime]
+  );
+
+  // Toggle flag for current question (UX2-11)
+  const toggleFlag = useCallback(() => {
+    if (!currentCard) return;
+    setFlaggedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(currentCard.id)) {
+        next.delete(currentCard.id);
+      } else {
+        next.add(currentCard.id);
+      }
+      return next;
+    });
+  }, [currentCard]);
+
+  // Reset question start time when navigating to a new question (UX2-12)
+  useEffect(() => {
+    setQuestionStartTime(Date.now());
+  }, [currentIndex]);
+
   const checkAnswer = useCallback(
     (card: StudyCard, userAnswer: string): boolean => {
       if (isChoice || isTrueFalse) {
@@ -103,35 +149,85 @@ export const QuizPractice: React.FC = () => {
     [isChoice, isTrueFalse, isMultiChoice]
   );
 
-  const handleOptionClick = (option: string) => {
-    if (showAnswer) return;
-    setSelectedOption(option);
-    setShowAnswer(true);
+  const handleOptionClick = useCallback(
+    (option: string) => {
+      if (showAnswer) return;
+      setSelectedOption(option);
+      setShowAnswer(true);
+      recordQuestionTime(currentCard.id);
 
-    const isCorrect = checkAnswer(currentCard, option);
-    setAnswerRecords((prev) => [
-      ...prev.filter((r) => r.cardId !== currentCard.id),
-      {
-        cardId: currentCard.id,
-        isCorrect,
-        userAnswer: option,
-        correctAnswer: currentCard.answer,
-      },
-    ]);
-  };
+      const isCorrect = checkAnswer(currentCard, option);
+      setAnswerRecords((prev) => [
+        ...prev.filter((r) => r.cardId !== currentCard.id),
+        {
+          cardId: currentCard.id,
+          isCorrect,
+          userAnswer: option,
+          correctAnswer: currentCard.answer,
+        },
+      ]);
+    },
+    [showAnswer, currentCard, checkAnswer, recordQuestionTime]
+  );
 
-  const handleMultiOptionClick = (option: string) => {
-    if (showAnswer) return;
-    const currentSelected = selectedOption ? JSON.parse(selectedOption) : [];
-    const newSelected = currentSelected.includes(option)
-      ? currentSelected.filter((o: string) => o !== option)
-      : [...currentSelected, option];
-    setSelectedOption(JSON.stringify(newSelected));
-  };
+  const handleMultiOptionClick = useCallback(
+    (option: string) => {
+      if (showAnswer) return;
+      const currentSelected = selectedOption ? JSON.parse(selectedOption) : [];
+      const newSelected = currentSelected.includes(option)
+        ? currentSelected.filter((o: string) => o !== option)
+        : [...currentSelected, option];
+      setSelectedOption(JSON.stringify(newSelected));
+    },
+    [showAnswer, selectedOption]
+  );
+
+  // Quiz option keyboard shortcuts (UX2-03)
+  const canSelectWithKeyboard = !showAnswer && keyboardOptions.length > 0;
+
+  useEffect(() => {
+    if (!canSelectWithKeyboard) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      const isInput =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+      if (isInput) return;
+
+      let optionIndex = -1;
+      const key = event.key.toLowerCase();
+      if (key === 'a' || key === '1') optionIndex = 0;
+      else if (key === 'b' || key === '2') optionIndex = 1;
+      else if (key === 'c' || key === '3') optionIndex = 2;
+      else if (key === 'd' || key === '4') optionIndex = 3;
+
+      if (optionIndex < 0 || optionIndex >= keyboardOptions.length) return;
+
+      event.preventDefault();
+      const option = keyboardOptions[optionIndex];
+      if (isMultiChoice) {
+        handleMultiOptionClick(option);
+      } else {
+        handleOptionClick(option);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    canSelectWithKeyboard,
+    keyboardOptions,
+    isMultiChoice,
+    handleMultiOptionClick,
+    handleOptionClick,
+  ]);
 
   const handleSubmitMultiChoice = () => {
     if (!selectedOption || JSON.parse(selectedOption).length === 0) return;
     setShowAnswer(true);
+    recordQuestionTime(currentCard.id);
 
     const isCorrect = checkAnswer(currentCard, selectedOption);
     setAnswerRecords((prev) => [
@@ -147,6 +243,7 @@ export const QuizPractice: React.FC = () => {
 
   const handleShowAnswer = () => {
     setShowAnswer(true);
+    recordQuestionTime(currentCard.id);
     setAnswerRecords((prev) => [
       ...prev.filter((r) => r.cardId !== currentCard.id),
       {
@@ -191,6 +288,9 @@ export const QuizPractice: React.FC = () => {
     setAnswerRecords([]);
     setIsFinished(false);
     setPracticeCards(null);
+    setQuestionTimings([]);
+    setFlaggedIds(new Set());
+    setQuestionStartTime(Date.now());
   };
 
   const handleRetryWrong = () => {
@@ -205,6 +305,9 @@ export const QuizPractice: React.FC = () => {
     setSelectedOption(null);
     setAnswerRecords([]);
     setIsFinished(false);
+    setQuestionTimings([]);
+    setFlaggedIds(new Set());
+    setQuestionStartTime(Date.now());
   };
 
   const handleBack = () => {
@@ -232,13 +335,30 @@ export const QuizPractice: React.FC = () => {
       return record && !record.isCorrect;
     });
 
+    // Timing stats (UX2-12): sum actual per-question durations
+    const totalTime = questionTimings.reduce((sum, t) => sum + t.duration, 0);
+    const answeredCount = questionTimings.length;
+    const avgTime = answeredCount > 0 ? totalTime / answeredCount : 0;
+
+    let fastest: { cardId: string; duration: number } | null = null;
+    let slowest: { cardId: string; duration: number } | null = null;
+    for (const t of questionTimings) {
+      if (!fastest || t.duration < fastest.duration) fastest = t;
+      if (!slowest || t.duration > slowest.duration) slowest = t;
+    }
+
     return {
       total: cards.length,
       correct,
       byType,
       wrongCards,
+      totalTime,
+      avgTime: Math.round(avgTime),
+      fastest: fastest ?? undefined,
+      slowest: slowest ?? undefined,
+      cards,
     };
-  }, [cards, answerRecords]);
+  }, [cards, answerRecords, questionTimings]);
 
   if (isLoading) {
     return (
@@ -339,6 +459,8 @@ export const QuizPractice: React.FC = () => {
             total={cards.length}
             answered={answered}
             onJump={handleJump}
+            startTime={sessionStartTime}
+            flaggedCount={flaggedIds.size}
           />
         </div>
       </div>
@@ -369,6 +491,22 @@ export const QuizPractice: React.FC = () => {
                   >
                     {cardTypeLabels[currentCard.card_type] || currentCard.card_type}
                   </span>
+                  <button
+                    onClick={toggleFlag}
+                    className={`p-1.5 rounded-lg transition-all ${
+                      flaggedIds.has(currentCard.id)
+                        ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                        : isDark
+                          ? 'text-slate-500 hover:text-amber-400 hover:bg-slate-700'
+                          : 'text-gray-400 hover:text-amber-500 hover:bg-gray-100'
+                    }`}
+                    title={flaggedIds.has(currentCard.id) ? '取消标记' : '标记待复查'}
+                  >
+                    <Flag
+                      size={16}
+                      fill={flaggedIds.has(currentCard.id) ? 'currentColor' : 'none'}
+                    />
+                  </button>
                 </div>
 
                 <div className="mb-8">

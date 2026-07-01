@@ -75,6 +75,7 @@ interface DashboardGraphCardProps {
   onDelete: (id: string, title: string) => void;
   onToggleFavorite: (id: string, currentFavorite: boolean) => void;
   onPrefetch: (id: string) => void;
+  onContextMenu: (e: React.MouseEvent, graph: Graph) => void;
 }
 
 export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
@@ -88,12 +89,14 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
   onDelete,
   onToggleFavorite,
   onPrefetch,
+  onContextMenu,
 }) => {
   const { t } = useTranslation();
 
   return (
     <div
       onMouseEnter={() => onPrefetch(graph.id)}
+      onContextMenu={(e) => onContextMenu(e, graph)}
       className={`group relative rounded-2xl transition-all duration-300 ${
         isSelectMode
           ? isSelected

@@ -75,5 +75,39 @@
     "unfavorite": "Unfavorite",
     "delete": "Delete Graph",
     "enterOutline": "Enter Outline"
+  },
+  "contextMenu": {
+    "copyId": "Copy Graph ID",
+    "copiedId": "Graph ID copied",
+    "copyFailed": "Copy failed",
+    "openInNewWindow": "Open in New Window",
+    "toggleFavorite": "Toggle Favorite",
+    "moveToTrash": "Move to Trash"
+  },
+  "recent": {
+    "title": "Recently Edited",
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "monthsAgo": "{{count}}mo ago"
+  },
+  "sort": {
+    "label": "Sort by",
+    "updatedAt": "Last updated",
+    "createdAt": "Last created",
+    "title": "Title",
+    "nodeCount": "Node count"
+  },
+  "filter": {
+    "statusLabel": "Status filter",
+    "rangeLabel": "Time range filter",
+    "statusAll": "All",
+    "statusActive": "Active",
+    "statusArchived": "Archived",
+    "rangeAll": "All",
+    "rangeToday": "Today",
+    "rangeWeek": "This week",
+    "rangeMonth": "This month"
   }
 }

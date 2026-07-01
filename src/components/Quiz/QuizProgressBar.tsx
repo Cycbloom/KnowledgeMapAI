@@ -1,11 +1,14 @@
-import React from 'react';
-import { Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Clock, Flag } from 'lucide-react';
+import { formatTimeFromSeconds } from '../../utils/formatters';
 
 interface QuizProgressBarProps {
   current: number;
   total: number;
   answered: boolean[];
   onJump: (index: number) => void;
+  startTime?: number;
+  flaggedCount?: number;
 }
 
 export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
@@ -13,8 +16,23 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
   total,
   answered,
   onJump,
+  startTime,
+  flaggedCount = 0,
 }) => {
   const progress = total > 0 ? (answered.filter(Boolean).length / total) * 100 : 0;
+
+  // Session timer (UX2-04)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!startTime) return;
+    const tick = () => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
 
   return (
     <div className="w-full space-y-3">
@@ -22,9 +40,23 @@ export const QuizProgressBar: React.FC<QuizProgressBarProps> = ({
         <span className="font-medium">
           第 <span className="text-primary-600 font-bold">{current + 1}</span> / {total} 题
         </span>
-        <span className="text-gray-500">
-          已答 {answered.filter(Boolean).length} 题
-        </span>
+        <div className="flex items-center gap-3">
+          {flaggedCount > 0 && (
+            <span className="flex items-center gap-1 text-amber-500" title="已标记待复查">
+              <Flag size={12} fill="currentColor" />
+              {flaggedCount}
+            </span>
+          )}
+          {startTime && (
+            <span className="flex items-center gap-1 text-gray-500 dark:text-slate-400" title="用时">
+              <Clock size={12} />
+              {formatTimeFromSeconds(elapsedSeconds)}
+            </span>
+          )}
+          <span className="text-gray-500">
+            已答 {answered.filter(Boolean).length} 题
+          </span>
+        </div>
       </div>
 
       <div className="relative h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">

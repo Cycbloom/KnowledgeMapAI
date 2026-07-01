@@ -50,10 +50,14 @@ import {
   Map as MapIcon,
   GitMerge,
   History,
+  ZoomIn,
+  ZoomOut,
+  Spline,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
+import { GraphSwitcher } from "./GraphSwitcher";
 import {
   Node,
   ColorScheme,
@@ -188,6 +192,20 @@ interface GraphToolbarProps {
   }>;
   collapsedRegions?: string[];
   onRegionToggle?: (regionId: string) => void;
+
+  // Graph Switcher
+  currentGraphId?: string;
+  currentGraphTitle?: string;
+
+  // Zoom controls
+  zoomLevel?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onZoomReset?: () => void;
+
+  // Edge display mode
+  edgeDisplayMode?: 'full' | 'simplified' | 'hidden';
+  setEdgeDisplayMode?: (mode: 'full' | 'simplified' | 'hidden') => void;
 }
 
 function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
@@ -349,6 +367,14 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   regions,
   collapsedRegions,
   onRegionToggle,
+  currentGraphId,
+  currentGraphTitle,
+  zoomLevel = 1,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
+  edgeDisplayMode = 'full',
+  setEdgeDisplayMode,
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -1203,6 +1229,14 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
       <Divider />
 
+      {/* Graph Switcher */}
+      <GraphSwitcher
+        currentGraphId={currentGraphId ?? id}
+        currentGraphTitle={currentGraphTitle}
+      />
+
+      <Divider />
+
       {/* 2. Edit Tools Dropdown - Hidden in read-only mode */}
       {!isReadOnly && (
         <div className="flex items-center space-x-2">
@@ -1649,6 +1683,71 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         <History size={18} />
         <span className="text-sm font-medium hidden xl:inline">版本历史</span>
       </button>
+
+      {/* Zoom Controls */}
+      {onZoomIn && onZoomOut && (
+        <>
+          <Divider />
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={onZoomOut}
+              className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
+              title={t("graphEditor.mindMap.zoomOut")}
+              aria-label={t("graphEditor.mindMap.zoomOut")}
+            >
+              <ZoomOut size={18} />
+            </button>
+            <button
+              onClick={() => onZoomReset?.()}
+              className={`px-2 py-1 rounded-lg text-xs font-medium tabular-nums min-w-[3.5rem] text-center transition-colors ${themeClasses.button.default}`}
+              title={t("graphEditor.mindMap.resetView")}
+            >
+              {Math.round(zoomLevel * 100)}%
+            </button>
+            <button
+              onClick={onZoomIn}
+              className={`p-1.5 rounded-lg transition-colors ${themeClasses.button.default}`}
+              title={t("graphEditor.mindMap.zoomIn")}
+              aria-label={t("graphEditor.mindMap.zoomIn")}
+            >
+              <ZoomIn size={18} />
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Edge Display Mode Toggle */}
+      {setEdgeDisplayMode && (
+        <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => {
+              const next: Record<string, 'full' | 'simplified' | 'hidden'> = {
+                full: 'simplified',
+                simplified: 'hidden',
+                hidden: 'full',
+              };
+              setEdgeDisplayMode(next[edgeDisplayMode] || 'full');
+            }}
+            className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
+              edgeDisplayMode !== 'full'
+                ? isDark
+                  ? "bg-primary-900/40 text-primary-400"
+                  : "bg-primary-50 text-primary-600"
+                : themeClasses.button.default
+            }`}
+            title={t('graphEditor.toolbar.edgeDisplayMode', '边线显示模式')}
+          >
+            <Spline size={18} />
+            <span className="text-xs font-medium hidden xl:inline">
+              {edgeDisplayMode === 'full'
+                ? t('graphEditor.toolbar.edgeFull', '边线')
+                : edgeDisplayMode === 'simplified'
+                  ? t('graphEditor.toolbar.edgeSimplified', '简化')
+                  : t('graphEditor.toolbar.edgeHidden', '隐藏')}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* AI Status Badge */}
       {aiEnabled === false && (

@@ -136,7 +136,10 @@
     "sessionCompleteDesc": "本次共复习 {{count}} 张卡片，继续加油！",
     "backToLearning": "返回学习中心",
     "backToCenter": "返回首页",
-    "practiceAgain": "再练一轮"
+    "practiceAgain": "再练一轮",
+    "cardsReviewed": "已复习卡片",
+    "timeSpent": "用时",
+    "accuracy": "准确率"
   },
   "quiz": {
     "exit": "退出",
@@ -182,5 +185,12 @@
   "messages": {
     "noCardsToReview": "没有需要复习的卡片",
     "saveProgressFailed": "保存进度失败，请重试"
+  },
+  "forecast": {
+    "title": "即将复习",
+    "tomorrow": "明天",
+    "thisWeek": "未来7天",
+    "cards": "张卡片",
+    "dayTooltip": "第{{day}}天：{{count}}张卡片"
   }
 }

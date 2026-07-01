@@ -491,7 +491,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           node_title: node.title,
           node_content: node.content,
           node_level: node.level,
-          graph_id: createdGraphId || graphId || "temp",
+          graph_id: createdGraphId ?? graphId ?? undefined,
           style,
           customPrompt: style === "custom" ? customPrompt : undefined,
           existing_children: node.children?.map((c) => ({ title: c.title })),

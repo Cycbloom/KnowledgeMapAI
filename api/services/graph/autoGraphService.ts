@@ -73,7 +73,7 @@ export interface ExpandNodeParams {
   nodeTitle: string;
   nodeContent?: string;
   nodeLevel?: string;
-  graphId: string;
+  graphId?: string;
   style: string;
   customPrompt?: string;
   existingChildren?: ExistingChild[];

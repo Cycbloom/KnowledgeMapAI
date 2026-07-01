@@ -37,7 +37,7 @@ export interface IAutoGraphApi {
     node_title: string;
     node_content?: string;
     node_level?: string;
-    graph_id: string;
+    graph_id?: string;
     style?: string;
     customPrompt?: string;
     existing_children?: Array<{ title: string; content?: string }>;

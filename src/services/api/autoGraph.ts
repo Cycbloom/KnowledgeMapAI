@@ -151,7 +151,7 @@ export const autoGraphApi = {
     node_title: string;
     node_content?: string;
     node_level?: string;
-    graph_id: string;
+    graph_id?: string;
     style?: "academic" | "practical" | "beginner" | "custom";
     customPrompt?: string;
     existing_children?: Array<{ title: string; content?: string }>;

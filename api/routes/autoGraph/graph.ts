@@ -49,7 +49,7 @@ const expandNodeSchema = z.object({
   node_title: z.string().min(1),
   node_content: z.string().optional(),
   node_level: z.string().optional(),
-  graph_id: z.string().min(1),
+  graph_id: z.string().uuid().optional(),
   style: z
     .enum(["academic", "practical", "beginner", "custom"])
     .default("academic"),

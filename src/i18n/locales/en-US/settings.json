@@ -198,7 +198,13 @@
     "colorRed": "Red",
     "colorPurple": "Purple",
     "colorPink": "Pink",
-    "colorSlate": "Slate"
+    "colorSlate": "Slate",
+    "searchNodeNavigateTarget": "Search Node Navigate Target",
+    "searchNodeNavigateTargetDesc": "Default page to navigate to when clicking a node in search results",
+    "navigateToGraph": "Graph",
+    "navigateToGraphDesc": "Navigate to graph and highlight the node",
+    "navigateToLearning": "Learning Mode",
+    "navigateToLearningDesc": "Navigate to learning mode and show node study materials"
   },
   "notifications": {
     "title": "Notification Preferences",

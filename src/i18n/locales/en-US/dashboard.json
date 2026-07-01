@@ -14,7 +14,9 @@
   "search": {
     "placeholder": "Search graphs and nodes...",
     "keyword": "Keyword",
-    "semantic": "Semantic"
+    "semantic": "Semantic",
+    "navigateToGraph": "Navigate to graph",
+    "navigateToLearning": "Navigate to learning mode"
   },
   "view": {
     "cardView": "Card View",

@@ -7,7 +7,7 @@ import React, {
   useLayoutEffect,
   useEffect,
 } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "../store/useStore";
 import { message } from "../utils/messageHelper";
 import { ArrowLeft, Loader2, Lock, LogIn } from "lucide-react";
@@ -201,6 +201,8 @@ const ViewLoader = () => (
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nodeIdFromUrl = searchParams.get("node_id");
   const { token, user } = useStore();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
@@ -1016,6 +1018,23 @@ export const GraphEditor = () => {
       setTimeout(() => setSearchHighlightNodeId(null), 3000);
     }
   }, [nodes, handleNodeClick, viewMode, setViewMode]);
+
+  // Auto-select and highlight node from URL ?node_id=xxx (e.g. from search results)
+  useEffect(() => {
+    if (nodeIdFromUrl && nodes.length > 0) {
+      const node = nodes.find((n) => n.id === nodeIdFromUrl);
+      if (node) {
+        handleNodeClick(node);
+        if (viewMode !== "mindmap") {
+          setViewMode("mindmap");
+        }
+        setSearchHighlightNodeId(nodeIdFromUrl);
+        setTimeout(() => setSearchHighlightNodeId(null), 3000);
+      }
+    }
+    // Only run when nodeIdFromUrl or nodes change; useRef to avoid re-triggering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeIdFromUrl, nodes]);
 
   const handleRAGChatNodeClick = useCallback((nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);

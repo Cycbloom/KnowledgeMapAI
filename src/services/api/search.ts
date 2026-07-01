@@ -10,12 +10,13 @@ export interface SearchGraphResult {
 }
 
 export interface SearchNodeResult {
-  knowledge_point_id: string;
+  id?: string;
+  knowledge_point_id?: string;
   graph_id: string;
   title: string;
   content?: string;
   summary?: string;
-  graph_title: string;
+  graph_title?: string;
   similarity?: number;
   updated_at?: string;
 }

@@ -198,7 +198,13 @@
     "colorRed": "红色",
     "colorPurple": "紫色",
     "colorPink": "粉色",
-    "colorSlate": "石板灰"
+    "colorSlate": "石板灰",
+    "searchNodeNavigateTarget": "搜索节点跳转目标",
+    "searchNodeNavigateTargetDesc": "点击搜索结果中的节点时，默认跳转到的页面",
+    "navigateToGraph": "图谱",
+    "navigateToGraphDesc": "跳转到图谱页面并高亮选中节点",
+    "navigateToLearning": "学习模式",
+    "navigateToLearningDesc": "跳转到学习模式并显示节点学习资料"
   },
   "notifications": {
     "title": "通知偏好设置",

@@ -18,10 +18,12 @@ export interface SearchGraphResult {
 
 export interface SearchNodeResult {
   id: string;
+  knowledge_point_id?: string;
   title: string;
   content?: string;
   summary?: string;
   graph_id: string;
+  graph_title?: string;
   knowledge_graphs?: {
     title: string;
   };
@@ -120,11 +122,14 @@ export class SearchService {
         const kp = kpMap.get(gn.knowledge_point_id);
         const kgRaw = gn.knowledge_graphs;
         const knowledgeGraphs = Array.isArray(kgRaw) ? kgRaw[0] : kgRaw;
+        const kgTitle = knowledgeGraphs?.title || "";
         return {
           id: kp?.id || gn.knowledge_point_id,
+          knowledge_point_id: gn.knowledge_point_id,
           title: kp?.title || "",
           content: kp?.content || "",
           graph_id: gn.graph_id,
+          graph_title: kgTitle,
           knowledge_graphs: knowledgeGraphs ?? undefined,
           updated_at: kp?.updated_at,
         };

@@ -1,8 +1,32 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Network, FileText, Sparkles, ChevronRight, Clock, Layers } from 'lucide-react';
-import type { SearchResult } from '../../services/api/search';
+import { Network, FileText, Sparkles, ChevronRight, Clock, Layers, BookOpen } from 'lucide-react';
+import type { SearchResult, SearchNodeResult } from '../../services/api/search';
+import {
+  type SearchNodeNavigateTarget,
+  type GraphEditorPreferences,
+} from '../Settings/GraphEditorSettings';
+
+const PREFS_STORAGE_KEY = 'graphEditorPreferences';
+
+/** Get the node ID from a search result, handling both keyword (id) and semantic (knowledge_point_id) formats */
+const getNodeId = (node: SearchNodeResult): string =>
+  node.knowledge_point_id || node.id || '';
+
+const getDefaultNavigateTarget = (): SearchNodeNavigateTarget => {
+  try {
+    const stored = localStorage.getItem(PREFS_STORAGE_KEY);
+    if (stored) {
+      const prefs: Partial<GraphEditorPreferences> = JSON.parse(stored);
+      return prefs.searchNodeNavigateTarget ?? 'graph';
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return 'graph';
+};
 
 interface SearchResultsProps {
   results: SearchResult | null;
@@ -39,16 +63,26 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   onClose,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const handleGraphClick = (graphId: string) => {
+  const handleGraphClick = useCallback((graphId: string) => {
     navigate(`/graph/${graphId}`);
     onClose?.();
-  };
+  }, [navigate, onClose]);
 
-  const handleNodeClick = (graphId: string) => {
-    navigate(`/graph/${graphId}`);
+  const navigateToNode = useCallback((graphId: string, nodeId: string, target: SearchNodeNavigateTarget) => {
+    if (target === 'learning') {
+      navigate(`/learning?graph_id=${graphId}&node_id=${nodeId}`);
+    } else {
+      navigate(`/graph/${graphId}?node_id=${nodeId}`);
+    }
     onClose?.();
-  };
+  }, [navigate, onClose]);
+
+  const handleNodeMainClick = useCallback((graphId: string, nodeId: string) => {
+    const target = getDefaultNavigateTarget();
+    navigateToNode(graphId, nodeId, target);
+  }, [navigateToNode]);
 
   const hasResults = results && (results.graphs.length > 0 || results.nodes.length > 0);
 
@@ -165,12 +199,14 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             </div>
             <div>
               {results.nodes.map((node, index) => (
-                <button
-                  key={`${node.knowledge_point_id}-${index}`}
-                  onClick={() => handleNodeClick(node.graph_id)}
-                  className="w-full px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-left flex items-center gap-2 group"
+                <div
+                  key={`${getNodeId(node)}-${index}`}
+                  className="w-full px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors flex items-center gap-2 group"
                 >
-                  <div className="flex-1 min-w-0">
+                  <button
+                    onClick={() => handleNodeMainClick(node.graph_id, getNodeId(node))}
+                    className="flex-1 min-w-0 text-left"
+                  >
                     <div className="flex items-center gap-2">
                       <HighlightText 
                         text={node.title} 
@@ -191,7 +227,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                     <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
                       <span className="flex items-center gap-0.5 truncate">
                         <Network className="w-2.5 h-2.5 flex-shrink-0" />
-                        <HighlightText text={node.graph_title} query={query} />
+                        <HighlightText text={node.graph_title || ''} query={query} />
                       </span>
                       {node.updated_at && (
                         <span className="flex items-center gap-0.5 flex-shrink-0">
@@ -200,9 +236,32 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                         </span>
                       )}
                     </div>
+                  </button>
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateToNode(node.graph_id, getNodeId(node), 'graph');
+                      }}
+                      className="p-1.5 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/30 text-gray-400 hover:text-primary-500 transition-colors"
+                      title={t('dashboard.search.navigateToGraph')}
+                      aria-label={t('dashboard.search.navigateToGraph')}
+                    >
+                      <Network className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateToNode(node.graph_id, getNodeId(node), 'learning');
+                      }}
+                      className="p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 text-gray-400 hover:text-green-500 transition-colors"
+                      title={t('dashboard.search.navigateToLearning')}
+                      aria-label={t('dashboard.search.navigateToLearning')}
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-green-500 flex-shrink-0" />
-                </button>
+                </div>
               ))}
             </div>
           </div>

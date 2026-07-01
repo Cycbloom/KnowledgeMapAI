@@ -14,7 +14,9 @@
   "search": {
     "placeholder": "搜索图谱和节点...",
     "keyword": "关键词",
-    "semantic": "语义"
+    "semantic": "语义",
+    "navigateToGraph": "跳转到图谱",
+    "navigateToLearning": "跳转到学习模式"
   },
   "view": {
     "cardView": "卡片视图",

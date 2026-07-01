@@ -12,14 +12,19 @@ import {
   Palette,
   Check,
   RotateCcw,
+  BookOpen,
+  Compass,
 } from "lucide-react";
 import type { GraphViewMode } from "@shared/types";
+
+export type SearchNodeNavigateTarget = "graph" | "learning";
 
 export interface GraphEditorPreferences {
   defaultViewMode: GraphViewMode;
   defaultZoomLevel: number | "fit";
   autoLayoutOnSave: boolean;
   defaultNodeColor: string;
+  searchNodeNavigateTarget: SearchNodeNavigateTarget;
 }
 
 const DEFAULT_PREFERENCES: GraphEditorPreferences = {
@@ -27,6 +32,7 @@ const DEFAULT_PREFERENCES: GraphEditorPreferences = {
   defaultZoomLevel: "fit",
   autoLayoutOnSave: true,
   defaultNodeColor: "#6366f1",
+  searchNodeNavigateTarget: "graph",
 };
 
 const STORAGE_KEY = "graphEditorPreferences";
@@ -82,6 +88,16 @@ const NODE_COLORS: Array<{ value: string; labelKey: string }> = [
   { value: "#8b5cf6", labelKey: "settings.graphEditor.colorPurple" },
   { value: "#ec4899", labelKey: "settings.graphEditor.colorPink" },
   { value: "#64748b", labelKey: "settings.graphEditor.colorSlate" },
+];
+
+const NAVIGATE_TARGETS: Array<{
+  value: SearchNodeNavigateTarget;
+  labelKey: string;
+  descKey: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { value: "graph", labelKey: "settings.graphEditor.navigateToGraph", descKey: "settings.graphEditor.navigateToGraphDesc", icon: Network },
+  { value: "learning", labelKey: "settings.graphEditor.navigateToLearning", descKey: "settings.graphEditor.navigateToLearningDesc", icon: BookOpen },
 ];
 
 export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
@@ -209,6 +225,34 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
               />
             </div>
           </label>
+        </div>
+
+        {/* Search node navigate target */}
+        <div className="pt-4 border-t border-gray-100 dark:border-slate-700">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+            <Compass className="w-4 h-4 text-gray-400" />
+            {t("settings.graphEditor.searchNodeNavigateTarget")}
+          </label>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+            {t("settings.graphEditor.searchNodeNavigateTargetDesc")}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {NAVIGATE_TARGETS.map(({ value, labelKey, descKey, icon: Icon }) => (
+              <button
+                key={value}
+                onClick={() => updatePreference("searchNodeNavigateTarget", value)}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all min-h-[72px] ${
+                  preferences.searchNodeNavigateTarget === value
+                    ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
+                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-medium text-sm">{t(labelKey)}</span>
+                <span className="text-xs opacity-70 text-center leading-tight">{t(descKey)}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Default node color */}

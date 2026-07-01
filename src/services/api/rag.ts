@@ -7,6 +7,9 @@ interface Source {
   title: string;
   content: string;
   similarity: number;
+  hopDistance?: number;
+  relationshipPath?: string;
+  relationshipType?: string;
 }
 
 export const ragApi = {

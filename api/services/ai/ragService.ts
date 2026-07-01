@@ -174,6 +174,12 @@ export class RAGService {
         }[]
       | undefined;
 
+    // 保留所有搜索结果的原始图关联信息，用于在构建 allSources 时还原 hopDistance
+    const originalGraphMetadata = new Map<
+      string,
+      { hopDistance: number; relationshipPath: string; relationshipType: string }
+    >();
+
     if (effectiveSearchMode === "semantic") {
       // 语义检索模式：保持原有逻辑（向后兼容）
       if (useGraphContext && graphId) {
@@ -184,6 +190,14 @@ export class RAGService {
           graphHops,
           useRrf: false, // semantic 模式保持原始拼接逻辑，确保向后兼容
         });
+
+        for (const r of graphResults) {
+          originalGraphMetadata.set(r.id, {
+            hopDistance: r.hopDistance,
+            relationshipPath: r.relationshipPath,
+            relationshipType: r.relationshipType,
+          });
+        }
 
         const seedResults = graphResults.filter((r) => r.hopDistance === 0);
         const expandedResults = graphResults.filter((r) => r.hopDistance > 0);
@@ -221,6 +235,14 @@ export class RAGService {
           graphHops,
         });
 
+        for (const r of hybridResults) {
+          originalGraphMetadata.set(r.id, {
+            hopDistance: r.hopDistance,
+            relationshipPath: r.relationshipPath,
+            relationshipType: r.relationshipType,
+          });
+        }
+
         const seedResults = hybridResults.filter((r) => r.hopDistance === 0);
         const expandedResults = hybridResults.filter((r) => r.hopDistance > 0);
 
@@ -240,6 +262,16 @@ export class RAGService {
           matchThreshold: 0.3,
           matchCount: 10,
         });
+
+        // hybridSearch 可能返回含图关联信息的结果，保留原始数据
+        for (const r of hybridResults) {
+          originalGraphMetadata.set(r.id, {
+            hopDistance: r.hopDistance,
+            relationshipPath: r.relationshipPath,
+            relationshipType: r.relationshipType,
+          });
+        }
+
         searchResults = hybridResults;
       }
     }
@@ -288,16 +320,19 @@ export class RAGService {
     );
 
     const allSources: GraphRAGSearchResult[] = [
-      ...usedSources.map((s) => ({
-        id: s.id,
-        title: s.title,
-        content: s.content,
-        similarity: s.similarity,
-        graphId: s.graphId,
-        hopDistance: 0,
-        relationshipPath: "",
-        relationshipType: "",
-      })),
+      ...usedSources.map((s) => {
+        const original = originalGraphMetadata.get(s.id);
+        return {
+          id: s.id,
+          title: s.title,
+          content: s.content,
+          similarity: s.similarity,
+          graphId: s.graphId,
+          hopDistance: original?.hopDistance ?? 0,
+          relationshipPath: original?.relationshipPath ?? "",
+          relationshipType: original?.relationshipType ?? "",
+        };
+      }),
       ...(graphSources || []).map((gs) => ({
         id: gs.id,
         title: gs.title,

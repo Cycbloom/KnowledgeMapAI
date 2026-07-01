@@ -140,7 +140,7 @@ export class RAGChatService {
 
       return {
         answer,
-        sources: sources.slice(0, 5),
+        sources: sources.slice(0, 8),
         suggestedQuestions,
       };
     } catch (error: unknown) {
@@ -356,7 +356,7 @@ export class RAGChatService {
         },
       );
 
-      return sources.slice(0, 5);
+      return sources.slice(0, 8);
     } catch (error: unknown) {
       logger.error("RAG Stream Chat Error:", error);
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {

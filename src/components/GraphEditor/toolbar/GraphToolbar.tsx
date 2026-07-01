@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -1048,37 +1048,90 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     label: string;
     children: React.ReactNode;
     active?: boolean;
-  }) => (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <button
-        onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
-        className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
-          active || openDropdown === id
-            ? isDark
-              ? "bg-primary-900/40 text-primary-400"
-              : "bg-primary-50 text-primary-600"
-            : isDark
-              ? "text-gray-300 hover:bg-slate-700"
-              : "text-gray-600 hover:bg-gray-100"
-        }`}
-      >
-        <Icon size={20} />
-        <span className="text-sm font-medium">{label}</span>
-        <ChevronDown
-          size={14}
-          className={`transition-transform duration-200 ${openDropdown === id ? "rotate-180" : ""}`}
-        />
-      </button>
+  }) => {
+    const [dropdownPosition, setDropdownPosition] = useState({
+      horizontal: "left" as "left" | "right",
+      vertical: "below" as "below" | "above",
+      maxHeight: undefined as number | undefined,
+    });
+    const dropdownContainerRef = useRef<HTMLDivElement>(null);
 
-      {openDropdown === id && (
-        <div
-          className={`absolute top-full left-0 mt-2 p-2 rounded-xl shadow-2xl border w-56 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in zoom-in-95 duration-150`}
+    useEffect(() => {
+      if (openDropdown === id && dropdownContainerRef.current) {
+        const rect = dropdownContainerRef.current.getBoundingClientRect();
+        const dropdownWidth = 224; // w-56 = 14rem = 224px
+        const dropdownMaxHeight = 400; // 预估最大高度
+        const padding = 8;
+
+        // 水平方向：右侧空间不足则右对齐
+        const horizontal: "left" | "right" =
+          rect.left + dropdownWidth > window.innerWidth ? "right" : "left";
+
+        // 垂直方向：下方空间不足则翻转到上方
+        const spaceBelow = window.innerHeight - rect.bottom - padding;
+        const spaceAbove = rect.top - padding;
+        const vertical: "below" | "above" =
+          spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow
+            ? "above"
+            : "below";
+
+        // 计算最大高度，确保不超出视口
+        const availableHeight = vertical === "below" ? spaceBelow : spaceAbove;
+        const maxHeight =
+          availableHeight < dropdownMaxHeight ? availableHeight : undefined;
+
+        setDropdownPosition({ horizontal, vertical, maxHeight });
+      }
+    }, [openDropdown, id]);
+
+    return (
+      <div
+        ref={dropdownContainerRef}
+        className="relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
+          className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
+            active || openDropdown === id
+              ? isDark
+                ? "bg-primary-900/40 text-primary-400"
+                : "bg-primary-50 text-primary-600"
+              : isDark
+                ? "text-gray-300 hover:bg-slate-700"
+                : "text-gray-600 hover:bg-gray-100"
+          }`}
         >
-          {children}
-        </div>
-      )}
-    </div>
-  );
+          <Icon size={20} />
+          <span className="text-sm font-medium">{label}</span>
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-200 ${openDropdown === id ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {openDropdown === id && (
+          <div
+            className={`absolute ${
+              dropdownPosition.vertical === "below"
+                ? "top-full mt-2"
+                : "bottom-full mb-2"
+            } ${
+              dropdownPosition.horizontal === "left" ? "left-0" : "right-0"
+            } p-2 rounded-xl shadow-2xl border w-56 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in zoom-in-95 duration-150`}
+            style={{
+              maxHeight: dropdownPosition.maxHeight
+                ? `${dropdownPosition.maxHeight}px`
+                : undefined,
+              overflowY: dropdownPosition.maxHeight ? "auto" : undefined,
+            }}
+          >
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const MenuItem = ({
     onClick,
@@ -1108,6 +1161,12 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     onSubMenuToggle?: () => void;
   }) => {
     const [internalSubMenuOpen, setInternalSubMenuOpen] = useState(false);
+    const [subMenuPosition, setSubMenuPosition] = useState({
+      horizontal: "right" as "right" | "left",
+      maxHeight: undefined as number | undefined,
+    });
+    const closeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const menuContainerRef = useRef<HTMLDivElement>(null);
 
     const isOpen =
       keepOpenOnChildClick && subMenuOpen !== undefined
@@ -1118,19 +1177,57 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       ? onSubMenuToggle || (() => setInternalSubMenuOpen(!internalSubMenuOpen))
       : undefined;
 
+    // 检测子菜单位置和可用空间
+    useEffect(() => {
+      if (isOpen && menuContainerRef.current) {
+        const rect = menuContainerRef.current.getBoundingClientRect();
+        const submenuWidth = 192; // w-48 = 12rem = 192px
+        const padding = 8;
+
+        // 水平方向：右侧空间不足则翻转到左侧
+        const horizontal: "right" | "left" =
+          rect.right + submenuWidth > window.innerWidth ? "left" : "right";
+
+        // 垂直方向：计算可用高度，确保不超出视口底部
+        const availableHeight = window.innerHeight - rect.top - padding;
+        const maxHeight = availableHeight < 400 ? availableHeight : undefined;
+
+        setSubMenuPosition({ horizontal, maxHeight });
+      }
+    }, [isOpen]);
+
+    // 清理关闭定时器
+    useEffect(() => {
+      return () => {
+        if (closeTimerRef.current) {
+          clearTimeout(closeTimerRef.current);
+        }
+      };
+    }, []);
+
+    const handleOpen = useCallback(() => {
+      if (children && !keepOpenOnChildClick) {
+        if (closeTimerRef.current) {
+          clearTimeout(closeTimerRef.current);
+        }
+        setInternalSubMenuOpen(true);
+      }
+    }, [children, keepOpenOnChildClick]);
+
+    const handleClose = useCallback(() => {
+      if (children && !keepOpenOnChildClick) {
+        closeTimerRef.current = setTimeout(() => {
+          setInternalSubMenuOpen(false);
+        }, 150);
+      }
+    }, [children, keepOpenOnChildClick]);
+
     return (
       <div
+        ref={menuContainerRef}
         className="relative w-full"
-        onMouseEnter={() => {
-          if (children && !keepOpenOnChildClick) {
-            setInternalSubMenuOpen(true);
-          }
-        }}
-        onMouseLeave={() => {
-          if (children && !keepOpenOnChildClick) {
-            setInternalSubMenuOpen(false);
-          }
-        }}
+        onMouseEnter={handleOpen}
+        onMouseLeave={handleClose}
       >
         <button
           disabled={disabled}
@@ -1168,7 +1265,21 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
 
         {children && isOpen && (
           <div
-            className={`absolute top-0 left-full ml-1 p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in slide-in-from-left-2 duration-150`}
+            className={`absolute top-0 ${
+              subMenuPosition.horizontal === "right"
+                ? "left-full ml-1"
+                : "right-full mr-1"
+            } p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in ${
+              subMenuPosition.horizontal === "right"
+                ? "slide-in-from-left-2"
+                : "slide-in-from-right-2"
+            } duration-150`}
+            style={{
+              maxHeight: subMenuPosition.maxHeight
+                ? `${subMenuPosition.maxHeight}px`
+                : undefined,
+              overflowY: subMenuPosition.maxHeight ? "auto" : undefined,
+            }}
             onClick={(e) => {
               if (keepOpenOnChildClick) {
                 e.stopPropagation();

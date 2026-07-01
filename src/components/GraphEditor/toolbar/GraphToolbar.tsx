@@ -149,6 +149,8 @@ interface GraphToolbarProps {
   onRefresh?: () => void;
   onOpenHelp?: () => void;
   onOpenShortcutSettings?: () => void;
+  onReplayTutorial?: () => void;
+  dataTour?: string;
   onShare?: () => void;
   onOpenAnalysis?: () => void;
   onOpenConceptAggregation?: () => void;
@@ -204,8 +206,8 @@ interface GraphToolbarProps {
   onZoomReset?: () => void;
 
   // Edge display mode
-  edgeDisplayMode?: 'full' | 'simplified' | 'hidden';
-  setEdgeDisplayMode?: (mode: 'full' | 'simplified' | 'hidden') => void;
+  edgeDisplayMode?: "full" | "simplified" | "hidden";
+  setEdgeDisplayMode?: (mode: "full" | "simplified" | "hidden") => void;
 }
 
 function areEqual(prev: GraphToolbarProps, next: GraphToolbarProps): boolean {
@@ -338,6 +340,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onRefresh,
   onOpenHelp,
   onOpenShortcutSettings,
+  onReplayTutorial,
+  dataTour,
   onShare,
   isExplorationMode,
   setIsExplorationMode,
@@ -373,7 +377,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   onZoomIn,
   onZoomOut,
   onZoomReset,
-  edgeDisplayMode = 'full',
+  edgeDisplayMode = "full",
   setEdgeDisplayMode,
 }) => {
   const navigate = useNavigate();
@@ -1032,7 +1036,13 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
     );
   }
 
-  const DropdownButton = ({ id, icon: Icon, label, children, active }: {
+  const DropdownButton = ({
+    id,
+    icon: Icon,
+    label,
+    children,
+    active,
+  }: {
     id: "edit" | "ai" | "system" | "view";
     icon: LucideIcon;
     label: string;
@@ -1192,6 +1202,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
   // Desktop Layout - Priority Sorted with Dropdowns
   return (
     <div
+      data-tour={dataTour}
       className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border transition-transform duration-300 ${themeClasses.container}`}
       style={{
         transform: isRAGChatOpen ? `translateX(${ragChatWidth}px)` : undefined,
@@ -1365,7 +1376,13 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           id="ai"
           icon={Sparkles}
           label={t("graphEditor.toolbar.aiAssistant")}
-          active={isChatOpen || isPathfindingMode || isLiteratureExtractOpen || isResearchProgressOpen || isLiteratureLibraryOpen}
+          active={
+            isChatOpen ||
+            isPathfindingMode ||
+            isLiteratureExtractOpen ||
+            isResearchProgressOpen ||
+            isLiteratureLibraryOpen
+          }
         >
           <MenuItem
             onClick={onTextToGraph}
@@ -1383,9 +1400,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             colorClass="text-amber-500"
           />
           <MenuItem
-            onClick={() =>
-              setIsResearchProgressOpen?.(!isResearchProgressOpen)
-            }
+            onClick={() => setIsResearchProgressOpen?.(!isResearchProgressOpen)}
             icon={BarChart3}
             label={t("graphEditor.toolbar.researchProgress")}
             active={isResearchProgressOpen}
@@ -1616,7 +1631,15 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
             };
             setColoringMode(nextMode[coloringMode] || "level");
           }}
-          icon={coloringMode === "level" ? Layers : coloringMode === "status" ? Activity : coloringMode === "heatmap" ? BarChart3 : Brain}
+          icon={
+            coloringMode === "level"
+              ? Layers
+              : coloringMode === "status"
+                ? Activity
+                : coloringMode === "heatmap"
+                  ? BarChart3
+                  : Brain
+          }
           label={
             coloringMode === "level"
               ? t("graphEditor.toolbar.coloringModeLevel")
@@ -1721,29 +1744,29 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
         <div className="relative" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => {
-              const next: Record<string, 'full' | 'simplified' | 'hidden'> = {
-                full: 'simplified',
-                simplified: 'hidden',
-                hidden: 'full',
+              const next: Record<string, "full" | "simplified" | "hidden"> = {
+                full: "simplified",
+                simplified: "hidden",
+                hidden: "full",
               };
-              setEdgeDisplayMode(next[edgeDisplayMode] || 'full');
+              setEdgeDisplayMode(next[edgeDisplayMode] || "full");
             }}
             className={`flex items-center space-x-1 px-2 py-1.5 rounded transition-all ${
-              edgeDisplayMode !== 'full'
+              edgeDisplayMode !== "full"
                 ? isDark
                   ? "bg-primary-900/40 text-primary-400"
                   : "bg-primary-50 text-primary-600"
                 : themeClasses.button.default
             }`}
-            title={t('graphEditor.toolbar.edgeDisplayMode', '边线显示模式')}
+            title={t("graphEditor.toolbar.edgeDisplayMode", "边线显示模式")}
           >
             <Spline size={18} />
             <span className="text-xs font-medium hidden xl:inline">
-              {edgeDisplayMode === 'full'
-                ? t('graphEditor.toolbar.edgeFull', '边线')
-                : edgeDisplayMode === 'simplified'
-                  ? t('graphEditor.toolbar.edgeSimplified', '简化')
-                  : t('graphEditor.toolbar.edgeHidden', '隐藏')}
+              {edgeDisplayMode === "full"
+                ? t("graphEditor.toolbar.edgeFull", "边线")
+                : edgeDisplayMode === "simplified"
+                  ? t("graphEditor.toolbar.edgeSimplified", "简化")
+                  : t("graphEditor.toolbar.edgeHidden", "隐藏")}
             </span>
           </button>
         </div>
@@ -1787,6 +1810,12 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           icon={HelpCircle}
           label={t("graphEditor.toolbar.helpGuide")}
           disabled={!onOpenHelp}
+        />
+        <MenuItem
+          onClick={onReplayTutorial}
+          icon={GraduationCap}
+          label={t("graphEditor.toolbar.replayTutorial")}
+          disabled={!onReplayTutorial}
         />
         <MenuItem
           onClick={onOpenShortcutSettings}

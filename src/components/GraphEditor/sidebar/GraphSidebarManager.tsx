@@ -392,6 +392,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
       >
         <div
           ref={sidebarRef}
+          data-tour="sidebar-panel"
           className={`bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== "outline" ? "p-4 overflow-y-auto" : ""}`}
           style={{ width: sidebarWidth }}
         >

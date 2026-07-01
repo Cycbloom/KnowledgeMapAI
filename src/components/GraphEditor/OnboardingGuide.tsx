@@ -1,17 +1,10 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
+import { driver, type DriveStep, type Side, type Driver } from "driver.js";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "../../hooks";
-import { Map, Wrench, PanelRight, Keyboard, X } from "lucide-react";
+import i18next from "i18next";
+import "driver.js/dist/driver.css";
 
 const ONBOARDING_KEY = "graph-editor-onboarding-complete";
-
-const steps = [
-  { tourId: "canvas", icon: Map },
-  { tourId: "toolbar", icon: Wrench },
-  { tourId: "sidebar", icon: PanelRight },
-  { tourId: "help", icon: Keyboard },
-] as const;
 
 export const isOnboardingComplete = (): boolean => {
   return localStorage.getItem(ONBOARDING_KEY) === "true";
@@ -21,203 +14,210 @@ export const markOnboardingComplete = (): void => {
   localStorage.setItem(ONBOARDING_KEY, "true");
 };
 
+interface TourCallbacks {
+  onOpenSidebar?: () => void;
+  onOpenRAGChat?: () => void;
+}
+
+interface StepDefinition {
+  tourId?: string;
+  side: Side;
+  i18nKey: string;
+  /** Allow user to click the highlighted element (e.g. a button) */
+  allowInteraction?: boolean;
+  /** Called when user clicks "Next" or the highlighted element itself */
+  onAdvance?: (callbacks: TourCallbacks, moveNext: () => void) => void;
+}
+
+const stepDefinitions: StepDefinition[] = [
+  {
+    tourId: "toolbar",
+    side: "bottom",
+    i18nKey: "step1",
+  },
+  {
+    tourId: "canvas",
+    side: "top",
+    i18nKey: "step2",
+  },
+  {
+    tourId: "sidebar",
+    side: "left",
+    i18nKey: "step3",
+    allowInteraction: true,
+    onAdvance: (callbacks, moveNext) => {
+      callbacks.onOpenSidebar?.();
+      setTimeout(moveNext, 300);
+    },
+  },
+  {
+    tourId: "sidebar-panel",
+    side: "left",
+    i18nKey: "step3b",
+  },
+  {
+    tourId: "rag-chat",
+    side: "right",
+    i18nKey: "step4",
+    allowInteraction: true,
+    onAdvance: (callbacks, moveNext) => {
+      callbacks.onOpenRAGChat?.();
+      setTimeout(moveNext, 300);
+    },
+  },
+  {
+    tourId: "rag-chat-panel",
+    side: "right",
+    i18nKey: "step4b",
+  },
+  {
+    side: "left",
+    i18nKey: "step5",
+  },
+];
+
+function buildSteps(
+  t: (key: string) => string,
+  callbacks: TourCallbacks,
+  driverRef: { current: Driver | null },
+): DriveStep[] {
+  return stepDefinitions.map((def) => {
+    const step: DriveStep = {
+      popover: {
+        title: t(`graphEditor.onboarding.${def.i18nKey}Title`),
+        description: t(`graphEditor.onboarding.${def.i18nKey}Desc`),
+        side: def.side,
+      },
+    };
+
+    if (def.tourId) {
+      step.element = `[data-tour="${def.tourId}"]`;
+    }
+
+    // Allow user to click the highlighted element
+    if (def.allowInteraction) {
+      step.disableActiveInteraction = false;
+    }
+
+    // When the element is highlighted, attach a click listener so clicking
+    // the actual UI element also advances the tour
+    if (def.onAdvance && def.allowInteraction) {
+      const hook = def.onAdvance;
+      step.onHighlighted = (element) => {
+        if (!element) return;
+        const handler = () => {
+          const drv = driverRef.current;
+          if (drv) {
+            hook(callbacks, () => drv.moveNext());
+          }
+          element.removeEventListener("click", handler);
+        };
+        element.addEventListener("click", handler);
+      };
+      step.onDeselected = (element) => {
+        void element;
+      };
+    }
+
+    // Intercept "Next" / "Done" button clicks on steps with onAdvance
+    if (def.onAdvance) {
+      const hook = def.onAdvance;
+      step.popover = {
+        ...step.popover,
+        onNextClick: (_element, _step, opts) => {
+          hook(callbacks, () => opts.driver.moveNext());
+        },
+        onDoneClick: (_element, _step, opts) => {
+          hook(callbacks, () => opts.driver.moveNext());
+        },
+      };
+    }
+
+    return step;
+  });
+}
+
+function createDriverInstance(
+  t: (key: string) => string,
+  onComplete?: () => void,
+  callbacks?: TourCallbacks,
+  driverRef?: { current: Driver | null },
+) {
+  const drv = driver({
+    showProgress: true,
+    showButtons: ["next", "previous", "close"],
+    nextBtnText: t("graphEditor.onboarding.next"),
+    prevBtnText: t("graphEditor.onboarding.prev"),
+    doneBtnText: t("graphEditor.onboarding.finish"),
+    progressText: "{{current}} / {{total}}",
+    overlayColor: "#000",
+    overlayOpacity: 0.5,
+    stagePadding: 8,
+    stageRadius: 8,
+    animate: true,
+    allowClose: true,
+    overlayClickBehavior: "close",
+    onDestroyStarted: (_element, _step, opts) => {
+      markOnboardingComplete();
+      onComplete?.();
+      opts.driver.destroy();
+    },
+    onDoneClick: (_element, _step, opts) => {
+      markOnboardingComplete();
+      onComplete?.();
+      opts.driver.destroy();
+    },
+    onCloseClick: (_element, _step, opts) => {
+      markOnboardingComplete();
+      onComplete?.();
+      opts.driver.destroy();
+    },
+    steps: buildSteps(t, callbacks ?? {}, driverRef ?? { current: null }),
+  });
+
+  if (driverRef) {
+    driverRef.current = drv;
+  }
+
+  return drv;
+}
+
+export const startOnboardingTour = (callbacks?: TourCallbacks): void => {
+  const t = i18next.getFixedT(i18next.language);
+  const driverRef: { current: Driver | null } = { current: null };
+  const driverObj = createDriverInstance(t, undefined, callbacks, driverRef);
+  driverObj.drive();
+};
+
 interface OnboardingGuideProps {
   onComplete: () => void;
+  onOpenSidebar?: () => void;
+  onOpenRAGChat?: () => void;
 }
 
 export const OnboardingGuide: React.FC<OnboardingGuideProps> = ({
   onComplete,
+  onOpenSidebar,
+  onOpenRAGChat,
 }) => {
   const { t } = useTranslation();
-  const { isDark } = useTheme();
-  const [currentStep, setCurrentStep] = useState(0);
+  const onCompleteRef = useRef(onComplete);
+  const driverRef = useRef<Driver | null>(null);
 
-  const stepKey = `step${currentStep + 1}` as
-    | "step1"
-    | "step2"
-    | "step3"
-    | "step4";
-  const title = t(`graphEditor.onboarding.${stepKey}Title`);
-  const description = t(`graphEditor.onboarding.${stepKey}Desc`);
-  const Icon = steps[currentStep]?.icon ?? Map;
-  const isLast = currentStep === steps.length - 1;
-  const isFirst = currentStep === 0;
-
-  const handleNext = useCallback(() => {
-    if (isLast) {
-      markOnboardingComplete();
-      onComplete();
-    } else {
-      setCurrentStep((prev) => prev + 1);
-    }
-  }, [isLast, onComplete]);
-
-  const handlePrev = useCallback(() => {
-    setCurrentStep((prev) => Math.max(0, prev - 1));
-  }, []);
-
-  const handleSkip = useCallback(() => {
-    markOnboardingComplete();
-    onComplete();
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* Semi-transparent overlay */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleSkip}
-      />
+  useEffect(() => {
+    const driverObj = createDriverInstance(
+      t,
+      () => onCompleteRef.current(),
+      { onOpenSidebar, onOpenRAGChat },
+      { current: null },
+    );
+    driverRef.current = driverObj;
+    driverObj.drive();
+  }, [t, onOpenSidebar, onOpenRAGChat]);
 
-      {/* Card */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="relative z-10 w-full max-w-md mx-4 rounded-2xl shadow-2xl border overflow-hidden"
-          style={{
-            backgroundColor: isDark ? "#1e293b" : "#ffffff",
-            borderColor: isDark ? "#334155" : "#e2e8f0",
-          }}
-        >
-          {/* Skip button */}
-          <button
-            onClick={handleSkip}
-            className="absolute top-3 right-3 p-1.5 rounded-lg transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <X size={16} />
-          </button>
-
-          {/* Content */}
-          <div className="px-8 pt-8 pb-6">
-            {/* Step icon */}
-            <div
-              className="w-14 h-14 rounded-xl flex items-center justify-center mb-5"
-              style={{
-                backgroundColor: isDark
-                  ? "rgba(99, 102, 241, 0.15)"
-                  : "rgba(99, 102, 241, 0.1)",
-              }}
-            >
-              <Icon
-                size={28}
-                className="text-indigo-500 dark:text-indigo-400"
-              />
-            </div>
-
-            {/* Step badge */}
-            <div className="flex items-center gap-2 mb-3">
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: isDark
-                    ? "rgba(99, 102, 241, 0.2)"
-                    : "rgba(99, 102, 241, 0.1)",
-                  color: isDark ? "#a5b4fc" : "#6366f1",
-                }}
-              >
-                {currentStep + 1} / {steps.length}
-              </span>
-            </div>
-
-            {/* Title */}
-            <h2
-              className="text-xl font-semibold mb-2"
-              style={{
-                color: isDark ? "#f1f5f9" : "#0f172a",
-              }}
-            >
-              {title}
-            </h2>
-
-            {/* Description */}
-            <p
-              className="text-sm leading-relaxed"
-              style={{
-                color: isDark ? "#94a3b8" : "#64748b",
-              }}
-            >
-              {description}
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div
-            className="px-8 py-4 flex items-center justify-between"
-            style={{
-              backgroundColor: isDark
-                ? "rgba(15, 23, 42, 0.4)"
-                : "rgba(248, 250, 252, 0.8)",
-              borderTopWidth: 1,
-              borderTopStyle: "solid",
-              borderTopColor: isDark ? "#334155" : "#e2e8f0",
-            }}
-          >
-            {/* Step dots */}
-            <div className="flex items-center gap-1.5">
-              {steps.map((_, index) => (
-                <div
-                  key={index}
-                  className="rounded-full transition-all duration-200"
-                  style={{
-                    width: index === currentStep ? 20 : 6,
-                    height: 6,
-                    backgroundColor:
-                      index === currentStep
-                        ? "#6366f1"
-                        : isDark
-                          ? "#475569"
-                          : "#cbd5e1",
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Navigation buttons */}
-            <div className="flex items-center gap-2">
-              {!isFirst && (
-                <button
-                  onClick={handlePrev}
-                  className="px-3 py-1.5 text-sm rounded-lg transition-colors"
-                  style={{
-                    color: isDark ? "#94a3b8" : "#64748b",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark
-                      ? "#334155"
-                      : "#f1f5f9";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  {t("graphEditor.onboarding.prev")}
-                </button>
-              )}
-              <button
-                onClick={handleNext}
-                className="px-4 py-1.5 text-sm font-medium rounded-lg text-white transition-colors"
-                style={{
-                  backgroundColor: "#6366f1",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#4f46e5";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#6366f1";
-                }}
-              >
-                {isLast
-                  ? t("graphEditor.onboarding.finish")
-                  : t("graphEditor.onboarding.next")}
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
+  return null;
 };

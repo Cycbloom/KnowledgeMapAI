@@ -123,6 +123,7 @@ import { addQuote } from "../components/RAGChat";
 import {
   OnboardingGuide,
   isOnboardingComplete,
+  startOnboardingTour,
 } from "../components/GraphEditor/OnboardingGuide";
 
 const LiteratureExtractPanel = lazy(() =>
@@ -1363,8 +1364,8 @@ export const GraphEditor = () => {
         </div>
       </div>
 
-      <div data-tour="toolbar">
       <GraphToolbar
+        dataTour="toolbar"
         onBack={handleBack}
         onUndo={undo}
         onRedo={redo}
@@ -1410,6 +1411,10 @@ export const GraphEditor = () => {
         exportActions={exportActions}
         onRefresh={() => window.location.reload()}
         onOpenHelp={() => setIsHelpOpen(true)}
+        onReplayTutorial={() => startOnboardingTour({
+          onOpenSidebar: () => setSidebarMode("outline"),
+          onOpenRAGChat: () => panelState.setIsRAGChatOpen(true),
+        })}
         onOpenShortcutSettings={() => panelState.setIsShortcutHelpOpen(true)}
         onShare={() => setIsShareModalOpen(true)}
         onOpenAnalysis={() => setIsAnalysisPanelOpen(true)}
@@ -1449,7 +1454,6 @@ export const GraphEditor = () => {
         edgeDisplayMode={edgeDisplayMode}
         setEdgeDisplayMode={setEdgeDisplayMode}
       />
-      </div>
 
       {isPresentationMode && (
         <PresentationControls
@@ -1498,6 +1502,7 @@ export const GraphEditor = () => {
       {sidebarMode === "none" && !isMobile && (
         <button
           onClick={handleOpenOutlineSidebar}
+          data-tour="sidebar"
           className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-l-xl shadow-lg border-y border-l border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary-600 transition-all hover:pr-4"
         >
           <ArrowLeft size={20} />
@@ -1542,7 +1547,6 @@ export const GraphEditor = () => {
         onClose={() => panelState.setIsRelationshipTypeSettingsOpen(false)}
       />
 
-      <div data-tour="sidebar">
       <Suspense fallback={<ViewLoader />}>
         <ErrorBoundary>
           <GraphSidebarManager
@@ -1568,7 +1572,6 @@ export const GraphEditor = () => {
           />
         </ErrorBoundary>
       </Suspense>
-      </div>
 
       <Suspense fallback={<ViewLoader />}>
         <GraphAnalysisPanel
@@ -1597,12 +1600,10 @@ export const GraphEditor = () => {
         onNodeSelect={handleCommandPaletteNodeSelect}
       />
 
-      <div data-tour="help">
       <ShortcutHelpPanel
         isOpen={panelState.isShortcutHelpOpen}
         onClose={() => panelState.setIsShortcutHelpOpen(false)}
       />
-      </div>
 
       <Suspense fallback={<ViewLoader />}>
         <RAGChatButton
@@ -1732,7 +1733,11 @@ export const GraphEditor = () => {
       )}
 
       {showOnboarding && (
-        <OnboardingGuide onComplete={() => setShowOnboarding(false)} />
+        <OnboardingGuide
+          onComplete={() => setShowOnboarding(false)}
+          onOpenSidebar={() => setSidebarMode("outline")}
+          onOpenRAGChat={() => panelState.setIsRAGChatOpen(true)}
+        />
       )}
     </div>
   );

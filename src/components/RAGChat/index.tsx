@@ -76,6 +76,7 @@ interface RAGChatPanelProps {
   enableTermTooltip?: boolean;
   enableSTT?: boolean;
   onNavigateToNode?: (nodeId: string) => void;
+  dataTour?: string;
 }
 
 export const RAGChatPanel = React.memo(function RAGChatPanel({
@@ -108,6 +109,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
   enableTermTooltip = false,
   enableSTT = false,
   onNavigateToNode,
+  dataTour,
 }: RAGChatPanelProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -446,6 +448,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
   return (
     <motion.div
       ref={panelRef}
+      data-tour={dataTour}
       initial={isEmbedded ? { opacity: 0 } : { opacity: 0, x: -300 }}
       animate={isEmbedded ? { opacity: 1 } : { opacity: 1, x: 0 }}
       exit={isEmbedded ? { opacity: 0 } : { opacity: 0, x: -300 }}
@@ -937,6 +940,7 @@ const SimpleChatButton: React.FC<{
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
+      data-tour="rag-chat"
       className={`fixed left-4 z-40 p-2.5 rounded-xl shadow-lg transition-all duration-300 ${
         shouldMoveUp ? "bottom-72" : "bottom-16"
       } ${
@@ -1018,6 +1022,7 @@ export const RAGChatButtonWrapper = React.memo(function RAGChatButtonWrapper({
               className="h-full pointer-events-auto"
             >
               <RAGChatPanel
+                dataTour="rag-chat-panel"
                 graphId={graphId}
                 currentNodeId={currentNodeId}
                 currentNodeTitle={currentNodeTitle}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +14,7 @@ import {
   List,
   Sparkles,
   ChevronDown,
+  SlidersHorizontal,
 } from "lucide-react";
 import { SearchResults } from "../common";
 import type {
@@ -116,6 +117,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   setTimeRangeFilter,
 }) => {
   const { t } = useTranslation();
+  const [filterExpanded, setFilterExpanded] = useState(false);
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -155,10 +157,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     <span className="font-semibold">{graphs.length}</span>{" "}
                     {t("dashboard.stats.graphs")} ·{" "}
                     <span className="font-semibold">
-                      {graphs.reduce(
-                        (acc, g) => acc + (g.nodes_count || 0),
-                        0,
-                      )}
+                      {graphs.reduce((acc, g) => acc + (g.nodes_count || 0), 0)}
                     </span>{" "}
                     {t("dashboard.stats.nodes")}
                   </>
@@ -169,10 +168,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     {t("dashboard.stats.graphsUnit")}，
                     {t("dashboard.stats.contains")}{" "}
                     <span className="font-semibold">
-                      {graphs.reduce(
-                        (acc, g) => acc + (g.nodes_count || 0),
-                        0,
-                      )}
+                      {graphs.reduce((acc, g) => acc + (g.nodes_count || 0), 0)}
                     </span>{" "}
                     {t("dashboard.stats.nodesUnit")}
                     {t("dashboard.stats.keepGoing")}
@@ -220,7 +216,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 : "bg-white border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 shadow-sm placeholder:text-gray-400"
             }`}
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 sm:gap-1" role="group" aria-label={t("dashboard.search.searchMode")}>
+          <div
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 sm:gap-1"
+            role="group"
+            aria-label={t("dashboard.search.searchMode")}
+          >
             <button
               onClick={() => setSearchMode("keyword")}
               className={`px-2 py-2.5 sm:py-1 text-xs rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 ${
@@ -364,6 +364,27 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </span>
               </button>
             )}
+
+            {/* Filter Toggle */}
+            <button
+              onClick={() => setFilterExpanded(!filterExpanded)}
+              className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
+                filterExpanded
+                  ? isDark
+                    ? "bg-primary-600/20 border-primary-500 text-primary-400"
+                    : "bg-primary-50 border-primary-300 text-primary-600"
+                  : isDark
+                    ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                    : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
+              }`}
+              aria-label={t("dashboard.filter.toggle")}
+              aria-expanded={filterExpanded}
+            >
+              <SlidersHorizontal size={16} aria-hidden="true" />
+              <span className="hidden lg:inline">
+                {t("dashboard.filter.toggle")}
+              </span>
+            </button>
 
             <button
               onClick={onImportClick}
@@ -522,40 +543,83 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     <Network size={18} aria-hidden="true" />
                     <span>{t("dashboard.actions.graphMap")}</span>
                   </Link>
+
+                  <button
+                    onClick={() => {
+                      setFilterExpanded(!filterExpanded);
+                      setShowMoreMenu(false);
+                    }}
+                    className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                      filterExpanded
+                        ? isDark
+                          ? "text-primary-400 hover:bg-primary-900/20"
+                          : "text-primary-600 hover:bg-primary-50"
+                        : isDark
+                          ? "text-slate-300 hover:bg-slate-700"
+                          : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                    role="menuitem"
+                  >
+                    <SlidersHorizontal size={18} aria-hidden="true" />
+                    <span>{t("dashboard.filter.toggle")}</span>
+                  </button>
                 </div>
               )}
             </div>
           </div>
         )}
+      </div>
 
-      {/* Row 3: Sort + Filter Chips */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      {/* Filter Row (collapsible with animation) */}
+      <div
+        className={`flex flex-wrap items-center gap-3 rounded-xl overflow-hidden transition-all duration-300 ease-in-out ${
+          filterExpanded
+            ? "max-h-[200px] opacity-100 px-4 py-3 border"
+            : "max-h-0 opacity-0 px-0 py-0 border-0 pointer-events-none"
+        } ${
+          isDark
+            ? "bg-primary-900/20 border-primary-800/30"
+            : "bg-primary-50 border-primary-100"
+        }`}
+      >
         {/* Sort Dropdown */}
-        <div className="relative">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-            aria-label={t("dashboard.sort.label")}
-            className={`appearance-none pl-3 pr-9 py-2 rounded-xl border text-sm font-medium transition-all outline-none focus:ring-2 focus:ring-primary-500 min-h-[40px] ${
-              isDark
-                ? "bg-slate-800 border-slate-700 text-slate-200"
-                : "bg-white border-gray-200 text-gray-700 shadow-sm"
-            }`}
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
           >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {t(opt.labelKey)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={14}
-            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${
-              isDark ? "text-slate-400" : "text-gray-400"
-            }`}
-            aria-hidden="true"
-          />
+            {t("dashboard.sort.label")}
+          </span>
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              aria-label={t("dashboard.sort.label")}
+              className={`appearance-none pl-3 pr-9 py-1.5 rounded-lg border text-xs font-medium transition-all outline-none focus:ring-2 focus:ring-primary-500 min-h-[36px] ${
+                isDark
+                  ? "bg-slate-700 border-slate-600 text-slate-200"
+                  : "bg-white border-gray-200 text-gray-700 shadow-sm"
+              }`}
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={12}
+              className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${
+                isDark ? "text-slate-400" : "text-gray-400"
+              }`}
+              aria-hidden="true"
+            />
+          </div>
         </div>
+
+        {/* Divider */}
+        <div
+          className={`w-px h-6 ${isDark ? "bg-slate-700" : "bg-gray-200"}`}
+        />
 
         {/* Status Filter Chips */}
         <div
@@ -563,6 +627,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           role="group"
           aria-label={t("dashboard.filter.statusLabel")}
         >
+          <span
+            className={`text-xs font-medium mr-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+          >
+            {t("dashboard.filter.statusLabel")}
+          </span>
           {STATUS_OPTIONS.map((opt) => {
             const active = statusFilter === opt.value;
             return (
@@ -573,7 +642,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   active
                     ? "bg-primary-500 text-white"
                     : isDark
-                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                      ? "bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600"
                       : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 shadow-sm"
                 }`}
                 aria-pressed={active}
@@ -584,12 +653,22 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           })}
         </div>
 
+        {/* Divider */}
+        <div
+          className={`w-px h-6 ${isDark ? "bg-slate-700" : "bg-gray-200"}`}
+        />
+
         {/* Time Range Filter Chips */}
         <div
           className="flex items-center gap-1"
           role="group"
           aria-label={t("dashboard.filter.rangeLabel")}
         >
+          <span
+            className={`text-xs font-medium mr-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+          >
+            {t("dashboard.filter.rangeLabel")}
+          </span>
           {TIME_RANGE_OPTIONS.map((opt) => {
             const active = timeRangeFilter === opt.value;
             return (
@@ -600,7 +679,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   active
                     ? "bg-primary-500 text-white"
                     : isDark
-                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                      ? "bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600"
                       : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 shadow-sm"
                 }`}
                 aria-pressed={active}
@@ -610,7 +689,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             );
           })}
         </div>
-      </div>
       </div>
     </div>
   );

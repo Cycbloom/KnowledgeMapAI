@@ -100,8 +100,9 @@
     "nodeCount": "节点数量"
   },
   "filter": {
-    "statusLabel": "状态筛选",
-    "rangeLabel": "时间范围筛选",
+    "toggle": "筛选",
+    "statusLabel": "状态",
+    "rangeLabel": "时间范围",
     "statusAll": "全部",
     "statusActive": "活跃",
     "statusArchived": "已归档",

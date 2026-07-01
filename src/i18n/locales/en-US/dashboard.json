@@ -100,8 +100,9 @@
     "nodeCount": "Node count"
   },
   "filter": {
-    "statusLabel": "Status filter",
-    "rangeLabel": "Time range filter",
+    "toggle": "Filter",
+    "statusLabel": "Status",
+    "rangeLabel": "Time range",
     "statusAll": "All",
     "statusActive": "Active",
     "statusArchived": "Archived",

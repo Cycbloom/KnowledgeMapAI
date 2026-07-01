@@ -24,6 +24,7 @@ import { LearningPathPanel } from "../Learning/LearningPathPanel";
 import { LiteratureExtractPanel } from "../LiteratureExtract/LiteratureExtractPanel";
 import { ConceptAggregationPanel } from "../ConceptAggregation/ConceptAggregationPanel";
 import "katex/dist/katex.min.css";
+import { extractSuggestedQuestions } from "../../utils/markdownPreprocessor";
 import { useTranslation } from "react-i18next";
 
 let addQuoteFn: ((text: string) => void) | null = null;
@@ -308,12 +309,18 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
         );
       }
 
+      // 从 AI 回复中提取相关问题建议
+      const { content: cleanedContent, questions: extractedQuestions } = extractSuggestedQuestions(fullResponse);
+
       chatState.updateMessage(assistantMessageId, {
+        content: cleanedContent,
         sources,
         isStreaming: false,
       });
 
-      if (currentNodeTitle) {
+      if (extractedQuestions.length > 0) {
+        chatState.setSuggestedQuestions(extractedQuestions);
+      } else if (currentNodeTitle) {
         chatState.setSuggestedQuestions(
           isTutorMode
             ? [
@@ -853,7 +860,7 @@ export const RAGChatPanel = React.memo(function RAGChatPanel({
             className={`px-4 py-2 border-t ${isDark ? "border-slate-700" : "border-gray-200"}`}
           >
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {chatState.suggestedQuestions.slice(0, 2).map((q, i) => (
+              {chatState.suggestedQuestions.slice(0, 3).map((q, i) => (
                 <button
                   key={i}
                   onClick={() => handleSend(q)}

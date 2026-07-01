@@ -16,6 +16,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { Message } from "./hooks/useChatState";
 import { addQuote } from "./index";
 import { TermTooltip } from "../common";
@@ -260,7 +261,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     : {}),
                 }}
               >
-                {message.content}
+                {preprocessMarkdown(message.content)}
               </ReactMarkdown>
               {message.isStreaming && (
                 <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-pulse align-middle opacity-50" />

@@ -24,3 +24,38 @@ export const preprocessMarkdown = (content: string): string => {
 
   return processed;
 };
+
+/**
+ * Extracts suggested/follow-up questions from AI response content.
+ * Removes the "相关问题建议" section from the content and returns the cleaned content
+ * along with the extracted questions array.
+ */
+export const extractSuggestedQuestions = (content: string): {
+  content: string;
+  questions: string[];
+} => {
+  if (!content) return { content: '', questions: [] };
+
+  const patterns = [
+    /(?:---\s*)?###\s*(?:相关问题建议?|Related\s+Questions?|Suggested\s+Questions?|Follow[- ]up\s+Questions?)[\s\S]*?(?=\n---\s*$|\n##[^#]|$)/i,
+    /(?:---\s*)?(?:相关问题建议?|Related\s+Questions?)[\s\S]*?(?=\n---\s*$|\n##[^#]|$)/i,
+  ];
+
+  let questions: string[] = [];
+  let cleanedContent = content;
+
+  for (const pattern of patterns) {
+    const match = content.match(pattern);
+    if (match) {
+      const section = match[0];
+      const itemPattern = /^\s*\d+\.\s*(.+)/gm;
+      const matches = [...section.matchAll(itemPattern)];
+      questions = matches.map(m => m[1].trim()).filter(Boolean);
+
+      cleanedContent = content.replace(pattern, '').replace(/\n{3,}/g, '\n\n').trim();
+      break;
+    }
+  }
+
+  return { content: cleanedContent, questions };
+};

@@ -57,5 +57,24 @@
     "deleteFailed": "Failed to delete learning path",
     "statusUpdated": "Status updated",
     "statusUpdateFailed": "Failed to update status"
+  },
+  "detail": {
+    "deletePathTitle": "Delete Learning Path",
+    "deletePathConfirm": "Are you sure you want to delete this learning path? This action cannot be undone.",
+    "fetchDetailFailed": "Failed to fetch learning path details",
+    "nodeStatusUpdated": "Node status updated",
+    "updateNodeStatusFailed": "Failed to update node status",
+    "taskCreated": "Task created: {{title}}",
+    "createTaskFailed": "Failed to create task",
+    "batchConvertSuccess": "Successfully converted {{count}} nodes to tasks",
+    "batchConvertPartialFailed": "{{count}} nodes failed to convert",
+    "batchConvertFailed": "Batch conversion failed",
+    "autoScheduleSuccess": "Master task created with {{total}} learning nodes, estimated {{days}} days to complete",
+    "autoScheduleFailed": "Auto scheduling failed",
+    "pathStatusUpdated": "Learning path status updated",
+    "updateStatusFailed": "Failed to update status",
+    "loadingPath": "Loading learning path...",
+    "pathNotExist": "Learning path does not exist",
+    "pathNotExistDesc": "This learning path may have been deleted or you don't have access"
   }
 }

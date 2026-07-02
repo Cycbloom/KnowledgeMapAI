@@ -515,7 +515,7 @@ export const GraphMap = () => {
 
     const confirmMessage = t('graphMap.batch.deleteConfirm', { count: ids.length });
     if (!await asyncConfirm({
-      title: '确认删除',
+      title: t('graphMap.batch.confirmDeleteTitle'),
       message: confirmMessage,
       isDangerous: true,
     })) return;

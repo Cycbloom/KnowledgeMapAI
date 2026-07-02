@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   X,
   Sparkles,
@@ -28,6 +29,7 @@ import { PromptConfigContent } from '../PromptConfig';
 import type { QuizSetConfig } from '@shared/types/quiz';
 import type { User } from '@shared/types/user';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { ModalShell } from '../common';
 
 interface LearningPathStageNode {
   knowledge_point_id?: string;
@@ -68,6 +70,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   onComplete,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const { token } = useStore();
   const { data: userData } = useUser(!!token);
 
@@ -220,12 +223,15 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-      <div
-        className={`rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 ${
-          showPromptConfig ? 'max-w-5xl' : 'max-w-2xl'
-        } ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white'}`}
-      >
+    <ModalShell
+      isOpen={open}
+      onClose={handleClose}
+      titleId="quiz-gen-modal-title"
+      className={`rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 ${
+        showPromptConfig ? 'max-w-5xl' : 'max-w-2xl'
+      } ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white'}`}
+      overlayClassName="z-[60] p-4 backdrop-blur-sm"
+    >
         <div
           className={`p-6 border-b ${
             isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-gradient-to-r from-primary-50 to-white'
@@ -254,11 +260,14 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                 </div>
               )}
               <div>
-                <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {showPromptConfig ? 'Prompt 配置管理' : '创建测验'}
+                <h3
+                  id="quiz-gen-modal-title"
+                  className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}
+                >
+                  {showPromptConfig ? t('study.quizGeneration.promptConfigTitle') : t('study.quizGeneration.title')}
                 </h3>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  {showPromptConfig ? '管理测验生成的提示词模板' : 'AI 自动生成测验题目'}
+                  {showPromptConfig ? t('study.quizGeneration.promptConfigDesc') : t('study.quizGeneration.subtitle')}
                 </p>
               </div>
             </div>
@@ -271,7 +280,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                       ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
                       : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
                   }`}
-                  title="Prompt 配置管理"
+                  title={t('study.quizGeneration.promptConfigTitle')}
                 >
                   <Settings size={18} />
                 </button>
@@ -283,6 +292,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                     ? 'text-slate-400 hover:bg-slate-800'
                     : 'text-gray-400 hover:bg-gray-100'
                 }`}
+                aria-label={t('common.close')}
               >
                 <X size={20} />
               </button>
@@ -557,7 +567,6 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
             </div>
           </>
         )}
-      </div>
-    </div>
+    </ModalShell>
   );
 };

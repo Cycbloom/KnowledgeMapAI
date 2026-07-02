@@ -48,6 +48,8 @@ import schedulerStats from './schedulerStats.json';
 import combinedViewPage from './combinedViewPage.json';
 import graphStyleSettings from './graphStyleSettings.json';
 import textToGraph from './textToGraph.json';
+import collaborators from './collaborators.json';
+import notifications from './notifications.json';
 
 const enUS = {
   dashboard,
@@ -100,6 +102,8 @@ const enUS = {
   combinedViewPage,
   graphStyleSettings,
   textToGraph,
+  collaborators,
+  notifications,
 };
 
 export default enUS;

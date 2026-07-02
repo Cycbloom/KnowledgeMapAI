@@ -11,6 +11,7 @@ import {
   Calendar, ChevronLeft, ChevronRight, Filter, RefreshCw
 } from 'lucide-react';
 import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
+import { formatDate } from '../utils/formatters';
 
 const TechCard = ({ children, className = '', glow = false }: { children: React.ReactNode; className?: string; glow?: boolean }) => (
   <div className={`
@@ -158,7 +159,7 @@ const DailyTrendChart = ({ data }: { data: { date: string; completed: number; du
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
+              labelFormatter={(label) => formatDate(label, 'short-date')}
             />
             <Area
               type="monotone"
@@ -219,7 +220,7 @@ const DurationTrendChart = ({ data }: { data: { date: string; completed: number;
                 color: '#fff'
               }}
               formatter={(value) => value !== undefined ? [formatDuration(value as number), t('schedulerStats.durationTrend.duration')] : ['', t('schedulerStats.durationTrend.duration')]}
-              labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
+              labelFormatter={(label) => formatDate(label, 'short-date')}
             />
             <Line
               type="monotone"
@@ -397,13 +398,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
   };
 
   const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return formatDate(dateStr, 'short-datetime');
   };
 
   // 状态标签映射：根据执行状态返回对应的 i18n 文本
@@ -569,7 +564,7 @@ const EfficiencyChart = ({ data }: { data: { date: string; completed: number; du
                 color: '#fff'
               }}
               formatter={(value) => value !== undefined ? [t('schedulerStats.efficiency.value', { value }), t('schedulerStats.efficiency.label')] : ['', t('schedulerStats.efficiency.label')]}
-              labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
+              labelFormatter={(label) => formatDate(label, 'short-date')}
             />
             <Bar
               dataKey="efficiency"

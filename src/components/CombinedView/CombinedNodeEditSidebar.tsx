@@ -41,6 +41,7 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
               onClick={onBack}
               className="mr-1 p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
               title="返回大纲"
+              aria-label="返回大纲"
             >
               <ArrowLeft size={18} />
             </button>

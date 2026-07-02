@@ -9,7 +9,7 @@ import {
   Zap,
 } from "lucide-react";
 import { api } from '../../services/api';
-import { formatDuration } from '../../utils/formatters';
+import { formatDuration, formatDate } from '../../utils/formatters';
 import type {DailyFocusStats} from '@shared/types';
 
 interface DailyStatsProps {
@@ -120,12 +120,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
 
   if (!stats) return null;
 
-  const displayDate = new Date(stats.date).toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  const displayDate = formatDate(stats.date, "long-date");
 
   const focusHours = stats.total_duration / 3600;
   const productivityScore = Math.min(

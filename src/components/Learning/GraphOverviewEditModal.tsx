@@ -3,6 +3,7 @@ import { X, BookOpen, Link2, FileText, Plus, Pencil, Trash2, Save, Eye, EyeOff }
 import { useTranslation } from 'react-i18next';
 import type { Graph, ReferenceBook, ExternalLink } from '../../../shared/types/graph';
 import { ConfirmationModal } from '../common/ConfirmationModal';
+import { ModalShell } from '../common';
 
 type TabType = 'books' | 'links' | 'guide';
 
@@ -544,8 +545,13 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
-        <div className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[95dvh] sm:max-h-[90dvh] flex flex-col">
+      <ModalShell
+        isOpen={isOpen}
+        onClose={onClose}
+        titleId="graph-overview-edit-modal-title"
+        className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[95dvh] sm:max-h-[90dvh] flex flex-col"
+        overlayClassName="p-2 sm:p-4 backdrop-blur-sm"
+      >
           <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-700">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -553,7 +559,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                   <BookOpen size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{t('learning.overviewEdit.title')}</h2>
+                  <h2 id="graph-overview-edit-modal-title" className="text-xl font-bold text-slate-800 dark:text-slate-100">{t('learning.overviewEdit.title')}</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                     {graph?.title || t('learning.overviewEdit.unnamedGraph')}
                   </p>
@@ -646,8 +652,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               )}
             </button>
           </div>
-        </div>
-      </div>
+      </ModalShell>
 
       <ConfirmationModal
         isOpen={deleteConfirm !== null}

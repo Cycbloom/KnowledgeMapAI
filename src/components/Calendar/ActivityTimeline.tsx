@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Brain, RotateCcw, Route, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../hooks";
-import { formatDuration } from "../../utils/formatters";
+import { formatDuration, formatDate } from "../../utils/formatters";
 import { ActivityEvent, ACTIVITY_TYPE_CONFIG } from "../../types/calendar";
 import { EmptyState } from "../common/EmptyState";
 
@@ -46,10 +46,7 @@ const COLOR_MAP: Record<
 };
 
 function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString("zh-CN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDate(dateStr, "time");
 }
 
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({

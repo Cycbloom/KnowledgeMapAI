@@ -128,24 +128,53 @@ export function formatNumber(n: number, locale?: string): string {
 }
 
 /** 日期输出格式 */
-export type DateFormat = 'short' | 'full' | 'relative' | 'short-datetime' | 'full-datetime';
+export type DateFormat =
+  | 'short'
+  | 'full'
+  | 'relative'
+  | 'short-datetime'
+  | 'full-datetime'
+  | 'short-date'
+  | 'month-day'
+  | 'weekday-short'
+  | 'weekday-long'
+  | 'month-year'
+  | 'time'
+  | 'long-date'
+  | 'month-day-weekday';
+
+/** formatDate 可接受的输入类型 */
+export type DateInput = string | number | Date | null | undefined;
 
 /**
- * 将日期字符串或时间戳格式化为可读的日期/时间字符串。
+ * 将日期字符串、时间戳或 Date 对象格式化为可读的日期/时间字符串。
  *
- * @param dateStr - ISO 日期字符串或时间戳（毫秒）
+ * 新增的 pattern 使用 `Intl.DateTimeFormat` 配合 i18next 当前语言实现 i18n，
+ * 在英文环境下显示英文日期。
+ *
+ * @param dateStr - ISO 日期字符串、时间戳（毫秒）或 Date 对象。null/undefined 返回 '--'。
  * @param format - 输出格式，默认 'full'
  * @returns 格式化后的日期字符串
  *
  * @example
- *   formatDate('2024-03-15T14:30:00Z', 'short')          // "3月15日"
- *   formatDate('2024-03-15T14:30:00Z', 'full')           // "2024年3月15日"
- *   formatDate('2024-03-15T14:30:00Z', 'relative')       // "2天前"（取决于当前时间）
- *   formatDate('2024-03-15T14:30:00Z', 'short-datetime') // "3月15日 14:30"
- *   formatDate('2024-03-15T14:30:00Z', 'full-datetime')  // "2024年3月15日 14:30"
+ *   formatDate('2024-03-15T14:30:00Z', 'short')              // "3月15日"
+ *   formatDate('2024-03-15T14:30:00Z', 'full')               // "2024年3月15日"
+ *   formatDate('2024-03-15T14:30:00Z', 'relative')           // "2天前"（取决于当前时间）
+ *   formatDate('2024-03-15T14:30:00Z', 'short-datetime')     // "3月15日 14:30"
+ *   formatDate('2024-03-15T14:30:00Z', 'full-datetime')      // "2024年3月15日 14:30"
+ *   formatDate('2024-03-15T14:30:00Z', 'time')               // "14:30"
+ *   formatDate('2024-03-15T14:30:00Z', 'short-date')         // "2024/03/15" / "3/15/2024"
+ *   formatDate('2024-03-15T14:30:00Z', 'month-day')          // "3月15日" / "March 15"
+ *   formatDate('2024-03-15T14:30:00Z', 'weekday-short')      // "周五" / "Fri"
+ *   formatDate('2024-03-15T14:30:00Z', 'weekday-long')       // "星期五" / "Friday"
+ *   formatDate('2024-03-15T14:30:00Z', 'month-year')         // "2024年3月" / "March 2024"
+ *   formatDate('2024-03-15T14:30:00Z', 'long-date')          // "2024年3月15日星期五" / "Friday, March 15, 2024"
+ *   formatDate('2024-03-15T14:30:00Z', 'month-day-weekday')  // "3月15日星期五" / "Friday, March 15"
  */
-export function formatDate(dateStr: string | number, format: DateFormat = 'full'): string {
-  const date = typeof dateStr === 'number' ? new Date(dateStr) : new Date(dateStr);
+export function formatDate(dateStr: DateInput, format: DateFormat = 'full'): string {
+  if (dateStr === null || dateStr === undefined) return '--';
+  const date =
+    dateStr instanceof Date ? dateStr : typeof dateStr === 'number' ? new Date(dateStr) : new Date(dateStr);
 
   if (isNaN(date.getTime())) return '--';
 
@@ -166,6 +195,52 @@ export function formatDate(dateStr: string | number, format: DateFormat = 'full'
       month: date.getMonth() + 1,
       day: date.getDate(),
     });
+  }
+
+  // 新增 pattern：使用 Intl.DateTimeFormat 跟随 i18next 当前语言
+  const locale = i18next.language ?? 'zh-CN';
+  switch (format) {
+    case 'time':
+      return new Intl.DateTimeFormat(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(date);
+    case 'short-date':
+      return new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(date);
+    case 'month-day':
+      return new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        day: 'numeric',
+      }).format(date);
+    case 'weekday-short':
+      return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date);
+    case 'weekday-long':
+      return new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(date);
+    case 'month-year':
+      return new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'long',
+      }).format(date);
+    case 'long-date':
+      return new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+      }).format(date);
+    case 'month-day-weekday':
+      return new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+      }).format(date);
+    default:
+      break;
   }
 
   const year = date.getFullYear();

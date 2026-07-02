@@ -273,5 +273,10 @@
     "prev": "Previous",
     "finish": "Get Started",
     "skip": "Skip"
+  },
+  "nodeCreation": {
+    "newNode": "New Node",
+    "unknownError": "Unknown error",
+    "createNodeFailed": "Failed to create node: {{message}}"
   }
 }

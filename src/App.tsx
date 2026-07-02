@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useEffect, useMemo } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar, ErrorBoundary, RouteErrorFallback } from "./components/common";
+import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop } from "./components/common";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
@@ -158,6 +158,7 @@ function App() {
   return (
     <ErrorBoundary>
       <LoadingBar />
+      <ScrollToTop />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Public routes (outside Layout) */}

@@ -84,7 +84,7 @@ const getTypeLabel = (type: string, t: (key: string) => string) => {
     case "embedding_generation":
       return t("tasks.embeddingGeneration");
     case "review_generation":
-      return t("tasks.reviewGeneration") || "复习任务生成";
+      return t("tasks.reviewGeneration");
     default:
       return type;
   }

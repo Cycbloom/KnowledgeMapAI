@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import type { StructuredAnalysisResult } from '../../services/api/agent';
 import { agentApi } from '../../services/api/agent';
+import { copyToClipboard } from '@/utils/clipboard';
 
 interface AnalysisResultViewProps {
   result: string;
@@ -25,9 +26,11 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const success = await copyToClipboard(result, t('common.copied'));
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const toggleRecommendation = (id: string) => {

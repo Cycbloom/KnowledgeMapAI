@@ -211,6 +211,7 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
                                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                             )}
                             title="重置为默认"
+                            aria-label="重置为默认"
                           >
                             <RotateCcw size={12} />
                           </button>

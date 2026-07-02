@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, ExternalLink, Star, Trash2 } from "lucide-react";
 import type { Graph } from "@shared/types";
-import { message } from "../../utils/messageHelper";
+import { copyToClipboard } from "@/utils/clipboard";
 
 interface DashboardCardContextMenuProps {
   graph: Graph;
@@ -70,12 +70,7 @@ export const DashboardCardContextMenu: React.FC<DashboardCardContextMenuProps> =
   }, [position]);
 
   const handleCopyId = async () => {
-    try {
-      await navigator.clipboard.writeText(graph.id);
-      message.success(t("dashboard.contextMenu.copiedId"));
-    } catch {
-      message.error(t("dashboard.contextMenu.copyFailed"));
-    }
+    await copyToClipboard(graph.id, t("dashboard.contextMenu.copiedId"));
     onClose();
   };
 

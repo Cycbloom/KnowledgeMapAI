@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { api } from '../../services/api';
-import { formatDuration } from '../../utils/formatters';
+import { formatDuration, formatDate } from '../../utils/formatters';
 import type {HeatmapData} from '@shared/types';
 
 interface FocusHeatmapProps {
@@ -82,11 +82,7 @@ const DayCell: React.FC<DayCellProps> = ({
           >
             <div className="bg-slate-900 dark:bg-slate-700 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap">
               <p className="font-medium">
-                {new Date(date).toLocaleDateString("zh-CN", {
-                  month: "long",
-                  day: "numeric",
-                  weekday: "long",
-                })}
+                {formatDate(date, "month-day-weekday")}
               </p>
               {duration > 0 ? (
                 <>

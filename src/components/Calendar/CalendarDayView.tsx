@@ -10,6 +10,7 @@ import {
 } from "../../types/calendar";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { CalendarSubtaskStack } from "./CalendarSubtaskStack";
+import { formatDate } from "../../utils/formatters";
 import type { TaskSubtask } from "@shared/types";
 
 interface CalendarDayViewProps {
@@ -165,12 +166,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
             <h3
               className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}
             >
-              {currentDate.toLocaleDateString("zh-CN", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                weekday: "long",
-              })}
+              {formatDate(currentDate, "long-date")}
             </h3>
             <p
               className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}

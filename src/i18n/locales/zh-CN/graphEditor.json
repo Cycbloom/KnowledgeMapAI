@@ -273,5 +273,10 @@
     "prev": "上一步",
     "finish": "开始使用",
     "skip": "跳过"
+  },
+  "nodeCreation": {
+    "newNode": "新节点",
+    "unknownError": "未知错误",
+    "createNodeFailed": "创建节点失败: {{message}}"
   }
 }

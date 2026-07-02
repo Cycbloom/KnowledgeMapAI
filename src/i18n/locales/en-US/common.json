@@ -32,6 +32,8 @@
   "copy": "Copy",
   "copied": "Copied",
   "copyFailed": "Copy failed",
+  "copyError": "Copy error info",
+  "copyCode": "Copy code",
   "clipboardUnavailable": "Clipboard unavailable",
   "backOnline": "Back online, syncing data",
   "slowConnection": "Slow connection, some operations may be delayed",

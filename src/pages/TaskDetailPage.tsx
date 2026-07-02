@@ -1,9 +1,11 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ErrorBoundary } from "../components/common";
 import { TaskWorkbench } from "../components/Scheduler/TaskWorkbench";
 
 const TaskDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
 
@@ -18,7 +20,7 @@ const TaskDetailPage: React.FC = () => {
   if (!taskId) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
-        <p className="text-slate-500 dark:text-slate-400">任务ID不存在</p>
+        <p className="text-slate-500 dark:text-slate-400">{t("tasks.taskIdNotExist")}</p>
       </div>
     );
   }

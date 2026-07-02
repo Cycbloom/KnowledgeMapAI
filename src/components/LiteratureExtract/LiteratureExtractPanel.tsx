@@ -38,6 +38,7 @@ import {
   LiteratureMetadataForm,
   type LiteratureMetadata,
 } from "./LiteratureMetadataForm";
+import { copyToClipboard } from "@/utils/clipboard";
 
 type InputMode = "text" | "file" | "url";
 
@@ -676,28 +677,23 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const handleCopySummary = useCallback(async () => {
     if (!extractedResult) return;
 
-    try {
-      const title = metadata.title || t("literatureExtract.noTitle");
-      const authors =
-        metadata.authors?.join(", ") || t("literatureExtract.noAuthors");
-      const summaryText = [
-        `${t("literatureExtract.toolbar.title")}: ${title}`,
-        `${t("literatureExtract.toolbar.authors")}: ${authors}`,
-        "",
-        `${t("literatureExtract.result.conceptsCount")}: ${extractedResult.concepts.length}`,
-        `${t("literatureExtract.result.relationsCount")}: ${extractedResult.relations.length}`,
-      ].join("\n");
+    const title = metadata.title || t("literatureExtract.noTitle");
+    const authors =
+      metadata.authors?.join(", ") || t("literatureExtract.noAuthors");
+    const summaryText = [
+      `${t("literatureExtract.toolbar.title")}: ${title}`,
+      `${t("literatureExtract.toolbar.authors")}: ${authors}`,
+      "",
+      `${t("literatureExtract.result.conceptsCount")}: ${extractedResult.concepts.length}`,
+      `${t("literatureExtract.result.relationsCount")}: ${extractedResult.relations.length}`,
+    ].join("\n");
 
-      await navigator.clipboard.writeText(summaryText);
+    const success = await copyToClipboard(summaryText, t("common.copied"));
+    if (success) {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 1000);
-    } catch (error) {
-      handleError(error, {
-        context: "CopySummary",
-        fallbackMessage: t("literatureExtract.errors.copyFailed"),
-      });
     }
-  }, [extractedResult, metadata, handleError, t]);
+  }, [extractedResult, metadata, t]);
 
   const handlePasteFromClipboard = useCallback(async () => {
     try {

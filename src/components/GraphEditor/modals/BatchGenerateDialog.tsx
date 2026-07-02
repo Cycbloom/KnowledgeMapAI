@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
+import { ModalShell } from '../../common';
 
 interface BatchGenerateConfig {
   types: string[];
@@ -97,13 +98,18 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="batch-generate-dialog-title"
+      className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200"
+      overlayClassName="p-4 backdrop-blur-sm"
+    >
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
                <Sparkles size={20} />
-               <h3 className="text-lg font-semibold">批量生成题目</h3>
+               <h3 id="batch-generate-dialog-title" className="text-lg font-semibold">批量生成题目</h3>
              </div>
              <button onClick={onClose} className="text-slate-400 hover:text-slate-500">
                <X size={20} />
@@ -222,7 +228,6 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
             开始生成
           </button>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

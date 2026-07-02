@@ -1,0 +1,10 @@
+{
+  "loadListFailed": "Failed to load notifications",
+  "loadUnreadFailed": "Failed to load unread count",
+  "markReadFailed": "Failed to mark as read",
+  "markAllReadFailed": "Failed to mark all as read",
+  "deleteFailed": "Failed to delete notification",
+  "markAllRead": "Mark all as read",
+  "deleteRead": "Delete read notifications",
+  "settings": "Notification settings"
+}

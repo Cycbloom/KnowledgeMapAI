@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Play,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../hooks';
+import { Skeleton, SkeletonCard } from '../components/common';
 import { useQuizSet, useDeleteQuizSetMutation, useRegenerateCardMutation } from '../hooks/queries';
 import { QuestionList } from '../components/Quiz';
 import { QuestionForm, type QuestionFormData } from '../components/Study/QuestionForm';
@@ -24,23 +26,28 @@ import { formatDate as formatDateUtil } from '../utils/formatters';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { message } from '@/utils/messageHelper';
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; darkBg: string; darkColor: string }> = {
+interface StatusConfig {
+  label: string;
+  color: string;
+  bgColor: string;
+  darkBg: string;
+  darkColor: string;
+}
+
+const statusVisualConfig: Record<string, { color: string; bgColor: string; darkBg: string; darkColor: string }> = {
   draft: {
-    label: '草稿',
     color: 'text-gray-600',
     bgColor: 'bg-gray-100',
     darkBg: 'bg-slate-700',
     darkColor: 'text-slate-400',
   },
   generating: {
-    label: '生成中',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
     darkBg: 'bg-amber-900/30',
     darkColor: 'text-amber-400',
   },
   ready: {
-    label: '就绪',
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-50',
     darkBg: 'bg-emerald-900/30',
@@ -48,16 +55,10 @@ const statusConfig: Record<string, { label: string; color: string; bgColor: stri
   },
 };
 
-const difficultyLabels: Record<string, string> = {
-  easy: '简单',
-  medium: '中等',
-  hard: '困难',
-  mixed: '混合',
-};
-
 export const QuizPreview: React.FC = () => {
   const { quizSetId } = useParams<{ quizSetId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const queryClient = useQueryClient();
@@ -71,7 +72,27 @@ export const QuizPreview: React.FC = () => {
   const deleteMutation = useDeleteQuizSetMutation();
   const regenerateMutation = useRegenerateCardMutation();
 
-  const status = quizSet ? statusConfig[quizSet.status] || statusConfig.draft : null;
+  const getStatusConfig = useCallback((status: string): StatusConfig => {
+    const visual = statusVisualConfig[status] || statusVisualConfig.draft;
+    const labelMap: Record<string, string> = {
+      draft: t('study.quizPreview.statusDraft'),
+      generating: t('study.quizPreview.statusGenerating'),
+      ready: t('study.quizPreview.statusReady'),
+    };
+    return { ...visual, label: labelMap[status] || labelMap.draft };
+  }, [t]);
+
+  const getDifficultyLabel = useCallback((difficulty: string): string => {
+    const map: Record<string, string> = {
+      easy: t('study.quizPreview.difficultyEasy'),
+      medium: t('study.quizPreview.difficultyMedium'),
+      hard: t('study.quizPreview.difficultyHard'),
+      mixed: t('study.quizPreview.difficultyMixed'),
+    };
+    return map[difficulty] || difficulty;
+  }, [t]);
+
+  const status = quizSet ? getStatusConfig(quizSet.status) : null;
   const isGenerating = quizSet?.status === 'generating';
   const isReady = quizSet?.status === 'ready';
 
@@ -82,7 +103,11 @@ export const QuizPreview: React.FC = () => {
 
   const handleDeleteQuiz = async () => {
     if (!quizSet) return;
-    if (await asyncConfirm({ title: '删除测验', message: `确定要删除测验 "${quizSet.title}" 吗？此操作不可恢复。`, isDangerous: true })) {
+    if (await asyncConfirm({
+      title: t('study.quizPreview.deleteConfirmTitle'),
+      message: t('study.quizPreview.deleteConfirmMessage', { title: quizSet.title }),
+      isDangerous: true,
+    })) {
       await deleteMutation.mutateAsync(quizSet.id);
       navigate('/study');
     }
@@ -106,9 +131,9 @@ export const QuizPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: quizQueryKeys.quizSet(quizSetId) });
     } catch (error) {
       console.error('Failed to delete card:', error);
-      message.error('删除题目失败');
+      message.error(t('study.quizPreview.deleteCardFailed'));
     }
-  }, [quizSetId, queryClient]);
+  }, [quizSetId, queryClient, t]);
 
   const handleRegenerateCard = useCallback(async (cardId: string) => {
     if (!quizSetId) return;
@@ -117,11 +142,11 @@ export const QuizPreview: React.FC = () => {
       await regenerateMutation.mutateAsync({ quizSetId, cardId });
     } catch (error) {
       console.error('Failed to regenerate card:', error);
-      message.error('重新生成题目失败');
+      message.error(t('study.quizPreview.regenerateCardFailed'));
     } finally {
       setRegeneratingCardId(null);
     }
-  }, [quizSetId, regenerateMutation]);
+  }, [quizSetId, regenerateMutation, t]);
 
   const handleSaveCard = async (data: QuestionFormData) => {
     if (!quizSetId || !quizSet) return;
@@ -159,7 +184,7 @@ export const QuizPreview: React.FC = () => {
       setShowAddForm(false);
     } catch (error) {
       console.error('Failed to save card:', error);
-      message.error('保存题目失败');
+      message.error(t('study.quizPreview.saveCardFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -172,10 +197,25 @@ export const QuizPreview: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 size={48} className={`animate-spin mx-auto mb-4 ${isDark ? 'text-primary-400' : 'text-primary-600'}`} />
-          <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>加载测验中...</p>
+      <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className={`rounded-2xl border overflow-hidden mb-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+            <div className="p-6">
+              <Skeleton className="h-8 w-64 mb-4" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-3/4 mb-6" />
+              <div className="flex gap-4">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -186,12 +226,12 @@ export const QuizPreview: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
-          <p className="text-red-500 mb-4">加载测验失败</p>
+          <p className="text-red-500 mb-4">{t('study.quizPreview.loadFailed')}</p>
           <button
             onClick={() => navigate('/study')}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
-            返回学习页面
+            {t('study.quizPreview.backToStudy')}
           </button>
         </div>
       </div>
@@ -209,7 +249,7 @@ export const QuizPreview: React.FC = () => {
             }`}
           >
             <ArrowLeft size={16} />
-            返回测验列表
+            {t('study.quizPreview.backToQuizList')}
           </button>
         </div>
 
@@ -242,19 +282,19 @@ export const QuizPreview: React.FC = () => {
                 <div className="flex flex-wrap gap-4 text-sm">
                   <div className={`flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                     <Layers size={16} className="text-primary-400" />
-                    <span>{cards.length} 道题目</span>
+                    <span>{t('study.quizPreview.questionsCount', { count: cards.length })}</span>
                   </div>
                   <div className={`flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                     <FileQuestion size={16} className="text-emerald-400" />
                     <span>
                       {quizSet.config?.difficulty
-                        ? difficultyLabels[quizSet.config.difficulty] || quizSet.config.difficulty
-                        : '未设置难度'}
+                        ? getDifficultyLabel(quizSet.config.difficulty)
+                        : t('study.quizPreview.noDifficulty')}
                     </span>
                   </div>
                   <div className={`flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                     <Clock size={16} className="text-amber-400" />
-                    <span>创建于 {formatDateUtil(quizSet.created_at, 'full-datetime')}</span>
+                    <span>{t('study.quizPreview.createdAt')} {formatDateUtil(quizSet.created_at, 'full-datetime')}</span>
                   </div>
                 </div>
               </div>
@@ -266,7 +306,7 @@ export const QuizPreview: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                   >
                     <Play size={18} />
-                    开始练习
+                    {t('study.quizPreview.startPractice')}
                   </button>
                 )}
                 <button
@@ -281,7 +321,7 @@ export const QuizPreview: React.FC = () => {
                   }`}
                 >
                   <Plus size={18} />
-                  添加题目
+                  {t('study.quizPreview.addQuestion')}
                 </button>
                 <button
                   onClick={handleDeleteQuiz}
@@ -290,7 +330,7 @@ export const QuizPreview: React.FC = () => {
                       ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700'
                       : 'text-gray-400 hover:text-red-600 hover:bg-gray-100'
                   }`}
-                  title="删除测验"
+                  title={t('study.quizPreview.deleteQuiz')}
                 >
                   <Trash2 size={20} />
                 </button>
@@ -311,7 +351,7 @@ export const QuizPreview: React.FC = () => {
             >
               <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
                 <h3 className="font-medium">
-                  {editingCard ? '编辑题目' : '添加新题目'}
+                  {editingCard ? t('study.quizPreview.editQuestion') : t('study.quizPreview.addNewQuestion')}
                 </h3>
               </div>
               <QuestionForm
@@ -328,7 +368,7 @@ export const QuizPreview: React.FC = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className={`p-6 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
               <Loader2 size={32} className="animate-spin mx-auto mb-3 text-primary-500" />
-              <p className={isDark ? 'text-slate-300' : 'text-gray-600'}>正在重新生成题目...</p>
+              <p className={isDark ? 'text-slate-300' : 'text-gray-600'}>{t('study.quizPreview.regeneratingTitle')}</p>
             </div>
           </div>
         )}

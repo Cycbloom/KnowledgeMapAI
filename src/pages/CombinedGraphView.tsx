@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useCombinedGraphAIOperations } from '../hooks/graphAI';
@@ -19,6 +20,7 @@ interface GraphDataResponse {
 export const CombinedGraphView: React.FC = () => {
   const { id1, id2 } = useParams<{ id1: string; id2: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -226,15 +228,15 @@ export const CombinedGraphView: React.FC = () => {
 
   const handleExportJSON = useCallback(() => {
     const data: CrossGraphRelationData = {
-      graph1: { 
-        id: id1 || '', 
-        title: graph1Meta?.title || '图谱 1', 
-        node_count: nodes1.length 
+      graph1: {
+        id: id1 || '',
+        title: graph1Meta?.title || t('combinedViewPage.page.graph1'),
+        node_count: nodes1.length
       },
-      graph2: { 
-        id: id2 || '', 
-        title: graph2Meta?.title || '图谱 2', 
-        node_count: nodes2.length 
+      graph2: {
+        id: id2 || '',
+        title: graph2Meta?.title || t('combinedViewPage.page.graph2'),
+        node_count: nodes2.length
       },
       graph_relations: graphRelations,
       cross_graph_connections: crossGraphConnections,
@@ -247,7 +249,7 @@ export const CombinedGraphView: React.FC = () => {
     a.download = `cross-graph-relations-${graph1Meta?.title || 'graph1'}-${graph2Meta?.title || 'graph2'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [id1, id2, graph1Meta, graph2Meta, nodes1, nodes2, graphRelations, crossGraphConnections]);
+  }, [id1, id2, graph1Meta, graph2Meta, nodes1, nodes2, graphRelations, crossGraphConnections, t]);
 
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
@@ -260,28 +262,28 @@ export const CombinedGraphView: React.FC = () => {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">缺少图谱 ID 参数</p>
+          <p className="text-red-600 dark:text-red-400">{t('combinedViewPage.page.missingGraphId')}</p>
           <button
             onClick={handleBack}
             className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
           >
-            返回图谱地图
+            {t('combinedViewPage.page.backToGraphMap')}
           </button>
         </div>
       </div>
     );
   }
-  
+
   if (hasError) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">加载图谱数据失败</p>
+          <p className="text-red-600 dark:text-red-400">{t('combinedViewPage.page.loadGraphDataFailed')}</p>
           <button
             onClick={handleBack}
             className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
           >
-            返回图谱地图
+            {t('combinedViewPage.page.backToGraphMap')}
           </button>
         </div>
       </div>
@@ -294,8 +296,8 @@ export const CombinedGraphView: React.FC = () => {
   return (
     <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-slate-900 relative">
       <CombinedGraphToolbar
-        graph1Title={graph1Meta?.title || '图谱 1'}
-        graph2Title={graph2Meta?.title || '图谱 2'}
+        graph1Title={graph1Meta?.title || t('combinedViewPage.page.graph1')}
+        graph2Title={graph2Meta?.title || t('combinedViewPage.page.graph2')}
         onBack={handleBack}
         coloringMode={coloringMode}
         onToggleColoringMode={handleToggleColoringMode}
@@ -311,7 +313,7 @@ export const CombinedGraphView: React.FC = () => {
           <div className="h-full flex items-center justify-center bg-white dark:bg-slate-800">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">加载中...</p>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
             </div>
           </div>
         ) : (
@@ -375,16 +377,16 @@ export const CombinedGraphView: React.FC = () => {
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: graph1Color }} />
-                  <span className="text-gray-600 dark:text-gray-400">{graph1Meta?.title || '图谱 1'}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{graph1Meta?.title || t('combinedViewPage.page.graph1')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: graph2Color }} />
-                  <span className="text-gray-600 dark:text-gray-400">{graph2Meta?.title || '图谱 2'}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{graph2Meta?.title || t('combinedViewPage.page.graph2')}</span>
                 </div>
               </div>
               {graphRelations.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-                  图谱间关系: {graphRelations.length} 条
+                  {t('combinedViewPage.page.interGraphRelations')}: {t('combinedViewPage.page.relationsCount', { count: graphRelations.length })}
                 </div>
               )}
             </div>
@@ -399,8 +401,8 @@ export const CombinedGraphView: React.FC = () => {
         nodes2={nodes2}
         edges1={edges1}
         edges2={edges2}
-        graph1Title={graph1Meta?.title || '图谱 1'}
-        graph2Title={graph2Meta?.title || '图谱 2'}
+        graph1Title={graph1Meta?.title || t('combinedViewPage.page.graph1')}
+        graph2Title={graph2Meta?.title || t('combinedViewPage.page.graph2')}
         graph1Color={graph1Color}
         graph2Color={graph2Color}
         graph1Id={id1 || ''}

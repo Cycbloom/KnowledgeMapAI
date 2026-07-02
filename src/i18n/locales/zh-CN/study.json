@@ -352,5 +352,38 @@
       "optionsMinLength": "选择题至少需要2个选项",
       "optionContentRequired": "选项内容不能为空"
     }
+  },
+  "quizPreview": {
+    "statusDraft": "草稿",
+    "statusGenerating": "生成中",
+    "statusReady": "就绪",
+    "difficultyEasy": "简单",
+    "difficultyMedium": "中等",
+    "difficultyHard": "困难",
+    "difficultyMixed": "混合",
+    "loadingQuiz": "加载测验中...",
+    "loadFailed": "加载测验失败",
+    "backToStudy": "返回学习页面",
+    "backToQuizList": "返回测验列表",
+    "questionsCount": "{{count}} 道题目",
+    "noDifficulty": "未设置难度",
+    "createdAt": "创建于",
+    "startPractice": "开始练习",
+    "addQuestion": "添加题目",
+    "deleteQuiz": "删除测验",
+    "editQuestion": "编辑题目",
+    "addNewQuestion": "添加新题目",
+    "regeneratingTitle": "正在重新生成题目...",
+    "deleteConfirmTitle": "删除测验",
+    "deleteConfirmMessage": "确定要删除测验 \"{{title}}\" 吗？此操作不可恢复。",
+    "deleteCardFailed": "删除题目失败",
+    "regenerateCardFailed": "重新生成题目失败",
+    "saveCardFailed": "保存题目失败"
+  },
+  "quizGeneration": {
+    "title": "创建测验",
+    "promptConfigTitle": "Prompt 配置管理",
+    "subtitle": "AI 自动生成测验题目",
+    "promptConfigDesc": "管理测验生成的提示词模板"
   }
 }

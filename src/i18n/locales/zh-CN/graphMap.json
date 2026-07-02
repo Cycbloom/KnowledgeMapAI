@@ -93,7 +93,8 @@
     "deleteFailed": "批量删除失败",
     "setDomainSuccess": "成功为 {{count}} 个图谱设置领域",
     "setDomainPartial": "部分完成：{{success}} 个成功，{{fail}} 个失败",
-    "setDomainFailed": "批量设置领域失败"
+    "setDomainFailed": "批量设置领域失败",
+    "confirmDeleteTitle": "确认删除"
   },
   "relation": {
     "createSuccess": "关系创建成功",

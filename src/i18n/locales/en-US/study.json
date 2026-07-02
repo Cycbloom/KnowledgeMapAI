@@ -352,5 +352,38 @@
       "optionsMinLength": "Choice questions require at least 2 options",
       "optionContentRequired": "Option content cannot be empty"
     }
+  },
+  "quizPreview": {
+    "statusDraft": "Draft",
+    "statusGenerating": "Generating",
+    "statusReady": "Ready",
+    "difficultyEasy": "Easy",
+    "difficultyMedium": "Medium",
+    "difficultyHard": "Hard",
+    "difficultyMixed": "Mixed",
+    "loadingQuiz": "Loading quiz...",
+    "loadFailed": "Failed to load quiz",
+    "backToStudy": "Back to Study",
+    "backToQuizList": "Back to Quiz List",
+    "questionsCount": "{{count}} questions",
+    "noDifficulty": "No difficulty set",
+    "createdAt": "Created at",
+    "startPractice": "Start Practice",
+    "addQuestion": "Add Question",
+    "deleteQuiz": "Delete Quiz",
+    "editQuestion": "Edit Question",
+    "addNewQuestion": "Add New Question",
+    "regeneratingTitle": "Regenerating question...",
+    "deleteConfirmTitle": "Delete Quiz",
+    "deleteConfirmMessage": "Are you sure you want to delete quiz \"{{title}}\"? This action cannot be undone.",
+    "deleteCardFailed": "Failed to delete question",
+    "regenerateCardFailed": "Failed to regenerate question",
+    "saveCardFailed": "Failed to save question"
+  },
+  "quizGeneration": {
+    "title": "Create Quiz",
+    "promptConfigTitle": "Prompt Configuration Management",
+    "subtitle": "AI Auto-generate Quiz Questions",
+    "promptConfigDesc": "Manage prompt templates for quiz generation"
   }
 }

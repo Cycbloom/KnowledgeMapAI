@@ -5,6 +5,7 @@ import type { KnowledgePointVersionWithDiff, KnowledgePointVersionDiff } from '.
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { formatDate as formatDateUtil } from '../../../utils/formatters';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { ModalShell } from '../../common';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -149,15 +150,19 @@ export const VersionHistoryModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-fade-in-up">
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="version-history-modal-title"
+      className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-fade-in-up"
+    >
         <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
               <History size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">版本历史</h2>
+              <h2 id="version-history-modal-title" className="text-xl font-bold text-gray-800 dark:text-gray-100">版本历史</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                 {knowledgePointTitle}
               </p>
@@ -425,7 +430,6 @@ export const VersionHistoryModal = ({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

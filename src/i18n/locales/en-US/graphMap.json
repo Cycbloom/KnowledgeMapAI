@@ -93,7 +93,8 @@
     "deleteFailed": "Batch delete failed",
     "setDomainSuccess": "Successfully set domain for {{count}} graphs",
     "setDomainPartial": "Partial completion: {{success}} succeeded, {{fail}} failed",
-    "setDomainFailed": "Batch set domain failed"
+    "setDomainFailed": "Batch set domain failed",
+    "confirmDeleteTitle": "Confirm Delete"
   },
   "relation": {
     "createSuccess": "Relation created successfully",

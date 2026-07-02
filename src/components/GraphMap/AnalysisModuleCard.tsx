@@ -104,6 +104,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
                 }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
                 title="编辑提示词"
+                aria-label="编辑提示词"
               >
                 <Settings size={16} />
               </button>
@@ -160,6 +161,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
               ${colors.bg} hover:opacity-80
             `}
             title="查看结果"
+            aria-label="查看结果"
           >
             <Eye className={`w-4 h-4 ${colors.icon}`} />
           </button>

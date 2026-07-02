@@ -21,6 +21,7 @@ import { Message } from "./hooks/useChatState";
 import { addQuote } from "./index";
 import { TermTooltip } from "../common";
 import { useTranslation } from "react-i18next";
+import { copyToClipboard } from "@/utils/clipboard";
 
 interface CodeBlockProps extends React.HTMLAttributes<HTMLElement> {
   className?: string;
@@ -77,14 +78,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const handleCopyMessage = useCallback(async () => {
     if (!message.content) return;
-    try {
-      await navigator.clipboard.writeText(message.content);
+    const success = await copyToClipboard(message.content, t("common.copied"));
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy message:", err);
     }
-  }, [message.content]);
+  }, [message.content, t]);
 
   const startEditing = useCallback(() => {
     if (isLoading) return;

@@ -148,6 +148,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                         onClick={() => handleNavigate(relation.targetGraphId)}
                         className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
                         title="打开图谱"
+                        aria-label="打开图谱"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
@@ -155,6 +156,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                         onClick={() => handleDeleteRelation(relation.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded"
                         title="删除关联"
+                        aria-label="删除关联"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -192,6 +194,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                         onClick={() => handleNavigate(relation.targetGraphId)}
                         className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
                         title="打开图谱"
+                        aria-label="打开图谱"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
@@ -199,6 +202,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                         onClick={() => handleDeleteRelation(relation.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded"
                         title="删除关联"
+                        aria-label="删除关联"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -236,6 +240,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                         onClick={() => handleNavigate(relation.targetGraphId)}
                         className="p-1.5 text-gray-400 hover:text-primary-500 rounded"
                         title="打开图谱"
+                        aria-label="打开图谱"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
@@ -243,6 +248,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
                         onClick={() => handleDeleteRelation(relation.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded"
                         title="删除关联"
+                        aria-label="删除关联"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

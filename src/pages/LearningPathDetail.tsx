@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Route, RefreshCw } from "lucide-react";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
@@ -20,6 +21,7 @@ import type {
 import { asyncConfirm } from "@/utils/asyncConfirm";
 
 const LearningPathDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id: pathId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -107,7 +109,7 @@ const LearningPathDetailPage: React.FC = () => {
     } catch (error) {
       handleError(error, {
         context: "LearningPathDetail",
-        fallbackMessage: "获取学习路径详情失败",
+        fallbackMessage: t("learningPaths.detail.fetchDetailFailed"),
       });
     } finally {
       setIsLoading(false);
@@ -125,11 +127,11 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       await learningPathsApi.updateNodeStatus(pathId, nodeId, status);
       await fetchPathDetail();
-      frontendEventBus.publish("message_show", { type: "success", content: "节点状态已更新" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.detail.nodeStatusUpdated") });
     } catch (error) {
       handleError(error, {
         context: "UpdateNodeStatus",
-        fallbackMessage: "更新节点状态失败",
+        fallbackMessage: t("learningPaths.detail.updateNodeStatusFailed"),
       });
     } finally {
       setIsUpdating(false);
@@ -149,12 +151,12 @@ const LearningPathDetailPage: React.FC = () => {
         knowledge_point_id: node.node_id,
         priority: node.difficulty_level || 2,
       });
-      frontendEventBus.publish("message_show", { type: "success", content: `已创建任务：${node.title}` });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.detail.taskCreated", { title: node.title }) });
       await fetchPathDetail();
     } catch (error) {
       handleError(error, {
         context: "ConvertToTask",
-        fallbackMessage: "创建任务失败",
+        fallbackMessage: t("learningPaths.detail.createTaskFailed"),
       });
     }
   };
@@ -172,14 +174,14 @@ const LearningPathDetailPage: React.FC = () => {
       if (result.converted_count > 0) {
         frontendEventBus.publish("message_show", {
           type: "success",
-          content: `成功转换 ${result.converted_count} 个节点为任务`,
+          content: t("learningPaths.detail.batchConvertSuccess", { count: result.converted_count }),
         });
       }
 
       if (result.failed_count > 0) {
         frontendEventBus.publish("message_show", {
           type: "warning",
-          content: `${result.failed_count} 个节点转换失败`,
+          content: t("learningPaths.detail.batchConvertPartialFailed", { count: result.failed_count }),
         });
       }
 
@@ -189,7 +191,7 @@ const LearningPathDetailPage: React.FC = () => {
     } catch (error) {
       handleError(error, {
         context: "BatchConvertToTasks",
-        fallbackMessage: "批量转换失败",
+        fallbackMessage: t("learningPaths.detail.batchConvertFailed"),
       });
     } finally {
       setIsBatchConverting(false);
@@ -237,14 +239,14 @@ const LearningPathDetailPage: React.FC = () => {
 
       frontendEventBus.publish("message_show", {
         type: "success",
-        content: `已创建主任务，包含 ${result.total_tasks} 个学习节点，预计 ${result.estimated_days} 天完成`,
+        content: t("learningPaths.detail.autoScheduleSuccess", { total: result.total_tasks, days: result.estimated_days }),
       });
 
       await fetchPathDetail();
     } catch (error) {
       handleError(error, {
         context: "AutoSchedule",
-        fallbackMessage: "自动排程失败",
+        fallbackMessage: t("learningPaths.detail.autoScheduleFailed"),
       });
     } finally {
       setIsUpdating(false);
@@ -260,11 +262,11 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       await learningPathsApi.update(pathId, { status });
       await fetchPathDetail();
-      frontendEventBus.publish("message_show", { type: "success", content: "学习路径状态已更新" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.detail.pathStatusUpdated") });
     } catch (error) {
       handleError(error, {
         context: "UpdatePathStatus",
-        fallbackMessage: "更新状态失败",
+        fallbackMessage: t("learningPaths.detail.updateStatusFailed"),
       });
     } finally {
       setIsUpdating(false);
@@ -272,17 +274,17 @@ const LearningPathDetailPage: React.FC = () => {
   };
 
   const handleDeletePath = async () => {
-    if (!pathId || !await asyncConfirm({ title: '删除学习路径', message: '确定要删除此学习路径吗？此操作不可恢复。', isDangerous: true }))
+    if (!pathId || !await asyncConfirm({ title: t('learningPaths.detail.deletePathTitle'), message: t('learningPaths.detail.deletePathConfirm'), isDangerous: true }))
       return;
 
     try {
       await learningPathsApi.delete(pathId);
-      frontendEventBus.publish("message_show", { type: "success", content: "学习路径已删除" });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.deleteSuccess") });
       navigate(-1);
     } catch (error) {
       handleError(error, {
         context: "DeletePath",
-        fallbackMessage: "删除学习路径失败",
+        fallbackMessage: t("learningPaths.messages.deleteFailed"),
       });
     }
   };
@@ -319,7 +321,7 @@ const LearningPathDetailPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
         <div className="text-center">
           <RefreshCw className="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">加载学习路径...</p>
+          <p className="text-gray-500 dark:text-gray-400">{t("learningPaths.detail.loadingPath")}</p>
         </div>
       </div>
     );
@@ -331,16 +333,16 @@ const LearningPathDetailPage: React.FC = () => {
         <div className="text-center">
           <Route className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            学习路径不存在
+            {t("learningPaths.detail.pathNotExist")}
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            该学习路径可能已被删除或您没有访问权限
+            {t("learningPaths.detail.pathNotExistDesc")}
           </p>
           <button
             onClick={() => navigate(-1)}
             className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
           >
-            返回
+            {t("common.back")}
           </button>
         </div>
       </div>

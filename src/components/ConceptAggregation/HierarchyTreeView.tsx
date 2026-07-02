@@ -290,6 +290,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 }}
                 className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 text-green-500 transition-colors"
                 title="确认关系"
+                aria-label="确认关系"
               >
                 <Check size={12} />
               </button>
@@ -300,6 +301,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 }}
                 className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
                 title="拒绝关系"
+                aria-label="拒绝关系"
               >
                 <X size={12} />
               </button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Users, Link as LinkIcon, UserPlus } from "lucide-react";
 import {
   CollaboratorList,
@@ -6,6 +7,7 @@ import {
   ShareLink,
 } from "@/components/collaborators";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { ModalShell } from '../common';
 import { useCollaborators } from "../../hooks";
 import type { CollaboratorRole } from "@shared/types";
 
@@ -24,6 +26,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   currentUserId,
   isOwner,
 }) => {
+  const { t } = useTranslation();
   const [showInvite, setShowInvite] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const {
@@ -67,16 +70,25 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
-        <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+      <ModalShell
+        isOpen={isOpen}
+        onClose={onClose}
+        titleId="share-dialog-title"
+        className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden"
+        overlayClassName="p-2 sm:p-4 backdrop-blur-sm"
+      >
           <div className="flex items-center justify-between p-4 border-b dark:border-slate-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h2
+              id="share-dialog-title"
+              className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2"
+            >
               <Users className="w-5 h-5" />
-              分享与协作
+              {t('collaborators.shareDialog.title')}
             </h2>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
+              aria-label={t('common.close')}
             >
               <X className="w-5 h-5 text-gray-500" />
             </button>
@@ -84,7 +96,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
           <div className="p-4 space-y-4 overflow-y-auto">
             {loading ? (
-              <div className="text-center py-4 text-gray-500">加载中...</div>
+              <div className="text-center py-4 text-gray-500">{t('common.loading')}</div>
             ) : (
               <CollaboratorList
                 collaborators={collaborators}
@@ -102,7 +114,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
                 >
                   <UserPlus className="w-4 h-4" />
-                  邀请协作者
+                  {t('collaborators.shareDialog.inviteCollaborator')}
                 </button>
 
                 <button
@@ -110,7 +122,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 border dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300"
                 >
                   <LinkIcon className="w-4 h-4" />
-                  生成分享链接
+                  {t('collaborators.shareDialog.generateLink')}
                 </button>
 
                 {shareToken && (
@@ -119,8 +131,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               </div>
             )}
           </div>
-        </div>
-      </div>
+      </ModalShell>
 
       <InviteCollaboratorDialog
         isOpen={showInvite}

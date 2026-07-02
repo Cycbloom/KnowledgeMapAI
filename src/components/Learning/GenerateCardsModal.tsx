@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { isCapacitorMobile } from '../../config/mobileApiConfig';
 import { mobileAIService } from '../../services/mobile/aiService';
+import { ModalShell } from '../common';
 
 interface GenerateProgress {
   current: number;
@@ -89,13 +90,18 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-800">
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="generate-cards-modal-title"
+      className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-800"
+      overlayClassName="z-[60] p-4 backdrop-blur-sm"
+    >
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
                <BrainCircuit size={24} />
-               <h3 className="text-xl font-bold">{t('learning.generateCards.title')}</h3>
+               <h3 id="generate-cards-modal-title" className="text-xl font-bold">{t('learning.generateCards.title')}</h3>
              </div>
              <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
                <X size={20} />
@@ -253,7 +259,6 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
             </>
           )}
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

@@ -21,6 +21,7 @@ import type {
   LiteratureMetadata,
   LiteratureType,
 } from "./LiteratureMetadataForm";
+import { copyToClipboard } from "@/utils/clipboard";
 
 export interface LiteratureMetadataCardProps {
   metadata: LiteratureMetadata;
@@ -83,12 +84,10 @@ const LiteratureMetadataCard: React.FC<LiteratureMetadataCardProps> = ({
   };
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(formatCitationText());
+    const success = await copyToClipboard(formatCitationText(), t("common.copied"));
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
     }
   };
 

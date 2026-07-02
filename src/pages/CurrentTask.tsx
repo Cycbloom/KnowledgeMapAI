@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Play,
   Pause,
@@ -33,14 +34,24 @@ import {
   useDemoteUserTaskMutation,
   useStartUserTaskMutation,
 } from "../hooks";
+import { Skeleton } from "../components/common";
 import { message } from "../utils/messageHelper";
 import { formatDurationMinutes, formatTimeFromSeconds } from "../utils/formatters";
 import { useTimerStore } from "../store/useTimerStore";
 import type { UserTask, TaskSettings } from "@shared/types";
 
-const QUEUE_CONFIG = {
+interface QueueConfig {
+  name: string;
+  color: string;
+  gradient: string;
+  bgClass: string;
+  textClass: string;
+  borderClass: string;
+  glowColor: string;
+}
+
+const QUEUE_VISUAL_CONFIG: Record<number, Omit<QueueConfig, "name">> = {
   0: {
-    name: "紧急队列",
     color: "#06b6d4",
     gradient: "from-primary-400 to-primary-500",
     bgClass: "bg-primary-100 dark:bg-primary-500/10",
@@ -49,7 +60,6 @@ const QUEUE_CONFIG = {
     glowColor: "rgba(6, 182, 212, 0.4)",
   },
   1: {
-    name: "重要队列",
     color: "#10b981",
     gradient: "from-emerald-400 to-green-500",
     bgClass: "bg-emerald-100 dark:bg-emerald-500/10",
@@ -58,7 +68,6 @@ const QUEUE_CONFIG = {
     glowColor: "rgba(16, 185, 129, 0.4)",
   },
   2: {
-    name: "普通队列",
     color: "#f59e0b",
     gradient: "from-amber-400 to-orange-500",
     bgClass: "bg-amber-100 dark:bg-amber-500/10",
@@ -86,6 +95,7 @@ const getTimeSlice = (
 };
 
 export const CurrentTask: React.FC = () => {
+  const { t } = useTranslation();
   const {
     data: tasksData,
     isLoading,
@@ -126,9 +136,19 @@ export const CurrentTask: React.FC = () => {
 
   const glowAnimationRef = useRef<number | null>(null);
 
+  const getQueueConfig = useCallback((queueLevel: number): QueueConfig => {
+    const visual = QUEUE_VISUAL_CONFIG[queueLevel] || QUEUE_VISUAL_CONFIG[0];
+    const nameMap: Record<number, string> = {
+      0: t("scheduler.currentTask.queueUrgent"),
+      1: t("scheduler.currentTask.queueImportant"),
+      2: t("scheduler.currentTask.queueNormal"),
+    };
+    return { ...visual, name: nameMap[queueLevel] || nameMap[0] };
+  }, [t]);
+
   const queueConfig = currentTask
-    ? QUEUE_CONFIG[currentTask.queue_level as keyof typeof QUEUE_CONFIG]
-    : QUEUE_CONFIG[0];
+    ? getQueueConfig(currentTask.queue_level as number)
+    : getQueueConfig(0);
   const timeSliceMinutes = currentTask
     ? getTimeSlice(currentTask.queue_level, settings) / 60
     : 25;
@@ -180,9 +200,9 @@ export const CurrentTask: React.FC = () => {
     try {
       await pauseMutation.mutateAsync(currentTask.id);
       pauseTimer();
-      message.info("任务已暂停");
+      message.info(t("scheduler.currentTask.taskPaused"));
     } catch (error) {
-      message.error("暂停失败");
+      message.error(t("scheduler.currentTask.pauseFailed"));
     }
   };
 
@@ -191,9 +211,9 @@ export const CurrentTask: React.FC = () => {
     try {
       await startMutation.mutateAsync(currentTask.id);
       resumeTimer();
-      message.success("任务已继续");
+      message.success(t("scheduler.currentTask.taskResumed"));
     } catch (error) {
-      message.error("继续失败");
+      message.error(t("scheduler.currentTask.resumeFailed"));
     }
   };
 
@@ -202,10 +222,10 @@ export const CurrentTask: React.FC = () => {
     try {
       await completeMutation.mutateAsync(currentTask.id);
       await completeTimer();
-      message.success("任务已完成！");
+      message.success(t("scheduler.currentTask.taskCompleted"));
       refetch();
     } catch (error) {
-      message.error("完成失败");
+      message.error(t("scheduler.currentTask.completeFailed"));
     }
   };
 
@@ -214,10 +234,10 @@ export const CurrentTask: React.FC = () => {
     try {
       await demoteMutation.mutateAsync(currentTask.id);
       await completeTimer();
-      message.info("任务已降级");
+      message.info(t("scheduler.currentTask.taskDemoted"));
       refetch();
     } catch (error) {
-      message.error("降级失败");
+      message.error(t("scheduler.currentTask.demoteFailed"));
     }
   };
 
@@ -250,10 +270,15 @@ export const CurrentTask: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-500 dark:text-slate-400">加载中...</p>
+      <div className="h-full bg-slate-50 dark:bg-slate-900 p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
+          <Skeleton className="h-32 w-full mb-6 rounded-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl" />
+          </div>
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       </div>
     );
@@ -272,17 +297,17 @@ export const CurrentTask: React.FC = () => {
             <Coffee size={40} className="text-slate-400 dark:text-slate-500" />
           </motion.div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-            当前没有进行中的任务
+            {t("scheduler.currentTask.noActiveTask")}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mb-6">
-            从任务队列中选择一个任务开始专注，或者创建新任务
+            {t("scheduler.currentTask.noActiveTaskDesc")}
           </p>
           <Link
             to="/scheduler"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 text-white font-medium hover:opacity-90 transition-opacity"
           >
             <Target size={18} />
-            前往任务队列
+            {t("scheduler.currentTask.goToTaskQueue")}
           </Link>
         </div>
       </div>
@@ -298,7 +323,7 @@ export const CurrentTask: React.FC = () => {
             className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft size={20} />
-            <span>返回任务队列</span>
+            <span>{t("scheduler.currentTask.backToTaskQueue")}</span>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -309,7 +334,8 @@ export const CurrentTask: React.FC = () => {
                   ? "bg-slate-100 dark:bg-slate-800 text-primary-600 dark:text-primary-400"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
               }`}
-              title={soundEnabled ? "关闭声音" : "开启声音"}
+              title={soundEnabled ? t("scheduler.currentTask.soundOn") : t("scheduler.currentTask.soundOff")}
+              aria-label={soundEnabled ? t("scheduler.currentTask.soundOn") : t("scheduler.currentTask.soundOff")}
             >
               {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </button>
@@ -320,7 +346,8 @@ export const CurrentTask: React.FC = () => {
                   ? "bg-slate-100 dark:bg-slate-800 text-primary-600 dark:text-primary-400"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
               }`}
-              title={notificationEnabled ? "关闭通知" : "开启通知"}
+              title={notificationEnabled ? t("scheduler.currentTask.notificationOn") : t("scheduler.currentTask.notificationOff")}
+              aria-label={notificationEnabled ? t("scheduler.currentTask.notificationOn") : t("scheduler.currentTask.notificationOff")}
             >
               {notificationEnabled ? <Bell size={18} /> : <BellOff size={18} />}
             </button>
@@ -432,7 +459,7 @@ export const CurrentTask: React.FC = () => {
                 </motion.div>
 
                 <div className="text-sm text-slate-400 dark:text-slate-500 mt-2">
-                  {isBreak ? "休息时间" : "专注时间"}
+                  {isBreak ? t("scheduler.currentTask.breakTime") : t("scheduler.currentTask.focusTime")}
                 </div>
 
                 <div className="text-sm text-slate-400 dark:text-slate-600 mt-1">
@@ -467,7 +494,7 @@ export const CurrentTask: React.FC = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Pause size={20} />
-                  <span className="font-medium">暂停</span>
+                  <span className="font-medium">{t("scheduler.currentTask.pause")}</span>
                 </motion.button>
               ) : (
                 <motion.button
@@ -477,7 +504,7 @@ export const CurrentTask: React.FC = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Play size={20} />
-                  <span className="font-medium">继续</span>
+                  <span className="font-medium">{t("scheduler.currentTask.resume")}</span>
                 </motion.button>
               )}
 
@@ -488,7 +515,7 @@ export const CurrentTask: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 <Check size={20} />
-                <span className="font-medium">完成</span>
+                <span className="font-medium">{t("scheduler.currentTask.complete")}</span>
               </motion.button>
             </div>
 
@@ -498,11 +525,11 @@ export const CurrentTask: React.FC = () => {
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: queueConfig.color }}
                 />
-                <span>已用: {formatTimeFromSeconds(totalTime - timeLeft)}</span>
+                <span>{t("scheduler.currentTask.used")}: {formatTimeFromSeconds(totalTime - timeLeft)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
-                <span>总计: {formatTimeFromSeconds(totalTime)}</span>
+                <span>{t("scheduler.currentTask.total")}: {formatTimeFromSeconds(totalTime)}</span>
               </div>
             </div>
           </motion.div>
@@ -550,7 +577,7 @@ export const CurrentTask: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Clock size={14} className={queueConfig.textClass} />
                     <span>
-                      预计 {formatDurationMinutes(currentTask.estimated_duration)}
+                      {t("scheduler.currentTask.estimated")} {formatDurationMinutes(currentTask.estimated_duration)}
                     </span>
                   </div>
                 )}
@@ -562,7 +589,7 @@ export const CurrentTask: React.FC = () => {
                       className="text-red-500 dark:text-red-400"
                     />
                     <span className="text-red-500 dark:text-red-400">
-                      截止 {new Date(currentTask.deadline).toLocaleDateString()}
+                      {t("scheduler.currentTask.deadline")} {new Date(currentTask.deadline).toLocaleDateString()}
                     </span>
                   </div>
                 )}
@@ -583,7 +610,7 @@ export const CurrentTask: React.FC = () => {
 
             <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                操作选项
+                {t("scheduler.currentTask.optionsTitle")}
               </h3>
               <div className="space-y-3">
                 <motion.button
@@ -596,9 +623,9 @@ export const CurrentTask: React.FC = () => {
                     className="text-amber-500 dark:text-amber-400"
                   />
                   <div className="text-left">
-                    <div className="font-medium">跳过任务</div>
+                    <div className="font-medium">{t("scheduler.currentTask.skipTask")}</div>
                     <div className="text-xs text-slate-400 dark:text-slate-500">
-                      任务将降级到下一队列
+                      {t("scheduler.currentTask.skipTaskDesc")}
                     </div>
                   </div>
                 </motion.button>
@@ -613,9 +640,9 @@ export const CurrentTask: React.FC = () => {
                     className="text-emerald-500 dark:text-emerald-400"
                   />
                   <div className="text-left">
-                    <div className="font-medium">开始休息</div>
+                    <div className="font-medium">{t("scheduler.currentTask.startBreak")}</div>
                     <div className="text-xs text-slate-400 dark:text-slate-500">
-                      休息 {breakDurationMinutes} 分钟
+                      {t("scheduler.currentTask.breakMinutes", { count: breakDurationMinutes })}
                     </div>
                   </div>
                 </motion.button>
@@ -624,31 +651,31 @@ export const CurrentTask: React.FC = () => {
 
             <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                时间片设置
+                {t("scheduler.currentTask.timeSliceSettings")}
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-3 rounded-xl bg-primary-100 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/20">
                   <div className="text-xs text-primary-600 dark:text-primary-400 mb-1">
-                    Q0 紧急
+                    {t("scheduler.currentTask.q0Urgent")}
                   </div>
                   <div className="text-lg font-bold text-slate-900 dark:text-white">
-                    {settings?.q0_time_slice || 15}分钟
+                    {settings?.q0_time_slice || 15}{t("scheduler.currentTask.minutesSuffix")}
                   </div>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
                   <div className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">
-                    Q1 重要
+                    {t("scheduler.currentTask.q1Important")}
                   </div>
                   <div className="text-lg font-bold text-slate-900 dark:text-white">
-                    {settings?.q1_time_slice || 25}分钟
+                    {settings?.q1_time_slice || 25}{t("scheduler.currentTask.minutesSuffix")}
                   </div>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
                   <div className="text-xs text-amber-600 dark:text-amber-400 mb-1">
-                    Q2 普通
+                    {t("scheduler.currentTask.q2Normal")}
                   </div>
                   <div className="text-lg font-bold text-slate-900 dark:text-white">
-                    {settings?.q2_time_slice || 45}分钟
+                    {settings?.q2_time_slice || 45}{t("scheduler.currentTask.minutesSuffix")}
                   </div>
                 </div>
               </div>
@@ -679,10 +706,10 @@ export const CurrentTask: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                      {isBreak ? "休息结束" : "时间片结束"}
+                      {isBreak ? t("scheduler.currentTask.breakEnded") : t("scheduler.currentTask.timeSliceEnded")}
                     </h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {isBreak ? "休息时间已结束" : "当前任务的时间片已用完"}
+                      {isBreak ? t("scheduler.currentTask.breakEndedDesc") : t("scheduler.currentTask.timeSliceEndedDesc")}
                     </p>
                   </div>
                 </div>
@@ -696,7 +723,7 @@ export const CurrentTask: React.FC = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        继续工作
+                        {t("scheduler.currentTask.continueWork")}
                       </motion.button>
                       <motion.button
                         onClick={handleDismissModal}
@@ -704,7 +731,7 @@ export const CurrentTask: React.FC = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        稍后处理
+                        {t("scheduler.currentTask.dealWithLater")}
                       </motion.button>
                     </>
                   ) : (
@@ -715,7 +742,7 @@ export const CurrentTask: React.FC = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        开始休息
+                        {t("scheduler.currentTask.startBreak")}
                       </motion.button>
                       <motion.button
                         onClick={handleContinueWork}
@@ -723,7 +750,7 @@ export const CurrentTask: React.FC = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        继续工作
+                        {t("scheduler.currentTask.continueWork")}
                       </motion.button>
                       <motion.button
                         onClick={handleComplete}
@@ -731,7 +758,7 @@ export const CurrentTask: React.FC = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        标记完成
+                        {t("scheduler.currentTask.markComplete")}
                       </motion.button>
                     </>
                   )}

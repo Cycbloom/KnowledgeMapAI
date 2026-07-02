@@ -3,6 +3,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
 import type { Element } from 'hast';
+import { useTranslation } from 'react-i18next';
+import { message } from '@/utils/messageHelper';
 import { cn } from '@/lib/utils';
 
 interface CodeBlockProps {
@@ -19,6 +21,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   node
 }) => {
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslation();
   
   const match = /language-(\w+)/.exec(className || '');
   const language = match ? match[1] : '';
@@ -30,9 +33,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
     try {
       await navigator.clipboard.writeText(codeContent);
       setCopied(true);
+      message.success(t('common.copied'));
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+      message.error(t('common.copyFailed'));
     }
   };
 
@@ -59,17 +64,18 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         <button
           onClick={handleCopy}
           className={cn('flex items-center gap-1 px-2 py-1 rounded transition-colors', isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-300 text-slate-500 hover:text-slate-700')}
-          title="复制代码"
+          title={t('common.copyCode')}
+          aria-label={t('common.copyCode')}
         >
           {copied ? (
             <>
               <Check size={14} />
-              <span>已复制</span>
+              <span>{t('common.copied')}</span>
             </>
           ) : (
             <>
               <Copy size={14} />
-              <span>复制</span>
+              <span>{t('common.copy')}</span>
             </>
           )}
         </button>

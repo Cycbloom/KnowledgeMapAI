@@ -123,6 +123,7 @@ const ConceptMemberCard: React.FC<ConceptMemberCardProps> = ({
             onClick={() => onSplit(groupId, member.knowledgePointId)}
             className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             title="从组中移除"
+            aria-label="从组中移除"
           >
             <SplitSquareHorizontal size={14} />
           </button>

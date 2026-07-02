@@ -8,9 +8,10 @@ import React, {
   useEffect,
 } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store/useStore";
 import { message } from "../utils/messageHelper";
-import { ArrowLeft, Loader2, Lock, LogIn } from "lucide-react";
+import { ArrowLeft, Lock, LogIn } from "lucide-react";
 
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
 import { MindMapCanvas } from "../components/GraphEditor/canvas/MindMapCanvas";
@@ -74,7 +75,7 @@ import {
   CommandPalette,
   CommandItem,
 } from "../components/GraphEditor/shared/CommandPalette";
-import { ErrorBoundary, ShortcutHelpPanel } from "../components/common";
+import { ErrorBoundary, ShortcutHelpPanel, Skeleton } from "../components/common";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCommandPalette } from "./GraphEditor/useCommandPalette";
 import { useLearningPathHandlers } from "./GraphEditor/hooks/useLearningPathHandlers";
@@ -192,21 +193,27 @@ const Console = lazy(() =>
   })),
 );
 
-const ViewLoader = () => (
-  <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
-    <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-  </div>
-);
-
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nodeIdFromUrl = searchParams.get("node_id");
   const { token, user } = useStore();
+  const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
   const queryClient = useQueryClient();
+
+  const ViewLoader = () => (
+    <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm ${isDark ? 'bg-slate-900/50' : 'bg-white/50'}`}>
+      <div className="w-full max-w-md space-y-4 p-4">
+        <Skeleton className="h-8 w-3/4" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+      </div>
+    </div>
+  );
 
   const isAuthenticated = !!token;
   const isReadOnly = !isAuthenticated;
@@ -846,7 +853,7 @@ export const GraphEditor = () => {
     try {
       const newNode = await mutations.createNodeMutation.mutateAsync({
         graph_id: id,
-        title: '新节点',
+        title: t('graphEditor.nodeCreation.newNode'),
         x_position: Math.round(canvasContextMenu.canvasX),
         y_position: Math.round(canvasContextMenu.canvasY),
         level: 'leaf',
@@ -856,10 +863,10 @@ export const GraphEditor = () => {
       setSelectedNode(newNode);
       setSidebarMode('edit');
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-      message.error(`创建节点失败: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : t('graphEditor.nodeCreation.unknownError');
+      message.error(t('graphEditor.nodeCreation.createNodeFailed', { message: errorMessage }));
     }
-  }, [id, canvasContextMenu, mutations.createNodeMutation, record, setSelectedNode, setSidebarMode]);
+  }, [id, canvasContextMenu, mutations.createNodeMutation, record, setSelectedNode, setSidebarMode, t]);
 
   const handlePasteNodes = useCallback(() => {
     // Paste is a placeholder - copies clipboard nodes as new nodes at offset position

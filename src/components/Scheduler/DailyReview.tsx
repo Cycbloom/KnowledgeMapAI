@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { taskReviewApi, TaskReview, Mood } from "../../services/api/review";
 import { api } from "../../services/api";
-import { formatDurationMinutes } from "../../utils/formatters";
+import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import type { UserTask } from "@shared/types";
 
 interface DailyReviewProps {
@@ -175,12 +175,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   每日回顾
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {new Date(targetDate).toLocaleDateString("zh-CN", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    weekday: "long",
-                  })}
+                  {formatDate(targetDate, "long-date")}
                 </p>
               </div>
               <button

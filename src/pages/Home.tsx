@@ -1,3 +1,5 @@
+import { Navigate } from 'react-router-dom';
+
 export default function Home() {
-  return <div>主页</div>;
+  return <Navigate to="/dashboard" replace />;
 }

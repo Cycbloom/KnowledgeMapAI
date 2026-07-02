@@ -26,5 +26,14 @@
     "belongingGraphs": "Belonging graphs:",
     "shared": "Shared knowledge point",
     "independent": "Independent knowledge point"
+  },
+  "page": {
+    "missingGraphId": "Missing graph ID parameter",
+    "loadGraphDataFailed": "Failed to load graph data",
+    "backToGraphMap": "Back to Graph Map",
+    "graph1": "Graph 1",
+    "graph2": "Graph 2",
+    "interGraphRelations": "Inter-graph relations",
+    "relationsCount": "{{count}}"
   }
 }

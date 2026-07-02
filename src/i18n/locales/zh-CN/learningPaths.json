@@ -57,5 +57,24 @@
     "deleteFailed": "删除学习路径失败",
     "statusUpdated": "状态已更新",
     "statusUpdateFailed": "更新状态失败"
+  },
+  "detail": {
+    "deletePathTitle": "删除学习路径",
+    "deletePathConfirm": "确定要删除此学习路径吗？此操作不可恢复。",
+    "fetchDetailFailed": "获取学习路径详情失败",
+    "nodeStatusUpdated": "节点状态已更新",
+    "updateNodeStatusFailed": "更新节点状态失败",
+    "taskCreated": "已创建任务：{{title}}",
+    "createTaskFailed": "创建任务失败",
+    "batchConvertSuccess": "成功转换 {{count}} 个节点为任务",
+    "batchConvertPartialFailed": "{{count}} 个节点转换失败",
+    "batchConvertFailed": "批量转换失败",
+    "autoScheduleSuccess": "已创建主任务，包含 {{total}} 个学习节点，预计 {{days}} 天完成",
+    "autoScheduleFailed": "自动排程失败",
+    "pathStatusUpdated": "学习路径状态已更新",
+    "updateStatusFailed": "更新状态失败",
+    "loadingPath": "加载学习路径...",
+    "pathNotExist": "学习路径不存在",
+    "pathNotExistDesc": "该学习路径可能已被删除或您没有访问权限"
   }
 }

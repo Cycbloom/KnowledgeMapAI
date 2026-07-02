@@ -8,7 +8,7 @@ import {
   Move,
 } from "lucide-react";
 import { useTheme } from "../../hooks";
-import { formatDurationMinutes } from "../../utils/formatters";
+import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import {
   CalendarEvent,
   ExecutionEvent,
@@ -257,11 +257,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               <h3
                 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                {currentDate.toLocaleDateString("zh-CN", {
-                  month: "long",
-                  day: "numeric",
-                  weekday: "long",
-                })}
+                {formatDate(currentDate, "month-day-weekday")}
               </h3>
               <button
                 onClick={goToNextDay}
@@ -373,10 +369,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                   <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-lg shadow-red-500/50" />
                   <div className="flex-1 h-0.5 bg-red-500" />
                   <span className="text-xs text-red-500 font-medium bg-white dark:bg-slate-900 px-1">
-                    {new Date().toLocaleTimeString("zh-CN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatDate(new Date(), "time")}
                   </span>
                 </div>
               </div>

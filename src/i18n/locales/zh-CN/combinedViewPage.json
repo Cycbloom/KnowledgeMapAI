@@ -26,5 +26,14 @@
     "belongingGraphs": "所属图谱:",
     "shared": "共享知识点",
     "independent": "独立知识点"
+  },
+  "page": {
+    "missingGraphId": "缺少图谱 ID 参数",
+    "loadGraphDataFailed": "加载图谱数据失败",
+    "backToGraphMap": "返回图谱地图",
+    "graph1": "图谱 1",
+    "graph2": "图谱 2",
+    "interGraphRelations": "图谱间关系",
+    "relationsCount": "{{count}} 条"
   }
 }

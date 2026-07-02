@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Copy, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { copyToClipboard } from "@/utils/clipboard";
 
 interface ShareLinkProps {
   invitationToken: string;
@@ -7,14 +9,17 @@ interface ShareLinkProps {
 }
 
 export const ShareLink: React.FC<ShareLinkProps> = ({ invitationToken, graphId: _graphId }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const shareUrl = `${window.location.origin}/collaboration/${invitationToken}`;
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const success = await copyToClipboard(shareUrl, t("common.copied"));
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (

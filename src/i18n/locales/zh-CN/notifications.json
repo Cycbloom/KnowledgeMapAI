@@ -1,0 +1,10 @@
+{
+  "loadListFailed": "加载通知列表失败",
+  "loadUnreadFailed": "加载未读数失败",
+  "markReadFailed": "标记已读失败",
+  "markAllReadFailed": "全部已读失败",
+  "deleteFailed": "删除通知失败",
+  "markAllRead": "全部已读",
+  "deleteRead": "删除已读通知",
+  "settings": "通知设置"
+}

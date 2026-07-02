@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { message } from '@/utils/messageHelper';
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
   task_start: <Timer className="text-primary-500" size={16} />,
@@ -72,6 +73,7 @@ export const NotificationCenter: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
+      message.error(t('notifications.loadListFailed'));
     } finally {
       setLoading(false);
     }
@@ -85,6 +87,7 @@ export const NotificationCenter: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load unread count:', error);
+      message.error(t('notifications.loadUnreadFailed'));
     }
   }, []);
 
@@ -136,6 +139,7 @@ export const NotificationCenter: React.FC = () => {
       setUnreadCount(Math.max(0, unreadCount - 1));
     } catch (error) {
       console.error('Failed to mark as read:', error);
+      message.error(t('notifications.markReadFailed'));
     }
   };
 
@@ -146,6 +150,7 @@ export const NotificationCenter: React.FC = () => {
       setUnreadCount(0);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
+      message.error(t('notifications.markAllReadFailed'));
     }
   };
 
@@ -160,6 +165,7 @@ export const NotificationCenter: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to delete notification:', error);
+      message.error(t('notifications.deleteFailed'));
     }
   };
 
@@ -275,7 +281,8 @@ export const NotificationCenter: React.FC = () => {
                         ? 'hover:bg-slate-700 text-slate-400 hover:text-white'
                         : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
                     }`}
-                    title="全部已读"
+                    title={t('notifications.markAllRead')}
+                    aria-label={t('notifications.markAllRead')}
                   >
                     <Check size={16} />
                   </button>
@@ -288,7 +295,8 @@ export const NotificationCenter: React.FC = () => {
                         ? 'hover:bg-red-900/30 text-slate-400 hover:text-red-400'
                         : 'hover:bg-red-50 text-gray-500 hover:text-red-500'
                     }`}
-                    title="删除已读通知"
+                    title={t('notifications.deleteRead')}
+                    aria-label={t('notifications.deleteRead')}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -303,7 +311,8 @@ export const NotificationCenter: React.FC = () => {
                       ? 'hover:bg-slate-700 text-slate-400 hover:text-white'
                       : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
                   }`}
-                  title="通知设置"
+                  title={t('notifications.settings')}
+                  aria-label={t('notifications.settings')}
                 >
                   <Settings size={16} />
                 </button>

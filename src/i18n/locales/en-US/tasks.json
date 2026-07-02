@@ -59,6 +59,7 @@
   "recursiveGraphGeneration": "Recursive Graph Generation",
   "infiniteExpansion": "Infinite Knowledge Network Expansion",
   "embeddingGeneration": "Embedding Generation",
+  "reviewGeneration": "Review task generation",
   "searchPlaceholder": "Search tasks...",
   "noSearchResults": "No matching tasks found",
   "selectMode": "Select",
@@ -70,5 +71,6 @@
   "batchDeleteSuccess": "Successfully deleted {{count}} tasks",
   "batchDeletePartial": "Deletion complete: {{success}} succeeded, {{fail}} failed",
   "cancelSelection": "Cancel Selection",
-  "emptyDesc": "Tasks will appear here once created"
+  "emptyDesc": "Tasks will appear here once created",
+  "taskIdNotExist": "Task ID does not exist"
 }

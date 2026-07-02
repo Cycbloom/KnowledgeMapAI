@@ -59,6 +59,7 @@
   "recursiveGraphGeneration": "递归生成图谱",
   "infiniteExpansion": "无限扩展知识网络",
   "embeddingGeneration": "向量嵌入生成",
+  "reviewGeneration": "复习任务生成",
   "searchPlaceholder": "搜索任务...",
   "noSearchResults": "未找到匹配的任务",
   "selectMode": "多选",
@@ -70,5 +71,6 @@
   "batchDeleteSuccess": "已成功删除 {{count}} 个任务",
   "batchDeletePartial": "删除完成：成功 {{success}} 个，失败 {{fail}} 个",
   "cancelSelection": "取消选择",
-  "emptyDesc": "任务创建后将显示在这里"
+  "emptyDesc": "任务创建后将显示在这里",
+  "taskIdNotExist": "任务ID不存在"
 }

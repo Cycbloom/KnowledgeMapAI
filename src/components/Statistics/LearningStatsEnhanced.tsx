@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { useTheme } from "../../hooks";
 import { CheckCircle, BookOpen, TrendingUp, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '../../utils/formatters';
 
 interface KnowledgeHeatmapProps {
   graphData: Array<{
@@ -367,7 +368,7 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
               <XAxis
                 dataKey="date"
-                tickFormatter={(v) => new Date(v).toLocaleDateString('zh-CN', { weekday: 'short' })}
+                tickFormatter={(v) => formatDate(v, 'weekday-short')}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }}
@@ -380,7 +381,7 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
               />
               <Tooltip
                 formatter={(value) => [`${value} ${t('learningStats.learningTimeTrend.hours')}`, t('learningStats.learningTimeTrend.learningTime')]}
-                labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
+                labelFormatter={(label) => formatDate(label, 'short-date')}
                 contentStyle={{
                   borderRadius: '8px',
                   border: 'none',

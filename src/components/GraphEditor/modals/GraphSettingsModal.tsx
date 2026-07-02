@@ -6,6 +6,7 @@ import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { usePerformanceStore } from '../../../store/usePerformanceStore';
 import { PromptSettingsPanel } from '../panels/PromptSettingsPanel';
 import { AIActionSettingsPanel } from '../panels/AIActionSettingsPanel';
+import { ModalShell } from '../../common';
 
 interface GraphSettingsModalProps {
   isOpen: boolean;
@@ -57,15 +58,20 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className={`bg-white dark:bg-slate-800 rounded-xl sm:rounded-xl shadow-2xl w-full ${activeTab === 'prompts' ? 'max-w-4xl' : 'max-w-md'} transition-all duration-300 overflow-hidden animate-fade-in-up max-h-[95dvh] sm:max-h-[90dvh]`}>
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="graph-settings-modal-title"
+      className={`bg-white dark:bg-slate-800 rounded-xl sm:rounded-xl shadow-2xl w-full ${activeTab === 'prompts' ? 'max-w-4xl' : 'max-w-md'} transition-all duration-300 overflow-hidden animate-fade-in-up max-h-[95dvh] sm:max-h-[90dvh]`}
+      overlayClassName="p-2 sm:p-4"
+    >
         {/* Header */}
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
               <Settings size={24} />
             </div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">图谱设置</h2>
+            <h2 id="graph-settings-modal-title" className="text-xl font-bold text-gray-800 dark:text-gray-100">图谱设置</h2>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target">
             <X size={24} />
@@ -299,7 +305,6 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </ModalShell>
   );
 };

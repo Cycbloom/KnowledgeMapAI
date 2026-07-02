@@ -261,6 +261,7 @@ export const GlobalSearch = () => {
                 : isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
             )}
             title="筛选"
+            aria-label="筛选"
           >
             <Filter size={14} />
           </button>
@@ -273,6 +274,7 @@ export const GlobalSearch = () => {
                 : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
             )}
             title={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
+            aria-label={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
           >
             <Sparkles size={14} fill={searchType === 'semantic' ? "currentColor" : "none"} />
           </button>

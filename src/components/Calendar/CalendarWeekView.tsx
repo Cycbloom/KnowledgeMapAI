@@ -7,6 +7,7 @@ import {
   EventDropInfo,
 } from "../../types/calendar";
 import { CalendarSubtaskStack } from "./CalendarSubtaskStack";
+import { formatDate } from "../../utils/formatters";
 import type { TaskSubtask } from "@shared/types";
 
 interface CalendarWeekViewProps {
@@ -309,10 +310,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     {position.height && parseInt(position.height) > 40 && (
                       <div className="px-1 text-xs opacity-80 flex items-center gap-1">
                         <Clock size={10} />
-                        {new Date(event.start).toLocaleTimeString("zh-CN", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDate(event.start, "time")}
                       </div>
                     )}
                     {showSubtasks &&

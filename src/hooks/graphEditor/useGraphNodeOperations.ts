@@ -51,9 +51,10 @@ export const useGraphNodeOperations = ({
     batchDeleteNodesMutation
   } = mutations;
 
-  const handleSaveNode = async () => {
+  const handleSaveNode = async (options?: { exitToDetail?: boolean }) => {
     if (!id) return;
-    
+    const shouldExitToDetail = options?.exitToDetail ?? false;
+
     await asyncHandler(
       async () => {
         if (sidebarMode === 'create') {
@@ -155,7 +156,9 @@ export const useGraphNodeOperations = ({
           }
           
           setSelectedNode(updated);
-          setSidebarMode('edit');
+          if (shouldExitToDetail) {
+            setSidebarMode('detail');
+          }
           return updated;
         }
         return null;

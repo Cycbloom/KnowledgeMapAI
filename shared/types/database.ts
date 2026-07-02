@@ -1,7 +1,7 @@
 import type { Graph, Domain, GraphDomain } from './graph';
 import type { User } from './user';
 import type { UserTask, UserTaskStatus, TaskType, ProgressMode, Achievement } from './scheduler';
-import type { Database } from './database.generated';
+import type { Database, Json } from './database.generated';
 
 // ===== Row 类型全部引用 supabase 自动生成的类型 =====
 // 保留原类型名作为别名以保持下游引用兼容
@@ -84,9 +84,8 @@ export function toGraph(row: KnowledgeGraphRow): Graph {
     domain: row.domain ?? undefined,
     user_id: row.user_id ?? undefined,
     settings: validateGraphSettings(row.settings),
-    created_at: row.created_at,
+    created_at: row.created_at ?? '',
     updated_at: row.updated_at ?? undefined,
-    nodes_count: row.nodes_count ?? undefined,
     podcast_script: row.podcast_script ?? undefined,
     is_favorite: row.is_favorite ?? undefined,
   };
@@ -111,14 +110,14 @@ export function toDomain(row: DomainRow): Domain {
     id: row.id,
     name: row.name,
     description: row.description ?? undefined,
-    color: row.color,
+    color: row.color ?? '',
     icon: row.icon ?? undefined,
     parent_id: row.parent_id ?? undefined,
-    sort_order: row.sort_order,
+    sort_order: row.sort_order ?? 0,
     user_id: row.user_id ?? undefined,
-    is_system: row.is_system,
-    created_at: row.created_at,
-    updated_at: row.updated_at ?? row.created_at,
+    is_system: row.is_system ?? false,
+    created_at: row.created_at ?? '',
+    updated_at: row.updated_at ?? row.created_at ?? '',
   };
 }
 
@@ -155,7 +154,7 @@ export function toUserTask(row: UserTaskRow): UserTask {
     task_type: toTaskType(row.task_type),
     total_duration: row.total_duration ?? undefined,
     progress_mode: toProgressMode(row.progress_mode),
-    progress_percentage: row.progress_percentage,
+    progress_percentage: row.progress_percentage ?? undefined,
     parent_task_id: row.parent_task_id ?? undefined,
     context: row.context ? JSON.stringify(row.context) : undefined,
   };
@@ -163,10 +162,10 @@ export function toUserTask(row: UserTaskRow): UserTask {
 
 // ===== Graph settings 校验 =====
 
-function validateGraphSettings(raw: Record<string, unknown> | null | undefined): Graph['settings'] {
-  if (!raw) return undefined;
+function validateGraphSettings(raw: Json | null | undefined): Graph['settings'] {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   // 保守校验：只要满足 settings 的形状即通过，未知字段保留
-  return raw as Graph['settings'];
+  return raw as Record<string, unknown> as Graph['settings'];
 }
 
 export function toAchievement(row: AchievementRow): Achievement {

@@ -44,6 +44,7 @@ import {
   useQuoteShortcut,
 } from "../hooks";
 import { useRecentGraphs } from "../hooks/useRecentGraphs";
+import { isAppError } from "../utils/errors";
 import { computeRegions } from "../lib/graph";
 import {
   useGraph,
@@ -291,8 +292,8 @@ export const GraphEditor = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const { addRecentGraph } = useRecentGraphs();
-  const { data: graphMeta } = useGraph(id || "");
+  const { addRecentGraph, removeRecentGraph } = useRecentGraphs();
+  const { data: graphMeta, isError: isGraphError, error: graphError } = useGraph(id || "");
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || "");
 
   // Record graph access for recent graphs quick access
@@ -306,6 +307,13 @@ export const GraphEditor = () => {
       });
     }
   }, [graphMeta, id, addRecentGraph]);
+
+  // 图谱不存在时（404），从最近编辑列表中清理该条目，避免死链
+  useEffect(() => {
+    if (id && isGraphError && isAppError(graphError) && graphError.statusCode === 404) {
+      removeRecentGraph(id);
+    }
+  }, [id, isGraphError, graphError, removeRecentGraph]);
   const nodeStatus = graphData?.nodeStatus ?? {};
   const { data: aiStatus } = useAIStatus(!!token);
   const aiEnabled = aiStatus?.enabled ?? true;

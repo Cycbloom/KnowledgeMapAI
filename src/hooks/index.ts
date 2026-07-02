@@ -9,6 +9,7 @@ export * from "./useConsole";
 export * from "./useScrollDirection";
 export * from "./useAILanguage";
 export * from "./useActivityTracker";
+export * from "./useBacklinks";
 export * from "./useCardReviewLogic";
 export * from "./useQuizLogic";
 export * from "./useStudyModeLogic";

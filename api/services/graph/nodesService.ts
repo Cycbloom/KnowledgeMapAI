@@ -494,6 +494,8 @@ export class NodesService {
                 supabase,
                 existingNode.knowledge_point_id,
                 kpUpdates,
+                userId,
+                existingNode.graph_id,
               );
             } catch (error: unknown) {
               logger.error('Update knowledge point error:', error);
@@ -528,6 +530,8 @@ export class NodesService {
               supabase,
               existingNode.knowledge_point_id,
               kpUpdates,
+              userId,
+              existingNode.graph_id,
             );
           } catch (error: unknown) {
             logger.error('Update knowledge point error:', error);

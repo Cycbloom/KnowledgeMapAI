@@ -201,6 +201,7 @@ export class NodeBatchService {
       nodeUpdateId: string;
       graphNodeId: string;
       knowledgePointId: string;
+      graphId: string;
       kpUpdates: Record<string, unknown>;
       gnUpdates: Record<string, unknown>;
     }> = [];
@@ -272,6 +273,7 @@ export class NodeBatchService {
           nodeUpdateId: nodeUpdate.id,
           graphNodeId: graphNode.id,
           knowledgePointId: graphNode.knowledge_point_id,
+          graphId: graphNode.graph_id,
           kpUpdates,
           gnUpdates,
         });
@@ -334,7 +336,7 @@ export class NodeBatchService {
           }
         },
         fallbackFn: async () => {
-          await this.executeBatchUpdateFallback(supabase, pendingUpdates, updateResults);
+          await this.executeBatchUpdateFallback(supabase, userId, pendingUpdates, updateResults);
         },
       });
     }
@@ -361,10 +363,12 @@ export class NodeBatchService {
    */
   private async executeBatchUpdateFallback(
     supabase: SupabaseClient,
+    userId: string,
     pendingUpdates: Array<{
       nodeUpdateId: string;
       graphNodeId: string;
       knowledgePointId: string;
+      graphId: string;
       kpUpdates: Record<string, unknown>;
       gnUpdates: Record<string, unknown>;
     }>,
@@ -380,6 +384,8 @@ export class NodeBatchService {
           supabase,
           item.knowledgePointId,
           item.kpUpdates,
+          userId,
+          item.graphId,
         );
         updateResults.push({ id: item.nodeUpdateId, updated: true });
       } catch (error: unknown) {

@@ -11,6 +11,7 @@ import graphNodesRoutes from "../../routes/graphNodes";
 import combinedViewRoutes from "../../routes/combinedView";
 import conceptAggregationRoutes from "../../routes/conceptAggregation";
 import regionRoutes from "../../routes/regions";
+import backlinksRoutes from "../../routes/backlinks";
 import { storyRoutes } from "../../routes/story";
 
 export const graphPlugin: Plugin = {
@@ -32,6 +33,7 @@ export const graphPlugin: Plugin = {
     kernel.registerRoutes("/api/combined-view", combinedViewRoutes);
     kernel.registerRoutes("/api/graphs", conceptAggregationRoutes);
     kernel.registerRoutes("/api/graphs/:graphId/regions", regionRoutes);
+    kernel.registerRoutes("/api/backlinks", backlinksRoutes);
     kernel.registerRoutes("/api/story/:graphId", storyRoutes);
   },
 };

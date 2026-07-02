@@ -11,6 +11,7 @@ export type { AIAction, AIActionVariables } from "@shared/types";
 export { authApi } from "./auth";
 export { graphsApi } from "./graphs";
 export { nodesApi, edgesApi } from "./nodes";
+export { backlinksApi } from "./backlinks";
 export {
   knowledgePointsApi,
   graphNodesApi,
@@ -66,6 +67,7 @@ export { graphVersionsApi } from "./graphVersions";
 import { authApi } from "./auth";
 import { graphsApi } from "./graphs";
 import { nodesApi, edgesApi } from "./nodes";
+import { backlinksApi } from "./backlinks";
 import {
   knowledgePointsApi,
   graphNodesApi,
@@ -106,6 +108,7 @@ export const api: IApi = {
   graphs: graphsApi,
   nodes: nodesApi,
   edges: edgesApi,
+  backlinks: backlinksApi,
   knowledgePoints: knowledgePointsApi,
   graphNodes: graphNodesApi,
   combinedView: combinedViewApi,

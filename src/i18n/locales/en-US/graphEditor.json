@@ -278,5 +278,18 @@
     "newNode": "New Node",
     "unknownError": "Unknown error",
     "createNodeFailed": "Failed to create node: {{message}}"
+  },
+  "backlinks": {
+    "tabContent": "Content",
+    "tabBacklinks": "Backlinks",
+    "panelTitle": "Backlinks",
+    "empty": "No backlinks yet",
+    "error": "Failed to load",
+    "notFound": "Node not found",
+    "searchPlaceholder": "Search nodes...",
+    "searchEmpty": "No matches",
+    "searchHint": "Type to search nodes",
+    "contextLabel": "Context",
+    "inCurrentGraph": "Current graph"
   }
 }

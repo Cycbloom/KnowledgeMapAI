@@ -1,3 +1,5 @@
+import { extractWikiLinks } from './wikiLink';
+
 export interface ParsedNode {
   id: string;
   title: string;
@@ -106,13 +108,13 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
     }
 
     // Extract Obsidian-style links: [[Target Node Title]]
+    // 复用 shared/utils/wikiLink 的解析逻辑
     if (currentNode) {
-      const linkRegex = /\[\[(.*?)\]\]/g;
-      let match;
-      while ((match = linkRegex.exec(line)) !== null) {
+      const wikiLinks = extractWikiLinks(line);
+      for (const targetTitle of wikiLinks) {
         potentialLinks.push({
           sourceId: currentNode.id,
-          targetTitle: match[1].trim()
+          targetTitle,
         });
       }
     }

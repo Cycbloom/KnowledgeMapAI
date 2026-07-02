@@ -7,6 +7,7 @@ export type { GraphRelationType, GraphRelation, CreateRelationData } from './gra
 export { graphTemplateService, GraphTemplateService } from './graphTemplateService';
 export type { GraphTemplateNode, GraphTemplateEdge, GraphTemplateLayout, GraphTemplate, CreateGraphTemplateData, UpdateGraphTemplateData } from './graphTemplateService';
 export { edgeService, EdgeService } from './edgeService';
+export { backlinkService, BacklinkService } from './backlinkService';
 export { graphVersionService, GraphVersionService } from './graphVersionService';
 export { knowledgePointService, KnowledgePointService } from './knowledgePointService';
 export type { ListKnowledgePointsOptions, ListPublicKnowledgePointsOptions, PaginatedResult, SubmitPublicOptions, AutoReviewResult, PendingKnowledgePointItem, CreateKnowledgePointData, UpdateKnowledgePointData, SimilarKnowledgePointResult, KnowledgePointGraph } from './knowledgePointService';

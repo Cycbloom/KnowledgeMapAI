@@ -22,16 +22,16 @@ export interface BackupGraphItem {
   domain?: string | null;
   is_favorite?: boolean | null;
   template_type?: string | null;
-  settings?: Record<string, unknown> | null;
+  settings?: unknown | null;
   is_public?: boolean | null;
-  reference_books?: Record<string, unknown>[] | null;
-  external_links?: Record<string, unknown>[] | null;
+  reference_books?: unknown | null;
+  external_links?: unknown | null;
   learning_guide?: string | null;
   parent_graph_id?: string | null;
   last_used_at?: string | null;
   task_id?: string | null;
   podcast_script?: string | null;
-  created_at: string;
+  created_at: string | null;
   updated_at?: string | null;
 }
 
@@ -40,6 +40,7 @@ export interface BackupNodeItem {
   graph_id: string;
   title: string;
   content?: string;
+  summary?: string;
   learning_material?: string;
   properties?: Record<string, unknown>;
   x_position: number;
@@ -88,7 +89,7 @@ export interface BackupStudyCardItem {
   fsrs_scheduled_days?: number | null;
   fsrs_retrievability?: number | null;
   fsrs_last_review?: string | null;
-  created_at: string;
+  created_at: string | null;
 }
 
 export interface BackupBackboneModuleItem {
@@ -505,118 +506,7 @@ export class BackupService {
   async restoreBackupData(
     supabase: SupabaseClient,
     userId: string,
-    data: {
-      graphs?: Array<{
-        id: string;
-        title: string;
-        description?: string | null;
-        domain?: string | null;
-        is_favorite?: boolean | null;
-        template_type?: string | null;
-        settings?: Record<string, unknown> | null;
-        is_public?: boolean | null;
-        reference_books?: Record<string, unknown>[] | null;
-        external_links?: Record<string, unknown>[] | null;
-        learning_guide?: string | null;
-        parent_graph_id?: string | null;
-        last_used_at?: string | null;
-        task_id?: string | null;
-        podcast_script?: string | null;
-      }>;
-      nodes?: Array<{
-        id: string;
-        graph_id: string;
-        title: string;
-        content?: string;
-        summary?: string;
-        learning_material?: string;
-        keywords?: Record<string, unknown>[] | null;
-        aliases?: string[] | null;
-        properties?: Record<string, unknown>;
-        mastery_level?: number | null;
-        last_study_at?: string | null;
-        total_study_duration?: number | null;
-        x_position?: number;
-        y_position?: number;
-        level?: string;
-        is_accepted?: boolean;
-      }>;
-      edges?: Array<{
-        graph_id: string;
-        source_knowledge_point_id: string;
-        target_knowledge_point_id: string;
-        relationship_type?: string;
-        weight?: number;
-        custom_label?: string | null;
-        custom_color?: string | null;
-        custom_line_style?: string | null;
-        show_arrow?: boolean | null;
-      }>;
-      study_cards?: Array<{
-        graph_id: string | null;
-        knowledge_point_id: string | null;
-        question: string;
-        answer: string;
-        explanation?: string | null;
-        card_type?: string | null;
-        options?: unknown | null;
-        difficulty?: number | null;
-        last_reviewed?: string | null;
-        next_review?: string | null;
-        review_count?: number | null;
-        fsrs_state?: string | null;
-        fsrs_stability?: number | null;
-        fsrs_difficulty?: number | null;
-        fsrs_elapsed_days?: number | null;
-        fsrs_scheduled_days?: number | null;
-        fsrs_retrievability?: number | null;
-        fsrs_last_review?: string | null;
-      }>;
-      study_progress?: Array<{
-        graph_id: string;
-        total_nodes?: number;
-        mastered_nodes?: number;
-        progress_percentage?: number;
-        study_streak?: number;
-      }>;
-      focus_sessions?: Array<{
-        task_id?: string | null;
-        started_at?: string | null;
-        ended_at?: string | null;
-        duration?: number | null;
-        mode?: string | null;
-        completed?: boolean | null;
-        pomodoro_count?: number | null;
-        white_noise_type?: string | null;
-        is_break?: boolean | null;
-      }>;
-      user_achievements?: Array<{
-        achievement_id: string | null;
-        progress?: number | null;
-        metadata?: Record<string, unknown> | null;
-        unlocked_at?: string | null;
-      }>;
-      periodic_tasks?: Array<{
-        period_type: string | null;
-        period_start: string | null;
-        period_end: string | null;
-        task_type: string | null;
-        target: number | null;
-        progress?: number | null;
-        status?: string | null;
-        xp_reward?: number | null;
-        pass_points?: number | null;
-      }>;
-      backbone_modules?: Array<{
-        graph_id: string;
-        module_type: string;
-        title: string;
-        icon?: string | null;
-        color?: string | null;
-        description?: string | null;
-        display_order?: number;
-      }>;
-    },
+    data: BackupData["data"],
   ): Promise<{
     graphs: number;
     nodes: number;

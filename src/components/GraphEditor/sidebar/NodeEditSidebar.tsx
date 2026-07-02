@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Node as GraphNode, NodeLevel } from "../../../types";
 import { getLevelColor, getLevelLabel } from "../../../lib/graphUtils";
 import {
@@ -29,6 +30,10 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
+import { preprocessWikiLinks, WikiLinkRenderer } from "../../../utils/wikiLinkRemarkPlugin";
+import { backlinksApi } from "../../../services/api/backlinks";
+import { NodeLinkSelector } from "./NodeLinkSelector";
+import { BacklinksPanel } from "./BacklinksPanel";
 
 interface NodeFormState {
   title: string;
@@ -43,7 +48,7 @@ interface NodeEditSidebarProps {
   mode: "create" | "edit";
   nodeForm: NodeFormState;
   setNodeForm: (form: NodeFormState) => void;
-  onSave: () => void;
+  onSave: (options?: { exitToDetail?: boolean }) => void;
   onClose: () => void;
   onBack: () => void;
   prevSidebarMode: "none" | "create" | "edit" | "outline" | "detail";
@@ -53,7 +58,87 @@ interface NodeEditSidebarProps {
   isSelectingParent?: boolean;
   onStartSelectingParent?: () => void;
   onCancelSelectingParent?: () => void;
+  /** 当前图谱 ID（用于双链搜索与反向链接同图谱判断） */
+  graphId?: string;
+  /** 点击 wiki 链接或反向链接项时跳转节点 */
+  onNavigateToNode?: (knowledgePointId: string, graphId?: string) => void;
 }
+
+/**
+ * 通过 mirror div 技术计算 textarea 中指定位置光标的相对坐标。
+ * 返回相对 textarea 内容区左上角的像素坐标（不含 padding 外的边框）。
+ */
+const CARET_COPY_STYLES = [
+  "boxSizing",
+  "width",
+  "height",
+  "overflowX",
+  "overflowY",
+  "borderTopWidth",
+  "borderRightWidth",
+  "borderBottomWidth",
+  "borderLeftWidth",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "fontStyle",
+  "fontVariant",
+  "fontWeight",
+  "fontStretch",
+  "fontSize",
+  "fontSizeAdjust",
+  "lineHeight",
+  "fontFamily",
+  "textAlign",
+  "textTransform",
+  "textIndent",
+  "textDecoration",
+  "letterSpacing",
+  "wordSpacing",
+  "tabSize",
+] as const;
+
+const getCaretCoordinates = (
+  textarea: HTMLTextAreaElement,
+  position: number,
+): { top: number; left: number } => {
+  const div = document.createElement("div");
+  const styles = window.getComputedStyle(textarea);
+  const sourceStyle = styles as unknown as Record<string, string>;
+  const targetStyle = div.style as unknown as Record<string, string>;
+  CARET_COPY_STYLES.forEach((prop) => {
+    targetStyle[prop] = sourceStyle[prop];
+  });
+  div.style.position = "absolute";
+  div.style.visibility = "hidden";
+  div.style.whiteSpace = "pre-wrap";
+  div.style.wordWrap = "break-word";
+
+  const textBefore = textarea.value.substring(0, position);
+  div.textContent = textBefore;
+
+  const span = document.createElement("span");
+  span.textContent = textarea.value.substring(position) || ".";
+  div.appendChild(span);
+
+  document.body.appendChild(div);
+
+  // 计算滚动偏移
+  const top = span.offsetTop - textarea.scrollTop;
+  const left = span.offsetLeft - textarea.scrollLeft;
+
+  document.body.removeChild(div);
+  return { top, left };
+};
+
+/**
+ * 判断光标前是否在代码块内（简单统计 ``` 出现次数，奇数即在内）
+ */
+const isInsideCodeBlock = (textBeforeCursor: string): boolean => {
+  const codeFenceCount = (textBeforeCursor.match(/```/g) ?? []).length;
+  return codeFenceCount % 2 === 1;
+};
 
 export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   mode,
@@ -69,9 +154,12 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   isSelectingParent = false,
   onStartSelectingParent,
   onCancelSelectingParent,
+  graphId,
+  onNavigateToNode,
 }) => {
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
+  const { t } = useTranslation();
   const [parentSearch, setParentSearch] = useState("");
   const [showParentDropdown, setShowParentDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -79,6 +167,16 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [contentViewMode, setContentViewMode] = useState<"edit" | "preview">("edit");
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  // 双链 [[ 触发器状态
+  const [showLinkSelector, setShowLinkSelector] = useState(false);
+  const [linkSelectorPosition, setLinkSelectorPosition] = useState<{
+    top: number;
+    left: number;
+  }>({ top: 0, left: 0 });
+  // 内容 / 反向链接 Tab 切换
+  const [contentTab, setContentTab] = useState<"content" | "backlinks">(
+    "content",
+  );
 
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<
@@ -115,7 +213,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     autoSaveTimerRef.current = setTimeout(() => {
       isAutoSavingRef.current = true;
       setAutoSaveStatus("saving");
-      onSaveRef.current();
+      onSaveRef.current({ exitToDetail: false });
     }, 3000);
 
     return () => {
@@ -147,7 +245,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     clearAutoSaveTimer();
     isAutoSavingRef.current = false;
     setAutoSaveStatus("idle");
-    onSave();
+    onSave({ exitToDetail: true });
   }, [clearAutoSaveTimer, onSave]);
 
   const currentNode = useMemo(() => {
@@ -278,6 +376,86 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     [wrapSelection],
   );
 
+  // 双链 [[ 触发检测 + 内容变更处理
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      setNodeForm({ ...nodeForm, content: newValue });
+
+      const textarea = e.target;
+      const cursorPos = textarea.selectionStart;
+      const beforeCursor = newValue.slice(0, cursorPos);
+      const lastTwo = beforeCursor.slice(-2);
+
+      if (lastTwo === "[[" && !isInsideCodeBlock(beforeCursor.slice(0, -2))) {
+        // 检测到 [[ 且不在代码块内，计算光标坐标并弹出选择器
+        const caretCoords = getCaretCoordinates(textarea, cursorPos);
+        const rect = textarea.getBoundingClientRect();
+        setLinkSelectorPosition({
+          top: rect.top + caretCoords.top + 20,
+          left: Math.min(
+            rect.left + caretCoords.left,
+            window.innerWidth - 340,
+          ),
+        });
+        setShowLinkSelector(true);
+      } else {
+        setShowLinkSelector(false);
+      }
+    },
+    [nodeForm, setNodeForm],
+  );
+
+  // 选中节点标题后，将 [[ 替换为 [[title]] 并移动光标到 ]] 之后
+  const handleLinkSelect = useCallback(
+    (title: string) => {
+      const textarea = contentTextareaRef.current;
+      if (!textarea) {
+        setShowLinkSelector(false);
+        return;
+      }
+      const cursorPos = textarea.selectionStart;
+      const value = nodeForm.content;
+      const bracketPos = value.lastIndexOf("[[", cursorPos);
+      if (bracketPos === -1) {
+        setShowLinkSelector(false);
+        return;
+      }
+      const replacement = `[[${title}]]`;
+      const newValue =
+        value.slice(0, bracketPos) + replacement + value.slice(cursorPos);
+      setNodeForm({ ...nodeForm, content: newValue });
+      setShowLinkSelector(false);
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const newCursorPos = bracketPos + replacement.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      });
+    },
+    [nodeForm, setNodeForm],
+  );
+
+  // 预览模式下点击 wiki 链接：搜索节点并跳转
+  const handleWikiLinkClick = useCallback(
+    async (title: string) => {
+      try {
+        const hits = await backlinksApi.search(title, {
+          graphId,
+          limit: 1,
+        });
+        const hit = hits[0];
+        if (hit) {
+          onNavigateToNode?.(hit.id, hit.graphIds[0]);
+        } else {
+          console.warn(t("graphEditor.backlinks.notFound"), title);
+        }
+      } catch {
+        console.warn(t("graphEditor.backlinks.notFound"), title);
+      }
+    },
+    [graphId, onNavigateToNode, t],
+  );
+
   const getLevelBadgeStyle = (level: NodeLevel, isDark: boolean = false) => {
     const styles = {
       root: isDark
@@ -359,9 +537,45 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
         </div>
       )}
 
+      {/* 内容 / 反向链接 Tab 切换器（仅编辑模式显示） */}
+      {mode === "edit" && (
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 mb-4">
+          <button
+            type="button"
+            onClick={() => setContentTab("content")}
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              contentTab === "content"
+                ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            {t("graphEditor.backlinks.tabContent")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setContentTab("backlinks")}
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              contentTab === "backlinks"
+                ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            {t("graphEditor.backlinks.tabBacklinks")}
+          </button>
+        </div>
+      )}
+
       <div
         className={`flex-1 overflow-y-auto ${isMobile ? "space-y-5 px-1 pb-32" : "space-y-4 pr-1"}`}
       >
+        {mode === "edit" && contentTab === "backlinks" ? (
+          <BacklinksPanel
+            knowledgePointId={currentNodeId}
+            currentGraphId={graphId}
+            onNavigateToNode={onNavigateToNode}
+          />
+        ) : (
+          <>
         <div>
           <label
             className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? "text-base mb-2" : "text-sm mb-1"}`}
@@ -618,7 +832,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
           <select
             value={nodeForm.level}
             onChange={(e) =>
-              setNodeForm({ ...nodeForm, level: e.target.value as any })
+              setNodeForm({ ...nodeForm, level: e.target.value as NodeLevel })
             }
             className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "px-4 py-3 min-h-[44px] text-base" : "px-3 py-2 text-sm"}`}
           >
@@ -715,11 +929,9 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               <textarea
                 ref={contentTextareaRef}
                 value={nodeForm.content}
-                onChange={(e) =>
-                  setNodeForm({ ...nodeForm, content: e.target.value })
-                }
+                onChange={handleContentChange}
                 className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? "h-48 px-4 py-3 text-base" : "h-64 px-3 py-2 text-sm"}`}
-                placeholder="支持 Markdown 格式..."
+                placeholder="支持 Markdown 格式... 输入 [[ 触发节点链接"
               />
             </>
           ) : (
@@ -732,8 +944,16 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}
                     urlTransform={(url) => url}
+                    components={{
+                      a: ({ node: _node, ...props }) => (
+                        <WikiLinkRenderer
+                          {...props}
+                          onWikiLinkClick={handleWikiLinkClick}
+                        />
+                      ),
+                    }}
                   >
-                    {preprocessMarkdown(nodeForm.content)}
+                    {preprocessWikiLinks(preprocessMarkdown(nodeForm.content))}
                   </ReactMarkdown>
                 </div>
               ) : (
@@ -744,6 +964,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       <div
@@ -823,6 +1045,17 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
           </button>
         )}
       </div>
+
+      {/* 双链 [[ 节点选择浮层 */}
+      {showLinkSelector && (
+        <NodeLinkSelector
+          graphId={graphId}
+          currentKnowledgePointId={currentNodeId}
+          onSelect={handleLinkSelect}
+          onClose={() => setShowLinkSelector(false)}
+          position={linkSelectorPosition}
+        />
+      )}
     </div>
   );
 };

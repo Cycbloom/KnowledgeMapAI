@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -69,8 +69,8 @@ export const Dashboard = () => {
   const batchDeleteGraphsMutation = useBatchDeleteGraphsMutation();
   const prefetchGraph = usePrefetchGraph();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const { getRecentGraphs } = useRecentGraphs();
-  const recentGraphs = useMemo(() => getRecentGraphs(), [getRecentGraphs]);
+  const { getRecentGraphs, removeRecentGraph } = useRecentGraphs();
+  const recentGraphsRaw = useMemo(() => getRecentGraphs(), [getRecentGraphs]);
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
@@ -94,6 +94,28 @@ export const Dashboard = () => {
     () => (Array.isArray(graphsData) ? graphsData : []),
     [graphsData],
   );
+
+  // 图谱列表加载成功后，用其校验最近编辑条目，过滤掉已被删除的死链
+  const validGraphIds = useMemo(
+    () => new Set(graphs.map((g) => g.id)),
+    [graphs],
+  );
+  const recentGraphs = useMemo(() => {
+    // 列表加载中或出错时不过滤，避免误隐藏有效条目
+    if (isLoading || error) return recentGraphsRaw;
+    return recentGraphsRaw.filter((r) => validGraphIds.has(r.id));
+  }, [recentGraphsRaw, validGraphIds, isLoading, error]);
+
+  // 同步清理 localStorage 中已失效的最近编辑条目
+  useEffect(() => {
+    if (isLoading || error) return;
+    const staleIds = recentGraphsRaw
+      .filter((r) => !validGraphIds.has(r.id))
+      .map((r) => r.id);
+    if (staleIds.length > 0) {
+      staleIds.forEach((id) => removeRecentGraph(id));
+    }
+  }, [recentGraphsRaw, validGraphIds, isLoading, error, removeRecentGraph]);
 
   const filters = useDashboardFilters({ isMobile, graphs });
 

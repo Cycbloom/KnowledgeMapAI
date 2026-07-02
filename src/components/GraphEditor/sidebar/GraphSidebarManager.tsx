@@ -23,7 +23,7 @@ interface GraphStats {
 }
 
 interface NodeOperations {
-  handleSaveNode: () => void;
+  handleSaveNode: (options?: { exitToDetail?: boolean }) => void;
   handleDeleteNode: () => void;
   handleBatchDelete: () => void;
   handleUpdateNode: (nodeId: string, updates: Partial<Node>) => void;
@@ -301,6 +301,17 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           onShowVersionHistory={() => setIsVersionHistoryOpen(true)}
           isGeneratingContent={loading}
           coloringMode={coloringMode}
+          onNavigateToNode={(knowledgePointId) => {
+            const targetNode = nodes.find(
+              (n) => n.knowledge_point_id === knowledgePointId,
+            );
+            if (targetNode) {
+              setSelectedNode(targetNode);
+              setSelectedNodeIds(new Set([targetNode.id]));
+              setFocusedNodeId(targetNode.id);
+              setSidebarMode("detail");
+            }
+          }}
         />
       ) : sidebarMode === "create" || sidebarMode === "edit" ? (
         <NodeEditSidebar
@@ -320,6 +331,18 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           isSelectingParent={isSelectingParent}
           onStartSelectingParent={onStartSelectingParent}
           onCancelSelectingParent={onCancelSelectingParent}
+          graphId={selectedNode?.graph_id}
+          onNavigateToNode={(knowledgePointId) => {
+            const targetNode = nodes.find(
+              (n) => n.knowledge_point_id === knowledgePointId,
+            );
+            if (targetNode) {
+              setSelectedNode(targetNode);
+              setSelectedNodeIds(new Set([targetNode.id]));
+              setFocusedNodeId(targetNode.id);
+              setSidebarMode("detail");
+            }
+          }}
         />
       ) : null}
     </>

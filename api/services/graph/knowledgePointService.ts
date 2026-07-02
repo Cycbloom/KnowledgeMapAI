@@ -5,6 +5,7 @@ import { PaginationOptions, getPaginationParams } from '../../utils/pagination';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { cacheService, CacheKeys, CacheTTL, computeTextHash } from '../common/cacheService';
+import { backlinkService } from './backlinkService';
 import type { KnowledgePoint, KnowledgePointVisibility } from '../../../shared/types/index';
 
 export type { KnowledgePoint, KnowledgePointVisibility };
@@ -148,7 +149,9 @@ export class KnowledgePointService {
   async update(
     supabase: SupabaseClient,
     id: string,
-    data: UpdateKnowledgePointData
+    data: UpdateKnowledgePointData,
+    userId?: string,
+    graphId?: string,
   ): Promise<KnowledgePoint> {
     // 更新前获取原标题，用于失效旧 embedding 缓存
     let oldTitle: string | undefined;
@@ -188,6 +191,30 @@ export class KnowledgePointService {
         const oldTitleHash = computeTextHash(oldTitle);
         await cacheService.del(CacheKeys.EMBEDDING(oldTitleHash));
       }
+    }
+
+    // content 字段变更时，异步触发 B1 双向链接同步（不阻塞保存响应）
+    if (data.content !== undefined && userId && graphId) {
+      const knowledgePointId = id;
+      const newContent = data.content;
+      // 异步执行，不等待结果，不阻塞保存响应
+      Promise.resolve().then(async () => {
+        try {
+          await backlinkService.syncBacklinks(
+            supabase,
+            userId,
+            graphId,
+            knowledgePointId,
+            newContent,
+          );
+        } catch (syncError) {
+          logger.warn('Failed to sync backlinks', {
+            knowledgePointId,
+            graphId,
+            error: syncError instanceof Error ? syncError.message : String(syncError),
+          });
+        }
+      });
     }
 
     return updatedKp as KnowledgePoint;

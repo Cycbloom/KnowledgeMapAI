@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import type { Node, Edge, GraphColorMode } from "../../../types";
 import type { RelatedNode } from "../../../hooks/graphEditor/useMiscState";
 import { levelLabels, DECAY_CONFIG } from "../../../config/graphConfig";
@@ -8,6 +8,11 @@ import {
 } from "../../../config/learningStatusColors";
 import { getLevel } from "../../../lib/graphUtils";
 import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
+import {
+  preprocessWikiLinks,
+  WikiLinkRenderer,
+} from "../../../utils/wikiLinkRemarkPlugin";
+import { backlinksApi } from "../../../services/api/backlinks";
 import { TermTooltip, CodeBlock, Mermaid, LazyImage } from "../../common";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -66,6 +71,7 @@ interface NodeDetailSidebarProps {
   onShowVersionHistory?: () => void;
   isGeneratingContent?: boolean;
   coloringMode?: GraphColorMode;
+  onNavigateToNode?: (knowledgePointId: string, graphId?: string) => void;
 }
 
 export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
@@ -96,6 +102,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   onShowVersionHistory,
   isGeneratingContent = false,
   coloringMode = "status",
+  onNavigateToNode,
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -103,6 +110,24 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
+
+  // 双链点击：搜索节点并跳转
+  const handleWikiLinkClick = useCallback(
+    async (title: string) => {
+      try {
+        const hits = await backlinksApi.search(title, { limit: 1 });
+        const hit = hits[0];
+        if (hit) {
+          onNavigateToNode?.(hit.id, hit.graphIds[0]);
+        } else {
+          console.warn(t("graphEditor.backlinks.notFound"), title);
+        }
+      } catch {
+        console.warn(t("graphEditor.backlinks.notFound"), title);
+      }
+    },
+    [onNavigateToNode, t],
+  );
 
   const isAccepted = node.is_accepted !== false;
   const tags: string[] = node.tags || node.properties?.tags || [];
@@ -336,6 +361,17 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 const { href, children } = props;
                 const cleanHref = href ? decodeURIComponent(href).trim() : "";
 
+                if (cleanHref.startsWith("wiki://")) {
+                  return (
+                    <WikiLinkRenderer
+                      href={href}
+                      onWikiLinkClick={handleWikiLinkClick}
+                    >
+                      {children}
+                    </WikiLinkRenderer>
+                  );
+                }
+
                 if (cleanHref.startsWith("term:")) {
                   const explanation = cleanHref.substring(5);
                   return (
@@ -356,7 +392,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               },
             }}
           >
-            {preprocessMarkdown(node.content || `*${t("nodeDetail.noContent")}*`)}
+            {preprocessWikiLinks(preprocessMarkdown(node.content || `*${t("nodeDetail.noContent")}*`))}
           </ReactMarkdown>
         </section>
 

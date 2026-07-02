@@ -1,6 +1,7 @@
 export type { IGraphsApi } from './IGraphsApi';
 export type { INodesApi } from './INodesApi';
 export type { IEdgesApi } from './IEdgesApi';
+export type { IBacklinksApi } from './IBacklinksApi';
 export type { IAuthApi } from './IAuthApi';
 export type { IAiApi, IAiActionsApi } from './IAiApi';
 export type { IStudyApi } from './IStudyApi';

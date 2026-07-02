@@ -2,6 +2,7 @@ import type { IAuthApi } from './IAuthApi';
 import type { IGraphsApi } from './IGraphsApi';
 import type { INodesApi } from './INodesApi';
 import type { IEdgesApi } from './IEdgesApi';
+import type { IBacklinksApi } from './IBacklinksApi';
 import type { IAiApi, IAiActionsApi } from './IAiApi';
 import type { IStudyApi } from './IStudyApi';
 import type { IDashboardApi } from './IDashboardApi';
@@ -35,6 +36,7 @@ export interface IApi {
   graphs: IGraphsApi;
   nodes: INodesApi;
   edges: IEdgesApi;
+  backlinks: IBacklinksApi;
   knowledgePoints: IKnowledgePointsApi;
   graphNodes: IGraphNodesApi;
   combinedView: ICombinedViewApi;

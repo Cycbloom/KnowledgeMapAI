@@ -1,6 +1,7 @@
 import { mobileGraphsApi } from "./graphs";
 import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
+import { mobileBacklinksApi } from "./backlinks";
 import { mobileAiApi } from "./ai";
 import {
   mobileStudyApi,
@@ -54,6 +55,7 @@ export { mobileAuthApi } from "./auth";
 export { mobileGraphsApi } from "./graphs";
 export { mobileNodesApi } from "./nodes";
 export { mobileEdgesApi } from "./edges";
+export { mobileBacklinksApi } from "./backlinks";
 export { mobileAiApi } from "./ai";
 export {
   mobileStudyApi,
@@ -77,6 +79,7 @@ export const mobileApi: IApi = {
   graphs: mobileGraphsApi,
   nodes: mobileNodesApi,
   edges: mobileEdgesApi,
+  backlinks: mobileBacklinksApi,
   knowledgePoints: createNotSupportedModule<IKnowledgePointsApi>("knowledgePoints"),
   graphNodes: createNotSupportedModule<IGraphNodesApi>("graphNodes"),
   combinedView: createNotSupportedModule<ICombinedViewApi>("combinedView"),

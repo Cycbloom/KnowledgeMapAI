@@ -278,5 +278,18 @@
     "newNode": "新节点",
     "unknownError": "未知错误",
     "createNodeFailed": "创建节点失败: {{message}}"
+  },
+  "backlinks": {
+    "tabContent": "内容",
+    "tabBacklinks": "反向链接",
+    "panelTitle": "反向链接",
+    "empty": "暂无反向链接",
+    "error": "加载失败",
+    "notFound": "未找到该节点",
+    "searchPlaceholder": "搜索节点...",
+    "searchEmpty": "无匹配节点",
+    "searchHint": "输入节点名称搜索",
+    "contextLabel": "上下文",
+    "inCurrentGraph": "当前图谱"
   }
 }

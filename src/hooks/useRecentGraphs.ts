@@ -46,5 +46,14 @@ export function useRecentGraphs() {
     [getRecentGraphs],
   );
 
-  return { getRecentGraphs, addRecentGraph };
+  // 删除指定 id 的最近编辑条目（用于图谱已被删除等场景的清理）
+  const removeRecentGraph = useCallback((id: string) => {
+    const recent = getRecentGraphs();
+    const filtered = recent.filter((r) => r.id !== id);
+    if (filtered.length !== recent.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    }
+  }, [getRecentGraphs]);
+
+  return { getRecentGraphs, addRecentGraph, removeRecentGraph };
 }

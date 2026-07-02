@@ -16,3 +16,5 @@ export * from "./useLearningModeTimer";
 export * from "./useLinkedTask";
 export * from "./useTaskActions";
 export * from "./useDashboardFilters";
+export * from "./useDebouncedSearch";
+export * from "./useMenuNavigation";

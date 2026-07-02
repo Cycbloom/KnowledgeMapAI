@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -39,6 +39,7 @@ import {
   PrioritySuggestion,
 } from "../../services/api/taskRecommendation";
 import { TemplateSelector } from "./TemplateSelector";
+import { asyncConfirm } from "../../utils/asyncConfirm";
 
 interface TaskFormProps {
   task?: UserTask;
@@ -107,6 +108,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isEditing = !!task;
+  // 用于在草稿检测确认完成前阻止 saveDraft 覆盖 localStorage 中的草稿
+  const draftCheckComplete = useRef(false);
 
   const DURATION_OPTIONS = [
     { value: 15, label: t("scheduler.taskForm.duration15min") },
@@ -174,16 +177,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         status: task?.status || "pending",
       };
     }
-    const draft = loadDraft();
-    if (draft) {
-      return {
-        ...draft,
-        taskType: draft.taskType || "one_time",
-        totalDuration: draft.totalDuration || 0,
-        progressMode: draft.progressMode || "average",
-        context: draft.context || "",
-      };
-    }
+    // 新建任务时不直接应用草稿，由 draft check 流程询问用户后再应用
     return {
       title: "",
       description: "",
@@ -280,8 +274,49 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     return () => clearTimeout(timer);
   }, [title, description, analyzePriority]);
 
+  // 初始化时检测 localStorage 草稿，询问用户是否恢复
   useEffect(() => {
-    if (!isEditing) {
+    if (isEditing) {
+      draftCheckComplete.current = true;
+      return;
+    }
+    const checkDraft = async () => {
+      const draft = loadDraft();
+      if (draft) {
+        const confirmed = await asyncConfirm({
+          title: t("scheduler.taskForm.draftDetected"),
+          message: t("scheduler.taskForm.draftDetectedMessage"),
+          confirmText: t("scheduler.taskForm.restoreDraft"),
+          cancelText: t("scheduler.taskForm.discardDraft"),
+          isDangerous: false,
+        });
+        draftCheckComplete.current = true;
+        if (confirmed) {
+          setTitle(draft.title || "");
+          setDescription(draft.description || "");
+          setEstimatedDuration(draft.estimatedDuration || 25);
+          setDeadline(draft.deadline || "");
+          setTags(draft.tags || []);
+          setKnowledgePointId(draft.knowledgePointId || "");
+          setPriority(draft.priority || 2);
+          setQueueLevel(draft.queueLevel ?? defaultQueueLevel);
+          setTaskType(draft.taskType || "one_time");
+          setTotalDuration(draft.totalDuration || 0);
+          setProgressMode(draft.progressMode || "average");
+          setContext(draft.context || "");
+        } else {
+          clearDraft();
+        }
+      } else {
+        draftCheckComplete.current = true;
+      }
+    };
+    void checkDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isEditing && draftCheckComplete.current) {
       saveDraft({
         title,
         description,

@@ -17,6 +17,7 @@
   "noDescription": "No description",
   "deletedAt": "Deleted At",
   "restoreGraph": "Restore Graph",
+  "restoring": "Restoring...",
   "permanentDelete": "Permanent Delete",
   "confirmDelete": {
     "title": "Permanently Delete Graph",

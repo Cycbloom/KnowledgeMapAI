@@ -62,11 +62,11 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                     setIsLoading(false);
                     onSuccess?.();
                     onClose();
-                    alert(`生成完成！共生成 ${task.result.totalCards} 道题目`);
+                    message.success(`生成完成！共生成 ${task.result.totalCards} 道题目`);
                 } else if (task.status === 'failed') {
                     setTaskId(null);
                     setIsLoading(false);
-                    alert(`生成失败: ${task.error}`);
+                    message.error(`生成失败: ${task.error}`);
                 } else if (task.status === 'processing' && task.result) {
                     setProgress({
                         current: task.result.progress || 0,

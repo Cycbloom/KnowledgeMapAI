@@ -28,6 +28,7 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 
 type PathStatus = LearningPathStatus | "all";
 
@@ -93,7 +94,7 @@ export const LearningPaths = () => {
   const updateMutation = useUpdateLearningPathMutation();
   const deleteMutation = useDeleteLearningPathMutation();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedStatus, setSelectedStatus] = useState<PathStatus>("all");
   const [isCreating, setIsCreating] = useState(false);
   const [newPathTitle, setNewPathTitle] = useState("");
@@ -104,10 +105,10 @@ export const LearningPaths = () => {
 
   const filteredPaths = (paths as LearningPathItem[]).filter((path) => {
     const matchesSearch =
-      path.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      path.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
       (path.description &&
-        path.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (path.goal && path.goal.toLowerCase().includes(searchQuery.toLowerCase()));
+        path.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
+      (path.goal && path.goal.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
     const matchesStatus =
       selectedStatus === "all" || path.status === selectedStatus;
     return matchesSearch && matchesStatus;

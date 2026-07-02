@@ -63,7 +63,9 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
       }
       setProviderForms(forms);
       setExpandedProviders(expanded);
-    } catch {
+    } catch (error) {
+      console.error("Failed to load provider configs:", error);
+      message.error(t("settings.providerConfigLoadFailed"));
       const forms: Record<string, ProviderFormData> = {};
       for (const [key, defaults] of Object.entries(PROVIDER_DEFAULTS)) {
         forms[key] = {
@@ -101,7 +103,8 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
         provider: PROVIDER_DEFAULTS[provider]?.name || provider,
       }));
       await fetchProviderConfigs();
-    } catch {
+    } catch (error) {
+      console.error("Failed to save provider config:", error);
       message.error(t("settings.providerConfigSaveFailed"));
     }
   };
@@ -130,7 +133,8 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
             }),
         );
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to test provider connection:", error);
       message.error(t("settings.providerTestFailed", {
         provider: PROVIDER_DEFAULTS[provider]?.name || provider,
       }));
@@ -159,7 +163,8 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
         provider: PROVIDER_DEFAULTS[provider]?.name || provider,
       }));
       await fetchProviderConfigs();
-    } catch {
+    } catch (error) {
+      console.error("Failed to clear provider config:", error);
       message.error(t("settings.providerConfigSaveFailed"));
     }
   };

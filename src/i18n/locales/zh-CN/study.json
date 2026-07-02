@@ -194,5 +194,69 @@
     "thisWeek": "未来7天",
     "cards": "张卡片",
     "dayTooltip": "第{{day}}天：{{count}}张卡片"
+  },
+  "quizResult": {
+    "title": {
+      "excellent": "太棒了！",
+      "good": "继续加油！",
+      "needsWork": "需要努力！"
+    },
+    "subtitle": "测验完成，以下是你的成绩单",
+    "stats": {
+      "total": "总题数",
+      "correct": "正确",
+      "wrong": "错误",
+      "accuracy": "正确率",
+      "duration": "用时"
+    },
+    "timeStats": {
+      "title": "时间统计",
+      "totalTime": "总耗时",
+      "avgPerQuestion": "平均每题",
+      "fastest": "最快",
+      "slowest": "最慢"
+    },
+    "byType": {
+      "title": "各题型得分"
+    },
+    "weakPoints": {
+      "title": "薄弱知识点",
+      "moreErrors": "还有 {{count}} 道错题..."
+    },
+    "cardType": {
+      "qa": "问答",
+      "choice": "单选",
+      "multi_choice": "多选",
+      "true_false": "判断",
+      "fill_in_the_blank": "填空",
+      "essay": "简答"
+    },
+    "actions": {
+      "retry": "重新测验",
+      "retryWrong": "错题重练 ({{count}} 题)",
+      "back": "返回测验列表"
+    }
+  },
+  "quizCard": {
+    "status": {
+      "draft": "草稿",
+      "generating": "生成中",
+      "ready": "就绪"
+    },
+    "difficulty": {
+      "easy": "简单",
+      "medium": "中等",
+      "hard": "困难",
+      "mixed": "混合"
+    },
+    "cardType": {
+      "qa": "问答",
+      "choice": "单选",
+      "multi_choice": "多选",
+      "true_false": "判断",
+      "fill_in_the_blank": "填空",
+      "essay": "简答"
+    },
+    "noCardType": "无"
   }
 }

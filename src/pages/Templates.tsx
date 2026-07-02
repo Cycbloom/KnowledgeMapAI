@@ -25,6 +25,7 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   knowledge: <GraduationCap size={20} />,
@@ -46,7 +47,7 @@ export const Templates = () => {
   const deleteTemplateMutation = useDeleteTemplateMutation();
 
   const [activeTab, setActiveTab] = useState<TemplateTab>("knowledge");
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedCategory, setSelectedCategory] = useState<
     TemplateCategory | "all"
   >("all");
@@ -60,9 +61,9 @@ export const Templates = () => {
 
   const filteredTemplates = templates.filter((t) => {
     const matchesSearch =
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
       (t.description &&
-        t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        t.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
     const matchesCategory =
       selectedCategory === "all" || t.category === selectedCategory;
     return matchesSearch && matchesCategory;

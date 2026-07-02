@@ -71,9 +71,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             <h2 id="help-modal-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('helpGuide.title')}</h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('helpGuide.subtitle')}</p>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors text-gray-500 dark:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
             aria-label={t('common.close')}
           >
             <X size={20} aria-hidden="true" />
@@ -192,9 +192,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 flex justify-end">
-          <button 
+          <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-900 dark:bg-primary-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-primary-700 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-primary-500"
+            className="px-6 py-2 bg-slate-900 dark:bg-primary-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-primary-700 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900 dark:focus-visible:ring-primary-500 dark:focus-visible:ring-offset-slate-800"
           >
             {t('helpGuide.gotIt')}
           </button>

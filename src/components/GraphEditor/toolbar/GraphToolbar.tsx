@@ -1323,7 +1323,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       <div className="flex items-center">
         <button
           onClick={onBack}
-          className={`p-2 rounded-lg transition-colors ${themeClasses.button.default}`}
+          className={`p-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${themeClasses.button.default}`}
           title="返回"
         >
           <ArrowLeft size={18} />
@@ -1333,7 +1333,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           <button
             onClick={onUndo}
             disabled={!canUndo}
-            className={`p-1.5 rounded-lg ${!canUndo ? themeClasses.button.disabled : themeClasses.button.default}`}
+            className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canUndo ? themeClasses.button.disabled : themeClasses.button.default}`}
             title="撤销"
           >
             <Undo size={18} />
@@ -1341,7 +1341,7 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
           <button
             onClick={onRedo}
             disabled={!canRedo}
-            className={`p-1.5 rounded-lg ${!canRedo ? themeClasses.button.disabled : themeClasses.button.default}`}
+            className={`p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${!canRedo ? themeClasses.button.disabled : themeClasses.button.default}`}
             title="重做"
           >
             <Redo size={18} />

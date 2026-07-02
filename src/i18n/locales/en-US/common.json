@@ -30,5 +30,13 @@
   "analyzing": "Analyzing...",
   "generating": "Generating...",
   "copy": "Copy",
-  "copied": "Copied"
+  "copied": "Copied",
+  "copyFailed": "Copy failed",
+  "clipboardUnavailable": "Clipboard unavailable",
+  "timeAgo": {
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} hr ago",
+    "daysAgo": "{{count}} days ago"
+  }
 }

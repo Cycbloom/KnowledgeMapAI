@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Node, Edge } from "../../../types";
 import { createClient } from "@supabase/supabase-js";
+import { useDebouncedSearch } from "../../../hooks/useDebouncedSearch";
 import type { BatchGenerateConfig } from "../modals/BatchGenerateDialog";
 import { LiteratureSourceDB } from "@shared/types/graph";
 import { BatchGenerateDialog } from "../modals/BatchGenerateDialog";
@@ -90,7 +91,7 @@ export const GraphOutline = React.memo(function GraphOutline({
   graphId,
 }: GraphOutlineProps) {
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(
     new Set(),
   );
@@ -150,8 +151,8 @@ export const GraphOutline = React.memo(function GraphOutline({
     let result = nodes.filter((node) => node && node.id);
 
     // 1. Search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       result = result.filter(
         (node) =>
           (node.title && node.title.toLowerCase().includes(query)) ||
@@ -165,7 +166,7 @@ export const GraphOutline = React.memo(function GraphOutline({
     }
 
     // 3. Sort (Applies to List Mode mainly, but we prepare it anyway)
-    if (viewMode === "list" || searchQuery.trim() || filterLevel !== "all") {
+    if (viewMode === "list" || debouncedSearchQuery.trim() || filterLevel !== "all") {
       result = [...result].sort((a, b) => {
         const safeTitleA = a.title || "";
         const safeTitleB = b.title || "";
@@ -202,7 +203,7 @@ export const GraphOutline = React.memo(function GraphOutline({
     }
 
     return result;
-  }, [nodes, searchQuery, filterLevel, sortMode, viewMode]);
+  }, [nodes, debouncedSearchQuery, filterLevel, sortMode, viewMode]);
 
   // Calculate isolated nodes count
   const isolatedCount = useMemo(() => {

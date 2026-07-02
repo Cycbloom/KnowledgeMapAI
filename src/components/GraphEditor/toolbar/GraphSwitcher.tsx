@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Star, Network } from "lucide-react";
-import { useTheme } from "../../../hooks";
+import { useTheme, useMenuNavigation } from "../../../hooks";
 import { useRecentGraphs, type RecentGraphEntry } from "../../../hooks/useRecentGraphs";
 
 interface GraphSwitcherProps {
@@ -43,6 +43,16 @@ export const GraphSwitcher: React.FC<GraphSwitcherProps> = ({
   };
 
   const otherGraphs = recentGraphs.filter((g) => g.id !== currentGraphId);
+
+  const { activeIndex } = useMenuNavigation({
+    itemCount: otherGraphs.length,
+    enabled: isOpen,
+    onSelect: (index: number) => {
+      const graph = otherGraphs[index];
+      if (graph) handleSelect(graph.id);
+    },
+    onClose: () => setIsOpen(false),
+  });
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -86,14 +96,18 @@ export const GraphSwitcher: React.FC<GraphSwitcherProps> = ({
               {t("graphEditor.switcher.noRecent")}
             </div>
           ) : (
-            otherGraphs.map((graph: RecentGraphEntry) => (
+            otherGraphs.map((graph: RecentGraphEntry, index: number) => (
               <button
                 key={graph.id}
                 onClick={() => handleSelect(graph.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isDark
-                    ? "hover:bg-slate-700 text-gray-300"
-                    : "hover:bg-gray-50 text-gray-700"
+                  index === activeIndex
+                    ? isDark
+                      ? "bg-slate-700 text-primary-400"
+                      : "bg-gray-100 text-primary-600"
+                    : isDark
+                      ? "hover:bg-slate-700 text-gray-300"
+                      : "hover:bg-gray-50 text-gray-700"
                 }`}
               >
                 <Network size={14} className="flex-shrink-0 opacity-50" />

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Settings, X, Clock, AlertCircle, CheckCircle, Timer, Coffee, Trash2 } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
 import { Notification, NotificationType } from '@shared/types';
-import { useTheme } from "../../hooks";
+import { useTheme, useMenuNavigation } from "../../hooks";
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { asyncConfirm } from '@/utils/asyncConfirm';
 
@@ -17,21 +18,6 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
   break_end: <Coffee className="text-primary-500" size={16} />,
   daily_summary: <CheckCircle className="text-primary-500" size={16} />,
   system: <Bell className="text-slate-500" size={16} />,
-};
-
-const formatTimeAgo = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return '刚刚';
-  if (diffMins < 60) return `${diffMins}分钟前`;
-  if (diffHours < 24) return `${diffHours}小时前`;
-  if (diffDays < 7) return `${diffDays}天前`;
-  return date.toLocaleDateString('zh-CN');
 };
 
 const MUTED_TYPES_KEY = 'mutedNotificationTypes';
@@ -54,12 +40,28 @@ const readMutedTypes = (): Set<string> => {
 export const NotificationCenter: React.FC = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [mutedTypes, setMutedTypes] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return t('common.timeAgo.justNow');
+    if (diffMins < 60) return t('common.timeAgo.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('common.timeAgo.hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('common.timeAgo.daysAgo', { count: diffDays });
+    return date.toLocaleDateString(i18n.language);
+  };
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -124,20 +126,6 @@ export const NotificationCenter: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
@@ -213,6 +201,22 @@ export const NotificationCenter: React.FC = () => {
     : notifications;
   const unreadNotifications = visibleNotifications.filter(n => !n.read_at);
   const readNotifications = visibleNotifications.filter(n => n.read_at);
+
+  const notificationIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    visibleNotifications.forEach((n, i) => map.set(n.id, i));
+    return map;
+  }, [visibleNotifications]);
+
+  const { activeIndex } = useMenuNavigation({
+    itemCount: visibleNotifications.length,
+    enabled: isOpen,
+    onSelect: (index: number) => {
+      const notification = visibleNotifications[index];
+      if (notification) handleNotificationClick(notification);
+    },
+    onClose: () => setIsOpen(false),
+  });
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -327,9 +331,13 @@ export const NotificationCenter: React.FC = () => {
                           key={notification.id}
                           onClick={() => handleNotificationClick(notification)}
                           className={`px-4 py-3 cursor-pointer transition-colors border-l-2 border-primary-500 ${
-                            isDark
-                              ? 'bg-slate-700/50 hover:bg-slate-700'
-                              : 'bg-primary-50/50 hover:bg-primary-50'
+                            notificationIndexMap.get(notification.id) === activeIndex
+                              ? isDark
+                                ? 'bg-slate-700'
+                                : 'bg-primary-100'
+                              : isDark
+                                ? 'bg-slate-700/50 hover:bg-slate-700'
+                                : 'bg-primary-50/50 hover:bg-primary-50'
                           }`}
                         >
                           <div className="flex items-start gap-3">
@@ -380,9 +388,13 @@ export const NotificationCenter: React.FC = () => {
                           key={notification.id}
                           onClick={() => handleNotificationClick(notification)}
                           className={`px-4 py-3 cursor-pointer transition-colors ${
-                            isDark
-                              ? 'hover:bg-slate-700/50'
-                              : 'hover:bg-gray-50'
+                            notificationIndexMap.get(notification.id) === activeIndex
+                              ? isDark
+                                ? 'bg-slate-700/50'
+                                : 'bg-gray-100'
+                              : isDark
+                                ? 'hover:bg-slate-700/50'
+                                : 'hover:bg-gray-50'
                           }`}
                         >
                           <div className="flex items-start gap-3">

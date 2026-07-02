@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles, Save, Variable } from "lucide-react";
 import { api } from "../../../services/api";
+import { message } from "@/utils/messageHelper";
 
 interface PromptEditorProps {
   initialContent: string;
@@ -67,8 +68,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       setOptimizeInstruction(""); // Clear instruction
     } catch (error) {
       console.error("Optimization failed", error);
-      // Ideally show a toast here
-      alert(
+      message.error(
         t("promptEditor.optimizeFailed", { message: (error as any).message }),
       );
     } finally {
@@ -82,7 +82,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       await onSave(content);
     } catch (error) {
       console.error("Save failed", error);
-      alert(t("promptEditor.saveFailed", { message: (error as any).message }));
+      message.error(t("promptEditor.saveFailed", { message: (error as any).message }));
     } finally {
       setIsSaving(false);
     }

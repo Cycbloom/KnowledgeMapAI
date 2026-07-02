@@ -17,6 +17,7 @@ import { pluginsApi } from "../../services/api/plugins";
 import type { RegistryPlugin, InstalledPlugin } from "../../services/api/plugins";
 import { PluginCard } from "./PluginCard";
 import { useStore } from "../../store/useStore";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 
 type Tab = "browse" | "installed";
 
@@ -71,7 +72,7 @@ export const PluginMarketplace = () => {
   const [activeTab, setActiveTab] = useState<Tab>("browse");
   const [registryPlugins, setRegistryPlugins] = useState<RegistryPlugin[]>([]);
   const [installedPlugins, setInstalledPlugins] = useState<InstalledPlugin[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedCategory, setSelectedCategory] = useState("");
   const [installing, setInstalling] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,7 +83,7 @@ export const PluginMarketplace = () => {
     try {
       const plugins = await pluginsApi.listRegistry({
         category: selectedCategory || undefined,
-        q: searchQuery || undefined,
+        q: debouncedSearchQuery || undefined,
       });
       setRegistryPlugins(plugins);
     } catch (err) {
@@ -90,7 +91,7 @@ export const PluginMarketplace = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, selectedCategory, searchQuery]);
+  }, [token, selectedCategory, debouncedSearchQuery]);
 
   const loadInstalled = useCallback(async () => {
     if (!token) return;

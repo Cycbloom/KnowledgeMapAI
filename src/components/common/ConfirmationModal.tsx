@@ -23,8 +23,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = '确定',
-  cancelText = '取消',
+  confirmText,
+  cancelText,
   isDangerous = false,
   requireConfirmText = false,
   confirmTextToMatch,
@@ -34,7 +34,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState('');
 
-  const textToMatch = confirmTextToMatch || confirmText;
+  const finalConfirmText = confirmText ?? t('confirmDialog.confirm');
+  const finalCancelText = cancelText ?? t('confirmDialog.cancel');
+  const textToMatch = confirmTextToMatch || finalConfirmText;
   const showConfirmInput = isDangerous && requireConfirmText;
   const canConfirm = !showConfirmInput || inputValue === textToMatch;
 
@@ -122,7 +124,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target"
+              className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
               aria-label="关闭对话框"
             >
               <X size={20} aria-hidden="true" />
@@ -152,23 +154,23 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t dark:border-slate-700">
           <button
             onClick={onClose}
-            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 dark:focus:ring-offset-slate-800 dark:focus:ring-slate-700 min-h-[44px] touch-target font-medium"
+            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 rounded-lg sm:rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-200 dark:focus-visible:ring-offset-slate-800 dark:focus-visible:ring-slate-700 min-h-[44px] touch-target font-medium"
           >
-            {cancelText}
+            {finalCancelText}
           </button>
           <button
             onClick={handleConfirm}
             disabled={!canConfirm}
             className={cn(
-              'flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 text-white rounded-lg sm:rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[44px] touch-target font-medium',
+              'flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 text-white rounded-lg sm:rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 min-h-[44px] touch-target font-medium',
               canConfirm
                 ? isDangerous
-                  ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 dark:focus:ring-offset-slate-800'
-                  : 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 dark:focus:ring-offset-slate-800'
+                  ? 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-500 dark:focus-visible:ring-offset-slate-800'
+                  : 'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 dark:focus-visible:ring-offset-slate-800'
                 : 'bg-gray-300 dark:bg-slate-600 text-gray-500 dark:text-slate-400 cursor-not-allowed'
             )}
           >
-            {confirmText}
+            {finalConfirmText}
           </button>
         </div>
       </div>

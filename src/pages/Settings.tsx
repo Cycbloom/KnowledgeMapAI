@@ -1,10 +1,17 @@
-import { useState, useRef, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type MouseEvent,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../hooks/queries";
 import { useUpdateProfileMutation } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
 import { message } from "../utils/messageHelper";
+import { cn } from "../lib/utils";
 import { AvailableModels } from "../types";
 import {
   Save,
@@ -61,6 +68,55 @@ export const Settings = () => {
   const studyStrategyRef = useRef<StudyStrategySettingsRef>(null);
   const dbSectionRef = useRef<HTMLDivElement>(null);
 
+  const sections = [
+    { id: "appearance", label: t("settings.sections.appearance") },
+    { id: "focusMode", label: t("settings.sections.focusMode") },
+    { id: "aiProvider", label: t("settings.sections.aiProvider") },
+    { id: "aiStatus", label: t("settings.sections.aiStatus") },
+    { id: "voice", label: t("settings.sections.voice") },
+    { id: "database", label: t("settings.sections.database") },
+    { id: "mobileAI", label: t("settings.sections.mobileAI") },
+    { id: "studyStrategy", label: t("settings.sections.studyStrategy") },
+    { id: "studyAlgorithm", label: t("settings.sections.studyAlgorithm") },
+    { id: "graphEditor", label: t("settings.sections.graphEditor") },
+    { id: "notifications", label: t("settings.sections.notifications") },
+    { id: "plugins", label: t("settings.sections.plugins") },
+  ];
+
+  const [activeSection, setActiveSection] = useState<string>(
+    sections[0]?.id ?? "",
+  );
+  const sectionRefs = useRef<Record<string, HTMLElement>>({});
+
+  const handleAnchorClick = useCallback(
+    (e: MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+      e.preventDefault();
+      const el = sectionRefs.current[sectionId];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        setActiveSection(sectionId);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: "-20% 0px -70% 0px" },
+    );
+    Object.values(sectionRefs.current).forEach((el) => {
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
   const scrollToDbSection = useCallback(() => {
     dbSectionRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -106,7 +162,7 @@ export const Settings = () => {
 
   return (
     <div className="h-full overflow-y-auto px-4 py-4 md:p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {!databaseConfig.connected && dbLoaded && (
           <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-200 flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 shrink-0" />
@@ -153,36 +209,166 @@ export const Settings = () => {
           </div>
         </div>
 
-        <AppearanceSettings />
-        <FocusModeSettings />
-        <AIProviderConfigSection />
-        <AIStatusSection
-          token={token}
-          availableModels={availableModels}
-          onAvailableModelsChange={handleAvailableModelsChange}
-        />
-        <VoiceServiceSettings />
-        <DatabaseSettings
-          onConfigChange={handleDatabaseConfigChange}
-          sectionRef={dbSectionRef}
-        />
-        <MobileAISettings availableModels={availableModels} />
-        <StudyStrategySettings
-          ref={studyStrategyRef}
-          settings={settings}
-        />
-        <StudyAlgorithmSettings />
-        <GraphEditorSettings />
-        <NotificationSettings />
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* 左侧锚点导航 - 桌面端 */}
+          <nav className="hidden md:block w-56 flex-shrink-0">
+            <div className="sticky top-6 space-y-1">
+              {sections.map((section) => (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  onClick={(e) => handleAnchorClick(e, section.id)}
+                  className={cn(
+                    "block px-3 py-2 rounded-lg text-sm transition-colors",
+                    activeSection === section.id
+                      ? "bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 font-medium"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800",
+                  )}
+                >
+                  {section.label}
+                </a>
+              ))}
+            </div>
+          </nav>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
-          <div className="flex items-center gap-2 mb-4">
-            <Puzzle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              插件市场
-            </h2>
+          {/* 移动端水平 chips */}
+          <nav className="md:hidden -mx-4 px-4 overflow-x-auto">
+            <div className="flex gap-2 pb-2">
+              {sections.map((section) => (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  onClick={(e) => handleAnchorClick(e, section.id)}
+                  className={cn(
+                    "flex-shrink-0 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors",
+                    activeSection === section.id
+                      ? "bg-primary-600 text-white"
+                      : "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-400",
+                  )}
+                >
+                  {section.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+
+          {/* 右侧内容区 */}
+          <div className="flex-1 min-w-0 space-y-6">
+            <section
+              id="appearance"
+              ref={(el) => {
+                if (el) sectionRefs.current.appearance = el;
+              }}
+            >
+              <AppearanceSettings />
+            </section>
+            <section
+              id="focusMode"
+              ref={(el) => {
+                if (el) sectionRefs.current.focusMode = el;
+              }}
+            >
+              <FocusModeSettings />
+            </section>
+            <section
+              id="aiProvider"
+              ref={(el) => {
+                if (el) sectionRefs.current.aiProvider = el;
+              }}
+            >
+              <AIProviderConfigSection />
+            </section>
+            <section
+              id="aiStatus"
+              ref={(el) => {
+                if (el) sectionRefs.current.aiStatus = el;
+              }}
+            >
+              <AIStatusSection
+                token={token}
+                availableModels={availableModels}
+                onAvailableModelsChange={handleAvailableModelsChange}
+              />
+            </section>
+            <section
+              id="voice"
+              ref={(el) => {
+                if (el) sectionRefs.current.voice = el;
+              }}
+            >
+              <VoiceServiceSettings />
+            </section>
+            <section
+              id="database"
+              ref={(el) => {
+                if (el) sectionRefs.current.database = el;
+              }}
+            >
+              <DatabaseSettings
+                onConfigChange={handleDatabaseConfigChange}
+                sectionRef={dbSectionRef}
+              />
+            </section>
+            <section
+              id="mobileAI"
+              ref={(el) => {
+                if (el) sectionRefs.current.mobileAI = el;
+              }}
+            >
+              <MobileAISettings availableModels={availableModels} />
+            </section>
+            <section
+              id="studyStrategy"
+              ref={(el) => {
+                if (el) sectionRefs.current.studyStrategy = el;
+              }}
+            >
+              <StudyStrategySettings
+                ref={studyStrategyRef}
+                settings={settings}
+              />
+            </section>
+            <section
+              id="studyAlgorithm"
+              ref={(el) => {
+                if (el) sectionRefs.current.studyAlgorithm = el;
+              }}
+            >
+              <StudyAlgorithmSettings />
+            </section>
+            <section
+              id="graphEditor"
+              ref={(el) => {
+                if (el) sectionRefs.current.graphEditor = el;
+              }}
+            >
+              <GraphEditorSettings />
+            </section>
+            <section
+              id="notifications"
+              ref={(el) => {
+                if (el) sectionRefs.current.notifications = el;
+              }}
+            >
+              <NotificationSettings />
+            </section>
+
+            <section
+              id="plugins"
+              ref={(el) => {
+                if (el) sectionRefs.current.plugins = el;
+              }}
+              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Puzzle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  插件市场
+                </h2>
+              </div>
+              <PluginMarketplace />
+            </section>
           </div>
-          <PluginMarketplace />
         </div>
       </div>
     </div>

@@ -194,7 +194,11 @@
     "tagProject": "项目",
     "tagMeeting": "会议",
     "tagExercise": "运动",
-    "tagRest": "休息"
+    "tagRest": "休息",
+    "draftDetected": "检测到未完成的草稿",
+    "draftDetectedMessage": "检测到您之前有未完成的草稿，是否恢复？",
+    "restoreDraft": "恢复草稿",
+    "discardDraft": "放弃草稿"
   },
   "review": {
     "overdue": "已过期",

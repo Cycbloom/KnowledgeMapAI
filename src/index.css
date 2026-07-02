@@ -1078,6 +1078,11 @@ select:focus-visible {
   outline-color: var(--primary-400);
 }
 
+/* 移除鼠标点击的焦点环（仅键盘 Tab 导航显示焦点） */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* ============================================
    Color Contrast Fixes - 颜色对比度修复
    WCAG 2.1 AA级要求：

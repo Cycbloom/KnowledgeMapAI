@@ -17,6 +17,7 @@
   "noDescription": "暂无描述",
   "deletedAt": "删除时间",
   "restoreGraph": "恢复图谱",
+  "restoring": "恢复中...",
   "permanentDelete": "永久删除",
   "confirmDelete": {
     "title": "永久删除图谱",

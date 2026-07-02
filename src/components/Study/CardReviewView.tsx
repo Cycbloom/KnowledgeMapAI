@@ -7,6 +7,7 @@ import { StatsOverview } from "../Statistics/StatsOverview";
 import { WeakPointAnalysis } from "./WeakPointAnalysis";
 import type { WeakPoint, Prediction } from "./WeakPointAnalysis";
 import type { ReviewForecast } from "../../hooks/queries/useStudyQueries";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import {
   Trophy,
   Clock,
@@ -66,7 +67,7 @@ export const CardReviewView = ({
 }: CardReviewViewProps) => {
   const { t } = useTranslation();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [tableMode, setTableMode] = useState<"due" | "all">("due");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
@@ -101,13 +102,13 @@ export const CardReviewView = ({
   );
 
   const filteredCards = useMemo(() => {
-    if (!searchQuery) return tableCards;
+    if (!debouncedSearchQuery) return tableCards;
     return tableCards.filter(
       (c) =>
-        c.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.answer.toLowerCase().includes(searchQuery.toLowerCase()),
+        c.question.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        c.answer.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
     );
-  }, [tableCards, searchQuery]);
+  }, [tableCards, debouncedSearchQuery]);
 
   const totalPages = Math.ceil(filteredCards.length / pageSize);
   const paginatedCards = useMemo(() => {

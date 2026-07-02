@@ -1,7 +1,8 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTasks } from "../hooks/queries";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import {
   useRetryTaskMutation,
   useDeleteTaskMutation,
@@ -15,6 +16,7 @@ import {
   XCircle,
   Loader2,
   Clock,
+  Inbox,
   RefreshCw,
   ArrowRight,
   Trash2,
@@ -122,12 +124,13 @@ export const Tasks = () => {
   const navigate = useNavigate();
   const { token } = useStore();
   const [filter, setFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
   const limit = 10;
 
   const { data, isLoading, error, refetch, isFetching } = useTasks(
@@ -136,6 +139,13 @@ export const Tasks = () => {
     limit,
     (page - 1) * limit,
   );
+
+  useEffect(() => {
+    if (error) {
+      console.error("Failed to load tasks:", error);
+    }
+  }, [error]);
+
   const retryMutation = useRetryTaskMutation();
   const deleteMutation = useDeleteTaskMutation();
   const { tasks, total } = useMemo(() => {
@@ -151,13 +161,13 @@ export const Tasks = () => {
   const totalPages = Math.ceil(total / limit);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery.trim()) return tasks;
-    const query = searchQuery.trim().toLowerCase();
+    if (!debouncedSearchQuery.trim()) return tasks;
+    const query = debouncedSearchQuery.trim().toLowerCase();
     return tasks.filter((task) => {
       const title = (task.title || getTypeLabel(task.task_type, t)).toLowerCase();
       return title.includes(query);
     });
-  }, [tasks, searchQuery, t]);
+  }, [tasks, debouncedSearchQuery, t]);
 
   const handleFilterChange = (v: string) => {
     setFilter(v);
@@ -422,15 +432,27 @@ export const Tasks = () => {
       {error ? (
         <div className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
           <XCircle className="w-8 h-8 mx-auto mb-2" />
-          <p>
-            {t("tasks.loadTasksFailed", { error: (error as Error).message })}
-          </p>
+          <p>{t("tasks.loadTasksFailed")}</p>
           <button
             onClick={() => refetch()}
             className="mt-4 text-primary-600 dark:text-primary-400 hover:underline"
           >
             {t("tasks.retry")}
           </button>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowErrorDetails((prev) => !prev)}
+              className="text-xs text-red-500 dark:text-red-400 hover:underline"
+            >
+              {t("tasks.errorDetails")}
+            </button>
+            {showErrorDetails && (
+              <pre className="mt-2 mx-auto max-w-full overflow-x-auto text-left text-xs bg-white dark:bg-slate-800 text-red-700 dark:text-red-300 p-3 rounded border border-red-100 dark:border-red-900/20 whitespace-pre-wrap break-words">
+                {(error as Error).message}
+              </pre>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -443,8 +465,8 @@ export const Tasks = () => {
 
           {!isLoading && filteredTasks.length === 0 && (
             <div className="p-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
-              <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
-              <p>{searchQuery.trim() ? t("tasks.noSearchResults") : t("tasks.noTasks")}</p>
+              <Inbox className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
+              <p>{debouncedSearchQuery.trim() ? t("tasks.noSearchResults") : t("tasks.noTasks")}</p>
             </div>
           )}
 
@@ -491,7 +513,7 @@ export const Tasks = () => {
                               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusBadgeClass(task.status)}`}
                             >
                               {getStatusIcon(task.status)}
-                              <span>{task.status}</span>
+                              <span>{t(`tasks.status.${task.status}`)}</span>
                             </span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100">
                               {task.title || getTypeLabel(task.task_type, t)}

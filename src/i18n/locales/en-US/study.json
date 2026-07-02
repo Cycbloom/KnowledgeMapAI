@@ -194,5 +194,69 @@
     "thisWeek": "Next 7 days",
     "cards": "cards",
     "dayTooltip": "Day {{day}}: {{count}} cards"
+  },
+  "quizResult": {
+    "title": {
+      "excellent": "Excellent!",
+      "good": "Keep it up!",
+      "needsWork": "Needs work!"
+    },
+    "subtitle": "Quiz complete, here is your report card",
+    "stats": {
+      "total": "Total",
+      "correct": "Correct",
+      "wrong": "Wrong",
+      "accuracy": "Accuracy",
+      "duration": "Duration"
+    },
+    "timeStats": {
+      "title": "Time Statistics",
+      "totalTime": "Total Time",
+      "avgPerQuestion": "Avg per Question",
+      "fastest": "Fastest",
+      "slowest": "Slowest"
+    },
+    "byType": {
+      "title": "Score by Type"
+    },
+    "weakPoints": {
+      "title": "Weak Points",
+      "moreErrors": "And {{count}} more wrong questions..."
+    },
+    "cardType": {
+      "qa": "Q&A",
+      "choice": "Single Choice",
+      "multi_choice": "Multiple Choice",
+      "true_false": "True/False",
+      "fill_in_the_blank": "Fill in the Blank",
+      "essay": "Essay"
+    },
+    "actions": {
+      "retry": "Retry Quiz",
+      "retryWrong": "Retry Wrong ({{count}})",
+      "back": "Back to Quiz List"
+    }
+  },
+  "quizCard": {
+    "status": {
+      "draft": "Draft",
+      "generating": "Generating",
+      "ready": "Ready"
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "mixed": "Mixed"
+    },
+    "cardType": {
+      "qa": "Q&A",
+      "choice": "Single Choice",
+      "multi_choice": "Multiple Choice",
+      "true_false": "True/False",
+      "fill_in_the_blank": "Fill in the Blank",
+      "essay": "Essay"
+    },
+    "noCardType": "None"
   }
 }

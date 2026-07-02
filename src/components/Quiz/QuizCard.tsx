@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Play, Edit2, Trash2, Clock, Layers, FileText, Loader2 } from 'lucide-react';
 import type { QuizSet } from '@shared/types/quiz';
@@ -13,23 +14,20 @@ interface QuizCardProps {
   onClick?: (quiz: QuizSet) => void;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; darkBg: string; darkColor: string }> = {
+const statusConfig: Record<string, { color: string; bgColor: string; darkBg: string; darkColor: string }> = {
   draft: {
-    label: '草稿',
     color: 'text-gray-600',
     bgColor: 'bg-gray-100',
     darkBg: 'bg-slate-700',
     darkColor: 'text-slate-400',
   },
   generating: {
-    label: '生成中',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
     darkBg: 'bg-amber-900/30',
     darkColor: 'text-amber-400',
   },
   ready: {
-    label: '就绪',
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-50',
     darkBg: 'bg-emerald-900/30',
@@ -45,6 +43,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   onDelete,
   onClick,
 }) => {
+  const { t } = useTranslation();
   const status = statusConfig[quiz.status] || statusConfig.draft;
   const isGenerating = quiz.status === 'generating';
   const isReady = quiz.status === 'ready';
@@ -54,26 +53,14 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   };
 
   const getDifficultyLabel = (difficulty: string) => {
-    const labels: Record<string, string> = {
-      easy: '简单',
-      medium: '中等',
-      hard: '困难',
-      mixed: '混合',
-    };
-    return labels[difficulty] || difficulty;
+    return t(`study.quizCard.difficulty.${difficulty}`, { defaultValue: difficulty });
   };
 
   const getCardTypeLabel = (cardTypes: string[]) => {
-    if (!cardTypes || cardTypes.length === 0) return '无';
-    const labels: Record<string, string> = {
-      qa: '问答',
-      choice: '单选',
-      multi_choice: '多选',
-      true_false: '判断',
-      fill_in_the_blank: '填空',
-      essay: '简答',
-    };
-    return cardTypes.map((t) => labels[t] || t).join('、');
+    if (!cardTypes || cardTypes.length === 0) return t('study.quizCard.noCardType');
+    return cardTypes
+      .map((ct) => t(`study.quizCard.cardType.${ct}`, { defaultValue: ct }))
+      .join('、');
   };
 
   return (
@@ -96,7 +83,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
           }`}
         >
           {isGenerating && <Loader2 size={10} className="inline mr-1 animate-spin" />}
-          {status.label}
+          {t(`study.quizCard.status.${quiz.status}`)}
         </span>
         <div className={`flex items-center gap-1 text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
           <Clock size={10} />

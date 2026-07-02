@@ -17,6 +17,7 @@ import { useGraphs } from '../../hooks/queries/useGraphQueries';
 import { QuizCard } from './QuizCard';
 import type { QuizSet, QuizSetStatus } from '@shared/types/quiz';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 interface QuizListProps {
   onCreateQuiz?: () => void;
@@ -35,14 +36,14 @@ export const QuizList: React.FC<QuizListProps> = ({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm } = useDebouncedSearch();
   const [selectedStatus, setSelectedStatus] = useState<QuizSetStatus | 'all'>('all');
   const [selectedGraphId, setSelectedGraphId] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
-  const { data: quizSets, isLoading, error } = useQuizSets();
+  const { data: quizSets, isLoading, error, refetch } = useQuizSets();
   const { data: graphs } = useGraphs();
   const deleteMutation = useDeleteQuizSetMutation();
 
@@ -67,14 +68,14 @@ export const QuizList: React.FC<QuizListProps> = ({
     if (!quizSets) return [];
     return quizSets.filter((quiz) => {
       const matchesSearch =
-        quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (quiz.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+        quiz.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        (quiz.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ?? false);
       const matchesStatus = selectedStatus === 'all' || quiz.status === selectedStatus;
       const matchesGraph =
         selectedGraphId === 'all' || quiz.graph_id === selectedGraphId;
       return matchesSearch && matchesStatus && matchesGraph;
     });
-  }, [quizSets, searchTerm, selectedStatus, selectedGraphId]);
+  }, [quizSets, debouncedSearchTerm, selectedStatus, selectedGraphId]);
 
   const totalPages = Math.ceil(filteredQuizzes.length / pageSize);
   const paginatedQuizzes = useMemo(() => {
@@ -125,7 +126,7 @@ export const QuizList: React.FC<QuizListProps> = ({
         <FileQuestion size={32} className="text-red-400" />
         <p className="text-red-500">{t('study.quizList.loadFailed')}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => { void refetch(); }}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           {t('study.quizList.retry')}

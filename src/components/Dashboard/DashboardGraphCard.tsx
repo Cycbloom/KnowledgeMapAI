@@ -163,7 +163,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
         }}
         tabIndex={0}
         role="button"
-        className="block p-4 sm:p-6 h-full flex flex-col cursor-pointer"
+        className="block p-4 sm:p-6 h-full flex flex-col cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 rounded-2xl"
       >
         <div className="flex items-start justify-between mb-3 sm:mb-4">
           <div

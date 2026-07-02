@@ -17,11 +17,13 @@ import {
   Square,
   X,
   Info,
+  Loader2,
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal } from "../components/common";
 import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
+import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 
 export const RecycleBin = () => {
   const { t } = useTranslation();
@@ -33,7 +35,7 @@ export const RecycleBin = () => {
   const batchRestoreMutation = useBatchRestoreGraphsMutation();
   const batchPermanentDeleteMutation = useBatchPermanentDeleteGraphsMutation();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -57,11 +59,11 @@ export const RecycleBin = () => {
     () =>
       graphs.filter(
         (g) =>
-          g.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          g.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
           (g.description &&
-            g.description.toLowerCase().includes(searchQuery.toLowerCase())),
+            g.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase())),
       ),
-    [graphs, searchQuery],
+    [graphs, debouncedSearchQuery],
   );
 
   const isAllSelected =
@@ -389,14 +391,19 @@ export const RecycleBin = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleRestore(graph.id)}
+                      disabled={restoreGraphMutation.isPending}
                       className={`p-2 rounded-lg transition-colors ${
                         isDark
                           ? "text-green-400 hover:bg-green-900/30"
                           : "text-green-600 hover:bg-green-50"
-                      }`}
-                      title={t("recycleBin.restoreGraph")}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      title={restoreGraphMutation.isPending ? t("recycleBin.restoring") : t("recycleBin.restoreGraph")}
                     >
-                      <RefreshCw size={18} />
+                      {restoreGraphMutation.isPending ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <RefreshCw size={18} />
+                      )}
                     </button>
                     <button
                       onClick={() => handleDelete(graph.id, graph.title)}

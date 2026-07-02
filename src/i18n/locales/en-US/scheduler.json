@@ -194,7 +194,11 @@
     "tagProject": "Project",
     "tagMeeting": "Meeting",
     "tagExercise": "Exercise",
-    "tagRest": "Rest"
+    "tagRest": "Rest",
+    "draftDetected": "Draft Detected",
+    "draftDetectedMessage": "An unfinished draft was detected. Would you like to restore it?",
+    "restoreDraft": "Restore Draft",
+    "discardDraft": "Discard Draft"
   },
   "review": {
     "overdue": "Overdue",

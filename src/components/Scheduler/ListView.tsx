@@ -28,6 +28,7 @@ import { api } from "../../services/api";
 import { LearningStateBadge } from "./LearningStateBadge";
 import { MasteryProgressBar } from "./MasteryProgressBar";
 import { formatDate as formatDateUtil } from "../../utils/formatters";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 
 interface ListViewProps {
   tasks: UserTask[];
@@ -129,7 +130,7 @@ export const ListView: React.FC<ListViewProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [filterQueue, setFilterQueue] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [showFilters, setShowFilters] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [subtasksMap, setSubtasksMap] = useState<Map<string, TaskSubtask[]>>(
@@ -142,8 +143,8 @@ export const ListView: React.FC<ListViewProps> = ({
   const filteredAndSortedTasks = useMemo(() => {
     let result = [...tasks];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       result = result.filter(
         (task) =>
           task.title.toLowerCase().includes(query) ||
@@ -198,7 +199,7 @@ export const ListView: React.FC<ListViewProps> = ({
     });
 
     return result;
-  }, [tasks, sortField, sortDirection, filterStatus, filterQueue, searchQuery]);
+  }, [tasks, sortField, sortDirection, filterStatus, filterQueue, debouncedSearchQuery]);
 
   const loadSubtasks = async (taskId: string) => {
     if (subtasksMap.has(taskId)) return;

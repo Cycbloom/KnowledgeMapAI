@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { api, AIAction } from '../../../services/api';
 import { Zap, Loader2, BookOpen } from 'lucide-react';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { useMenuNavigation } from '../../../hooks';
 
 interface NodeContextMenuProps {
   x: number;
@@ -67,6 +68,27 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
     }
   };
 
+  const handleMenuSelect = (index: number) => {
+    if (index === 0) {
+      if (!annotating) {
+        handleAnnotateTerms();
+      }
+    } else {
+      const action = actions[index - 1];
+      if (action) {
+        onExecuteAction(action, nodeId);
+        onClose();
+      }
+    }
+  };
+
+  const { activeIndex } = useMenuNavigation({
+    itemCount: 1 + actions.length,
+    enabled: !loading,
+    onSelect: handleMenuSelect,
+    onClose,
+  });
+
   if (loading) {return (
       <div className="fixed bg-white dark:bg-gray-800 shadow-xl rounded-lg p-2 z-50 border dark:border-gray-700" style={{ top: y, left: x }}>
           <Loader2 className="animate-spin h-4 w-4 text-gray-500" />
@@ -83,7 +105,11 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
             系统功能
         </div>
         <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm flex items-center gap-2 text-gray-700 dark:text-gray-200"
+            className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-gray-700 dark:text-gray-200 ${
+              activeIndex === 0
+                ? "bg-primary-50 dark:bg-primary-900/30"
+                : "hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
             onClick={handleAnnotateTerms}
             disabled={annotating}
         >
@@ -96,10 +122,14 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
                 <div className="px-3 py-2 text-xs font-bold text-gray-500 border-b border-gray-100 dark:border-gray-700 mt-1 mb-1">
                     AI 动作
                 </div>
-                {actions.map(action => (
+                {actions.map((action, index) => (
                     <button
                         key={action.id}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm flex items-center gap-2 text-gray-700 dark:text-gray-200"
+                        className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-gray-700 dark:text-gray-200 ${
+                          activeIndex === index + 1
+                            ? "bg-primary-50 dark:bg-primary-900/30"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
                         onClick={() => {
                             onExecuteAction(action, nodeId);
                             onClose();

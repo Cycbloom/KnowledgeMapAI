@@ -22,6 +22,7 @@ import { quizQueryKeys } from '../hooks/queries/useQuizQueries';
 import type { StudyCard } from '@shared/types/common';
 import { formatDate as formatDateUtil } from '../utils/formatters';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { message } from '@/utils/messageHelper';
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; darkBg: string; darkColor: string }> = {
   draft: {
@@ -105,7 +106,7 @@ export const QuizPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: quizQueryKeys.quizSet(quizSetId) });
     } catch (error) {
       console.error('Failed to delete card:', error);
-      alert('删除题目失败');
+      message.error('删除题目失败');
     }
   }, [quizSetId, queryClient]);
 
@@ -116,7 +117,7 @@ export const QuizPreview: React.FC = () => {
       await regenerateMutation.mutateAsync({ quizSetId, cardId });
     } catch (error) {
       console.error('Failed to regenerate card:', error);
-      alert('重新生成题目失败');
+      message.error('重新生成题目失败');
     } finally {
       setRegeneratingCardId(null);
     }
@@ -158,7 +159,7 @@ export const QuizPreview: React.FC = () => {
       setShowAddForm(false);
     } catch (error) {
       console.error('Failed to save card:', error);
-      alert('保存题目失败');
+      message.error('保存题目失败');
     } finally {
       setIsSubmitting(false);
     }

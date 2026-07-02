@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Globe, Lock, Copy, Check, ExternalLink, Users, UserPlus, Link as LinkIcon } from 'lucide-react';
 import { api } from '../../../services/api';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import type { CollaboratorRole, CollaboratorWithUser } from '@shared/types';
 import { useStore } from '../../../store/useStore';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { copyToClipboard } from '@/utils/clipboard';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   ownerId
 }) => {
   const { user } = useStore();
+  const { t } = useTranslation();
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -81,10 +84,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleCopy = () => {
     const publicUrl = `${window.location.origin}/graph/${graphId}`;
-    navigator.clipboard.writeText(publicUrl);
+    void copyToClipboard(publicUrl, t('common.copied'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    frontendEventBus.publish("message_show", { type: 'success', content: '链接已复制到剪贴板' });
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -312,8 +314,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         />
                         <button
                           onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/collaboration/${shareToken}`);
-                            frontendEventBus.publish("message_show", { type: 'success', content: '链接已复制' });
+                            void copyToClipboard(`${window.location.origin}/collaboration/${shareToken}`, t('common.copied'));
                           }}
                           className="px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
                         >

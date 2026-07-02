@@ -8,6 +8,7 @@ import { asyncConfirm } from '@/utils/asyncConfirm';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
 import { StudyCardPreview } from './StudyCardPreview';
 import { StudyCardDetailModal } from './StudyCardDetailModal';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 interface QuestionBankProps {
   cards: StudyCard[];
@@ -17,7 +18,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const [searchTerm, setSearchTerm] = useState('');
+  const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm } = useDebouncedSearch();
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
@@ -52,10 +53,10 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const filteredCards = useMemo(() => {
     return cards.filter(card => {
       // Basic Search
-      const matchesSearch = card.question.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            card.answer.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = card.question.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                            card.answer.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       const matchesType = selectedType === 'all' || card.card_type === selectedType;
-      
+
       if (!matchesSearch || !matchesType) return false;
 
       // Advanced Filters
@@ -83,7 +84,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
 
       return true;
     });
-  }, [cards, searchTerm, selectedType, showAdvancedFilters, reviewCountRange, selectedFsrsStates, nextReviewRange]);
+  }, [cards, debouncedSearchTerm, selectedType, showAdvancedFilters, reviewCountRange, selectedFsrsStates, nextReviewRange]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredCards.length / pageSize);

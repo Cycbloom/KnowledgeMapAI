@@ -8,6 +8,7 @@ import {
   getElectronApiUrl,
 } from "../../config/electronConfig";
 import { message } from "../../utils/messageHelper";
+import { copyToClipboard } from "@/utils/clipboard";
 
 interface CalendarExportModalProps {
   isOpen: boolean;
@@ -51,8 +52,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
   const handleCopyWebCalLink = () => {
     const webcalUrl = `webcal://${window.location.host}/api/calendar/subscribe/${localStorage.getItem("userId")}`;
-    navigator.clipboard.writeText(webcalUrl);
-    message.success(t("calendar.webcalCopied"));
+    void copyToClipboard(webcalUrl, t("calendar.webcalCopied"));
   };
 
   return (

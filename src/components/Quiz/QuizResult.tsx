@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   Trophy,
@@ -39,23 +40,18 @@ interface QuizResultProps {
   onBack: () => void;
 }
 
-const cardTypeLabels: Record<string, string> = {
-  qa: '问答题',
-  choice: '单选题',
-  multi_choice: '多选题',
-  true_false: '判断题',
-  fill_in_the_blank: '填空题',
-  essay: '解答题',
-};
-
 export const QuizResult: React.FC<QuizResultProps> = ({
   results,
   onRetry,
   onRetryWrong,
   onBack,
 }) => {
+  const { t } = useTranslation();
   const accuracy = results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0;
   const hasWrongCards = results.wrongCards.length > 0;
+
+  const getCardTypeLabel = (cardType: string) =>
+    t(`study.quizResult.cardType.${cardType}`, { defaultValue: cardType });
 
   const getAccuracyColor = (acc: number) => {
     if (acc >= 80) return 'text-emerald-500';
@@ -107,7 +103,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               transition={{ delay: 0.3 }}
               className="text-3xl font-bold mb-2 text-gray-900 dark:text-white"
             >
-              {accuracy >= 80 ? '太棒了！' : accuracy >= 60 ? '继续加油！' : '需要努力！'}
+              {accuracy >= 80 ? t('study.quizResult.title.excellent') : accuracy >= 60 ? t('study.quizResult.title.good') : t('study.quizResult.title.needsWork')}
             </motion.h2>
 
             <motion.p
@@ -116,7 +112,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               transition={{ delay: 0.4 }}
               className="text-gray-500 dark:text-slate-400"
             >
-              测验完成，以下是你的成绩单
+              {t('study.quizResult.subtitle')}
             </motion.p>
           </div>
 
@@ -130,19 +126,19 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               <div className="text-3xl font-black text-gray-900 dark:text-white">
                 {results.total}
               </div>
-              <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">总题数</div>
+              <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">{t('study.quizResult.stats.total')}</div>
             </div>
             <div className="text-center p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20">
               <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
                 {results.correct}
               </div>
-              <div className="text-sm text-emerald-600/70 dark:text-emerald-400/70 mt-1">正确</div>
+              <div className="text-sm text-emerald-600/70 dark:text-emerald-400/70 mt-1">{t('study.quizResult.stats.correct')}</div>
             </div>
             <div className="text-center p-4 rounded-2xl bg-red-50 dark:bg-red-900/20">
               <div className="text-3xl font-black text-red-600 dark:text-red-400">
                 {results.total - results.correct}
               </div>
-              <div className="text-sm text-red-600/70 dark:text-red-400/70 mt-1">错误</div>
+              <div className="text-sm text-red-600/70 dark:text-red-400/70 mt-1">{t('study.quizResult.stats.wrong')}</div>
             </div>
           </motion.div>
 
@@ -153,7 +149,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             className="mb-8"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600 dark:text-slate-300">正确率</span>
+              <span className="text-sm font-medium text-gray-600 dark:text-slate-300">{t('study.quizResult.stats.accuracy')}</span>
               <span className={`text-2xl font-black ${getAccuracyColor(accuracy)}`}>
                 {accuracy}%
               </span>
@@ -178,17 +174,17 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             >
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={18} className="text-primary-500" />
-                <h3 className="font-bold text-gray-900 dark:text-white">时间统计</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t('study.quizResult.timeStats.title')}</h3>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-700/50">
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">总耗时</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">{t('study.quizResult.timeStats.totalTime')}</div>
                   <div className="text-lg font-bold text-gray-900 dark:text-white">
                     {formatTimeFromSeconds(results.totalTime)}
                   </div>
                 </div>
                 <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-700/50">
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">平均每题</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">{t('study.quizResult.timeStats.avgPerQuestion')}</div>
                   <div className="text-lg font-bold text-gray-900 dark:text-white">
                     {formatTimeFromSeconds(results.avgTime ?? 0)}
                   </div>
@@ -198,7 +194,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 mb-2">
                   <Zap size={16} className="text-emerald-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-emerald-600/70 dark:text-emerald-400/70">最快 · {formatTimeFromSeconds(results.fastest.duration)}</div>
+                    <div className="text-xs text-emerald-600/70 dark:text-emerald-400/70">{t('study.quizResult.timeStats.fastest')} · {formatTimeFromSeconds(results.fastest.duration)}</div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                       {results.cards?.find((c) => c.id === results.fastest?.cardId)?.question ?? '—'}
                     </p>
@@ -209,7 +205,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30">
                   <Coffee size={16} className="text-amber-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-amber-600/70 dark:text-amber-400/70">最慢 · {formatTimeFromSeconds(results.slowest.duration)}</div>
+                    <div className="text-xs text-amber-600/70 dark:text-amber-400/70">{t('study.quizResult.timeStats.slowest')} · {formatTimeFromSeconds(results.slowest.duration)}</div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                       {results.cards?.find((c) => c.id === results.slowest?.cardId)?.question ?? '—'}
                     </p>
@@ -228,7 +224,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             >
               <div className="flex items-center gap-2 mb-4">
                 <BarChart3 size={18} className="text-primary-500" />
-                <h3 className="font-bold text-gray-900 dark:text-white">各题型得分</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t('study.quizResult.byType.title')}</h3>
               </div>
               <div className="space-y-3">
                 {Object.entries(results.byType).map(([type, stats]) => {
@@ -236,7 +232,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                   return (
                     <div key={type} className="flex items-center gap-3">
                       <span className="text-sm font-medium text-gray-600 dark:text-slate-300 w-20">
-                        {cardTypeLabels[type] || type}
+                        {getCardTypeLabel(type)}
                       </span>
                       <div className="flex-1 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div
@@ -269,7 +265,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             >
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle size={18} className="text-amber-500" />
-                <h3 className="font-bold text-gray-900 dark:text-white">薄弱知识点</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t('study.quizResult.weakPoints.title')}</h3>
               </div>
               <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
                 {results.wrongCards.slice(0, 5).map((card) => (
@@ -283,14 +279,14 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                         {card.question}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                        {cardTypeLabels[card.card_type] || card.card_type}
+                        {getCardTypeLabel(card.card_type)}
                       </p>
                     </div>
                   </div>
                 ))}
                 {results.wrongCards.length > 5 && (
                   <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-2">
-                    还有 {results.wrongCards.length - 5} 道错题...
+                    {t('study.quizResult.weakPoints.moreErrors', { count: results.wrongCards.length - 5 })}
                   </p>
                 )}
               </div>
@@ -308,7 +304,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 flex items-center justify-center gap-2"
             >
               <RefreshCw size={18} />
-              重新测验
+              {t('study.quizResult.actions.retry')}
             </button>
 
             {hasWrongCards && (
@@ -317,7 +313,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                 className="w-full py-4 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-2xl font-bold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all border border-amber-200 dark:border-amber-800 flex items-center justify-center gap-2"
               >
                 <BookOpen size={18} />
-                错题重练 ({results.wrongCards.length} 题)
+                {t('study.quizResult.actions.retryWrong', { count: results.wrongCards.length })}
               </button>
             )}
 
@@ -326,7 +322,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               className="w-full py-4 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-2xl font-bold hover:bg-gray-200 dark:hover:bg-slate-600 transition-all flex items-center justify-center gap-2"
             >
               <ArrowLeft size={18} />
-              返回测验列表
+              {t('study.quizResult.actions.back')}
             </button>
           </motion.div>
         </div>

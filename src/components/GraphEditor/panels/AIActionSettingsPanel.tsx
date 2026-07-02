@@ -4,6 +4,7 @@ import { api, AIAction } from '../../../services/api';
 import { PromptEditor } from './PromptEditor';
 import { Edit, Trash2, Plus, Zap, Copy } from 'lucide-react';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { message } from '@/utils/messageHelper';
 
 interface AIActionSettingsPanelProps {
   graphId?: string;
@@ -70,7 +71,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
         fetchActions();
     } catch (err) {
         console.error("Failed to save action", err);
-        alert(t('aiAction.saveFailed'));
+        message.error(t('aiAction.saveFailed'));
     }
   };
 

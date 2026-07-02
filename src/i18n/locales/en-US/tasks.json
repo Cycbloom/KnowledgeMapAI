@@ -10,7 +10,13 @@
   "completed": "Completed",
   "failed": "Failed",
   "pending": "Pending",
-  "loadTasksFailed": "Failed to load tasks: {{error}}",
+  "status": {
+    "pending": "Pending",
+    "in_progress": "In Progress",
+    "completed": "Completed"
+  },
+  "loadTasksFailed": "Failed to load tasks, please retry later",
+  "errorDetails": "Details",
   "retry": "Retry",
   "loading": "Loading...",
   "noTasks": "No tasks",

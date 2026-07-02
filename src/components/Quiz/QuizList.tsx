@@ -13,8 +13,10 @@ import {
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { useQuizSets, useDeleteQuizSetMutation } from '../../hooks/queries';
+import { useGraphs } from '../../hooks/queries/useGraphQueries';
 import { QuizCard } from './QuizCard';
 import type { QuizSet, QuizSetStatus } from '@shared/types/quiz';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface QuizListProps {
   onCreateQuiz?: () => void;
@@ -41,7 +43,16 @@ export const QuizList: React.FC<QuizListProps> = ({
   const pageSize = 8;
 
   const { data: quizSets, isLoading, error } = useQuizSets();
+  const { data: graphs } = useGraphs();
   const deleteMutation = useDeleteQuizSetMutation();
+
+  const graphNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (graphs) {
+      graphs.forEach((g) => map.set(g.id, g.title));
+    }
+    return map;
+  }, [graphs]);
 
   const graphOptions = useMemo(() => {
     if (!quizSets) return [];
@@ -76,7 +87,7 @@ export const QuizList: React.FC<QuizListProps> = ({
   }, [searchTerm, selectedStatus, selectedGraphId]);
 
   const handleDelete = async (quiz: QuizSet) => {
-    if (confirm(t('study.quizList.deleteConfirm', { title: quiz.title }))) {
+    if (await asyncConfirm({ title: t('study.quizList.deleteConfirm', { title: quiz.title }), message: t('study.quizList.deleteConfirm', { title: quiz.title }), isDangerous: true })) {
       await deleteMutation.mutateAsync(quiz.id);
     }
   };
@@ -215,7 +226,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                 <option value="all">{t('study.quizList.allGraphs')}</option>
                 {graphOptions.map((id) => (
                   <option key={id} value={id}>
-                    {id}
+                    {graphNameMap.get(id) ?? `${id} (已删除)`}
                   </option>
                 ))}
               </select>

@@ -12,6 +12,7 @@ import {
 import { api } from "../../../services/api";
 import { TaskLink } from "../../../types";
 import { message as messageHelper } from "../../../utils/messageHelper";
+import { asyncConfirm } from "../../../utils/asyncConfirm";
 
 interface TaskLinksProps {
   taskId: string;
@@ -102,6 +103,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
   };
 
   const handleDeleteLink = async (linkId: string) => {
+    if (!await asyncConfirm({ title: '删除链接', message: '确定要删除这个链接吗？', isDangerous: true })) return;
     try {
       const response = await api.scheduler.deleteLink(taskId, linkId);
       if (response.success) {

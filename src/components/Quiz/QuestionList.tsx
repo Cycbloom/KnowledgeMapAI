@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StudyCard } from '@shared/types/common';
 import { useTheme } from "../../hooks";
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface QuestionListProps {
   cards: StudyCard[];
@@ -358,8 +359,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                       <RefreshCw size={16} />
                                     </button>
                                     <button
-                                      onClick={() => {
-                                        if (confirm('确定要删除这道题目吗？')) {
+                                      onClick={async () => {
+                                        if (await asyncConfirm({ title: '删除题目', message: '确定要删除这道题目吗？', isDangerous: true })) {
                                           onDelete(card.id);
                                         }
                                       }}

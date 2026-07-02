@@ -127,7 +127,9 @@
     "due": "待复习",
     "all": "全部",
     "searchPlaceholder": "搜索卡片...",
-    "noCardsFound": "未找到匹配的卡片"
+    "noCardsFound": "未找到匹配的卡片",
+    "clearSearch": "清除搜索",
+    "switchToAll": "切换到全部卡片"
   },
   "completed": {
     "levelComplete": "本轮完成！",

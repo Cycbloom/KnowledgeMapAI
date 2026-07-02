@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useError } from "../../hooks";
 import { useActivityTracker } from "../../hooks/useActivityTracker";
@@ -264,7 +265,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   };
 
   const handleDeletePath = async (pathId: string) => {
-    if (!window.confirm(t("learning.learningPath.confirmDelete"))) return;
+    if (!await asyncConfirm({ title: '删除', message: t("learning.learningPath.confirmDelete"), isDangerous: true })) return;
 
     try {
       await deleteMutation.mutateAsync(pathId);

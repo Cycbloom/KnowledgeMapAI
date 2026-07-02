@@ -52,5 +52,16 @@
   "autoExpandGraph": "Auto Expand Graph",
   "recursiveGraphGeneration": "Recursive Graph Generation",
   "infiniteExpansion": "Infinite Knowledge Network Expansion",
-  "embeddingGeneration": "Embedding Generation"
+  "embeddingGeneration": "Embedding Generation",
+  "searchPlaceholder": "Search tasks...",
+  "noSearchResults": "No matching tasks found",
+  "selectMode": "Select",
+  "exitSelectMode": "Exit Select",
+  "selectedCount": "{{count}} selected",
+  "selectAll": "Select All",
+  "batchDelete": "Batch Delete",
+  "batchDeleteConfirm": "Are you sure you want to delete {{count}} selected tasks? This action cannot be undone.",
+  "batchDeleteSuccess": "Successfully deleted {{count}} tasks",
+  "batchDeletePartial": "Deletion complete: {{success}} succeeded, {{fail}} failed",
+  "cancelSelection": "Cancel Selection"
 }

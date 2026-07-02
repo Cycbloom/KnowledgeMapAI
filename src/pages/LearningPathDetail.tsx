@@ -17,6 +17,7 @@ import type {
   ApiLearningPathNode,
   LearningPathNode,
 } from "../components/LearningPath/types";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 
 const LearningPathDetailPage: React.FC = () => {
   const { id: pathId } = useParams<{ id: string }>();
@@ -271,7 +272,7 @@ const LearningPathDetailPage: React.FC = () => {
   };
 
   const handleDeletePath = async () => {
-    if (!pathId || !window.confirm("确定要删除此学习路径吗？此操作不可恢复。"))
+    if (!pathId || !await asyncConfirm({ title: '删除学习路径', message: '确定要删除此学习路径吗？此操作不可恢复。', isDangerous: true }))
       return;
 
     try {

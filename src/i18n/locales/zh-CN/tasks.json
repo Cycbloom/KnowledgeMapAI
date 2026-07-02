@@ -52,5 +52,16 @@
   "autoExpandGraph": "自动扩展图谱",
   "recursiveGraphGeneration": "递归生成图谱",
   "infiniteExpansion": "无限扩展知识网络",
-  "embeddingGeneration": "向量嵌入生成"
+  "embeddingGeneration": "向量嵌入生成",
+  "searchPlaceholder": "搜索任务...",
+  "noSearchResults": "未找到匹配的任务",
+  "selectMode": "多选",
+  "exitSelectMode": "退出多选",
+  "selectedCount": "已选 {{count}} 项",
+  "selectAll": "全选",
+  "batchDelete": "批量删除",
+  "batchDeleteConfirm": "确定要删除选中的 {{count}} 个任务吗？此操作无法撤销。",
+  "batchDeleteSuccess": "已成功删除 {{count}} 个任务",
+  "batchDeletePartial": "删除完成：成功 {{success}} 个，失败 {{fail}} 个",
+  "cancelSelection": "取消选择"
 }

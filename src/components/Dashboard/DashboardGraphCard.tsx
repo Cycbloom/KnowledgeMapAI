@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   BookOpen,
@@ -92,6 +92,7 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
   onContextMenu,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <div
@@ -144,6 +145,11 @@ export const DashboardGraphCard: React.FC<DashboardGraphCardProps> = ({
             onToggleSelect(graph.id);
           } else {
             onNavigate(graph.id);
+          }
+        }}
+        onDoubleClick={() => {
+          if (!isSelectMode) {
+            navigate(`/graph/${graph.id}`);
           }
         }}
         onKeyDown={(e) => {

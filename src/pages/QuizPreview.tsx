@@ -21,6 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { quizQueryKeys } from '../hooks/queries/useQuizQueries';
 import type { StudyCard } from '@shared/types/common';
 import { formatDate as formatDateUtil } from '../utils/formatters';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; darkBg: string; darkColor: string }> = {
   draft: {
@@ -80,7 +81,7 @@ export const QuizPreview: React.FC = () => {
 
   const handleDeleteQuiz = async () => {
     if (!quizSet) return;
-    if (confirm(`确定要删除测验 "${quizSet.title}" 吗？此操作不可恢复。`)) {
+    if (await asyncConfirm({ title: '删除测验', message: `确定要删除测验 "${quizSet.title}" 吗？此操作不可恢复。`, isDangerous: true })) {
       await deleteMutation.mutateAsync(quizSet.id);
       navigate('/study');
     }

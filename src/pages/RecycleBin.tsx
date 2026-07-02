@@ -16,6 +16,7 @@ import {
   CheckSquare,
   Square,
   X,
+  Info,
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal } from "../components/common";
@@ -109,7 +110,15 @@ export const RecycleBin = () => {
     try {
       const ids = Array.from(selectedIds);
       await batchRestoreMutation.mutateAsync(ids);
-      frontendEventBus.publish("message_show", { type: "success", content: t("recycleBin.messages.batchRestoreSuccess", { count: ids.length }) });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("recycleBin.messages.batchRestoreSuccess", { count: ids.length }),
+        action: {
+          label: t("recycleBin.messages.view"),
+          onClick: () => navigate("/dashboard"),
+        },
+        duration: 5000,
+      });
       setSelectedIds(new Set());
     } catch (err: unknown) {
       console.error(err);
@@ -209,6 +218,10 @@ export const RecycleBin = () => {
               className={`${isDark ? "text-slate-400" : "text-gray-500"} text-lg max-w-xl`}
             >
               {t("recycleBin.subtitle")}
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1.5">
+              <Info size={14} />
+              {t("recycleBin.autoCleanupHint")}
             </p>
           </div>
 
@@ -332,6 +345,12 @@ export const RecycleBin = () => {
                   ? t("recycleBin.noResultsHint")
                   : t("recycleBin.emptyHint")}
               </p>
+              {!searchQuery && (
+                <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1.5 mt-2">
+                  <Info size={14} />
+                  {t("recycleBin.autoCleanupHint")}
+                </p>
+              )}
             </div>
           ) : (
             filteredGraphs.map((graph) => (

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Settings, X, Clock, AlertCircle, CheckCircle, Timer, Coffee } from 'lucide-react';
+import { Bell, Check, Settings, X, Clock, AlertCircle, CheckCircle, Timer, Coffee, Trash2 } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
 import { Notification, NotificationType } from '@shared/types';
 import { useTheme } from "../../hooks";
 import { useNavigate } from 'react-router-dom';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
   task_start: <Timer className="text-primary-500" size={16} />,
@@ -124,6 +125,20 @@ export const NotificationCenter: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await notificationApi.markAsRead(notificationId);
@@ -157,6 +172,27 @@ export const NotificationCenter: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to delete notification:', error);
+    }
+  };
+
+  const handleDeleteReadNotifications = async () => {
+    const readIds = notifications.filter(n => n.read_at).map(n => n.id);
+    if (readIds.length === 0) return;
+
+    const confirmed = await asyncConfirm({
+      title: '删除已读通知',
+      message: `确定要删除所有已读通知吗？共 ${readIds.length} 条，此操作无法撤销。`,
+      confirmText: '删除',
+      cancelText: '取消',
+      isDangerous: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await Promise.all(readIds.map(id => notificationApi.deleteNotification(id)));
+      setNotifications(notifications.filter(n => !n.read_at));
+    } catch (error) {
+      console.error('Failed to delete read notifications:', error);
     }
   };
 
@@ -238,6 +274,19 @@ export const NotificationCenter: React.FC = () => {
                     title="全部已读"
                   >
                     <Check size={16} />
+                  </button>
+                )}
+                {readNotifications.length > 0 && (
+                  <button
+                    onClick={handleDeleteReadNotifications}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      isDark
+                        ? 'hover:bg-red-900/30 text-slate-400 hover:text-red-400'
+                        : 'hover:bg-red-50 text-gray-500 hover:text-red-500'
+                    }`}
+                    title="删除已读通知"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 )}
                 <button

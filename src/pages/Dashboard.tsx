@@ -15,7 +15,7 @@ import { Network, Star, Clock } from "lucide-react";
 import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
-import { ConfirmationModal } from "../components/common";
+import { ConfirmationModal, SkeletonCard } from "../components/common";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
 import { useDashboardFilters } from "../hooks/useDashboardFilters";
@@ -252,9 +252,17 @@ export const Dashboard = () => {
   if (isLoading)
     return (
       <div
-        className={`min-h-full flex items-center justify-center p-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
       >
-        正在加载图谱...
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 space-y-4 lg:space-y-6">
+          <div
+            className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} lines={3} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   if (error)

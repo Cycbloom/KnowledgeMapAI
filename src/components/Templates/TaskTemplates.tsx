@@ -28,6 +28,7 @@ import { useTheme } from "../../hooks";
 import { useTemplateForm } from "../../hooks/templates/useTemplateForm";
 import { useTemplateList } from "../../hooks/templates/useTemplateList";
 import { useTemplateModals } from "../../hooks/templates/useTemplateModals";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   study: <BookOpen size={20} />,
@@ -139,7 +140,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       return;
     }
 
-    if (!confirm(`${t("common.confirm")}${t("common.delete")} "${template.name}"?`)) return;
+    if (!await asyncConfirm({ title: t("common.delete"), message: `${t("common.confirm")}${t("common.delete")} "${template.name}"?`, isDangerous: true })) return;
 
     try {
       await taskTemplatesApi.deleteTemplate(template.id);

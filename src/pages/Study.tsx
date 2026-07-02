@@ -179,9 +179,50 @@ export const Study = () => {
   if (isLoading)
     return (
       <div
-        className={`min-h-full flex items-center justify-center ${isMobile ? "p-4" : "p-8"} ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"} ${isMobile ? "p-3" : "p-8"}`}
       >
-        Loading...
+        <div
+          className={`${isMobile ? "max-w-full" : "max-w-6xl"} mx-auto space-y-6 md:space-y-8`}
+        >
+          {/* Header skeleton */}
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-lg animate-pulse ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+            <div className={`h-7 w-40 rounded animate-pulse ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+          </div>
+
+          {/* Stats cards skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className={`p-3 rounded-xl border animate-pulse ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                  <div className={`h-3 w-16 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                </div>
+                <div className={`h-6 w-12 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+              </div>
+            ))}
+          </div>
+
+          {/* List skeleton */}
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className={`p-4 rounded-xl border animate-pulse ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`h-5 w-48 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                  <div className={`h-4 w-20 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                </div>
+                <div className={`h-4 w-full rounded mb-2 ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                <div className={`h-4 w-2/3 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
 

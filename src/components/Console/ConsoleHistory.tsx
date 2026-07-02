@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Trash2, CheckCircle, XCircle, Search } from 'lucide-react';
 import type { CommandHistoryItem } from '@/services/console';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface ConsoleHistoryProps {
   history: CommandHistoryItem[];
@@ -52,8 +53,8 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
     onSelect(command);
   }, [onSelect]);
 
-  const handleClearClick = useCallback(() => {
-    if (window.confirm('确定要清空所有历史记录吗？')) {
+  const handleClearClick = useCallback(async () => {
+    if (await asyncConfirm({ title: '清空历史记录', message: '确定要清空所有历史记录吗？', isDangerous: true })) {
       onClear();
     }
   }, [onClear]);

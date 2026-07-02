@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTasks } from "../hooks/queries";
@@ -9,6 +9,7 @@ import {
 import { useStore } from "../store/useStore";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal } from "../components/common";
+import { asyncConfirm } from "../utils/asyncConfirm";
 import {
   CheckCircle2,
   XCircle,
@@ -21,6 +22,10 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  Search,
+  CheckSquare,
+  Square,
+  X,
 } from "lucide-react";
 
 const formatTime = (iso?: string) => {
@@ -117,8 +122,12 @@ export const Tasks = () => {
   const navigate = useNavigate();
   const { token } = useStore();
   const [filter, setFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
   const limit = 10;
 
   const { data, isLoading, error, refetch, isFetching } = useTasks(
@@ -140,6 +149,15 @@ export const Tasks = () => {
   }, [data]);
 
   const totalPages = Math.ceil(total / limit);
+
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery.trim()) return tasks;
+    const query = searchQuery.trim().toLowerCase();
+    return tasks.filter((task) => {
+      const title = (task.title || getTypeLabel(task.task_type, t)).toLowerCase();
+      return title.includes(query);
+    });
+  }, [tasks, searchQuery, t]);
 
   const handleFilterChange = (v: string) => {
     setFilter(v);
@@ -183,6 +201,82 @@ export const Tasks = () => {
       });
     }
   };
+
+  const toggleSelectMode = useCallback(() => {
+    setIsSelectMode((prev) => {
+      if (prev) {
+        setSelectedIds(new Set());
+      }
+      return !prev;
+    });
+  }, []);
+
+  const toggleTaskSelection = useCallback((taskId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredTasks.map((task) => task.id)));
+  }, [filteredTasks]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+
+    const confirmed = await asyncConfirm({
+      title: t("tasks.batchDelete"),
+      message: t("tasks.batchDeleteConfirm", { count: selectedIds.size }),
+      isDangerous: true,
+    });
+
+    if (!confirmed) return;
+
+    setIsBatchDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    const ids = Array.from(selectedIds);
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          await deleteMutation.mutateAsync(id);
+          successCount++;
+        } catch {
+          failCount++;
+        }
+      }),
+    );
+
+    setIsBatchDeleting(false);
+    setSelectedIds(new Set());
+    setIsSelectMode(false);
+
+    if (failCount === 0) {
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("tasks.batchDeleteSuccess", { count: successCount }),
+      });
+    } else {
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("tasks.batchDeletePartial", {
+          success: successCount,
+          fail: failCount,
+        }),
+      });
+    }
+  }, [selectedIds, deleteMutation, t]);
 
   const handleExport = () => {
     if (!tasks || tasks.length === 0) {
@@ -238,6 +332,17 @@ export const Tasks = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={toggleSelectMode}
+            className={`px-4 py-2 rounded-md flex items-center gap-2 transition-colors ${
+              isSelectMode
+                ? "bg-primary-600 text-white hover:bg-primary-700"
+                : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700"
+            }`}
+          >
+            <CheckSquare className="w-4 h-4" />
+            <span>{isSelectMode ? t("tasks.exitSelectMode") : t("tasks.selectMode")}</span>
+          </button>
           <button
             onClick={handleExport}
             className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
@@ -299,6 +404,19 @@ export const Tasks = () => {
           current={filter}
           onClick={handleFilterChange}
         />
+        <div className="relative ml-auto flex-shrink-0">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
+            size={16}
+          />
+          <input
+            type="text"
+            placeholder={t("tasks.searchPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all w-48 bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
+          />
+        </div>
       </div>
 
       {error ? (
@@ -323,17 +441,17 @@ export const Tasks = () => {
             </div>
           )}
 
-          {!isLoading && tasks.length === 0 && (
+          {!isLoading && filteredTasks.length === 0 && (
             <div className="p-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
               <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
-              <p>{t("tasks.noTasks")}</p>
+              <p>{searchQuery.trim() ? t("tasks.noSearchResults") : t("tasks.noTasks")}</p>
             </div>
           )}
 
-          {!isLoading && tasks.length > 0 && (
+          {!isLoading && filteredTasks.length > 0 && (
             <>
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
-                {tasks.map((task) => {
+                {filteredTasks.map((task) => {
                   const context = (() => {
                     try {
                       const input = (task as any).input_data || {};
@@ -350,9 +468,23 @@ export const Tasks = () => {
                   return (
                     <div
                       key={task.id}
-                      className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                      className={`p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
+                        selectedIds.has(task.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-4">
+                        {isSelectMode && (
+                          <button
+                            onClick={() => toggleTaskSelection(task.id)}
+                            className="mt-1 flex-shrink-0 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                          >
+                            {selectedIds.has(task.id) ? (
+                              <CheckSquare className="w-5 h-5" />
+                            ) : (
+                              <Square className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+                            )}
+                          </button>
+                        )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span
@@ -560,6 +692,43 @@ export const Tasks = () => {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {isSelectMode && selectedIds.size > 0 && (
+        <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 px-6 py-3 flex items-center justify-between shadow-lg z-10">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t("tasks.selectedCount", { count: selectedIds.size })}
+            </span>
+            <button
+              onClick={selectAll}
+              className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium transition-colors"
+            >
+              {t("tasks.selectAll")}
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBatchDelete}
+              disabled={isBatchDeleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+            >
+              {isBatchDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              <span>{t("tasks.batchDelete")}</span>
+            </button>
+            <button
+              onClick={clearSelection}
+              className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium hover:bg-gray-200 dark:hover:bg-slate-600 flex items-center gap-2 transition-colors"
+            >
+              <X className="w-4 h-4" />
+              <span>{t("tasks.cancelSelection")}</span>
+            </button>
+          </div>
         </div>
       )}
 

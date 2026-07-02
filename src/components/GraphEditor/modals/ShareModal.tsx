@@ -4,6 +4,7 @@ import { api } from '../../../services/api';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import type { CollaboratorRole, CollaboratorWithUser } from '@shared/types';
 import { useStore } from '../../../store/useStore';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -116,7 +117,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   const handleRemoveCollaborator = async (collaboratorUserId: string) => {
-    if (!confirm('确定要移除此协作者吗？')) return;
+    if (!await asyncConfirm({
+      title: '移除协作者',
+      message: '确定要移除此协作者吗？',
+      isDangerous: true,
+    })) return;
     
     try {
       const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators/${collaboratorUserId}`, {

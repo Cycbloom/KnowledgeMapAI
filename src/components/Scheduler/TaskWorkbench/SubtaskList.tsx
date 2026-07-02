@@ -12,6 +12,7 @@ import {
 import { api } from "../../../services/api";
 import { TaskSubtask } from "../../../types";
 import { message as messageHelper } from "../../../utils/messageHelper";
+import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { LearningStateBadge } from "../LearningStateBadge";
 import { MasteryProgressBar } from "../MasteryProgressBar";
 
@@ -130,6 +131,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   };
 
   const handleDeleteSubtask = async (subtaskId: string) => {
+    if (!await asyncConfirm({ title: '删除子任务', message: '确定要删除这个子任务吗？', isDangerous: true })) return;
     try {
       const response = await api.scheduler.deleteSubtask(taskId, subtaskId);
       if (response.success) {

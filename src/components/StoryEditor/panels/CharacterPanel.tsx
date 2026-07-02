@@ -1,6 +1,7 @@
 import React from "react";
 import { Plus, Trash2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { asyncConfirm } from "../../../utils/asyncConfirm";
 import type { StoryCharacter } from "../../../services/api/storyCreation";
 
 interface CharacterPanelProps {
@@ -59,9 +60,9 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (window.confirm(t("storyEditor.confirmDelete"))) {
+    if (await asyncConfirm({ title: '删除', message: t("storyEditor.confirmDelete"), isDangerous: true })) {
       onDelete(id);
     }
   };

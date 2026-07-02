@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import type { StoryStructure } from "../../../services/api/storyCreation";
 
 interface StructurePanelProps {
@@ -88,9 +89,9 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
     }
   };
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (window.confirm(t("storyEditor.confirmDelete"))) {
+    if (await asyncConfirm({ title: '删除', message: t("storyEditor.confirmDelete"), isDangerous: true })) {
       onDelete(id);
     }
   };

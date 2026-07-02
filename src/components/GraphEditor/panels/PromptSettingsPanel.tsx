@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import { PromptEditor } from "./PromptEditor";
 import {
   Edit,
@@ -283,14 +284,16 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
 
     if (canReset && effective.id) {
       if (
-        confirm(
-          t("profile.promptSettings.confirmReset", {
+        await asyncConfirm({
+          title: '确认重置',
+          message: t("profile.promptSettings.confirmReset", {
             scope:
               scope === "graph"
                 ? t("profile.promptSettings.graphScope")
                 : t("profile.promptSettings.userScope"),
           }),
-        )
+          isDangerous: true,
+        })
       ) {
         await api.prompts.reset(effective.id);
         fetchTemplates();

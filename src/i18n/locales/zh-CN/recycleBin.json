@@ -11,6 +11,7 @@
   "batchDelete": "批量删除",
   "empty": "回收站为空",
   "emptyHint": "最近删除的图谱将显示在这里。",
+  "autoCleanupHint": "已删除的项目将在 30 天后永久删除",
   "noResults": "未找到相关图谱",
   "noResultsHint": "尝试更换搜索关键词",
   "noDescription": "暂无描述",
@@ -31,6 +32,7 @@
     "deleteSuccess": "图谱已永久删除",
     "deleteFailed": "删除失败",
     "batchDeleteSuccess": "已永久删除 {{count}} 个图谱",
-    "batchDeleteFailed": "批量删除失败"
+    "batchDeleteFailed": "批量删除失败",
+    "view": "查看"
   }
 }

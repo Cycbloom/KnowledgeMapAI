@@ -5,6 +5,7 @@ import {
   EdgeLineStyle,
 } from '../../../types';
 import { request } from '../../../services/api';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface RelationshipTypeSettingsProps {
   isOpen: boolean;
@@ -159,7 +160,11 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
   };
 
   const deleteRelationshipType = async (id: string) => {
-    if (!confirm('确定要删除此关系类型吗？')) return;
+    if (!await asyncConfirm({
+      title: '删除关系类型',
+      message: '确定要删除此关系类型吗？',
+      isDangerous: true,
+    })) return;
     setLoading(true);
     setError(null);
     try {

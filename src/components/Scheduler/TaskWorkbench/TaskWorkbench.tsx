@@ -19,6 +19,7 @@ import { api } from "../../../services/api";
 import { UserTaskDetail } from "../../../types";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../../../utils/formatters";
 import { message as messageHelper } from "../../../utils/messageHelper";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import { SubtaskList } from "./SubtaskList";
 import { TaskLinks } from "./TaskLinks";
 import { KnowledgePointAssociation } from "./KnowledgePointAssociation";
@@ -102,7 +103,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
   const handleDeleteTask = async () => {
     if (!task) return;
-    if (!window.confirm("确定要删除这个任务吗？此操作不可撤销。")) return;
+    if (!await asyncConfirm({ title: '删除任务', message: '确定要删除这个任务吗？此操作不可撤销。', isDangerous: true })) return;
     try {
       await api.scheduler.delete(task.id);
       messageHelper.success("任务已删除");

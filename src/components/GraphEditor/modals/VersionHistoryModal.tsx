@@ -4,6 +4,7 @@ import { knowledgePointsApi } from '../../../services/api/knowledgePoints';
 import type { KnowledgePointVersionWithDiff, KnowledgePointVersionDiff } from '../../../types';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { formatDate as formatDateUtil } from '../../../utils/formatters';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -55,7 +56,11 @@ export const VersionHistoryModal = ({
   };
 
   const handleRollback = async (versionNumber: number) => {
-    if (!confirm(`确定要回滚到版本 ${versionNumber} 吗？当前内容将被新版本覆盖。`)) {
+    if (!await asyncConfirm({
+      title: '确认回滚',
+      message: `确定要回滚到版本 ${versionNumber} 吗？当前内容将被新版本覆盖。`,
+      isDangerous: true,
+    })) {
       return;
     }
 

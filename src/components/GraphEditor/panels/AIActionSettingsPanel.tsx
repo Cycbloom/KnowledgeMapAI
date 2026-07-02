@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api, AIAction } from '../../../services/api';
 import { PromptEditor } from './PromptEditor';
 import { Edit, Trash2, Plus, Zap, Copy } from 'lucide-react';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface AIActionSettingsPanelProps {
   graphId?: string;
@@ -74,7 +75,11 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm(t('aiAction.confirmDelete'))) {
+    if (await asyncConfirm({
+      title: '确认删除',
+      message: t('aiAction.confirmDelete'),
+      isDangerous: true,
+    })) {
         await api.aiActions.delete(id);
         fetchActions();
     }

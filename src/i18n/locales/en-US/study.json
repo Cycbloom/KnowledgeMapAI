@@ -127,7 +127,9 @@
     "due": "Due",
     "all": "All",
     "searchPlaceholder": "Search cards...",
-    "noCardsFound": "No matching cards found"
+    "noCardsFound": "No matching cards found",
+    "clearSearch": "Clear Search",
+    "switchToAll": "Switch to All Cards"
   },
   "completed": {
     "levelComplete": "Round Complete!",

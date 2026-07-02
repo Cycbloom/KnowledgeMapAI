@@ -24,6 +24,7 @@ import {
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   knowledge: <GraduationCap size={20} />,
@@ -117,9 +118,7 @@ export const Templates = () => {
     }
 
     if (
-      !confirm(
-        `${t("common.confirm")}${t("common.delete")} "${template.name}"?`,
-      )
+      !await asyncConfirm({ title: t("common.delete"), message: `${t("common.confirm")}${t("common.delete")} "${template.name}"?`, isDangerous: true })
     )
       return;
 

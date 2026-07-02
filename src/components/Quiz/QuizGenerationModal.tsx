@@ -27,6 +27,7 @@ import { DifficultySelector } from './DifficultySelector';
 import { PromptConfigContent } from '../PromptConfig';
 import type { QuizSetConfig } from '@shared/types/quiz';
 import type { User } from '@shared/types/user';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface LearningPathStageNode {
   knowledge_point_id?: string;
@@ -125,9 +126,9 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
     setShowPromptConfig(false);
   }, [initialGraphId]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback(async () => {
     if (isGenerating) {
-      if (!confirm('测验正在生成中，确定要取消吗？')) {
+      if (!await asyncConfirm({ title: '取消生成', message: '测验正在生成中，确定要取消吗？' })) {
         return;
       }
     }

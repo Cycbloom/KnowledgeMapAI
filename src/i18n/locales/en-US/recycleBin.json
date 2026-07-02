@@ -11,6 +11,7 @@
   "batchDelete": "Batch Delete",
   "empty": "Trash is empty",
   "emptyHint": "Recently deleted graphs will appear here.",
+  "autoCleanupHint": "Deleted items will be permanently deleted after 30 days",
   "noResults": "No matching graphs found",
   "noResultsHint": "Try different search keywords",
   "noDescription": "No description",
@@ -31,6 +32,7 @@
     "deleteSuccess": "Graph permanently deleted",
     "deleteFailed": "Delete failed",
     "batchDeleteSuccess": "{{count}} graphs permanently deleted",
-    "batchDeleteFailed": "Batch delete failed"
+    "batchDeleteFailed": "Batch delete failed",
+    "view": "View"
   }
 }

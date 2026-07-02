@@ -14,6 +14,7 @@ import {
 import { api } from "../../../services/api";
 import { TaskProgressPlan } from "../../../types";
 import { formatDate as formatDateUtil } from "../../../utils/formatters";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 
 interface ProgressDetailProps {
   taskId: string;
@@ -516,8 +517,8 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
 
               <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-between">
                 <button
-                  onClick={() => {
-                    if (confirm("确定要删除这个进度计划吗？")) {
+                  onClick={async () => {
+                    if (await asyncConfirm({ title: '删除进度计划', message: '确定要删除这个进度计划吗？', isDangerous: true })) {
                       handleUpdatePlan(selectedPlan.id, { status: "skipped" });
                     }
                   }}

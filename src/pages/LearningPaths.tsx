@@ -27,6 +27,7 @@ import {
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 
 type PathStatus = LearningPathStatus | "all";
 
@@ -141,7 +142,7 @@ export const LearningPaths = () => {
   };
 
   const handleDeletePath = async (path: LearningPathItem) => {
-    if (!confirm(t("learningPaths.messages.deleteConfirm", { title: path.title }))) return;
+    if (!await asyncConfirm({ title: t("learningPaths.actions.delete"), message: t("learningPaths.messages.deleteConfirm", { title: path.title }), isDangerous: true })) return;
 
     try {
       await deleteMutation.mutateAsync(path.id);

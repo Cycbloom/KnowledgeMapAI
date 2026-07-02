@@ -10,6 +10,7 @@ import { PromptSettingsPanel } from '../components/GraphEditor/panels/PromptSett
 import { AIActionSettingsPanel } from '../components/GraphEditor/panels/AIActionSettingsPanel';
 import { backupApi, BackupSnapshot } from '../services/api/backup';
 import { queryClient } from '../main';
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 export const Profile = () => {
   const { t } = useTranslation();
@@ -146,7 +147,7 @@ export const Profile = () => {
   };
 
   const handleRestoreSnapshot = async (id: string) => {
-    if (!confirm(t('profile.messages.confirmRestore'))) return;
+    if (!await asyncConfirm({ title: t('profile.backup.restoreSnapshot'), message: t('profile.messages.confirmRestore'), isDangerous: true })) return;
     
     setRestoringId(id);
     try {
@@ -169,7 +170,7 @@ export const Profile = () => {
   };
 
   const handleDeleteSnapshot = async (id: string) => {
-    if (!confirm(t('profile.messages.confirmDelete'))) return;
+    if (!await asyncConfirm({ title: t('profile.backup.deleteSnapshot'), message: t('profile.messages.confirmDelete'), isDangerous: true })) return;
     
     setDeletingId(id);
     try {

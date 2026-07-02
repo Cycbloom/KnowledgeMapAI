@@ -4,6 +4,7 @@ import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/mutations';
 import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from "../../hooks";
+import { asyncConfirm } from '@/utils/asyncConfirm';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
 import { StudyCardPreview } from './StudyCardPreview';
 import { StudyCardDetailModal } from './StudyCardDetailModal';
@@ -120,7 +121,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   };
 
   const handleBatchDelete = async () => {
-    if (confirm(t('study.questionBank.deleteConfirm', { count: selectedIds.size }))) {
+    if (await asyncConfirm({ title: '批量删除', message: t('study.questionBank.deleteConfirm', { count: selectedIds.size }), isDangerous: true })) {
       await deleteBatchMutation.mutateAsync(Array.from(selectedIds));
       setSelectedIds(new Set());
     }
@@ -353,7 +354,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                   onPreview={setPreviewCard}
                   onEdit={startEditing}
                   onDelete={async (c) => {
-                    if(confirm(t('study.questionBank.deleteCardConfirm'))) await deleteCardMutation.mutateAsync(c.id);
+                    if(await asyncConfirm({ title: '删除卡片', message: t('study.questionBank.deleteCardConfirm'), isDangerous: true })) await deleteCardMutation.mutateAsync(c.id);
                   }}
                   onSelect={(c) => toggleSelect(c.id)}
                   selected={selectedIds.has(card.id)}

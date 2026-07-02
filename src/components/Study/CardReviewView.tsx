@@ -607,7 +607,39 @@ export const CardReviewView = ({
               }`}
             >
               <Search className="mx-auto mb-3 opacity-20" size={48} />
-              <p>{t("study.cardList.noCardsFound")}</p>
+              <p className="mb-4">{t("study.cardList.noCardsFound")}</p>
+              <div className="flex items-center justify-center gap-3">
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setCurrentPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                      isDark
+                        ? "border-slate-600 text-slate-300 hover:bg-slate-800"
+                        : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    {t("study.cardList.clearSearch")}
+                  </button>
+                )}
+                {tableMode === "due" && (
+                  <button
+                    onClick={() => {
+                      setTableMode("all");
+                      setCurrentPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                      isDark
+                        ? "border-primary-700 text-primary-400 hover:bg-primary-900/30"
+                        : "border-primary-300 text-primary-600 hover:bg-primary-50"
+                    }`}
+                  >
+                    {t("study.cardList.switchToAll")}
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             paginatedCards.map((card) => (

@@ -19,6 +19,7 @@ import { DomainManager } from "../components/GraphMap/DomainManager";
 import { CrossDomainInsightsSection } from "../components/GraphMap/CrossDomainInsightsSection";
 import type { CrossDomainAnalysisResult } from "../components/GraphMap/types";
 import { useAnalysisModules } from "../hooks/useAnalysisModules";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import type {
   Graph,
   GraphRelation,
@@ -513,7 +514,11 @@ export const GraphMap = () => {
     if (ids.length === 0) return;
 
     const confirmMessage = t('graphMap.batch.deleteConfirm', { count: ids.length });
-    if (!window.confirm(confirmMessage)) return;
+    if (!await asyncConfirm({
+      title: '确认删除',
+      message: confirmMessage,
+      isDangerous: true,
+    })) return;
 
     try {
       for (const id of ids) {

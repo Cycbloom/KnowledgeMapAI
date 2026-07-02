@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "@/hooks/queries";
 import { formatDurationMs as formatDuration } from "@/utils/formatters";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import type { AIPerformanceLog, AIProviderType } from "@shared/types";
 
 interface PerformanceTabProps {
@@ -899,7 +900,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   }, [loadData]);
 
   const handleClearLogs = useCallback(async () => {
-    if (window.confirm(t("console.performance.clearConfirm"))) {
+    if (await asyncConfirm({ title: '清空日志', message: t("console.performance.clearConfirm"), isDangerous: true })) {
       await clearLogsMutate(undefined);
       // mutation 的 onSuccess 已自动失效缓存，无需手动 loadData
     }

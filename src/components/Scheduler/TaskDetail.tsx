@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { UserTask, TaskExecution } from "@shared/types";
 import { formatDurationMinutes } from "../../utils/formatters";
+import { asyncConfirm } from "../../utils/asyncConfirm";
 import { TASK_DETAIL_QUEUE_CONFIG, TASK_DETAIL_STATUS_CONFIG } from "@/constants/scheduler";
 
 interface TaskDetailProps {
@@ -63,6 +64,18 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
     TASK_DETAIL_QUEUE_CONFIG[task.queue_level as keyof typeof TASK_DETAIL_QUEUE_CONFIG] ||
     TASK_DETAIL_QUEUE_CONFIG[2];
   const statusConfig = TASK_DETAIL_STATUS_CONFIG[task.status as keyof typeof TASK_DETAIL_STATUS_CONFIG] || TASK_DETAIL_STATUS_CONFIG.pending;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const formatDateTime = (dateStr?: string) => {
     if (!dateStr) return "--";
@@ -276,7 +289,10 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
             <div className="flex items-center gap-2">
               {onDelete && (
                 <button
-                  onClick={onDelete}
+                  onClick={async () => {
+                    if (!await asyncConfirm({ title: '删除任务', message: '确定要删除这个任务吗？此操作不可撤销。', isDangerous: true })) return;
+                    onDelete();
+                  }}
                   className="p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
                   title="删除"
                 >

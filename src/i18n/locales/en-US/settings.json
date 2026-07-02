@@ -1,6 +1,7 @@
 {
   "title": "System Settings",
   "subtitle": "Manage appearance, AI models and learning algorithms",
+  "back": "Back",
   "saveAll": "Save All Changes",
   "saving": "Saving...",
   "sections": {

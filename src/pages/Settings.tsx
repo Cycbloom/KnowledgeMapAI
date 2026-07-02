@@ -5,7 +5,7 @@ import {
   useCallback,
   type MouseEvent,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../hooks/queries";
 import { useStore } from "../store/useStore";
@@ -88,48 +88,81 @@ export const Settings = () => {
     sections[0]?.id ?? "",
   );
   const sectionRefs = useRef<Record<string, HTMLElement>>({});
+  const location = useLocation();
+
+  // 兼容旧的 ?tab=xxx 导航方式
+  const tabToSection: Record<string, string> = {
+    ai: "prompts",
+    notifications: "notifications",
+  };
+
+  const scrollToSection = useCallback((sectionId: string, behavior: ScrollBehavior = "smooth") => {
+    const el = sectionRefs.current[sectionId];
+    if (el) {
+      el.scrollIntoView({ behavior, block: "start" });
+      setActiveSection(sectionId);
+    }
+  }, []);
 
   const handleAnchorClick = useCallback(
     (e: MouseEvent<HTMLAnchorElement>, sectionId: string) => {
       e.preventDefault();
-      const el = sectionRefs.current[sectionId];
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        setActiveSection(sectionId);
-      }
+      scrollToSection(sectionId);
     },
-    [],
+    [scrollToSection],
   );
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: "-20% 0px -70% 0px" },
-    );
-    Object.values(sectionRefs.current).forEach((el) => {
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
+    // Delay observer setup so a deep-link scroll (e.g. arriving at
+    // /settings#prompts from another route) can complete first. Without this,
+    // the observer fires immediately on mount with the first visible section
+    // (e.g. "appearance") and overwrites the deep-link's active section.
+    let observer: IntersectionObserver | null = null;
+    const timer = setTimeout(() => {
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveSection(entry.target.id);
+            }
+          });
+        },
+        { rootMargin: "-20% 0px -70% 0px" },
+      );
+      Object.values(sectionRefs.current).forEach((el) => {
+        if (el) observer?.observe(el);
+      });
+    }, 100);
+    return () => {
+      clearTimeout(timer);
+      observer?.disconnect();
+    };
   }, []);
 
-  // Deep-link activation: on mount, if the URL targets a section (e.g.
-  // #prompts), scroll to it and mark it active so the sidebar highlights.
+  // Deep-link activation: when the URL targets a section (e.g. #prompts),
+  // scroll to it and mark it active. Supports both hash (#prompts) and
+  // legacy query-param (?tab=ai) navigation styles.
   useEffect(() => {
-    const hash = window.location.hash.replace("#", "");
-    if (hash) {
-      const el = sectionRefs.current[hash];
-      if (el) {
-        el.scrollIntoView({ behavior: "auto", block: "start" });
-        setActiveSection(hash);
+    // 优先使用 hash，其次使用 search params
+    let targetSection = location.hash.replace("#", "");
+    if (!targetSection) {
+      const params = new URLSearchParams(location.search);
+      const tab = params.get("tab");
+      if (tab && tab in tabToSection) {
+        targetSection = tabToSection[tab];
       }
     }
-  }, []);
+    if (targetSection) {
+      const timer = setTimeout(() => {
+        const el = sectionRefs.current[targetSection];
+        if (el) {
+          el.scrollIntoView({ behavior: "auto", block: "start" });
+          setActiveSection(targetSection);
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash, location.search]);
 
   const scrollToDbSection = useCallback(() => {
     dbSectionRef.current?.scrollIntoView({
@@ -167,8 +200,18 @@ export const Settings = () => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              // Return to the previous page when there is history; otherwise
+              // fall back to the personal center so the button always works
+              // (e.g. when the page is opened directly / refreshed).
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate("/profile");
+              }
+            }}
             className="p-3 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors min-h-[44px] min-w-[44px]"
+            aria-label={t("settings.back")}
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>

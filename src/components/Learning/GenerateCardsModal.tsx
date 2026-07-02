@@ -46,7 +46,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
 
   const handleGoToSettings = () => {
     onClose();
-    navigate('/settings?tab=ai');
+    navigate('/settings#prompts');
   };
 
   const handleToggleType = (typeId: string) => {

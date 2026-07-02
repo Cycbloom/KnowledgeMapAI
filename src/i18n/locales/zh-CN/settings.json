@@ -1,6 +1,7 @@
 {
   "title": "系统设置",
   "subtitle": "管理外观、AI 模型与学习算法",
+  "back": "返回",
   "saveAll": "保存所有更改",
   "saving": "保存中...",
   "sections": {

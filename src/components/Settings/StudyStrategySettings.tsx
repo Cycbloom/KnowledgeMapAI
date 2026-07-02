@@ -29,7 +29,24 @@ export const StudyStrategySettings = React.memo(
       const [schedulerWeights, setSchedulerWeights] = useState(DEFAULT_SCHEDULER_WEIGHTS);
       const [semanticScheduling, setSemanticScheduling] = useState(true);
 
-      const skipNextSaveRef = useRef(true);
+      // Refs hold the latest unstable values (mutation object, translation fn,
+      // and the settings prop) so the debounced save effect below can depend
+      // ONLY on the editable local state. Without this, the mutation object
+      // changes identity on every render and re-triggers the effect, causing an
+      // infinite save → refetch → save loop.
+      const settingsRef = useRef(settings);
+      const mutationRef = useRef(updateProfileMutation);
+      const tRef = useRef(t);
+      useEffect(() => {
+        settingsRef.current = settings;
+        mutationRef.current = updateProfileMutation;
+        tRef.current = t;
+      });
+
+      // Tracks whether the user has actually changed a value. Auto-save only
+      // fires when this is true, so mounting / loading from props / parent
+      // re-renders (e.g. availableModels identity change) never trigger a save.
+      const isDirtyRef = useRef(false);
 
       useLayoutEffect(() => {
         if (settings) {
@@ -45,22 +62,19 @@ export const StudyStrategySettings = React.memo(
             setSchedulerWeights(settings.schedulerWeights as typeof DEFAULT_SCHEDULER_WEIGHTS);
           if (settings.semantic_scheduling !== undefined)
             setSemanticScheduling(settings.semantic_scheduling as boolean);
-          // Skip auto-save after loading values from the profile to avoid
-          // immediately writing back the data we just received.
-          skipNextSaveRef.current = true;
+          // Loading values from the profile does not mark the form dirty;
+          // auto-save should only fire on explicit user interaction.
+          isDirtyRef.current = false;
         }
       }, [settings]);
 
       useEffect(() => {
-        if (skipNextSaveRef.current) {
-          skipNextSaveRef.current = false;
-          return;
-        }
+        if (!isDirtyRef.current) return;
         const timer = setTimeout(() => {
-          updateProfileMutation
+          mutationRef.current
             .mutateAsync({
               settings: {
-                ...settings,
+                ...settingsRef.current,
                 request_retention: Number(retention),
                 maximum_interval: Number(maxInterval),
                 defaultStudyMode,
@@ -71,10 +85,11 @@ export const StudyStrategySettings = React.memo(
               },
             })
             .then(() => {
-              message.success(t("settings.saveSuccess"));
+              isDirtyRef.current = false;
+              message.success(tRef.current("settings.saveSuccess"));
             })
             .catch(() => {
-              message.error(t("settings.saveFailed"));
+              message.error(tRef.current("settings.saveFailed"));
             });
         }, 800);
         return () => clearTimeout(timer);
@@ -86,12 +101,10 @@ export const StudyStrategySettings = React.memo(
         schedulerWeights,
         semanticScheduling,
         availableModels,
-        settings,
-        updateProfileMutation,
-        t,
       ]);
 
       const handleStudyModeChange = (mode: string) => {
+        isDirtyRef.current = true;
         setDefaultStudyMode(mode);
         const preset = STUDY_MODE_PRESETS[mode];
         if (preset) {
@@ -101,6 +114,7 @@ export const StudyStrategySettings = React.memo(
       };
 
       const handleResetStudyStrategyDefaults = () => {
+        isDirtyRef.current = true;
         setDefaultStudyMode(STUDY_STRATEGY_DEFAULTS.defaultStudyMode);
         setRetention(STUDY_STRATEGY_DEFAULTS.requestRetention);
         setMaxInterval(STUDY_STRATEGY_DEFAULTS.maximumInterval);
@@ -166,8 +180,10 @@ export const StudyStrategySettings = React.memo(
                       value={retention}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
-                        if (!isNaN(val) && val >= 0.7 && val <= 0.99)
+                        if (!isNaN(val) && val >= 0.7 && val <= 0.99) {
+                          isDirtyRef.current = true;
                           setRetention(val);
+                        }
                       }}
                       className="w-20 input-mobile text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 transition-all"
                     />
@@ -178,7 +194,10 @@ export const StudyStrategySettings = React.memo(
                     max="0.99"
                     step="0.01"
                     value={retention}
-                    onChange={(e) => setRetention(Number(e.target.value))}
+                    onChange={(e) => {
+                      isDirtyRef.current = true;
+                      setRetention(Number(e.target.value));
+                    }}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -198,8 +217,10 @@ export const StudyStrategySettings = React.memo(
                       value={maxInterval}
                       onChange={(e) => {
                         const val = parseInt(e.target.value);
-                        if (!isNaN(val) && val >= 1 && val <= 36500)
+                        if (!isNaN(val) && val >= 1 && val <= 36500) {
+                          isDirtyRef.current = true;
                           setMaxInterval(val);
+                        }
                       }}
                       className="w-24 input-mobile text-right text-primary-600 dark:text-primary-400 font-bold bg-transparent border-b border-primary-200 dark:border-primary-800 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 transition-all"
                     />
@@ -210,7 +231,10 @@ export const StudyStrategySettings = React.memo(
                     max="36500"
                     step="10"
                     value={maxInterval}
-                    onChange={(e) => setMaxInterval(Number(e.target.value))}
+                    onChange={(e) => {
+                      isDirtyRef.current = true;
+                      setMaxInterval(Number(e.target.value));
+                    }}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -240,12 +264,13 @@ export const StudyStrategySettings = React.memo(
                     max="0.5"
                     step="0.05"
                     value={masteryThresholds.learningReview}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      isDirtyRef.current = true;
                       setMasteryThresholds((prev) => ({
                         ...prev,
                         learningReview: Number(e.target.value),
-                      }))
-                    }
+                      }));
+                    }}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -268,12 +293,13 @@ export const StudyStrategySettings = React.memo(
                     max="0.7"
                     step="0.05"
                     value={masteryThresholds.reviewPractice}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      isDirtyRef.current = true;
                       setMasteryThresholds((prev) => ({
                         ...prev,
                         reviewPractice: Number(e.target.value),
-                      }))
-                    }
+                      }));
+                    }}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -296,12 +322,13 @@ export const StudyStrategySettings = React.memo(
                     max="0.9"
                     step="0.05"
                     value={masteryThresholds.practiceQuiz}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      isDirtyRef.current = true;
                       setMasteryThresholds((prev) => ({
                         ...prev,
                         practiceQuiz: Number(e.target.value),
-                      }))
-                    }
+                      }));
+                    }}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -348,12 +375,13 @@ export const StudyStrategySettings = React.memo(
                       max="0.5"
                       step="0.05"
                       value={schedulerWeights[item.key]}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        isDirtyRef.current = true;
                         setSchedulerWeights((prev) => ({
                           ...prev,
                           [item.key]: Number(e.target.value),
-                        }))
-                      }
+                        }));
+                      }}
                       className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                     />
                   </div>
@@ -380,7 +408,10 @@ export const StudyStrategySettings = React.memo(
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                     semanticScheduling ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                   }`}
-                  onClick={() => setSemanticScheduling(!semanticScheduling)}
+                  onClick={() => {
+                    isDirtyRef.current = true;
+                    setSemanticScheduling(!semanticScheduling);
+                  }}
                 >
                   <span
                     className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${

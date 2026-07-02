@@ -286,7 +286,7 @@ export const NotificationCenter: React.FC = () => {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    navigate('/settings?tab=notifications');
+                    navigate('/settings#notifications');
                   }}
                   className={`p-1.5 rounded-lg transition-colors ${
                     isDark

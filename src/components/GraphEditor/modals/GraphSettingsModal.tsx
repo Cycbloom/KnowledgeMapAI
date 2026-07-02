@@ -62,11 +62,11 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
       isOpen={isOpen}
       onClose={onClose}
       titleId="graph-settings-modal-title"
-      className={`bg-white dark:bg-slate-800 rounded-xl sm:rounded-xl shadow-2xl w-full ${activeTab === 'prompts' ? 'max-w-4xl' : 'max-w-md'} transition-all duration-300 overflow-hidden animate-fade-in-up max-h-[95dvh] sm:max-h-[90dvh]`}
+      className={`bg-white dark:bg-slate-800 rounded-xl sm:rounded-xl shadow-2xl w-full ${activeTab === 'prompts' ? 'max-w-4xl' : 'max-w-2xl'} transition-all duration-300 overflow-hidden animate-fade-in-up max-h-[95dvh] sm:max-h-[90dvh] flex flex-col`}
       overlayClassName="p-2 sm:p-4"
     >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 dark:border-slate-700">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
               <Settings size={24} />
@@ -79,7 +79,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
         </div>
 
         {/* Tabs */}
-        <div className="flex flex-wrap border-b border-gray-100 dark:border-slate-700 px-4 sm:px-6">
+        <div className="flex flex-wrap border-b border-gray-100 dark:border-slate-700 px-4 sm:px-6 shrink-0">
           <button
             onClick={() => setActiveTab('general')}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center min-h-[44px] touch-target ${
@@ -116,7 +116,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
         </div>
 
         {/* Body */}
-        <div className="p-4 sm:p-6 max-h-[calc(95dvh-200px)] sm:max-h-[calc(90dvh-200px)] overflow-y-auto custom-scrollbar">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto min-h-0 custom-scrollbar">
           {activeTab === 'general' ? (
             <div className="space-y-6">
               {/* Performance Settings */}
@@ -163,11 +163,11 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                 
                 <div className="flex justify-between items-center bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                   <span className="text-sm text-gray-600 dark:text-gray-300">显示性能统计 (FPS)</span>
-                  <button 
+                  <button
                     onClick={toggleStats}
-                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${showStats ? 'bg-primary-600' : 'bg-gray-300 dark:bg-slate-600'}`}
+                    className={`relative w-12 h-6 rounded-full transition-colors touch-target shrink-0 ${showStats ? 'bg-primary-600' : 'bg-gray-300 dark:bg-slate-600'}`}
                   >
-                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${showStats ? 'translate-x-6' : 'translate-x-0'}`} />
+                    <div className={`absolute top-0 left-0 bg-white w-6 h-6 rounded-full transition-transform ${showStats ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -186,11 +186,11 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     <Shield size={18} />
                     <span>闯关模式 (Gamification)</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setGamificationEnabled(!gamificationEnabled)}
-                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${gamificationEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-slate-600'}`}
+                    className={`relative w-12 h-6 rounded-full transition-colors touch-target shrink-0 ${gamificationEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-slate-600'}`}
                   >
-                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${gamificationEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    <div className={`absolute top-0 left-0 bg-white w-6 h-6 rounded-full transition-transform ${gamificationEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">

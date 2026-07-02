@@ -291,7 +291,7 @@ export const LearningMode = () => {
       if (!mobileAIService.isConfigured()) {
         frontendEventBus.publish("message_show", {
           type: "error", content: t("learning.cards.configureApiKey"),
-          action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings?tab=ai") },
+          action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") },
         });
         return;
       }
@@ -385,7 +385,7 @@ export const LearningMode = () => {
   const handleAICardGenError = (error: AICardGenError, config: { count: number; types: string[] }) => {
     switch (error.type) {
       case "api_key_missing": case "api_key_invalid":
-        frontendEventBus.publish("message_show", { type: "error", content: error.message, duration: 8000, action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings?tab=ai") } });
+        frontendEventBus.publish("message_show", { type: "error", content: error.message, duration: 8000, action: { label: t("learning.cards.goToSettings"), onClick: () => navigate("/settings#prompts") } });
         break;
       case "quota_exceeded":
         msgHelper.error(error.message, { duration: 8000 }); msgHelper.info(error.suggestion, { duration: 8000 });

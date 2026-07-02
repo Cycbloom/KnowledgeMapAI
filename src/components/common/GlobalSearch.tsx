@@ -401,7 +401,7 @@ export const GlobalSearch = () => {
               <span className="text-sm">搜索中...</span>
             </div>
           ) : results ? (
-            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar" aria-live="polite" aria-atomic="true">
               {results.answer && (
                 <div className={cn("p-4 border-b", isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-primary-50/50')}>
                   <div className="flex items-center gap-2 mb-2">

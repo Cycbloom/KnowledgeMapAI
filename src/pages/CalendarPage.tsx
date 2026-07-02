@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../hooks";
 import {
   useCalendarNavigation,
@@ -25,6 +26,7 @@ interface QuickTaskFormData {
 export const CalendarPage: React.FC = () => {
   const { isDark } = useTheme();
   const { t, i18n } = useTranslation();
+  const routerNavigate = useNavigate();
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("plan");
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -87,8 +89,8 @@ export const CalendarPage: React.FC = () => {
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
-    if (event.id) window.location.href = `/scheduler/task/${event.id}`;
-  }, []);
+    if (event.id) routerNavigate(`/scheduler/task/${event.id}`);
+  }, [routerNavigate]);
 
   const handleAddEvent = useCallback((date: Date, hour?: number) => {
     const deadline = new Date(date);

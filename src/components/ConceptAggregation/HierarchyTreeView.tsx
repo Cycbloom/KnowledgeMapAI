@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
@@ -14,6 +15,7 @@ import {
   Info,
 } from "lucide-react";
 import type { NodeLevel } from "../../types";
+import { EmptyState } from "../common/EmptyState";
 
 export interface HierarchyNode {
   id: string;
@@ -347,6 +349,7 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
   selectedNodeId,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const { t } = useTranslation();
 
   const handleToggle = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -394,11 +397,11 @@ export const HierarchyTreeView: React.FC<HierarchyTreeViewProps> = ({
 
   if (hierarchyData.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-slate-500 dark:text-slate-400">
-        <Network className="w-12 h-12 mb-3 opacity-50" />
-        <p className="text-sm">暂无层次结构</p>
-        <p className="text-xs mt-1">运行概念分析以生成层次树</p>
-      </div>
+      <EmptyState
+        icon={<Network className="w-12 h-12 text-gray-400 dark:text-gray-500" />}
+        title={t("common.conceptAggregation.noHierarchyTreeTitle")}
+        description={t("common.conceptAggregation.noHierarchyTreeDesc")}
+      />
     );
   }
 

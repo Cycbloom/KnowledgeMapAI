@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useStatistics, useUser, useGraphs } from '../hooks/queries';
+import { useTheme } from '../hooks';
 import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
   KnowledgeHeatmap,
@@ -14,6 +15,8 @@ import {
 } from 'recharts';
 import { BookOpen, Brain, Clock, TrendingUp, LucideIcon } from 'lucide-react';
 import type { Graph } from '../types';
+import { formatNumber } from '../utils/formatters';
+import { Skeleton } from '../components/common';
 
 interface MetricCardProps {
   title: string;
@@ -21,14 +24,15 @@ interface MetricCardProps {
   subtext?: string;
   icon: LucideIcon;
   color: string;
+  isDark: boolean;
 }
 
-const MetricCard = ({ title, value, subtext, icon: Icon, color }: MetricCardProps) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-start justify-between">
+const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: MetricCardProps) => (
+  <div className={`p-6 rounded-lg shadow-sm border flex items-start justify-between ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
     <div>
-      <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-gray-800">{value}</h3>
-      {subtext && <p className="text-gray-400 text-xs mt-2">{subtext}</p>}
+      <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{title}</p>
+      <h3 className={`text-3xl font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{typeof value === 'number' ? formatNumber(value) : value}</h3>
+      {subtext && <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{subtext}</p>}
     </div>
     <div className={`p-3 rounded-full ${color}`}>
       <Icon size={24} className="text-white" />
@@ -41,29 +45,29 @@ interface ForecastDataItem {
   count: number;
 }
 
-const ForecastChart = ({ data, t }: { data: ForecastDataItem[], t: TFunction }) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
-    <h3 className="text-lg font-bold text-gray-800 mb-6">{t('statistics.forecast.title')}</h3>
+const ForecastChart = ({ data, t, isDark }: { data: ForecastDataItem[], t: TFunction, isDark: boolean }) => (
+  <div className={`p-6 rounded-lg shadow-sm border h-80 flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+    <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.forecast.title')}</h3>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-          <XAxis 
-            dataKey="date" 
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+          <XAxis
+            dataKey="date"
             tickFormatter={(value) => `${new Date(value).getDate().toString()}${t('statistics.day')}`}
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#64748b', fontSize: 12 }}
+            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
             dy={10}
           />
-          <YAxis 
+          <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#64748b', fontSize: 12 }}
+            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
           />
-          <RechartsTooltip 
-            cursor={{ fill: '#f8fafc' }}
-            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+          <RechartsTooltip
+            cursor={{ fill: isDark ? '#1e293b' : '#f8fafc' }}
+            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: isDark ? '#1e293b' : '#fff' }}
           />
           <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} name={t('statistics.forecast.reviewCards')} />
         </BarChart>
@@ -77,9 +81,9 @@ interface GrowthDataItem {
   count: number;
 }
 
-const GrowthChart = ({ data, t }: { data: GrowthDataItem[], t: TFunction }) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
-    <h3 className="text-lg font-bold text-gray-800 mb-6">{t('statistics.growth.title')}</h3>
+const GrowthChart = ({ data, t, isDark }: { data: GrowthDataItem[], t: TFunction, isDark: boolean }) => (
+  <div className={`p-6 rounded-lg shadow-sm border h-80 flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+    <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.growth.title')}</h3>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
@@ -89,30 +93,30 @@ const GrowthChart = ({ data, t }: { data: GrowthDataItem[], t: TFunction }) => (
               <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-          <XAxis 
-            dataKey="date" 
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+          <XAxis
+            dataKey="date"
             tickFormatter={(value, index) => index % 5 === 0 ? `${new Date(value).getMonth() + 1}/${new Date(value).getDate()}` : ''}
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#64748b', fontSize: 12 }}
+            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
             dy={10}
           />
-          <YAxis 
+          <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#64748b', fontSize: 12 }}
+            tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
           />
-          <RechartsTooltip 
-            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+          <RechartsTooltip
+            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: isDark ? '#1e293b' : '#fff' }}
           />
-          <Area 
-            type="monotone" 
-            dataKey="count" 
-            stroke="#10b981" 
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke="#10b981"
             strokeWidth={3}
-            fillOpacity={1} 
-            fill="url(#colorGrowth)" 
+            fillOpacity={1}
+            fill="url(#colorGrowth)"
             name={t('statistics.growth.newCards')}
           />
         </AreaChart>
@@ -121,7 +125,7 @@ const GrowthChart = ({ data, t }: { data: GrowthDataItem[], t: TFunction }) => (
   </div>
 );
 
-const ForgettingCurveChart = ({ retentionThreshold, avgStability, t }: { retentionThreshold: number, avgStability: number, t: TFunction }) => {
+const ForgettingCurveChart = ({ retentionThreshold, avgStability, t, isDark }: { retentionThreshold: number, avgStability: number, t: TFunction, isDark: boolean }) => {
   const data = useMemo(() => {
     const points = [];
     const stability = avgStability > 0 ? avgStability : 7;
@@ -136,44 +140,44 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, t }: { retenti
   }, [avgStability]);
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
-      <h3 className="text-lg font-bold text-gray-800 mb-2">{t('statistics.forgettingCurve.title')}</h3>
-      <p className="text-gray-500 text-xs mb-6">
+    <div className={`p-6 rounded-lg shadow-sm border h-80 flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+      <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{t('statistics.forgettingCurve.title')}</h3>
+      <p className={`text-xs mb-6 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
         {t('statistics.forgettingCurve.description', { stability: avgStability > 0 ? avgStability.toFixed(1) : 7 })}
       </p>
       <div className="flex-1 w-full min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis 
-              dataKey="day" 
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+            <XAxis
+              dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 12 }}
+              tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
             />
-            <YAxis 
-              domain={[0, 100]} 
+            <YAxis
+              domain={[0, 100]}
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 12 }}
+              tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
               tickFormatter={(val) => `${val}%`}
             />
-            <RechartsTooltip 
+            <RechartsTooltip
               formatter={(value) => [`${value}%`, t('statistics.forgettingCurve.retentionRate')]}
               labelFormatter={(label) => t('statistics.forgettingCurve.dayLabel', { day: label })}
-              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: isDark ? '#1e293b' : '#fff' }}
             />
-            <ReferenceLine 
-              y={retentionThreshold * 100} 
-              stroke="#ef4444" 
-              strokeDasharray="3 3" 
-              label={{ value: t('statistics.forgettingCurve.target', { percent: retentionThreshold * 100 }), position: 'right', fill: '#ef4444', fontSize: 10 }} 
+            <ReferenceLine
+              y={retentionThreshold * 100}
+              stroke="#ef4444"
+              strokeDasharray="3 3"
+              label={{ value: t('statistics.forgettingCurve.target', { percent: retentionThreshold * 100 }), position: 'right', fill: '#ef4444', fontSize: 10 }}
             />
-            <Line 
-              type="monotone" 
-              dataKey="retention" 
-              stroke="#6366f1" 
-              strokeWidth={3} 
+            <Line
+              type="monotone"
+              dataKey="retention"
+              stroke="#6366f1"
+              strokeWidth={3}
               dot={false}
               name={t('statistics.forgettingCurve.retentionRate')}
             />
@@ -186,6 +190,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, t }: { retenti
 
 export const Statistics = () => {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
   const { data: stats, isLoading, error } = useStatistics() as unknown as {
     data?: {
       distribution: Array<{ name: string; value: number; color: string }>;
@@ -226,7 +231,28 @@ export const Statistics = () => {
     }));
   }, [stats]);
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">{t('statistics.loading')}</div>;
+  if (isLoading) {
+    return (
+      <div className="h-full overflow-y-auto p-8 bg-slate-50 dark:bg-slate-900">
+        <div className="mb-8">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 space-y-3"
+            >
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (error) return <div className="p-8 text-center text-red-500">{t('statistics.loadError')}</div>;
   if (!stats) return null;
 
@@ -263,33 +289,37 @@ export const Statistics = () => {
       {activeTab === 'overview' ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <MetricCard 
-              title={t('statistics.metrics.totalCards')} 
-              value={stats.metrics.totalCards} 
+            <MetricCard
+              title={t('statistics.metrics.totalCards')}
+              value={stats.metrics.totalCards}
               subtext={t('statistics.metrics.totalCardsSubtext')}
-              icon={BookOpen} 
-              color="bg-primary-500" 
+              icon={BookOpen}
+              color="bg-primary-500"
+              isDark={isDark}
             />
-            <MetricCard 
-              title={t('statistics.metrics.dueToday')} 
-              value={stats.metrics.dueToday} 
+            <MetricCard
+              title={t('statistics.metrics.dueToday')}
+              value={stats.metrics.dueToday}
               subtext={t('statistics.metrics.dueTodaySubtext')}
-              icon={Clock} 
-              color="bg-amber-500" 
+              icon={Clock}
+              color="bg-amber-500"
+              isDark={isDark}
             />
-            <MetricCard 
-              title={t('statistics.metrics.learning')} 
-              value={stats.metrics.learning} 
+            <MetricCard
+              title={t('statistics.metrics.learning')}
+              value={stats.metrics.learning}
               subtext={t('statistics.metrics.learningSubtext')}
-              icon={Brain} 
-              color="bg-green-500" 
+              icon={Brain}
+              color="bg-green-500"
+              isDark={isDark}
             />
-            <MetricCard 
-              title={t('statistics.metrics.avgStability')} 
-              value={stats.metrics.avgStability} 
+            <MetricCard
+              title={t('statistics.metrics.avgStability')}
+              value={stats.metrics.avgStability}
               subtext={t('statistics.metrics.avgStabilitySubtext')}
-              icon={TrendingUp} 
-              color="bg-primary-500" 
+              icon={TrendingUp}
+              color="bg-primary-500"
+              isDark={isDark}
             />
           </div>
 
@@ -298,16 +328,17 @@ export const Statistics = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <ForecastChart data={stats.forecast || []} t={t} />
-            <ForgettingCurveChart 
-              retentionThreshold={retention} 
+            <ForecastChart data={stats.forecast || []} t={t} isDark={isDark} />
+            <ForgettingCurveChart
+              retentionThreshold={retention}
               avgStability={stats.metrics.avgStability}
               t={t}
+              isDark={isDark}
             />
           </div>
 
           <div className="mb-8">
-            <GrowthChart data={stats.growth || []} t={t} />
+            <GrowthChart data={stats.growth || []} t={t} isDark={isDark} />
           </div>
         </>
       ) : (

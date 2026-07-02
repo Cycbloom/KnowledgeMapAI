@@ -38,6 +38,7 @@ import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
 import { Console } from "../Console/Console";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
+import { useNetworkStatus } from "../../hooks/common/useNetworkStatus";
 import { apiClient } from "../../services/api/createApiClient";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
@@ -132,6 +133,12 @@ export const Layout = () => {
       },
     },
     enabled: true,
+  });
+
+  useNetworkStatus({
+    enableSlowDetection: true,
+    onOnline: () => message.success(t('common.backOnline')),
+    onSlowConnection: () => message.warning(t('common.slowConnection')),
   });
 
   const { data: userData, isLoading: isUserLoading } = useUser(

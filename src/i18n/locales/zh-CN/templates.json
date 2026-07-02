@@ -226,5 +226,6 @@
   "nodeList": "节点列表 ({{count}})",
   "edgeList": "边关系 ({{count}})",
   "basicInfo": "基本信息",
-  "noNodesClickToAdd": "暂无节点，点击上方按钮添加"
+  "noNodesClickToAdd": "暂无节点，点击上方按钮添加",
+  "createFirst": "新建模板"
 }

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { useTheme } from "../../hooks";
 import {
@@ -23,8 +24,6 @@ interface CalendarMonthViewProps {
   onSubtaskClick?: (subtask: TaskSubtask, parentEvent: CalendarEvent) => void;
 }
 
-const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
-
 export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   currentDate,
   events,
@@ -37,8 +36,22 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   showSubtasks = false,
   onSubtaskClick,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+
+  const weekdays = useMemo(
+    () => [
+      t("calendar.weekdays.sun"),
+      t("calendar.weekdays.mon"),
+      t("calendar.weekdays.tue"),
+      t("calendar.weekdays.wed"),
+      t("calendar.weekdays.thu"),
+      t("calendar.weekdays.fri"),
+      t("calendar.weekdays.sat"),
+    ],
+    [t],
+  );
 
   const monthData = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -128,7 +141,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   return (
     <div className="h-full flex flex-col">
       <div className="grid grid-cols-7 mb-2">
-        {WEEKDAYS.map((day) => (
+        {weekdays.map((day) => (
           <div
             key={day}
             className={`text-center text-sm font-medium py-2 ${
@@ -228,7 +241,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                   <div
                     className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
                   >
-                    +{day.events.length - 3} 更多
+                    {t("calendar.moreEvents", { count: day.events.length - 3 })}
                   </div>
                 )}
               </div>
@@ -265,8 +278,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     <span
                       className={`text-[10px] ${isDark ? "text-slate-500" : "text-gray-400"}`}
                     >
-                      {stats.activity_count}项 ·{" "}
-                      {Math.round(stats.total_duration / 60)}分钟
+                      {t("calendar.activitySummary", { count: stats.activity_count, minutes: Math.round(stats.total_duration / 60) })}
                     </span>
                   </div>
                 );

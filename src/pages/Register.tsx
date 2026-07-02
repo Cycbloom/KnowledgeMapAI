@@ -42,7 +42,7 @@ export const Register = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-slate-900 transition-colors duration-300">
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-96 transition-colors duration-300">
+      <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-full max-w-md mx-4 transition-colors duration-300">
         <h2 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">{t('register.title')}</h2>
         <div className="flex items-center justify-center gap-1.5 mb-6 text-xs text-gray-500 dark:text-gray-400">
           <Cloud size={14} />

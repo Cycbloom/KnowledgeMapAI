@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useEffect, useMemo } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar, ErrorBoundary } from "./components/common";
+import { LoadingBar, ErrorBoundary, RouteErrorFallback } from "./components/common";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
@@ -40,6 +40,22 @@ function getLazyComponent(registration: RouteRegistration): React.LazyExoticComp
   lazyComponentCache.set(registration.path, Component);
   return Component;
 }
+
+/* eslint-disable react-hooks/static-components */
+function LazyRoute({ registration }: { registration: RouteRegistration }) {
+  const Component = getLazyComponent(registration);
+  if (!Component) return null;
+  return (
+    <ErrorBoundary
+      fallbackRender={(error, resetErrorBoundary) => (
+        <RouteErrorFallback error={error} resetErrorBoundary={resetErrorBoundary} />
+      )}
+    >
+      <Component />
+    </ErrorBoundary>
+  );
+}
+/* eslint-enable react-hooks/static-components */
 
 function useKernelRoutes(layoutType: "public" | "protected") {
   return useMemo(() => {
@@ -155,12 +171,11 @@ function App() {
                 />
               );
             }
-            const Component = getLazyComponent(registration);
             return (
               <Route
                 key={registration.path}
                 path={registration.path}
-                element={Component ? <Component /> : null}
+                element={<LazyRoute registration={registration} />}
               />
             );
           })}
@@ -184,12 +199,11 @@ function App() {
                   />
                 );
               }
-              const Component = getLazyComponent(registration);
               return (
                 <Route
                   key={registration.path}
                   {...(isIndex ? { index: true } : { path: registration.path.replace(/^\//, "") })}
-                  element={Component ? <Component /> : null}
+                  element={<LazyRoute registration={registration} />}
                 />
               );
             })}

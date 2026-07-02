@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, FileText, Image, List, Check, Download, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
+import { LazyImage } from "../../common";
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -114,7 +115,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                 
                 {includeScreenshot ? (
                   screenshotPreview ? (
-                    <img src={screenshotPreview} alt="Graph Preview" className="w-full h-32 object-cover rounded mb-6 border border-gray-100" loading="lazy" />
+                    <LazyImage src={screenshotPreview} alt="Graph Preview" className="w-full h-32 object-cover rounded mb-6 border border-gray-100" />
                   ) : (
                     <div className="w-full h-32 bg-gray-100 rounded mb-6 flex items-center justify-center text-gray-400 text-xs">
                       {t('graphEditor.export.noPreview')}

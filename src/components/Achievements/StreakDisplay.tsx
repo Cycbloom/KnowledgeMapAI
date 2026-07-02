@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Calendar, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatNumber } from '../../utils/formatters';
 
 interface StreakDisplayProps {
   dailyStreak: number;
@@ -62,7 +63,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
               </div>
               
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {value}
+                {formatNumber(value)}
               </div>
               
               <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">

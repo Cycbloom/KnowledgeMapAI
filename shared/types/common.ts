@@ -76,6 +76,8 @@ export interface Task {
   created_at: string;
   updated_at: string;
   deleted_at: string;
+  input_data?: Record<string, unknown> | string;
+  error_message?: string;
 }
 
 export interface PeriodicTask {

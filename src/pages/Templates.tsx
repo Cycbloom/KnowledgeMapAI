@@ -26,6 +26,8 @@ import { useTheme } from "../hooks";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
+import { EmptyState } from "@/components/common/EmptyState";
+import { SkeletonCard } from "@/components/common";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   knowledge: <GraduationCap size={20} />,
@@ -299,18 +301,25 @@ export const Templates = () => {
             </div>
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
               </div>
             ) : filteredTemplates.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-                <p className="text-lg mb-2">
-                  {t("templates.empty.noTemplates")}
-                </p>
-                <p className="text-sm">
-                  {t("templates.empty.noTemplatesHint")}
-                </p>
-              </div>
+              <EmptyState
+                title={t("templates.empty.noTemplates")}
+                description={t("templates.empty.noTemplatesHint")}
+                action={{
+                  label: t("templates.createFirst"),
+                  onClick: () => {
+                    setNewTemplateName("");
+                    setNewTemplateDescription("");
+                    setNewTemplateCategory("knowledge");
+                    setIsCreating(true);
+                  },
+                }}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTemplates.map((template: Template) => (

@@ -69,5 +69,6 @@
   "batchDeleteConfirm": "Are you sure you want to delete {{count}} selected tasks? This action cannot be undone.",
   "batchDeleteSuccess": "Successfully deleted {{count}} tasks",
   "batchDeletePartial": "Deletion complete: {{success}} succeeded, {{fail}} failed",
-  "cancelSelection": "Cancel Selection"
+  "cancelSelection": "Cancel Selection",
+  "emptyDesc": "Tasks will appear here once created"
 }

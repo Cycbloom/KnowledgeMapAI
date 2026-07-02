@@ -226,5 +226,6 @@
   "nodeList": "Node List ({{count}})",
   "edgeList": "Edge List ({{count}})",
   "basicInfo": "Basic Information",
-  "noNodesClickToAdd": "No nodes yet, click the button above to add"
+  "noNodesClickToAdd": "No nodes yet, click the button above to add",
+  "createFirst": "New Template"
 }

@@ -59,9 +59,9 @@ export const Profile = () => {
     }
   }, [token]);
 
-  const profile = (userData as any)?.user?.profile;
-  const displayName = profile?.name || (userData as any)?.user?.user_metadata?.name || user?.name || t('profile.accountInfo.unnamedUser');
-  const email = (userData as any)?.user?.email || user?.email || '-';
+  const profile = userData?.user?.profile;
+  const displayName = profile?.name || userData?.user?.user_metadata?.name || user?.name || t('profile.accountInfo.unnamedUser');
+  const email = userData?.user?.email || user?.email || '-';
 
   const handleLogout = async () => {
     try {

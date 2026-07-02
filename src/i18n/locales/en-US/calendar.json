@@ -48,6 +48,19 @@
   "huaweiTip": "💡 Huawei users: Open Calendar app → Tap menu (top right) → Select \"Subscribe to calendar\" → Paste WebCal link",
   "calendarExported": "Calendar exported!",
   "exportFailed": "Export failed",
-  "webcalCopied": "WebCal link copied!",
-  "unknownTask": "Unknown Task"
+ "webcalCopied": "WebCal link copied!",
+  "unknownTask": "Unknown Task",
+  "noActivityTitle": "No Activity Records",
+  "noActivityDesc": "Your activity timeline will appear here once you start learning",
+  "weekdays": {
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
+  },
+  "moreEvents": "+{{count}} more",
+  "activitySummary": "{{count}} items · {{minutes}} min"
 }

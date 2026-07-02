@@ -35,6 +35,8 @@ import { api } from "../services/api";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type { Graph } from "../types";
+import { formatNumber } from "../utils/formatters";
+import { Skeleton } from "../components/common";
 
 interface MetricCardProps {
   title: string;
@@ -67,7 +69,7 @@ const MetricCard = ({
       <h3
         className={`text-xl md:text-2xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
       >
-        {value}
+        {typeof value === "number" ? formatNumber(value) : value}
       </h3>
       {subtext && (
         <p
@@ -414,7 +416,7 @@ const FocusStatsCard = ({
           <p
             className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
           >
-            {stats.today?.minutes || 0} {t("learningStats.focus.minutes")}
+            {formatNumber(stats.today?.minutes || 0)} {t("learningStats.focus.minutes")}
           </p>
           <p
             className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
@@ -436,7 +438,7 @@ const FocusStatsCard = ({
           <p
             className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}
           >
-            {((stats.total?.minutes || 0) / 60).toFixed(1)}{" "}
+            {formatNumber(Number(((stats.total?.minutes || 0) / 60).toFixed(1)))}{" "}
             {t("learningStats.focus.hours")}
           </p>
           <p
@@ -545,8 +547,31 @@ export const LearningStatsCenter = () => {
 
   if (isLoading)
     return (
-      <div className="p-8 text-center text-gray-500 dark:text-slate-400">
-        {t("learningStats.loading")}
+      <div
+        className={`h-full overflow-y-auto p-4 md:p-8 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6 md:mb-8">
+            <Skeleton className={`h-8 w-64 mb-2 ${isDark ? "bg-slate-700" : ""}`} />
+            <Skeleton className={`h-4 w-96 ${isDark ? "bg-slate-700" : ""}`} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className={`p-6 rounded-lg shadow-sm border space-y-3 ${
+                  isDark
+                    ? "bg-slate-800 border-slate-700"
+                    : "bg-white border-gray-100"
+                }`}
+              >
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   if (error)

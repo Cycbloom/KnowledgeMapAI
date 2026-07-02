@@ -5,6 +5,8 @@
  * 提供三种输入单位（秒 / 分钟 / 毫秒）与多种输出格式。
  */
 
+import i18next from 'i18next';
+
 /** 时长输出格式 */
 export type DurationFormat = 'zh' | 'zh-spaced' | 'compact';
 
@@ -114,6 +116,17 @@ export function formatTimeFromSeconds(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+/**
+ * 格式化数字，添加千分位分隔符
+ * @param n 数字
+ * @param locale locale 字符串，默认跟随 i18next.language
+ * @returns 格式化后的字符串，如 "12,345"
+ */
+export function formatNumber(n: number, locale?: string): string {
+  const resolvedLocale = locale ?? i18next.language ?? 'zh-CN';
+  return new Intl.NumberFormat(resolvedLocale).format(n);
+}
+
 /** 日期输出格式 */
 export type DateFormat = 'short' | 'full' | 'relative' | 'short-datetime' | 'full-datetime';
 
@@ -143,12 +156,16 @@ export function formatDate(dateStr: string | number, format: DateFormat = 'full'
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return '刚刚';
-    if (minutes < 60) return `${minutes}分钟前`;
-    if (hours < 24) return `${hours}小时前`;
-    if (days < 7) return `${days}天前`;
+    if (minutes < 1) return i18next.t('common.date.justNow');
+    if (minutes < 60) return i18next.t('common.date.minutesAgo', { count: minutes });
+    if (hours < 24) return i18next.t('common.date.hoursAgo', { count: hours });
+    if (days < 7) return i18next.t('common.date.daysAgo', { count: days });
     // 超过7天，回退到完整日期
-    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    return i18next.t('common.date.fullDate', {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+    });
   }
 
   const year = date.getFullYear();
@@ -160,15 +177,15 @@ export function formatDate(dateStr: string | number, format: DateFormat = 'full'
 
   switch (format) {
     case 'short':
-      return `${month}月${day}日`;
+      return i18next.t('common.date.shortDate', { month, day });
     case 'short-datetime':
-      return `${month}月${day}日${timePart}`;
+      return `${i18next.t('common.date.shortDate', { month, day })}${timePart}`;
     case 'full':
-      return `${year}年${month}月${day}日`;
+      return i18next.t('common.date.fullDate', { year, month, day });
     case 'full-datetime':
-      return `${year}年${month}月${day}日${timePart}`;
+      return `${i18next.t('common.date.fullDate', { year, month, day })}${timePart}`;
     default:
-      return `${year}年${month}月${day}日`;
+      return i18next.t('common.date.fullDate', { year, month, day });
   }
 }
 
@@ -187,15 +204,19 @@ function formatMinutesInternal(minutes: number, format: DurationFormat): string 
   }
 
   if (format === 'zh-spaced') {
-    if (minutes < 60) return `${minutes} 分钟`;
+    if (minutes < 60) return i18next.t('common.duration.minutes', { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`;
+    return mins > 0
+      ? i18next.t('common.duration.hoursMinutes', { hours, minutes: mins })
+      : i18next.t('common.duration.hours', { count: hours });
   }
 
   // 'zh'（默认）
-  if (minutes < 60) return `${minutes}分钟`;
+  if (minutes < 60) return i18next.t('common.duration.minutes', { count: minutes });
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+  return mins > 0
+    ? i18next.t('common.duration.hoursMinutes', { hours, minutes: mins })
+    : i18next.t('common.duration.hours', { count: hours });
 }

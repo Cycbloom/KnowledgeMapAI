@@ -29,6 +29,10 @@
     "shortcutHint": "Tab for autocomplete · Ctrl+R to search history · Esc to close",
     "scrollMore": "Scroll up to view more history ({{count}} entries)"
   },
+  "noHistoryTitle": "No History",
+  "noHistoryDesc": "Executed commands will appear here",
+  "noSearchResultsTitle": "No Matching History",
+  "noSearchResultsDesc": "Try different search keywords",
   "performance": {
     "title": "AI Performance Monitor",
     "filter": "Filter",

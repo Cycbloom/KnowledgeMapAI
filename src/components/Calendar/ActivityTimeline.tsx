@@ -1,9 +1,11 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Brain, RotateCcw, Route, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../hooks";
 import { formatDuration } from "../../utils/formatters";
 import { ActivityEvent, ACTIVITY_TYPE_CONFIG } from "../../types/calendar";
+import { EmptyState } from "../common/EmptyState";
 
 interface ActivityTimelineProps {
   activities: ActivityEvent[];
@@ -55,15 +57,15 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   onActivityClick,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   if (activities.length === 0) {
     return (
-      <div
-        className={`flex flex-col items-center justify-center py-12 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-      >
-        <Clock size={40} className="mb-3 opacity-50" />
-        <p className="text-sm">暂无活动记录</p>
-      </div>
+      <EmptyState
+        icon={<Clock size={40} className="text-gray-400 dark:text-gray-500" />}
+        title={t("calendar.noActivityTitle")}
+        description={t("calendar.noActivityDesc")}
+      />
     );
   }
 

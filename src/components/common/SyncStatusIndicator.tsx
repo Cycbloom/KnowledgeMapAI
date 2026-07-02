@@ -34,7 +34,7 @@ export function SyncStatusIndicator() {
   const Icon = config.icon;
 
   return (
-    <div className="relative">
+    <div className="relative" aria-live="polite" aria-atomic="true">
       <button
         onClick={() => setShowPanel(!showPanel)}
         className={cn('flex items-center gap-1 px-2 py-1 rounded-md text-xs hover:bg-white/10 transition-colors', config.color)}

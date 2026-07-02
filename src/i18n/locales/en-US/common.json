@@ -33,10 +33,32 @@
   "copied": "Copied",
   "copyFailed": "Copy failed",
   "clipboardUnavailable": "Clipboard unavailable",
+  "backOnline": "Back online, syncing data",
+  "slowConnection": "Slow connection, some operations may be delayed",
+  "offlineMode": "Offline mode: some AI features are unavailable",
   "timeAgo": {
     "justNow": "just now",
     "minutesAgo": "{{count}} min ago",
     "hoursAgo": "{{count}} hr ago",
     "daysAgo": "{{count}} days ago"
+  },
+  "date": {
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} hr ago",
+    "daysAgo": "{{count}} days ago",
+    "fullDate": "{{month}}/{{day}}/{{year}}",
+    "shortDate": "{{month}}/{{day}}"
+  },
+  "duration": {
+    "minutes": "{{count}} min",
+    "hours": "{{count}} hr",
+    "hoursMinutes": "{{hours}} hr {{minutes}} min"
+  },
+  "routeError": {
+    "title": "Page Load Failed",
+    "message": "Sorry, an error occurred while loading this page. Please retry or go home.",
+    "retry": "Retry",
+    "goHome": "Go Home"
   }
 }

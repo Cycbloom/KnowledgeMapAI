@@ -1,6 +1,8 @@
 export { Button } from "./Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 export { ErrorBoundary, withErrorBoundary } from "./ErrorBoundary";
+export { RouteErrorFallback } from "./RouteErrorFallback";
+export type { RouteFallbackProps } from "./RouteErrorFallback";
 export {
   GlobalErrorBoundary,
   withGlobalErrorBoundary,

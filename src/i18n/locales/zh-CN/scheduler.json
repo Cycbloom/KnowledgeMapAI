@@ -262,5 +262,31 @@
     "relevance": "关联度",
     "noLinkedKnowledge": "暂无关联的知识点",
     "addLink": "添加知识点关联"
+  },
+  "taskCard": {
+    "typeLongTerm": "长期",
+    "typePeriodic": "周期",
+    "typeLearning": "学习",
+    "overdue": "已过期",
+    "today": "今天",
+    "tomorrow": "明天",
+    "daysLater": "{{count}}天后",
+    "progress": "进度",
+    "subtasks": "子任务",
+    "subtaskProgress": "{{completed}}/{{total}} 完成",
+    "noSubtasks": "暂无子任务",
+    "moreSubtasks": "还有 {{count}} 个子任务...",
+    "pendingDependencies": "{{count}} 个前置任务待完成",
+    "allDependenciesCompleted": "所有前置任务已完成",
+    "periodicInstance": "周期任务实例",
+    "subtaskCompleted": "子任务已完成",
+    "subtaskReopened": "子任务已重新开启",
+    "updateSubtaskFailed": "更新子任务失败",
+    "actionStart": "开始",
+    "actionPause": "暂停",
+    "actionComplete": "完成",
+    "actionDetail": "详情",
+    "actionEdit": "编辑",
+    "actionDelete": "删除"
   }
 }

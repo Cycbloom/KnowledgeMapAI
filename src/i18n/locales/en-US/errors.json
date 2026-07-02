@@ -82,5 +82,23 @@
   "TOKEN_REFRESH_EXPIRED": "Session expired, please log in again",
   "MISSING_REFRESH_TOKEN": "Missing refresh token",
   "LOGOUT_FAILED": "Logout failed",
-  "PASSWORD_REQUIREMENTS": "Password does not meet requirements. Please ensure it is at least 8 characters with uppercase, lowercase letters and numbers"
+  "PASSWORD_REQUIREMENTS": "Password does not meet requirements. Please ensure it is at least 8 characters with uppercase, lowercase letters and numbers",
+  "boundary": {
+    "title": "Something went wrong",
+    "description": "Sorry, the application encountered an unexpected problem. We have automatically logged the error.",
+    "unknownError": "Unknown error",
+    "componentStack": "Component Stack",
+    "retry": "Retry",
+    "reload": "Reload Page",
+    "goHome": "Go Home",
+    "reportError": "Report Error",
+    "reported": "Reported",
+    "errorCode": "Error Code",
+    "statusCode": "Status Code",
+    "typeNetwork": "Network Error",
+    "typeAuth": "Authentication Error",
+    "typeValidation": "Validation Error",
+    "typeServer": "Server Error",
+    "typeApp": "Application Error"
+  }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -9,13 +10,13 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Flag,
 } from 'lucide-react';
 import { useTheme } from '../hooks';
 import { useQuizSet } from '../hooks/queries';
 import { QuizProgressBar } from '../components/Quiz/QuizProgressBar';
 import { QuizResult } from '../components/Quiz/QuizResult';
+import { Skeleton } from '../components/common';
 import type { StudyCard } from '@shared/types/common';
 
 interface AnswerRecord {
@@ -25,20 +26,21 @@ interface AnswerRecord {
   correctAnswer: string;
 }
 
-const cardTypeLabels: Record<string, string> = {
-  qa: '问答题',
-  choice: '单选题',
-  multi_choice: '多选题',
-  true_false: '判断题',
-  fill_in_the_blank: '填空题',
-  essay: '解答题',
-};
-
 export const QuizPractice: React.FC = () => {
+  const { t } = useTranslation();
   const { quizSetId } = useParams<{ quizSetId: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  const cardTypeLabels: Record<string, string> = useMemo(() => ({
+    qa: t('study.quizPractice.cardType.qa'),
+    choice: t('study.quizPractice.cardType.choice'),
+    multi_choice: t('study.quizPractice.cardType.multi_choice'),
+    true_false: t('study.quizPractice.cardType.true_false'),
+    fill_in_the_blank: t('study.quizPractice.cardType.fill_in_the_blank'),
+    essay: t('study.quizPractice.cardType.essay'),
+  }), [t]);
 
   const { data: quizSetData, isLoading, error } = useQuizSet(quizSetId || '');
 
@@ -363,12 +365,34 @@ export const QuizPractice: React.FC = () => {
   if (isLoading) {
     return (
       <div
-        className={`min-h-full flex items-center justify-center ${
-          isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-50 text-gray-500'
+        className={`min-h-full flex items-center justify-center p-8 ${
+          isDark ? 'bg-slate-900' : 'bg-gray-50'
         }`}
       >
-        <Loader2 size={32} className="animate-spin mr-3" />
-        正在加载测验...
+        <div
+          className={`w-full max-w-2xl rounded-2xl border p-6 space-y-4 ${
+            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <Skeleton className="h-6 w-3/4" />
+          <div className="space-y-3 pt-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${
+                  isDark ? 'bg-slate-700 border-slate-600' : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-4 flex-1" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -380,12 +404,12 @@ export const QuizPractice: React.FC = () => {
           isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-50 text-gray-500'
         }`}
       >
-        <p className="text-red-500 mb-4">加载测验失败</p>
+        <p className="text-red-500 mb-4">{t('study.quizPractice.loadFailed')}</p>
         <button
           onClick={handleBack}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
-          返回测验列表
+          {t('study.quizPractice.backToList')}
         </button>
       </div>
     );
@@ -398,12 +422,12 @@ export const QuizPractice: React.FC = () => {
           isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-50 text-gray-500'
         }`}
       >
-        <p className="mb-4">测验中没有卡片</p>
+        <p className="mb-4">{t('study.quizPractice.noCards')}</p>
         <button
           onClick={handleBack}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
-          返回测验列表
+          {t('study.quizPractice.backToList')}
         </button>
       </div>
     );
@@ -443,7 +467,7 @@ export const QuizPractice: React.FC = () => {
               }`}
             >
               <ArrowLeft size={18} />
-              退出测验
+              {t('study.quizPractice.exitQuiz')}
             </button>
             <h1
               className={`text-lg font-bold ${
@@ -500,7 +524,7 @@ export const QuizPractice: React.FC = () => {
                           ? 'text-slate-500 hover:text-amber-400 hover:bg-slate-700'
                           : 'text-gray-400 hover:text-amber-500 hover:bg-gray-100'
                     }`}
-                    title={flaggedIds.has(currentCard.id) ? '取消标记' : '标记待复查'}
+                    title={flaggedIds.has(currentCard.id) ? t('study.quizPractice.unflag') : t('study.quizPractice.flagForReview')}
                   >
                     <Flag
                       size={16}
@@ -689,7 +713,7 @@ export const QuizPractice: React.FC = () => {
                           className={btnClass}
                         >
                           <span className="text-xl font-bold">
-                            {option === 'True' ? '正确' : '错误'}
+                            {option === 'True' ? t('study.quizPractice.trueLabel') : t('study.quizPractice.falseLabel')}
                           </span>
                           <span className="text-xs opacity-50 uppercase tracking-wider">
                             {option}
@@ -718,7 +742,7 @@ export const QuizPractice: React.FC = () => {
                           isDark ? 'text-emerald-400' : 'text-emerald-600'
                         }`}
                       >
-                        参考答案
+                        {t('study.quizPractice.referenceAnswer')}
                       </h4>
                       <p
                         className={`text-base leading-relaxed ${
@@ -741,7 +765,7 @@ export const QuizPractice: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 mb-3 text-primary-500">
                       <Brain size={18} />
-                      <h4 className="font-bold text-sm uppercase tracking-wider">题目解析</h4>
+                      <h4 className="font-bold text-sm uppercase tracking-wider">{t('study.quizPractice.explanationTitle')}</h4>
                     </div>
                     <p
                       className={`text-sm leading-relaxed ${
@@ -766,7 +790,7 @@ export const QuizPractice: React.FC = () => {
                       className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 flex items-center justify-center gap-2"
                     >
                       <BookOpen size={20} />
-                      显示答案
+                      {t('study.quizPractice.showAnswer')}
                     </button>
                   ) : isMultiChoice ? (
                     <button
@@ -774,7 +798,7 @@ export const QuizPractice: React.FC = () => {
                       disabled={!selectedOption || JSON.parse(selectedOption).length === 0}
                       className="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 disabled:opacity-50 disabled:shadow-none"
                     >
-                      提交答案
+                      {t('study.quizPractice.submitAnswer')}
                     </button>
                   ) : (
                     <p
@@ -782,7 +806,7 @@ export const QuizPractice: React.FC = () => {
                         isDark ? 'text-slate-500' : 'text-gray-400'
                       }`}
                     >
-                      请选择一个选项
+                      {t('study.quizPractice.selectOption')}
                     </p>
                   )
                 ) : (
@@ -799,13 +823,13 @@ export const QuizPractice: React.FC = () => {
                       }`}
                     >
                       <ChevronLeft size={20} />
-                      上一题
+                      {t('study.quizPractice.prevQuestion')}
                     </button>
                     <button
                       onClick={handleNext}
                       className="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 dark:shadow-primary-900/30 flex items-center justify-center gap-2"
                     >
-                      {currentIndex === cards.length - 1 ? '完成测验' : '下一题'}
+                      {currentIndex === cards.length - 1 ? t('study.quizPractice.finishQuiz') : t('study.quizPractice.nextQuestion')}
                       {currentIndex < cards.length - 1 && <ChevronRight size={20} />}
                     </button>
                   </div>

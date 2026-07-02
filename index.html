@@ -2,6 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta
       name="viewport"
@@ -32,7 +33,67 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- 首屏加载占位：React 渲染后自动替换 -->
+      <style>
+        #root-loader {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          background: #ffffff;
+          color: #1e293b;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        @media (prefers-color-scheme: dark) {
+          #root-loader {
+            background: #0f172a;
+            color: #e2e8f0;
+          }
+        }
+        #root-loader .logo {
+          width: 56px;
+          height: 56px;
+          color: #3b82f6;
+          animation: root-loader-pulse 1.4s ease-in-out infinite;
+        }
+        #root-loader .spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid currentColor;
+          border-top-color: transparent;
+          border-radius: 50%;
+          opacity: 0.7;
+          animation: root-loader-spin 0.9s linear infinite;
+        }
+        #root-loader .label {
+          font-size: 14px;
+          opacity: 0.6;
+        }
+        @keyframes root-loader-pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(0.92); opacity: 0.7; }
+        }
+        @keyframes root-loader-spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+      <div id="root-loader">
+        <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="6" cy="6" r="2.5"/>
+          <circle cx="18" cy="6" r="2.5"/>
+          <circle cx="12" cy="18" r="2.5"/>
+          <path d="M6 8.5 L11 16"/>
+          <path d="M18 8.5 L13 16"/>
+          <path d="M8.5 6 L15.5 6"/>
+        </svg>
+        <div class="spinner"></div>
+        <div class="label">KnowledgeMap</div>
+      </div>
+    </div>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

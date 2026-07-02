@@ -1,4 +1,5 @@
 import React, { useState, useLayoutEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { CheckSquare, Plus, X } from 'lucide-react';
 import { useTheme } from "../../hooks";
@@ -41,12 +42,13 @@ const getInitialFormData = (initialData?: StudyCard): QuestionFormData => {
   };
 };
 
-export const QuestionForm: React.FC<QuestionFormProps> = ({ 
-  initialData, 
-  onSubmit, 
+export const QuestionForm: React.FC<QuestionFormProps> = ({
+  initialData,
+  onSubmit,
   onCancel,
-  isSubmitting = false 
+  isSubmitting = false
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [formData, setFormData] = useState<QuestionFormData>(() => getInitialFormData(initialData));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -77,19 +79,19 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.question.trim()) newErrors.question = '请输入问题';
-    else if (formData.question.length > 500) newErrors.question = '问题不能超过500字';
-    
-    if (!formData.answer.trim()) newErrors.answer = '请输入答案';
-    
+    if (!formData.question.trim()) newErrors.question = t('study.questionForm.validation.questionRequired');
+    else if (formData.question.length > 500) newErrors.question = t('study.questionForm.validation.questionTooLong');
+
+    if (!formData.answer.trim()) newErrors.answer = t('study.questionForm.validation.answerRequired');
+
     if ((formData.card_type === 'choice' || formData.card_type === 'multi_choice')) {
       if (formData.options.length < 2) {
-        newErrors.options = '选择题至少需要2个选项';
+        newErrors.options = t('study.questionForm.validation.optionsMinLength');
       } else if (formData.options.some(o => !o.trim())) {
-        newErrors.options = '选项内容不能为空';
+        newErrors.options = t('study.questionForm.validation.optionContentRequired');
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -141,7 +143,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-sm font-medium mb-1 label-mobile">
-              问题 <span className="text-red-500">*</span>
+              {t('study.questionForm.questionLabel')} <span className="text-red-500">*</span>
               <span className={`ml-2 text-xs font-normal ${formData.question.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>
                 {formData.question.length}/500
               </span>
@@ -152,12 +154,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
               onChange={e => setFormData({...formData, question: e.target.value})}
               className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.question ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
               rows={1}
-              placeholder="输入问题内容..."
+              placeholder={t('study.questionForm.questionPlaceholder')}
             />
             {errors.question && <p className="text-red-500 text-xs mt-1">{errors.question}</p>}
           </div>
           <div className="w-full sm:w-32">
-            <label className="block text-sm font-medium mb-1 label-mobile">类型</label>
+            <label className="block text-sm font-medium mb-1 label-mobile">{t('study.questionForm.typeLabel')}</label>
             <select
               value={formData.card_type}
               onChange={e => {
@@ -172,12 +174,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
               className={`w-full p-3 border rounded-lg text-base min-h-[44px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
               disabled={!!initialData}
             >
-              <option value="qa">问答</option>
-              <option value="choice">单选</option>
-              <option value="multi_choice">多选</option>
-              <option value="true_false">判断</option>
-              <option value="fill_in_the_blank">填空</option>
-              <option value="essay">论述</option>
+              <option value="qa">{t('study.questionForm.cardType.qa')}</option>
+              <option value="choice">{t('study.questionForm.cardType.choice')}</option>
+              <option value="multi_choice">{t('study.questionForm.cardType.multi_choice')}</option>
+              <option value="true_false">{t('study.questionForm.cardType.true_false')}</option>
+              <option value="fill_in_the_blank">{t('study.questionForm.cardType.fill_in_the_blank')}</option>
+              <option value="essay">{t('study.questionForm.cardType.essay')}</option>
             </select>
           </div>
         </div>
@@ -186,7 +188,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') && (
             <div>
                 <label className="block text-sm font-medium mb-1 label-mobile">
-                    选项 & 正确答案 <span className="text-red-500">*</span>
+                    {t('study.questionForm.optionsAndAnswer')} <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2">
                     {formData.options.map((option, idx) => {
@@ -224,7 +226,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                     ? 'bg-green-500 border-green-500 text-white' 
                                     : 'border-gray-300 hover:border-green-400'
                                 }`}
-                                title="设为正确答案"
+                                title={t('study.questionForm.setAsAnswer')}
                             >
                                 {isChecked && <CheckSquare size={18} />}
                             </button>
@@ -234,7 +236,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                 value={option}
                                 onChange={e => updateOption(idx, e.target.value)}
                                 className={`flex-1 p-3 border rounded-lg text-base min-h-[44px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
-                                placeholder={`选项 ${idx + 1}`}
+                                placeholder={t('study.questionForm.optionN', { n: idx + 1 })}
                             />
                             <button onClick={() => removeOption(idx)} className="text-gray-400 hover:text-red-500 p-2 touch-target">
                                 <X size={18} />
@@ -246,7 +248,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                         onClick={addOption}
                         className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1 min-h-[44px] touch-target"
                     >
-                        <Plus size={16} /> 添加选项
+                        <Plus size={16} /> {t('study.questionForm.addOption')}
                     </button>
                 </div>
                 {errors.options && <p className="text-red-500 text-xs mt-1">{errors.options}</p>}
@@ -256,7 +258,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         {/* Answer Input */}
         <div>
           <label className="block text-sm font-medium mb-1 label-mobile">
-            {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? '答案预览 (自动生成)' : '答案'} <span className="text-red-500">*</span>
+            {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? t('study.questionForm.answerPreview') : t('study.questionForm.answerLabel')} <span className="text-red-500">*</span>
           </label>
           
           {formData.card_type === 'true_false' ? (
@@ -271,13 +273,13 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                               onChange={e => setFormData({...formData, answer: e.target.value})}
                               className="w-5 h-5 text-primary-600"
                           />
-                          <span className="text-base">{val === 'True' ? '正确 (True)' : '错误 (False)'}</span>
+                          <span className="text-base">{val === 'True' ? t('study.questionForm.trueLabel') : t('study.questionForm.falseLabel')}</span>
                       </label>
                   ))}
               </div>
           ) : (formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? (
               <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>
-                  {formData.answer || '请点击上方选项左侧圆圈选择正确答案'}
+                  {formData.answer || t('study.questionForm.clickToSelectAnswer')}
               </div>
           ) : (
               <textarea
@@ -286,21 +288,21 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                 onChange={e => setFormData({...formData, answer: e.target.value})}
                 className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.answer ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
                 rows={1}
-                placeholder="输入标准答案..."
+                placeholder={t('study.questionForm.answerPlaceholder')}
               />
           )}
           {errors.answer && <p className="text-red-500 text-xs mt-1">{errors.answer}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 label-mobile">解析 (可选)</label>
+          <label className="block text-sm font-medium mb-1 label-mobile">{t('study.questionForm.explanationLabel')}</label>
           <textarea
             ref={explanationRef}
             value={formData.explanation}
             onChange={e => setFormData({...formData, explanation: e.target.value})}
             className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} resize-none overflow-hidden min-h-[44px]`}
             rows={1}
-            placeholder="输入解析..."
+            placeholder={t('study.questionForm.explanationPlaceholder')}
           />
         </div>
 
@@ -310,14 +312,14 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
             className="px-4 py-3 text-gray-500 hover:text-gray-700 min-h-[44px] touch-target font-medium rounded-lg"
             disabled={isSubmitting}
           >
-            取消
+            {t('study.questionForm.cancel')}
           </button>
           <button 
             onClick={handleSubmit}
             disabled={!formData.question || !formData.answer || isSubmitting}
             className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 min-h-[44px] touch-target font-medium"
           >
-            {isSubmitting ? '保存中...' : '保存'}
+            {isSubmitting ? t('study.questionForm.saving') : t('study.questionForm.save')}
           </button>
         </div>
       </div>

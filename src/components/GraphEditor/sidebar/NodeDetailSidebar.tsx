@@ -8,7 +8,7 @@ import {
 } from "../../../config/learningStatusColors";
 import { getLevel } from "../../../lib/graphUtils";
 import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
-import { TermTooltip, CodeBlock, Mermaid } from "../../common";
+import { TermTooltip, CodeBlock, Mermaid, LazyImage } from "../../common";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -318,13 +318,20 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                   </CodeBlock>
                 );
               },
-              img: (props) => (
-                <img
-                  {...props}
-                  className="rounded-lg max-w-full h-auto"
-                  loading="lazy"
-                />
-              ),
+              img: (props) => {
+                const { src, alt } = props;
+                if (typeof src !== "string" || !src) {
+                  return null;
+                }
+                return (
+                  <LazyImage
+                    src={src}
+                    alt={alt ?? ""}
+                    className="rounded-lg max-w-full h-auto"
+                    showSkeleton={false}
+                  />
+                );
+              },
               a: (props) => {
                 const { href, children } = props;
                 const cleanHref = href ? decodeURIComponent(href).trim() : "";

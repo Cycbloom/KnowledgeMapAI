@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -38,22 +39,22 @@ interface TaskCardProps {
   onSubtaskUpdate?: () => void;
 }
 
-const getTaskTypeBadge = (taskType?: string) => {
+const getTaskTypeBadge = (taskType: string | undefined, t: (key: string) => string) => {
   if (!taskType || taskType === "one_time") return null;
 
   const badges: Record<string, { label: string; icon?: React.ComponentType<{ size?: number | string }>; color: string }> = {
     long_term: {
-      label: "长期",
+      label: t("scheduler.taskCard.typeLongTerm"),
       color:
         "bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300",
     },
     periodic: {
-      label: "周期",
+      label: t("scheduler.taskCard.typePeriodic"),
       color:
         "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
     },
     learning: {
-      label: "学习",
+      label: t("scheduler.taskCard.typeLearning"),
       icon: BookOpen,
       color:
         "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
@@ -102,6 +103,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
   onViewTaskDetail,
   onSubtaskUpdate,
 }) => {
+  const { t } = useTranslation();
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
   const [loadingSubtasks, setLoadingSubtasks] = useState(false);
@@ -140,13 +142,13 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
     if (days < 0)
-      return { text: "已过期", color: "text-red-500 dark:text-red-400" };
+      return { text: t("scheduler.taskCard.overdue"), color: "text-red-500 dark:text-red-400" };
     if (days === 0)
-      return { text: "今天", color: "text-amber-500 dark:text-amber-400" };
+      return { text: t("scheduler.taskCard.today"), color: "text-amber-500 dark:text-amber-400" };
     if (days === 1)
-      return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
+      return { text: t("scheduler.taskCard.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
     if (days <= 7)
-      return { text: `${days}天后`, color: "text-primary-500 dark:text-primary-400" };
+      return { text: t("scheduler.taskCard.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
     return {
       text: d.toLocaleDateString(),
       color: "text-slate-500 dark:text-slate-400",
@@ -203,11 +205,11 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
           subtasks.map((st) => (st.id === subtask.id ? response.data : st))
         );
         onSubtaskUpdate?.();
-        message.success(newStatus === "completed" ? "子任务已完成" : "子任务已重新开启");
+        message.success(newStatus === "completed" ? t("scheduler.taskCard.subtaskCompleted") : t("scheduler.taskCard.subtaskReopened"));
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "更新子任务失败";
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      const errorMessage = error instanceof Error ? error.message : t("scheduler.taskCard.updateSubtaskFailed");
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -266,7 +268,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
 
         <h4 className="font-medium text-slate-900 dark:text-white mb-0.5 truncate pr-2 flex items-center gap-2">
           {task.title}
-          {getTaskTypeBadge(task.task_type)}
+          {getTaskTypeBadge(task.task_type, t)}
         </h4>
 
         {task.description && (
@@ -286,7 +288,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
           task.progress_percentage !== undefined && (
             <div className="mt-2 mb-2">
               <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>进度</span>
+                <span>{t("scheduler.taskCard.progress")}</span>
                 <span>{task.progress_percentage}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
@@ -313,9 +315,9 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 ) : (
                   <ChevronRight size={14} />
                 )}
-                <span>子任务</span>
+                <span>{t("scheduler.taskCard.subtasks")}</span>
                 <span className="text-slate-500 dark:text-slate-500">
-                  {task.subtask_completed || 0}/{task.subtask_count} 完成
+                  {t("scheduler.taskCard.subtaskProgress", { completed: task.subtask_completed || 0, total: task.subtask_count })}
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-1 ml-3">
@@ -378,19 +380,19 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                           {subtask.estimated_duration && (
                             <span className="text-[10px] text-slate-400 flex items-center gap-1">
                               <Clock size={10} />
-                              {subtask.estimated_duration}分钟
+                              {t("scheduler.minutes", { count: subtask.estimated_duration })}
                             </span>
                           )}
                         </div>
                       ))
                     ) : (
                       <div className="text-center py-2 text-slate-400 text-xs">
-                        暂无子任务
+                        {t("scheduler.taskCard.noSubtasks")}
                       </div>
                     )}
                     {subtasks.length > 5 && (
                       <div className="text-center py-1 text-slate-400 text-xs">
-                        还有 {subtasks.length - 5} 个子任务...
+                        {t("scheduler.taskCard.moreSubtasks", { count: subtasks.length - 5 })}
                       </div>
                     )}
                   </div>
@@ -433,8 +435,8 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
               {task.dependencies.filter(
                 (d) => d.depends_on_task?.status !== "completed",
               ).length > 0
-                ? `${task.dependencies.filter((d) => d.depends_on_task?.status !== "completed").length} 个前置任务待完成`
-                : "所有前置任务已完成"}
+                ? t("scheduler.taskCard.pendingDependencies", { count: task.dependencies.filter((d) => d.depends_on_task?.status !== "completed").length })
+                : t("scheduler.taskCard.allDependenciesCompleted")}
             </span>
           </div>
         )}
@@ -442,7 +444,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
         {task.task_type === "periodic" && task.parent_task_id && (
           <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
             <Repeat className="w-3 h-3" />
-            <span>周期任务实例</span>
+            <span>{t("scheduler.taskCard.periodicInstance")}</span>
           </div>
         )}
       </div>
@@ -467,7 +469,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 onStartTask(task);
               }}
               className={`p-2.5 rounded-md transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center ${queueStyle.bg} ${queueStyle.text}`}
-              title="开始"
+              title={t("scheduler.taskCard.actionStart")}
             >
               <Play size={14} />
             </button>
@@ -480,7 +482,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 onPauseTask(task);
               }}
               className="p-2.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              title="暂停"
+              title={t("scheduler.taskCard.actionPause")}
             >
               <Pause size={14} />
             </button>
@@ -496,7 +498,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                   onCompleteTask(task);
                 }}
                 className="p-2.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                title="完成"
+                title={t("scheduler.taskCard.actionComplete")}
               >
                 <Check size={14} />
               </button>
@@ -509,7 +511,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 onViewTaskDetail(task);
               }}
               className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              title="详情"
+              title={t("scheduler.taskCard.actionDetail")}
             >
               <Info size={14} />
             </button>
@@ -522,7 +524,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 onEditTask(task);
               }}
               className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              title="编辑"
+              title={t("scheduler.taskCard.actionEdit")}
             >
               <Edit2 size={14} />
             </button>
@@ -535,7 +537,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 onDeleteTask(task);
               }}
               className="p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              title="删除"
+              title={t("scheduler.taskCard.actionDelete")}
             >
               <Trash2 size={14} />
             </button>

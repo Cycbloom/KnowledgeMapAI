@@ -68,6 +68,8 @@ export const SSEStatusIndicator = () => {
     <div
       className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium', statusInfo.bgColor, statusInfo.color)}
       title={statusInfo.tooltip}
+      aria-live="polite"
+      aria-atomic="true"
     >
       <StatusIcon size={14} className={status === 'connecting' ? 'animate-spin' : ''} />
       <span className="hidden sm:inline">{statusInfo.label}</span>

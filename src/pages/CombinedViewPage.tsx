@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCombinedView } from '../hooks';
+import { X } from 'lucide-react';
+import { useCombinedView, useTheme } from '../hooks';
 import { CombinedViewCanvas } from '../components/CombinedView/CombinedViewCanvas';
 import { api } from '../services/api';
 import type { Graph, CombinedViewLayoutMode, KnowledgePoint, GraphNodeWithKnowledgePoint, Edge } from '../types';
@@ -94,6 +95,7 @@ interface CombinedViewPageProps {
 
 export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraphIds }) => {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
   const [showSelector, setShowSelector] = useState(!initialGraphIds || initialGraphIds.length === 0);
   const [tempSelectedIds, setTempSelectedIds] = useState<string[]>(initialGraphIds || []);
   const [selectedNode, setSelectedNode] = useState<MergedNode | null>(null);
@@ -316,24 +318,25 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
         </div>
         
         {selectedNode && (
-          <div className="absolute top-4 right-4 w-72 bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 text-sm">
+          <div className={`absolute top-4 right-4 w-72 ${isDark ? 'bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 text-sm text-white' : 'bg-white/95 backdrop-blur-sm rounded-lg p-4 text-sm text-gray-900 border border-gray-200'}`}>
             <div className="flex items-start justify-between">
-              <h3 className="font-semibold text-white">{selectedNode.knowledgePoint.title}</h3>
+              <h3 className={isDark ? 'font-semibold text-white' : 'font-semibold text-gray-900'}>{selectedNode.knowledgePoint.title}</h3>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="text-gray-400 hover:text-white"
+                aria-label={t('common.close')}
+                className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-900'}
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
             
             {selectedNode.knowledgePoint.content && (
-              <p className="mt-2 text-gray-300 text-xs line-clamp-3">
+              <p className={isDark ? 'mt-2 text-gray-300 text-xs line-clamp-3' : 'mt-2 text-gray-600 text-xs line-clamp-3'}>
                 {selectedNode.knowledgePoint.content}
               </p>
             )}
             
-            <div className="mt-3 pt-3 border-t border-gray-700">
+            <div className={isDark ? 'mt-3 pt-3 border-t border-gray-700' : 'mt-3 pt-3 border-t border-gray-200'}>
               <p className="text-gray-400 text-xs mb-2">{t('combinedViewPage.nodeDetail.belongingGraphs')}</p>
               <div className="flex flex-wrap gap-1">
                 {selectedNode.graphIds.map(gid => (
@@ -354,8 +357,8 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
             <div className="mt-2">
               <span className={`text-xs px-2 py-0.5 rounded ${
                 selectedNode.isShared
-                  ? 'bg-primary-900/50 text-primary-300'
-                  : 'bg-gray-700 text-gray-300'
+                  ? (isDark ? 'bg-primary-900/50 text-primary-300' : 'bg-primary-100 text-primary-700')
+                  : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600')
               }`}>
                 {selectedNode.isShared ? t('combinedViewPage.nodeDetail.shared') : t('combinedViewPage.nodeDetail.independent')}
               </span>

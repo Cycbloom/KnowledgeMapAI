@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -16,6 +17,7 @@ import {
 import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { Button } from "../common/Button";
+import { EmptyState } from "../common/EmptyState";
 import type {
   AnalysisResult,
   ConceptGroup,
@@ -48,6 +50,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
     similarityThreshold: 0.8,
     hierarchyThreshold: 0.7,
   });
+  const { t } = useTranslation();
 
   const loadLatestResults = useCallback(async () => {
     try {
@@ -144,11 +147,11 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
 
     if (!analysisResult || groups.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 text-slate-500 dark:text-slate-400">
-          <Group className="w-12 h-12 mb-3 opacity-50" />
-          <p className="text-sm">暂无聚合结果</p>
-          <p className="text-xs mt-1">点击「开始分析」检测可合并的相似概念</p>
-        </div>
+        <EmptyState
+          icon={<Group className="w-12 h-12 text-gray-400 dark:text-gray-500" />}
+          title={t("common.conceptAggregation.noAggregationTitle")}
+          description={t("common.conceptAggregation.noAggregationDesc")}
+        />
       );
     }
 
@@ -196,11 +199,11 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
 
     if (!analysisResult || relations.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 text-slate-500 dark:text-slate-400">
-          <Network className="w-12 h-12 mb-3 opacity-50" />
-          <p className="text-sm">暂无层次关系</p>
-          <p className="text-xs mt-1">点击「开始分析」检测概念的层次结构</p>
-        </div>
+        <EmptyState
+          icon={<Network className="w-12 h-12 text-gray-400 dark:text-gray-500" />}
+          title={t("common.conceptAggregation.noHierarchyTitle")}
+          description={t("common.conceptAggregation.noHierarchyDesc")}
+        />
       );
     }
 

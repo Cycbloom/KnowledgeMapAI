@@ -21,6 +21,7 @@ export interface User {
     [key: string]: unknown;
   };
   profile?: {
+    name?: string;
     xp?: number;
     level?: number;
     daily_task_streak?: number;

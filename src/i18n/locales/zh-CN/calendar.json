@@ -49,5 +49,16 @@
   "calendarExported": "日历已导出!",
   "exportFailed": "导出失败",
   "webcalCopied": "WebCal 链接已复制!",
-  "unknownTask": "未知任务"
+  "unknownTask": "未知任务",
+  "weekdays": {
+    "sun": "日",
+    "mon": "一",
+    "tue": "二",
+    "wed": "三",
+    "thu": "四",
+    "fri": "五",
+    "sat": "六"
+  },
+  "moreEvents": "+{{count}} 更多",
+  "activitySummary": "{{count}}项 · {{minutes}}分钟"
 }

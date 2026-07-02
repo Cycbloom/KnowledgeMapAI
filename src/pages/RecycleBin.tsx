@@ -20,7 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { ConfirmationModal } from "../components/common";
+import { ConfirmationModal, SkeletonCard } from "../components/common";
 import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
@@ -183,9 +183,15 @@ export const RecycleBin = () => {
   if (isLoading)
     return (
       <div
-        className={`min-h-full flex items-center justify-center p-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
       >
-        {t("recycleBin.loading")}
+        <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   if (error)

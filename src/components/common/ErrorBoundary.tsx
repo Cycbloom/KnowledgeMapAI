@@ -1,10 +1,12 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import i18next from 'i18next';
 import { RefreshCcw, AlertTriangle, Home, Bug } from 'lucide-react';
 import { CopyButton } from './CopyButton';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  fallbackRender?: (error: Error, resetErrorBoundary: () => void) => ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
   resetKeys?: unknown[];
 }
@@ -91,12 +93,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   override render() {
     if (this.state.hasError) {
+      if (this.props.fallbackRender && this.state.error) {
+        return this.props.fallbackRender(this.state.error, this.reset);
+      }
+
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
       const errorDetails = [
-        this.state.error?.message || '未知错误',
+        this.state.error?.message || i18next.t('errors.boundary.unknownError'),
         this.state.error?.stack?.split('\n').slice(0, 3).join('\n') || '',
       ].filter(Boolean).join('\n\n');
 
@@ -107,18 +113,18 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
             </div>
             
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">出错了</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{i18next.t('errors.boundary.title')}</h2>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
-              抱歉，应用程序遇到了一些意外问题。我们已经自动记录了该错误。
+              {i18next.t('errors.boundary.description')}
             </p>
             
             <div className="relative bg-gray-50 dark:bg-slate-700 p-4 rounded-lg text-left text-xs font-mono mb-8 overflow-auto max-h-48 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-300">
               <CopyButton text={errorDetails} />
-              {this.state.error?.message || '未知错误'}
+              {this.state.error?.message || i18next.t('errors.boundary.unknownError')}
               {this.state.errorInfo?.componentStack && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
-                    组件堆栈
+                    {i18next.t('errors.boundary.componentStack')}
                   </summary>
                   <pre className="mt-2 text-xs overflow-auto whitespace-pre-wrap">
                     {this.state.errorInfo.componentStack}
@@ -133,7 +139,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <RefreshCcw className="w-4 h-4 mr-2" />
-                重试
+                {i18next.t('errors.boundary.retry')}
               </button>
               
               <button
@@ -141,7 +147,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <Bug className="w-4 h-4 mr-2" />
-                刷新页面
+                {i18next.t('errors.boundary.reload')}
               </button>
               
               <button
@@ -149,7 +155,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <Home className="w-4 h-4 mr-2" />
-                返回首页
+                {i18next.t('errors.boundary.goHome')}
               </button>
             </div>
           </div>

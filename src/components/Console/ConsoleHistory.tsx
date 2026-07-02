@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Clock, Trash2, CheckCircle, XCircle, Search } from 'lucide-react';
 import type { CommandHistoryItem } from '@/services/console';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { EmptyState } from '@/components/common/EmptyState';
 
 interface ConsoleHistoryProps {
   history: CommandHistoryItem[];
@@ -39,6 +41,7 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
   isDark,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useTranslation();
 
   const filteredHistory = useMemo(() => {
     if (!searchQuery.trim()) return history;
@@ -103,11 +106,12 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {filteredHistory.length === 0 ? (
-          <div className={`p-4 text-center text-xs ${
-            isDark ? 'text-slate-500' : 'text-gray-400'
-          }`}>
-            {searchQuery ? '没有匹配的历史记录' : '暂无历史记录'}
-          </div>
+          <EmptyState
+            illustration={searchQuery ? 'search' : 'empty'}
+            title={searchQuery ? t('console.noSearchResultsTitle') : t('console.noHistoryTitle')}
+            description={searchQuery ? t('console.noSearchResultsDesc') : t('console.noHistoryDesc')}
+            className="min-h-[160px] py-8"
+          />
         ) : (
           <div className="py-1">
             {filteredHistory.map((item, index) => (

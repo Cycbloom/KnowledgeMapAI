@@ -8,10 +8,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
-  Loader2,
   FileQuestion,
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
+import { SkeletonCard } from "../../components/common";
 import { useQuizSets, useDeleteQuizSetMutation } from '../../hooks/queries';
 import { useGraphs } from '../../hooks/queries/useGraphQueries';
 import { QuizCard } from './QuizCard';
@@ -106,12 +106,15 @@ export const QuizList: React.FC<QuizListProps> = ({
   if (isLoading) {
     return (
       <div
-        className={`rounded-xl border p-16 flex flex-col items-center justify-center gap-4 ${
+        className={`rounded-xl border p-4 ${
           isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'
         }`}
       >
-        <Loader2 size={32} className={`animate-spin ${isDark ? 'text-primary-400' : 'text-primary-600'}`} />
-        <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>{t('study.quizList.loading')}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     );
   }

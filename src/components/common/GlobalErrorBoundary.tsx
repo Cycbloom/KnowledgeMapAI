@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode, useState, useCallback } from "react";
+import i18next from "i18next";
 import { cn } from "@/lib/utils";
 import {
   RefreshCcw,
@@ -38,18 +39,18 @@ function getErrorTypeDisplay(code?: ErrorCode): {
 } {
   switch (code) {
     case "NETWORK_ERROR":
-      return { label: "网络错误", color: "text-orange-500" };
+      return { label: i18next.t("errors.boundary.typeNetwork"), color: "text-orange-500" };
     case SharedErrorCodes.AUTH_UNAUTHORIZED:
     case SharedErrorCodes.AUTH_TOKEN_EXPIRED:
     case SharedErrorCodes.AUTH_TOKEN_INVALID:
     case SharedErrorCodes.AUTH_TOKEN_REVOKED:
-      return { label: "认证错误", color: "text-yellow-500" };
+      return { label: i18next.t("errors.boundary.typeAuth"), color: "text-yellow-500" };
     case SharedErrorCodes.VALIDATION_ERROR:
-      return { label: "验证错误", color: "text-primary-500" };
+      return { label: i18next.t("errors.boundary.typeValidation"), color: "text-primary-500" };
     case SharedErrorCodes.SYSTEM_INTERNAL_ERROR:
-      return { label: "服务器错误", color: "text-red-500" };
+      return { label: i18next.t("errors.boundary.typeServer"), color: "text-red-500" };
     default:
-      return { label: "应用错误", color: "text-red-500" };
+      return { label: i18next.t("errors.boundary.typeApp"), color: "text-red-500" };
   }
 }
 
@@ -135,8 +136,8 @@ export class GlobalErrorBoundary extends Component<Props, State> {
       const errorType = getErrorTypeDisplay(appError.code);
       const errorDetails = [
         `[${errorType.label}] ${appError.message}`,
-        `错误码: ${appError.code}`,
-        `状态码: ${appError.statusCode}`,
+        `${i18next.t("errors.boundary.errorCode")}: ${appError.code}`,
+        `${i18next.t("errors.boundary.statusCode")}: ${appError.statusCode}`,
         this.state.error?.stack?.split("\n").slice(0, 3).join("\n") || "",
       ]
         .filter(Boolean)
@@ -167,7 +168,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               {this.state.errorInfo?.componentStack && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
-                    组件堆栈
+                    {i18next.t("errors.boundary.componentStack")}
                   </summary>
                   <pre className="mt-2 text-xs overflow-auto whitespace-pre-wrap">
                     {this.state.errorInfo.componentStack}
@@ -182,7 +183,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <RefreshCcw className="w-4 h-4 mr-2" />
-                重试
+                {i18next.t("errors.boundary.retry")}
               </button>
 
               <button
@@ -190,7 +191,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <Bug className="w-4 h-4 mr-2" />
-                刷新页面
+                {i18next.t("errors.boundary.reload")}
               </button>
 
               <button
@@ -198,7 +199,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <Home className="w-4 h-4 mr-2" />
-                返回首页
+                {i18next.t("errors.boundary.goHome")}
               </button>
 
               {this.props.showReportButton !== false && (
@@ -208,7 +209,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                   className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  {this.state.errorReported ? "已上报" : "上报错误"}
+                  {this.state.errorReported ? i18next.t("errors.boundary.reported") : i18next.t("errors.boundary.reportError")}
                 </button>
               )}
             </div>

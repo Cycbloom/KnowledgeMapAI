@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Lock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatNumber } from "../../utils/formatters";
 
 interface PassReward {
   id: string;
@@ -261,12 +262,12 @@ export const PassProgress: React.FC<PassProgressProps> = ({
 
                     {reward.reward_type === "xp" && reward.reward_value && (
                       <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                        +{reward.reward_value} XP
+                        +{formatNumber(reward.reward_value)} XP
                       </div>
                     )}
 
                     <div className="text-[10px] text-slate-400 mt-1">
-                      {t("achievements.pass.pointsRequired", { points: reward.points_required })}
+                      {t("achievements.pass.pointsRequired", { points: formatNumber(reward.points_required) })}
                     </div>
 
                     <div className="mt-2">

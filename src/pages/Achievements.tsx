@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import { PeriodicTaskList } from '../components/Achievements/PeriodicTaskList';
 import { PassProgress } from '../components/Achievements/PassProgress';
 import { StreakDisplay } from '../components/Achievements/StreakDisplay';
+import { Skeleton } from '../components/common';
 
 const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Flame, Zap, Crown, Timer, Brain, GraduationCap, BookOpen, Trophy, Medal, Target, Star
@@ -107,8 +108,23 @@ export const Achievements = () => {
 
   if (isLoading) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <div className="h-full overflow-y-auto px-4 py-4 md:p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5 flex items-center gap-4"
+              >
+                <Skeleton variant="circular" width={48} height={48} />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

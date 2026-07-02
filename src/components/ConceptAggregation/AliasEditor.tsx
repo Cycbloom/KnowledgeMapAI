@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, Tag, AlertCircle, Loader2 } from 'lucide-react';
 import { useDebouncedValue } from '../../hooks/common/useWorker';
+import { EmptyState } from '../common/EmptyState';
 
 interface AliasEditorProps {
   knowledgePointId: string;
@@ -44,6 +46,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const prevAliasesRef = useRef<string[]>(currentAliases);
+  const { t } = useTranslation();
 
   const debouncedAliases = useDebouncedValue(aliases, 300);
 
@@ -144,7 +147,10 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
           <span>别名</span>
         </div>
         {aliases.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">暂无别名</p>
+          <EmptyState
+            title={t("common.conceptAggregation.noAliasTitle")}
+            className="min-h-0 py-2"
+          />
         ) : (
           <div className="flex flex-wrap gap-2">
             {aliases.map((alias) => (

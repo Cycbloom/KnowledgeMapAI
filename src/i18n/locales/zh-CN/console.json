@@ -29,6 +29,10 @@
     "shortcutHint": "Tab 补全 · Ctrl+R 搜索历史 · Esc 关闭",
     "scrollMore": "向上滚动查看更多历史记录 ({{count}} 条)"
   },
+  "noHistoryTitle": "暂无历史记录",
+  "noHistoryDesc": "执行的命令将出现在这里",
+  "noSearchResultsTitle": "没有匹配的历史记录",
+  "noSearchResultsDesc": "尝试更换搜索关键词",
   "performance": {
     "title": "AI 性能监控",
     "filter": "筛选",

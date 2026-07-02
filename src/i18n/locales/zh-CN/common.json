@@ -33,10 +33,32 @@
   "copied": "已复制",
   "copyFailed": "复制失败",
   "clipboardUnavailable": "剪贴板不可用",
+  "backOnline": "已恢复在线，正在同步数据",
+  "slowConnection": "网络较慢，部分操作可能延迟",
+  "offlineMode": "离线模式：部分 AI 功能不可用",
   "timeAgo": {
     "justNow": "刚刚",
     "minutesAgo": "{{count}}分钟前",
     "hoursAgo": "{{count}}小时前",
     "daysAgo": "{{count}}天前"
+  },
+  "date": {
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前",
+    "fullDate": "{{year}}年{{month}}月{{day}}日",
+    "shortDate": "{{month}}月{{day}}日"
+  },
+  "duration": {
+    "minutes": "{{count}}分钟",
+    "hours": "{{count}}小时",
+    "hoursMinutes": "{{hours}} 小时 {{minutes}} 分钟"
+  },
+  "routeError": {
+    "title": "页面加载失败",
+    "message": "抱歉，此页面加载时发生错误。请尝试重试或返回首页。",
+    "retry": "重试",
+    "goHome": "返回首页"
   }
 }

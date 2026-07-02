@@ -9,7 +9,8 @@ import {
 } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { ConfirmationModal } from "../components/common";
+import { ConfirmationModal, Skeleton } from "../components/common";
+import { EmptyState } from "@/components/common/EmptyState";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import {
   CheckCircle2,
@@ -40,14 +41,14 @@ const formatTime = (iso?: string) => {
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case "completed":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700";
     case "cancelled":
-      return "bg-red-50 text-red-700 border-red-200";
+      return "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700";
     case "in_progress":
-      return "bg-primary-50 text-primary-700 border-primary-200";
+      return "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700";
     case "pending":
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600";
   }
 };
 
@@ -106,8 +107,8 @@ const FilterTab = ({
     onClick={() => onClick(value)}
     className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
       current === value
-        ? "bg-primary-100 text-primary-700"
-        : "text-gray-600 hover:bg-gray-100"
+        ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+        : "text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
     }`}
   >
     {label}
@@ -457,16 +458,27 @@ export const Tasks = () => {
       ) : (
         <div className="space-y-4">
           {isLoading && !isFetching && (
-            <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-              <p>{t("tasks.loading")}</p>
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-slate-700 flex items-center gap-3"
+                >
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              ))}
             </div>
           )}
 
           {!isLoading && filteredTasks.length === 0 && (
-            <div className="p-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
-              <Inbox className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
-              <p>{debouncedSearchQuery.trim() ? t("tasks.noSearchResults") : t("tasks.noTasks")}</p>
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
+              <EmptyState
+                icon={<Inbox className="w-12 h-12 text-gray-300 dark:text-slate-600" />}
+                title={debouncedSearchQuery.trim() ? t("tasks.noSearchResults") : t("tasks.noTasks")}
+                description={t("tasks.emptyDesc")}
+              />
             </div>
           )}
 
@@ -476,7 +488,7 @@ export const Tasks = () => {
                 {filteredTasks.map((task) => {
                   const context = (() => {
                     try {
-                      const input = (task as any).input_data || {};
+                      const input = task.input_data || {};
                       return typeof input === "string"
                         ? JSON.parse(input)
                         : input;
@@ -537,9 +549,9 @@ export const Tasks = () => {
                               )}
                             </div>
 
-                            {(task as any).error_message && (
+                            {task.error_message && (
                               <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
-                                {(task as any).error_message}
+                                {task.error_message}
                               </div>
                             )}
 

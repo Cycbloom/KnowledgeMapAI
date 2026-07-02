@@ -6,6 +6,7 @@ import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
 import { useAIExpandMutation, useAIGenerateCardsMutation, useCreateCardsBatchMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from '../mutations';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import {
   processExpandSuggestions,
@@ -30,6 +31,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const queryClient = useQueryClient();
   const asyncHandler = createAsyncHandler();
+  const navigate = useNavigate();
   
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
@@ -233,7 +235,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
     }
     
     const currentGraphId = getCurrentGraphId();
-    window.location.href = `/study?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`;
+    navigate(`/study?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`);
   };
   
   const handleStartLearningMode = () => {
@@ -243,7 +245,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
     }
     
     const currentGraphId = getCurrentGraphId();
-    window.location.href = `/learning?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`;
+    navigate(`/learning?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`);
   };
   
   const handleAnalyzeCrossGraphConnections = async () => {

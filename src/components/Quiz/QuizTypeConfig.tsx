@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HelpCircle, CheckCircle, ListChecks, ToggleLeft, FileText, MessageSquare, AlertCircle } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import type { QuizSetConfig, CardType } from '@shared/types/quiz';
@@ -16,53 +17,54 @@ interface QuizTypeOption {
   defaultCount: number;
 }
 
-const quizTypes: QuizTypeOption[] = [
-  {
-    id: 'qa',
-    label: '问答题',
-    description: '开放式问题，需要完整回答',
-    icon: <HelpCircle size={18} />,
-    defaultCount: 5,
-  },
-  {
-    id: 'choice',
-    label: '单选题',
-    description: '从多个选项中选择一个正确答案',
-    icon: <CheckCircle size={18} />,
-    defaultCount: 5,
-  },
-  {
-    id: 'multi_choice',
-    label: '多选题',
-    description: '从多个选项中选择所有正确答案',
-    icon: <ListChecks size={18} />,
-    defaultCount: 3,
-  },
-  {
-    id: 'true_false',
-    label: '判断题',
-    description: '判断陈述是否正确',
-    icon: <ToggleLeft size={18} />,
-    defaultCount: 5,
-  },
-  {
-    id: 'fill_in_the_blank',
-    label: '填空题',
-    description: '填写空白处的正确内容',
-    icon: <FileText size={18} />,
-    defaultCount: 5,
-  },
-  {
-    id: 'essay',
-    label: '论述题',
-    description: '深入分析，需要详细阐述',
-    icon: <MessageSquare size={18} />,
-    defaultCount: 2,
-  },
-];
-
 export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
+
+  const quizTypes: QuizTypeOption[] = useMemo(() => [
+    {
+      id: 'qa',
+      label: t('study.quizTypeConfig.types.qa.label'),
+      description: t('study.quizTypeConfig.types.qa.description'),
+      icon: <HelpCircle size={18} />,
+      defaultCount: 5,
+    },
+    {
+      id: 'choice',
+      label: t('study.quizTypeConfig.types.choice.label'),
+      description: t('study.quizTypeConfig.types.choice.description'),
+      icon: <CheckCircle size={18} />,
+      defaultCount: 5,
+    },
+    {
+      id: 'multi_choice',
+      label: t('study.quizTypeConfig.types.multi_choice.label'),
+      description: t('study.quizTypeConfig.types.multi_choice.description'),
+      icon: <ListChecks size={18} />,
+      defaultCount: 3,
+    },
+    {
+      id: 'true_false',
+      label: t('study.quizTypeConfig.types.true_false.label'),
+      description: t('study.quizTypeConfig.types.true_false.description'),
+      icon: <ToggleLeft size={18} />,
+      defaultCount: 5,
+    },
+    {
+      id: 'fill_in_the_blank',
+      label: t('study.quizTypeConfig.types.fill_in_the_blank.label'),
+      description: t('study.quizTypeConfig.types.fill_in_the_blank.description'),
+      icon: <FileText size={18} />,
+      defaultCount: 5,
+    },
+    {
+      id: 'essay',
+      label: t('study.quizTypeConfig.types.essay.label'),
+      description: t('study.quizTypeConfig.types.essay.description'),
+      icon: <MessageSquare size={18} />,
+      defaultCount: 2,
+    },
+  ], [t]);
 
   const selectedTypes = config.cardTypes || [];
   const cardsPerType: Partial<Record<CardType, number>> = config.cardsPerType || {};
@@ -100,12 +102,12 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          题型配置
+          {t('study.quizTypeConfig.title')}
         </label>
         <div className={`px-3 py-1 rounded-full text-sm font-bold ${
           isDark ? 'bg-primary-900/50 text-primary-300' : 'bg-primary-100 text-primary-600'
         }`}>
-          预计 {totalCount} 题
+          {t('study.quizTypeConfig.expectedCount', { count: totalCount })}
         </div>
       </div>
 
@@ -114,7 +116,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
           isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-700'
         }`}>
           <AlertCircle size={16} />
-          <span>请至少选择一种题型</span>
+          <span>{t('study.quizTypeConfig.selectAtLeastOne')}</span>
         </div>
       )}
 
@@ -176,7 +178,7 @@ export const QuizTypeConfig: React.FC<QuizTypeConfigProps> = ({ config, onChange
                 >
                   <div className="flex items-center justify-between">
                     <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                      题目数量
+                      {t('study.quizTypeConfig.questionCount')}
                     </span>
                     <div className="flex items-center gap-2">
                       <button

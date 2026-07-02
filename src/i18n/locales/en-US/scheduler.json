@@ -262,5 +262,31 @@
     "relevance": "Relevance",
     "noLinkedKnowledge": "No linked knowledge points",
     "addLink": "Add knowledge link"
+  },
+  "taskCard": {
+    "typeLongTerm": "Long-term",
+    "typePeriodic": "Periodic",
+    "typeLearning": "Learning",
+    "overdue": "Overdue",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "daysLater": "In {{count}} days",
+    "progress": "Progress",
+    "subtasks": "Subtasks",
+    "subtaskProgress": "{{completed}}/{{total}} done",
+    "noSubtasks": "No subtasks",
+    "moreSubtasks": "{{count}} more subtasks...",
+    "pendingDependencies": "{{count}} dependencies pending",
+    "allDependenciesCompleted": "All dependencies completed",
+    "periodicInstance": "Periodic task instance",
+    "subtaskCompleted": "Subtask completed",
+    "subtaskReopened": "Subtask reopened",
+    "updateSubtaskFailed": "Failed to update subtask",
+    "actionStart": "Start",
+    "actionPause": "Pause",
+    "actionComplete": "Complete",
+    "actionDetail": "Details",
+    "actionEdit": "Edit",
+    "actionDelete": "Delete"
   }
 }

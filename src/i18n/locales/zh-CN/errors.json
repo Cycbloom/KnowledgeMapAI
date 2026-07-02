@@ -82,5 +82,23 @@
   "TOKEN_REFRESH_EXPIRED": "登录已过期，请重新登录",
   "MISSING_REFRESH_TOKEN": "缺少刷新令牌",
   "LOGOUT_FAILED": "退出登录失败",
-  "PASSWORD_REQUIREMENTS": "密码不符合要求，请确保密码至少8位，包含大小写字母和数字"
+  "PASSWORD_REQUIREMENTS": "密码不符合要求，请确保密码至少8位，包含大小写字母和数字",
+  "boundary": {
+    "title": "出错了",
+    "description": "抱歉，应用程序遇到了一些意外问题。我们已经自动记录了该错误。",
+    "unknownError": "未知错误",
+    "componentStack": "组件堆栈",
+    "retry": "重试",
+    "reload": "刷新页面",
+    "goHome": "返回首页",
+    "reportError": "上报错误",
+    "reported": "已上报",
+    "errorCode": "错误码",
+    "statusCode": "状态码",
+    "typeNetwork": "网络错误",
+    "typeAuth": "认证错误",
+    "typeValidation": "验证错误",
+    "typeServer": "服务器错误",
+    "typeApp": "应用错误"
+  }
 }

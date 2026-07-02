@@ -258,5 +258,99 @@
       "essay": "Essay"
     },
     "noCardType": "None"
+  },
+  "quizPractice": {
+    "loading": "Loading quiz...",
+    "loadFailed": "Failed to load quiz",
+    "noCards": "No cards in this quiz",
+    "backToList": "Back to Quiz List",
+    "exitQuiz": "Exit Quiz",
+    "flagForReview": "Flag for review",
+    "unflag": "Remove flag",
+    "trueLabel": "True",
+    "falseLabel": "False",
+    "referenceAnswer": "Reference Answer",
+    "explanationTitle": "Explanation",
+    "showAnswer": "Show Answer",
+    "submitAnswer": "Submit Answer",
+    "selectOption": "Select an option",
+    "prevQuestion": "Previous",
+    "nextQuestion": "Next",
+    "finishQuiz": "Finish Quiz",
+    "cardType": {
+      "qa": "Q&A",
+      "choice": "Single Choice",
+      "multi_choice": "Multiple Choice",
+      "true_false": "True/False",
+      "fill_in_the_blank": "Fill in the Blank",
+      "essay": "Essay"
+    }
+  },
+  "quizTypeConfig": {
+    "title": "Question Type Configuration",
+    "expectedCount": "Estimated {{count}} questions",
+    "selectAtLeastOne": "Please select at least one question type",
+    "questionCount": "Question Count",
+    "types": {
+      "qa": {
+        "label": "Q&A",
+        "description": "Open-ended question requiring a full answer"
+      },
+      "choice": {
+        "label": "Single Choice",
+        "description": "Select one correct answer from multiple options"
+      },
+      "multi_choice": {
+        "label": "Multiple Choice",
+        "description": "Select all correct answers from multiple options"
+      },
+      "true_false": {
+        "label": "True/False",
+        "description": "Judge whether a statement is correct"
+      },
+      "fill_in_the_blank": {
+        "label": "Fill in the Blank",
+        "description": "Fill in the correct content for the blank"
+      },
+      "essay": {
+        "label": "Essay",
+        "description": "In-depth analysis requiring detailed elaboration"
+      }
+    }
+  },
+  "questionForm": {
+    "questionLabel": "Question",
+    "questionPlaceholder": "Enter question content...",
+    "typeLabel": "Type",
+    "optionsAndAnswer": "Options & Correct Answer",
+    "setAsAnswer": "Set as correct answer",
+    "optionN": "Option {{n}}",
+    "addOption": "Add Option",
+    "answerPreview": "Answer Preview (auto-generated)",
+    "answerLabel": "Answer",
+    "trueLabel": "True",
+    "falseLabel": "False",
+    "clickToSelectAnswer": "Click the circle on the left of the option above to select the correct answer",
+    "answerPlaceholder": "Enter the standard answer...",
+    "explanationLabel": "Explanation (optional)",
+    "explanationPlaceholder": "Enter explanation...",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save",
+    "cardType": {
+      "qa": "Q&A",
+      "choice": "Choice",
+      "multi_choice": "Multi",
+      "true_false": "T/F",
+      "fill_in_the_blank": "Fill",
+      "essay": "Essay"
+    },
+    "validation": {
+      "questionRequired": "Please enter a question",
+      "questionTooLong": "Question cannot exceed 500 characters",
+      "answerRequired": "Please enter the answer",
+      "optionsMinLength": "Choice questions require at least 2 options",
+      "optionContentRequired": "Option content cannot be empty"
+    }
   }
 }

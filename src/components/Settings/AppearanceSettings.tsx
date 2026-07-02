@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../hooks";
-import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import {
   Palette,
   Sun,
@@ -15,7 +14,6 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
   const { t, i18n } = useTranslation();
   const { themeMode, setTheme, themePreset, setThemePreset, availablePresets } =
     useTheme();
-  const { aiLanguage, setAILanguage } = useLearningSettingsStore();
 
   return (
     <>
@@ -161,55 +159,6 @@ export const AppearanceSettings = React.memo(function AppearanceSettings() {
                 <span className="text-2xl mb-2">A</span>
                 <span className="font-medium text-sm">
                   {t("settings.english")}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-              {t("settings.aiOutputLanguage")}
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                onClick={() => setAILanguage("auto")}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
-                  aiLanguage === "auto"
-                    ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
-                }`}
-              >
-                <Monitor className="w-5 h-5 mb-1" />
-                <span className="font-medium text-sm">
-                  {t("settings.languageAuto")}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setAILanguage("zh-CN")}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
-                  aiLanguage === "zh-CN"
-                    ? "bg-red-50 border-red-200 text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
-                }`}
-              >
-                <span className="text-xl mb-1">中</span>
-                <span className="font-medium text-sm">
-                  {t("settings.languageChinese")}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setAILanguage("en-US")}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
-                  aiLanguage === "en-US"
-                    ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
-                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
-                }`}
-              >
-                <span className="text-xl mb-1">A</span>
-                <span className="font-medium text-sm">
-                  {t("settings.languageEnglish")}
                 </span>
               </button>
             </div>

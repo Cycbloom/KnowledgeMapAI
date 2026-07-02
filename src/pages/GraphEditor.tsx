@@ -575,7 +575,10 @@ export const GraphEditor = () => {
     nodes,
     edges,
     state,
-    mutations,
+    mutations: {
+      ...mutations,
+      updateNodeMutation: mutations.updateNodeOptimisticMutation,
+    },
     record,
   });
 
@@ -591,7 +594,7 @@ export const GraphEditor = () => {
       createTaskMutation: mutations.createTaskMutation,
       createNodeMutation: mutations.createNodeMutation,
       createEdgeMutation: mutations.createEdgeMutation,
-      updateNodeMutation: mutations.updateNodeMutation,
+      updateNodeMutation: mutations.updateNodeOptimisticMutation,
       recommendConnectionsMutation: mutations.recommendConnectionsMutation,
     },
     record,

@@ -4,28 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Network, FileText, Sparkles, ChevronRight, Clock, Layers, BookOpen } from 'lucide-react';
 import type { SearchResult, SearchNodeResult } from '../../services/api/search';
-import {
-  type SearchNodeNavigateTarget,
-  type GraphEditorPreferences,
-} from '../Settings/GraphEditorSettings';
-
-const PREFS_STORAGE_KEY = 'graphEditorPreferences';
+import { type SearchNodeNavigateTarget } from '../Settings/GraphEditorSettings';
+import { useGraphEditorPreferencesStore } from '../../store/useGraphEditorPreferencesStore';
 
 /** Get the node ID from a search result, handling both keyword (id) and semantic (knowledge_point_id) formats */
 const getNodeId = (node: SearchNodeResult): string =>
   node.knowledge_point_id || node.id || '';
 
 const getDefaultNavigateTarget = (): SearchNodeNavigateTarget => {
-  try {
-    const stored = localStorage.getItem(PREFS_STORAGE_KEY);
-    if (stored) {
-      const prefs: Partial<GraphEditorPreferences> = JSON.parse(stored);
-      return prefs.searchNodeNavigateTarget ?? 'graph';
-    }
-  } catch {
-    // ignore parse errors
-  }
-  return 'graph';
+  return useGraphEditorPreferencesStore.getState().searchNodeNavigateTarget;
 };
 
 interface SearchResultsProps {

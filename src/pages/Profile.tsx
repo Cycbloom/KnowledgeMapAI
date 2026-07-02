@@ -5,9 +5,7 @@ import { useUser } from '../hooks/queries';
 import { useLogoutMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X, Database, Download, Upload, AlertTriangle, Trash2, RotateCcw, Clock, Plus, RefreshCw } from 'lucide-react';
-import { PromptSettingsPanel } from '../components/GraphEditor/panels/PromptSettingsPanel';
-import { AIActionSettingsPanel } from '../components/GraphEditor/panels/AIActionSettingsPanel';
+import { LogOut, User, Settings as SettingsIcon, ExternalLink, Database, Download, Upload, AlertTriangle, Trash2, RotateCcw, Clock, Plus, RefreshCw } from 'lucide-react';
 import { backupApi, BackupSnapshot } from '../services/api/backup';
 import { queryClient } from '../main';
 import { asyncConfirm } from '@/utils/asyncConfirm';
@@ -17,8 +15,6 @@ export const Profile = () => {
   const navigate = useNavigate();
   const { user, token, setUser } = useStore();
   const logoutMutation = useLogoutMutation();
-  const [isPromptSettingsOpen, setIsPromptSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'prompts' | 'actions'>('prompts');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('replace');
@@ -260,25 +256,6 @@ export const Profile = () => {
             </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
-            <div className="flex items-center justify-between">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.promptManagement.title')}</h2>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('profile.promptManagement.description')}</p>
-                </div>
-                <button
-                    onClick={() => setIsPromptSettingsOpen(true)}
-                    className="px-4 py-2 rounded-md bg-primary-50 dark:bg-slate-700 text-primary-700 dark:text-white hover:bg-primary-100 dark:hover:bg-slate-600 flex items-center gap-2 transition-colors"
-                >
-                    <span>{t('profile.promptManagement.managePrompts')}</span>
-                    <ExternalLink className="w-4 h-4" />
-                </button>
-            </div>
-        </div>
-
         {/* Data Backup Section */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
@@ -443,52 +420,6 @@ export const Profile = () => {
           </div>
         </div>
       </div>
-      {/* Prompt Settings Modal */}
-      {isPromptSettingsOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in-up">
-            <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700 shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-primary-50 rounded-lg text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-                  <MessageSquare size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('profile.promptSettings.title')}</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.promptSettings.description')}</p>
-                </div>
-              </div>
-              <button onClick={() => setIsPromptSettingsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="flex border-b border-gray-100 dark:border-gray-700 px-6 bg-gray-50/50 dark:bg-gray-800/50">
-                <button 
-                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'prompts' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
-                    onClick={() => setActiveTab('prompts')}
-                >
-                    {t('profile.promptSettings.promptTemplates')}
-                    {activeTab === 'prompts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 dark:bg-primary-400 rounded-t-full" />}
-                </button>
-                <button 
-                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'actions' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
-                    onClick={() => setActiveTab('actions')}
-                >
-                    {t('profile.promptSettings.customActions')}
-                    {activeTab === 'actions' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 dark:bg-primary-400 rounded-t-full" />}
-                </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              {activeTab === 'prompts' ? (
-                <PromptSettingsPanel scope="user" />
-              ) : (
-                <AIActionSettingsPanel scope="user" />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

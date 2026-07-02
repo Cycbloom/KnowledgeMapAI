@@ -13,6 +13,9 @@ import { asyncConfirm } from './utils/asyncConfirm'
 import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
 import { useStore } from './store/useStore'
 import { migrateLegacyKeys } from './store/createPersistedStore'
+import { useThemeStore } from './store/useThemeStore'
+import { useNotificationsStore } from './store/useNotificationsStore'
+import { useGraphEditorPreferencesStore } from './store/useGraphEditorPreferencesStore'
 import './store/storeIntegrations'
 import './index.css'
 import 'katex/dist/katex.min.css'
@@ -28,6 +31,16 @@ export const queryClient = new QueryClient({
 })
 
 migrateLegacyKeys()
+// The theme store hydrates synchronously at import time (before
+// migrateLegacyKeys runs), so re-read km-theme to pick up values just
+// migrated from the legacy themeMode/themePreset keys on first load.
+void useThemeStore.persist.rehydrate()
+// The notifications and graph-editor stores also hydrate synchronously at
+// import time (before migrateLegacyKeys runs), so re-read their km-* keys
+// to pick up values just migrated from the legacy
+// mutedNotificationTypes/graphEditorPreferences keys on first load.
+void useNotificationsStore.persist.rehydrate()
+void useGraphEditorPreferencesStore.persist.rehydrate()
 
 const restoredUser = useStore.getState().user
 if (restoredUser?.id) {

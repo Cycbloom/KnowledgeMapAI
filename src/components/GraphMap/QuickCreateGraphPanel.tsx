@@ -5,7 +5,7 @@ import { X, Loader2, Sparkles, ArrowRight, AlertCircle, Settings, Check } from '
 import type { GraphRelationType, QuickCreateGraphRequest } from '../../types';
 import type { DomainTreeNode } from '@shared/types/graph';
 import { useTopicCheck } from "../../hooks";
-import { PromptConfigPanel } from '../PromptConfig';
+import { PromptSettingsPanel } from '../GraphEditor/panels/PromptSettingsPanel';
 import { domainsApi } from '../../services/api/domains';
 
 interface QuickCreateGraphPanelProps {
@@ -406,11 +406,32 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
         </motion.div>
       </motion.div>
 
-      <PromptConfigPanel
-        isOpen={showPromptConfig}
-        onClose={() => setShowPromptConfig(false)}
-        initialScenarioId="graph_creation"
-      />
+      {showPromptConfig && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm"
+          onClick={() => setShowPromptConfig(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {t('quickCreate.promptConfig')}
+              </h2>
+              <button
+                onClick={() => setShowPromptConfig(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <PromptSettingsPanel scope="user" />
+            </div>
+          </div>
+        </div>
+      )}
     </AnimatePresence>
   );
 };

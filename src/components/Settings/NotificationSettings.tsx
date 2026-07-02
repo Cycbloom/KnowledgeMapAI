@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bell,
@@ -12,8 +12,7 @@ import {
   Square,
 } from "lucide-react";
 import type { NotificationType } from "@shared/types";
-
-export const MUTED_NOTIFICATION_TYPES_KEY = "mutedNotificationTypes";
+import { useNotificationsStore } from "../../store/useNotificationsStore";
 
 const NOTIFICATION_TYPES: NotificationType[] = [
   "task_start",
@@ -80,39 +79,14 @@ const NOTIFICATION_TYPE_META: Record<
   },
 };
 
-export const loadMutedNotificationTypes = (): NotificationType[] => {
-  try {
-    const stored = localStorage.getItem(MUTED_NOTIFICATION_TYPES_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as unknown;
-      if (Array.isArray(parsed)) {
-        return parsed.filter(
-          (item): item is NotificationType =>
-            typeof item === "string" && NOTIFICATION_TYPES.includes(item as NotificationType),
-        );
-      }
-    }
-  } catch (error) {
-    console.error("Failed to load muted notification types:", error);
-  }
-  return [];
-};
-
-const saveMutedNotificationTypes = (types: NotificationType[]): void => {
-  try {
-    localStorage.setItem(MUTED_NOTIFICATION_TYPES_KEY, JSON.stringify(types));
-  } catch (error) {
-    console.error("Failed to save muted notification types:", error);
-  }
-};
-
 export const NotificationSettings = React.memo(function NotificationSettings() {
   const { t } = useTranslation();
-  const [mutedTypes, setMutedTypes] = useState<NotificationType[]>([]);
-
-  useEffect(() => {
-    setMutedTypes(loadMutedNotificationTypes());
-  }, []);
+  const mutedTypes = useNotificationsStore((s) => s.mutedNotificationTypes);
+  const toggleMutedType = useNotificationsStore((s) => s.toggleMutedType);
+  const setMutedNotificationTypes = useNotificationsStore(
+    (s) => s.setMutedNotificationTypes,
+  );
+  const clearMuted = useNotificationsStore((s) => s.clearMuted);
 
   const allMuted = useMemo(
     () => NOTIFICATION_TYPES.every((type) => mutedTypes.includes(type)),
@@ -123,23 +97,17 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
   const isMuted = (type: NotificationType): boolean => mutedTypes.includes(type);
 
   const toggleType = (type: NotificationType): void => {
-    const updated = isMuted(type)
-      ? mutedTypes.filter((t0) => t0 !== type)
-      : [...mutedTypes, type];
-    setMutedTypes(updated);
-    saveMutedNotificationTypes(updated);
+    toggleMutedType(type);
   };
 
   const handleSelectAll = (): void => {
     // "Select all" = enable all (clear mutes)
-    setMutedTypes([]);
-    saveMutedNotificationTypes([]);
+    clearMuted();
   };
 
   const handleDeselectAll = (): void => {
     // "Deselect all" = mute all
-    setMutedTypes([...NOTIFICATION_TYPES]);
-    saveMutedNotificationTypes([...NOTIFICATION_TYPES]);
+    setMutedNotificationTypes([...NOTIFICATION_TYPES]);
   };
 
   return (

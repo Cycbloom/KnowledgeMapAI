@@ -1,4 +1,5 @@
 import { createPersistedStore } from "./createPersistedStore";
+import type { UserSettingsNoise } from "@shared/types";
 
 export type WhiteNoiseType =
   | "rain"
@@ -42,13 +43,7 @@ export interface NoiseOption {
   category: NoiseCategory;
 }
 
-interface NoiseState {
-  selectedNoise: WhiteNoiseType;
-  noiseVolume: number;
-  mixedNoises: MixedNoise[];
-  customPresets: NoisePreset[];
-  activePresetId: string | null;
-
+interface NoiseState extends UserSettingsNoise {
   setNoise: (noise: WhiteNoiseType) => void;
   setNoiseVolume: (volume: number) => void;
   addMixedNoise: (noise: MixedNoise) => void;

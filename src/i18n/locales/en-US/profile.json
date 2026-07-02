@@ -15,11 +15,6 @@
     "description": "Manage appearance, AI model configuration and learning algorithm parameters",
     "goToSettings": "Go to Settings"
   },
-  "promptManagement": {
-    "title": "AI Prompt Management",
-    "description": "Configure user-level AI prompt templates (User Scope)",
-    "managePrompts": "Manage Prompts"
-  },
   "backup": {
     "title": "Data Backup",
     "description": "Export all knowledge graphs, nodes, study cards and progress data. Regular backups are recommended to prevent data loss.",

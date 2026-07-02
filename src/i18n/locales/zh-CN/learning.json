@@ -121,6 +121,7 @@
     "languageChinese": "中文",
     "languageEnglish": "英文",
     "resetSettings": "重置默认设置",
+    "managePromptsLink": "管理 AI 提示词",
     "configScenarios": "配置场景",
     "templatePriority": "模板优先级说明",
     "priorityOrder": "模板按以下优先级生效：",

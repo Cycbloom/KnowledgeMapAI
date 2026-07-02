@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import type { ThemePreset } from '../../types';
 import { getAvailablePresets } from '../../config/themePresets';
+import { useThemeStore } from '../../store/useThemeStore';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -18,22 +19,12 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const savedThemeMode = localStorage.getItem('themeMode') as ThemeMode;
-    return savedThemeMode || 'system';
-  });
+  const themeMode = useThemeStore((s) => s.themeMode);
+  const themePreset = useThemeStore((s) => s.themePreset);
+  const setThemeMode = useThemeStore((s) => s.setThemeMode);
+  const setThemePresetStore = useThemeStore((s) => s.setThemePreset);
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
-
-  const [themePreset, setThemePresetState] = useState<ThemePreset>(() => {
-    const savedPreset = localStorage.getItem('themePreset') as ThemePreset;
-    return savedPreset || 'default';
-  });
-
-  const setThemePreset = (preset: ThemePreset) => {
-    setThemePresetState(preset);
-    localStorage.setItem('themePreset', preset);
-  };
 
   const availablePresets = getAvailablePresets();
 
@@ -55,7 +46,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         updateResolvedTheme();
       }
     };
-    
+
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
   }, [themeMode]);
@@ -68,16 +59,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const presetClasses = Array.from(root.classList).filter(c => c.startsWith('theme-'));
     presetClasses.forEach(c => root.classList.remove(c));
     root.classList.add(`theme-${themePreset}`);
-
-    localStorage.setItem('themeMode', themeMode);
   }, [resolvedTheme, themeMode, themePreset]);
 
   const toggleTheme = () => {
-    setThemeMode(_prev => (resolvedTheme === 'dark' ? 'light' : 'dark'));
+    setThemeMode(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   const setTheme = (mode: ThemeMode) => {
     setThemeMode(mode);
+  };
+
+  const setThemePreset = (preset: ThemePreset) => {
+    setThemePresetStore(preset);
   };
 
   const value = {

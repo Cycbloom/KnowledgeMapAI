@@ -1,19 +1,10 @@
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { createPersistedStore } from "./createPersistedStore";
+import type { UserSettingsFocus } from "@shared/types";
 
-interface FocusState {
-  focusDuration: number;
-  shortBreakDuration: number;
-  longBreakDuration: number;
-  longBreakInterval: number;
-  autoStartBreak: boolean;
-  autoStartPomodoro: boolean;
-  soundEnabled: boolean;
-  notificationEnabled: boolean;
-
+interface FocusState extends UserSettingsFocus {
+  // Transient (runtime-only) fields, not persisted.
   isInFocusMode: boolean;
-  highlightEnabled: boolean;
-  highlightIntensity: number;
   currentNodeId: string | null;
 
   updateSettings: (

@@ -15,11 +15,6 @@
     "description": "管理外观、AI 模型配置及学习算法参数",
     "goToSettings": "前往设置"
   },
-  "promptManagement": {
-    "title": "AI 提示词管理",
-    "description": "配置用户全局 AI 提示词模板 (User Scope)",
-    "managePrompts": "管理提示词"
-  },
   "backup": {
     "title": "数据备份",
     "description": "导出所有知识图谱、节点、学习卡片和进度数据。建议定期备份以防数据丢失。",

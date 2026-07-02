@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
 import { useFullscreen } from "../../hooks/useFullscreen";
 import { useTimerStore } from "../../store/useTimerStore";
+import { useFocusStore } from "../../store/useFocusStore";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { AudioVisualizer } from "../common/AudioVisualizer";
 import { FocusModeNoisePanel } from "./FocusModeNoisePanel";
@@ -34,7 +35,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   useEffect(() => {
     if (isOpen) {
       startMixer();
-      if (taskId && !isActive) useTimerStore.getState().start(taskId, 25);
+      if (taskId && !isActive)
+        useTimerStore.getState().start(
+          taskId,
+          useFocusStore.getState().focusDuration,
+        );
       frontendEventBus.publish("focus_enter", { taskId });
     } else {
       stopMixer();

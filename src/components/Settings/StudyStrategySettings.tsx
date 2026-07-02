@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Brain } from "lucide-react";
 import {
@@ -8,21 +8,19 @@ import {
   DEFAULT_SCHEDULER_WEIGHTS,
   STUDY_STRATEGY_DEFAULTS,
 } from "./settingsConstants";
-import type { StudyStrategyValues } from "./settingsConstants";
 import { AvailableModels } from "../../types";
-
-export interface StudyStrategySettingsRef {
-  getSettings: (availableModels: AvailableModels) => StudyStrategyValues;
-}
+import { useUpdateProfileMutation } from "../../hooks/mutations";
+import { message } from "../../utils/messageHelper";
 
 interface StudyStrategySettingsProps {
   settings: Record<string, unknown> | undefined;
+  availableModels: AvailableModels;
 }
 
 export const StudyStrategySettings = React.memo(
-  forwardRef<StudyStrategySettingsRef, StudyStrategySettingsProps>(
-    function StudyStrategySettings({ settings }, ref) {
+  function StudyStrategySettings({ settings, availableModels }: StudyStrategySettingsProps) {
       const { t } = useTranslation();
+      const updateProfileMutation = useUpdateProfileMutation();
 
       const [retention, setRetention] = useState(0.9);
       const [maxInterval, setMaxInterval] = useState(36500);
@@ -31,17 +29,7 @@ export const StudyStrategySettings = React.memo(
       const [schedulerWeights, setSchedulerWeights] = useState(DEFAULT_SCHEDULER_WEIGHTS);
       const [semanticScheduling, setSemanticScheduling] = useState(true);
 
-      useImperativeHandle(ref, () => ({
-        getSettings: (models: AvailableModels) => ({
-          request_retention: Number(retention),
-          maximum_interval: Number(maxInterval),
-          defaultStudyMode,
-          masteryThresholds,
-          schedulerWeights,
-          semantic_scheduling: semanticScheduling,
-          available_models: models,
-        }),
-      }), [retention, maxInterval, defaultStudyMode, masteryThresholds, schedulerWeights, semanticScheduling]);
+      const skipNextSaveRef = useRef(true);
 
       useLayoutEffect(() => {
         if (settings) {
@@ -57,8 +45,51 @@ export const StudyStrategySettings = React.memo(
             setSchedulerWeights(settings.schedulerWeights as typeof DEFAULT_SCHEDULER_WEIGHTS);
           if (settings.semantic_scheduling !== undefined)
             setSemanticScheduling(settings.semantic_scheduling as boolean);
+          // Skip auto-save after loading values from the profile to avoid
+          // immediately writing back the data we just received.
+          skipNextSaveRef.current = true;
         }
       }, [settings]);
+
+      useEffect(() => {
+        if (skipNextSaveRef.current) {
+          skipNextSaveRef.current = false;
+          return;
+        }
+        const timer = setTimeout(() => {
+          updateProfileMutation
+            .mutateAsync({
+              settings: {
+                ...settings,
+                request_retention: Number(retention),
+                maximum_interval: Number(maxInterval),
+                defaultStudyMode,
+                masteryThresholds,
+                schedulerWeights,
+                semantic_scheduling: semanticScheduling,
+                available_models: availableModels,
+              },
+            })
+            .then(() => {
+              message.success(t("settings.saveSuccess"));
+            })
+            .catch(() => {
+              message.error(t("settings.saveFailed"));
+            });
+        }, 800);
+        return () => clearTimeout(timer);
+      }, [
+        retention,
+        maxInterval,
+        defaultStudyMode,
+        masteryThresholds,
+        schedulerWeights,
+        semanticScheduling,
+        availableModels,
+        settings,
+        updateProfileMutation,
+        t,
+      ]);
 
       const handleStudyModeChange = (mode: string) => {
         setDefaultStudyMode(mode);
@@ -363,5 +394,4 @@ export const StudyStrategySettings = React.memo(
         </div>
       );
     },
-  ),
-);
+  );

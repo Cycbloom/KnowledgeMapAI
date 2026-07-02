@@ -8,18 +8,20 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../hooks/queries";
-import { useUpdateProfileMutation } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
-import { message } from "../utils/messageHelper";
+import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { cn } from "../lib/utils";
 import { AvailableModels } from "../types";
 import {
-  Save,
   ArrowLeft,
   AlertTriangle,
   Puzzle,
+  Globe,
+  Monitor,
 } from "lucide-react";
 import { PluginMarketplace } from "../components/PluginMarketplace/PluginMarketplace";
+import { PromptSettingsPanel } from "../components/GraphEditor/panels/PromptSettingsPanel";
+import { AIActionSettingsPanel } from "../components/GraphEditor/panels/AIActionSettingsPanel";
 
 import {
   AppearanceSettings,
@@ -34,7 +36,6 @@ import {
   GraphEditorSettings,
   NotificationSettings,
 } from "../components/Settings";
-import type { StudyStrategySettingsRef } from "../components/Settings";
 import type { DatabaseConfig } from "../components/Settings/settingsConstants";
 import { DEFAULT_AVAILABLE_MODES } from "../components/Settings/settingsConstants";
 
@@ -44,7 +45,6 @@ export const Settings = () => {
   const { token } = useStore();
 
   const { data: userData } = useUser(!!token);
-  const updateProfileMutation = useUpdateProfileMutation();
 
   const profile = (userData as Record<string, unknown>)?.user &&
     typeof (userData as Record<string, unknown>).user === "object"
@@ -65,7 +65,7 @@ export const Settings = () => {
   });
   const [dbLoaded, setDbLoaded] = useState(false);
 
-  const studyStrategyRef = useRef<StudyStrategySettingsRef>(null);
+  const { aiLanguage, setAILanguage } = useLearningSettingsStore();
   const dbSectionRef = useRef<HTMLDivElement>(null);
 
   const sections = [
@@ -73,6 +73,7 @@ export const Settings = () => {
     { id: "focusMode", label: t("settings.sections.focusMode") },
     { id: "aiProvider", label: t("settings.sections.aiProvider") },
     { id: "aiStatus", label: t("settings.sections.aiStatus") },
+    { id: "prompts", label: t("settings.sections.prompts") },
     { id: "voice", label: t("settings.sections.voice") },
     { id: "database", label: t("settings.sections.database") },
     { id: "mobileAI", label: t("settings.sections.mobileAI") },
@@ -117,6 +118,19 @@ export const Settings = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Deep-link activation: on mount, if the URL targets a section (e.g.
+  // #prompts), scroll to it and mark it active so the sidebar highlights.
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash) {
+      const el = sectionRefs.current[hash];
+      if (el) {
+        el.scrollIntoView({ behavior: "auto", block: "start" });
+        setActiveSection(hash);
+      }
+    }
+  }, []);
+
   const scrollToDbSection = useCallback(() => {
     dbSectionRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -132,33 +146,6 @@ export const Settings = () => {
   const handleAvailableModelsChange = useCallback((models: AvailableModels) => {
     setAvailableModels(models);
   }, []);
-
-  const handleSaveAllSettings = async () => {
-    try {
-      const studyValues = studyStrategyRef.current?.getSettings(availableModels);
-      if (!studyValues) {
-        message.error(t("settings.saveFailed"));
-        return;
-      }
-
-      await updateProfileMutation.mutateAsync({
-        settings: {
-          ...settings,
-          request_retention: studyValues.request_retention,
-          maximum_interval: studyValues.maximum_interval,
-          defaultStudyMode: studyValues.defaultStudyMode,
-          masteryThresholds: studyValues.masteryThresholds,
-          schedulerWeights: studyValues.schedulerWeights,
-          semantic_scheduling: studyValues.semantic_scheduling,
-          available_models: studyValues.available_models,
-        },
-      });
-      message.success(t("settings.saveSuccess"));
-    } catch (e) {
-      console.error(e);
-      message.error(t("settings.saveFailed"));
-    }
-  };
 
   return (
     <div className="h-full overflow-y-auto px-4 py-4 md:p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
@@ -192,20 +179,6 @@ export const Settings = () => {
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm md:text-base">
               {t("settings.subtitle")}
             </p>
-          </div>
-          <div>
-            <button
-              onClick={handleSaveAllSettings}
-              className="px-4 py-3 rounded-md bg-primary-600 text-white hover:bg-primary-700 flex items-center gap-2 transition-colors shadow-sm min-h-[44px]"
-              disabled={updateProfileMutation.isPending}
-            >
-              <Save className="w-4 h-4" />
-              <span className="hidden md:inline">
-                {updateProfileMutation.isPending
-                  ? t("settings.saving")
-                  : t("settings.saveAll")}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -276,7 +249,60 @@ export const Settings = () => {
                 if (el) sectionRefs.current.aiProvider = el;
               }}
             >
-              <AIProviderConfigSection />
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+                <div className="flex items-center gap-2 mb-4">
+                  <Globe className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {t("settings.ai.aiOutputLanguage")}
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setAILanguage("auto")}
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
+                      aiLanguage === "auto"
+                        ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
+                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    <Monitor className="w-5 h-5 mb-1" />
+                    <span className="font-medium text-sm">
+                      {t("settings.ai.languageAuto")}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setAILanguage("zh-CN")}
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
+                      aiLanguage === "zh-CN"
+                        ? "bg-red-50 border-red-200 text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
+                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    <span className="text-xl mb-1">中</span>
+                    <span className="font-medium text-sm">
+                      {t("settings.ai.languageChinese")}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setAILanguage("en-US")}
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all min-h-[72px] ${
+                      aiLanguage === "en-US"
+                        ? "bg-primary-50 border-primary-200 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:border-primary-800 dark:text-primary-300"
+                        : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    <span className="text-xl mb-1">A</span>
+                    <span className="font-medium text-sm">
+                      {t("settings.ai.languageEnglish")}
+                    </span>
+                  </button>
+                </div>
+              </div>
+              <div className="mt-6">
+                <AIProviderConfigSection />
+              </div>
             </section>
             <section
               id="aiStatus"
@@ -289,6 +315,17 @@ export const Settings = () => {
                 availableModels={availableModels}
                 onAvailableModelsChange={handleAvailableModelsChange}
               />
+            </section>
+            <section
+              id="prompts"
+              ref={(el) => {
+                if (el) sectionRefs.current.prompts = el;
+              }}
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors space-y-6">
+                <PromptSettingsPanel scope="user" />
+                <AIActionSettingsPanel scope="user" />
+              </div>
             </section>
             <section
               id="voice"
@@ -324,8 +361,8 @@ export const Settings = () => {
               }}
             >
               <StudyStrategySettings
-                ref={studyStrategyRef}
                 settings={settings}
+                availableModels={availableModels}
               />
             </section>
             <section

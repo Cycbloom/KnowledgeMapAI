@@ -62,6 +62,7 @@
     "languageChinese": "Chinese",
     "languageEnglish": "English",
     "resetSettings": "Reset Default Settings",
+    "managePromptsLink": "Manage AI Prompts",
     "configScenarios": "Configuration Scenarios",
     "templatePriority": "Template Priority",
     "priorityOrder": "Templates take effect in the following priority:",

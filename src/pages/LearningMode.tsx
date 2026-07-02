@@ -578,7 +578,6 @@ export const LearningMode = () => {
 
       <LearningSettingsPanel
         isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}
-        initialScenarioId="learning_material" graphId={graphId || undefined}
       />
 
       <GraphOverviewEditModal

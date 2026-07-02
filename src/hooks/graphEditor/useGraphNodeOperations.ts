@@ -10,7 +10,7 @@ import { UseMutationResult } from '@tanstack/react-query';
 
 interface GraphNodeMutations {
   createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
-  updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId?: string }, unknown>;
+  updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId: string }, { previousData: { nodes: Node[]; edges: Edge[] } | undefined; queryKey: readonly unknown[] }>;
   deleteNodeMutation: UseMutationResult<{ affected_graphs?: string[] }, Error, { id: string; graphId: string; hardDelete?: boolean }, unknown>;
   createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
   deleteEdgeMutation: UseMutationResult<unknown, Error, { id: string }, unknown>;

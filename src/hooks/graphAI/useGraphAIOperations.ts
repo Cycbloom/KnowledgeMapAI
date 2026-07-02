@@ -71,7 +71,7 @@ interface GraphAIMutations {
   createTaskMutation: UseMutationResult<unknown, Error, { type: string; payload: unknown }, unknown>;
   createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
   createEdgeMutation: UseMutationResult<Edge, Error, { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }, unknown>;
-  updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId?: string }, unknown>;
+  updateNodeMutation: UseMutationResult<Node, Error, { id: string; data: UpdateNodeData; graphId: string }, { previousData: { nodes: Node[]; edges: Edge[] } | undefined; queryKey: readonly unknown[] }>;
   recommendConnectionsMutation: UseMutationResult<unknown, Error, RecommendConnectionsVariables, unknown>;
 }
 

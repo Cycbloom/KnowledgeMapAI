@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Network,
@@ -15,47 +15,17 @@ import {
   BookOpen,
   Compass,
 } from "lucide-react";
-import type { GraphViewMode } from "@shared/types";
+import type {
+  GraphViewMode,
+  UserSettingsGraphEditor,
+  UserSettingsSearchNodeNavigateTarget,
+} from "@shared/types";
+import { useGraphEditorPreferencesStore } from "../../store/useGraphEditorPreferencesStore";
 
-export type SearchNodeNavigateTarget = "graph" | "learning";
+export type SearchNodeNavigateTarget = UserSettingsSearchNodeNavigateTarget;
 
-export interface GraphEditorPreferences {
-  defaultViewMode: GraphViewMode;
-  defaultZoomLevel: number | "fit";
-  autoLayoutOnSave: boolean;
-  defaultNodeColor: string;
-  searchNodeNavigateTarget: SearchNodeNavigateTarget;
-}
-
-const DEFAULT_PREFERENCES: GraphEditorPreferences = {
-  defaultViewMode: "mindmap",
-  defaultZoomLevel: "fit",
-  autoLayoutOnSave: true,
-  defaultNodeColor: "#6366f1",
-  searchNodeNavigateTarget: "graph",
-};
-
-const STORAGE_KEY = "graphEditorPreferences";
-
-const loadPreferences = (): GraphEditorPreferences => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return { ...DEFAULT_PREFERENCES, ...JSON.parse(stored) };
-    }
-  } catch (error) {
-    console.error("Failed to load graph editor preferences:", error);
-  }
-  return DEFAULT_PREFERENCES;
-};
-
-const savePreferences = (preferences: GraphEditorPreferences): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
-  } catch (error) {
-    console.error("Failed to save graph editor preferences:", error);
-  }
-};
+// Backwards-compat alias; the canonical type lives in shared/types.
+export type GraphEditorPreferences = UserSettingsGraphEditor;
 
 const VIEW_MODES: Array<{
   mode: GraphViewMode;
@@ -102,24 +72,21 @@ const NAVIGATE_TARGETS: Array<{
 
 export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
   const { t } = useTranslation();
-  const [preferences, setPreferences] = useState<GraphEditorPreferences>(DEFAULT_PREFERENCES);
-
-  useEffect(() => {
-    setPreferences(loadPreferences());
-  }, []);
+  const preferences = useGraphEditorPreferencesStore();
+  const updatePreferences = useGraphEditorPreferencesStore(
+    (state) => state.updatePreferences,
+  );
+  const reset = useGraphEditorPreferencesStore((state) => state.reset);
 
   const updatePreference = <K extends keyof GraphEditorPreferences>(
     key: K,
     value: GraphEditorPreferences[K],
   ): void => {
-    const updated = { ...preferences, [key]: value };
-    setPreferences(updated);
-    savePreferences(updated);
+    updatePreferences({ [key]: value });
   };
 
   const handleReset = (): void => {
-    setPreferences(DEFAULT_PREFERENCES);
-    savePreferences(DEFAULT_PREFERENCES);
+    reset();
   };
 
   return (

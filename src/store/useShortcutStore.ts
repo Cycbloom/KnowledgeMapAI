@@ -6,11 +6,9 @@ import {
   formatShortcutKey
 } from '../config/shortcuts';
 import { createPersistedStore } from './createPersistedStore';
+import type { UserSettingsShortcuts } from '@shared/types';
 
-interface ShortcutState {
-  bindings: Record<string, ShortcutBinding>;
-  enabled: boolean;
-
+interface ShortcutState extends UserSettingsShortcuts {
   getShortcut: (id: string) => ShortcutDefinition | undefined;
   getBinding: (id: string) => ShortcutBinding | undefined;
   getKeyForAction: (action: string) => ShortcutKey | undefined;

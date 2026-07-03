@@ -18,9 +18,9 @@ npm run electron:build:win    # 构建 Windows
 ### 数据库操作
 
 ```bash
-npx supabase db reset         # 重置本地数据库
+npm run db:local:reset       # 重置本地数据库
 npm run db:seed               # 插入测试数据
-npx supabase db diff          # 查看远程数据库状态
+supabase db diff          # 查看远程数据库状态
 ```
 
 ### 测试命令
@@ -56,10 +56,10 @@ npm run db:local:logs     # 查看本地数据库日志
 或直接使用 Supabase CLI：
 
 ```bash
-npx supabase start        # 启动本地数据库
-npx supabase stop         # 停止本地数据库
-npx supabase db reset     # 重置本地数据库
-npx supabase status       # 查看状态
+supabase start        # 启动本地数据库
+supabase stop         # 停止本地数据库
+supabase db reset     # 重置本地数据库（推荐使用 npm run db:local:reset）
+supabase status       # 查看状态
 ```
 
 ### 本地数据库访问地址
@@ -73,13 +73,13 @@ npx supabase status       # 查看状态
 | PostgreSQL | localhost:54322        | 直连数据库        |
 | Inbucket   | http://127.0.0.1:54324 | 邮件测试服务      |
 
-> 注意：实际端口以 `npx supabase status` 输出为准
+> 注意：实际端口以 `supabase status` 输出为准
 
 ### 本地数据库
 
 - **Schema 文件**：`supabase/migrations/` 目录下按业务域组织的模块化 SQL 文件（00-16 为 Schema，17-25 为 Seed）
 - **Seed 文件**：`supabase/migrations/` 目录下按数据类型组织的模块化 SQL 文件
-- **测试用户**：`test@example.com` / `test123456`（每次 `npx supabase db reset` 后自动创建）
+- **测试用户**：`test@example.com` / `test123456`（每次 `npm run db:local:reset` 后自动创建）
 - **迁移文件管理**：所有变更直接修改对应的模块化文件，不创建新的增量迁移文件
 - **迁移文件命名**：`{两位序号}_{业务域}.sql`，序号确保执行顺序
 - **类型生成**：schema 变更后必须运行 `npm run db:gen-types` 重新生成 `shared/types/database.generated.ts`
@@ -133,12 +133,12 @@ npm run dev
 
 ### 检查命令
 
-| 命令 | 用途 | 场景 |
-|------|------|------|
-| `npm run check` | 增量类型检查（build mode 自动跳过未变更子项目） | **开发时推荐** |
-| `npm run check:full` | 强制全量检查（`--force` 忽略 .tsbuildinfo） | CI/疑难问题排查 |
-| `npm run lint` | 带 ESLint 缓存检查 | 提交前检查 |
-| `npm run lint:full` | 全量 ESLint 检查 | CI |
+| 命令                 | 用途                                            | 场景            |
+| -------------------- | ----------------------------------------------- | --------------- |
+| `npm run check`      | 增量类型检查（build mode 自动跳过未变更子项目） | **开发时推荐**  |
+| `npm run check:full` | 强制全量检查（`--force` 忽略 .tsbuildinfo）     | CI/疑难问题排查 |
+| `npm run lint`       | 带 ESLint 缓存检查                              | 提交前检查      |
+| `npm run lint:full`  | 全量 ESLint 检查                                | CI              |
 
 ### 开发流程建议
 
@@ -152,6 +152,7 @@ npm run check && npm run lint
 # CI 环境
 npm run check:full && npm run lint:full
 ```
+
 ## 代码规范
 
 ### 日志规范
@@ -302,9 +303,9 @@ eventSource.onmessage = (event) => {
 
 ```typescript
 const { card, scheduledCard } = await studyService.updateProgress(
-  supabase,        // SupabaseClient
-  cardId,          // study_cards.id
-  quality,         // 0-5（内部映射为 Again/Hard/Good/Easy）
+  supabase, // SupabaseClient
+  cardId, // study_cards.id
+  quality, // 0-5（内部映射为 Again/Hard/Good/Easy）
   userId,
 );
 // scheduledCard.due            下次复习时间

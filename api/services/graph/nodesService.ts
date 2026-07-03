@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { cacheService } from '../common/cacheService';
 import { aiService } from '../ai/aiService';
-import { knowledgePointService, graphNodeService, edgeService } from './index';
+import { knowledgePointService, graphNodeService, edgeService, backlinkService } from './index';
 import { buildNodeFromGraphNode, createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
 import { appEventBus } from '../core/eventBus';
 import type { NodeCreatedPayload, EdgeCreatedPayload } from '../../../shared/types/events';
@@ -600,6 +600,26 @@ export class NodesService {
 
     await cacheService.invalidateGraphCache(userId, existingNode.graph_id);
     await cacheService.invalidateStudyCache(existingNode.graph_id);
+
+    // 节点重命名时，异步同步笔记正文中 [[oldName]] → [[newName]]（扩展 backlinks 机制）
+    // 不阻塞重命名主流程，失败仅记录警告（参考 knowledgePointService.update 中 syncBacklinks 的容错风格）
+    // 注意：重命名不改变 node_id，note_node_links 挂载关系无需重新同步
+    if (updates.title !== undefined && kp?.title && updates.title !== kp.title) {
+      const oldTitle = kp.title;
+      const newTitle = updates.title;
+      Promise.resolve().then(async () => {
+        try {
+          await backlinkService.syncNotesWikiLinks(supabase, userId, oldTitle, newTitle);
+        } catch (syncError) {
+          logger.warn('Failed to sync notes wiki links on node rename', {
+            knowledgePointId,
+            oldTitle,
+            newTitle,
+            error: syncError instanceof Error ? syncError.message : String(syncError),
+          });
+        }
+      });
+    }
 
     return buildNodeFromGraphNode(updatedNode);
   }

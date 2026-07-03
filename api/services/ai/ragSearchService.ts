@@ -154,6 +154,101 @@ export class RAGSearchService {
   }
 
   /**
+   * 笔记内容语义检索（P1 Task 5.1）
+   *
+   * 查询 note_embeddings 表做向量检索，返回与查询语义相关的笔记片段。
+   * - 数据源类型标记为 type='note'，与 graph knowledge_points (type='document') 区分
+   * - 单笔记单 embedding（note_embeddings.note_id UNIQUE），结果 id 即 note_id，
+   *   便于前端跳转到 /notes/:noteId
+   * - 内部调用 rerankingService 重排序（与 semanticSearch 风格一致），
+   *   rerank 失败时回退到 pgvector 原始排序
+   * - 不支持 graphId 过滤（笔记不绑定特定图谱）
+   */
+  async noteSemanticSearch(
+    query: string,
+    userId: string,
+    options: {
+      matchThreshold?: number;
+      matchCount?: number;
+    } = {},
+  ): Promise<RAGSearchResult[]> {
+    const { matchThreshold = 0.5, matchCount = 5 } = options;
+    const candidateCount = Math.max(matchCount * 4, 20);
+
+    const queryEmbedding = await this.aiService.generateEmbedding(query);
+    if (!queryEmbedding) {
+      logger.warn("Failed to generate query embedding for note RAG search");
+      return [];
+    }
+
+    try {
+      const supabase = getSupabaseAdmin();
+
+      const result = await supabase.rpc("match_notes", {
+        query_embedding: queryEmbedding,
+        match_threshold: matchThreshold,
+        match_count: candidateCount,
+        p_user_id: userId,
+      });
+
+      if (result.error || !result.data) {
+        logger.error("Failed to perform vector search for notes RAG", {
+          error: result.error,
+        });
+        return [];
+      }
+
+      const data = result.data as {
+        id: string;
+        note_id: string;
+        chunk_text: string | null;
+        title: string;
+        similarity: number;
+      }[];
+
+      let results: RAGSearchResult[] = data.map((row) => ({
+        // 用 note_id 作为结果 id，便于前端跳转到 /notes/:noteId
+        id: row.note_id,
+        title: row.title,
+        content: row.chunk_text || "",
+        similarity: row.similarity,
+        graphId: "",
+        type: "note",
+      }));
+
+      if (results.length > 1) {
+        try {
+          const rerankResults = await rerankingService.rerank(
+            query,
+            results.map((r) => ({
+              id: r.id,
+              content: `${r.title}: ${r.content}`,
+            })),
+            { topN: matchCount },
+          );
+          if (rerankResults.length > 0) {
+            const resultMap = new Map(results.map((r) => [r.id, r]));
+            results = rerankResults
+              .map((rr) => {
+                const original = resultMap.get(rr.id);
+                if (!original) return null;
+                return { ...original, similarity: rr.relevanceScore };
+              })
+              .filter((r): r is RAGSearchResult => r !== null);
+          }
+        } catch {
+          // fall back to original pgvector ordering
+        }
+      }
+
+      return results.slice(0, matchCount);
+    } catch (err) {
+      logger.error("Note RAG semantic search error", { err });
+      return [];
+    }
+  }
+
+  /**
    * 转义 like 模式中的特殊字符（%_\）
    */
   private escapePattern(pattern: string): string {

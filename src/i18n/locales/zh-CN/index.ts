@@ -50,6 +50,7 @@ import graphStyleSettings from './graphStyleSettings.json';
 import textToGraph from './textToGraph.json';
 import collaborators from './collaborators.json';
 import notifications from './notifications.json';
+import notes from './notes.json';
 
 const zhCN = {
   dashboard,
@@ -104,6 +105,7 @@ const zhCN = {
   textToGraph,
   collaborators,
   notifications,
+  notes,
 };
 
 export default zhCN;

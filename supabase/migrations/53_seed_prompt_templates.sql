@@ -897,3 +897,29 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no ```markdown ... ```)
 - 确保没有循环依赖（A是B的父，B又是A的父）
 - 一个子概念通常只有一个直接父概念
 - 优先选择最直接的父子关系', NOW(), NOW());
+
+-- =====================================================
+-- Notes P1 - AI 辅助：当日学习总结 / 反向建图提取知识点
+-- 对应 spec: add-notes-p1-ai-search-templates (Task 3)
+-- =====================================================
+INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, created_at, updated_at) VALUES
+('notes_daily_summary', 'system', null, null, '你是学习总结助手。基于用户今日的学习数据（复习卡片、完成任务、专注时长），生成一段结构化的反思总结。总结应包含：今日学习要点回顾、掌握情况评估、明日改进建议。语气真诚、具体，避免空话套话。
+
+今日日期：{{date}}
+今日复习卡片数：{{today_reviewed_cards}}
+今日完成任务数：{{today_completed_tasks}}
+今日专注时长（分钟）：{{today_focus_time}}
+
+今日复习的卡片内容：
+{{today_reviewed_card_contents}}
+
+今日完成的任务：
+{{today_completed_tasks_list}}
+
+请生成今日学习总结（使用 Markdown 格式，包含"今日要点回顾"、"掌握情况评估"、"明日改进建议"三个小节）：', NOW(), NOW()),
+('notes_extract_concepts', 'system', null, null, '你是知识提取助手。从用户提供的笔记正文中提取值得作为图谱节点的知识点候选。每个候选包含：name（简洁的概念名）、description（简短描述）、related（建议关联的已有概念名数组，可为空）。严格返回 JSON 格式：{"concepts":[{"name":"","description":"","related":[]}]}。不要返回其他内容。
+
+笔记正文：
+{{content}}
+
+请提取知识点候选，返回 JSON：', NOW(), NOW());

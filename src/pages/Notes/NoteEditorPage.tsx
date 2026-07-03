@@ -1,0 +1,317 @@
+import React, { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  ArrowLeft,
+  Pin,
+  PinOff,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  Loader2,
+  CalendarDays,
+  NotebookPen,
+} from "lucide-react";
+import { useNote } from "@/hooks/queries";
+import { useUpdateNoteMutation, useDeleteNoteMutation } from "@/hooks/mutations";
+import { useError } from "@/hooks";
+import { BlockEditor } from "@/components/Notes/BlockEditor";
+import { Skeleton, EmptyState } from "@/components/common";
+import { asyncConfirm } from "@/utils/asyncConfirm";
+import { message } from "@/utils/messageHelper";
+import { formatDate } from "@/utils/formatters";
+
+/** 标题输入防抖时长（ms）。 */
+const TITLE_DEBOUNCE_MS = 600;
+
+/**
+ * NoteEditorPage —— 笔记编辑器页（Task 8）。
+ *
+ * 路由：`/notes/:noteId`
+ * 职责：
+ * - 加载单篇笔记（useNote 查询）
+ * - 顶部：返回列表按钮、类型徽章、可编辑标题（失焦/防抖保存）、置顶/归档/删除操作
+ * - 主体：嵌入 BlockEditor（自动保存由其内部完成，列表查询失效由 mutation 处理）
+ * - 加载态：Skeleton 骨架屏；错误/不存在态：EmptyState
+ * - 暗色模式全覆盖
+ */
+const NoteEditorPage: React.FC = () => {
+  const { t } = useTranslation();
+  const { noteId } = useParams<{ noteId: string }>();
+  const navigate = useNavigate();
+  const { handleError } = useError();
+
+  const { data: note, isLoading, isError } = useNote(noteId);
+
+  const updateMutation = useUpdateNoteMutation();
+  const deleteMutation = useDeleteNoteMutation();
+
+  // 本地标题状态（受控输入，避免远端 refetch 覆盖用户输入）
+  const [title, setTitle] = useState<string>("");
+  const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedTitleRef = useRef<string>("");
+
+  // 仅在 noteId 变化时同步标题，避免远端 refetch 覆盖正在输入的标题
+  const noteIdValue = note?.id;
+  useEffect(() => {
+    if (note) {
+      setTitle(note.title);
+      lastSavedTitleRef.current = note.title;
+    }
+    // 仅依赖 noteId，避免 note.title 变化触发同步
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteIdValue]);
+
+  // 卸载时清标题防抖定时器
+  useEffect(() => {
+    return () => {
+      if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
+    };
+  }, []);
+
+  const saveTitle = async (nextTitle: string) => {
+    if (!noteId) return;
+    if (nextTitle === lastSavedTitleRef.current) return;
+    try {
+      await updateMutation.mutateAsync({
+        id: noteId,
+        data: { title: nextTitle },
+      });
+      lastSavedTitleRef.current = nextTitle;
+    } catch (err) {
+      handleError(err, {
+        context: "NoteEditorPage.saveTitle",
+        fallbackMessage: t("notes.editorPage.saveError"),
+      });
+    }
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setTitle(next);
+    if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
+    titleTimerRef.current = setTimeout(() => {
+      void saveTitle(next);
+    }, TITLE_DEBOUNCE_MS);
+  };
+
+  const handleTitleBlur = () => {
+    if (titleTimerRef.current) {
+      clearTimeout(titleTimerRef.current);
+      titleTimerRef.current = null;
+    }
+    void saveTitle(title);
+  };
+
+  const handleTogglePin = async () => {
+    if (!note) return;
+    try {
+      await updateMutation.mutateAsync({
+        id: note.id,
+        data: { isPinned: !note.isPinned },
+      });
+    } catch (err) {
+      handleError(err, {
+        context: "NoteEditorPage.togglePin",
+        fallbackMessage: t("notes.updateFailed"),
+      });
+    }
+  };
+
+  const handleToggleArchive = async () => {
+    if (!note) return;
+    try {
+      await updateMutation.mutateAsync({
+        id: note.id,
+        data: { isArchived: !note.isArchived },
+      });
+    } catch (err) {
+      handleError(err, {
+        context: "NoteEditorPage.toggleArchive",
+        fallbackMessage: t("notes.updateFailed"),
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!note) return;
+    const confirmed = await asyncConfirm({
+      title: t("notes.editorPage.deleteConfirmTitle"),
+      message: t("notes.editorPage.deleteConfirmMessage"),
+      confirmText: t("common.delete"),
+      cancelText: t("common.cancel"),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
+    try {
+      await deleteMutation.mutateAsync(note.id);
+      message.success(t("notes.noteDeleted"));
+      navigate("/notes");
+    } catch (err) {
+      handleError(err, {
+        context: "NoteEditorPage.delete",
+        fallbackMessage: t("notes.deleteFailed"),
+      });
+    }
+  };
+
+  const handleBack = () => {
+    navigate("/notes");
+  };
+
+  // —— 加载态：Skeleton 骨架屏 ——
+  if (isLoading) {
+    return (
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900 p-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-9 flex-1" />
+            <Skeleton className="h-9 w-24 rounded-lg" />
+          </div>
+          <Skeleton className="h-4 w-40" />
+          <Skeleton variant="rectangular" className="h-[60vh] w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // —— 错误/不存在态 ——
+  if (isError || !note) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-900 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 max-w-md w-full">
+          <EmptyState
+            illustration="error"
+            title={t("notes.editorPage.notFound")}
+            description={t("notes.editorPage.loadFailed")}
+            action={{ label: t("notes.actions.open"), onClick: handleBack }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const typeBadgeClass =
+    note.type === "daily"
+      ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700"
+      : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700";
+
+  return (
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900">
+      {/* 顶部 header */}
+      <header className="flex-shrink-0 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            aria-label={t("notes.actions.open")}
+            title={t("notes.actions.open")}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold flex-shrink-0 ${typeBadgeClass}`}
+          >
+            {note.type === "daily" ? (
+              <CalendarDays size={11} aria-hidden="true" />
+            ) : (
+              <NotebookPen size={11} aria-hidden="true" />
+            )}
+            <span>
+              {note.type === "daily"
+                ? t("notes.badges.daily")
+                : t("notes.badges.note")}
+            </span>
+          </span>
+
+          <input
+            type="text"
+            value={title}
+            onChange={handleTitleChange}
+            onBlur={handleTitleBlur}
+            placeholder={t("notes.editorPage.untitled")}
+            className="flex-1 min-w-0 bg-transparent text-lg font-semibold text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-md px-2 py-1"
+            aria-label={t("notes.editorPage.title")}
+          />
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              type="button"
+              onClick={handleTogglePin}
+              disabled={updateMutation.isPending}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-md transition-colors disabled:opacity-50"
+              title={
+                note.isPinned
+                  ? t("notes.actions.unpin")
+                  : t("notes.actions.pin")
+              }
+              aria-label={
+                note.isPinned
+                  ? t("notes.actions.unpin")
+                  : t("notes.actions.pin")
+              }
+            >
+              {note.isPinned ? <PinOff size={18} /> : <Pin size={18} />}
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleArchive}
+              disabled={updateMutation.isPending}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors disabled:opacity-50"
+              title={
+                note.isArchived
+                  ? t("notes.actions.unarchive")
+                  : t("notes.actions.archive")
+              }
+              aria-label={
+                note.isArchived
+                  ? t("notes.actions.unarchive")
+                  : t("notes.actions.archive")
+              }
+            >
+              {note.isArchived ? (
+                <ArchiveRestore size={18} />
+              ) : (
+                <Archive size={18} />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-50"
+              title={t("notes.actions.delete")}
+              aria-label={t("notes.actions.delete")}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Trash2 size={18} />
+              )}
+            </button>
+          </div>
+        </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-2 text-xs text-gray-400 dark:text-slate-500">
+          {t("notes.fields.updatedAt")}: {formatDate(note.updatedAt, "relative")}
+        </div>
+      </header>
+
+      {/* 主体：BlockEditor（自动保存由其内部完成，列表查询失效由 mutation 处理） */}
+      <main className="flex-1 overflow-hidden">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6 h-full">
+          <BlockEditor
+            noteId={note.id}
+            initialContent={note.content}
+            noteType={note.type}
+          />
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default NoteEditorPage;

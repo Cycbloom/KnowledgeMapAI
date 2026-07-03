@@ -40,4 +40,5 @@ export type { IRegionsApi, CustomRegion, CreateRegionData, UpdateRegionData, Gra
 export type { IStoryCreationApi, IStoryStructuresApi, IStoryCharactersApi, IStoryScenesApi, IStoryAppearancesApi, IStoryRelationshipsApi, StoryStructure, StoryCharacter, StorySceneDetail, StoryAppearance, StoryCharacterRelationship, InitializeTemplateResponse } from './IStoryCreationApi';
 export type { IConceptAggregationApi, AnalyzeOptions, AnalysisResult, MergeGroup, MergeResult, HierarchyRelationInput, ApplyHierarchyResult, UpdateAliasesResult, ConceptGroup, HierarchyRelation } from './IConceptAggregationApi';
 export type { IGraphVersionsApi, PaginatedResult, GraphSnapshot, DiffResult, GraphEvent, SnapshotData, SnapshotNodeData, SnapshotEdgeData, NodeDiff, EdgeDiff, DiffChangeType, GraphSnapshotType, VersionGraphEventType } from './IGraphVersionsApi';
+export type { INotesApi, NoteListResult, NoteRestoreResult } from './INotesApi';
 export { NotSupportedError } from './types';

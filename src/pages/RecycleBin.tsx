@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useTrashGraphs } from "../hooks/queries";
+import { useTrashGraphs, useTrashNotes } from "../hooks/queries";
 import {
   useRestoreGraphMutation,
   usePermanentDeleteGraphMutation,
   useBatchRestoreGraphsMutation,
   useBatchPermanentDeleteGraphsMutation,
+  useRestoreNoteMutation,
 } from "../hooks/mutations";
 import {
   Trash2,
@@ -18,12 +19,27 @@ import {
   X,
   Info,
   Loader2,
+  NotebookPen,
+  CalendarDays,
 } from "lucide-react";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { ConfirmationModal, SkeletonCard } from "../components/common";
+import { ConfirmationModal, SkeletonCard, EmptyState } from "../components/common";
 import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
+import { formatDate } from "../utils/formatters";
+import type { Note, NoteType } from "@shared/types/note";
+
+/** 回收站资源分类：graphs 图谱 / notes 笔记 */
+type RecycleBinCategory = "graphs" | "notes";
+
+/** 笔记类型徽章样式：daily 用紫色，note 用蓝色（与 NotesListPage 一致）。 */
+const getNoteTypeBadgeClass = (type: NoteType): string => {
+  if (type === "daily") {
+    return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700";
+  }
+  return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700";
+};
 
 export const RecycleBin = () => {
   const { t } = useTranslation();
@@ -37,6 +53,15 @@ export const RecycleBin = () => {
 
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // 资源分类：默认展示图谱回收站
+  const [category, setCategory] = useState<RecycleBinCategory>("graphs");
+
+  // 笔记回收站查询（仅在切换到 notes 分类时启用，避免无谓请求）
+  const { data: trashNotesData, isLoading: trashNotesLoading, error: trashNotesError } = useTrashNotes({
+    enabled: category === "notes",
+  });
+  const restoreNoteMutation = useRestoreNoteMutation();
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
@@ -66,6 +91,20 @@ export const RecycleBin = () => {
     [graphs, debouncedSearchQuery],
   );
 
+  // 笔记回收站列表（trashNotesData 已在 queryFn 内过滤 deletedAt != null）
+  const trashNotes = useMemo<Note[]>(
+    () => (Array.isArray(trashNotesData) ? trashNotesData : []),
+    [trashNotesData],
+  );
+
+  const filteredNotes = useMemo(
+    () =>
+      trashNotes.filter((n) =>
+        n.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
+      ),
+    [trashNotes, debouncedSearchQuery],
+  );
+
   const isAllSelected =
     filteredGraphs.length > 0 &&
     filteredGraphs.every((g) => selectedIds.has(g.id));
@@ -93,6 +132,40 @@ export const RecycleBin = () => {
 
   const clearSelection = () => {
     setSelectedIds(new Set());
+  };
+
+  // 切换分类时清空图谱的选择状态，避免跨分类残留
+  const handleCategoryChange = (next: RecycleBinCategory) => {
+    if (next === category) return;
+    setCategory(next);
+    setSelectedIds(new Set());
+  };
+
+  // 笔记恢复：调用 restore 后提示"挂载关系不自动恢复，需重新编辑笔记保存以重建"
+  // useRestoreNoteMutation 已失效 ["notes"] 前缀，会自动刷新回收站笔记列表与笔记查询
+  const handleRestoreNote = async (note: Note) => {
+    try {
+      await restoreNoteMutation.mutateAsync(note.id);
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("recycleBin.notes.restoreSuccess"),
+        duration: 6000,
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : t("recycleBin.notes.restoreFailed");
+      frontendEventBus.publish("message_show", { type: "error", content: message });
+    }
+  };
+
+  // 笔记彻底删除：后端 notesService.delete 仅支持软删除，无永久删除端点。
+  // 本任务约束"不修改后端"，故降级为提示"暂不支持彻底删除，将在后续迭代支持"。
+  const handleHardDeleteNote = () => {
+    frontendEventBus.publish("message_show", {
+      type: "info",
+      content: t("recycleBin.notes.hardDeleteNotAvailable"),
+      duration: 5000,
+    });
   };
 
   const handleRestore = async (id: string) => {
@@ -180,7 +253,7 @@ export const RecycleBin = () => {
     }
   };
 
-  if (isLoading)
+  if ((category === "graphs" && isLoading) || (category === "notes" && trashNotesLoading))
     return (
       <div
         className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
@@ -194,10 +267,12 @@ export const RecycleBin = () => {
         </div>
       </div>
     );
-  if (error)
+  if ((category === "graphs" && error) || (category === "notes" && trashNotesError))
     return (
       <div className="p-8 text-red-600">
-        {t("common.error")}: {(error as Error).message || t("recycleBin.loadFailed")}
+        {t("common.error")}:{" "}
+        {(category === "graphs" ? (error as Error) : (trashNotesError as Error))?.message ||
+          t("recycleBin.loadFailed")}
       </div>
     );
 
@@ -254,7 +329,40 @@ export const RecycleBin = () => {
           </div>
         </div>
 
-        {filteredGraphs.length > 0 && (
+        {/* 分类切换：图谱 / 笔记 */}
+        <div
+          className={`flex items-center gap-2 p-1.5 rounded-xl overflow-x-auto ${
+            isDark ? "bg-slate-800" : "bg-white border border-gray-200"
+          }`}
+        >
+          {(["graphs", "notes"] as const).map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => handleCategoryChange(cat)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+                category === cat
+                  ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                  : isDark
+                    ? "text-slate-400 hover:bg-slate-700"
+                    : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              {cat === "graphs" ? (
+                <Trash2 size={14} aria-hidden="true" />
+              ) : (
+                <NotebookPen size={14} aria-hidden="true" />
+              )}
+              {cat === "graphs"
+                ? t("recycleBin.tabs.graphs")
+                : t("recycleBin.tabs.notes")}
+            </button>
+          ))}
+        </div>
+
+        {category === "graphs" && (
+          <>
+            {filteredGraphs.length > 0 && (
           <div
             className={`flex items-center gap-4 p-3 rounded-xl ${isDark ? "bg-slate-800" : "bg-white border border-gray-200"}`}
           >
@@ -450,6 +558,149 @@ export const RecycleBin = () => {
             ))
           )}
         </div>
+          </>
+        )}
+
+        {category === "notes" && (
+          <>
+            {filteredNotes.length === 0 ? (
+              <div
+                className={`col-span-full flex flex-col items-center justify-center py-20 rounded-3xl border-2 border-dashed ${
+                  isDark
+                    ? "border-slate-800 bg-slate-800/30"
+                    : "border-gray-200 bg-gray-50"
+                }`}
+              >
+                <EmptyState
+                  icon={
+                    <NotebookPen
+                      className={`w-12 h-12 ${isDark ? "text-slate-600" : "text-gray-300"}`}
+                    />
+                  }
+                  title={
+                    searchQuery
+                      ? t("recycleBin.noResults")
+                      : t("recycleBin.notes.empty")
+                  }
+                  description={
+                    searchQuery
+                      ? t("recycleBin.noResultsHint")
+                      : t("recycleBin.notes.emptyHint")
+                  }
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredNotes.map((note) => (
+                  <div
+                    key={note.id}
+                    className={`group relative rounded-2xl p-6 border transition-all duration-300 ${
+                      isDark
+                        ? "bg-slate-800 border-slate-700 hover:border-purple-900/50"
+                        : "bg-white border-gray-100 hover:border-purple-100 shadow-sm"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div
+                        className={`p-3.5 rounded-xl ${
+                          isDark
+                            ? "bg-purple-900/20 text-purple-400"
+                            : "bg-purple-50 text-purple-500"
+                        }`}
+                      >
+                        <NotebookPen size={24} />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleRestoreNote(note)}
+                          disabled={restoreNoteMutation.isPending}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isDark
+                              ? "text-green-400 hover:bg-green-900/30"
+                              : "text-green-600 hover:bg-green-50"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          title={t("recycleBin.notes.restore")}
+                        >
+                          {restoreNoteMutation.isPending ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <RefreshCw size={18} />
+                          )}
+                        </button>
+                        <button
+                          onClick={handleHardDeleteNote}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isDark
+                              ? "text-red-400 hover:bg-red-900/30"
+                              : "text-red-500 hover:bg-red-50"
+                          }`}
+                          title={t("recycleBin.notes.hardDeleteNotAvailable")}
+                        >
+                          <AlertTriangle size={18} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold ${getNoteTypeBadgeClass(
+                          note.type,
+                        )}`}
+                      >
+                        {note.type === "daily" ? (
+                          <CalendarDays size={11} aria-hidden="true" />
+                        ) : (
+                          <NotebookPen size={11} aria-hidden="true" />
+                        )}
+                        <span>
+                          {note.type === "daily"
+                            ? t("notes.badges.daily")
+                            : t("notes.badges.note")}
+                        </span>
+                      </span>
+                      <h3
+                        className={`text-xl font-bold line-clamp-1 ${
+                          isDark ? "text-slate-100" : "text-gray-900"
+                        }`}
+                      >
+                        {note.title || t("notes.fields.untitled")}
+                      </h3>
+                    </div>
+
+                    <div
+                      className={`pt-4 border-t text-xs space-y-1 ${
+                        isDark
+                          ? "border-slate-700 text-slate-500"
+                          : "border-gray-50 text-gray-400"
+                      }`}
+                    >
+                      <div>
+                        {t("recycleBin.deletedAt")}:{" "}
+                        {note.deletedAt
+                          ? formatDate(note.deletedAt, "full")
+                          : "--"}
+                      </div>
+                      <div>
+                        {t("recycleBin.notes.updatedAt")}:{" "}
+                        {formatDate(note.updatedAt, "relative")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <p
+              className={`text-sm flex items-center gap-1.5 ${
+                isDark ? "text-slate-500" : "text-gray-500"
+              }`}
+            >
+              <Info size={14} />
+              {t("recycleBin.notes.hardDeleteHint")}
+            </p>
+          </>
+        )}
 
         <ConfirmationModal
           isOpen={deleteConfirm.isOpen}

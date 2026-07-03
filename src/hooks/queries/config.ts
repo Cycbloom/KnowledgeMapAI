@@ -89,6 +89,32 @@ export const queryKeys = {
     startTime?: number;
     endTime?: number;
   }) => ["aiPerformanceStats", query] as const,
+  notes: (params?: {
+    type?: string;
+    isArchived?: boolean;
+    isPinned?: boolean;
+    tag?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+  }) =>
+    [
+      "notes",
+      params?.type ?? "all",
+      params?.isArchived ?? false,
+      params?.isPinned ?? false,
+      params?.tag ?? "all",
+      params?.search ?? "",
+      params?.page ?? 1,
+      params?.pageSize ?? 20,
+    ] as const,
+  // 单笔记详情：以 ["notes", "detail", id] 为键，可被 ["notes"] 前缀失效
+  note: (id: string) => ["notes", "detail", id] as const,
+  // 节点详情"关联笔记"：以 ["notes", "by-node", nodeId] 为键，可被 ["notes"] 前缀失效
+  notesByNode: (nodeId: string) => ["notes", "by-node", nodeId] as const,
+  // P1 Task 11: 笔记模板列表。模板变更会影响下次 daily 自动创建,故以
+  // ["notes", "templates"] 为键的同时被 ["notes"] 前缀失效。
+  noteTemplates: () => ["notes", "templates"] as const,
 };
 
 export type { Node, Edge, Task, NodeLevel };

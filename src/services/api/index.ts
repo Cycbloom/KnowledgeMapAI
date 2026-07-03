@@ -63,6 +63,7 @@ export type {
   ApplyHierarchyResult,
 } from "./conceptAggregation";
 export { graphVersionsApi } from "./graphVersions";
+export { notesApi } from "./notes";
 
 import { authApi } from "./auth";
 import { graphsApi } from "./graphs";
@@ -101,6 +102,7 @@ import { regionsApi } from "./regions";
 import { storyCreationHttpApi } from "./storyCreation";
 import { conceptAggregationApi } from "./conceptAggregation";
 import { graphVersionsApi } from "./graphVersions";
+import { notesApi } from "./notes";
 import type { IApi } from "./contracts/IApi";
 
 export const api: IApi = {
@@ -145,6 +147,7 @@ export const api: IApi = {
   storyCreation: storyCreationHttpApi,
   conceptAggregation: conceptAggregationApi,
   graphVersions: graphVersionsApi,
+  notes: notesApi,
 };
 
 export type {

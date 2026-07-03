@@ -892,6 +892,95 @@ export const snapshotsQuerySchema = z.object({
   pageSize: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
 });
 
+// --- Notes Schemas ---
+export const createNoteSchema = z.object({
+  title: z.string().min(1, "标题不能为空").max(255, "标题最多255个字符"),
+  content: z.string().optional(),
+  type: z.enum(["note", "daily"]),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式应为 YYYY-MM-DD")
+    .optional(),
+  templateId: z.string().uuid("无效的模板ID").optional(),
+  tags: z.array(z.string()).optional(),
+  isPinned: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
+});
+
+export const updateNoteSchema = z.object({
+  title: z.string().min(1, "标题不能为空").max(255, "标题最多255个字符").optional(),
+  content: z.string().optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式应为 YYYY-MM-DD")
+    .nullable()
+    .optional(),
+  templateId: z.string().uuid("无效的模板ID").nullable().optional(),
+  tags: z.array(z.string()).optional(),
+  isPinned: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
+});
+
+export const noteListQuerySchema = z.object({
+  type: z.enum(["note", "daily"]).optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式应为 YYYY-MM-DD")
+    .optional(),
+  tag: z.string().optional(),
+  isArchived: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
+  isPinned: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
+  nodeId: z.string().uuid("无效的节点ID").optional(),
+  search: z.string().optional(),
+  includeDeleted: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
+  page: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : 1)),
+  pageSize: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : 20)),
+});
+
+// --- Note Template Schemas (P1: 自定义模板) ---
+export const createNoteTemplateSchema = z.object({
+  name: z.string().min(1, "模板名称不能为空").max(100, "模板名称最多100个字符"),
+  content: z.string().min(1, "模板内容不能为空"),
+});
+
+export const updateNoteTemplateSchema = z.object({
+  name: z
+    .string()
+    .min(1, "模板名称不能为空")
+    .max(100, "模板名称最多100个字符")
+    .optional(),
+  content: z.string().min(1, "模板内容不能为空").optional(),
+});
+
+// --- Note Create Nodes from Concepts Schema (P1: 反向建图) ---
+export const createNodesFromConceptsSchema = z.object({
+  graphId: z.string().uuid("无效的图谱ID"),
+  selectedConcepts: z
+    .array(
+      z.object({
+        name: z.string().min(1, "知识点名称不能为空"),
+        description: z.string(),
+        related: z.array(z.string()).optional(),
+      }),
+    )
+    .min(1, "至少选择一个知识点"),
+});
+
 // --- AI Action Route Schemas (re-export from aiAction.ts) ---
 export {
   createActionSchema,

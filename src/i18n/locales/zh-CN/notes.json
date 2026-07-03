@@ -1,0 +1,233 @@
+{
+  "title": "笔记",
+  "subtitle": "承载读书笔记、复盘反思与每日学习日志",
+  "nav": "笔记",
+  "views": {
+    "all": "全部",
+    "daily": "每日反思",
+    "note": "普通笔记",
+    "pinned": "收藏",
+    "archived": "归档"
+  },
+  "actions": {
+    "newNote": "新建笔记",
+    "newDaily": "新建 Daily",
+    "open": "打开",
+    "pin": "置顶",
+    "unpin": "取消置顶",
+    "archive": "归档",
+    "unarchive": "取消归档",
+    "delete": "删除",
+    "restore": "恢复",
+    "refresh": "刷新",
+    "refreshing": "刷新中..."
+  },
+  "badges": {
+    "note": "笔记",
+    "daily": "Daily",
+    "pinned": "已置顶",
+    "archived": "已归档"
+  },
+  "fields": {
+    "updatedAt": "更新于",
+    "createdAt": "创建于",
+    "linkedNodes": "挂载节点",
+    "tags": "标签",
+    "untitled": "无标题"
+  },
+  "empty": {
+    "title": "还没有笔记",
+    "description": "创建你的第一篇笔记，开始沉淀学习心得",
+    "cta": "新建笔记",
+    "archivedTitle": "归档区为空",
+    "archivedDescription": "归档后的笔记会显示在这里",
+    "pinnedTitle": "还没有收藏的笔记",
+    "pinnedDescription": "置顶的笔记会显示在这里",
+    "dailyTitle": "还没有 Daily 笔记",
+    "dailyDescription": "点击「新建 Daily」记录今日学习",
+    "searchTitle": "未找到匹配的笔记",
+    "searchDescription": "调整搜索关键词或清除筛选后再试"
+  },
+  "search": {
+    "placeholder": "搜索笔记标题..."
+  },
+  "filter": {
+    "current": "当前筛选",
+    "clear": "清除",
+    "clearAriaLabel": "清除标签筛选",
+    "tagAriaLabel": "按 {{tag}} 筛选"
+  },
+  "loading": "加载中...",
+  "loadFailed": "加载笔记失败，请稍后重试",
+  "retry": "重试",
+  "errorDetails": "详情",
+  "showing": "显示 {{start}} - {{end}} 条，共 {{total}} 条",
+  "page": "第 {{page}} / {{totalPages}} 页",
+  "prevPage": "上一页",
+  "nextPage": "下一页",
+  "newNoteDefaultTitle": "无标题笔记",
+  "createNoteFailed": "创建笔记失败",
+  "createDailyFailed": "创建 Daily 笔记失败",
+  "noteCreated": "笔记已创建",
+  "dailyCreated": "Daily 笔记已创建",
+  "dailyExists": "今日 Daily 已存在",
+  "updateFailed": "更新笔记失败",
+  "noteUpdated": "笔记已更新",
+  "noteDeleted": "笔记已移入回收站",
+  "deleteFailed": "删除笔记失败",
+  "deleteConfirmTitle": "删除笔记",
+  "deleteConfirmMessage": "确定要删除这篇笔记吗？笔记将移入回收站，挂载关系不会自动恢复。",
+  "editor": {
+    "placeholder": "输入 / 唤起块菜单，或直接开始记录…",
+    "slashHint": "输入 / 插入块",
+    "saveStatus": {
+      "idle": "未保存",
+      "saving": "保存中…",
+      "saved": "已保存",
+      "error": "保存失败"
+    },
+    "blockMenu": {
+      "title": "块类型",
+      "paragraph": "段落",
+      "heading1": "一级标题",
+      "heading2": "二级标题",
+      "heading3": "三级标题",
+      "bulletList": "无序列表",
+      "orderedList": "有序列表",
+      "taskList": "待办列表",
+      "blockquote": "引用",
+      "codeBlock": "代码块",
+      "divider": "分割线",
+      "image": "图片",
+      "table": "表格"
+    },
+    "toolbar": {
+      "bold": "粗体",
+      "italic": "斜体",
+      "strike": "删除线",
+      "code": "行内代码",
+      "undo": "撤销",
+      "redo": "重做",
+      "moveUp": "上移块",
+      "moveDown": "下移块"
+    },
+    "wikiLink": {
+      "placeholder": "搜索图节点…",
+      "noMatch": "未找到匹配的节点",
+      "searching": "搜索中…",
+      "createLink": "创建链接"
+    }
+  },
+  "editorPage": {
+    "title": "笔记标题",
+    "loading": "加载笔记中…",
+    "loadFailed": "笔记加载失败，或您没有访问权限",
+    "notFound": "笔记不存在",
+    "untitled": "无标题",
+    "saveSuccess": "保存成功",
+    "saveError": "保存失败",
+    "deleteConfirmTitle": "删除笔记",
+    "deleteConfirmMessage": "确定要删除这篇笔记吗？笔记将移入回收站，挂载关系不会自动恢复。"
+  },
+  "notesPanel": {
+    "title": "关联笔记",
+    "loading": "加载关联笔记中…",
+    "loadFailed": "加载关联笔记失败，请稍后重试",
+    "empty": {
+      "title": "暂无关联笔记",
+      "description": "在笔记正文中使用 [[节点名]] 引用此节点即可自动建立关联",
+      "cta": "新建笔记"
+    },
+    "updated": "更新于 {{date}}"
+  },
+  "ai": {
+    "summary": {
+      "button": "生成今日总结",
+      "loading": "正在生成今日总结…",
+      "success": "已插入今日总结",
+      "error": "生成今日总结失败"
+    },
+    "extractConcepts": {
+      "button": "提取要点建图",
+      "loading": "正在提取知识点…",
+      "success": "已提取 {{count}} 个候选知识点",
+      "error": "提取知识点失败",
+      "dialog": {
+        "title": "提取要点建图",
+        "description": "选择要创建为图谱节点的知识点，并选择目标图谱。",
+        "conceptName": "名称",
+        "conceptDescription": "描述",
+        "related": "建议关联：{{related}}",
+        "targetGraph": "目标图谱",
+        "selectGraph": "请选择图谱",
+        "confirm": "创建节点",
+        "cancel": "取消",
+        "empty": "未提取到候选知识点"
+      }
+    },
+    "createNodes": {
+      "success": "已在图谱创建 {{count}} 个节点",
+      "error": "创建节点失败"
+    }
+  },
+  "image": {
+    "insertButton": "插入图片",
+    "uploading": "正在上传图片…",
+    "uploadSuccess": "图片已插入",
+    "uploadError": "上传图片失败",
+    "notImage": "仅支持图片文件"
+  },
+  "templates": {
+    "title": "模板管理",
+    "subtitle": "管理 Daily Notes 与笔记模板",
+    "backToNotes": "返回笔记",
+    "list": {
+      "system": "系统模板",
+      "custom": "自定义模板",
+      "empty": "还没有自定义模板",
+      "emptyHint": "点击右上角「新建模板」创建你的第一个模板",
+      "default": "默认",
+      "defaultHint": "下次创建 Daily 时使用"
+    },
+    "actions": {
+      "new": "新建模板",
+      "edit": "编辑",
+      "delete": "删除",
+      "setDefault": "设为默认",
+      "cancelDefault": "取消默认",
+      "save": "保存",
+      "cancel": "取消",
+      "manage": "模板管理"
+    },
+    "fields": {
+      "name": "模板名称",
+      "namePlaceholder": "为模板取个名字",
+      "content": "模板正文",
+      "contentPlaceholder": "# 标题\n\n在此编写模板内容..."
+    },
+    "hints": {
+      "variables": "支持的变量",
+      "varDate": "{{date}} 当日日期",
+      "varReviewedCards": "{{today_reviewed_cards}} 今日复习卡数",
+      "varCompletedTasks": "{{today_completed_tasks}} 今日完成任务数",
+      "varFocusTime": "{{today_focus_time}} 今日专注时长（分钟）"
+    },
+    "dialog": {
+      "createTitle": "新建模板",
+      "editTitle": "编辑模板",
+      "deleteConfirmTitle": "删除模板",
+      "deleteConfirmMessage": "确定要删除此模板吗？此操作不可撤销。"
+    },
+    "messages": {
+      "created": "模板已创建",
+      "updated": "模板已更新",
+      "deleted": "模板已删除",
+      "setDefault": "已设为默认模板",
+      "createFailed": "创建模板失败",
+      "updateFailed": "更新模板失败",
+      "deleteFailed": "删除模板失败",
+      "setDefaultFailed": "设为默认模板失败",
+      "systemTemplateProtected": "系统模板不可删除或修改"
+    }
+  }
+}

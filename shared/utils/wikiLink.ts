@@ -81,3 +81,24 @@ export const getWikiLinkContext = (
   const suffix = end < content.length ? '...' : '';
   return prefix + content.slice(start, end).replace(/\n/g, ' ') + suffix;
 };
+
+/**
+ * 替换内容中的 wiki 链接（节点重命名同步用）
+ * 将所有 [[oldName]] 精确替换为 [[newName]]（区分大小写）
+ * 用于图节点重命名时，同步更新笔记/知识点正文中引用该节点的双链
+ * @param content 笔记/知识点内容
+ * @param oldName 旧节点名
+ * @param newName 新节点名
+ * @returns 替换后的内容
+ */
+export const replaceWikiLink = (
+  content: string,
+  oldName: string,
+  newName: string,
+): string => {
+  if (!content || !oldName || oldName === newName) return content;
+  // 转义正则特殊字符，避免 oldName 含 ( ) [ ] . 等导致正则错误或误匹配
+  const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`\\[\\[${escaped}\\]\\]`, 'g');
+  return content.replace(regex, `[[${newName}]]`);
+};

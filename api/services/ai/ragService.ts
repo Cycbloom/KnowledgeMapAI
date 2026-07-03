@@ -49,6 +49,13 @@ export interface RAGSearchResult {
   content: string;
   similarity: number;
   graphId: string;
+  /**
+   * 数据源类型（P1 Task 5）：
+   * - 'document'：图谱知识点（knowledge_points / document_chunks），默认值
+   * - 'note'：笔记（note_embeddings 命中或 note_node_links 挂载）
+   * 可选字段，向后兼容（未设置时视为 'document'）。
+   */
+  type?: "document" | "note";
 }
 
 export interface GraphRAGSearchResult extends RAGSearchResult {
@@ -109,6 +116,22 @@ export class RAGService {
     return ragSearchService.keywordSearch(query, userId, options);
   }
 
+  /**
+   * 笔记内容语义检索（P1 Task 5.1 / 5.2）
+   * 委托给 ragSearchService.noteSemanticSearch，查询 note_embeddings 表。
+   * 返回结果 type='note'，与图谱检索结果合并后参与 RAG 上下文构建。
+   */
+  async noteSemanticSearch(
+    query: string,
+    userId: string,
+    options: {
+      matchThreshold?: number;
+      matchCount?: number;
+    } = {},
+  ): Promise<RAGSearchResult[]> {
+    return ragSearchService.noteSemanticSearch(query, userId, options);
+  }
+
   async hybridSearch(
     query: string,
     userId: string,
@@ -161,6 +184,17 @@ export class RAGService {
 
     // 默认使用 hybrid 模式
     const effectiveSearchMode = searchMode ?? "hybrid";
+
+    // P1 Task 5.2: 并行查 notes embedding（与图谱搜索并行，避免阻塞）
+    // noteSemanticSearch 内部已做容错（失败返回 []），这里直接 await 即可。
+    // 提前启动 promise，与下方图谱检索并行执行，降低整体延迟。
+    const noteResultsPromise = this.noteSemanticSearch(query, userId, {
+      matchThreshold: 0.3,
+      matchCount: 5,
+    }).catch((err) => {
+      logger.warn("RAG buildContext: noteSemanticSearch failed", { err });
+      return [] as RAGSearchResult[];
+    });
 
     let searchResults: RAGSearchResult[];
     let graphSources:
@@ -276,7 +310,16 @@ export class RAGService {
       }
     }
 
+    // P1 Task 5.2: 等待笔记语义检索结果，合并到 searchResults
+    // noteResults 已在搜索模式分支前并行启动，此处 await 不会阻塞图谱检索。
+    const noteResults = await noteResultsPromise;
+    if (noteResults.length > 0) {
+      searchResults = [...searchResults, ...noteResults];
+    }
+
     let currentNodeContext: string | undefined;
+    // P1 Task 5.4: 当前节点挂载的笔记（note_node_links），作为确定性上下文注入
+    let mountedNoteSources: { id: string; title: string; content: string }[] = [];
     if (currentNodeId) {
       const { data: currentGraphNode } = await notDeleted(getSupabaseAdmin()
         .from("graph_nodes")
@@ -306,6 +349,13 @@ export class RAGService {
           maxContentLength: 1000,
         });
       }
+
+      // 查询挂载到当前节点（及相关 graph_node）的笔记
+      mountedNoteSources = await this.fetchMountedNotes(
+        getSupabaseAdmin(),
+        userId,
+        currentNodeId,
+      );
     }
 
     const maxTokens = Math.floor(maxContextLength / 2);
@@ -316,6 +366,7 @@ export class RAGService {
         maxTokens,
         currentNodeContext,
         graphSources,
+        noteSources: mountedNoteSources,
       },
     );
 
@@ -331,6 +382,7 @@ export class RAGService {
           hopDistance: original?.hopDistance ?? 0,
           relationshipPath: original?.relationshipPath ?? "",
           relationshipType: original?.relationshipType ?? "",
+          type: s.type,
         };
       }),
       ...(graphSources || []).map((gs) => ({
@@ -342,10 +394,106 @@ export class RAGService {
         hopDistance: gs.hopDistance,
         relationshipPath: gs.relationshipPath,
         relationshipType: gs.relationshipType,
+        type: "document" as const,
+      })),
+      // P1 Task 5: 笔记数据源（语义检索命中的笔记 + 挂载笔记）
+      ...noteResults.map((nr) => ({
+        id: nr.id,
+        title: nr.title,
+        content: nr.content,
+        similarity: nr.similarity,
+        graphId: "",
+        hopDistance: 0,
+        relationshipPath: "",
+        relationshipType: "",
+        type: "note" as const,
+      })),
+      ...mountedNoteSources.map((mn) => ({
+        id: mn.id,
+        title: mn.title,
+        content: mn.content,
+        similarity: 1,
+        graphId: graphId || "",
+        hopDistance: 0,
+        relationshipPath: "",
+        relationshipType: "",
+        type: "note" as const,
       })),
     ];
 
     return { context, sources: allSources };
+  }
+
+  /**
+   * 查询挂载到当前知识点的笔记（P1 Task 5.4）。
+   *
+   * 流程：
+   * 1. 查 graph_nodes（knowledge_point_id = currentNodeId，未软删除）→ graph_node ids
+   * 2. 查 note_node_links（node_id IN graph_node ids）→ note_ids
+   * 3. 查 notes（id IN note_ids，user_id = userId，未软删除）→ 笔记内容
+   *
+   * 使用 getSupabaseAdmin（service role，绕过 RLS），因此必须显式过滤 user_id，
+   * 避免跨用户泄露笔记内容。失败时返回空数组（不阻塞主流程）。
+   */
+  private async fetchMountedNotes(
+    supabase: import("@supabase/supabase-js").SupabaseClient,
+    userId: string,
+    currentNodeId: string,
+  ): Promise<{ id: string; title: string; content: string }[]> {
+    try {
+      // 1. 查 graph_node ids（currentNodeId 是 knowledge_point_id）
+      const { data: graphNodes } = await notDeleted(supabase
+        .from("graph_nodes")
+        .select("id")
+        .eq("knowledge_point_id", currentNodeId)
+      );
+
+      if (!graphNodes || graphNodes.length === 0) {
+        return [];
+      }
+
+      const nodeIds = (graphNodes as unknown as { id: string }[]).map((gn) => gn.id);
+
+      // 2. 查 note_node_links → note_ids
+      const { data: links } = await supabase
+        .from("note_node_links")
+        .select("note_id")
+        .in("node_id", nodeIds);
+
+      if (!links || links.length === 0) {
+        return [];
+      }
+
+      const noteIds = [
+        ...new Set(
+          (links as unknown as { note_id: string }[]).map((l) => l.note_id),
+        ),
+      ];
+
+      // 3. 查 notes（显式过滤 user_id，因为使用 admin client 绕过 RLS）
+      const { data: notes } = await notDeleted(supabase
+        .from("notes")
+        .select("id, title, content")
+        .in("id", noteIds)
+        .eq("user_id", userId)
+        .order("is_pinned", { ascending: false })
+        .order("updated_at", { ascending: false })
+        .limit(5)
+      );
+
+      if (!notes) {
+        return [];
+      }
+
+      return (notes as unknown as { id: string; title: string; content: string }[]).map((n) => ({
+        id: n.id,
+        title: n.title,
+        content: n.content,
+      }));
+    } catch (err) {
+      logger.warn("fetchMountedNotes: query failed", { userId, currentNodeId, err });
+      return [];
+    }
   }
 
   async chat(

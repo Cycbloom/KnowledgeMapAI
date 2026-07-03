@@ -3,7 +3,7 @@
   "subtitle": "查看和管理已删除的图谱。您可以恢复它们，或永久删除。",
   "loading": "正在加载回收站...",
   "loadFailed": "加载回收站失败",
-  "searchPlaceholder": "搜索已删除图谱...",
+  "searchPlaceholder": "搜索已删除项目...",
   "selectAll": "全选",
   "deselectAll": "取消全选",
   "selected": "已选择 {{count}} 项",
@@ -12,13 +12,27 @@
   "empty": "回收站为空",
   "emptyHint": "最近删除的图谱将显示在这里。",
   "autoCleanupHint": "已删除的项目将在 30 天后永久删除",
-  "noResults": "未找到相关图谱",
+  "noResults": "未找到相关项目",
   "noResultsHint": "尝试更换搜索关键词",
   "noDescription": "暂无描述",
   "deletedAt": "删除时间",
   "restoreGraph": "恢复图谱",
   "restoring": "恢复中...",
   "permanentDelete": "永久删除",
+  "tabs": {
+    "graphs": "图谱",
+    "notes": "笔记"
+  },
+  "notes": {
+    "empty": "回收站中没有已删除的笔记",
+    "emptyHint": "已删除的笔记将显示在这里",
+    "restore": "恢复笔记",
+    "restoreSuccess": "笔记已恢复。注意：挂载关系不会自动恢复，请重新编辑笔记并保存以重建挂载关系。",
+    "restoreFailed": "恢复笔记失败",
+    "hardDeleteNotAvailable": "暂不支持笔记彻底删除，将在后续迭代支持",
+    "hardDeleteHint": "笔记彻底删除暂未支持；可先恢复后再次删除管理",
+    "updatedAt": "更新时间"
+  },
   "confirmDelete": {
     "title": "永久删除图谱",
     "batchTitle": "批量永久删除图谱",

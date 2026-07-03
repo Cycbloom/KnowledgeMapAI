@@ -34,6 +34,7 @@ import { preprocessWikiLinks, WikiLinkRenderer } from "../../../utils/wikiLinkRe
 import { backlinksApi } from "../../../services/api/backlinks";
 import { NodeLinkSelector } from "./NodeLinkSelector";
 import { BacklinksPanel } from "./BacklinksPanel";
+import { NotesPanel } from "../../Notes/NotesPanel";
 
 interface NodeFormState {
   title: string;
@@ -173,10 +174,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     top: number;
     left: number;
   }>({ top: 0, left: 0 });
-  // 内容 / 反向链接 Tab 切换
-  const [contentTab, setContentTab] = useState<"content" | "backlinks">(
-    "content",
-  );
+  // 内容 / 反向链接 / 关联笔记 Tab 切换
+  const [contentTab, setContentTab] = useState<
+    "content" | "backlinks" | "notes"
+  >("content");
 
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<
@@ -537,7 +538,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
         </div>
       )}
 
-      {/* 内容 / 反向链接 Tab 切换器（仅编辑模式显示） */}
+      {/* 内容 / 反向链接 / 关联笔记 Tab 切换器（仅编辑模式显示） */}
       {mode === "edit" && (
         <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 mb-4">
           <button
@@ -562,6 +563,17 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
           >
             {t("graphEditor.backlinks.tabBacklinks")}
           </button>
+          <button
+            type="button"
+            onClick={() => setContentTab("notes")}
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              contentTab === "notes"
+                ? "bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            {t("graphEditor.backlinks.tabNotes")}
+          </button>
         </div>
       )}
 
@@ -574,6 +586,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             currentGraphId={graphId}
             onNavigateToNode={onNavigateToNode}
           />
+        ) : mode === "edit" && contentTab === "notes" ? (
+          <NotesPanel nodeId={currentNodeId} graphId={graphId} />
         ) : (
           <>
         <div>

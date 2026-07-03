@@ -7,6 +7,11 @@ interface ContextSource {
   content: string;
   similarity: number;
   graphId: string;
+  /**
+   * 数据源类型 (P1 Task 5): 'document' 图谱知识点 / 'note' 笔记。
+   * 可选字段,与 RAGSearchResult.type 对齐,确保 usedSources 保留类型信息。
+   */
+  type?: "document" | "note";
 }
 
 interface GraphContextSource {
@@ -16,6 +21,18 @@ interface GraphContextSource {
   hopDistance: number;
   relationshipPath: string;
   relationshipType: string;
+}
+
+/**
+ * 挂载笔记上下文源（P1 Task 5.4）。
+ * 通过 note_node_links 查当前节点挂载的笔记，作为确定性上下文注入。
+ * 与 GraphContextSource 不同：笔记无 hopDistance / relationshipPath，
+ * 是用户显式挂载到节点的笔记内容。
+ */
+interface NoteContextSource {
+  id: string;
+  title: string;
+  content: string;
 }
 
 interface ContextChunk {
@@ -30,6 +47,7 @@ interface BuildContextOptions {
   currentNodeContext?: string;
   chunks?: ContextChunk[];
   graphSources?: GraphContextSource[];
+  noteSources?: NoteContextSource[];
 }
 
 interface BuildContextResult {
@@ -57,7 +75,7 @@ export class ContextWindowManager {
     sources: ContextSource[],
     options: BuildContextOptions,
   ): BuildContextResult {
-    const { maxTokens, currentNodeContext, chunks, graphSources } = options;
+    const { maxTokens, currentNodeContext, chunks, graphSources, noteSources } = options;
 
     const sortedSources = [...sources].sort(
       (a, b) => b.similarity - a.similarity,
@@ -72,8 +90,16 @@ export class ContextWindowManager {
       currentNodeSection = `[当前节点]\n${currentNodeContext}\n`;
     }
 
+    // 预算分配：seed 70% 保持不变；当存在挂载笔记时，从 graph 30% 中分出一半给 notes。
+    // 无挂载笔记时保持原有 70/30 行为，确保向后兼容。
+    const hasNotes = noteSources && noteSources.length > 0;
     const seedBudget = Math.floor(remainingBudget * 0.7);
-    const graphBudget = remainingBudget - seedBudget;
+    const graphBudget = hasNotes
+      ? Math.floor(remainingBudget * 0.15)
+      : remainingBudget - seedBudget;
+    const noteBudget = hasNotes
+      ? remainingBudget - seedBudget - graphBudget
+      : 0;
 
     const usedSources: ContextSource[] = [];
     const sourceEntries: string[] = [];
@@ -156,6 +182,40 @@ export class ContextWindowManager {
           context += "\n\n";
         }
         context += `[图谱关联节点]\n${graphEntries.join("\n\n")}`;
+      }
+    }
+
+    // 挂载笔记段落（P1 Task 5.4）：当前节点通过 note_node_links 显式挂载的笔记内容。
+    // 作为确定性上下文注入（非相似度检索），优先级高于图谱关联节点。
+    if (noteSources && noteSources.length > 0) {
+      const noteEntries: string[] = [];
+      let noteRemaining = noteBudget;
+
+      for (const ns of noteSources) {
+        // 笔记内容可能较长，截断到 1000 字符（与 buildNodeContext maxContentLength 一致）
+        const truncatedContent = ns.content.slice(0, 1000);
+        const noteEntryText = `${ns.title}\n${truncatedContent}`;
+        const noteEntryTokens = this.estimateTokens(noteEntryText);
+
+        if (noteEntryTokens <= noteRemaining) {
+          noteEntries.push(noteEntryText);
+          noteRemaining -= noteEntryTokens;
+        } else {
+          logger.warn(
+            `Note context budget exhausted. Skipping note source: ${ns.title}`,
+          );
+          break;
+        }
+      }
+
+      if (noteEntries.length > 0) {
+        const formattedNotes = noteEntries
+          .map((entry, i) => `[${i + 1}] ${entry}`)
+          .join("\n\n");
+        if (context) {
+          context += "\n\n";
+        }
+        context += `[挂载笔记]\n${formattedNotes}`;
       }
     }
 

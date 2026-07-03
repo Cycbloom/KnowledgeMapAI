@@ -34,27 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _schema_versions: {
-        Row: {
-          checksum: string | null
-          executed_at: string | null
-          id: number
-          version: string
-        }
-        Insert: {
-          checksum?: string | null
-          executed_at?: string | null
-          id?: number
-          version: string
-        }
-        Update: {
-          checksum?: string | null
-          executed_at?: string | null
-          id?: number
-          version?: string
-        }
-        Relationships: []
-      }
       achievements: {
         Row: {
           category: string
@@ -1704,6 +1683,141 @@ export type Database = {
             columns: ["graph_id"]
             isOneToOne: false
             referencedRelation: "knowledge_graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_node_links: {
+        Row: {
+          created_at: string
+          graph_id: string
+          id: string
+          node_id: string
+          note_id: string
+        }
+        Insert: {
+          created_at?: string
+          graph_id: string
+          id?: string
+          node_id: string
+          note_id: string
+        }
+        Update: {
+          created_at?: string
+          graph_id?: string
+          id?: string
+          node_id?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_node_links_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_graphs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_node_links_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "graph_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_node_links_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_default: boolean
+          is_system: boolean
+          name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          is_system?: boolean
+          name: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          date: string | null
+          deleted_at: string | null
+          id: string
+          is_archived: boolean
+          is_pinned: boolean
+          tags: string[] | null
+          template_id: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          date?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_archived?: boolean
+          is_pinned?: boolean
+          tags?: string[] | null
+          template_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          date?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_archived?: boolean
+          is_pinned?: boolean
+          tags?: string[] | null
+          template_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "note_templates"
             referencedColumns: ["id"]
           },
         ]

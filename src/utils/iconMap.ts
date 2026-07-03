@@ -11,6 +11,7 @@ import {
   Zap,
   User,
   Trash2,
+  NotebookPen,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -31,4 +32,5 @@ export const iconMap: Record<string, LucideIcon> = {
   Zap,
   User,
   Trash2,
+  NotebookPen,
 };

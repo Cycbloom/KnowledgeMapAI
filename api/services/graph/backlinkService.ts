@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { BacklinkItem, OutlinkItem, KnowledgePointSearchHit } from '@shared/types';
-import { extractWikiLinks, extractWikiLinkPositions, getWikiLinkContext } from '@shared/utils/wikiLink';
+import { extractWikiLinks, extractWikiLinkPositions, getWikiLinkContext, replaceWikiLink } from '@shared/utils/wikiLink';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
@@ -396,6 +396,75 @@ export class BacklinkService {
       }
     } catch (err) {
       logger.warn('Sync backlinks: unexpected error:', { userId, graphId, knowledgePointId, error: err });
+    }
+  }
+
+  /**
+   * 同步笔记正文中的 wiki 链接（节点重命名场景）。
+   *
+   * 当图节点 X 被重命名为 Y 时，将所有引用 [[X]] 的未软删除笔记正文更新为 [[Y]]。
+   * 扩展现有 backlinks 机制，覆盖 notes 表（既有 syncBacklinks 仅处理 knowledge_points 间的边）。
+   *
+   * 说明：
+   * - 节点重命名不改变 node_id，只改 knowledge_points.title；
+   *   note_node_links 通过 node_id 关联，故挂载关系无需重新同步。
+   * - 用 LIKE（大小写敏感）预筛出 content 含 [[oldName]] 的候选笔记，
+   *   再由 replaceWikiLink 精确替换（区分大小写，避免误伤 [[oldName-后缀]] 等）。
+   * - 此方法设计为异步调用，不阻塞重命名主流程，失败仅记录警告（参考 notesService.syncNodeLinks 容错风格）。
+   *
+   * @param supabase Supabase 客户端
+   * @param userId 用户 ID（RLS 隔离）
+   * @param oldName 旧节点标题
+   * @param newName 新节点标题
+   */
+  async syncNotesWikiLinks(
+    supabase: SupabaseClient,
+    userId: string,
+    oldName: string,
+    newName: string,
+  ): Promise<void> {
+    try {
+      if (!oldName || !newName || oldName === newName) return;
+
+      // 1. 查询所有 content 含 [[oldName]] 且未软删除的笔记（大小写敏感预筛）
+      const pattern = `%[[${oldName}]]%`;
+      const { data: notes, error: queryError } = await notDeleted(supabase
+        .from('notes')
+        .select('id, content')
+        .eq('user_id', userId)
+        .like('content', pattern)
+      );
+
+      if (queryError) {
+        logger.warn('syncNotesWikiLinks: query notes error', { userId, oldName, newName, error: queryError });
+        return;
+      }
+
+      if (!notes || notes.length === 0) return;
+
+      // 2. 对每篇笔记用 replaceWikiLink 精确替换，仅收集实际发生变更的
+      const toUpdate: { id: string; content: string }[] = [];
+      for (const note of notes as unknown as { id: string; content: string }[]) {
+        const newContent = replaceWikiLink(note.content ?? '', oldName, newName);
+        if (newContent !== note.content) {
+          toUpdate.push({ id: note.id, content: newContent });
+        }
+      }
+
+      if (toUpdate.length === 0) return;
+
+      // 3. 批量更新（逐条 UPDATE，supabase-js 不支持异构 content 批量更新）
+      for (const { id, content } of toUpdate) {
+        const { error: updateError } = await supabase
+          .from('notes')
+          .update({ content })
+          .eq('id', id);
+        if (updateError) {
+          logger.warn('syncNotesWikiLinks: update note content error', { userId, noteId: id, error: updateError });
+        }
+      }
+    } catch (err) {
+      logger.warn('syncNotesWikiLinks: unexpected error', { userId, oldName, newName, error: err });
     }
   }
 

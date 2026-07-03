@@ -282,6 +282,7 @@
   "backlinks": {
     "tabContent": "内容",
     "tabBacklinks": "反向链接",
+    "tabNotes": "关联笔记",
     "panelTitle": "反向链接",
     "empty": "暂无反向链接",
     "error": "加载失败",

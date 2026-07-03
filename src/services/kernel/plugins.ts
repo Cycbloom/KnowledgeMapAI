@@ -211,6 +211,50 @@ const studyPlugin: Plugin = {
   },
 };
 
+const notesPlugin: Plugin = {
+  name: "notes",
+  version: "1.0.0",
+  description: "Notes pages: NotesListPage (/notes), TemplatesPage (/notes/templates) and NoteEditorPage (/notes/:noteId).",
+  dependencies: ["core"],
+
+  onInstall(kernel): void {
+    // Protected route (inside Layout)
+    kernel.registerRoute({
+      path: "/notes",
+      component: () => import("../../pages/Notes/NotesListPage").then((m) => ({ default: m.NotesListPage })),
+      options: { protected: true },
+      layout: "protected",
+    });
+
+    // Templates page (Task 11) — 必须注册在 /notes/:noteId 之前,
+    // 否则 React Router 会把 "templates" 当作 noteId 参数匹配。
+    kernel.registerRoute({
+      path: "/notes/templates",
+      component: () => import("../../pages/Notes/TemplatesPage").then((m) => ({ default: m.default })),
+      options: { protected: true },
+      layout: "protected",
+    });
+
+    // Note editor page (Task 8)
+    kernel.registerRoute({
+      path: "/notes/:noteId",
+      component: () => import("../../pages/Notes/NoteEditorPage").then((m) => ({ default: m.default })),
+      options: { protected: true },
+      layout: "protected",
+    });
+
+    // Nav item — placed between graph-map (order 2) and study (order 10)
+    kernel.registerNavItem({
+      path: "/notes",
+      label: "layout.notes",
+      icon: "NotebookPen",
+      order: 5,
+      protected: true,
+      category: "main",
+    });
+  },
+};
+
 const schedulerPlugin: Plugin = {
   name: "scheduler",
   version: "1.0.0",
@@ -343,6 +387,7 @@ export function initializeFrontendPlugins(): Kernel {
   kernel.registerPlugin(corePlugin);
   kernel.registerPlugin(graphPlugin);
   kernel.registerPlugin(studyPlugin);
+  kernel.registerPlugin(notesPlugin);
   kernel.registerPlugin(schedulerPlugin);
 
   return kernel;

@@ -14,3 +14,4 @@ export * from "./graphVersion";
 export * from "./ipc";
 export * from "./appError";
 export * from "./settings";
+export * from "./note";

@@ -30,6 +30,7 @@ import type { IRegionsApi } from './IRegionsApi';
 import type { IStoryCreationApi } from './IStoryCreationApi';
 import type { IConceptAggregationApi } from './IConceptAggregationApi';
 import type { IGraphVersionsApi } from './IGraphVersionsApi';
+import type { INotesApi } from './INotesApi';
 
 export interface IApi {
   auth: IAuthApi;
@@ -73,4 +74,5 @@ export interface IApi {
   storyCreation: IStoryCreationApi;
   conceptAggregation: IConceptAggregationApi;
   graphVersions: IGraphVersionsApi;
+  notes: INotesApi;
 }

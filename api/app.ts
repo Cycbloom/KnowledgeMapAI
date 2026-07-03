@@ -3,6 +3,7 @@
  */
 
 import express, { type Request, type Response } from "express";
+import path from "node:path";
 import "express-async-errors";
 import cors from "cors";
 import helmet from "helmet";
@@ -137,6 +138,17 @@ export function createApp(kernel?: Kernel): express.Express {
 
   app.use(requestLogger);
   app.use(slowRequestLogger(2000));
+
+  // 静态文件:笔记图片上传后落盘到 public/uploads/notes/,
+  // 通过 /uploads/notes/{filename} 直接访问(express.static 不走 CSRF / 限流,
+  // 与 API 路由隔离;目录由 multer 在上传时按需创建)。
+  app.use(
+    "/uploads",
+    express.static(path.join(process.cwd(), "public", "uploads"), {
+      maxAge: "7d",
+      fallthrough: true,
+    }),
+  );
 
   app.get("/api/csrf-token", getCsrfToken);
 

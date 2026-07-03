@@ -6,6 +6,7 @@ import { notDeleted } from '../common/softDeleteHelper';
 export interface SearchResult {
   graphs: SearchGraphResult[];
   nodes: SearchNodeResult[];
+  notes: SearchNoteResult[];
 }
 
 export interface SearchGraphResult {
@@ -14,6 +15,20 @@ export interface SearchGraphResult {
   description: string | null;
   updated_at: string;
   similarity?: number;
+}
+
+/**
+ * 笔记搜索结果项（P1 Task 5.3）。
+ * - summary 为 content 截断摘要（前 200 字符）
+ * - 链接路径：/notes/:noteId（前端据此跳转）
+ */
+export interface SearchNoteResult {
+  id: string;
+  title: string;
+  summary: string;
+  type: string;
+  updated_at: string;
+  tags: string[] | null;
 }
 
 export interface SearchNodeResult {
@@ -34,6 +49,7 @@ export interface SearchNodeResult {
 export interface SemanticSearchResult {
   graphs: SearchGraphResult[];
   nodes: SearchNodeResult[];
+  notes: SearchNoteResult[];
   answer: string;
 }
 
@@ -58,6 +74,15 @@ interface SemanticGraphRow {
   similarity?: number;
 }
 
+interface NoteSearchRow {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  updated_at: string;
+  tags: string[] | null;
+}
+
 export class SearchService {
   private escapePattern(pattern: string): string {
     return pattern.replace(/[%_\\]/g, "\\$&");
@@ -66,7 +91,7 @@ export class SearchService {
   async search(supabase: SupabaseClient, query: string): Promise<SearchResult> {
     const pattern = `%${this.escapePattern(query)}%`;
 
-    const [graphsResult, knowledgePointsResult] = await Promise.all([
+    const [graphsResult, knowledgePointsResult, notesResult] = await Promise.all([
       supabase
         .from("knowledge_graphs")
         .select("id, title, description, updated_at")
@@ -78,6 +103,14 @@ export class SearchService {
         .select("id, title, content, owner_id, updated_at")
         .or(`title.ilike.${pattern},content.ilike.${pattern}`)
         .limit(20),
+      // P1 Task 5.3: 笔记纳入全局搜索（RLS 自动按 user_id 过滤）
+      notDeleted(supabase
+        .from("notes")
+        .select("id, title, content, type, updated_at, tags")
+        .or(`title.ilike.${pattern},content.ilike.${pattern}`)
+        .order("updated_at", { ascending: false })
+        .limit(10)
+      ),
     ]);
 
     if (graphsResult.error) {
@@ -89,6 +122,10 @@ export class SearchService {
         "Search knowledge points error:",
         knowledgePointsResult.error
       );
+    }
+
+    if (notesResult.error) {
+      logger.error("Search notes error:", notesResult.error);
     }
 
     const kpIds = (knowledgePointsResult.data || []).map((kp) => kp.id);
@@ -136,10 +173,56 @@ export class SearchService {
       }) as SearchNodeResult[];
     }
 
+    const notes = this.mapNoteRows(notesResult.data);
+
     return {
       graphs: (graphsResult.data || []) as SearchGraphResult[],
       nodes,
+      notes,
     };
+  }
+
+  /**
+   * 仅查询笔记（P1 Task 5.3）：用于 ?type=notes 单独搜索笔记。
+   * 按标题/内容 LIKE 模糊匹配，RLS 自动按 user_id 过滤。
+   */
+  async searchNotes(
+    supabase: SupabaseClient,
+    query: string,
+  ): Promise<SearchNoteResult[]> {
+    const pattern = `%${this.escapePattern(query)}%`;
+
+    const { data, error } = await notDeleted(supabase
+      .from("notes")
+      .select("id, title, content, type, updated_at, tags")
+      .or(`title.ilike.${pattern},content.ilike.${pattern}`)
+      .order("updated_at", { ascending: false })
+      .limit(20)
+    );
+
+    if (error) {
+      logger.error("searchNotes error:", error);
+      return [];
+    }
+
+    return this.mapNoteRows(data);
+  }
+
+  /**
+   * 将 notes 表行映射为 SearchNoteResult（content 截断为 200 字符摘要）。
+   */
+  private mapNoteRows(data: unknown): SearchNoteResult[] {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+    return (data as NoteSearchRow[]).map((n) => ({
+      id: n.id,
+      title: n.title,
+      summary: n.content.slice(0, 200),
+      type: n.type,
+      updated_at: n.updated_at,
+      tags: n.tags,
+    }));
   }
 
   async semanticSearch(
@@ -153,6 +236,7 @@ export class SearchService {
       return {
         graphs: [],
         nodes: [],
+        notes: [],
         answer: "",
       };
     }
@@ -240,6 +324,7 @@ export class SearchService {
     return {
       graphs,
       nodes,
+      notes: [],
       answer: "",
     };
   }

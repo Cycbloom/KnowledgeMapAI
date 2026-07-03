@@ -32,6 +32,7 @@ import type { IRegionsApi } from "../api/contracts/IRegionsApi";
 import type { IStoryCreationApi } from "../api/contracts/IStoryCreationApi";
 import type { IConceptAggregationApi } from "../api/contracts/IConceptAggregationApi";
 import type { IGraphVersionsApi } from "../api/contracts/IGraphVersionsApi";
+import type { INotesApi } from "../api/contracts/INotesApi";
 import type { IKnowledgePointsApi, IGraphNodesApi, ICombinedViewApi } from "../api/contracts/IKnowledgePointsApi";
 import { NotSupportedError } from "../api/contracts/types";
 
@@ -116,4 +117,5 @@ export const mobileApi: IApi = {
   storyCreation: createNotSupportedModule<IStoryCreationApi>("storyCreation"),
   conceptAggregation: createNotSupportedModule<IConceptAggregationApi>("conceptAggregation"),
   graphVersions: createNotSupportedModule<IGraphVersionsApi>("graphVersions"),
+  notes: createNotSupportedModule<INotesApi>("notes"),
 };

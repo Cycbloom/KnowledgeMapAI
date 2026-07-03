@@ -282,6 +282,7 @@
   "backlinks": {
     "tabContent": "Content",
     "tabBacklinks": "Backlinks",
+    "tabNotes": "Linked Notes",
     "panelTitle": "Backlinks",
     "empty": "No backlinks yet",
     "error": "Failed to load",

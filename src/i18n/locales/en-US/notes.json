@@ -1,0 +1,233 @@
+{
+  "title": "Notes",
+  "subtitle": "Reading notes, reflections and daily learning logs",
+  "nav": "Notes",
+  "views": {
+    "all": "All",
+    "daily": "Daily",
+    "note": "Notes",
+    "pinned": "Pinned",
+    "archived": "Archived"
+  },
+  "actions": {
+    "newNote": "New Note",
+    "newDaily": "New Daily",
+    "open": "Open",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "restore": "Restore",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing..."
+  },
+  "badges": {
+    "note": "Note",
+    "daily": "Daily",
+    "pinned": "Pinned",
+    "archived": "Archived"
+  },
+  "fields": {
+    "updatedAt": "Updated",
+    "createdAt": "Created",
+    "linkedNodes": "Linked nodes",
+    "tags": "Tags",
+    "untitled": "Untitled"
+  },
+  "empty": {
+    "title": "No notes yet",
+    "description": "Create your first note to capture your learning",
+    "cta": "New Note",
+    "archivedTitle": "Archive is empty",
+    "archivedDescription": "Archived notes will appear here",
+    "pinnedTitle": "No pinned notes",
+    "pinnedDescription": "Pinned notes will appear here",
+    "dailyTitle": "No daily notes yet",
+    "dailyDescription": "Click \"New Daily\" to record today's learning",
+    "searchTitle": "No matching notes found",
+    "searchDescription": "Try adjusting your search or clear filters"
+  },
+  "search": {
+    "placeholder": "Search notes by title..."
+  },
+  "filter": {
+    "current": "Filter",
+    "clear": "Clear",
+    "clearAriaLabel": "Clear tag filter",
+    "tagAriaLabel": "Filter by {{tag}}"
+  },
+  "loading": "Loading...",
+  "loadFailed": "Failed to load notes, please retry later",
+  "retry": "Retry",
+  "errorDetails": "Details",
+  "showing": "Showing {{start}} - {{end}} of {{total}}",
+  "page": "Page {{page}} / {{totalPages}}",
+  "prevPage": "Previous",
+  "nextPage": "Next",
+  "newNoteDefaultTitle": "Untitled Note",
+  "createNoteFailed": "Failed to create note",
+  "createDailyFailed": "Failed to create daily note",
+  "noteCreated": "Note created",
+  "dailyCreated": "Daily note created",
+  "dailyExists": "Today's daily note already exists",
+  "updateFailed": "Failed to update note",
+  "noteUpdated": "Note updated",
+  "noteDeleted": "Note moved to recycle bin",
+  "deleteFailed": "Failed to delete note",
+  "deleteConfirmTitle": "Delete Note",
+  "deleteConfirmMessage": "Are you sure you want to delete this note? It will be moved to the recycle bin and node links will not be restored automatically.",
+  "editor": {
+    "placeholder": "Type / for blocks, or start writing…",
+    "slashHint": "Type / to insert a block",
+    "saveStatus": {
+      "idle": "Not saved",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Save failed"
+    },
+    "blockMenu": {
+      "title": "Block types",
+      "paragraph": "Text",
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "bulletList": "Bullet list",
+      "orderedList": "Numbered list",
+      "taskList": "To-do list",
+      "blockquote": "Quote",
+      "codeBlock": "Code block",
+      "divider": "Divider",
+      "image": "Image",
+      "table": "Table"
+    },
+    "toolbar": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "strike": "Strikethrough",
+      "code": "Inline code",
+      "undo": "Undo",
+      "redo": "Redo",
+      "moveUp": "Move block up",
+      "moveDown": "Move block down"
+    },
+    "wikiLink": {
+      "placeholder": "Search graph nodes…",
+      "noMatch": "No matching nodes found",
+      "searching": "Searching…",
+      "createLink": "Create link"
+    }
+  },
+  "editorPage": {
+    "title": "Note title",
+    "loading": "Loading note…",
+    "loadFailed": "Failed to load the note, or you don't have access",
+    "notFound": "Note not found",
+    "untitled": "Untitled",
+    "saveSuccess": "Saved",
+    "saveError": "Failed to save",
+    "deleteConfirmTitle": "Delete Note",
+    "deleteConfirmMessage": "Are you sure you want to delete this note? It will be moved to the recycle bin and node links will not be restored automatically."
+  },
+  "notesPanel": {
+    "title": "Linked Notes",
+    "loading": "Loading linked notes…",
+    "loadFailed": "Failed to load linked notes, please retry later",
+    "empty": {
+      "title": "No linked notes",
+      "description": "Reference this node with [[node name]] in a note to link it automatically",
+      "cta": "New Note"
+    },
+    "updated": "Updated {{date}}"
+  },
+  "ai": {
+    "summary": {
+      "button": "Generate Daily Summary",
+      "loading": "Generating daily summary…",
+      "success": "Daily summary inserted",
+      "error": "Failed to generate daily summary"
+    },
+    "extractConcepts": {
+      "button": "Extract Concepts to Graph",
+      "loading": "Extracting concepts…",
+      "success": "Extracted {{count}} candidate concepts",
+      "error": "Failed to extract concepts",
+      "dialog": {
+        "title": "Extract Concepts to Graph",
+        "description": "Select concepts to create as graph nodes, then choose a target graph.",
+        "conceptName": "Name",
+        "conceptDescription": "Description",
+        "related": "Suggested related: {{related}}",
+        "targetGraph": "Target Graph",
+        "selectGraph": "Select a graph",
+        "confirm": "Create Nodes",
+        "cancel": "Cancel",
+        "empty": "No candidate concepts extracted"
+      }
+    },
+    "createNodes": {
+      "success": "Created {{count}} nodes in graph",
+      "error": "Failed to create nodes"
+    }
+  },
+  "image": {
+    "insertButton": "Insert Image",
+    "uploading": "Uploading image…",
+    "uploadSuccess": "Image inserted",
+    "uploadError": "Failed to upload image",
+    "notImage": "Only image files are supported"
+  },
+  "templates": {
+    "title": "Templates",
+    "subtitle": "Manage Daily Notes and note templates",
+    "backToNotes": "Back to Notes",
+    "list": {
+      "system": "System Templates",
+      "custom": "Custom Templates",
+      "empty": "No custom templates yet",
+      "emptyHint": "Click \"New Template\" in the top right to create your first one",
+      "default": "Default",
+      "defaultHint": "Used when creating the next Daily"
+    },
+    "actions": {
+      "new": "New Template",
+      "edit": "Edit",
+      "delete": "Delete",
+      "setDefault": "Set as Default",
+      "cancelDefault": "Unset Default",
+      "save": "Save",
+      "cancel": "Cancel",
+      "manage": "Templates"
+    },
+    "fields": {
+      "name": "Template Name",
+      "namePlaceholder": "Give your template a name",
+      "content": "Template Content",
+      "contentPlaceholder": "# Title\n\nWrite your template content here..."
+    },
+    "hints": {
+      "variables": "Supported variables",
+      "varDate": "{{date}} Today's date",
+      "varReviewedCards": "{{today_reviewed_cards}} Cards reviewed today",
+      "varCompletedTasks": "{{today_completed_tasks}} Tasks completed today",
+      "varFocusTime": "{{today_focus_time}} Focus time today (minutes)"
+    },
+    "dialog": {
+      "createTitle": "New Template",
+      "editTitle": "Edit Template",
+      "deleteConfirmTitle": "Delete Template",
+      "deleteConfirmMessage": "Are you sure you want to delete this template? This action cannot be undone."
+    },
+    "messages": {
+      "created": "Template created",
+      "updated": "Template updated",
+      "deleted": "Template deleted",
+      "setDefault": "Set as default template",
+      "createFailed": "Failed to create template",
+      "updateFailed": "Failed to update template",
+      "deleteFailed": "Failed to delete template",
+      "setDefaultFailed": "Failed to set default template",
+      "systemTemplateProtected": "System templates cannot be deleted or modified"
+    }
+  }
+}

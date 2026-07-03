@@ -5,6 +5,7 @@ import { AIPlugin as aiPlugin } from "../plugins/AIPlugin";
 import { StudyPlugin as studyPlugin } from "../plugins/StudyPlugin";
 import { SchedulerPlugin as schedulerPlugin } from "../plugins/SchedulerPlugin";
 import { AgentPlugin as agentPlugin } from "../plugins/AgentPlugin";
+import { NotesPlugin as notesPlugin } from "../plugins/NotesPlugin";
 
 /**
  * 构造一个 Kernel 实例并注册全部内置插件。
@@ -22,5 +23,6 @@ export function bootstrapKernel(): Kernel {
   kernel.registerPlugin(studyPlugin);
   kernel.registerPlugin(schedulerPlugin);
   kernel.registerPlugin(agentPlugin);
+  kernel.registerPlugin(notesPlugin);
   return kernel;
 }

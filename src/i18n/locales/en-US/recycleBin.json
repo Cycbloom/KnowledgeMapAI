@@ -3,7 +3,7 @@
   "subtitle": "View and manage deleted graphs. You can restore them or permanently delete.",
   "loading": "Loading trash...",
   "loadFailed": "Failed to load trash",
-  "searchPlaceholder": "Search deleted graphs...",
+  "searchPlaceholder": "Search deleted items...",
   "selectAll": "Select All",
   "deselectAll": "Deselect All",
   "selected": "{{count}} items selected",
@@ -12,13 +12,27 @@
   "empty": "Trash is empty",
   "emptyHint": "Recently deleted graphs will appear here.",
   "autoCleanupHint": "Deleted items will be permanently deleted after 30 days",
-  "noResults": "No matching graphs found",
+  "noResults": "No matching items found",
   "noResultsHint": "Try different search keywords",
   "noDescription": "No description",
   "deletedAt": "Deleted At",
   "restoreGraph": "Restore Graph",
   "restoring": "Restoring...",
   "permanentDelete": "Permanent Delete",
+  "tabs": {
+    "graphs": "Graphs",
+    "notes": "Notes"
+  },
+  "notes": {
+    "empty": "No deleted notes in trash",
+    "emptyHint": "Deleted notes will appear here",
+    "restore": "Restore Note",
+    "restoreSuccess": "Note restored. Note: node links are not restored automatically. Please edit the note and save again to rebuild links.",
+    "restoreFailed": "Failed to restore note",
+    "hardDeleteNotAvailable": "Permanent deletion of notes is not supported yet; it will arrive in a future iteration",
+    "hardDeleteHint": "Permanent deletion of notes is not yet supported; restore and delete again to manage",
+    "updatedAt": "Updated At"
+  },
   "confirmDelete": {
     "title": "Permanently Delete Graph",
     "batchTitle": "Batch Permanently Delete Graphs",

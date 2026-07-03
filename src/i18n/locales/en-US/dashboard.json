@@ -16,7 +16,10 @@
     "keyword": "Keyword",
     "semantic": "Semantic",
     "navigateToGraph": "Navigate to graph",
-    "navigateToLearning": "Navigate to learning mode"
+    "navigateToLearning": "Navigate to learning mode",
+    "notes": "Notes",
+    "noteBadgeDaily": "Daily",
+    "noteBadgeNote": "Note"
   },
   "view": {
     "cardView": "Card View",

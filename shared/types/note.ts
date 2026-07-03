@@ -291,3 +291,105 @@ export interface UploadImageResponse {
   /** 可选：文件大小（字节） */
   size?: number;
 }
+
+// ============================================================
+// P2 类型扩展 (写作辅助 / Daily 聚合刷新)
+// 对应 spec: extend-notes-p2-writing-refresh-search
+// ============================================================
+
+// ----- 写作辅助（continue / rewrite / expand）-----
+
+/**
+ * 写作辅助动作类型
+ * - continue: 续写后续内容
+ * - rewrite: 改写优化表达
+ * - expand: 扩写补充细节
+ */
+export type WritingAssistAction = 'continue' | 'rewrite' | 'expand';
+
+/**
+ * 写作辅助请求
+ */
+export interface WritingAssistRequest {
+  /** 目标笔记 ID */
+  noteId: string;
+  /** 写作辅助动作 */
+  action: WritingAssistAction;
+  /** 用户选中的文字（必填） */
+  selectedText: string;
+  /** 选中文字之前的前文上下文（可选） */
+  contextBefore?: string;
+  /** 选中文字之后的后文上下文（可选） */
+  contextAfter?: string;
+}
+
+/**
+ * 写作辅助响应
+ */
+export interface WritingAssistResponse {
+  /** AI 生成的写作建议文本 */
+  suggestion: string;
+  /** 可选：本次调用的 token 使用量（性能监控） */
+  tokensUsed?: number;
+}
+
+// ----- Daily 聚合刷新 -----
+
+/**
+ * Daily 笔记聚合刷新响应
+ * 用于在打开 daily 笔记时，按需触发今日学习数据聚合刷新
+ */
+export interface RefreshDailyAggregationResponse {
+  /** 刷新后的 daily 笔记（含最新聚合内容） */
+  note: Note;
+  /** 是否实际触发了刷新（无变化时为 false，直接返回缓存笔记） */
+  refreshed: boolean;
+}
+
+// ============================================================
+// P3 类型扩展 (块引用 / 块嵌入)
+// 对应 spec: extend-notes-p3-block-refs-embeds
+// 对应迁移: supabase/migrations/35_note_block_refs.sql
+// ============================================================
+
+// ============ P3: 块引用/块嵌入 ============
+
+/** 块 ID，10 位 [a-z0-9] 串（对齐 Obsidian ^block-id 风格） */
+export type BlockId = string;
+
+/** 块引用类型：ref=inline 引用，embed=块嵌入 */
+export type BlockRefType = 'ref' | 'embed';
+
+/** 块引用关系记录（对应 note_block_refs 表 Row） */
+export interface BlockRef {
+  id: string;
+  sourceNoteId: string;
+  sourceBlockId: BlockId;
+  targetNoteId: string;
+  targetBlockId: BlockId;
+  type: BlockRefType;
+  createdAt: string;
+  /** P3: 查询时 JOIN 获取的源笔记标题（getInboundRefs 填充，便于前端展示来源） */
+  sourceNoteTitle?: string;
+  /** P3: 查询时 JOIN 获取的目标笔记标题（getOutboundRefs 填充，便于前端展示目标） */
+  targetNoteTitle?: string;
+}
+
+/** 块搜索补全结果项（供 BlockRefPopover 使用） */
+export interface BlockRefTarget {
+  noteId: string;
+  noteTitle: string;
+  blockId: BlockId;
+  blockSummary: string;
+  blockType: string;
+  updatedAt: string;
+}
+
+/** 块内容查询结果（供 BlockReference/BlockEmbed 渲染使用） */
+export interface BlockContent {
+  noteId: string;
+  blockId: BlockId;
+  content: string;
+  noteTitle: string;
+  isStale: boolean;
+}

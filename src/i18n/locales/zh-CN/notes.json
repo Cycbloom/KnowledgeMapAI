@@ -109,14 +109,59 @@
       "undo": "撤销",
       "redo": "重做",
       "moveUp": "上移块",
-      "moveDown": "下移块"
+      "moveDown": "下移块",
+      "copyBlockRef": "复制块引用",
+      "embedBlock": "嵌入此块"
     },
     "wikiLink": {
       "placeholder": "搜索图节点…",
       "noMatch": "未找到匹配的节点",
       "searching": "搜索中…",
       "createLink": "创建链接"
+    },
+    "blockRef": {
+      "placeholder": "搜索块…",
+      "noMatch": "未找到匹配的块",
+      "searching": "搜索中…",
+      "copied": "块引用已复制",
+      "embedded": "已嵌入当前块",
+      "stale": "源块已失效",
+      "removed": "源块已删除,可点击移除引用",
+      "tooltip": "点击跳转到源块"
+    },
+    "blockEmbed": {
+      "loading": "加载块内容…",
+      "removed": "源块已删除",
+      "jumpToSource": "跳转到源块",
+      "unembed": "解除嵌入",
+      "refreshPrompt": "源块已更新,点击刷新"
     }
+  },
+  "blockRefsPanel": {
+    "nodeTitle": "引用此节点的块",
+    "inboundTitle": "被引用的块",
+    "empty": "暂无块引用",
+    "loadFailed": "加载块引用失败",
+    "emptyBlock": "（空块）",
+    "typeRef": "引用",
+    "typeEmbed": "嵌入"
+  },
+  "writingAssist": {
+    "button": {
+      "continue": "续写",
+      "rewrite": "改写",
+      "expand": "扩写"
+    },
+    "loading": "正在生成建议…",
+    "accept": "采纳",
+    "reject": "放弃",
+    "error": "写作辅助生成失败",
+    "popoverTitle": "写作辅助"
+  },
+  "refreshAggregation": {
+    "button": "刷新今日数据",
+    "success": "已刷新今日数据",
+    "error": "刷新今日数据失败"
   },
   "editorPage": {
     "title": "笔记标题",

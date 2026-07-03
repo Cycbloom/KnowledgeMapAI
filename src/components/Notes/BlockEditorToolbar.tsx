@@ -26,6 +26,12 @@ import {
   Sparkles,
   Network,
   Image as ImageIcon,
+  Forward,
+  Pencil,
+  Maximize2,
+  RefreshCw,
+  Copy,
+  FileText,
 } from "lucide-react";
 import type { Editor } from "@tiptap/core";
 import { cn } from "@/lib/utils";
@@ -35,7 +41,7 @@ import {
 } from "@/hooks/mutations";
 import { message } from "@/utils/messageHelper";
 import { ExtractConceptsDialog } from "./ExtractConceptsDialog";
-import type { NoteType, NoteExtractedConcept } from "@shared/types/note";
+import type { NoteType, NoteExtractedConcept, WritingAssistAction } from "@shared/types/note";
 
 /** 工具栏分隔符(模块级组件,避免在 render 内创建导致状态重置)。 */
 const ToolbarDivider: React.FC = () => (
@@ -139,6 +145,20 @@ export interface BlockEditorToolbarProps {
   onInsertImage?: (file: File) => Promise<void> | void;
   /** Task 9:图片上传中状态(同步按钮 loading) */
   isUploadingImage?: boolean;
+  /** P2 Task 7:当前是否存在非空选区(决定写作辅助按钮是否启用) */
+  hasSelection?: boolean;
+  /** P2 Task 7:写作辅助回调(续写/改写/扩写),由 BlockEditor 处理 mutation 与 popover */
+  onWritingAssist?: (action: WritingAssistAction) => void;
+  /** P2 Task 7:写作辅助 loading 状态(禁止重复触发) */
+  isWritingAssistLoading?: boolean;
+  /** P2 Task 7:刷新今日数据回调(仅 daily),由 BlockEditor 处理 mutation 与 setContent */
+  onRefreshAggregation?: () => void;
+  /** P2 Task 7:刷新聚合 loading 状态 */
+  isRefreshingAggregation?: boolean;
+  /** P3 Task 8.3: 复制当前顶层块的 ((blockId)) 到剪贴板,由 BlockEditor 处理 ensureBlockId + clipboard */
+  onCopyBlockRef?: () => void;
+  /** P3 Task 8.4: 在当前光标位置插入 !((blockId)) 嵌入当前顶层块,由 BlockEditor 处理 ensureBlockId + insertBlockEmbed */
+  onEmbedBlock?: () => void;
 }
 
 export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
@@ -151,6 +171,13 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
   noteType,
   onInsertImage,
   isUploadingImage = false,
+  hasSelection = false,
+  onWritingAssist,
+  isWritingAssistLoading = false,
+  onRefreshAggregation,
+  isRefreshingAggregation = false,
+  onCopyBlockRef,
+  onEmbedBlock,
 }) => {
   const { t } = useTranslation();
   const summaryMutation = useGenerateDailySummaryMutation();
@@ -167,7 +194,11 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
   if (!editor) return null;
 
   const isDaily = noteType === "daily";
-  const aiLoading = summaryMutation.isPending || extractMutation.isPending;
+  const aiLoading =
+    summaryMutation.isPending ||
+    extractMutation.isPending ||
+    isWritingAssistLoading ||
+    isRefreshingAggregation;
 
   const handlePickImage = () => {
     fileInputRef.current?.click();
@@ -268,6 +299,28 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
         onClick={onMoveBlockDown}
         disabled={!canMoveDown}
       />
+      {/* P3 Task 8.3/8.4: 块引用操作(复制块引用 / 嵌入此块),由 BlockEditor 处理 ensureBlockId */}
+      {(onCopyBlockRef || onEmbedBlock) && (
+        <>
+          <ToolbarDivider />
+          {onCopyBlockRef && (
+            <ToolbarButton
+              icon={Copy}
+              label={t("notes.editor.toolbar.copyBlockRef")}
+              onClick={onCopyBlockRef}
+              disabled={aiLoading}
+            />
+          )}
+          {onEmbedBlock && (
+            <ToolbarButton
+              icon={FileText}
+              label={t("notes.editor.toolbar.embedBlock")}
+              onClick={onEmbedBlock}
+              disabled={aiLoading}
+            />
+          )}
+        </>
+      )}
       <ToolbarDivider />
       {isDaily && (
         <ToolbarButton
@@ -303,6 +356,46 @@ export const BlockEditorToolbar: React.FC<BlockEditorToolbarProps> = ({
           void handleFileChange(event);
         }}
       />
+      {/* P2 Task 7:写作辅助按钮组(续写/改写/扩写),仅在选区非空时启用 */}
+      {onWritingAssist && (
+        <>
+          <ToolbarDivider />
+          <ToolbarButton
+            icon={Forward}
+            label={t("notes.writingAssist.button.continue")}
+            onClick={() => onWritingAssist("continue")}
+            loading={isWritingAssistLoading}
+            disabled={!hasSelection || aiLoading}
+          />
+          <ToolbarButton
+            icon={Pencil}
+            label={t("notes.writingAssist.button.rewrite")}
+            onClick={() => onWritingAssist("rewrite")}
+            loading={isWritingAssistLoading}
+            disabled={!hasSelection || aiLoading}
+          />
+          <ToolbarButton
+            icon={Maximize2}
+            label={t("notes.writingAssist.button.expand")}
+            onClick={() => onWritingAssist("expand")}
+            loading={isWritingAssistLoading}
+            disabled={!hasSelection || aiLoading}
+          />
+        </>
+      )}
+      {/* P2 Task 7:刷新今日数据按钮(仅 daily) */}
+      {isDaily && onRefreshAggregation && (
+        <>
+          <ToolbarDivider />
+          <ToolbarButton
+            icon={RefreshCw}
+            label={t("notes.refreshAggregation.button")}
+            onClick={onRefreshAggregation}
+            loading={isRefreshingAggregation}
+            disabled={aiLoading}
+          />
+        </>
+      )}
 
       <ExtractConceptsDialog
         open={dialogOpen}

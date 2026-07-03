@@ -34,6 +34,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      _schema_versions: {
+        Row: {
+          checksum: string | null
+          executed_at: string | null
+          id: number
+          version: string
+        }
+        Insert: {
+          checksum?: string | null
+          executed_at?: string | null
+          id?: number
+          version: string
+        }
+        Update: {
+          checksum?: string | null
+          executed_at?: string | null
+          id?: number
+          version?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           category: string

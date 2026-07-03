@@ -11,6 +11,12 @@ import type {
   CreateNodesFromConceptsRequest,
   CreateNodesFromConceptsResponse,
   UploadImageResponse,
+  WritingAssistRequest,
+  WritingAssistResponse,
+  RefreshDailyAggregationResponse,
+  BlockContent,
+  BlockRef,
+  BlockRefTarget,
 } from '@shared/types/note';
 
 /**
@@ -96,4 +102,49 @@ export interface INotesApi {
 
   /** 上传图片到笔记(POST /notes/:id/upload-image,multipart/form-data) */
   uploadImage(noteId: string, file: File): Promise<UploadImageResponse>;
+
+  // ----- P2: 写作辅助与刷新聚合 -----
+
+  /**
+   * 写作辅助(POST /notes/:id/writing-assist)
+   * noteId 在 URL path 中,不放入 body;body 仅含 action/selectedText/contextBefore?/contextAfter?
+   */
+  writingAssist(
+    noteId: string,
+    data: WritingAssistRequest,
+  ): Promise<WritingAssistResponse>;
+
+  /**
+   * 刷新 Daily 笔记的今日学习聚合内容(POST /notes/:id/refresh-aggregation,无 body)
+   * 无变化时返回缓存笔记且 refreshed=false
+   */
+  refreshDailyAggregation(
+    noteId: string,
+  ): Promise<RefreshDailyAggregationResponse>;
+
+  // ----- P3: 块引用 / 块嵌入 -----
+
+  /**
+   * 获取笔记中指定块的内容(GET /notes/:id/blocks/:blockId)
+   * 供 BlockReference/BlockEmbed 渲染时拉取块正文
+   */
+  getBlock(noteId: string, blockId: string): Promise<BlockContent>;
+
+  /**
+   * 查询引用了本笔记某块的全部来源(GET /notes/:id/block-refs/inbound)
+   * 用于"被引用"面板展示
+   */
+  getInboundBlockRefs(noteId: string): Promise<BlockRef[]>;
+
+  /**
+   * 查询本笔记正文中的全部块引用/嵌入(GET /notes/:id/block-refs/outbound)
+   * 用于"引用列表"展示
+   */
+  getOutboundBlockRefs(noteId: string): Promise<BlockRef[]>;
+
+  /**
+   * 块搜索补全(GET /notes/block-search?q=&limit=)
+   * 供 BlockRefPopover 输入 (( 时拉取候选块
+   */
+  searchBlocks(query: string, limit?: number): Promise<BlockRefTarget[]>;
 }

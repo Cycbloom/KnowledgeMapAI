@@ -21,9 +21,24 @@ export interface SearchNodeResult {
   updated_at?: string;
 }
 
+/**
+ * 笔记搜索结果项(对齐后端 notes 检索返回)
+ * type 字段对应 NoteType:"note" | "daily"
+ */
+export interface SearchNoteResult {
+  id: string;
+  title: string;
+  summary: string;
+  type: string;
+  updated_at: string;
+  tags: string[] | null;
+  similarity?: number;
+}
+
 export interface SearchResult {
   graphs: SearchGraphResult[];
   nodes: SearchNodeResult[];
+  notes?: SearchNoteResult[];
   answer?: string;
 }
 

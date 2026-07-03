@@ -35,6 +35,7 @@ import { backlinksApi } from "../../../services/api/backlinks";
 import { NodeLinkSelector } from "./NodeLinkSelector";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { NotesPanel } from "../../Notes/NotesPanel";
+import { NodeBlockRefsPanel } from "../../Notes/NodeBlockRefsPanel";
 
 interface NodeFormState {
   title: string;
@@ -587,7 +588,16 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             onNavigateToNode={onNavigateToNode}
           />
         ) : mode === "edit" && contentTab === "notes" ? (
-          <NotesPanel nodeId={currentNodeId} graphId={graphId} />
+          <div className="space-y-4">
+            <NotesPanel nodeId={currentNodeId} graphId={graphId} />
+            {/* P3 Task 10.1: 引用此节点的块(块级反向链接) */}
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                {t("notes.blockRefsPanel.nodeTitle")}
+              </h4>
+              <NodeBlockRefsPanel nodeId={currentNodeId} />
+            </div>
+          </div>
         ) : (
           <>
         <div>

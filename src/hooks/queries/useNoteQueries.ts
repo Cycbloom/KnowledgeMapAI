@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys, defaultQueryConfig } from "./config";
-import type { Note, NoteListParams, NoteType, NoteTemplate } from "@shared/types/note";
+import type { Note, NoteListParams, NoteType, NoteTemplate, BlockContent, BlockRef, BlockRefTarget, NodeBlockRefBacklink } from "@shared/types";
 
 
 /**
@@ -185,3 +185,91 @@ export const useNoteTemplates = (options?: { enabled?: boolean }) => {
     ...defaultQueryConfig,
   });
 };
+
+// ============================================================
+// P3: 块引用 / 块嵌入查询
+// ============================================================
+
+/**
+ * 单块内容查询(GET /notes/:id/blocks/:blockId)。
+ *
+ * 供 BlockReference/BlockEmbed 渲染时拉取目标块正文。
+ * 仅在 noteId/blockId 存在且 enabled 时启用。
+ */
+export const useBlockContent = (
+  noteId: string,
+  blockId: string,
+  enabled?: boolean,
+) =>
+  useQuery({
+    queryKey: queryKeys.noteBlock(noteId, blockId),
+    queryFn: async (): Promise<BlockContent> =>
+      api.notes.getBlock(noteId, blockId),
+    enabled: (enabled ?? true) && !!noteId && !!blockId,
+    ...defaultQueryConfig,
+  });
+
+/**
+ * 被引用列表查询(GET /notes/:id/block-refs/inbound)。
+ *
+ * 返回引用了本笔记某块的全部来源,用于"被引用"面板展示。
+ */
+export const useInboundBlockRefs = (noteId: string) =>
+  useQuery({
+    queryKey: queryKeys.noteInboundBlockRefs(noteId),
+    queryFn: async (): Promise<BlockRef[]> =>
+      api.notes.getInboundBlockRefs(noteId),
+    enabled: !!noteId,
+    ...defaultQueryConfig,
+  });
+
+/**
+ * 引用列表查询(GET /notes/:id/block-refs/outbound)。
+ *
+ * 返回本笔记正文中的全部块引用/嵌入,用于"引用列表"展示。
+ */
+export const useOutboundBlockRefs = (noteId: string) =>
+  useQuery({
+    queryKey: queryKeys.noteOutboundBlockRefs(noteId),
+    queryFn: async (): Promise<BlockRef[]> =>
+      api.notes.getOutboundBlockRefs(noteId),
+    enabled: !!noteId,
+    ...defaultQueryConfig,
+  });
+
+/**
+ * 块搜索补全查询(GET /notes/block-search?q=)。
+ *
+ * 供 BlockRefPopover 输入 (( 时拉取候选块。
+ * 仅当 query 非空且 enabled 时启用。
+ */
+export const useBlockSearch = (query: string, enabled?: boolean) =>
+  useQuery({
+    queryKey: queryKeys.noteBlockSearch(query),
+    queryFn: async (): Promise<BlockRefTarget[]> =>
+      api.notes.searchBlocks(query),
+    enabled: (enabled ?? true) && query.trim().length > 0,
+    ...defaultQueryConfig,
+  });
+
+/**
+ * P3:节点详情"引用此节点的块"查询(GET /backlinks/:knowledgePointId/block-refs)。
+ *
+ * 返回引用了"含 [[节点]] 的块"的笔记列表,供节点详情侧边栏
+ * "引用此节点的块"子区块使用。每项含引用方笔记信息 + 被引用块摘要。
+ *
+ * queryKey 为 ["backlinks", nodeId, "block-refs"](独立前缀,
+ * 不随 ["notes"] 前缀失效,仅在节点变更时由 nodeId 维度自然失效)。
+ */
+export const useBlockRefBacklinks = (nodeId: string | undefined | null) =>
+  useQuery({
+    queryKey: queryKeys.nodeBlockRefBacklinks(nodeId ?? "none"),
+    queryFn: async (): Promise<NodeBlockRefBacklink[]> => {
+      if (!nodeId) {
+        throw new Error("nodeId is required");
+      }
+      return api.backlinks.getBlockRefBacklinks(nodeId);
+    },
+    enabled: !!nodeId,
+    ...defaultQueryConfig,
+  });

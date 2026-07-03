@@ -981,6 +981,15 @@ export const createNodesFromConceptsSchema = z.object({
     .min(1, "至少选择一个知识点"),
 });
 
+// --- Note Writing Assist Schema (P2: 写作辅助) ---
+// noteId 来自路径参数,不在此 body schema 中
+export const writingAssistSchema = z.object({
+  action: z.enum(["continue", "rewrite", "expand"]),
+  selectedText: z.string().min(1, "选中文本不能为空"),
+  contextBefore: z.string().optional(),
+  contextAfter: z.string().optional(),
+});
+
 // --- AI Action Route Schemas (re-export from aiAction.ts) ---
 export {
   createActionSchema,

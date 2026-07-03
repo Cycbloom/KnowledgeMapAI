@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Network, FileText, Sparkles, ChevronRight, Clock, Layers, BookOpen } from 'lucide-react';
+import { Network, FileText, Sparkles, ChevronRight, Clock, Layers, BookOpen, NotebookPen, Hash } from 'lucide-react';
 import type { SearchResult, SearchNodeResult } from '../../services/api/search';
 import { type SearchNodeNavigateTarget } from '../Settings/GraphEditorSettings';
 import { useGraphEditorPreferencesStore } from '../../store/useGraphEditorPreferencesStore';
@@ -13,6 +13,61 @@ const getNodeId = (node: SearchNodeResult): string =>
 
 const getDefaultNavigateTarget = (): SearchNodeNavigateTarget => {
   return useGraphEditorPreferencesStore.getState().searchNodeNavigateTarget;
+};
+
+/** 标签 chip 颜色(与 NotesListPage 视觉风格一致,只读展示) */
+const NOTE_TAG_CHIP_COLORS = [
+  'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  'bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
+  'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
+];
+
+const getNoteTagChipColor = (tagName: string): string => {
+  let hash = 0;
+  for (let i = 0; i < tagName.length; i++) {
+    hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return NOTE_TAG_CHIP_COLORS[Math.abs(hash) % NOTE_TAG_CHIP_COLORS.length];
+};
+
+/** 笔记类型徽章样式:daily 紫色,note 蓝色(对齐 NotesListPage.getTypeBadgeClass) */
+const getNoteTypeBadgeClass = (type: string): string => {
+  if (type === 'daily') {
+    return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700';
+  }
+  return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700';
+};
+
+/** 前端保险截断:后端已截断 summary 到 200 字符,这里再做一次防御 */
+const truncateSummary = (text: string, maxLen = 200): string => {
+  if (!text) return '';
+  return text.length > maxLen ? `${text.slice(0, maxLen)}…` : text;
+};
+
+/** 只读笔记标签芯片组(用于搜索结果项展示 note.tags) */
+const NoteTagChips: React.FC<{ tags: string[] | null | undefined }> = ({ tags }) => {
+  if (!tags || tags.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1 mt-1">
+      {tags.slice(0, 6).map((tag) => (
+        <span
+          key={tag}
+          className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getNoteTagChipColor(tag)}`}
+        >
+          <Hash size={9} aria-hidden="true" />
+          {tag}
+        </span>
+      ))}
+      {tags.length > 6 && (
+        <span className="text-[10px] text-gray-400 dark:text-slate-500">
+          +{tags.length - 6}
+        </span>
+      )}
+    </div>
+  );
 };
 
 interface SearchResultsProps {
@@ -71,7 +126,16 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     navigateToNode(graphId, nodeId, target);
   }, [navigateToNode]);
 
-  const hasResults = results && (results.graphs.length > 0 || results.nodes.length > 0);
+  const handleNoteClick = useCallback((noteId: string) => {
+    navigate(`/notes/${noteId}`);
+    onClose?.();
+  }, [navigate, onClose]);
+
+  const hasResults = results && (
+    results.graphs.length > 0 ||
+    results.nodes.length > 0 ||
+    (results.notes?.length ?? 0) > 0
+  );
 
   if (isSearching) {
     return (
@@ -115,16 +179,6 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         exit={{ opacity: 0, y: -4 }}
         className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 max-h-[60vh] overflow-y-auto"
       >
-        {results?.answer && (
-          <div className="p-2 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Sparkles className="w-3 h-3 text-primary-500" />
-              <span className="text-xs font-medium text-primary-700 dark:text-primary-300">AI 回答</span>
-            </div>
-            <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">{results.answer}</p>
-          </div>
-        )}
-
         {results?.graphs && results.graphs.length > 0 && (
           <div className="py-1.5 border-b border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
@@ -251,6 +305,73 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {results?.notes && results.notes.length > 0 && (
+          <div className="py-1.5 border-t border-gray-200 dark:border-slate-700">
+            <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
+              <NotebookPen className="w-3 h-3 text-amber-500" />
+              <span>
+                {t('dashboard.search.notes')} {results.notes.length}
+              </span>
+            </div>
+            <div>
+              {results.notes.map((note) => (
+                <button
+                  key={note.id}
+                  onClick={() => handleNoteClick(note.id)}
+                  className="w-full px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-left flex items-center gap-2 group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <HighlightText
+                        text={note.title}
+                        query={query}
+                        className="text-sm text-gray-900 dark:text-white truncate font-bold"
+                      />
+                      <span
+                        className={`text-[10px] px-1 py-0.5 rounded border ${getNoteTypeBadgeClass(note.type)}`}
+                      >
+                        {note.type === 'daily'
+                          ? t('dashboard.search.noteBadgeDaily')
+                          : t('dashboard.search.noteBadgeNote')}
+                      </span>
+                      {note.similarity !== undefined && (
+                        <span className="text-[10px] px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300">
+                          {(note.similarity * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                    {note.summary && (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2">
+                        <HighlightText text={truncateSummary(note.summary)} query={query} />
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                      {note.updated_at && (
+                        <span className="flex items-center gap-0.5 flex-shrink-0">
+                          <Clock className="w-2.5 h-2.5" />
+                          {new Date(note.updated_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <NoteTagChips tags={note.tags} />
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-amber-500 flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {results?.answer && (
+          <div className="p-2 border-t border-gray-200 dark:border-slate-700 bg-gradient-to-r from-primary-50 to-primary-50 dark:from-primary-900/20 dark:to-primary-900/20">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sparkles className="w-3 h-3 text-primary-500" />
+              <span className="text-xs font-medium text-primary-700 dark:text-primary-300">AI 回答</span>
+            </div>
+            <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">{results.answer}</p>
           </div>
         )}
       </motion.div>

@@ -24,6 +24,8 @@ import TableCell from "@tiptap/extension-table-cell";
 import { Markdown } from "tiptap-markdown";
 import type { Extensions } from "@tiptap/core";
 import { WIKI_LINK_PROTOCOL } from "./markdownSerializer";
+import { BlockReference } from "./extensions/BlockReference";
+import { BlockEmbed } from "./extensions/BlockEmbed";
 
 /**
  * 构建 BlockEditor 的扩展列表。
@@ -62,11 +64,23 @@ export const buildEditorExtensions = (placeholder: string): Extensions => [
   TableHeader,
   TableCell,
   Markdown.configure({
-    html: false,
+    // P3: 块引用/块嵌入依赖 HTML 直通——preprocessBlockRefs 会把 ((id)) / !((id))
+    // 转为 <span data-block-ref>/<div data-block-embed>,需 html:true 才能被 markdown-it
+    // 原样保留并由 ProseMirror DOMParser 按节点 parseHTML 规则解析。
+    // 序列化时 BlockReference/BlockEmbed 无 markdownSpec,回退到 HTMLNode 输出 HTML,
+    // 再由 tiptapToMarkdownBlockRefs 还原为 ((id)) / !((id))。
+    html: true,
     tightLists: true,
     linkify: false,
     breaks: false,
     transformPastedText: true,
     transformCopiedText: true,
   }),
+  // P3: 块引用/块嵌入自研节点
+  // - BlockReference: inline atom,承载 ((id)) 引用
+  // - BlockEmbed: block atom + ReactNodeView,承载 !((id)) 嵌入
+  // Markdown 双向转换由 markdownSerializer.ts 的 preprocessBlockRefs /
+  // tiptapToMarkdownBlockRefs 在 Markdown 扩展前后处理
+  BlockReference,
+  BlockEmbed,
 ];

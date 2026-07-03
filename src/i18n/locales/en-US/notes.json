@@ -109,14 +109,59 @@
       "undo": "Undo",
       "redo": "Redo",
       "moveUp": "Move block up",
-      "moveDown": "Move block down"
+      "moveDown": "Move block down",
+      "copyBlockRef": "Copy block reference",
+      "embedBlock": "Embed this block"
     },
     "wikiLink": {
       "placeholder": "Search graph nodes…",
       "noMatch": "No matching nodes found",
       "searching": "Searching…",
       "createLink": "Create link"
+    },
+    "blockRef": {
+      "placeholder": "Search blocks…",
+      "noMatch": "No matching blocks found",
+      "searching": "Searching…",
+      "copied": "Block reference copied",
+      "embedded": "Block embedded",
+      "stale": "Source block is stale",
+      "removed": "Source block removed, click to remove reference",
+      "tooltip": "Click to jump to source block"
+    },
+    "blockEmbed": {
+      "loading": "Loading block content…",
+      "removed": "Source block removed",
+      "jumpToSource": "Jump to source block",
+      "unembed": "Unembed",
+      "refreshPrompt": "Source block updated, click to refresh"
     }
+  },
+  "blockRefsPanel": {
+    "nodeTitle": "Blocks referencing this node",
+    "inboundTitle": "Referenced blocks",
+    "empty": "No block references",
+    "loadFailed": "Failed to load block references",
+    "emptyBlock": "(empty block)",
+    "typeRef": "ref",
+    "typeEmbed": "embed"
+  },
+  "writingAssist": {
+    "button": {
+      "continue": "Continue",
+      "rewrite": "Rewrite",
+      "expand": "Expand"
+    },
+    "loading": "Generating suggestion…",
+    "accept": "Accept",
+    "reject": "Reject",
+    "error": "Writing assist failed",
+    "popoverTitle": "Writing Assist"
+  },
+  "refreshAggregation": {
+    "button": "Refresh Today's Data",
+    "success": "Today's data refreshed",
+    "error": "Failed to refresh today's data"
   },
   "editorPage": {
     "title": "Note title",

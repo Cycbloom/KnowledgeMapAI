@@ -115,6 +115,23 @@ export const queryKeys = {
   // P1 Task 11: 笔记模板列表。模板变更会影响下次 daily 自动创建,故以
   // ["notes", "templates"] 为键的同时被 ["notes"] 前缀失效。
   noteTemplates: () => ["notes", "templates"] as const,
+  // P3: 块引用/块嵌入相关查询键
+  // 单块内容:以 ["notes", noteId, "blocks", blockId] 为键,可被 ["notes", noteId] 前缀失效
+  noteBlock: (noteId: string, blockId: string) =>
+    ["notes", noteId, "blocks", blockId] as const,
+  // 被引用列表:以 ["notes", noteId, "block-refs", "inbound"] 为键
+  noteInboundBlockRefs: (noteId: string) =>
+    ["notes", noteId, "block-refs", "inbound"] as const,
+  // 引用列表:以 ["notes", noteId, "block-refs", "outbound"] 为键
+  noteOutboundBlockRefs: (noteId: string) =>
+    ["notes", noteId, "block-refs", "outbound"] as const,
+  // 块搜索补全:以 ["notes", "block-search", query] 为键
+  noteBlockSearch: (query: string) =>
+    ["notes", "block-search", query] as const,
+  // P3:节点详情"引用此节点的块":以 ["backlinks", nodeId, "block-refs"] 为键
+  // 独立前缀,避免被 ["notes"] 前缀失效误清(节点详情数据不随笔记列表变更而变)
+  nodeBlockRefBacklinks: (nodeId: string) =>
+    ["backlinks", nodeId, "block-refs"] as const,
 };
 
 export type { Node, Edge, Task, NodeLevel };

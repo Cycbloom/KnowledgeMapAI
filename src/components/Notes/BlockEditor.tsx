@@ -16,9 +16,14 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import type { EditorView } from "prosemirror-view";
 import { TextSelection } from "prosemirror-state";
 import { useTranslation } from "react-i18next";
-import { useUpdateNoteMutation, useUploadNoteImageMutation } from "@/hooks/mutations";
+import {
+  useUpdateNoteMutation,
+  useUploadNoteImageMutation,
+  useWritingAssistMutation,
+  useRefreshDailyAggregationMutation,
+} from "@/hooks/mutations";
 import { message } from "@/utils/messageHelper";
-import type { NoteType } from "@shared/types/note";
+import type { NoteType, WritingAssistAction } from "@shared/types/note";
 import { buildEditorExtensions } from "./editorExtensions";
 import {
   markdownToTiptap,
@@ -38,6 +43,9 @@ import {
 } from "./WikiLinkPopover";
 import { BlockEditorToolbar } from "./BlockEditorToolbar";
 import { canMoveBlock, moveBlock } from "./blockMovement";
+import { WritingAssistPopover } from "./WritingAssistPopover";
+import { BlockRefPopover } from "./BlockRefPopover";
+import { extractBlockId, generateBlockId } from "@shared/utils/blockRef";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -92,9 +100,23 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   const { t } = useTranslation();
   const updateMutation = useUpdateNoteMutation();
   const uploadImageMutation = useUploadNoteImageMutation();
+  const writingAssistMutation = useWritingAssistMutation();
+  const refreshAggregationMutation = useRefreshDailyAggregationMutation();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [moveAvailability, setMoveAvailability] = useState({ up: false, down: false });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // P2 Task 7:选区跟踪(仅 hasSelection,用于工具栏按钮启用/禁用)
+  const [hasSelection, setHasSelection] = useState(false);
+
+  // P2 Task 7:写作辅助浮层状态(action 用于采纳时决定插入/替换策略)
+  const [writingAssistState, setWritingAssistState] = useState<{
+    action: WritingAssistAction;
+    suggestion: string;
+    isLoading: boolean;
+    error?: string;
+    anchorRect: DOMRect;
+  } | null>(null);
 
   // 斜杠命令菜单状态
   const [slashMenu, setSlashMenu] = useState<SlashMenu>({
@@ -111,6 +133,13 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     selectedIndex: 0,
     position: { top: 0, left: 0 },
   });
+
+  // P3 Task 8.2: 块引用补全浮层状态(null 表示关闭)
+  // mode: 'ref' 对应 ((, 'embed' 对应 !((
+  const [blockRefPopover, setBlockRefPopover] = useState<{
+    mode: "ref" | "embed";
+    anchorRect: DOMRect;
+  } | null>(null);
 
   // 知识点标题列表（懒加载）
   const nodeTitlesQuery = useNodeTitles();
@@ -190,6 +219,16 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     // 仅依赖 noteId，不依赖 initialContent（避免父组件 re-render 重置内容）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId, editor]);
+
+  // P3 Task 9: 将当前 noteId 写入 BlockEmbed 扩展的 storage,
+  // 供 BlockEmbedNodeView 在节点 noteId 属性为 null(页面重载后)时回退使用。
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const storage = editor.storage as unknown as {
+      blockEmbed: { currentNoteId: string | undefined };
+    };
+    storage.blockEmbed.currentNoteId = noteId;
+  }, [editor, noteId]);
 
   // —— 保存逻辑 ——
   const save = useCallback(
@@ -359,6 +398,112 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     [closeWikiPopover, nodeTitlesQuery],
   );
 
+  // —— P3 Task 8.2: 块引用补全检测 ——
+  // 检测光标前文本是否以 `((`(ref)或 `!((`(embed)结尾,唤起 BlockRefPopover。
+  // BlockRefPopover 自带输入框(查询在浮层内输入,不依赖编辑器文本),
+  // 故此处只检测触发字符,不捕获查询文本(与 WikiLinkPopover 不同)。
+  const closeBlockRefPopover = useCallback(() => {
+    setBlockRefPopover((prev) => (prev ? null : prev));
+  }, []);
+
+  const detectBlockRef = useCallback(
+    (ed: Editor) => {
+      const { selection } = ed.state;
+      const $from = selection.$from;
+      if (!$from.parent.isTextblock) {
+        closeBlockRefPopover();
+        return;
+      }
+      const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+      // Embed 模式: 文本以 `!((` 结尾
+      if (/!\(\($/.test(textBefore)) {
+        const coords = ed.view.coordsAtPos(selection.from);
+        setBlockRefPopover({
+          mode: "embed",
+          anchorRect: new DOMRect(
+            coords.left,
+            coords.top,
+            coords.right - coords.left,
+            coords.bottom - coords.top,
+          ),
+        });
+        return;
+      }
+      // Ref 模式: 文本以 `((` 结尾,且前一字符不是 `!`(否则为 embed 模式)
+      if (textBefore.endsWith("((")) {
+        const thirdToLast =
+          textBefore.length >= 3 ? textBefore[textBefore.length - 3] : "";
+        if (thirdToLast !== "!") {
+          const coords = ed.view.coordsAtPos(selection.from);
+          setBlockRefPopover({
+            mode: "ref",
+            anchorRect: new DOMRect(
+              coords.left,
+              coords.top,
+              coords.right - coords.left,
+              coords.bottom - coords.top,
+            ),
+          });
+          return;
+        }
+      }
+      closeBlockRefPopover();
+    },
+    [closeBlockRefPopover],
+  );
+
+  // —— P3 Task 8.2: 块引用/块嵌入插入(popover 选中后) ——
+  // 删除触发字符 `((` / `!((`,插入 BlockReference / BlockEmbed 节点。
+  // 重新检查触发字符(防止 popover 打开期间用户继续输入导致状态不一致)。
+  // P3 Task 9: embed 模式同时传入源笔记 noteId,供 BlockEmbedNodeView 拉取块内容。
+  const handleBlockRefSelect = useCallback(
+    (blockId: string, noteId: string) => {
+      if (!editor || !blockRefPopover) {
+        closeBlockRefPopover();
+        return;
+      }
+      const { selection } = editor.state;
+      const $from = selection.$from;
+      const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+
+      if (blockRefPopover.mode === "embed") {
+        // Embed: 文本应以 `!((` 结尾
+        if (!/!\(\($/.test(textBefore)) {
+          closeBlockRefPopover();
+          return;
+        }
+        const startPos = $from.pos - 3; // `!((` 为 3 字符
+        editor
+          .chain()
+          .focus()
+          .deleteRange({ from: startPos, to: selection.to })
+          .insertBlockEmbed(blockId, noteId)
+          .run();
+      } else {
+        // Ref: 文本应以 `((` 结尾,且前一字符不是 `!`
+        if (!textBefore.endsWith("((")) {
+          closeBlockRefPopover();
+          return;
+        }
+        const thirdToLast =
+          textBefore.length >= 3 ? textBefore[textBefore.length - 3] : "";
+        if (thirdToLast === "!") {
+          closeBlockRefPopover();
+          return;
+        }
+        const startPos = $from.pos - 2; // `((` 为 2 字符
+        editor
+          .chain()
+          .focus()
+          .deleteRange({ from: startPos, to: selection.to })
+          .insertBlockReference(blockId)
+          .run();
+      }
+      closeBlockRefPopover();
+    },
+    [editor, blockRefPopover, closeBlockRefPopover],
+  );
+
   // —— 应用块类型（斜杠菜单选中） ——
   const applyBlock = useCallback(
     (block: BlockType) => {
@@ -419,6 +564,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
       onUpdate?.(markdown);
       detectSlashCommand(editor);
       detectWikiLink(editor);
+      detectBlockRef(editor);
       scheduleSave(markdown);
       // 更新块移动可用性
       setMoveAvailability(canMoveBlock(editor));
@@ -427,7 +573,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     return () => {
       editor.off("update", handler);
     };
-  }, [editor, onUpdate, detectSlashCommand, detectWikiLink, scheduleSave]);
+  }, [editor, onUpdate, detectSlashCommand, detectWikiLink, detectBlockRef, scheduleSave]);
 
   // —— 键盘导航（菜单打开时拦截 Arrow/Enter/Esc） ——
   // 斜杠菜单过滤后的项
@@ -550,6 +696,161 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     return () => dom.removeEventListener("focusout", onFocusOut);
   }, [editor, handleBlur]);
 
+  // —— P2 Task 7:选区跟踪(仅 hasSelection,用于工具栏按钮启用/禁用) ——
+  useEffect(() => {
+    if (!editor) return;
+    const handler = () => {
+      const next = !editor.state.selection.empty;
+      setHasSelection((prev) => (prev === next ? prev : next));
+    };
+    editor.on("selectionUpdate", handler);
+    return () => {
+      editor.off("selectionUpdate", handler);
+    };
+  }, [editor]);
+
+  // —— P2 Task 7:写作辅助(续写/改写/扩写) ——
+  // 计算 selection.to 处的锚点坐标,供 popover 定位。
+  const computeAnchorRect = useCallback(
+    (ed: Editor): DOMRect => {
+      const sel = ed.state.selection;
+      const coords = ed.view.coordsAtPos(sel.to);
+      return new DOMRect(
+        coords.left,
+        coords.top,
+        coords.right - coords.left,
+        coords.bottom - coords.top,
+      );
+    },
+    [],
+  );
+
+  // 触发写作辅助:从 editor.state 读取选区文本与上下文,调用 mutation,成功后显示 popover。
+  const handleWritingAssist = useCallback(
+    async (action: WritingAssistAction) => {
+      if (!editor) return;
+      const sel = editor.state.selection;
+      if (sel.empty) return;
+
+      const docSize = editor.state.doc.content.size;
+      const selectedText = editor.state.doc.textBetween(
+        sel.from,
+        sel.to,
+        "\n",
+      );
+      const contextBefore = editor.state.doc.textBetween(
+        Math.max(0, sel.from - 200),
+        sel.from,
+        "\n",
+      );
+      const contextAfter = editor.state.doc.textBetween(
+        sel.to,
+        Math.min(docSize, sel.to + 200),
+        "\n",
+      );
+
+      const anchorRect = computeAnchorRect(editor);
+      setWritingAssistState({
+        action,
+        suggestion: "",
+        isLoading: true,
+        anchorRect,
+      });
+
+      try {
+        const res = await writingAssistMutation.mutateAsync({
+          noteId,
+          data: {
+            noteId,
+            action,
+            selectedText,
+            contextBefore,
+            contextAfter,
+          },
+        });
+        // 重新计算坐标(防止 loading 期间滚动导致位置偏移)
+        const newAnchorRect = computeAnchorRect(editor);
+        setWritingAssistState({
+          action,
+          suggestion: res.suggestion,
+          isLoading: false,
+          anchorRect: newAnchorRect,
+        });
+      } catch {
+        setWritingAssistState(null);
+        message.error(t("notes.writingAssist.error"));
+      }
+    },
+    [editor, noteId, t, writingAssistMutation, computeAnchorRect],
+  );
+
+  // 采纳建议:continue→选区后插入;rewrite/expand→替换选区;关闭 popover 并立即保存。
+  const handleAcceptWritingAssist = useCallback(() => {
+    if (!editor || !writingAssistState) return;
+    const { action, suggestion } = writingAssistState;
+    const { selection } = editor.state;
+
+    if (action === "continue") {
+      // 续写:光标定位到选区末尾后插入建议
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(selection.to)
+        .insertContent(suggestion)
+        .run();
+    } else {
+      // 改写/扩写:删除选区并插入建议(deleteSelection 后光标停在 selection.from)
+      editor.chain().focus().deleteSelection().insertContent(suggestion).run();
+    }
+
+    setWritingAssistState(null);
+
+    // 采纳即落盘:清除防抖定时器并立即保存
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    const markdown = readMarkdown(editor);
+    void save(markdown);
+  }, [editor, writingAssistState, save]);
+
+  // 放弃建议:仅关闭 popover
+  const handleRejectWritingAssist = useCallback(() => {
+    setWritingAssistState(null);
+  }, []);
+
+  // P2 Task 7:popover 打开时,监听 scroll/resize 关闭浮层(锚点坐标已失效)
+  const writingAssistOpen = writingAssistState !== null;
+  useEffect(() => {
+    if (!writingAssistOpen) return;
+    const handleClose = () => setWritingAssistState(null);
+    window.addEventListener("scroll", handleClose, true);
+    window.addEventListener("resize", handleClose);
+    return () => {
+      window.removeEventListener("scroll", handleClose, true);
+      window.removeEventListener("resize", handleClose);
+    };
+  }, [writingAssistOpen]);
+
+  // —— P2 Task 7:刷新今日数据聚合(daily) ——
+  // 调用后端重新渲染"## 今日数据"段并落盘,用返回的 note.content 替换编辑器内容。
+  const handleRefreshAggregation = useCallback(async () => {
+    if (!editor) return;
+    try {
+      const res = await refreshAggregationMutation.mutateAsync(noteId);
+      isSettingContentRef.current = true;
+      editor.commands.setContent(markdownToTiptap(res.note.content), {
+        emitUpdate: false,
+      });
+      isSettingContentRef.current = false;
+      lastSavedContentRef.current = res.note.content;
+      setSaveStatus("saved");
+      message.success(t("notes.refreshAggregation.success"));
+    } catch {
+      message.error(t("notes.refreshAggregation.error"));
+    }
+  }, [editor, noteId, t, refreshAggregationMutation]);
+
   // —— 块移动 ——
   const handleMoveUp = useCallback(() => {
     if (editor) {
@@ -564,6 +865,87 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
       setMoveAvailability(canMoveBlock(editor));
     }
   }, [editor]);
+
+  // —— P3 Task 8.3/8.4: 块引用操作辅助 ——
+  // 确保当前选区所在顶层块有 ^blockId,若无则生成并追加到块尾。
+  // 跳过代码块/分割线(这些块的 ^id 追加需特殊处理,不在 Task 8.3/8.4 范围)。
+  // 返回 { blockId, isNew },失败返回 null。
+  const ensureCurrentBlockId = useCallback(
+    (ed: Editor): { blockId: string; isNew: boolean } | null => {
+      const { state } = ed;
+      const $pos = state.selection.$from;
+      if ($pos.depth < 1) return null;
+      const blockStart = $pos.before(1);
+      const blockNode = state.doc.nodeAt(blockStart);
+      if (!blockNode) return null;
+      // 跳过代码块/分割线(^id 追加需特殊处理,不在本任务范围)
+      const blockType = blockNode.type.name;
+      if (blockType === "codeBlock" || blockType === "horizontalRule") {
+        return null;
+      }
+      const blockText = blockNode.textContent;
+      const existingId = extractBlockId(blockText);
+      if (existingId) return { blockId: existingId, isNew: false };
+      // 生成新 ID 并插入到块末尾(闭合标签前)
+      // 使用 ProseMirror Transaction.insertText(insertText 在 ChainedCommands 类型上不存在)
+      const newId = generateBlockId();
+      const insertPos = blockStart + blockNode.nodeSize - 1;
+      const tr = ed.state.tr.insertText(`^${newId}`, insertPos);
+      ed.view.dispatch(tr);
+      return { blockId: newId, isNew: true };
+    },
+    [],
+  );
+
+  // P3 Task 8.3: 复制块引用 —— 复制 ((blockId)) 到剪贴板
+  const handleCopyBlockRef = useCallback(async () => {
+    if (!editor) return;
+    const result = ensureCurrentBlockId(editor);
+    if (!result) {
+      message.error(t("notes.editor.blockRef.stale"));
+      return;
+    }
+    const { blockId, isNew } = result;
+    const refText = `((${blockId}))`;
+    try {
+      await navigator.clipboard.writeText(refText);
+      message.success(t("notes.editor.blockRef.copied"));
+    } catch {
+      message.error(t("notes.editor.blockRef.stale"));
+      return;
+    }
+    // 若新生成了 blockId,立即保存(清除防抖定时器)
+    if (isNew) {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      const markdown = readMarkdown(editor);
+      void save(markdown);
+    }
+  }, [editor, ensureCurrentBlockId, t, save]);
+
+  // P3 Task 8.4: 嵌入此块 —— 在当前光标位置插入 !((blockId)) 块嵌入节点
+  const handleEmbedBlock = useCallback(() => {
+    if (!editor) return;
+    const result = ensureCurrentBlockId(editor);
+    if (!result) {
+      message.error(t("notes.editor.blockRef.stale"));
+      return;
+    }
+    const { blockId, isNew } = result;
+    editor.chain().focus().insertBlockEmbed(blockId).run();
+    message.success(t("notes.editor.blockRef.embedded"));
+    // 若新生成了 blockId,立即保存
+    if (isNew) {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      const markdown = readMarkdown(editor);
+      void save(markdown);
+    }
+  }, [editor, ensureCurrentBlockId, t, save]);
 
   // —— 保存状态文案 ——
   const saveStatusText = (() => {
@@ -600,6 +982,13 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
         noteType={noteType}
         onInsertImage={uploadAndInsertImage}
         isUploadingImage={isUploadingImage}
+        hasSelection={hasSelection}
+        onWritingAssist={handleWritingAssist}
+        isWritingAssistLoading={writingAssistMutation.isPending}
+        onRefreshAggregation={handleRefreshAggregation}
+        isRefreshingAggregation={refreshAggregationMutation.isPending}
+        onCopyBlockRef={handleCopyBlockRef}
+        onEmbedBlock={handleEmbedBlock}
       />
 
       <div className="flex-1 overflow-y-auto">
@@ -651,6 +1040,27 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
         }
         onSelect={insertWikiLink}
       />
+
+      {/* P2 Task 7:写作辅助浮层(仅 writingAssistState 非空时渲染) */}
+      {writingAssistState && (
+        <WritingAssistPopover
+          suggestion={writingAssistState.suggestion}
+          isLoading={writingAssistState.isLoading}
+          error={writingAssistState.error}
+          anchorRect={writingAssistState.anchorRect}
+          onAccept={handleAcceptWritingAssist}
+          onReject={handleRejectWritingAssist}
+        />
+      )}
+
+      {/* P3 Task 8.2:块引用补全浮层(仅 blockRefPopover 非空时渲染) */}
+      {blockRefPopover && (
+        <BlockRefPopover
+          anchorRect={blockRefPopover.anchorRect}
+          onSelect={handleBlockRefSelect}
+          onClose={closeBlockRefPopover}
+        />
+      )}
     </div>
   );
 };

@@ -15,6 +15,12 @@ import type {
   CreateNodesFromConceptsRequest,
   CreateNodesFromConceptsResponse,
   UploadImageResponse,
+  WritingAssistRequest,
+  WritingAssistResponse,
+  RefreshDailyAggregationResponse,
+  BlockContent,
+  BlockRef,
+  BlockRefTarget,
 } from '@shared/types/note';
 import type { INotesApi, NoteListResult, NoteRestoreResult } from './contracts/INotesApi';
 
@@ -147,5 +153,52 @@ export const notesApi: INotesApi = {
       body: formData,
     });
     return handleResponse<UploadImageResponse>(response);
+  },
+
+  // ----- P2: 写作辅助与刷新聚合 -----
+
+  // noteId 走 URL path,不放入 body;body 仅含 action/selectedText/contextBefore?/contextAfter?
+  // JSON.stringify 会自动忽略 undefined 字段,可选上下文未提供时不进入请求体。
+  writingAssist: (noteId: string, data: WritingAssistRequest) =>
+    request<WritingAssistResponse>(`/notes/${noteId}/writing-assist`, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: data.action,
+        selectedText: data.selectedText,
+        contextBefore: data.contextBefore,
+        contextAfter: data.contextAfter,
+      }),
+    }),
+
+  // 无 body;后端按需触发聚合刷新,无变化时返回缓存笔记且 refreshed=false。
+  refreshDailyAggregation: (noteId: string) =>
+    request<RefreshDailyAggregationResponse>(
+      `/notes/${noteId}/refresh-aggregation`,
+      {
+        method: 'POST',
+      },
+    ),
+
+  // ----- P3: 块引用 / 块嵌入(只读端点) -----
+  // getBlock: 获取笔记中指定块的内容,供 BlockReference/BlockEmbed 渲染
+  // getInboundBlockRefs / getOutboundBlockRefs: 引用关系列表
+  // searchBlocks: 块搜索补全,供 BlockRefPopover 输入 (( 时拉取候选块
+
+  getBlock: (noteId: string, blockId: string): Promise<BlockContent> =>
+    request(`/notes/${noteId}/blocks/${blockId}`),
+
+  getInboundBlockRefs: (noteId: string): Promise<BlockRef[]> =>
+    request(`/notes/${noteId}/block-refs/inbound`),
+
+  getOutboundBlockRefs: (noteId: string): Promise<BlockRef[]> =>
+    request(`/notes/${noteId}/block-refs/outbound`),
+
+  searchBlocks: (
+    query: string,
+    limit?: number,
+  ): Promise<BlockRefTarget[]> => {
+    const params = new URLSearchParams({ q: query });
+    if (limit !== undefined) params.set('limit', String(limit));
+    return request(`/notes/block-search?${params.toString()}`);
   },
 };

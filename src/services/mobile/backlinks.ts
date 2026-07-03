@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import { useStore } from "@/store/useStore";
 import { createErrorFromResponse } from "@/utils/errors";
 import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
-import type { BacklinkItem, OutlinkItem, KnowledgePointSearchHit } from "@shared/types";
+import type { BacklinkItem, OutlinkItem, KnowledgePointSearchHit, NodeBlockRefBacklink } from "@shared/types";
 import type { IBacklinksApi } from "../api/contracts/IBacklinksApi";
 
 const createMobileBacklinksClient = (): AxiosInstance => {
@@ -62,4 +62,7 @@ export const mobileBacklinksApi: IBacklinksApi = {
     if (options?.limit) params.set("limit", String(options.limit));
     return get<KnowledgePointSearchHit[]>(`/backlinks/search?${params.toString()}`);
   },
+
+  getBlockRefBacklinks: (knowledgePointId: string): Promise<NodeBlockRefBacklink[]> =>
+    get<NodeBlockRefBacklink[]>(`/backlinks/${knowledgePointId}/block-refs`),
 };

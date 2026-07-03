@@ -16,6 +16,7 @@ import { useNote } from "@/hooks/queries";
 import { useUpdateNoteMutation, useDeleteNoteMutation } from "@/hooks/mutations";
 import { useError } from "@/hooks";
 import { BlockEditor } from "@/components/Notes/BlockEditor";
+import { InboundBlockRefsPanel } from "@/components/Notes/InboundBlockRefsPanel";
 import { Skeleton, EmptyState } from "@/components/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "@/utils/messageHelper";
@@ -300,14 +301,27 @@ const NoteEditorPage: React.FC = () => {
         </div>
       </header>
 
-      {/* 主体：BlockEditor（自动保存由其内部完成，列表查询失效由 mutation 处理） */}
+      {/* 主体：BlockEditor(左) + 被引用的块侧边栏(右,P3 Task 10.2) */}
       <main className="flex-1 overflow-hidden">
-        <div className="max-w-4xl mx-auto p-4 sm:p-6 h-full">
-          <BlockEditor
-            noteId={note.id}
-            initialContent={note.content}
-            noteType={note.type}
-          />
+        <div className="h-full max-w-6xl mx-auto flex gap-4 px-4 sm:px-6 py-4">
+          <div className="flex-1 min-w-0 h-full">
+            <div className="max-w-4xl mx-auto h-full">
+              <BlockEditor
+                noteId={note.id}
+                initialContent={note.content}
+                noteType={note.type}
+              />
+            </div>
+          </div>
+          {/* P3 Task 10.2: 被引用的块侧边栏(大屏可见,移动端隐藏避免遮挡编辑器) */}
+          <aside className="hidden lg:flex flex-col w-72 flex-shrink-0 h-full overflow-y-auto border-l border-gray-200 dark:border-slate-700 pl-4">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 flex-shrink-0">
+              {t("notes.blockRefsPanel.inboundTitle")}
+            </h3>
+            <div className="flex-1 min-h-0">
+              <InboundBlockRefsPanel noteId={note.id} />
+            </div>
+          </aside>
         </div>
       </main>
     </div>

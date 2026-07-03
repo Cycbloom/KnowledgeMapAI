@@ -1,5 +1,5 @@
 import { request } from './client';
-import type { BacklinkItem, OutlinkItem, KnowledgePointSearchHit } from '@shared/types';
+import type { BacklinkItem, OutlinkItem, KnowledgePointSearchHit, NodeBlockRefBacklink } from '@shared/types';
 import type { IBacklinksApi } from './contracts/IBacklinksApi';
 
 export const backlinksApi: IBacklinksApi = {
@@ -20,4 +20,7 @@ export const backlinksApi: IBacklinksApi = {
       method: 'GET',
     });
   },
+
+  getBlockRefBacklinks: (knowledgePointId: string) =>
+    request<NodeBlockRefBacklink[]>(`/backlinks/${knowledgePointId}/block-refs`, { method: 'GET' }),
 };

@@ -21,6 +21,7 @@ export interface SearchGraphResult {
  * 笔记搜索结果项（P1 Task 5.3）。
  * - summary 为 content 截断摘要（前 200 字符）
  * - 链接路径：/notes/:noteId（前端据此跳转）
+ * - similarity: 语义检索相似度（仅 semanticSearch 返回时存在）
  */
 export interface SearchNoteResult {
   id: string;
@@ -29,6 +30,7 @@ export interface SearchNoteResult {
   type: string;
   updated_at: string;
   tags: string[] | null;
+  similarity?: number;
 }
 
 export interface SearchNodeResult {
@@ -81,6 +83,22 @@ interface NoteSearchRow {
   type: string;
   updated_at: string;
   tags: string[] | null;
+}
+
+/**
+ * match_notes RPC 返回行（与 34_notes_match_function.sql RETURNS TABLE 对齐）。
+ * - id: note_embeddings.id
+ * - note_id: 关联笔记 ID（前端跳转用）
+ * - chunk_text: 笔记内容快照（用于检索结果摘要）
+ * - title: 笔记标题
+ * - similarity: 1 - cosine_distance
+ */
+interface MatchNoteRow {
+  id: string;
+  note_id: string;
+  chunk_text: string | null;
+  title: string;
+  similarity: number;
 }
 
 export class SearchService {
@@ -241,7 +259,9 @@ export class SearchService {
       };
     }
 
-    const [semanticKPs, semanticGraphs] = await Promise.all([
+    // 三个 RPC 并行调用:knowledge_points / graphs / notes
+    // match_notes 失败不阻塞(用 result.error 判定后 notes=[],不影响 graphs/nodes)
+    const [semanticKPs, semanticGraphs, semanticNotes] = await Promise.all([
       supabase.rpc("match_knowledge_points", {
         query_embedding: embedding,
         match_threshold: 0.5,
@@ -254,6 +274,12 @@ export class SearchService {
         p_match_threshold: 0.5,
         p_match_count: 5,
       }),
+      supabase.rpc("match_notes", {
+        query_embedding: embedding,
+        match_threshold: 0.5,
+        match_count: 10,
+        p_user_id: userId,
+      }),
     ]);
 
     if (semanticKPs.error) {
@@ -265,6 +291,11 @@ export class SearchService {
 
     if (semanticGraphs.error) {
       logger.error("Semantic search graphs error:", semanticGraphs.error);
+    }
+
+    if (semanticNotes.error) {
+      // match_notes 失败不阻塞,仅记录日志
+      logger.error("Semantic search notes error:", semanticNotes.error);
     }
 
     let nodes: SearchNodeResult[] = [];
@@ -321,10 +352,26 @@ export class SearchService {
       }));
     }
 
+    // 映射 match_notes 返回行为 SearchNoteResult[]
+    // - match_notes 不返回 type/updated_at/tags,固定/占位处理
+    // - 失败时(error 不为 null)data 为 null,notes 自然为空数组
+    const notes: SearchNoteResult[] =
+      semanticNotes.error || !semanticNotes.data
+        ? []
+        : (semanticNotes.data as MatchNoteRow[]).map((row) => ({
+            id: row.note_id,
+            title: row.title,
+            summary: (row.chunk_text ?? "").slice(0, 200),
+            type: "note",
+            updated_at: "",
+            tags: null,
+            similarity: row.similarity,
+          }));
+
     return {
       graphs,
       nodes,
-      notes: [],
+      notes,
       answer: "",
     };
   }

@@ -48,6 +48,8 @@ export interface AIPerformanceLog {
     documentName?: string;
     learningStyle?: string;
     targetGoal?: string;
+    noteId?: string;
+    action?: string;
   };
 }
 

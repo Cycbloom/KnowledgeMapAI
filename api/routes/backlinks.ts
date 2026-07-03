@@ -1,5 +1,6 @@
 import { Router, type Response } from "express";
 import { requireAuth, type AuthedRequest } from "../middleware/auth";
+import { rateLimiters } from "../middleware/rateLimiter";
 import { backlinkService } from "../services/graph";
 
 const router = Router();
@@ -42,6 +43,30 @@ router.get(
   async (req: AuthedRequest, res: Response) => {
     const { knowledgePointId } = req.params;
     const data = await backlinkService.getOutlinks(
+      req.supabase,
+      req.user.id,
+      knowledgePointId,
+    );
+    res.json(data);
+  },
+);
+
+/**
+ * GET /backlinks/:knowledgePointId/block-refs
+ * 获取"引用了含 [[节点X]] 的块"的笔记列表（P3 块级反向链接）。
+ *
+ * 与 getBacklinks（基于 edges 关系）互补：本端点返回笔记块引用层面的关系，
+ * 供节点详情侧边栏"引用此节点的块"子区块使用。
+ *
+ * 走 rateLimiters.general（read 限流）。
+ */
+router.get(
+  "/:knowledgePointId/block-refs",
+  requireAuth,
+  rateLimiters.general,
+  async (req: AuthedRequest, res: Response) => {
+    const { knowledgePointId } = req.params;
+    const data = await backlinkService.getBlockRefBacklinksForNode(
       req.supabase,
       req.user.id,
       knowledgePointId,

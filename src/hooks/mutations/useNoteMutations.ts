@@ -15,6 +15,9 @@ import type {
   CreateNodesFromConceptsRequest,
   CreateNodesFromConceptsResponse,
   UploadImageResponse,
+  WritingAssistResponse,
+  WritingAssistRequest,
+  RefreshDailyAggregationResponse,
 } from "@shared/types/note";
 
 /**
@@ -159,3 +162,34 @@ export const useSetDefaultNoteTemplateMutation = createInvalidationMutation<
   ["notes", "templates"],
   ["notes"],
 ]);
+
+// ============================================================
+// P2 Task 7: 写作辅助与 Daily 聚合刷新
+// ============================================================
+
+/**
+ * 写作辅助(续写/改写/扩写)。
+ *
+ * 调用 notesApi.writingAssist 返回 AI 建议文本,由调用方(BlockEditor)
+ * 弹出 WritingAssistPopover 供用户采纳/放弃。不失效缓存——
+ * 采纳后由 BlockEditor 自动保存触发 notes 失效。
+ *
+ * 变量采用 { noteId, data } 结构,与 useUpdateNoteMutation 风格一致;
+ * data.noteId 与外层 noteId 一致(类型要求 WritingAssistRequest 含 noteId)。
+ */
+export const useWritingAssistMutation = createSimpleMutation<
+  WritingAssistResponse,
+  { noteId: string; data: WritingAssistRequest }
+>(({ noteId, data }) => api.notes.writingAssist(noteId, data));
+
+/**
+ * 刷新 Daily 笔记的今日聚合数据。
+ *
+ * 调用 notesApi.refreshDailyAggregation 后端重新渲染"## 今日数据"段并落盘,
+ * 返回刷新后的笔记。由于修改了 note.content,需失效 ["notes"] 缓存
+ * 让列表与详情查询刷新,故用 createInvalidationMutation。
+ */
+export const useRefreshDailyAggregationMutation = createInvalidationMutation<
+  RefreshDailyAggregationResponse,
+  string
+>((noteId) => api.notes.refreshDailyAggregation(noteId), [["notes"]]);

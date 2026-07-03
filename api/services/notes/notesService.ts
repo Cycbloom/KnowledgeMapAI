@@ -15,8 +15,15 @@ import type {
   CreatedNodeResult,
   CreateNoteTemplateInput,
   UpdateNoteTemplateInput,
+  WritingAssistRequest,
+  WritingAssistResponse,
+  RefreshDailyAggregationResponse,
 } from '@shared/types/note';
 import { extractWikiLinks } from '@shared/utils/wikiLink';
+import {
+  extractAllBlockIds,
+  findBlockContent,
+} from '../../../shared/utils/blockRef';
 import {
   withTimeoutAndRetry,
   TimeoutError,
@@ -36,6 +43,8 @@ import { parseAIResponse } from '../ai/utils';
 import { getSupabaseAdmin } from '../../supabase';
 import { knowledgePointService } from '../graph/knowledgePointService';
 import { graphNodeService } from '../graph/graphNodeService';
+import { blockRefService } from './blockRefService';
+import { sseService } from '../core/sseService';
 
 /**
  * notes 表 DB 行(snake_case,来自数据库)
@@ -370,6 +379,13 @@ export class NotesService {
       logger.warn('Notes create: syncNodeLinks failed', { userId, noteId: note.id, error: err });
     });
 
+    // P3: 同步块引用关系(失败仅记录日志,不阻塞笔记创建)
+    await blockRefService
+      .syncBlockRefs(supabase, userId, note.id, note.content)
+      .catch((err) => {
+        logger.warn('Notes create: syncBlockRefs failed', { userId, noteId: note.id, error: err });
+      });
+
     // 异步刷新 embedding(失败仅记录日志,不阻塞笔记创建主流程)
     // 说明: refreshEmbedding 在 SubTask 1.3 实现,见类末尾
     await this.refreshEmbedding(supabase, note.id, note.content).catch((err) => {
@@ -391,7 +407,8 @@ export class NotesService {
     data: UpdateNoteInput,
   ): Promise<Note> {
     // 先校验存在性(同时验证属主,跨用户返回 NOT_FOUND)
-    await this.get(supabase, userId, id);
+    // P3: 捕获旧笔记内容,供 SSE block_updated 比对块文本变化
+    const oldNote = await this.get(supabase, userId, id);
 
     const updateRow: Record<string, unknown> = {};
     if (data.title !== undefined) updateRow.title = data.title;
@@ -428,11 +445,49 @@ export class NotesService {
         logger.warn('Notes update: syncNodeLinks failed', { userId, noteId: note.id, error: err });
       });
 
+      // P3: 同步块引用关系(失败仅记录日志,不阻塞笔记更新)
+      await blockRefService
+        .syncBlockRefs(supabase, userId, note.id, note.content)
+        .catch((err) => {
+          logger.warn('Notes update: syncBlockRefs failed', { userId, noteId: note.id, error: err });
+        });
+
       // content 变更时刷新 embedding(失败仅记录日志,不阻塞笔记更新主流程)
       // 说明: refreshEmbedding 在 SubTask 1.3 实现,见类末尾
       await this.refreshEmbedding(supabase, note.id, note.content).catch((err) => {
         logger.warn('Notes update: refreshEmbedding failed', { userId, noteId: note.id, error: err });
       });
+
+      // P3: SSE 推送 block_updated(块内容变化时通知前端实时刷新嵌入/引用)
+      try {
+        const oldContent = oldNote.content;
+        const newContent = note.content;
+        const oldBlockIds = extractAllBlockIds(oldContent);
+        const newBlockIds = extractAllBlockIds(newContent);
+
+        // 检查新旧块内容是否变化
+        const allBlockIds = new Set<string>([...oldBlockIds, ...newBlockIds]);
+        for (const blockId of allBlockIds) {
+          const oldBlock = findBlockContent(oldContent, blockId);
+          const newBlock = findBlockContent(newContent, blockId);
+
+          if (oldBlock !== newBlock) {
+            // 内容变化(新增/修改/删除),推送 block_updated
+            await sseService.sendToUser(userId, {
+              type: 'block_updated',
+              blockId,
+              noteId: note.id,
+              newContent: newBlock ?? '',
+            });
+          }
+        }
+      } catch (err) {
+        logger.warn('Notes update: SSE block_updated push failed', {
+          userId,
+          noteId: note.id,
+          error: err,
+        });
+      }
     }
 
     return note;
@@ -442,6 +497,8 @@ export class NotesService {
    * 软删除笔记。
    * - UPDATE deleted_at
    * - 显式 DELETE note_node_links(软删除不触发 ON DELETE CASCADE)
+   * - P3: 显式 DELETE note_block_refs(清理块引用关系,挂载关系不自动恢复)
+   * - P3: 推送 block_removed 给引用方(SSE)
    */
   async delete(supabase: SupabaseClient, userId: string, id: string): Promise<void> {
     // 校验存在性 + 属主
@@ -465,6 +522,30 @@ export class NotesService {
 
     if (linkError) {
       logger.warn('Notes delete: cleanup links failed', { userId, id, error: linkError });
+    }
+
+    // P3: 清理块引用关系(软删除不触发 ON DELETE CASCADE)
+    const { error: refError } = await supabase
+      .from('note_block_refs')
+      .delete()
+      .or(`source_note_id.eq.${id},target_note_id.eq.${id}`);
+
+    if (refError) {
+      logger.warn('Notes delete: cleanup block refs failed', { userId, id, error: refError });
+    }
+
+    // P3: 推送 block_removed 给当前用户(RLS 限制跨用户,简化为推送给当前用户)
+    try {
+      await sseService.sendToUser(userId, {
+        type: 'block_removed',
+        noteId: id,
+      });
+    } catch (err) {
+      logger.warn('Notes delete: SSE block_removed push failed', {
+        userId,
+        noteId: id,
+        error: err,
+      });
     }
   }
 
@@ -1692,6 +1773,189 @@ export class NotesService {
     }
 
     return { results };
+  }
+
+  // ============================================================
+  // P2 Task 3: 写作辅助 / Daily 聚合刷新
+  // ============================================================
+
+  /**
+   * 写作辅助(continue / rewrite / expand)。
+   *
+   * 流程:
+   * 1. 校验笔记存在 + 属主(复用 this.get)
+   * 2. 渲染 prompt(notes_writing_${action},含 selectedText / contextBefore / contextAfter)
+   * 3. 调用 AI(单一 system + user 消息)
+   * 4. 记录 performanceMonitor(token 用量与时长)
+   * 5. 返回 { suggestion, tokensUsed }
+   *
+   * 失败处理: AI 调用失败抛 AppError(AI_TIMEOUT / AI_PROVIDER_ERROR),并记 performanceMonitor success=false
+   */
+  async writingAssist(
+    supabase: SupabaseClient,
+    userId: string,
+    req: WritingAssistRequest,
+  ): Promise<WritingAssistResponse> {
+    const startTime = Date.now();
+
+    // 1. 校验笔记存在 + 属主(跨用户由 RLS 拦截,返回 NOT_FOUND)
+    await this.get(supabase, userId, req.noteId);
+
+    // 2. 获取 AI provider(未配置抛 AI_PROVIDER_NOT_CONFIGURED)
+    const provider = await getAIProviderForTask('text');
+    if (!provider.hasKey) {
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, {
+        context: { userId, noteId: req.noteId },
+      });
+    }
+
+    try {
+      // 3. 渲染 prompt(根据 action 选择 notes_writing_continue / rewrite / expand)
+      const prompt = await promptService.getRenderedPrompt(
+        getSupabaseAdmin(),
+        `notes_writing_${req.action}`,
+        {
+          selectedText: req.selectedText,
+          contextBefore: req.contextBefore ?? '',
+          contextAfter: req.contextAfter ?? '',
+        },
+        userId,
+      );
+
+      // 4. 调用 AI(单一 system + user 消息,带超时 + 重试)
+      const completion = await withTimeoutAndRetry(
+        () =>
+          provider.client.chat.completions.create({
+            messages: [
+              { role: 'system', content: prompt },
+              { role: 'user', content: req.selectedText },
+            ],
+            model: provider.model,
+          }),
+        {
+          timeout: DEFAULT_TIMEOUT,
+          maxRetries: 3,
+          onRetry: (attempt, error) => {
+            logger.warn(
+              `writingAssist retry attempt ${attempt}: ${error.message}`,
+            );
+          },
+        },
+      );
+
+      const suggestion = completion.choices[0]?.message?.content ?? '';
+      const inputTokens = completion.usage?.prompt_tokens ?? 0;
+      const outputTokens = completion.usage?.completion_tokens ?? 0;
+      const totalTokens = inputTokens + outputTokens;
+      const estimatedCost = pricingService.calculateCost(
+        provider.providerType,
+        provider.model,
+        inputTokens,
+        outputTokens,
+      );
+
+      // 5. 记录性能监控
+      await performanceMonitor.recordLog({
+        operation: `notes_writing_${req.action}`,
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        estimatedCost,
+        duration: Date.now() - startTime,
+        success: true,
+        metadata: { userId, noteId: req.noteId, action: req.action },
+      });
+
+      return { suggestion, tokensUsed: totalTokens };
+    } catch (error) {
+      // 记录失败
+      await performanceMonitor.recordLog({
+        operation: `notes_writing_${req.action}`,
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        estimatedCost: 0,
+        duration: Date.now() - startTime,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        metadata: { userId, noteId: req.noteId, action: req.action },
+      });
+
+      if (error instanceof TimeoutError) {
+        throw new AppError(ErrorCodes.AI_TIMEOUT, { context: { userId, noteId: req.noteId } });
+      }
+      if (error instanceof RetryError) {
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${error.attempts} 次: ${error.lastError.message}`,
+          context: { userId, noteId: req.noteId },
+        });
+      }
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: error instanceof Error ? error.message : 'AI 写作辅助失败',
+        context: { userId, noteId: req.noteId },
+      });
+    }
+  }
+
+  /**
+   * 刷新 Daily 笔记的"今日数据"段。
+   *
+   * 流程:
+   * 1. 校验笔记存在 + 属主 + type='daily'(否则抛 VALIDATION_ERROR "笔记不是 Daily 类型")
+   * 2. 调用 getDailyAggregation 获取最新统计(复习卡数 / 完成任务数 / 专注时长)
+   * 3. 渲染 ## 今日数据 段 Markdown(与系统默认模板格式一致)
+   * 4. 用正则定位正文中的"今日数据"段并整段替换;未匹配时在顶部追加
+   * 5. 调用 this.update 落盘
+   * 6. 返回 { note: updatedNote, refreshed: true }
+   */
+  async refreshDailyAggregation(
+    supabase: SupabaseClient,
+    userId: string,
+    noteId: string,
+  ): Promise<RefreshDailyAggregationResponse> {
+    // 1. 校验笔记存在 + 属主 + type='daily'
+    const note = await this.get(supabase, userId, noteId);
+    if (note.type !== 'daily') {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: '笔记不是 Daily 类型',
+        context: { userId, noteId, type: note.type },
+      });
+    }
+
+    // 2. 获取最新聚合数据(daily 笔记必有 date;无则回退到今日)
+    const dateStr = note.date ?? getLocalDateString();
+    const aggregation = await this.getDailyAggregation(supabase, userId, dateStr);
+
+    // 3. 渲染 ## 今日数据 段(与系统默认模板格式一致)
+    const newSection =
+      `## 今日数据\n` +
+      `- 复习卡片: ${aggregation.reviewedCards}\n` +
+      `- 完成任务: ${aggregation.completedTasks}\n` +
+      `- 专注时长: ${aggregation.focusTimeMinutes}\n`;
+
+    // 4. 定位正文中的"今日数据"段并整段替换;未匹配时在顶部追加
+    //    正则说明:
+    //    - ^## 今日数据$  匹配段标题行(m 标志下 ^/$ 按行匹配)
+    //    - \n             标题后的换行
+    //    - (?:.*\n)*?     非贪婪匹配任意行(每行需以 \n 结尾)
+    //    - (?=^## |\n$|$) 向前看:下一段标题 / 空行 / 行尾
+    const sectionRegex = /^## 今日数据$\n(?:.*\n)*?(?=^## |\n$|$)/m;
+    const hasSection = sectionRegex.test(note.content);
+    const content = hasSection
+      ? note.content.replace(sectionRegex, newSection)
+      : `${newSection}\n${note.content}`;
+
+    // 5. 落盘(复用 update,会自动 syncNodeLinks + refreshEmbedding)
+    const updatedNote = await this.update(supabase, userId, noteId, { content });
+
+    return { note: updatedNote, refreshed: true };
   }
 
   // ============================================================

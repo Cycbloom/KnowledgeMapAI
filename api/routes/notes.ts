@@ -13,8 +13,10 @@ import {
   createNoteTemplateSchema,
   updateNoteTemplateSchema,
   createNodesFromConceptsSchema,
+  writingAssistSchema,
 } from "../schemas/index";
 import { notesService } from "../services/notes";
+import { blockRefService } from "../services/notes/blockRefService";
 import { rateLimiters } from "../middleware/rateLimiter";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
@@ -248,6 +250,35 @@ router.get(
   },
 );
 
+// ============================================================
+// P3 块引用端点
+// 注意: block-search 必须在 /:id 之前定义(Express 路由顺序敏感),
+// 否则 "block-search" 会被当作 :id 路径参数。
+// ============================================================
+
+/**
+ * GET /notes/block-search?q=keyword&limit=50
+ * 块搜索补全(供前端 BlockRefPopover 使用)。
+ * 返回 BlockRefTarget[]。
+ */
+router.get(
+  "/block-search",
+  requireAuth,
+  rateLimiters.general,
+  async (req: AuthedRequest, res: Response) => {
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    const limitParam = Number(req.query.limit ?? 50);
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(1, limitParam), 100) : 50;
+    const result = await blockRefService.getBlocksForSearch(
+      req.supabase,
+      req.user.id,
+      q,
+      limit,
+    );
+    res.json(result);
+  },
+);
+
 /**
  * GET /notes/:id
  * 查询单个笔记。跨用户(由 RLS 拦截)返回 NOT_FOUND。
@@ -326,8 +357,84 @@ router.post(
     res.json({
       ...data,
       linksRestored: false,
-      message: "笔记已恢复,但挂载关系不自动恢复,请重新编辑笔记以重建链接",
+      blockRefsRestored: false,
+      message: "笔记已恢复,但挂载关系与块引用不自动恢复,请重新编辑笔记以重建链接",
     });
+  },
+);
+
+// ============================================================
+// P3 块引用查询端点 (/:id/blocks/:blockId, /:id/block-refs/*)
+// ============================================================
+
+const blockIdParamSchema = z.object({
+  id: z.string().uuid("无效的笔记ID"),
+  blockId: z.string().regex(/^[a-z0-9]{10}$/, "无效的块ID"),
+});
+
+/**
+ * GET /notes/:id/blocks/:blockId
+ * 获取指定块的内容(供前端 BlockReference/BlockEmbed 渲染)。
+ * 返回 BlockContent | null。
+ */
+router.get(
+  "/:id/blocks/:blockId",
+  requireAuth,
+  validate({ params: blockIdParamSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id, blockId } = req.params;
+    const result = await blockRefService.getBlockContent(
+      req.supabase,
+      req.user.id,
+      id,
+      blockId,
+    );
+    if (result === null) {
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND, {
+        context: { noteId: id, blockId },
+      });
+    }
+    res.json(result);
+  },
+);
+
+/**
+ * GET /notes/:id/block-refs/inbound
+ * 获取笔记的被引用列表(谁引用了我的块)。
+ * 返回 BlockRef[]。
+ */
+router.get(
+  "/:id/block-refs/inbound",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const result = await blockRefService.getInboundRefs(
+      req.supabase,
+      req.user.id,
+      id,
+    );
+    res.json(result);
+  },
+);
+
+/**
+ * GET /notes/:id/block-refs/outbound
+ * 获取笔记的引用列表(我引用了谁的块)。
+ * 返回 BlockRef[]。
+ */
+router.get(
+  "/:id/block-refs/outbound",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const result = await blockRefService.getOutboundRefs(
+      req.supabase,
+      req.user.id,
+      id,
+    );
+    res.json(result);
   },
 );
 
@@ -401,6 +508,61 @@ router.post(
       req.user.id,
       id,
       req.body,
+    );
+    res.json(data);
+  },
+);
+
+// ============================================================
+// P2 AI/写入端点 (写作辅助 / Daily 聚合刷新)
+// 对应 spec: extend-notes-p2-writing-refresh-search
+// ============================================================
+
+/**
+ * POST /notes/:id/writing-assist
+ * 写作辅助:根据用户选中文本执行 continue/rewrite/expand。
+ * 调用 notesService.writingAssist,返回 WritingAssistResponse { suggestion, tokensUsed? }。
+ *
+ * 限流:aiHeavy(1 小时 1000 次,与 summary/extract-concepts 同桶)。
+ */
+router.post(
+  "/:id/writing-assist",
+  requireAuth,
+  rateLimiters.aiHeavy,
+  validate({ params: uuidParamsSchema, body: writingAssistSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const { action, selectedText, contextBefore, contextAfter } = req.body;
+    const data = await notesService.writingAssist(req.supabase, req.user.id, {
+      noteId: id,
+      action,
+      selectedText,
+      contextBefore,
+      contextAfter,
+    });
+    res.json(data);
+  },
+);
+
+/**
+ * POST /notes/:id/refresh-aggregation
+ * 刷新 Daily 笔记的"今日数据"聚合段。
+ * 调用 notesService.refreshDailyAggregation,
+ * 返回 RefreshDailyAggregationResponse { note, refreshed }。
+ *
+ * 限流:write(1 分钟 30 次,与图片上传同桶,均属写入落盘操作)。
+ */
+router.post(
+  "/:id/refresh-aggregation",
+  requireAuth,
+  rateLimiters.write,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthedRequest, res: Response) => {
+    const { id } = req.params;
+    const data = await notesService.refreshDailyAggregation(
+      req.supabase,
+      req.user.id,
+      id,
     );
     res.json(data);
   },

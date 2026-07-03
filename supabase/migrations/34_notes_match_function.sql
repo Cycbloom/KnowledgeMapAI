@@ -14,11 +14,13 @@
 
 -- Match notes function for semantic search (笔记内容向量检索)
 -- 参数与 match_knowledge_points 对齐: query_embedding / match_threshold / match_count / p_user_id
+-- 注意: p_user_id 必须给 DEFAULT NULL（PostgreSQL 要求有默认值的参数之后所有参数也有默认值），
+--       调用方 ragSearchService.noteSemanticSearch 已显式传 user_id，不会走到默认值。
 CREATE OR REPLACE FUNCTION match_notes (
   query_embedding vector(1024),
   match_threshold float DEFAULT 0.5,
   match_count int DEFAULT 10,
-  p_user_id uuid
+  p_user_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,

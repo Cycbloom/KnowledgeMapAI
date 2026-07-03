@@ -1,6 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { BacklinkItem, OutlinkItem, KnowledgePointSearchHit } from '@shared/types';
+import type { BlockId } from '@shared/types/note';
 import { extractWikiLinks, extractWikiLinkPositions, getWikiLinkContext, replaceWikiLink } from '@shared/utils/wikiLink';
+import { extractBlockId } from '../../../shared/utils/blockRef';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
@@ -479,6 +481,158 @@ export class BacklinkService {
     const match = positions.find(p => p.title.trim().toLowerCase() === targetLower);
     if (!match) return '';
     return getWikiLinkContext(content, match.start, match.end);
+  }
+
+  // ============================================================
+  // P3 块引用反链：查询哪些笔记通过块引用引用了含 [[节点X]] 的块
+  // ============================================================
+
+  /**
+   * 查询通过块引用引用了"含 [[节点X]] 的块"的笔记列表。
+   *
+   * 用于节点详情侧边栏"块引用反链"区块，与 getBacklinks（基于 edges 关系）
+   * 互补：getBacklinks 返回图谱层面的边关系，本方法返回笔记块引用层面的关系。
+   *
+   * 流程：
+   * 1. 查 knowledge_points 拿到节点标题
+   * 2. 查所有未软删除的、content 含 [[节点标题]] 的笔记
+   * 3. 对每篇笔记，提取含 [[节点标题]] 的块的 ^id（blockId）
+   * 4. 查 note_block_refs WHERE target_block_id IN (这些 blockId)
+   * 5. JOIN source 笔记拿标题，返回引用方列表
+   *
+   * @param supabase Supabase 客户端
+   * @param userId 用户 ID（RLS 隔离）
+   * @param knowledgePointId 知识点 ID
+   */
+  async getBlockRefBacklinksForNode(
+    supabase: SupabaseClient,
+    userId: string,
+    knowledgePointId: string,
+  ): Promise<Array<{ noteId: string; noteTitle: string; blockId: BlockId; blockSummary: string }>> {
+    try {
+      // 1. 查知识点标题
+      const { data: kp, error: kpError } = await supabase
+        .from('knowledge_points')
+        .select('title')
+        .eq('id', knowledgePointId)
+        .maybeSingle();
+
+      if (kpError) {
+        logger.warn('getBlockRefBacklinksForNode: fetch knowledge point error', {
+          userId,
+          knowledgePointId,
+          error: kpError,
+        });
+        return [];
+      }
+
+      if (!kp) return [];
+
+      const nodeTitle: string = kp.title;
+
+      // 2. 查含 [[nodeTitle]] 的笔记（LIKE 预筛，大小写敏感）
+      const pattern = `%[[${nodeTitle}]]%`;
+      const { data: notes, error: notesError } = await notDeleted(supabase
+        .from('notes')
+        .select('id, title, content')
+        .eq('user_id', userId)
+        .like('content', pattern)
+      );
+
+      if (notesError) {
+        logger.warn('getBlockRefBacklinksForNode: query notes error', {
+          userId,
+          knowledgePointId,
+          nodeTitle,
+          error: notesError,
+        });
+        return [];
+      }
+
+      if (!notes || notes.length === 0) return [];
+
+      // 3. 对每篇笔记，提取含 [[nodeTitle]] 的块的 ^id
+      const blockIdToNoteInfo = new Map<string, { noteId: string; noteTitle: string; blockSummary: string }>();
+      const wikiLinkPattern = `[[${nodeTitle}]]`;
+      for (const note of notes as unknown as Array<{ id: string; title: string; content: string }>) {
+        const blocks = (note.content ?? '').split(/\n\s*\n/);
+        for (const block of blocks) {
+          // 仅处理含 [[nodeTitle]] 的块
+          if (!block.includes(wikiLinkPattern)) continue;
+
+          // 提取块的 ^id
+          const blockId = extractBlockId(block);
+          if (!blockId) continue;
+
+          // 块摘要：剥离 ^id 后取前 100 字符
+          const summary = block.replace(/\s*\^[a-z0-9]{10}\s*$/, '').trim().slice(0, 100);
+          blockIdToNoteInfo.set(blockId, {
+            noteId: note.id,
+            noteTitle: note.title,
+            blockSummary: summary,
+          });
+        }
+      }
+
+      if (blockIdToNoteInfo.size === 0) return [];
+
+      // 4. 查 note_block_refs WHERE target_block_id IN (这些 blockId)
+      const targetBlockIds = Array.from(blockIdToNoteInfo.keys());
+      const { data: refs, error: refsError } = await supabase
+        .from('note_block_refs')
+        .select(`
+          source_note_id,
+          target_block_id,
+          source_note:notes!source_note_id(id, title, deleted_at)
+        `)
+        .in('target_block_id', targetBlockIds);
+
+      if (refsError) {
+        logger.warn('getBlockRefBacklinksForNode: query refs error', {
+          userId,
+          knowledgePointId,
+          error: refsError,
+        });
+        return [];
+      }
+
+      // 5. 组装结果：引用方笔记列表
+      const result: Array<{ noteId: string; noteTitle: string; blockId: BlockId; blockSummary: string }> = [];
+      const seenReferrers = new Set<string>(); // 去重：(sourceNoteId, blockId)
+
+      for (const ref of (refs ?? []) as unknown as Array<{
+        source_note_id: string;
+        target_block_id: string;
+        source_note: { id: string; title: string; deleted_at: string | null } | null;
+      }>) {
+        // 过滤已软删除的 source 笔记
+        if (!ref.source_note || ref.source_note.deleted_at !== null) continue;
+
+        const blockInfo = blockIdToNoteInfo.get(ref.target_block_id);
+        if (!blockInfo) continue;
+
+        const key = `${ref.source_note_id}|${ref.target_block_id}`;
+        if (seenReferrers.has(key)) continue;
+        seenReferrers.add(key);
+
+        // 返回引用方笔记信息 + 被引用块的信息
+        result.push({
+          noteId: ref.source_note_id,
+          noteTitle: ref.source_note.title,
+          blockId: ref.target_block_id,
+          blockSummary: blockInfo.blockSummary,
+        });
+      }
+
+      return result;
+    } catch (err) {
+      logger.warn('getBlockRefBacklinksForNode: unexpected error', {
+        userId,
+        knowledgePointId,
+        error: err,
+      });
+      return [];
+    }
   }
 }
 

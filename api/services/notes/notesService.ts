@@ -1940,17 +1940,42 @@ export class NotesService {
       `- 完成任务: ${aggregation.completedTasks}\n` +
       `- 专注时长: ${aggregation.focusTimeMinutes}\n`;
 
-    // 4. 定位正文中的"今日数据"段并整段替换;未匹配时在顶部追加
-    //    正则说明:
-    //    - ^## 今日数据$  匹配段标题行(m 标志下 ^/$ 按行匹配)
-    //    - \n             标题后的换行
-    //    - (?:.*\n)*?     非贪婪匹配任意行(每行需以 \n 结尾)
-    //    - (?=^## |\n$|$) 向前看:下一段标题 / 空行 / 行尾
-    const sectionRegex = /^## 今日数据$\n(?:.*\n)*?(?=^## |\n$|$)/m;
-    const hasSection = sectionRegex.test(note.content);
-    const content = hasSection
-      ? note.content.replace(sectionRegex, newSection)
-      : `${newSection}\n${note.content}`;
+    // 4. 按行分段替换正文中的"今日数据"段;未匹配时在顶部追加
+    //    旧实现用正则 /^## 今日数据$\n(?:.*\n)*?(?=^## |\n$|$)/m,在以下场景会失败导致数据残留/重复:
+    //    - \r\n 换行: $\n 不匹配 \r\n
+    //    - 标题尾部空格(## 今日数据 ): ^## 今日数据$ 不匹配
+    //    - 段在文档末尾无末尾 \n: (?:.*\n) 要求每行以 \n 结尾,最后一行无法匹配
+    //    - 多次连续刷新: 部分场景下非贪婪只匹配标题行,数据行残留后下次刷新再追加,数据重复
+    //    改为按行分段: 找到 ## 今日数据 行(用 trim 容忍尾部空格),向后遍历到下一个 ## 标题或文档末尾,
+    //    整段替换为 newSection。同时容忍 \r\n(统一转为 \n 处理)。
+    const normalizedContent = note.content.replace(/\r\n/g, '\n');
+    const lines = normalizedContent.split('\n');
+    const sectionHeader = '## 今日数据';
+    const headerIdx = lines.findIndex((line) => line.trim() === sectionHeader);
+
+    let content: string;
+    if (headerIdx === -1) {
+      // 未找到段,在文档顶部追加(newSection 末尾已有 \n,再加一个 \n 形成空行分隔)
+      content = `${newSection}\n${note.content}`;
+    } else {
+      // 找到段,向后遍历直到下一个 ## 标题(trimStart 容忍前导空格)或文档末尾
+      let endIdx = headerIdx + 1;
+      while (
+        endIdx < lines.length &&
+        !lines[endIdx].trimStart().startsWith('## ')
+      ) {
+        endIdx++;
+      }
+      const before = lines.slice(0, headerIdx);
+      const after = lines.slice(endIdx);
+      // newSection 末尾的 \n 在 split 后产生末尾空字符串元素,过滤最后一个空元素避免双空行
+      const newSectionLines = newSection
+        .replace(/\r\n/g, '\n')
+        .split('\n')
+        .filter((line, i, arr) => !(line === '' && i === arr.length - 1));
+      const newLines = [...before, ...newSectionLines, ...after];
+      content = newLines.join('\n');
+    }
 
     // 5. 落盘(复用 update,会自动 syncNodeLinks + refreshEmbedding)
     const updatedNote = await this.update(supabase, userId, noteId, { content });

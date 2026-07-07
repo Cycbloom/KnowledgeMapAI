@@ -41,6 +41,7 @@ import {
 } from "@/hooks/mutations";
 import { message } from "@/utils/messageHelper";
 import { ExtractConceptsDialog } from "./ExtractConceptsDialog";
+import { markdownToTiptap } from "./markdownSerializer";
 import type { NoteType, NoteExtractedConcept, WritingAssistAction } from "@shared/types/note";
 
 /** 工具栏分隔符(模块级组件,避免在 render 内创建导致状态重置)。 */
@@ -112,22 +113,26 @@ const findReflectionInsertPos = (editor: Editor): number | null => {
 
 /**
  * 将 AI 生成的总结插入编辑器:
- * - 若文档中存在"今日反思"标题,在其后插入一个新段落承载总结;
+ * - 若文档中存在"今日反思"标题,在其后插入;
  * - 否则退化到光标处插入。
+ *
+ * 关键:必须以"字符串"形式传给 insertContentAt —— tiptap-markdown 的 Markdown 扩展
+ * 重写了 insertContentAt,会调用 parser.parse(content) 将 Markdown 渲染为 HTML,再由
+ * ProseMirror DOMParser 解析为对应节点(标题/列表/加粗等)。若传入 JSON 对象,
+ * parser.parse 会原样返回,Markdown 语法(### /**等)会被当作纯文本不渲染。
+ * 注意:insertContent(无 At 后缀)未被重写,不会解析 Markdown,故改用 insertContentAt
+ * 配合光标当前位置实现等价插入。
+ * 此外用 markdownToTiptap 预处理 wiki 链接 [[节点名]] 与块引用 ((id)) / !((id))。
  */
 const insertSummary = (editor: Editor, summary: string) => {
+  const content = markdownToTiptap(summary);
   const pos = findReflectionInsertPos(editor);
   if (pos !== null) {
-    editor
-      .chain()
-      .focus()
-      .insertContentAt(pos, {
-        type: "paragraph",
-        content: [{ type: "text", text: summary }],
-      })
-      .run();
+    editor.chain().focus().insertContentAt(pos, content).run();
   } else {
-    editor.chain().focus().insertContent(summary).run();
+    // insertContent 未被 tiptap-markdown 重写,故用 insertContentAt 配合当前光标位置
+    const { from } = editor.state.selection;
+    editor.chain().focus().insertContentAt(from, content).run();
   }
 };
 

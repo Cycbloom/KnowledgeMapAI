@@ -247,4 +247,186 @@ describe("NotesService.refreshDailyAggregation (P2 Task 3.2)", () => {
     // 不应调用 update
     expect(updateSpy).not.toHaveBeenCalled();
   });
+
+  // ===========================================================================
+  // Bug 7 回归测试: 旧正则方案在以下边界场景会失败导致数据残留/重复,改为按行分段替换后修复
+  // ===========================================================================
+
+  /** 工具:统计子串出现次数,用于断言"段不重复" */
+  const countOccurrences = (str: string, substr: string): number =>
+    str.split(substr).length - 1;
+
+  it("Bug 7 回归: 标题后紧跟空行时应整段替换(空行也算段内)", async () => {
+    // 旧正则 ^## 今日数据$\n... 在标题后紧跟空行时,部分场景只匹配标题行,空行+数据行残留
+    const contentWithBlankAfterHeader =
+      "# 日志\n\n## 今日数据\n\n- 复习卡片: 5\n- 完成任务: 3\n- 专注时长: 60\n\n## 今日学习\n";
+    const mockSupabase = createMockSupabase({
+      note: { ...baseDailyNote, content: contentWithBlankAfterHeader },
+      studyCardsCount: 10,
+      taskExecutionsCount: 7,
+      focusSessions: [{ duration: 1800 }, { duration: 1200 }], // 50 min
+    });
+
+    await notesService.refreshDailyAggregation(
+      mockSupabase as unknown as never,
+      USER_ID,
+      NOTE_ID,
+    );
+
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+    const updateData = updateSpy.mock.calls[0][3] as { content: string };
+    const newContent = updateData.content;
+
+    // 只有一个 ## 今日数据 段
+    expect(countOccurrences(newContent, "## 今日数据")).toBe(1);
+    // 新数据已替换
+    expect(newContent).toContain("复习卡片: 10");
+    expect(newContent).toContain("完成任务: 7");
+    expect(newContent).toContain("专注时长: 50");
+    // 旧数据不应残留
+    expect(newContent).not.toContain("复习卡片: 5");
+    expect(newContent).not.toContain("完成任务: 3");
+    expect(newContent).not.toContain("专注时长: 60");
+    // 后续段落保留
+    expect(newContent).toContain("## 今日学习");
+  });
+
+  it("Bug 7 回归: 段在文档末尾无末尾换行时应整段替换", async () => {
+    // 旧正则 (?:.*\n)*? 要求每行以 \n 结尾,文档末尾无 \n 时无法匹配,导致 hasSection=false 走追加分支
+    const contentNoTrailingNewline =
+      "## 今日数据\n- 复习卡片: 5\n- 完成任务: 3\n- 专注时长: 60";
+    const mockSupabase = createMockSupabase({
+      note: { ...baseDailyNote, content: contentNoTrailingNewline },
+      studyCardsCount: 10,
+      taskExecutionsCount: 7,
+      focusSessions: [{ duration: 1800 }, { duration: 1200 }],
+    });
+
+    await notesService.refreshDailyAggregation(
+      mockSupabase as unknown as never,
+      USER_ID,
+      NOTE_ID,
+    );
+
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+    const updateData = updateSpy.mock.calls[0][3] as { content: string };
+    const newContent = updateData.content;
+
+    // 只有一个 ## 今日数据 段(关键:旧逻辑会追加新段,产生两个)
+    expect(countOccurrences(newContent, "## 今日数据")).toBe(1);
+    expect(newContent).toContain("复习卡片: 10");
+    expect(newContent).toContain("专注时长: 50");
+    expect(newContent).not.toContain("复习卡片: 5");
+    expect(newContent).not.toContain("专注时长: 60");
+  });
+
+  it("Bug 7 回归: \\r\\n 换行时应整段替换", async () => {
+    // 旧正则 $\n 不匹配 \r\n,导致 hasSection=false 走追加分支,产生两个段
+    const contentCrlf =
+      "## 今日数据\r\n- 复习卡片: 5\r\n- 完成任务: 3\r\n- 专注时长: 60\r\n\r\n## 今日学习\r\n";
+    const mockSupabase = createMockSupabase({
+      note: { ...baseDailyNote, content: contentCrlf },
+      studyCardsCount: 10,
+      taskExecutionsCount: 7,
+      focusSessions: [{ duration: 1800 }, { duration: 1200 }],
+    });
+
+    await notesService.refreshDailyAggregation(
+      mockSupabase as unknown as never,
+      USER_ID,
+      NOTE_ID,
+    );
+
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+    const updateData = updateSpy.mock.calls[0][3] as { content: string };
+    const newContent = updateData.content;
+
+    // 只有一个 ## 今日数据 段
+    expect(countOccurrences(newContent, "## 今日数据")).toBe(1);
+    expect(newContent).toContain("复习卡片: 10");
+    expect(newContent).toContain("专注时长: 50");
+    expect(newContent).not.toContain("复习卡片: 5");
+    expect(newContent).not.toContain("专注时长: 60");
+    // 后续段落保留
+    expect(newContent).toContain("## 今日学习");
+  });
+
+  it("Bug 7 回归: 标题含尾部空格时应整段替换", async () => {
+    // 旧正则 ^## 今日数据$ 不匹配 "## 今日数据 "(尾部空格),走追加分支产生两个段
+    const contentTrailingSpace =
+      "## 今日数据 \n- 复习卡片: 5\n- 完成任务: 3\n- 专注时长: 60\n";
+    const mockSupabase = createMockSupabase({
+      note: { ...baseDailyNote, content: contentTrailingSpace },
+      studyCardsCount: 10,
+      taskExecutionsCount: 7,
+      focusSessions: [{ duration: 1800 }, { duration: 1200 }],
+    });
+
+    await notesService.refreshDailyAggregation(
+      mockSupabase as unknown as never,
+      USER_ID,
+      NOTE_ID,
+    );
+
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+    const updateData = updateSpy.mock.calls[0][3] as { content: string };
+    const newContent = updateData.content;
+
+    // 只有一个 ## 今日数据 段(新段标题无尾部空格)
+    expect(countOccurrences(newContent, "## 今日数据")).toBe(1);
+    expect(newContent).toContain("复习卡片: 10");
+    expect(newContent).toContain("专注时长: 50");
+    expect(newContent).not.toContain("复习卡片: 5");
+    expect(newContent).not.toContain("专注时长: 60");
+  });
+
+  it("Bug 7 回归: 多次连续刷新数据不应重复追加", async () => {
+    // 旧正则在部分场景只替换标题行,数据行残留;下次刷新再追加新数据,导致数据重复
+    const originalContent =
+      "# 日志\n\n## 今日数据\n- 复习卡片: 5\n- 完成任务: 3\n- 专注时长: 60\n\n## 今日学习\n";
+    const config = {
+      note: { ...baseDailyNote, content: originalContent },
+      studyCardsCount: 10,
+      taskExecutionsCount: 7,
+      focusSessions: [{ duration: 1800 }, { duration: 1200 }], // 50 min
+    };
+    const mockSupabase = createMockSupabase(config);
+
+    // 第一次刷新
+    await notesService.refreshDailyAggregation(
+      mockSupabase as unknown as never,
+      USER_ID,
+      NOTE_ID,
+    );
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+    const firstContent = (updateSpy.mock.calls[0][3] as { content: string })
+      .content;
+    // 只有一个段
+    expect(countOccurrences(firstContent, "## 今日数据")).toBe(1);
+    expect(firstContent).toContain("复习卡片: 10");
+    expect(firstContent).not.toContain("复习卡片: 5");
+
+    // 模拟落盘后再次刷新:更新 mock 中的 note.content 为第一次刷新的结果
+    config.note = { ...baseDailyNote, content: firstContent };
+
+    await notesService.refreshDailyAggregation(
+      mockSupabase as unknown as never,
+      USER_ID,
+      NOTE_ID,
+    );
+    expect(updateSpy).toHaveBeenCalledTimes(2);
+    const secondContent = (updateSpy.mock.calls[1][3] as { content: string })
+      .content;
+
+    // 关键断言: 第二次刷新后仍只有一个段,且数据条目数量正确(无重复)
+    expect(countOccurrences(secondContent, "## 今日数据")).toBe(1);
+    expect(countOccurrences(secondContent, "- 复习卡片:")).toBe(1);
+    expect(countOccurrences(secondContent, "- 完成任务:")).toBe(1);
+    expect(countOccurrences(secondContent, "- 专注时长:")).toBe(1);
+    expect(secondContent).toContain("复习卡片: 10");
+    expect(secondContent).toContain("完成任务: 7");
+    expect(secondContent).toContain("专注时长: 50");
+    // 后续段落保留
+    expect(secondContent).toContain("## 今日学习");
+  });
 });

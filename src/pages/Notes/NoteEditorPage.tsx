@@ -15,6 +15,7 @@ import {
 import { useNote } from "@/hooks/queries";
 import { useUpdateNoteMutation, useDeleteNoteMutation } from "@/hooks/mutations";
 import { useError } from "@/hooks";
+import { addRecentNote } from "@/hooks/useRecentNotes";
 import { BlockEditor } from "@/components/Notes/BlockEditor";
 import { InboundBlockRefsPanel } from "@/components/Notes/InboundBlockRefsPanel";
 import { Skeleton, EmptyState } from "@/components/common";
@@ -69,6 +70,18 @@ const NoteEditorPage: React.FC = () => {
       if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
     };
   }, []);
+
+  // 记录最近访问的笔记（Task 12）
+  // 防重复：用 ref 记录上次写入的 noteId，仅在 noteId 变化时写入，
+  // 避免 note.title 加载前后触发重复写入
+  const lastRecordedNoteIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!noteId || !note) return;
+    if (lastRecordedNoteIdRef.current === noteId) return;
+    const noteTitle = note.title?.trim() || t("notes.editorPage.untitled");
+    addRecentNote({ id: noteId, title: noteTitle });
+    lastRecordedNoteIdRef.current = noteId;
+  }, [noteId, note?.title, t]);
 
   const saveTitle = async (nextTitle: string) => {
     if (!noteId) return;

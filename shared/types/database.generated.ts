@@ -34,27 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _schema_versions: {
-        Row: {
-          checksum: string | null
-          executed_at: string | null
-          id: number
-          version: string
-        }
-        Insert: {
-          checksum?: string | null
-          executed_at?: string | null
-          id?: number
-          version: string
-        }
-        Update: {
-          checksum?: string | null
-          executed_at?: string | null
-          id?: number
-          version?: string
-        }
-        Relationships: []
-      }
       achievements: {
         Row: {
           category: string
@@ -1704,6 +1683,86 @@ export type Database = {
             columns: ["graph_id"]
             isOneToOne: false
             referencedRelation: "knowledge_graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_block_refs: {
+        Row: {
+          created_at: string
+          id: string
+          source_block_id: string
+          source_note_id: string
+          target_block_id: string
+          target_note_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source_block_id: string
+          source_note_id: string
+          target_block_id: string
+          target_note_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source_block_id?: string
+          source_note_id?: string
+          target_block_id?: string
+          target_note_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_block_refs_source_note_id_fkey"
+            columns: ["source_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_block_refs_target_note_id_fkey"
+            columns: ["target_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_embeddings: {
+        Row: {
+          chunk_text: string | null
+          created_at: string
+          embedding: string
+          id: string
+          note_id: string
+          updated_at: string
+        }
+        Insert: {
+          chunk_text?: string | null
+          created_at?: string
+          embedding: string
+          id?: string
+          note_id: string
+          updated_at?: string
+        }
+        Update: {
+          chunk_text?: string | null
+          created_at?: string
+          embedding?: string
+          id?: string
+          note_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_embeddings_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: true
+            referencedRelation: "notes"
             referencedColumns: ["id"]
           },
         ]
@@ -4433,6 +4492,21 @@ export type Database = {
         Returns: {
           content: string
           id: string
+          similarity: number
+          title: string
+        }[]
+      }
+      match_notes: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_user_id?: string
+          query_embedding: string
+        }
+        Returns: {
+          chunk_text: string
+          id: string
+          note_id: string
           similarity: number
           title: string
         }[]

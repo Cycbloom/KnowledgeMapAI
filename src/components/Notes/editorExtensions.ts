@@ -23,7 +23,6 @@ import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import { Markdown } from "tiptap-markdown";
 import type { Extensions } from "@tiptap/core";
-import { WIKI_LINK_PROTOCOL } from "./markdownSerializer";
 import { BlockReference } from "./extensions/BlockReference";
 import { BlockEmbed } from "./extensions/BlockEmbed";
 
@@ -40,9 +39,12 @@ export const buildEditorExtensions = (placeholder: string): Extensions => [
     heading: { levels: [1, 2, 3] },
   }),
   // wiki 链接：用 Link 节点承载 wiki:// 协议；编辑模式下不点击跳转，由外层处理导航
+  // autolink:false —— wiki 链接通过 [[ 唤起 WikiLinkPopover 显式插入（marks 显式创建），
+  // 不依赖 linkifyjs 自动识别；linkifyjs 对含中文的 wiki://节点名 URL 解析会抛
+  // "incorrect scheme format" 错误，关闭后避免污染控制台与失效渲染。
   Link.configure({
     openOnClick: false,
-    autolink: true,
+    autolink: false,
     linkOnPaste: true,
     HTMLAttributes: {
       class: "wiki-link",
@@ -50,7 +52,8 @@ export const buildEditorExtensions = (placeholder: string): Extensions => [
       "data-wiki": "true",
     },
     // 仅允许 wiki:// 协议与常规 http(s) 链接
-    protocols: ["https", "http", WIKI_LINK_PROTOCOL.slice(0, -2)],
+    // 注意：linkifyjs 校验 scheme 不允许含冒号，须用 "wiki" 而非 "wiki:"
+    protocols: ["https", "http", "wiki"],
   }),
   Placeholder.configure({
     placeholder,

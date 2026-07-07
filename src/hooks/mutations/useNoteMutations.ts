@@ -40,11 +40,15 @@ export const useGetOrCreateTodayDailyMutation = createInvalidationMutation<Note,
 
 /**
  * 更新笔记(标题/正文/置顶/归档/标签等)。成功后失效笔记列表缓存。
+ *
+ * Bug 5: 标记为 silent,使 LoadingBar 的 useIsMutating 过滤掉自动保存触发的
+ * mutation,避免每次自动保存都让顶部进度条闪现(saveStatus 文案已提供反馈)。
  */
 export const useUpdateNoteMutation = createInvalidationMutation(
   ({ id, data }: { id: string; data: UpdateNoteInput }) =>
     api.notes.update(id, data),
   [["notes"]],
+  { silent: true },
 );
 
 /**

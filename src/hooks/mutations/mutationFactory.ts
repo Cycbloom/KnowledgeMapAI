@@ -23,6 +23,9 @@ export function createSimpleMutation<TData, TVariables>(
  *
  * queryKeys 支持静态 QueryKey 或 `(variables) => QueryKey` 函数形式
  *
+ * @param meta 可选 meta,透传到 useMutation(如 `{ silent: true }` 标记静默 mutation,
+ *            供 LoadingBar 等通过 useIsMutating predicate 过滤)
+ *
  * @example
  * export const useDeleteCardMutation = createInvalidationMutation(
  *   (id: string) => api.study.delete(id),
@@ -38,11 +41,13 @@ export function createSimpleMutation<TData, TVariables>(
 export function createInvalidationMutation<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   queryKeys: QueryKeyOrGetter<TVariables>[],
+  meta?: Record<string, unknown>,
 ) {
   return () => {
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn,
+      meta,
       onSuccess: (_data, variables) => {
         for (const qk of queryKeys) {
           const key = typeof qk === "function" ? qk(variables) : qk;

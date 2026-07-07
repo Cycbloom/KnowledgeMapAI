@@ -5,7 +5,11 @@ export const LoadingBar: React.FC = () => {
   const isFetching = useIsFetching({
     predicate: (query) => !query.meta?.silent
   });
-  const isMutating = useIsMutating();
+  // Bug 5: 过滤掉标记为 silent 的 mutation(如笔记自动保存),
+  // 避免静默后台操作触发顶部进度条。
+  const isMutating = useIsMutating({
+    predicate: (mutation) => !mutation.options.meta?.silent,
+  });
   const isLoading = isFetching > 0 || isMutating > 0;
   
   const [progress, setProgress] = useState(0);

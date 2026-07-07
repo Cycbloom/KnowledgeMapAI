@@ -350,11 +350,23 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
       const match = textBefore.match(/^\/([^\s/]*)$/);
       if (match) {
         const coords = ed.view.coordsAtPos(selection.from);
+        // viewport 边界 clamp：避免菜单溢出右侧/底部
+        const MENU_WIDTH = 280;
+        const MENU_HEIGHT = 320;
+        const MARGIN = 8;
+        const left = Math.max(
+          MARGIN,
+          Math.min(coords.left, window.innerWidth - MENU_WIDTH - MARGIN),
+        );
+        const top =
+          coords.bottom + 4 + MENU_HEIGHT > window.innerHeight
+            ? coords.top - MENU_HEIGHT - 4 // 翻转到上方
+            : coords.bottom + 4;
         setSlashMenu({
           open: true,
           query: match[1],
           selectedIndex: 0,
-          position: { top: coords.bottom + 4, left: coords.left },
+          position: { top, left },
         });
       } else {
         closeSlashMenu();
@@ -789,18 +801,26 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     if (!editor || !writingAssistState) return;
     const { action, suggestion } = writingAssistState;
     const { selection } = editor.state;
+    // 用 markdownToTiptap 预处理 wiki 链接/块引用;insertContentAt 走 tiptap-markdown
+    // 重写,会将 Markdown 字符串解析为 ProseMirror 节点(标题/列表/加粗等)。
+    const content = markdownToTiptap(suggestion);
 
     if (action === "continue") {
-      // 续写:光标定位到选区末尾后插入建议
+      // 续写:光标定位到选区末尾后插入建议(insertContent 未被 tiptap-markdown 重写,故用 insertContentAt)
       editor
         .chain()
         .focus()
         .setTextSelection(selection.to)
-        .insertContent(suggestion)
+        .insertContentAt(selection.to, content)
         .run();
     } else {
       // 改写/扩写:删除选区并插入建议(deleteSelection 后光标停在 selection.from)
-      editor.chain().focus().deleteSelection().insertContent(suggestion).run();
+      editor
+        .chain()
+        .focus()
+        .deleteSelection()
+        .insertContentAt(selection.from, content)
+        .run();
     }
 
     setWritingAssistState(null);

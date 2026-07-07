@@ -11,7 +11,7 @@
   },
   "actions": {
     "newNote": "新建笔记",
-    "newDaily": "新建 Daily",
+    "newDaily": "新建每日笔记",
     "open": "打开",
     "pin": "置顶",
     "unpin": "取消置顶",
@@ -24,7 +24,7 @@
   },
   "badges": {
     "note": "笔记",
-    "daily": "Daily",
+    "daily": "每日笔记",
     "pinned": "已置顶",
     "archived": "已归档"
   },
@@ -43,8 +43,8 @@
     "archivedDescription": "归档后的笔记会显示在这里",
     "pinnedTitle": "还没有收藏的笔记",
     "pinnedDescription": "置顶的笔记会显示在这里",
-    "dailyTitle": "还没有 Daily 笔记",
-    "dailyDescription": "点击「新建 Daily」记录今日学习",
+    "dailyTitle": "还没有每日笔记",
+    "dailyDescription": "点击「新建每日笔记」记录今日学习",
     "searchTitle": "未找到匹配的笔记",
     "searchDescription": "调整搜索关键词或清除筛选后再试"
   },
@@ -67,10 +67,10 @@
   "nextPage": "下一页",
   "newNoteDefaultTitle": "无标题笔记",
   "createNoteFailed": "创建笔记失败",
-  "createDailyFailed": "创建 Daily 笔记失败",
+  "createDailyFailed": "创建每日笔记失败",
   "noteCreated": "笔记已创建",
-  "dailyCreated": "Daily 笔记已创建",
-  "dailyExists": "今日 Daily 已存在",
+  "dailyCreated": "每日笔记已创建",
+  "dailyExists": "今日每日笔记已存在",
   "updateFailed": "更新笔记失败",
   "noteUpdated": "笔记已更新",
   "noteDeleted": "笔记已移入回收站",
@@ -224,7 +224,7 @@
   },
   "templates": {
     "title": "模板管理",
-    "subtitle": "管理 Daily Notes 与笔记模板",
+    "subtitle": "管理每日笔记与笔记模板",
     "backToNotes": "返回笔记",
     "list": {
       "system": "系统模板",
@@ -232,7 +232,7 @@
       "empty": "还没有自定义模板",
       "emptyHint": "点击右上角「新建模板」创建你的第一个模板",
       "default": "默认",
-      "defaultHint": "下次创建 Daily 时使用"
+      "defaultHint": "下次创建每日笔记时使用"
     },
     "actions": {
       "new": "新建模板",

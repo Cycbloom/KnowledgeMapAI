@@ -353,7 +353,10 @@ export const NotesListPage = () => {
   });
 
   const createNoteMutation = useCreateNoteMutation();
+  // Bug 4: 自动创建 useEffect 与"新建 Daily"按钮使用独立的 mutation 实例,
+  // 避免自动创建的 isPending 影响按钮可用状态(按钮变灰转圈)。
   const createDailyMutation = useGetOrCreateTodayDailyMutation();
+  const manualCreateDailyMutation = useGetOrCreateTodayDailyMutation();
   const updateNoteMutation = useUpdateNoteMutation();
   const deleteNoteMutation = useDeleteNoteMutation();
 
@@ -465,7 +468,7 @@ export const NotesListPage = () => {
 
   const handleCreateDaily = async () => {
     try {
-      const note = await createDailyMutation.mutateAsync();
+      const note = await manualCreateDailyMutation.mutateAsync();
       frontendEventBus.publish("message_show", {
         type: "success",
         content: t("notes.dailyCreated"),
@@ -596,10 +599,10 @@ export const NotesListPage = () => {
           <button
             type="button"
             onClick={handleCreateDaily}
-            disabled={createDailyMutation.isPending}
+            disabled={manualCreateDailyMutation.isPending}
             className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
           >
-            {createDailyMutation.isPending ? (
+            {manualCreateDailyMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <CalendarDays className="w-4 h-4" />

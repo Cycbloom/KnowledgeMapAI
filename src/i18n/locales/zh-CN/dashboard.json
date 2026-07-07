@@ -115,5 +115,11 @@
     "rangeToday": "今天",
     "rangeWeek": "本周",
     "rangeMonth": "本月"
+  },
+  "undo": {
+    "deletedOne": "已删除图谱「{{title}}」",
+    "deletedMany": "已删除 {{count}} 个图谱",
+    "restored": "已恢复",
+    "restoreFailed": "恢复失败，请前往回收站手动恢复"
   }
 }

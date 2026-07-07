@@ -19,3 +19,5 @@ export * from "./useTaskActions";
 export * from "./useDashboardFilters";
 export * from "./useDebouncedSearch";
 export * from "./useMenuNavigation";
+export * from "./useUndoableDelete";
+export * from "./useNoteWordCount";

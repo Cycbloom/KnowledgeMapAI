@@ -135,6 +135,10 @@
       "jumpToSource": "跳转到源块",
       "unembed": "解除嵌入",
       "refreshPrompt": "源块已更新,点击刷新"
+    },
+    "footer": {
+      "wordCount": "{{count}} 字",
+      "readingTime": "约 {{minutes}} 分钟"
     }
   },
   "blockRefsPanel": {
@@ -274,5 +278,31 @@
       "setDefaultFailed": "设为默认模板失败",
       "systemTemplateProtected": "系统模板不可删除或修改"
     }
+  },
+  "sort": {
+    "label": "排序",
+    "updatedAt": "更新时间",
+    "createdAt": "创建时间",
+    "title": "标题"
+  },
+  "batch": {
+    "toolbar": "批量操作工具栏",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "selected": "已选 {{count}} 条",
+    "batchDelete": "批量删除",
+    "deleting": "删除中…",
+    "clearSelection": "清除选择",
+    "exit": "退出批量管理",
+    "enterSelectMode": "批量管理",
+    "confirmTitle": "批量删除笔记",
+    "confirmMessage": "确定要删除选中的 {{count}} 条笔记吗？此操作可撤销。",
+    "partialDeleteFailed": "部分笔记删除失败，请重试"
+  },
+  "undo": {
+    "deletedOne": "已删除笔记「{{title}}」",
+    "deletedMany": "已删除 {{count}} 条笔记",
+    "restored": "已恢复",
+    "restoreFailed": "恢复失败，请前往回收站手动恢复"
   }
 }

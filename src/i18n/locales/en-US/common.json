@@ -38,6 +38,9 @@
   "backOnline": "Back online, syncing data",
   "slowConnection": "Slow connection, some operations may be delayed",
   "offlineMode": "Offline mode: some AI features are unavailable",
+  "undo": "Undo",
+  "restored": "Restored",
+  "restoreFailed": "Restore failed. Please restore manually from the recycle bin.",
   "timeAgo": {
     "justNow": "just now",
     "minutesAgo": "{{count}} min ago",

@@ -3,6 +3,10 @@ import { useFocusStore } from "../store/useFocusStore";
 
 interface MessageOptions {
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 export const message = {
@@ -11,6 +15,7 @@ export const message = {
       type: "success",
       content,
       duration: options?.duration ?? 3000,
+      action: options?.action,
     }),
 
   error: (content: string, options?: MessageOptions) =>
@@ -18,6 +23,7 @@ export const message = {
       type: "error",
       content,
       duration: options?.duration ?? 5000,
+      action: options?.action,
     }),
 
   info: (content: string, options?: MessageOptions) =>
@@ -25,6 +31,7 @@ export const message = {
       type: "info",
       content,
       duration: options?.duration ?? 3000,
+      action: options?.action,
     }),
 
   warning: (content: string, options?: MessageOptions) =>
@@ -32,6 +39,7 @@ export const message = {
       type: "warning",
       content,
       duration: options?.duration ?? 4000,
+      action: options?.action,
     }),
 };
 

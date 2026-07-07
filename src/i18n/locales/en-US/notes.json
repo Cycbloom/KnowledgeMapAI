@@ -135,6 +135,10 @@
       "jumpToSource": "Jump to source block",
       "unembed": "Unembed",
       "refreshPrompt": "Source block updated, click to refresh"
+    },
+    "footer": {
+      "wordCount": "{{count}} words",
+      "readingTime": "approx. {{minutes}} min"
     }
   },
   "blockRefsPanel": {
@@ -274,5 +278,31 @@
       "setDefaultFailed": "Failed to set default template",
       "systemTemplateProtected": "System templates cannot be deleted or modified"
     }
+  },
+  "sort": {
+    "label": "Sort",
+    "updatedAt": "Updated time",
+    "createdAt": "Created time",
+    "title": "Title"
+  },
+  "batch": {
+    "toolbar": "Batch actions toolbar",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "selected": "{{count}} selected",
+    "batchDelete": "Delete selected",
+    "deleting": "Deleting…",
+    "clearSelection": "Clear selection",
+    "exit": "Exit batch mode",
+    "enterSelectMode": "Batch manage",
+    "confirmTitle": "Delete notes",
+    "confirmMessage": "Delete {{count}} selected notes? This can be undone.",
+    "partialDeleteFailed": "Some notes failed to delete. Please retry."
+  },
+  "undo": {
+    "deletedOne": "Deleted note \"{{title}}\"",
+    "deletedMany": "Deleted {{count}} notes",
+    "restored": "Restored",
+    "restoreFailed": "Restore failed. Please restore manually from the recycle bin."
   }
 }

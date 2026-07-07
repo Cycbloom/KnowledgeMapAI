@@ -22,6 +22,7 @@ import {
   useWritingAssistMutation,
   useRefreshDailyAggregationMutation,
 } from "@/hooks/mutations";
+import { useNoteWordCount } from "@/hooks";
 import { message } from "@/utils/messageHelper";
 import type { NoteType, WritingAssistAction } from "@shared/types/note";
 import { buildEditorExtensions } from "./editorExtensions";
@@ -205,6 +206,9 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     // 初始内容（Markdown 串，由 tiptap-markdown 扩展解析）
     content: markdownToTiptap(initialContent),
   });
+
+  // 字数与阅读时长（Task 6：底部状态栏展示）
+  const { wordCount, readingMinutes } = useNoteWordCount(editor);
 
   // 同步 noteId 切换时的内容（不在每次 initialContent 变化时重置，避免覆盖用户编辑）
   useEffect(() => {
@@ -1028,6 +1032,12 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
                 aria-hidden
               />
               {t("notes.image.uploading")}
+            </span>
+          ) : wordCount > 0 ? (
+            <span>
+              {t("notes.editor.footer.wordCount", { count: wordCount })}
+              {" · "}
+              {t("notes.editor.footer.readingTime", { minutes: readingMinutes })}
             </span>
           ) : (
             t("notes.editor.slashHint")

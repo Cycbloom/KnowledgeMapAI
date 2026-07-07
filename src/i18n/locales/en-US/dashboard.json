@@ -115,5 +115,11 @@
     "rangeToday": "Today",
     "rangeWeek": "This week",
     "rangeMonth": "This month"
+  },
+  "undo": {
+    "deletedOne": "Deleted graph \"{{title}}\"",
+    "deletedMany": "Deleted {{count}} graphs",
+    "restored": "Restored",
+    "restoreFailed": "Restore failed. Please restore manually from the recycle bin."
   }
 }

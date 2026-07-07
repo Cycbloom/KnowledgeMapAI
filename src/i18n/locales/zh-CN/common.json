@@ -38,6 +38,9 @@
   "backOnline": "已恢复在线，正在同步数据",
   "slowConnection": "网络较慢，部分操作可能延迟",
   "offlineMode": "离线模式：部分 AI 功能不可用",
+  "undo": "撤销",
+  "restored": "已恢复",
+  "restoreFailed": "恢复失败，请前往回收站手动恢复",
   "timeAgo": {
     "justNow": "刚刚",
     "minutesAgo": "{{count}}分钟前",

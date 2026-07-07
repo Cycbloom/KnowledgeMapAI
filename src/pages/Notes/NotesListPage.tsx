@@ -1,6 +1,13 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   NotebookPen,
   CalendarDays,
@@ -18,17 +25,25 @@ import {
   Hash,
   Loader2,
   LayoutTemplate,
+  CheckSquare,
+  Square,
+  X,
 } from "lucide-react";
 import { useStore } from "../../store/useStore";
+import { useTheme } from "../../hooks";
 import { useNotesList, type NoteView } from "../../hooks/queries";
 import {
   useCreateNoteMutation,
   useGetOrCreateTodayDailyMutation,
   useUpdateNoteMutation,
   useDeleteNoteMutation,
+  useRestoreNoteMutation,
 } from "../../hooks/mutations";
+import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { Skeleton, EmptyState } from "../../components/common";
+import { Skeleton, EmptyState, ConfirmationModal } from "../../components/common";
+import { NotesListSortDropdown, type SortBy } from "../../components/Notes/NotesListSortDropdown";
+import { NotesBatchActions } from "../../components/Notes/NotesBatchActions";
 import { asyncConfirm } from "../../utils/asyncConfirm";
 import { formatDate } from "../../utils/formatters";
 import type { Note, NoteType } from "@shared/types/note";
@@ -186,6 +201,9 @@ const NoteCard = ({
   onDelete,
   pendingAction,
   onTagClick,
+  isSelectMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: {
   note: Note;
   onPin: (note: Note) => void;
@@ -193,17 +211,30 @@ const NoteCard = ({
   onDelete: (note: Note) => void;
   pendingAction: string | null;
   onTagClick?: (tag: string) => void;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isBusy = pendingAction === note.id;
 
   const handleClick = () => {
+    // 批量选择模式:点击切换选中态,不跳转。
+    if (isSelectMode) {
+      onToggleSelect?.(note.id);
+      return;
+    }
     // 跳转笔记编辑器;路由 /notes/:noteId 由 Task 8 注册。
     navigate(`/notes/${note.id}`);
   };
 
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleSelect?.(note.id);
+  };
 
   return (
     <div
@@ -216,9 +247,36 @@ const NoteCard = ({
           handleClick();
         }
       }}
-      className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+      className={`p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${
+        isSelectMode && isSelected
+          ? "bg-primary-50/40 dark:bg-primary-900/10"
+          : ""
+      }`}
     >
       <div className="flex items-start justify-between gap-4">
+        {isSelectMode && (
+          <button
+            type="button"
+            onClick={handleCheckboxClick}
+            className="mt-1 flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+            aria-label={note.title || t("notes.fields.untitled")}
+            aria-pressed={isSelected}
+          >
+            {isSelected ? (
+              <CheckSquare
+                size={20}
+                className="text-primary-500"
+                aria-hidden="true"
+              />
+            ) : (
+              <Square
+                size={20}
+                className="text-gray-400 dark:text-slate-500"
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             {note.isPinned && (
@@ -333,7 +391,9 @@ const NoteListSkeleton = () => (
 export const NotesListPage = () => {
   const { t } = useTranslation();
   const { token } = useStore();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [view, setView] = useState<NoteView>("all");
   const [page, setPage] = useState(1);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -344,6 +404,28 @@ export const NotesListPage = () => {
   // SubTask 10.2: 客户端标签筛选(点击列表项 tag chip 时设置)。
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Task 4: 客户端列表排序,持久化到 localStorage。
+  const [sortBy, setSortBy] = useState<SortBy>(() => {
+    if (typeof window === "undefined") return "updatedAt";
+    const saved = window.localStorage.getItem("notes-list-sort");
+    return saved === "createdAt" || saved === "title" || saved === "updatedAt"
+      ? saved
+      : "updatedAt";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("notes-list-sort", sortBy);
+  }, [sortBy]);
+
+  // Task 5: 批量选择模式
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchDeleteConfirm, setBatchDeleteConfirm] = useState<{
+    isOpen: boolean;
+    count: number;
+  }>({ isOpen: false, count: 0 });
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
   const { data, isLoading, error, refetch, isFetching } = useNotesList({
     view,
@@ -359,6 +441,7 @@ export const NotesListPage = () => {
   const manualCreateDailyMutation = useGetOrCreateTodayDailyMutation();
   const updateNoteMutation = useUpdateNoteMutation();
   const deleteNoteMutation = useDeleteNoteMutation();
+  const restoreNoteMutation = useRestoreNoteMutation();
 
   const notes = useMemo(() => data?.items ?? [], [data]);
   const total = data?.total ?? 0;
@@ -405,6 +488,32 @@ export const NotesListPage = () => {
       return matchTitle && matchTag;
     });
   }, [notes, searchKeyword, filterTag]);
+
+  // Task 4: 在客户端过滤结果之上叠加排序。
+  const sortedFilteredNotes = useMemo(() => {
+    const sorted = [...filteredNotes];
+    switch (sortBy) {
+      case "createdAt":
+        sorted.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        break;
+      case "title":
+        sorted.sort((a, b) =>
+          (a.title ?? "").localeCompare(b.title ?? ""),
+        );
+        break;
+      case "updatedAt":
+      default:
+        sorted.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        );
+        break;
+    }
+    return sorted;
+  }, [filteredNotes, sortBy]);
 
   // SubTask 9.1: 进入 /notes 时静默确保今日 daily 存在。
   // 仅当本日首次进入且后端刚创建(createdAt 在最近 60 秒内)时跳转到编辑器,
@@ -533,12 +642,23 @@ export const NotesListPage = () => {
     });
     if (!confirmed) return;
 
+    // Task 3: 在 mutation 之前捕获 note id/title,用于撤销 toast 回调。
+    const deletedNoteId = note.id;
     setPendingAction(note.id);
     try {
       await deleteNoteMutation.mutateAsync(note.id);
       frontendEventBus.publish("message_show", {
         type: "success",
-        content: t("notes.noteDeleted"),
+        content: t("notes.undo.deletedOne", {
+          title: note.title || t("notes.fields.untitled"),
+        }),
+        duration: 5000,
+        action: {
+          label: t("common.undo"),
+          onClick: () => {
+            void handleUndoDeleteNote(deletedNoteId);
+          },
+        },
       });
     } catch (err: unknown) {
       const message =
@@ -549,6 +669,143 @@ export const NotesListPage = () => {
       });
     } finally {
       setPendingAction(null);
+    }
+  };
+
+  // Task 3: 撤销单条删除。使用 useRestoreNoteMutation(后端 POST /notes/:id/restore)。
+  // 失效 ["notes"] 前缀以刷新列表/详情/回收站等所有 notes 查询。
+  const handleUndoDeleteNote = useCallback(
+    async (id: string) => {
+      try {
+        await restoreNoteMutation.mutateAsync(id);
+        await queryClient.invalidateQueries({ queryKey: ["notes"] });
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("notes.undo.restored"),
+        });
+      } catch {
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: t("notes.undo.restoreFailed"),
+        });
+      }
+    },
+    [restoreNoteMutation, queryClient, t],
+  );
+
+  // Task 5: 批量删除确认回调。
+  // 使用 Promise.allSettled 并行调用 api.notes.delete;部分失败时给出 warning toast。
+  // 全部成功时给出带 undo 按钮的 success toast,点击 undo 调用 handleUndoBatchDeleteNotes。
+  const handleConfirmBatchDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setIsBatchDeleting(true);
+    setBatchDeleteConfirm({ isOpen: false, count: 0 });
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => api.notes.delete(id)),
+      );
+      const failedCount = results.filter(
+        (r) => r.status === "rejected",
+      ).length;
+      await queryClient.invalidateQueries({ queryKey: ["notes"] });
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      if (failedCount === 0) {
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: t("notes.undo.deletedMany", { count: ids.length }),
+          duration: 5000,
+          action: {
+            label: t("common.undo"),
+            onClick: () => {
+              void handleUndoBatchDeleteNotes(ids);
+            },
+          },
+        });
+      } else {
+        frontendEventBus.publish("message_show", {
+          type: "warning",
+          content: t("notes.batch.partialDeleteFailed"),
+        });
+      }
+    } catch {
+      // allSettled 不会 reject,此分支仅作防御。
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("notes.deleteFailed"),
+      });
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
+
+  // Task 5: 撤销批量删除。使用 Promise.allSettled 并行调用 api.notes.restore。
+  const handleUndoBatchDeleteNotes = useCallback(
+    async (ids: string[]) => {
+      try {
+        const results = await Promise.allSettled(
+          ids.map((id) => api.notes.restore(id)),
+        );
+        const failedCount = results.filter(
+          (r) => r.status === "rejected",
+        ).length;
+        await queryClient.invalidateQueries({ queryKey: ["notes"] });
+        if (failedCount === 0) {
+          frontendEventBus.publish("message_show", {
+            type: "success",
+            content: t("notes.undo.restored"),
+          });
+        } else {
+          frontendEventBus.publish("message_show", {
+            type: "error",
+            content: t("notes.undo.restoreFailed"),
+          });
+        }
+      } catch {
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: t("notes.undo.restoreFailed"),
+        });
+      }
+    },
+    [queryClient, t],
+  );
+
+  // Task 5: 进入/退出批量选择模式。
+  const enterSelectMode = () => {
+    setSelectedIds(new Set());
+    setIsSelectMode(true);
+  };
+  const exitSelectMode = () => {
+    setSelectedIds(new Set());
+    setIsSelectMode(false);
+  };
+
+  // Task 5: 切换单条选中态。
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  // Task 5: 全选/取消全选(基于当前排序+过滤后的可见项)。
+  const toggleSelectAll = () => {
+    if (
+      sortedFilteredNotes.length > 0 &&
+      sortedFilteredNotes.every((n) => selectedIds.has(n.id))
+    ) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(
+        new Set(sortedFilteredNotes.map((n) => n.id)),
+      );
     }
   };
 
@@ -647,20 +904,55 @@ export const NotesListPage = () => {
               {t("notes.templates.actions.manage")}
             </span>
           </button>
+          {/* Task 5: 批量管理 / 退出批量管理 */}
+          {!isSelectMode ? (
+            <button
+              type="button"
+              onClick={enterSelectMode}
+              className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+              title={t("notes.batch.enterSelectMode")}
+              aria-label={t("notes.batch.enterSelectMode")}
+            >
+              <CheckSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {t("notes.batch.enterSelectMode")}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-2 rounded-md flex items-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+              title={t("notes.batch.exit")}
+              aria-label={t("notes.batch.exit")}
+            >
+              <X className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {t("notes.batch.exit")}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 视图切换 */}
-      <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto">
-        {VIEW_TABS.map((tab) => (
-          <FilterTab
-            key={tab.value}
-            label={t(tab.labelKey)}
-            value={tab.value}
-            current={view}
-            onClick={handleViewChange}
-          />
-        ))}
+      {/* 视图切换 + Task 4 排序下拉 */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto flex-1 min-w-0">
+          {VIEW_TABS.map((tab) => (
+            <FilterTab
+              key={tab.value}
+              label={t(tab.labelKey)}
+              value={tab.value}
+              current={view}
+              onClick={handleViewChange}
+            />
+          ))}
+        </div>
+        <NotesListSortDropdown
+          value={sortBy}
+          onChange={setSortBy}
+          isDark={isDark}
+        />
       </div>
 
       {/* SubTask 10.1: 顶部搜索框(debounce 300ms,回车立即触发) */}
@@ -777,8 +1069,35 @@ export const NotesListPage = () => {
 
           {!isLoading && filteredNotes.length > 0 && (
             <>
+              {/* Task 5: 批量选择模式下的批量操作工具栏 */}
+              {isSelectMode && (
+                <NotesBatchActions
+                  isDark={isDark}
+                  isAllSelected={
+                    sortedFilteredNotes.length > 0 &&
+                    sortedFilteredNotes.every((n) => selectedIds.has(n.id))
+                  }
+                  isPartialSelected={
+                    !(
+                      sortedFilteredNotes.length > 0 &&
+                      sortedFilteredNotes.every((n) => selectedIds.has(n.id))
+                    ) &&
+                    sortedFilteredNotes.some((n) => selectedIds.has(n.id))
+                  }
+                  selectedCount={selectedIds.size}
+                  isBatchDeleting={isBatchDeleting}
+                  onToggleSelectAll={toggleSelectAll}
+                  onBatchDelete={() =>
+                    setBatchDeleteConfirm({
+                      isOpen: true,
+                      count: selectedIds.size,
+                    })
+                  }
+                  onClearSelection={exitSelectMode}
+                />
+              )}
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
-                {filteredNotes.map((note) => (
+                {sortedFilteredNotes.map((note) => (
                   <NoteCard
                     key={note.id}
                     note={note}
@@ -787,6 +1106,9 @@ export const NotesListPage = () => {
                     onDelete={handleDelete}
                     pendingAction={pendingAction}
                     onTagClick={(tag) => setFilterTag(tag)}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIds.has(note.id)}
+                    onToggleSelect={toggleSelect}
                   />
                 ))}
               </div>
@@ -836,6 +1158,20 @@ export const NotesListPage = () => {
           )}
         </div>
       )}
+
+      {/* Task 5: 批量删除确认对话框 */}
+      <ConfirmationModal
+        isOpen={batchDeleteConfirm.isOpen}
+        title={t("notes.batch.confirmTitle")}
+        message={t("notes.batch.confirmMessage", {
+          count: batchDeleteConfirm.count,
+        })}
+        onConfirm={handleConfirmBatchDelete}
+        onClose={() => setBatchDeleteConfirm({ isOpen: false, count: 0 })}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
+        isDangerous
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,8 @@ import {
   useToggleFavoriteMutation,
   usePrefetchGraph,
   useBatchDeleteGraphsMutation,
+  useRestoreGraphMutation,
+  useBatchRestoreGraphsMutation,
 } from "../hooks/mutations";
 import { useQueryClient } from "@tanstack/react-query";
 import { Network, Star, Clock } from "lucide-react";
@@ -67,6 +69,8 @@ export const Dashboard = () => {
   const deleteGraphMutation = useDeleteGraphMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
   const batchDeleteGraphsMutation = useBatchDeleteGraphsMutation();
+  const restoreGraphMutation = useRestoreGraphMutation();
+  const batchRestoreGraphsMutation = useBatchRestoreGraphsMutation();
   const prefetchGraph = usePrefetchGraph();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { getRecentGraphs, removeRecentGraph } = useRecentGraphs();
@@ -119,6 +123,34 @@ export const Dashboard = () => {
 
   const filters = useDashboardFilters({ isMobile, graphs });
 
+  const handleUndoDeleteGraph = useCallback(
+    async (id: string) => {
+      try {
+        await restoreGraphMutation.mutateAsync(id);
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+        message.success(t("dashboard.undo.restored"));
+      } catch (err: unknown) {
+        console.error(err);
+        message.error(t("dashboard.undo.restoreFailed"));
+      }
+    },
+    [restoreGraphMutation, queryClient, t],
+  );
+
+  const handleUndoBatchDeleteGraphs = useCallback(
+    async (ids: string[]) => {
+      try {
+        await batchRestoreGraphsMutation.mutateAsync(ids);
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+        message.success(t("dashboard.undo.restored"));
+      } catch (err: unknown) {
+        console.error(err);
+        message.error(t("dashboard.undo.restoreFailed"));
+      }
+    },
+    [batchRestoreGraphsMutation, queryClient, t],
+  );
+
   const handleBatchDelete = () => {
     if (filters.selectedIds.size === 0) return;
     setDeleteConfirm({
@@ -129,10 +161,21 @@ export const Dashboard = () => {
   };
 
   const handleConfirmBatchDelete = () => {
-    const ids = Array.from(filters.selectedIds);
-    batchDeleteGraphsMutation.mutate(ids, {
+    const deletedIds = Array.from(filters.selectedIds);
+    batchDeleteGraphsMutation.mutate(deletedIds, {
       onSuccess: () => {
-        message.success(`已将 ${ids.length} 个图谱移至回收站`);
+        message.success(
+          t("dashboard.undo.deletedMany", { count: deletedIds.length }),
+          {
+            duration: 5000,
+            action: {
+              label: t("common.undo"),
+              onClick: () => {
+                void handleUndoBatchDeleteGraphs(deletedIds);
+              },
+            },
+          },
+        );
         filters.clearSelection();
         filters.setIsSelectMode(false);
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
@@ -152,9 +195,21 @@ export const Dashboard = () => {
 
   const handleConfirmDelete = () => {
     if (deleteConfirm.id) {
-      deleteGraphMutation.mutate(deleteConfirm.id, {
+      const { id, title } = deleteConfirm;
+      deleteGraphMutation.mutate(id, {
         onSuccess: () => {
-          message.success("图谱删除成功");
+          message.success(
+            t("dashboard.undo.deletedOne", { title }),
+            {
+              duration: 5000,
+              action: {
+                label: t("common.undo"),
+                onClick: () => {
+                  void handleUndoDeleteGraph(id);
+                },
+              },
+            },
+          );
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: unknown) => {
@@ -471,7 +526,11 @@ export const Dashboard = () => {
                 <table className="w-full">
                   <thead>
                     <tr
-                      className={`border-b ${isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-100 bg-gray-50"}`}
+                      className={`sticky top-0 z-10 border-b ${
+                        isDark
+                          ? "border-slate-700 bg-slate-800"
+                          : "border-gray-100 bg-gray-50"
+                      }`}
                     >
                       {filters.isSelectMode && (
                         <th className="w-12 px-4 py-3">

@@ -27,6 +27,7 @@ import {
   HelpModal,
   SSEStatusIndicator,
   SyncStatusIndicator,
+  GlobalCommandPalette,
 } from "../common";
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
@@ -94,6 +95,7 @@ export const Layout = () => {
   const { isMobile } = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [schemaStatus, setSchemaStatus] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const importGraphMutation = useImportGraphMutation();
@@ -130,6 +132,40 @@ export const Layout = () => {
       },
       toggleTheme: () => {
         toggleTheme();
+      },
+      openCommandPalette: () => {
+        // GraphEditor 全屏路径有自己的 CommandPalette，不触发全局
+        if (
+          location.pathname.startsWith("/graph/") ||
+          location.pathname === "/learning" ||
+          location.pathname.startsWith("/scheduler/task/")
+        ) {
+          return;
+        }
+        setIsCommandPaletteOpen((prev) => !prev);
+      },
+      openSearch: () => {
+        // 搜索能力已内嵌在全局命令面板中，行为与 openCommandPalette 一致
+        if (
+          location.pathname.startsWith("/graph/") ||
+          location.pathname === "/learning" ||
+          location.pathname.startsWith("/scheduler/task/")
+        ) {
+          return;
+        }
+        setIsCommandPaletteOpen((prev) => !prev);
+      },
+      navigateBack: () => {
+        navigate(-1);
+      },
+      navigateForward: () => {
+        navigate(1);
+      },
+      goHome: () => {
+        navigate("/");
+      },
+      openSettings: () => {
+        navigate("/settings");
       },
     },
     enabled: true,
@@ -503,6 +539,12 @@ export const Layout = () => {
           <OfflineIndicator />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+          {!isFullScreenPage && (
+            <GlobalCommandPalette
+              isOpen={isCommandPaletteOpen}
+              onClose={() => setIsCommandPaletteOpen(false)}
+            />
+          )}
           {user?.id && (
             <Console
               isOpen={isConsoleOpen}

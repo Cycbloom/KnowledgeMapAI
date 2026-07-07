@@ -34,6 +34,7 @@ import {
   StudyStrategySettings,
   StudyAlgorithmSettings,
   GraphEditorSettings,
+  ShortcutSettings,
   NotificationSettings,
 } from "../components/Settings";
 import type { DatabaseConfig } from "../components/Settings/settingsConstants";
@@ -80,6 +81,7 @@ export const Settings = () => {
     { id: "studyStrategy", label: t("settings.sections.studyStrategy") },
     { id: "studyAlgorithm", label: t("settings.sections.studyAlgorithm") },
     { id: "graphEditor", label: t("settings.sections.graphEditor") },
+    { id: "shortcuts", label: t("settings.sections.shortcuts") },
     { id: "notifications", label: t("settings.sections.notifications") },
     { id: "plugins", label: t("settings.sections.plugins") },
   ];
@@ -423,6 +425,14 @@ export const Settings = () => {
               }}
             >
               <GraphEditorSettings />
+            </section>
+            <section
+              id="shortcuts"
+              ref={(el) => {
+                if (el) sectionRefs.current.shortcuts = el;
+              }}
+            >
+              <ShortcutSettings />
             </section>
             <section
               id="notifications"

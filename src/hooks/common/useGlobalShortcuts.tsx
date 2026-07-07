@@ -57,8 +57,20 @@ export function useGlobalShortcuts({
 }
 
 function isGlobalShortcut(shortcut: ShortcutDefinition): boolean {
-  const globalActions = ['undo', 'redo', 'save', 'openCommandPalette', 'openConsole'];
-  return globalActions.includes(shortcut.action) || 
+  // 输入框内不触发的 action：
+  // - 导航类（navigateBack / navigateForward / goHome / openSettings）：避免在输入时误触跳转
+  // - openCommandPalette / openSearch：输入框内按 Ctrl+K 不弹出全局命令面板（符合 spec，避免与浏览器原生行为冲突）
+  const inputBlockedActions = [
+    'navigateBack',
+    'navigateForward',
+    'goHome',
+    'openSettings',
+    'openCommandPalette',
+    'openSearch',
+  ];
+  if (inputBlockedActions.includes(shortcut.action)) return false;
+  const globalActions = ['undo', 'redo', 'save', 'openConsole'];
+  return globalActions.includes(shortcut.action) ||
          !!(shortcut.defaultKeys.ctrl || shortcut.defaultKeys.meta);
 }
 

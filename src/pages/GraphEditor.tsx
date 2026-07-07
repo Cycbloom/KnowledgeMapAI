@@ -6,6 +6,7 @@ import React, {
   useState,
   useLayoutEffect,
   useEffect,
+  useRef,
 } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -19,6 +20,8 @@ import { QuadrantCanvas } from "../components/GraphEditor/canvas/QuadrantCanvas"
 import { ExplorationTimeline } from "../components/GraphEditor/shared/ExplorationTimeline";
 import { GraphStyleSettings } from "../components/GraphEditor/shared/GraphStyleSettings";
 import { RelationshipTypeSettings } from "../components/GraphEditor/shared/RelationshipTypeSettings";
+import { NodeBreadcrumb } from "../components/GraphEditor/shared/NodeBreadcrumb";
+import type { NodeBreadcrumbItem } from "../components/GraphEditor/shared/NodeBreadcrumb";
 
 import { GraphModalManager } from "../components/GraphEditor/modals/GraphModalManager";
 import {
@@ -44,6 +47,7 @@ import {
   useQuoteShortcut,
 } from "../hooks";
 import { useRecentGraphs } from "../hooks/useRecentGraphs";
+import { addRecentNode } from "../hooks/useRecentNodes";
 import { isAppError } from "../utils/errors";
 import { computeRegions } from "../lib/graph";
 import {
@@ -472,6 +476,55 @@ export const GraphEditor = () => {
     setFocusedLinkIds,
     setForceShowTextIds,
   });
+
+  // 节点层级面包屑：基于 edges 回溯 selectedNode 的父链（source 为父，target 为子）
+  const parentChain = useMemo<NodeBreadcrumbItem[]>(() => {
+    const selectedNodeId = selectedNode?.id;
+    if (!selectedNodeId) return [];
+
+    const parentMap = new Map<string, string>();
+    for (const edge of edges) {
+      const childId = edge.target_knowledge_point_id;
+      const parentId = edge.source_knowledge_point_id;
+      if (!parentMap.has(childId)) {
+        parentMap.set(childId, parentId);
+      }
+    }
+
+    const titleMap = new Map<string, string>();
+    for (const node of nodes) {
+      titleMap.set(node.id, node.title ?? "未命名节点");
+    }
+
+    const chain: NodeBreadcrumbItem[] = [];
+    const visited = new Set<string>();
+    let currentParentId = parentMap.get(selectedNodeId);
+    while (currentParentId && !visited.has(currentParentId)) {
+      visited.add(currentParentId);
+      chain.push({
+        id: currentParentId,
+        title: titleMap.get(currentParentId) ?? "未命名节点",
+      });
+      currentParentId = parentMap.get(currentParentId);
+    }
+
+    chain.reverse();
+    return chain;
+  }, [selectedNode?.id, edges, nodes]);
+
+  // 记录最近访问节点：仅 nodeId 变化时写入，避免频繁写入 localStorage
+  const lastRecordedNodeIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedNode || !id || !graphMeta) return;
+    if (lastRecordedNodeIdRef.current === selectedNode.id) return;
+    lastRecordedNodeIdRef.current = selectedNode.id;
+    addRecentNode({
+      id: selectedNode.id,
+      title: selectedNode.title ?? "未命名节点",
+      graphId: id,
+      graphTopic: graphMeta.title ?? "未命名图谱",
+    });
+  }, [selectedNode?.id, id, graphMeta]);
 
   // Narrative mode + learning path handlers (extracted hook)
   const {
@@ -1250,6 +1303,22 @@ export const GraphEditor = () => {
         )}
 
         <div className="h-full w-full bg-white dark:bg-slate-900 relative" data-tour="canvas">
+          {/* 节点层级面包屑：顶部居中浮层，点击父节点复用 focusNode 居中并选中 */}
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 w-max max-w-[60vw]">
+            <NodeBreadcrumb
+              graphTitle={graphMeta?.title ?? "未命名图谱"}
+              selectedNode={
+                selectedNode
+                  ? {
+                      id: selectedNode.id,
+                      title: selectedNode.title ?? "未命名节点",
+                    }
+                  : null
+              }
+              parentChain={parentChain}
+              onSelectNode={focusNode}
+            />
+          </div>
           {(viewMode === "mindmap" || viewMode === "semantic") && (
             <ErrorBoundary>
               <MindMapCanvas

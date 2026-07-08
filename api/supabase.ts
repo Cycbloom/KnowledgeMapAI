@@ -16,7 +16,8 @@ const DEMO_SERVICE_KEY =
 
 function isDevelopment(): boolean {
   const nodeEnv = process.env.NODE_ENV;
-  return nodeEnv === "development" || !nodeEnv;
+  // "test" 环境同样使用开发回退（demo key），避免单元测试因缺少密钥而无法加载模块
+  return nodeEnv === "development" || nodeEnv === "test" || !nodeEnv;
 }
 
 function resolveServiceKey(): string {

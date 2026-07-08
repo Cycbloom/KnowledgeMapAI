@@ -34,6 +34,12 @@ jobs:
       - name: Type Check (Electron)
         run: npm run check:electron
 
+      - name: Rebuild native modules for system Node
+        # postinstall 的 electron-rebuild 把 better-sqlite3 编译为 Electron 的 V8 版本，
+        # 但 vitest 运行在系统 Node.js 上，原生模块二进制不兼容（NODE_MODULE_VERSION 不匹配）。
+        # 在运行测试前为系统 Node.js 重新编译。
+        run: npm rebuild better-sqlite3
+
       - name: Run Tests
         run: npm test -- run
 

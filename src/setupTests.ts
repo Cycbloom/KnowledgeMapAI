@@ -24,7 +24,10 @@ beforeAll(async () => {
   if (typeof window === 'undefined') return;
 
   // jest-dom 仅在 jsdom 环境下加载（扩展 expect 的 DOM 匹配器）
-  // 在 node 环境下跳过，避免不必要的 DOM 依赖
+  // 在 node 环境下跳过，避免不必要的 DOM 依赖。
+  // 该包默认入口是无导出的副作用脚本（仅扩展 expect），TS 不识别为模块；
+  // 使用 // @ts-expect-error 显式声明此处为副作用导入，抑制 TS2306。
+  // @ts-expect-error - side-effect import for extending expect with DOM matchers
   await import('@testing-library/jest-dom');
 
   Object.defineProperty(window, 'localStorage', { value: localStorageMock });

@@ -54,4 +54,15 @@ export default tseslint.config(
       'no-console': 'off',
     },
   },
+  {
+    // E2E tests use Playwright fixtures whose `use` callback collides with
+    // React 19's `use` hook in eslint-plugin-react-hooks. Playwright tests
+    // don't use React hooks at all, so disable the plugin here.
+    files: ['e2e/**/*.{ts,tsx}'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'no-empty-pattern': 'off',
+    },
+  },
 )

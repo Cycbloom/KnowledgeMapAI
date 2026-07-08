@@ -54,6 +54,7 @@
     "test:ci": "npm run check && npm run lint && npm run test:coverage",
     "check:electron": "tsc -p tsconfig.electron.json --noEmit",
     "server:dev": "nodemon",
+    "server:start": "tsx --tsconfig tsconfig.api.json api/server.ts",
     "db:backfill": "tsx scripts/backfill_embeddings.ts",
     "db:seed": "tsx scripts/seed_test_data.ts",
     "db:export": "tsx scripts/exportFromSupabase.ts",

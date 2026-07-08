@@ -50,13 +50,25 @@ export default defineConfig({
           use: { ...devices['iPhone 12'] },
         },
       ],
-  webServer: {
-    command: 'npm run dev',
-    // 检查 /api/health/system 端点（通过 Vite proxy 转发到 API 服务器），
-    // 确保 API 服务器完全就绪后再开始测试。
-    // 如果只检查前端 5173 端口，API 服务器可能还没启动，所有测试会超时。
-    url: 'http://localhost:5173/api/health/system',
-    reuseExistingServer: !process.env.CI,
-    timeout: 180 * 1000,
-  },
+  // 分别启动前端 (Vite) 和 API 服务器，避免 concurrently 输出被吞掉。
+  // API 用 server:start (tsx 直接运行) 而非 server:dev (nodemon)，
+  // 因为 CI 不需要文件监视，且 nodemon 会缓冲输出导致日志不可见。
+  webServer: [
+    {
+      command: 'npm run server:start',
+      url: 'http://localhost:3001/api/health/system',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    {
+      command: 'npm run client:dev',
+      url: 'http://localhost:5173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+  ],
 });

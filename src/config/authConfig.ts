@@ -11,7 +11,14 @@ function isDevelopment(): boolean {
   const mode = getEnv("MODE");
   const nodeEnv = getEnv("NODE_ENV");
   const devServerUrl = getEnv("VITE_DEV_SERVER_URL");
-  return mode === "development" || nodeEnv === "development" || !!devServerUrl;
+  // "test" 环境同样使用开发回退（空字符串），避免单元测试因缺少 VITE_ 变量而抛错
+  return (
+    mode === "development" ||
+    mode === "test" ||
+    nodeEnv === "development" ||
+    nodeEnv === "test" ||
+    !!devServerUrl
+  );
 }
 
 const SUPABASE_CONFIG_KEY = "supabase_config";

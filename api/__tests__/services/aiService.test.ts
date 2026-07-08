@@ -7,6 +7,14 @@ vi.mock("../../services/ai/factory", () => ({
   getAIProvider: vi.fn(),
 }));
 
+// generateCards 内部调用 promptService.getRenderedPrompt 查询数据库获取 prompt 模板。
+// 单元测试不应依赖数据库，mock 返回空字符串触发 fallback 路径（使用内置 typePrompts）。
+vi.mock("../../services/ai/promptService", () => ({
+  promptService: {
+    getRenderedPrompt: vi.fn().mockResolvedValue(""),
+  },
+}));
+
 // aiService.chat/tutorChat 通过延迟绑定委托 chatService（拆解循环依赖），
 // 测试前需注入 chatService 实例。
 bindChatService(chatService);

@@ -103,14 +103,10 @@ export function createApp(kernel?: Kernel): express.Express {
     process.env.FRONTEND_URL,
   ].filter(Boolean) as string[];
 
-  // Strict CORS allowlist: only specific Vercel preview subdomains and local dev origins.
-  const VERCEL_PREVIEW_REGEX = /^https:\/\/knowledgemap-[a-z0-9]+\.vercel\.app$/;
+  // Strict CORS allowlist: only local dev origins and explicit FRONTEND_URL.
   const LOCALHOST_REGEX = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
   const isAllowedOrigin = (origin: string): boolean => {
-    if (VERCEL_PREVIEW_REGEX.test(origin)) {
-      return true;
-    }
     if (LOCALHOST_REGEX.test(origin)) {
       return true;
     }

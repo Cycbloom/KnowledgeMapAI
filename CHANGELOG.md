@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-07-09
+
+### Changed
+
+- 移除 Vercel 部署相关配置（vercel.json / .vercelignore / VERCEL_ENV_SETUP.md），项目改为纯 Electron 桌面应用分发
+- 从 `package.json` 的 `build.extraResources` 移除 `.env.production` 条目，避免构建时因文件缺失而失败
+- 移除 `api/app.ts` 中 CORS 允许列表的 Vercel 预览域名正则
+- 更新 `.env.example` 注释，移除 Vercel 相关示例
+
 ## [1.0.0] - 2025-03-15
 
 ### Added

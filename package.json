@@ -1,6 +1,6 @@
 {
   "name": "knowledgemap",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "KnowledgeMap - AI-powered knowledge management application with graph visualization, spaced repetition learning, and smart task scheduling",
   "author": {
     "name": "KnowledgeMap Team",
@@ -299,10 +299,6 @@
         "filter": [
           "**/*"
         ]
-      },
-      {
-        "from": ".env.production",
-        "to": ".env.production"
       },
       {
         "from": "supabase/migrations",

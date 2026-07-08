@@ -95,18 +95,56 @@ jobs:
           # Supabase CLI 需要 Docker（GitHub Actions ubuntu-latest 已预装）
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - name: Get Supabase Keys
-        id: supabase-keys
+      - name: Extract Supabase Keys
+        # Supabase CLI 每次启动生成随机的 JWT_SECRET，不能使用固定 demo key。
+        # 从 supabase status 提取实际密钥，并写入 .env.development.local
+        # 供 api/supabase.ts 的 dotenv 加载（override:true）。
         run: |
-          # Local Supabase uses fixed development keys (same across all local instances).
-          # See: https://supabase.com/docs/guides/local-development
+          STATUS_JSON=$(supabase status -o json)
+          ANON_KEY=$(echo "$STATUS_JSON" | jq -r '.anonKey // empty')
+          SERVICE_KEY=$(echo "$STATUS_JSON" | jq -r '.serviceKey // empty')
+          JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.jwtSecret // empty')
+
+          # 兼容旧版 CLI：JSON 解析失败时回退到文本解析
+          if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then
+            STATUS_TEXT=$(supabase status)
+            ANON_KEY=$(echo "$STATUS_TEXT" | grep -oP 'anon key:\s*\K\S+' || echo "")
+            SERVICE_KEY=$(echo "$STATUS_TEXT" | grep -oP 'service_role key:\s*\K\S+' || echo "")
+            JWT_SECRET=$(echo "$STATUS_TEXT" | grep -oP 'JWT secret:\s*\K\S+' || echo "")
+          fi
+
+          if [ -z "$SERVICE_KEY" ]; then
+            echo "ERROR: 无法提取 service role key"
+            supabase status
+            exit 1
+          fi
+
+          echo "ANON_KEY length: ${#ANON_KEY}"
+          echo "SERVICE_KEY length: ${#SERVICE_KEY}"
+
+          # 写入 GITHUB_ENV（test:db 直接读取这些变量）
           echo "SUPABASE_URL=http://127.0.0.1:54321" >> $GITHUB_ENV
-          echo "SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJyHcsQwClqkuYnl9pJeCDr6Pmns" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_URL=http://127.0.0.1:54321" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_KEY" >> $GITHUB_ENV
+          if [ -n "$JWT_SECRET" ]; then
+            echo "SUPABASE_JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV
+          fi
+
+          # 写入 .env.development.local（api/supabase.ts 以 override:true 加载）
+          echo "VITE_SUPABASE_URL=http://127.0.0.1:54321" > .env.development.local
+          echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> .env.development.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_KEY" >> .env.development.local
+          if [ -n "$JWT_SECRET" ]; then
+            echo "SUPABASE_JWT_SECRET=$JWT_SECRET" >> .env.development.local
+          fi
 
       - name: Run Database Tests
         run: npm run test:db
         env:
           SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          VITE_SUPABASE_URL: ${{ env.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ env.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Upload Coverage Report
@@ -170,15 +208,60 @@ jobs:
           supabase start
           supabase db reset
 
+      - name: Extract Supabase Keys
+        # Supabase CLI 每次启动生成随机的 JWT_SECRET 和新格式的密钥（sb_secret_...），
+        # 不能再使用旧版固定的 demo key。从 supabase status 输出提取实际密钥。
+        # 同时写入 .env.local 供 API 服务器和前端读取。
+        run: |
+          # 获取 supabase status 的完整输出（JSON 格式更可靠）
+          STATUS_JSON=$(supabase status -o json)
+          echo "Supabase status JSON: $STATUS_JSON"
+
+          # 提取密钥（使用 jq 解析 JSON）
+          ANON_KEY=$(echo "$STATUS_JSON" | jq -r '.anonKey // empty')
+          SERVICE_KEY=$(echo "$STATUS_JSON" | jq -r '.serviceKey // empty')
+          JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.jwtSecret // empty')
+
+          # 兼容旧版 CLI：如果 JSON 中没有，回退到从文本输出提取
+          if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then
+            echo "JSON 解析失败，回退到文本解析"
+            STATUS_TEXT=$(supabase status)
+            ANON_KEY=$(echo "$STATUS_TEXT" | grep -oP 'anon key:\s*\K\S+' || echo "")
+            SERVICE_KEY=$(echo "$STATUS_TEXT" | grep -oP 'service_role key:\s*\K\S+' || echo "")
+            JWT_SECRET=$(echo "$STATUS_TEXT" | grep -oP 'JWT secret:\s*\K\S+' || echo "")
+          fi
+
+          if [ -z "$SERVICE_KEY" ]; then
+            echo "ERROR: 无法提取 service role key"
+            supabase status
+            exit 1
+          fi
+
+          echo "ANON_KEY length: ${#ANON_KEY}"
+          echo "SERVICE_KEY length: ${#SERVICE_KEY}"
+          echo "JWT_SECRET length: ${#JWT_SECRET}"
+
+          # 写入 GITHUB_ENV 供后续步骤使用
+          echo "VITE_SUPABASE_URL=http://127.0.0.1:54321" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_KEY" >> $GITHUB_ENV
+          if [ -n "$JWT_SECRET" ]; then
+            echo "SUPABASE_JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV
+          fi
+
+          # 也写入 .env.development.local 供 API 服务器的 dotenv 加载
+          # （api/supabase.ts 以 override:true 加载 .env.development.local，
+          #   覆盖 .env.development 中的固定密钥）
+          echo "VITE_SUPABASE_URL=http://127.0.0.1:54321" > .env.development.local
+          echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> .env.development.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_KEY" >> .env.development.local
+          if [ -n "$JWT_SECRET" ]; then
+            echo "SUPABASE_JWT_SECRET=$JWT_SECRET" >> .env.development.local
+          fi
+
       - name: Run E2E Tests (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
-          # Local Supabase development keys (same across all local instances).
-          # See: https://supabase.com/docs/guides/local-development
-          VITE_SUPABASE_URL: http://127.0.0.1:54321
-          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJyHcsQwClqkuYnl9pJeCDr6Pmns
-          SUPABASE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
           DISABLE_RATE_LIMIT: 'true'
           TEST_USER_EMAIL: test@example.com
           TEST_USER_PASSWORD: test123456

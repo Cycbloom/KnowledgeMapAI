@@ -9,10 +9,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_SUPABASE_URL = "http://127.0.0.1:54321";
 const LOCAL_SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
-// Public Supabase demo service_role key (from official Supabase docs).
+// Local Supabase service_role key (matching .env.development).
 // Used ONLY as a development fallback when SUPABASE_SERVICE_ROLE_KEY is missing.
+// NOTE: The old official demo key (signature ...JyHcsQwClqkuYnl9pJeCDr6Pmns) no
+// longer works with newer Supabase CLI versions. This key matches the local
+// Supabase JWT secret and is the same value Kong gateway issues for sb_secret_*.
 const DEMO_SERVICE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35yJt5IUY2-hG09QYxi0IprSuN4kDawpg";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
 function isDevelopment(): boolean {
   const nodeEnv = process.env.NODE_ENV;
@@ -80,28 +83,41 @@ try {
       "resources",
     );
 
-  const possiblePaths: string[] = [];
+  // Env file loading strategy (Vite-compatible order):
+  // - Production: load .env.production with override=false (system env wins)
+  // - Development: load .env.development with override=true (beats pre-set cloud
+  //   values from --env-file or other modules), then .env.development.local with
+  //   override=true (CI writes instance-specific keys extracted from `supabase status`)
+  const envFiles: Array<{ file: string; override: boolean }> = [];
 
   if (isPackaged) {
     const resourcesPath = (process as { resourcesPath?: string }).resourcesPath;
     if (resourcesPath) {
-      possiblePaths.push(path.join(resourcesPath, ".env.production"));
+      envFiles.push({ file: path.join(resourcesPath, ".env.production"), override: false });
     }
-    possiblePaths.push(path.join(__dirname, "..", ".env.production"));
-    possiblePaths.push(path.join(__dirname, "..", "..", ".env.production"));
+    envFiles.push({ file: path.join(__dirname, "..", ".env.production"), override: false });
+    envFiles.push({ file: path.join(__dirname, "..", "..", ".env.production"), override: false });
+  } else if (isDevelopment()) {
+    // .env.development: committed dev config with local Supabase keys.
+    // override=true ensures local values win over pre-set cloud values
+    // (e.g., from --env-file=.env or system env vars).
+    envFiles.push({ file: path.join(__dirname, "..", ".env.development"), override: true });
+    // .env.development.local: gitignored, CI writes instance-specific keys here.
+    // override=true so CI-extracted keys override the fixed .env.development values.
+    envFiles.push({ file: path.join(__dirname, "..", ".env.development.local"), override: true });
+    // Parent directory fallbacks (e.g., when running from api/ subdir)
+    envFiles.push({ file: path.join(__dirname, "..", "..", ".env.development"), override: true });
+    envFiles.push({ file: path.join(__dirname, "..", "..", ".env.development.local"), override: true });
   } else {
-    possiblePaths.push(path.join(__dirname, "..", ".env.development"));
-    possiblePaths.push(path.join(__dirname, "..", ".env"));
-    possiblePaths.push(path.join(__dirname, "..", "..", ".env.development"));
-    possiblePaths.push(path.join(__dirname, "..", "..", ".env"));
+    envFiles.push({ file: path.join(__dirname, "..", ".env"), override: false });
+    envFiles.push({ file: path.join(__dirname, "..", "..", ".env"), override: false });
   }
 
-  for (const tryPath of possiblePaths) {
+  for (const { file: tryPath, override } of envFiles) {
     try {
-      const result = dotenv.config({ path: tryPath });
+      const result = dotenv.config({ path: tryPath, override });
       if (!result.error) {
         envPath = tryPath;
-        break;
       }
     } catch {
       logger.debug(`Failed to load .env from ${tryPath}`);
@@ -111,7 +127,7 @@ try {
   if (!envPath) {
     dotenv.config();
   }
-  
+
   if (envPath) {
     logger.info(`Loaded environment from: ${envPath}`);
   }

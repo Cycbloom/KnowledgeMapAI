@@ -13,18 +13,6 @@ import "./taskProcessors/infiniteExpansionProcessor.js";
 import "./taskProcessors/embeddingGenerationProcessor.js";
 import "./taskProcessors/quizGenerationProcessor.js";
 import "./taskProcessors/generateQuestionsProcessor.js";
-import dotenv from "dotenv";
-import * as path from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-try {
-  dotenv.config({ path: path.join(__dirname, '..', '..', '.env.production') });
-  dotenv.config();
-} catch (err) {
-  logger.warn('Failed to load .env file in taskService:', err);
-}
 
 export interface TaskProgress {
   stage?: string;

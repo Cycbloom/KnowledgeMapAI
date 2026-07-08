@@ -1,9 +1,6 @@
-import dotenv from "dotenv";
 import type { AIProviderType, AIProviderConfig } from "@shared/types";
 import { appSettingsService } from "../core/appSettingsService";
 import { logger } from "../../utils/logger";
-
-dotenv.config();
 
 // Providers that support embedding functionality
 const EMBEDDING_CAPABLE_PROVIDERS: AIProviderType[] = [

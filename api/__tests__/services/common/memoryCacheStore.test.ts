@@ -118,13 +118,13 @@ describe('MemoryCacheStore', () => {
       await store.set('key2', 'value2', 300, ['user:123']);
       await store.set('key3', 'value3', 300, ['graph:456']);
 
-      const count = store.delByTagsWithCount(['user:123']);
+      const count = await store.delByTagsWithCount(['user:123']);
       expect(count).toBe(2);
     });
 
     it('delByTags 对无匹配 tag 返回 0', async () => {
       await store.set('key1', 'value1', 300, ['user:123']);
-      const count = store.delByTagsWithCount(['user:nonexistent']);
+      const count = await store.delByTagsWithCount(['user:nonexistent']);
       expect(count).toBe(0);
       expect(await store.get('key1')).toBe('value1');
     });
@@ -220,24 +220,26 @@ describe('MemoryCacheStore', () => {
 
   describe('LRU 淘汰', () => {
     it('超过 MAX_CACHE_KEYS 时总 key 数不超过上限', async () => {
-      // MAX_CACHE_KEYS = 1000
-      for (let i = 0; i < 1000; i++) {
+      // MAX_CACHE_KEYS = 5000 (defined in cacheStore.ts)
+      const MAX_CACHE_KEYS = 5000;
+      for (let i = 0; i < MAX_CACHE_KEYS; i++) {
         await store.set(`lru_key_${i}`, `value_${i}`, 300);
       }
 
       const keysBefore = await store.keys();
-      expect(keysBefore.length).toBe(1000);
+      expect(keysBefore.length).toBe(MAX_CACHE_KEYS);
 
-      // 添加第 1001 个 key，触发 LRU 淘汰
+      // 添加第 MAX_CACHE_KEYS+1 个 key，触发 LRU 淘汰
       await store.set('lru_overflow', 'overflow_value', 300);
 
       const keysAfter = await store.keys();
-      expect(keysAfter.length).toBeLessThanOrEqual(1000);
+      expect(keysAfter.length).toBeLessThanOrEqual(MAX_CACHE_KEYS);
       expect(await store.get('lru_overflow')).toBe('overflow_value');
     });
 
     it('LRU 淘汰后新 key 可正常访问', async () => {
-      for (let i = 0; i < 1000; i++) {
+      const MAX_CACHE_KEYS = 5000;
+      for (let i = 0; i < MAX_CACHE_KEYS; i++) {
         await store.set(`lru_key_${i}`, `value_${i}`, 300);
       }
 
@@ -331,13 +333,13 @@ describe('MemoryCacheStore', () => {
       await store.set('key2', 'value2');
       await store.set('key3', 'value3');
 
-      const count = store.delMany(['key1', 'key2', 'key3']);
+      const count = await store.delMany(['key1', 'key2', 'key3']);
       expect(count).toBe(3);
     });
 
     it('delMany 对不存在的 key 不计入', async () => {
       await store.set('key1', 'value1');
-      const count = store.delMany(['key1', 'nonexistent']);
+      const count = await store.delMany(['key1', 'nonexistent']);
       expect(count).toBe(1);
     });
   });

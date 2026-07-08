@@ -77,9 +77,8 @@ class LiteratureExtractMountingPage {
       .locator("button")
       .filter({ hasText: /文献提取|提取概念/ })
       .first();
-    if (await extractButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await extractButton.click();
-    }
+    await expect(extractButton).toBeVisible({ timeout: 5000 });
+    await extractButton.click();
     await expect(this.extractPanel).toBeVisible({ timeout: 10000 });
   }
 
@@ -101,13 +100,12 @@ class LiteratureExtractMountingPage {
     const moduleText = card.locator(
       "text=/研究背景|文献综述|研究方法|核心概念|应用领域|未来方向/"
     );
-    return await moduleText.textContent({ timeout: 3000 }).catch(() => null);
+    return await moduleText.textContent({ timeout: 3000 });
   }
 
   async confirmConcepts() {
-    if (await this.confirmButton.isEnabled({ timeout: 3000 }).catch(() => false)) {
-      await this.confirmButton.click();
-    }
+    await expect(this.confirmButton).toBeEnabled({ timeout: 3000 });
+    await this.confirmButton.click();
   }
 
   async cancelPreview() {
@@ -118,9 +116,8 @@ class LiteratureExtractMountingPage {
     const closeButton = this.extractPanel
       .locator("button")
       .filter({ has: this.page.locator("svg.lucide-x") });
-    if (await closeButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await closeButton.click();
-    }
+    await expect(closeButton).toBeVisible({ timeout: 3000 });
+    await closeButton.click();
   }
 }
 
@@ -136,10 +133,9 @@ class GraphOutlinePage {
   }
 
   async openOutline() {
-    if (await this.outlineButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await this.outlineButton.click();
-      await expect(this.outlinePanel).toBeVisible({ timeout: 5000 });
-    }
+    await expect(this.outlineButton).toBeVisible({ timeout: 3000 });
+    await this.outlineButton.click();
+    await expect(this.outlinePanel).toBeVisible({ timeout: 5000 });
   }
 
   async getBackboneNode(moduleLabel: string) {
@@ -148,25 +144,21 @@ class GraphOutlinePage {
 
   async expandBackboneNode(moduleLabel: string) {
     const node = await this.getBackboneNode(moduleLabel);
-    if (await node.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const parent = node.locator("xpath=..");
-      const expandButton = parent.locator(
-        'button:has(svg), [class*="expand"], [class*="collapse"]'
-      );
-      if (await expandButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await expandButton.click();
-        await this.page.waitForTimeout(500);
-      }
-    }
+    await expect(node).toBeVisible({ timeout: 3000 });
+    const parent = node.locator("xpath=..");
+    const expandButton = parent.locator(
+      'button:has(svg), [class*="expand"], [class*="collapse"]'
+    );
+    await expect(expandButton).toBeVisible({ timeout: 1000 });
+    await expandButton.click();
+    await this.page.waitForTimeout(500);
   }
 
   async getChildNodes(parentLabel: string) {
     const parent = await this.getBackboneNode(parentLabel);
-    if (await parent.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const parentElement = parent.locator("xpath=..");
-      return parentElement.locator('[class*="child"], [class*="nested"]');
-    }
-    return null;
+    await expect(parent).toBeVisible({ timeout: 3000 });
+    const parentElement = parent.locator("xpath=..");
+    return parentElement.locator('[class*="child"], [class*="nested"]');
   }
 
   async getNodeHierarchy() {
@@ -209,26 +201,21 @@ class GraphCanvasPage {
 
   async clickNode(title: string) {
     const node = await this.findNodeByTitle(title);
-    if (await node.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await node.click();
-    }
+    await expect(node).toBeVisible({ timeout: 5000 });
+    await node.click();
   }
 
   async getNodeInfo(title: string) {
     const node = await this.findNodeByTitle(title);
-    if (await node.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const parent = node.locator("xpath=..");
-      const dataNodeId = await parent.getAttribute("data-node-id").catch(() => null);
-      const dataBackboneModule = await parent
-        .getAttribute("data-backbone-module")
-        .catch(() => null);
-      return {
-        nodeId: dataNodeId,
-        backboneModule: dataBackboneModule,
-        isVisible: true,
-      };
-    }
-    return { nodeId: null, backboneModule: null, isVisible: false };
+    await expect(node).toBeVisible({ timeout: 3000 });
+    const parent = node.locator("xpath=..");
+    const dataNodeId = await parent.getAttribute("data-node-id");
+    const dataBackboneModule = await parent.getAttribute("data-backbone-module");
+    return {
+      nodeId: dataNodeId,
+      backboneModule: dataBackboneModule,
+      isVisible: true,
+    };
   }
 
   async getVisibleNodeTitles() {
@@ -324,16 +311,13 @@ test.describe("文献提取节点挂载功能测试", () => {
 
         for (const moduleLabel of Object.values(BACKBONE_MODULE_LABELS)) {
           const backboneNode = await outlinePage.getBackboneNode(moduleLabel);
-          if (await backboneNode.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await outlinePage.expandBackboneNode(moduleLabel);
-            await page.waitForTimeout(500);
+          await expect(backboneNode).toBeVisible({ timeout: 3000 });
+          await outlinePage.expandBackboneNode(moduleLabel);
+          await page.waitForTimeout(500);
 
-            const children = await outlinePage.getChildNodes(moduleLabel);
-            if (children) {
-              const childCount = await children.count();
-              expect(childCount).toBeGreaterThanOrEqual(0);
-            }
-          }
+          const children = await outlinePage.getChildNodes(moduleLabel);
+          const childCount = await children.count();
+          expect(childCount).toBeGreaterThanOrEqual(0);
         }
       }
     });
@@ -368,7 +352,8 @@ test.describe("文献提取节点挂载功能测试", () => {
 
       for (const [moduleKey, moduleLabel] of Object.entries(BACKBONE_MODULE_LABELS)) {
         const nodeInfo = await canvasPage.getNodeInfo(moduleLabel);
-        if (nodeInfo.isVisible && nodeInfo.backboneModule) {
+        expect(nodeInfo.backboneModule).not.toBeNull();
+        if (nodeInfo.backboneModule) {
           expect(nodeInfo.backboneModule).toBe(moduleKey);
         }
       }
@@ -621,11 +606,9 @@ test.describe("文献提取节点挂载功能测试", () => {
           await page.waitForTimeout(500);
 
           const nodeDetail = page.locator('[class*="node-detail"], [class*="sidebar"]');
-          if (await nodeDetail.isVisible({ timeout: 3000 }).catch(() => false)) {
-            const parentInfo = nodeDetail.locator("text=/父节点|上级|所属/");
-            const hasParentInfo = await parentInfo.isVisible({ timeout: 2000 }).catch(() => false);
-            expect(typeof hasParentInfo).toBe("boolean");
-          }
+          await expect(nodeDetail).toBeVisible({ timeout: 3000 });
+          const parentInfo = nodeDetail.locator("text=/父节点|上级|所属/");
+          await expect(parentInfo).toBeVisible({ timeout: 2000 });
         }
       }
     });
@@ -655,7 +638,7 @@ test.describe("文献提取节点挂载功能测试", () => {
           return node.level > hierarchy[index - 1].level;
         });
 
-        expect(typeof hasNestedStructure).toBe("boolean");
+        expect(hasNestedStructure).toBe(true);
       }
     });
 
@@ -677,9 +660,7 @@ test.describe("文献提取节点挂载功能测试", () => {
         await page.waitForTimeout(3000);
 
         const canvas = page.locator("canvas").first();
-        if (await canvas.isVisible({ timeout: 3000 }).catch(() => false)) {
-          expect(await canvas.isVisible()).toBeTruthy();
-        }
+        await expect(canvas).toBeVisible({ timeout: 3000 });
       }
     });
   });
@@ -693,9 +674,7 @@ test.describe("文献提取节点挂载功能测试", () => {
       await extractPage.fillTextAndExtract("短文本");
 
       const errorMessage = page.locator("text=/字以上|至少|过短/");
-      await expect(errorMessage).toBeVisible({ timeout: 5000 }).catch(() => {
-        // 可能以其他方式显示错误
-      });
+      await expect(errorMessage).toBeVisible({ timeout: 5000 });
     });
 
     test("应该支持取消预览", async ({ page }) => {
@@ -723,7 +702,7 @@ test.describe("文献提取节点挂载功能测试", () => {
 
       if (conceptCount === 0) {
         const confirmButton = extractPage.confirmButton;
-        const isEnabled = await confirmButton.isEnabled({ timeout: 1000 }).catch(() => false);
+        const isEnabled = await confirmButton.isEnabled({ timeout: 1000 });
         expect(isEnabled).toBeFalsy();
       }
     });

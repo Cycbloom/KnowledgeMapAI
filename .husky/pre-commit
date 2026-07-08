@@ -16,3 +16,18 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "✅ 代码检查通过"
+
+# Optional: run unit tests before commit (opt-in via RUN_TESTS=1)
+# Set RUN_TESTS=1 to enable, e.g.: RUN_TESTS=1 git commit -m "..."
+# Use SKIP_TESTS=1 to explicitly skip even if RUN_TESTS is set in your shell.
+if [ "$RUN_TESTS" = "1" ] && [ "$SKIP_TESTS" != "1" ]; then
+  echo "🧪 运行单元测试... (RUN_TESTS=1)"
+  npm run test:run
+  if [ $? -ne 0 ]; then
+    echo "❌ 单元测试失败，请修复后再提交（或使用 SKIP_TESTS=1 临时跳过）"
+    exit 1
+  fi
+  echo "✅ 单元测试通过"
+else
+  echo "💡 提示：设置 RUN_TESTS=1 可在提交前运行单元测试"
+fi

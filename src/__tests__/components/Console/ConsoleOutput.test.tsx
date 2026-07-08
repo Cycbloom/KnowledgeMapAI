@@ -1,7 +1,12 @@
+// @vitest-environment jsdom
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { ConsoleOutput, type ConsoleOutputRef } from '../../../components/Console/ConsoleOutput';
+import i18n from '../../../i18n';
+
+// Initialize i18n with Chinese translations so t() returns real strings
+i18n.changeLanguage('zh-CN');
 
 const createMockOutput = (count: number) => {
   return Array.from({ length: count }, (_, i) => ({
@@ -170,12 +175,12 @@ describe('ConsoleOutput 日志折叠功能', () => {
     it('应该正确渲染 output 类型（成功）', () => {
       const output = [{
         type: 'output' as const,
-        content: '执行成功',
+        content: '',
         result: { success: true, data: 'Done' },
       }];
-      
+
       render(<ConsoleOutput ref={ref} output={output} isDark={false} onClear={vi.fn()} />);
-      
+
       expect(screen.getByText('Done')).toBeInTheDocument();
     });
 

@@ -5,6 +5,9 @@
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- pgTAP for database unit testing (RLS, RPC, triggers).
+-- Safe in production: pgTAP is read-only and adds no persistent tables.
+CREATE EXTENSION IF NOT EXISTS pgtap;
 
 CREATE TYPE prompt_scope AS ENUM ('system', 'user', 'graph');
 CREATE TYPE knowledge_point_visibility AS ENUM ('private', 'public', 'pending');

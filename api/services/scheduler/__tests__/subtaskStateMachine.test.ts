@@ -16,63 +16,63 @@ describe("SubtaskStateMachine", () => {
     describe("从 learning 状态转换", () => {
       it("learning + mastery < 30% → review", () => {
         expect(stateMachine.getNextState("learning", 0)).toBe("review");
-        expect(stateMachine.getNextState("learning", 10)).toBe("review");
-        expect(stateMachine.getNextState("learning", 29)).toBe("review");
+        expect(stateMachine.getNextState("learning", 0.1)).toBe("review");
+        expect(stateMachine.getNextState("learning", 0.29)).toBe("review");
       });
 
       it("learning + mastery 30-70% → practice", () => {
-        expect(stateMachine.getNextState("learning", 30)).toBe("practice");
-        expect(stateMachine.getNextState("learning", 50)).toBe("practice");
-        expect(stateMachine.getNextState("learning", 69)).toBe("practice");
+        expect(stateMachine.getNextState("learning", 0.3)).toBe("practice");
+        expect(stateMachine.getNextState("learning", 0.5)).toBe("practice");
+        expect(stateMachine.getNextState("learning", 0.69)).toBe("practice");
       });
 
       it("learning + mastery > 70% → quiz", () => {
-        expect(stateMachine.getNextState("learning", 70)).toBe("quiz");
-        expect(stateMachine.getNextState("learning", 80)).toBe("quiz");
-        expect(stateMachine.getNextState("learning", 100)).toBe("quiz");
+        expect(stateMachine.getNextState("learning", 0.7)).toBe("quiz");
+        expect(stateMachine.getNextState("learning", 0.8)).toBe("quiz");
+        expect(stateMachine.getNextState("learning", 1.0)).toBe("quiz");
       });
     });
 
     describe("从 review 状态转换", () => {
       it("review 始终转换到 practice（复习完成后进入练习）", () => {
         expect(stateMachine.getNextState("review", 0)).toBe("practice");
-        expect(stateMachine.getNextState("review", 30)).toBe("practice");
-        expect(stateMachine.getNextState("review", 50)).toBe("practice");
-        expect(stateMachine.getNextState("review", 100)).toBe("practice");
+        expect(stateMachine.getNextState("review", 0.3)).toBe("practice");
+        expect(stateMachine.getNextState("review", 0.5)).toBe("practice");
+        expect(stateMachine.getNextState("review", 1.0)).toBe("practice");
       });
     });
 
     describe("从 practice 状态转换", () => {
       it("practice + mastery < 70% → review", () => {
         expect(stateMachine.getNextState("practice", 0)).toBe("review");
-        expect(stateMachine.getNextState("practice", 30)).toBe("review");
-        expect(stateMachine.getNextState("practice", 69)).toBe("review");
+        expect(stateMachine.getNextState("practice", 0.3)).toBe("review");
+        expect(stateMachine.getNextState("practice", 0.69)).toBe("review");
       });
 
       it("practice + mastery >= 70% → quiz", () => {
-        expect(stateMachine.getNextState("practice", 70)).toBe("quiz");
-        expect(stateMachine.getNextState("practice", 80)).toBe("quiz");
-        expect(stateMachine.getNextState("practice", 100)).toBe("quiz");
+        expect(stateMachine.getNextState("practice", 0.7)).toBe("quiz");
+        expect(stateMachine.getNextState("practice", 0.8)).toBe("quiz");
+        expect(stateMachine.getNextState("practice", 1.0)).toBe("quiz");
       });
     });
 
     describe("从 quiz 状态转换", () => {
-      it("quiz + mastery < 60% → review", () => {
+      it("quiz + mastery < 50% → review", () => {
         expect(stateMachine.getNextState("quiz", 0)).toBe("review");
-        expect(stateMachine.getNextState("quiz", 30)).toBe("review");
-        expect(stateMachine.getNextState("quiz", 59)).toBe("review");
+        expect(stateMachine.getNextState("quiz", 0.3)).toBe("review");
+        expect(stateMachine.getNextState("quiz", 0.49)).toBe("review");
       });
 
-      it("quiz + mastery 60-80% → practice", () => {
-        expect(stateMachine.getNextState("quiz", 60)).toBe("practice");
-        expect(stateMachine.getNextState("quiz", 70)).toBe("practice");
-        expect(stateMachine.getNextState("quiz", 79)).toBe("practice");
+      it("quiz + mastery 50-85% → practice", () => {
+        expect(stateMachine.getNextState("quiz", 0.5)).toBe("practice");
+        expect(stateMachine.getNextState("quiz", 0.7)).toBe("practice");
+        expect(stateMachine.getNextState("quiz", 0.84)).toBe("practice");
       });
 
-      it("quiz + mastery >= 80% → quiz（继续深化）", () => {
-        expect(stateMachine.getNextState("quiz", 80)).toBe("quiz");
-        expect(stateMachine.getNextState("quiz", 90)).toBe("quiz");
-        expect(stateMachine.getNextState("quiz", 100)).toBe("quiz");
+      it("quiz + mastery >= 85% → quiz（继续深化）", () => {
+        expect(stateMachine.getNextState("quiz", 0.85)).toBe("quiz");
+        expect(stateMachine.getNextState("quiz", 0.9)).toBe("quiz");
+        expect(stateMachine.getNextState("quiz", 1.0)).toBe("quiz");
       });
     });
   });
@@ -332,13 +332,13 @@ describe("SubtaskStateMachine", () => {
     it("首次 learning 返回基于掌握度的状态", () => {
       const history: StateHistoryEntry[] = [];
       expect(
-        stateMachine.getRecommendedNextState("learning", 20, history),
+        stateMachine.getRecommendedNextState("learning", 0.2, history),
       ).toBe("review");
       expect(
-        stateMachine.getRecommendedNextState("learning", 50, history),
+        stateMachine.getRecommendedNextState("learning", 0.5, history),
       ).toBe("practice");
       expect(
-        stateMachine.getRecommendedNextState("learning", 80, history),
+        stateMachine.getRecommendedNextState("learning", 0.8, history),
       ).toBe("quiz");
     });
 

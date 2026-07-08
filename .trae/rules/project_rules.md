@@ -26,11 +26,16 @@ supabase db diff          # 查看远程数据库状态
 ### 测试命令
 
 ```bash
-npm run lint                  # 代码检查
-npm run check                 # 类型检查
-npx playwright test           # E2E 测试
-npx playwright test --grep="功能名称"  # 运行特定测试
+npm test                       # watch 模式（开发时）
+npm run test:run               # 单次运行（CI / 本地验证）
+npm run test:coverage          # 覆盖率（含门禁）
+npm run test:db                # pgTAP 数据库测试（需先启动本地 Supabase）
+npm run test:e2e               # Playwright E2E
+npm run test:ci                # CI 完整流程：check + lint + test:coverage
+npx playwright test --grep="功能名称"  # 运行特定 E2E 测试
 ```
+
+> 完整测试命令列表与前置条件见 `docs/testing-guidelines.md` 第 9 节。
 
 ## 数据库规范
 
@@ -110,17 +115,65 @@ npm run dev
 
 ## 测试规范
 
+> 完整规范见 `docs/testing-guidelines.md`。本节为强制要点摘要，新测试 **必须** 遵循。
+
 ### 必须运行测试的场景
 
 1. 提交代码前：`npm run lint` + `npm run check`
-2. 功能开发完成后：`npx playwright test`
+2. 功能开发完成后：`npm run test:run` + `npm run test:e2e`
+3. CI 流程：`npm run test:ci`（含覆盖率门禁）
+
+### 测试分层（Testing Trophy）
+
+| 层级 | 占比目标 | 工具 |
+|------|---------|------|
+| 静态检查 | 100% | `tsc --build` + `eslint` |
+| 单元测试 | ~20% | Vitest（纯函数，无外部依赖） |
+| 集成测试 | ~60% | Vitest + RTL + MSW + 本地 Supabase（主力层） |
+| E2E | ~20% | Playwright（仅关键用户旅程） |
+
+### 共享基础设施（强制）
+
+新测试 **必须** 使用 `tests/` 目录下的共享基础设施，禁止在测试文件内重复定义：
+
+- **mock 工厂**：`tests/helpers/mockFactories.ts`（`createMockSupabase` / `createMockResponse` / `createMockProvider` / `buildCard` / `createMockRequest`）
+- **Faker 工厂**：`tests/helpers/factories.ts`（`userFactory` / `graphFactory` / `nodeFactory` / `noteFactory` 等）
+- **Provider 包装器**：`tests/helpers/renderWithProviders.tsx`（React Query + Router + Theme + Zustand）
+- **测试 DB 客户端**：`tests/helpers/testDb.ts`（`getAdminClient` / `getAnonClient` / `getAuthedClient` / `describeIfDbAvailable` / `cleanTable`）
+- **Electron mock**：`tests/helpers/electronMock.ts`（`mockElectron` / `callIpcHandler`）
+- **MSW handlers**：`tests/setup/mswHandlers.ts` + `tests/setup/mswServer.ts`（用 `server.use()` 覆盖默认 handler）
+
+### 断言原则（强制）
+
+**禁止** 以下模式，违反将阻断 PR：
+
+- ❌ 软跳过：`if (await locator.isVisible().catch(() => false))` + `if (isVisible)` 包裹断言
+- ❌ `.catch(() => {})` 包裹断言（吞掉断言错误等于没断言）
+- ❌ `typeof` 弱断言：`expect(typeof x).toBe("boolean")` 只验证类型不验证值
+- ❌ 测试私有方法 / 字段：通过 `as any` / `as unknown as` 访问内部实现
+- ❌ `container.querySelector`：使用 RTL 语义化查询（`getByRole` / `getByText` / `getByTestId`）
+
+**必须** 使用显式断言：
+
+- ✅ 元素可见：`await expect(locator).toBeVisible({ timeout: 5000 })`
+- ✅ 元素不存在：`await expect(locator).toHaveCount(0)` 或 `not.toBeVisible()`
+- ✅ 值断言：`expect(value).toBe(true)` / `toEqual(expected)` / `toHaveLength(n)`
 
 ### 测试原则
 
-- 使用 Page Object Model
+- 使用 Page Object Model（E2E）
 - 语义化选择器（`data-testid`、`role`、`label`）
-- 避免硬编码等待
-- 测试独立性
+- 避免硬编码等待，善用 Playwright/RTL 自动等待
+- 测试独立性，避免测试间依赖
+- 测试描述使用中文，以"应该"开头，描述验证的行为
+- App Action 模式：setup 用 API（快），断言用 UI（真实）
+
+### 覆盖率门禁
+
+- 初始门禁：1% statements / branches（当前基线约 5%）
+- 目标：70% statements / 65% branches
+- 关键模块（auth、FSRS、RLS）：85%+
+- 运行：`npm run test:coverage`
 
 ## 类型检查与代码检查
 

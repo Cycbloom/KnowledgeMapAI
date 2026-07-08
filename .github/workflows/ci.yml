@@ -1,10 +1,15 @@
-﻿﻿﻿﻿name: CI
+﻿﻿name: CI
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  schedule:
+    # Weekly flaky test detection: every Sunday at 02:00 UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    # Allow manual trigger for flaky detection or other ad-hoc runs
 
 jobs:
   validate:
@@ -65,8 +70,46 @@ jobs:
             console.log("Audit passed: no non-whitelisted high/critical vulnerabilities");
           '
 
-      - name: Run Tests
-        run: npm test -- run
+      - name: Run Tests (with coverage)
+        run: npm run test:coverage
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Start Supabase
+        run: |
+          supabase start
+          supabase db reset
+        env:
+          # Supabase CLI 需要 Docker（GitHub Actions ubuntu-latest 已预装）
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Get Supabase Keys
+        id: supabase-keys
+        run: |
+          # Local Supabase uses fixed development keys (same across all local instances).
+          # See: https://supabase.com/docs/guides/local-development
+          echo "SUPABASE_URL=http://127.0.0.1:54321" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJyHcsQwClqkuYnl9pJeCDr6Pmns" >> $GITHUB_ENV
+
+      - name: Run Database Tests
+        run: npm run test:db
+        env:
+          SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
 
       - name: Build
         run: npm run build
@@ -86,9 +129,15 @@ jobs:
           find dist/ -type f 2>/dev/null | wc -l || echo "0"
 
   e2e-tests:
-    name: E2E Tests (Playwright)
+    name: E2E Tests (Playwright - Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      # Don't cancel other shards on failure — useful for debugging flaky tests
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
 
     steps:
       - uses: actions/checkout@v4
@@ -105,22 +154,94 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      - name: Run E2E Tests
-        run: npm run test:e2e
+      - name: Run E2E Tests (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+        run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
-      - name: Upload Test Results
+      - name: Upload Blob Report (Shard ${{ matrix.shardIndex }})
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
+          name: blob-report-${{ matrix.shardIndex }}
+          path: blob-report
+          retention-days: 7
 
-      - name: Upload Test Screenshots
+      - name: Upload Test Screenshots (Shard ${{ matrix.shardIndex }})
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-screenshots
+          name: playwright-screenshots-${{ matrix.shardIndex }}
           path: test-results/
           retention-days: 7
+
+  merge-reports:
+    name: Merge E2E Reports
+    if: always()
+    needs: [e2e-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Download All Blob Reports
+        uses: actions/download-artifact@v4
+        with:
+          # Match all blob-report-* artifacts and unpack them into ./blob-report
+          pattern: blob-report-*
+          merge-multiple: true
+          path: blob-report
+
+      - name: Merge Blob Reports into HTML
+        run: npx playwright merge-reports --reporter html ./blob-report
+
+      - name: Upload Merged HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report
+          path: playwright-report
+          retention-days: 30
+
+  flaky-detection:
+    name: Flaky Test Detection
+    # Runs weekly on Sunday 02:00 UTC + manual trigger
+    # Repeats each E2E test 3 times to surface flaky tests.
+    # Quarantine flaky tests by moving them to e2e/quarantine/ (see e2e/quarantine/.gitkeep).
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run E2E Tests (repeat-each=3 for flaky detection)
+        run: npm run test:flaky
+
+      - name: Upload Flaky Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-report
+          path: playwright-report/
+          retention-days: 30
 

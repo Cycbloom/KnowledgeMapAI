@@ -19,51 +19,54 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  */
 
 // --- Mock AI 依赖(必须在 import notesService 之前声明) ---
+// vi.mock 工厂会被提升到文件顶部,故用 vi.hoisted 确保 mockProvider 可用
 
-const mockChatCompletionsCreate = vi.fn();
-
-const mockProvider = {
-  hasKey: true,
-  model: "test-model",
-  providerType: "openai" as const,
-  client: {
-    chat: {
-      completions: {
-        create: mockChatCompletionsCreate,
+const { mockChatCompletionsCreate, mockProvider } = vi.hoisted(() => {
+  const mockChatCompletionsCreate = vi.fn();
+  const mockProvider = {
+    hasKey: true,
+    model: "test-model",
+    providerType: "openai" as const,
+    client: {
+      chat: {
+        completions: {
+          create: mockChatCompletionsCreate,
+        },
       },
     },
-  },
-};
+  };
+  return { mockChatCompletionsCreate, mockProvider };
+});
 
-vi.mock("../../../services/ai/factory", () => ({
+vi.mock("../../services/ai/factory", () => ({
   getAIProviderForTask: vi.fn().mockResolvedValue(mockProvider),
 }));
 
-vi.mock("../../../services/ai/promptService", () => ({
+vi.mock("../../services/ai/promptService", () => ({
   promptService: {
     getRenderedPrompt: vi.fn().mockResolvedValue("rendered prompt"),
   },
 }));
 
-vi.mock("../../../services/ai/performanceMonitor", () => ({
+vi.mock("../../services/ai/performanceMonitor", () => ({
   performanceMonitor: {
     recordLog: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
-vi.mock("../../../services/ai/pricingService", () => ({
+vi.mock("../../services/ai/pricingService", () => ({
   pricingService: {
     calculateCost: vi.fn().mockReturnValue(0),
   },
 }));
 
-vi.mock("../../../services/ai/embeddingOps", () => ({
+vi.mock("../../services/ai/embeddingOps", () => ({
   embeddingOps: {
     generateEmbedding: vi.fn().mockResolvedValue(null),
   },
 }));
 
-vi.mock("../../../supabase", () => ({
+vi.mock("../../supabase", () => ({
   getSupabaseAdmin: vi.fn().mockReturnValue({}),
 }));
 

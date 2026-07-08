@@ -260,4 +260,218 @@ describe('blockRef', () => {
       expect(findBlockContent('content', '')).toBeNull();
     });
   });
+
+  describe('边界情况：无引用与多引用', () => {
+    it('字符串无任何块引用时 extractBlockRefs 返回空数组', () => {
+      expect(extractBlockRefs('这是一段普通文本，没有引用')).toEqual([]);
+    });
+
+    it('字符串无任何块尾 id 时 extractAllBlockIds 返回空数组', () => {
+      const content = '第一块\n\n第二块\n\n第三块';
+      expect(extractAllBlockIds(content)).toEqual([]);
+    });
+
+    it('单字符串内多个 ref 按出现顺序返回', () => {
+      const content = '一 ((aaa111bbbb)) 二 ((ccc333dddd)) 三 ((eee555ffff))';
+      const refs = extractBlockRefs(content);
+      expect(refs.map((r) => r.blockId)).toEqual([
+        'aaa111bbbb',
+        'ccc333dddd',
+        'eee555ffff',
+      ]);
+      expect(refs.every((r) => r.type === 'ref')).toBe(true);
+    });
+
+    it('连续无分隔的块引用均被解析', () => {
+      const content = '((aaa111bbbb))((ccc333dddd))';
+      const refs = extractBlockRefs(content);
+      expect(refs.map((r) => r.blockId)).toEqual(['aaa111bbbb', 'ccc333dddd']);
+    });
+
+    it('仅包含 embed 时 extractBlockRefIds 返回空', () => {
+      const content = '嵌入 !((ccc333dddd))';
+      expect(extractBlockRefIds(content)).toEqual([]);
+    });
+
+    it('仅包含 ref 时 extractBlockEmbedIds 返回空', () => {
+      const content = '引用 ((aaa111bbbb))';
+      expect(extractBlockEmbedIds(content)).toEqual([]);
+    });
+  });
+
+  describe('边界情况：畸形输入', () => {
+    it('不完整的 (( 不被解析为 ref', () => {
+      expect(extractBlockRefs('不完整 ((aaa111bbbb')).toEqual([]);
+    });
+
+    it('不完整的 )) 不被解析为 ref', () => {
+      expect(extractBlockRefs('不完整 aaa111bbbb))')).toEqual([]);
+    });
+
+    it('多余的右括号 )) ) 仍能匹配前段 ((id))', () => {
+      // 正则匹配 ((id))，多余的 ) 留作普通字符
+      const refs = extractBlockRefs('text ((aaa111bbbb))) end');
+      expect(refs).toHaveLength(1);
+      expect(refs[0].blockId).toBe('aaa111bbbb');
+    });
+
+    it('id 含空格不被解析（不符合 [a-z0-9]{10}）', () => {
+      expect(extractBlockRefs('text ((aaa 111bbbb)) end')).toEqual([]);
+    });
+
+    it('id 含大写字母不被解析（不符合 [a-z0-9]）', () => {
+      expect(extractBlockRefs('text ((AAA111bbbb)) end')).toEqual([]);
+    });
+
+    it('id 不足 10 位不被解析', () => {
+      expect(extractBlockRefs('text ((aaa111bbb)) end')).toEqual([]);
+    });
+
+    it('id 超过 10 位不被解析', () => {
+      // 正则要求 10 位后紧跟 ))，超长不匹配
+      expect(extractBlockRefs('text ((aaa111bbbbcc)) end')).toEqual([]);
+    });
+
+    it('单个括号对 (id) 不被解析为 ref', () => {
+      expect(extractBlockRefs('text (aaa111bbbb) end')).toEqual([]);
+    });
+
+    it('三层括号 (((id))) 仅匹配内层 ((id))', () => {
+      const refs = extractBlockRefs('text (((aaa111bbbb))) end');
+      expect(refs).toHaveLength(1);
+      expect(refs[0].blockId).toBe('aaa111bbbb');
+      expect(refs[0].type).toBe('ref');
+    });
+  });
+
+  describe('边界情况：特殊字符与 Unicode', () => {
+    it('中文环境下的块引用被解析', () => {
+      const content = '中文内容 ((aaa111bbbb)) 结束';
+      const refs = extractBlockRefs(content);
+      expect(refs).toEqual([{ blockId: 'aaa111bbbb', type: 'ref' }]);
+    });
+
+    it('emoji 环境下的块引用被解析', () => {
+      const content = '🎉 ((aaa111bbbb)) 🚀';
+      const refs = extractBlockRefs(content);
+      expect(refs).toEqual([{ blockId: 'aaa111bbbb', type: 'ref' }]);
+    });
+
+    it('markdown 语法包裹的块引用被解析', () => {
+      const content = '**加粗 ((aaa111bbbb)) 加粗**';
+      const refs = extractBlockRefs(content);
+      expect(refs).toEqual([{ blockId: 'aaa111bbbb', type: 'ref' }]);
+    });
+
+    it('斜体包裹的块引用被解析', () => {
+      const content = '*斜体 ((aaa111bbbb)) 斜体*';
+      const refs = extractBlockRefs(content);
+      expect(refs).toEqual([{ blockId: 'aaa111bbbb', type: 'ref' }]);
+    });
+
+    it('中文块尾 ^id 被解析', () => {
+      expect(extractBlockId('中文内容^aaa111bbbb')).toBe('aaa111bbbb');
+    });
+
+    it('emoji 后的块尾 ^id 被解析', () => {
+      expect(extractBlockId('🎉🚀^aaa111bbbb')).toBe('aaa111bbbb');
+    });
+  });
+
+  describe('边界情况：位置与重复', () => {
+    it('块引用位于字符串开头', () => {
+      const refs = extractBlockRefs('((aaa111bbbb)) 后续文本');
+      expect(refs).toEqual([{ blockId: 'aaa111bbbb', type: 'ref' }]);
+    });
+
+    it('块引用位于字符串末尾', () => {
+      const refs = extractBlockRefs('前置文本 ((aaa111bbbb))');
+      expect(refs).toEqual([{ blockId: 'aaa111bbbb', type: 'ref' }]);
+    });
+
+    it('块引用位于字符串中间', () => {
+      const refs = extractBlockRefs('前置 ((aaa111bbbb)) 后置');
+      expect(refs).toEqual([{ blockId: 'aaa111bbbb', type: 'ref' }]);
+    });
+
+    it('同一 ref 多次出现按首次顺序去重', () => {
+      const content = 'a ((aaa111bbbb)) b ((ccc333dddd)) c ((aaa111bbbb))';
+      const ids = extractBlockRefIds(content);
+      expect(ids).toEqual(['aaa111bbbb', 'ccc333dddd']);
+    });
+
+    it('同一 embed 多次出现按首次顺序去重', () => {
+      const content = 'a !((aaa111bbbb)) b !((ccc333dddd)) c !((aaa111bbbb))';
+      const ids = extractBlockEmbedIds(content);
+      expect(ids).toEqual(['aaa111bbbb', 'ccc333dddd']);
+    });
+
+    it('ref 与 embed 同 id 分别保留', () => {
+      // extractBlockRefs 不去重，ref 与 embed 同 id 都保留
+      const content = 'ref ((aaa111bbbb)) embed !((aaa111bbbb))';
+      const refs = extractBlockRefs(content);
+      expect(refs).toHaveLength(2);
+      expect(refs[0]).toEqual({ blockId: 'aaa111bbbb', type: 'ref' });
+      expect(refs[1]).toEqual({ blockId: 'aaa111bbbb', type: 'embed' });
+    });
+  });
+
+  describe('边界情况：块尾 id 位置与重复', () => {
+    it('extractBlockId 仅匹配块尾（id 在中间不匹配）', () => {
+      expect(extractBlockId('hello^aaa111bbbb world')).toBeNull();
+    });
+
+    it('extractBlockId 仅匹配块尾（id 在开头不匹配）', () => {
+      expect(extractBlockId('^aaa111bbbb hello')).toBeNull();
+    });
+
+    it('仅含 ^id 的字符串可被提取', () => {
+      expect(extractBlockId('^aaa111bbbb')).toBe('aaa111bbbb');
+    });
+
+    it('removeBlockId 不影响中间的 ^id', () => {
+      // 仅剥离尾部 ^id，中间的 ^text 保留
+      expect(removeBlockId('hello^mid text^aaa111bbbb')).toBe('hello^mid text');
+    });
+
+    it('removeBlockId 处理仅含 ^id 的字符串', () => {
+      expect(removeBlockId('^aaa111bbbb')).toBe('');
+    });
+
+    it('ensureBlockId 处理空字符串', () => {
+      const result = ensureBlockId('');
+      // 空字符串 + ^id，content 形如 ^xxxxxxxxxx
+      expect(result.content).toMatch(/^\^[a-z0-9]{10}$/);
+      expect(result.content.startsWith('^')).toBe(true);
+      expect(result.blockId).toMatch(/^[a-z0-9]{10}$/);
+    });
+
+    it('ensureBlockId 不重复追加（已有 id）', () => {
+      const result = ensureBlockId('hello^aaa111bbbb');
+      expect(result.content).toBe('hello^aaa111bbbb');
+      expect(result.blockId).toBe('aaa111bbbb');
+    });
+
+    it('extractAllBlockIds 同一块内多个 ^id 仅取块尾', () => {
+      // 块尾正则只匹配末尾，中间的 ^id 不被 extractBlockId 提取
+      const content = 'hello^mid text^aaa111bbbb';
+      const ids = extractAllBlockIds(content);
+      expect(ids).toEqual(['aaa111bbbb']);
+    });
+  });
+
+  describe('边界情况：findBlockContent 边界', () => {
+    it('块 id 出现在多个块中时返回首个匹配', () => {
+      const content = '块一^aaa111bbbb\n\n块二^aaa111bbbb';
+      expect(findBlockContent(content, 'aaa111bbbb')).toBe('块一^aaa111bbbb');
+    });
+
+    it('仅含空白的 blockId 返回 null', () => {
+      expect(findBlockContent('content', '   ')).toBeNull();
+    });
+
+    it('内容仅为分隔空行时返回 null', () => {
+      expect(findBlockContent('\n\n\n', 'aaa111bbbb')).toBeNull();
+    });
+  });
 });

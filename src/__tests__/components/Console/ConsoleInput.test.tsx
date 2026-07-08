@@ -1,7 +1,12 @@
+// @vitest-environment jsdom
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { ConsoleInput, type ConsoleInputRef } from '../../../components/Console/ConsoleInput';
+import i18n from '../../../i18n';
+
+// Initialize i18n with Chinese translations so t() returns real strings
+i18n.changeLanguage('zh-CN');
 
 const mockGetAutocompleteSuggestions = vi.fn();
 const mockHistory: Array<{ id: string; command: string; timestamp: number }> = [

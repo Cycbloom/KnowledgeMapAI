@@ -1,25 +1,7 @@
 import { Response } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { sseService } from '../../services/core/sseService';
-
-type EventCallback = (...args: unknown[]) => void;
-
-function createMockResponse(writeReturn: boolean = true): Response {
-  const listeners: Record<string, EventCallback[]> = {};
-  const mockRes = {
-    write: vi.fn(() => writeReturn),
-    end: vi.fn(),
-    on: vi.fn((event: string, cb: EventCallback) => {
-      if (!listeners[event]) listeners[event] = [];
-      listeners[event].push(cb);
-      return mockRes;
-    }),
-    emit: (event: string, ...args: unknown[]) => {
-      (listeners[event] ?? []).forEach(cb => cb(...args));
-    },
-  };
-  return mockRes as unknown as Response;
-}
+import { createMockResponse } from '../../../tests/helpers/mockFactories';
 
 describe('SSE Service', () => {
   beforeEach(() => {

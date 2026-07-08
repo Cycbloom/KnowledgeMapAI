@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { type Request, type Response, type NextFunction } from 'express';
 import { z, ZodSchema } from 'zod';
 import { validate } from '../../middleware/validate';
+import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 const createMockReq = (overrides: {
@@ -25,6 +26,23 @@ const createMockRes = (): Response => {
 };
 
 const createMockNext = (): NextFunction => vi.fn() as unknown as NextFunction;
+
+// Helper: invoke middleware and capture thrown AppError (fails test if no throw)
+const invokeAndCaptureError = (
+  middleware: (req: Request, res: Response, next: NextFunction) => void,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): AppError => {
+  let thrown: unknown;
+  try {
+    middleware(req, res, next);
+  } catch (e) {
+    thrown = e;
+  }
+  expect(thrown).toBeInstanceOf(AppError);
+  return thrown as AppError;
+};
 
 describe('validate middleware', () => {
   beforeEach(() => {
@@ -55,7 +73,7 @@ describe('validate middleware', () => {
       expect(req.body).toEqual({ name: 'Alice', age: 25 });
     });
 
-    it('should return 400 when body is invalid', () => {
+    it('should throw AppError when body is invalid', () => {
       const middleware = validate({ body: bodySchema });
       const req = createMockReq({
         body: { name: '', age: -1 },
@@ -63,19 +81,15 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          code: ErrorCodes.VALIDATION_ERROR,
-        }),
-      );
+      expect(() => middleware(req, res, next)).toThrow(AppError);
+      const error = invokeAndCaptureError(middleware, req, res, next);
+      expect(error.code).toBe(ErrorCodes.VALIDATION_ERROR);
+      expect(error.statusCode).toBe(400);
       expect(next).not.toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('should include field-level error details in response', () => {
+    it('should include field-level error details in thrown AppError', () => {
       const middleware = validate({ body: bodySchema });
       const req = createMockReq({
         body: { name: 123, age: 'not-a-number' },
@@ -83,17 +97,16 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
+      const error = invokeAndCaptureError(middleware, req, res, next);
 
-      const jsonCall = (res.json as ReturnType<typeof vi.fn>).mock.calls[0];
-      const responseBody = jsonCall?.[0];
-      expect(responseBody.details).toBeInstanceOf(Array);
-      expect(responseBody.details.length).toBeGreaterThan(0);
-      expect(responseBody.details[0]).toHaveProperty('field');
-      expect(responseBody.details[0]).toHaveProperty('message');
+      expect(error.details).toBeInstanceOf(Array);
+      const details = error.details as Array<{ field: string; message: string }>;
+      expect(details.length).toBeGreaterThan(0);
+      expect(details[0]).toHaveProperty('field');
+      expect(details[0]).toHaveProperty('message');
     });
 
-    it('should return 400 when required fields are missing', () => {
+    it('should throw AppError when required fields are missing', () => {
       const middleware = validate({ body: bodySchema });
       const req = createMockReq({
         body: {},
@@ -101,13 +114,12 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
+      const error = invokeAndCaptureError(middleware, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      const jsonCall = (res.json as ReturnType<typeof vi.fn>).mock.calls[0];
-      const responseBody = jsonCall?.[0];
+      expect(error.code).toBe(ErrorCodes.VALIDATION_ERROR);
+      const details = error.details as Array<{ field: string; message: string }>;
       // Both name and age should be missing
-      expect(responseBody.details.length).toBeGreaterThanOrEqual(2);
+      expect(details.length).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -131,7 +143,7 @@ describe('validate middleware', () => {
       expect(next).toHaveBeenCalledWith();
     });
 
-    it('should return 400 when query has invalid enum value', () => {
+    it('should throw AppError when query has invalid enum value', () => {
       const middleware = validate({ query: querySchema });
       const req = createMockReq({
         query: { sort: 'invalid' },
@@ -139,14 +151,11 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
+      const error = invokeAndCaptureError(middleware, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      const jsonCall = (res.json as ReturnType<typeof vi.fn>).mock.calls[0];
-      const responseBody = jsonCall?.[0];
-      expect(responseBody.details.some(
-        (d: { field: string }) => d.field === 'sort',
-      )).toBe(true);
+      expect(error.code).toBe(ErrorCodes.VALIDATION_ERROR);
+      const details = error.details as Array<{ field: string; message: string }>;
+      expect(details.some((d) => d.field === 'sort')).toBe(true);
     });
   });
 
@@ -168,7 +177,7 @@ describe('validate middleware', () => {
       expect(next).toHaveBeenCalledWith();
     });
 
-    it('should return 400 when params id is not a UUID', () => {
+    it('should throw AppError when params id is not a UUID', () => {
       const middleware = validate({ params: paramsSchema });
       const req = createMockReq({
         params: { id: 'not-a-uuid' },
@@ -176,14 +185,11 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
+      const error = invokeAndCaptureError(middleware, req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      const jsonCall = (res.json as ReturnType<typeof vi.fn>).mock.calls[0];
-      const responseBody = jsonCall?.[0];
-      expect(responseBody.details.some(
-        (d: { field: string }) => d.field === 'id',
-      )).toBe(true);
+      expect(error.code).toBe(ErrorCodes.VALIDATION_ERROR);
+      const details = error.details as Array<{ field: string; message: string }>;
+      expect(details.some((d) => d.field === 'id')).toBe(true);
     });
   });
 
@@ -210,7 +216,7 @@ describe('validate middleware', () => {
       expect(req.body).toEqual({ content: 'hello' });
     });
 
-    it('should return 400 when body is invalid but params are valid', () => {
+    it('should throw AppError when body is invalid but params are valid', () => {
       const middleware = validate(schemas);
       const req = createMockReq({
         body: { content: '' },
@@ -220,9 +226,7 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(() => middleware(req, res, next)).toThrow(AppError);
     });
   });
 
@@ -245,7 +249,7 @@ describe('validate middleware', () => {
       expect(req.body).toEqual({ title: 'My Graph' });
     });
 
-    it('should return 400 for invalid body in legacy mode', () => {
+    it('should throw AppError for invalid body in legacy mode', () => {
       const middleware = validate(bodySchema);
       const req = createMockReq({
         body: { title: '' },
@@ -253,14 +257,15 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(() => middleware(req, res, next)).toThrow(AppError);
+      const error = invokeAndCaptureError(middleware, req, res, next);
+      expect(error.code).toBe(ErrorCodes.VALIDATION_ERROR);
+      expect(error.statusCode).toBe(400);
     });
   });
 
   describe('error response format', () => {
-    it('should have consistent error response structure', () => {
+    it('should have consistent AppError structure', () => {
       const middleware = validate({
         body: z.object({ email: z.string().email() }),
       });
@@ -270,16 +275,12 @@ describe('validate middleware', () => {
       const res = createMockRes();
       const next = createMockNext();
 
-      middleware(req, res, next);
+      const error = invokeAndCaptureError(middleware, req, res, next);
 
-      const jsonCall = (res.json as ReturnType<typeof vi.fn>).mock.calls[0];
-      const responseBody = jsonCall?.[0];
-      expect(responseBody).toMatchObject({
-        success: false,
-        code: ErrorCodes.VALIDATION_ERROR,
-        error: '输入验证失败',
-        details: expect.any(Array),
-      });
+      expect(error.code).toBe(ErrorCodes.VALIDATION_ERROR);
+      expect(error.statusCode).toBe(400);
+      expect(error.details).toBeInstanceOf(Array);
+      expect(error.message).toBe('数据验证失败');
     });
   });
 

@@ -25,15 +25,13 @@ test.describe('移动端体验测试', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
-    
+
     const bottomNav = page.locator('[class*="MobileBottomNav"], [data-testid="mobile-bottom-nav"], nav').first();
-    const isVisible = await bottomNav.isVisible({ timeout: 5000 }).catch(() => false);
-    
-    if (isVisible) {
-      const navItems = await bottomNav.locator('a, button').all();
-      expect(navItems.length).toBeGreaterThanOrEqual(0);
-    }
-    
+    await expect(bottomNav).toBeVisible({ timeout: 5000 });
+
+    const navItems = await bottomNav.locator('a, button').all();
+    expect(navItems.length).toBeGreaterThan(0);
+
     await expect(page.locator('body')).toBeVisible();
   });
 });

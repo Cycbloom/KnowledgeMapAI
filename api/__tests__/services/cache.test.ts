@@ -308,12 +308,15 @@ describe('Cache Service', () => {
     });
 
     it('should invalidate all graph related cache', async () => {
-      await cacheService.set(CacheKeys.GRAPH_NODES('user1', 'graph1'), 'nodes', 100);
+      // Graph-level keys must be tagged with `graph:{graphId}` so that
+      // invalidateAllGraphRelated can remove them via delByTags.
+      await cacheService.set(CacheKeys.GRAPH_NODES('user1', 'graph1'), 'nodes', 100, ['graph:graph1']);
+      await cacheService.set(CacheKeys.GRAPH('graph1'), 'graph', 100, ['graph:graph1']);
+      // User-level key is deleted explicitly (not tag-based).
       await cacheService.set(CacheKeys.USER_GRAPHS('user1'), 'graphs', 100);
-      await cacheService.set(CacheKeys.GRAPH('graph1'), 'graph', 100);
-      
+
       await cacheService.invalidateAllGraphRelated('user1', 'graph1');
-      
+
       expect(await cacheService.get(CacheKeys.GRAPH_NODES('user1', 'graph1'))).toBeUndefined();
       expect(await cacheService.get(CacheKeys.USER_GRAPHS('user1'))).toBeUndefined();
       expect(await cacheService.get(CacheKeys.GRAPH('graph1'))).toBeUndefined();
@@ -348,21 +351,22 @@ describe('Cache Service', () => {
     it('should evict oldest entries when maxKeys is reached', async () => {
       // Flush to start clean
       await cacheService.flush();
-      
-      // Fill cache to maxKeys (1000)
-      for (let i = 0; i < 1000; i++) {
+
+      // Fill cache to MAX_CACHE_KEYS (5000, defined in cacheStore.ts)
+      const MAX_CACHE_KEYS = 5000;
+      for (let i = 0; i < MAX_CACHE_KEYS; i++) {
         await cacheService.set(`maxkey_test_${i}`, `value_${i}`, 300);
       }
-      
+
       const statsBefore = await cacheService.getStats();
-      expect(statsBefore.keys).toBe(1000);
-      
+      expect(statsBefore.keys).toBe(MAX_CACHE_KEYS);
+
       // Adding one more should trigger eviction
       await cacheService.set('maxkey_overflow', 'overflow_value', 300);
-      
+
       const statsAfter = await cacheService.getStats();
-      // NodeCache with maxKeys evicts when exceeding, total should still be <= maxKeys
-      expect(statsAfter.keys).toBeLessThanOrEqual(1000);
+      // Eviction keeps total at or below MAX_CACHE_KEYS
+      expect(statsAfter.keys).toBeLessThanOrEqual(MAX_CACHE_KEYS);
       expect(await cacheService.get('maxkey_overflow')).toBe('overflow_value');
     });
   });
@@ -382,24 +386,30 @@ describe('Cache Service', () => {
   describe('getOrSetWithRefresh', () => {
     it('should return cached value and trigger refresh when threshold reached', async () => {
       vi.useFakeTimers();
-      
+
+      // stochasticTTL uses Math.random to jitter TTL ±20%. Pin it so the
+      // effective TTL equals the base TTL (100s) deterministically; otherwise
+      // a low random draw can make the key expire before the 85s advance.
+      const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
       let fetchCount = 0;
       const fetchFn = vi.fn().mockImplementation(async () => {
         fetchCount++;
         return `new_value_${fetchCount}`;
       });
-      
+
       await cacheService.set('auto_refresh_key', 'cached_value', 100);
-      
+
       vi.advanceTimersByTime(85 * 1000);
-      
+
       const result = await cacheService.getOrSetWithRefresh('auto_refresh_key', fetchFn, 100, 0.8);
-      
+
       expect(result).toBe('cached_value');
-      
+
       vi.advanceTimersByTime(1000);
       await Promise.resolve();
-      
+
+      randomSpy.mockRestore();
       vi.useRealTimers();
     });
   });

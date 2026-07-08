@@ -106,11 +106,11 @@ describe('Graph Utils', () => {
 
   describe('getLevelColor', () => {
     it('should return correct color class for each level', () => {
-      expect(getLevelColor('root')).toBe('bg-purple-500');
-      expect(getLevelColor('core')).toBe('bg-red-500');
-      expect(getLevelColor('sub')).toBe('bg-orange-500');
-      expect(getLevelColor('normal')).toBe('bg-blue-500');
-      expect(getLevelColor('leaf')).toBe('bg-green-500');
+      expect(getLevelColor('root')).toBe('bg-primary-500');
+      expect(getLevelColor('core')).toBe('bg-primary-500');
+      expect(getLevelColor('sub')).toBe('bg-secondary-500');
+      expect(getLevelColor('normal')).toBe('bg-tertiary-500');
+      expect(getLevelColor('leaf')).toBe('bg-tertiary-500');
     });
   });
 
@@ -525,7 +525,7 @@ describe('Graph Utils', () => {
       ] as any;
       const strength = calculateEdgeStrength(edges[0], nodes, edges);
       expect(strength.score).toBeGreaterThanOrEqual(0);
-      expect(strength.factors.relationshipType).toBe('related');
+      expect(strength.factors.relationshipType).toBe('contains');
     });
   });
 });

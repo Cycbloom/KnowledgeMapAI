@@ -33,67 +33,10 @@ import {
 import { AppError } from "../../../middleware/errorHandler";
 import { ErrorCodes } from "../../../../shared/types/errorCodes";
 
-/**
- * 创建 mock AIProvider。
- * hasKey=true 表示已配置 API key，会走真实 provider 路径。
- */
-const createMockProvider = (
-  overrides: Partial<AIProvider> & { hasKey?: boolean } = {},
-): AIProvider => {
-  const base = {
-    hasKey: true,
-    model: "test-model",
-    providerType: "openai" as const,
-    client: {
-      chat: {
-        completions: {
-          create: vi.fn(),
-        },
-      },
-      embeddings: {
-        create: vi.fn(),
-      },
-    },
-  };
-  return { ...base, ...overrides } as unknown as AIProvider;
-};
-
-/**
- * 创建 mock Express Response，记录所有 write/end 调用以便断言。
- * sendStreamChunk 内部调用 res.write(`data: ${JSON.stringify({ content })}\n\n`)。
- */
-const createMockResponse = (): Response & {
-  chunks: string[];
-  writes: string[];
-} => {
-  const writes: string[] = [];
-  const chunks: string[] = [];
-  const res = {
-    write: vi.fn((data: string) => {
-      writes.push(data);
-      // 解析 SSE data 行以提取 content
-      const match = /data: (.*)/.exec(data);
-      if (match) {
-        try {
-          const parsed = JSON.parse(match[1]) as { content?: string };
-          if (parsed.content) {
-            chunks.push(parsed.content);
-          }
-        } catch {
-          // 非 JSON（如 [DONE]），忽略
-        }
-      }
-      return true;
-    }),
-    end: vi.fn(),
-    setHeader: vi.fn(),
-    get: vi.fn(),
-  };
-  return { ...res, chunks, writes } as unknown as Response & {
-    chunks: string[];
-    writes: string[];
-  };
-};
+import {
+  createMockProvider,
+  createMockResponse,
+} from "../../../../tests/helpers/mockFactories";
 
 /**
  * 创建 mock 流式 async iterable。
@@ -366,7 +309,8 @@ describe("ChatService", () => {
         { choices: [{ delta: { content: "World" } }] },
         { choices: [{ delta: {} }] },
       ];
-      mockProvider.client.chat.completions.create.mockResolvedValue(
+      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
+      mockProvider.client.chat.completions.create.mockReturnValue(
         createMockStream(chunks),
       );
 
@@ -389,7 +333,8 @@ describe("ChatService", () => {
 
     it("流式调用使用 stream:true 与 stream_options 参数", async () => {
       const mockProvider = createMockProvider();
-      mockProvider.client.chat.completions.create.mockResolvedValue(
+      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
+      mockProvider.client.chat.completions.create.mockReturnValue(
         createMockStream([{ choices: [{ delta: { content: "x" } }] }]),
       );
 
@@ -422,7 +367,8 @@ describe("ChatService", () => {
         { choices: [{ delta: { content: "only-this" } }] },
         { choices: [{ delta: null }] },
       ];
-      mockProvider.client.chat.completions.create.mockResolvedValue(
+      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
+      mockProvider.client.chat.completions.create.mockReturnValue(
         createMockStream(chunks),
       );
 
@@ -458,7 +404,8 @@ describe("ChatService", () => {
           },
         },
       ];
-      mockProvider.client.chat.completions.create.mockResolvedValue(
+      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
+      mockProvider.client.chat.completions.create.mockReturnValue(
         createMockStream(chunks),
       );
 
@@ -490,7 +437,8 @@ describe("ChatService", () => {
     it("无 usage chunk 时 token 统计为 0", async () => {
       const mockProvider = createMockProvider();
       const chunks = [{ choices: [{ delta: { content: "no usage" } }] }];
-      mockProvider.client.chat.completions.create.mockResolvedValue(
+      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
+      mockProvider.client.chat.completions.create.mockReturnValue(
         createMockStream(chunks),
       );
 
@@ -527,7 +475,8 @@ describe("ChatService", () => {
           };
         },
       };
-      mockProvider.client.chat.completions.create.mockResolvedValue(
+      // streamChatCompletion 不 await create()，故用 mockReturnValue 同步返回 stream
+      mockProvider.client.chat.completions.create.mockReturnValue(
         failingStream,
       );
 

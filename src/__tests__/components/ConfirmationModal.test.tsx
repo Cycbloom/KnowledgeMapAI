@@ -1,6 +1,9 @@
+// @vitest-environment jsdom
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { ConfirmationModal } from "../../components/common";
+
+// i18n 默认语言已在 src/setupTests.ts 全局设置为 zh-CN,无需在此重复调用。
 
 describe("ConfirmationModal", () => {
   const defaultProps = {
@@ -32,7 +35,7 @@ describe("ConfirmationModal", () => {
 
   it("should call onConfirm when confirm button is clicked", () => {
     render(<ConfirmationModal {...defaultProps} />);
-    const confirmButton = screen.getByText("确定");
+    const confirmButton = screen.getByText("确认");
     fireEvent.click(confirmButton);
     expect(defaultProps.onConfirm).toHaveBeenCalled();
   });
@@ -51,7 +54,7 @@ describe("ConfirmationModal", () => {
 
   it("should render dangerous style when isDangerous is true", () => {
     render(<ConfirmationModal {...defaultProps} isDangerous={true} />);
-    const confirmButton = screen.getByText("确定");
+    const confirmButton = screen.getByText("确认");
     expect(confirmButton.className).toContain("bg-red-600");
   });
 });

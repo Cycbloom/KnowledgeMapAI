@@ -14,31 +14,21 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"], button[aria-label*="象限"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"], button[aria-label*="象限"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-
-        await page.waitForTimeout(500);
-
-        const quadrantCanvas = page.locator(
-          'svg, [data-testid="quadrant-canvas"], .quadrant-view',
-        );
-        const isVisible = await quadrantCanvas
-          .isVisible({ timeout: 5000 })
-          .catch(() => false);
-
-        expect(typeof isVisible).toBe("boolean");
-      }
-    }
+    const quadrantCanvas = page.locator(
+      'svg, [data-testid="quadrant-canvas"], .quadrant-view',
+    );
+    await expect(quadrantCanvas).toBeVisible({ timeout: 5000 });
 
     await expect(page).not.toHaveURL(/login/);
   });
@@ -47,28 +37,22 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
-
-        const svg = page.locator("svg");
-        if (await svg.isVisible({ timeout: 3000 }).catch(() => false)) {
-          const circles = svg.locator("circle");
-          const circleCount = await circles.count();
-          expect(circleCount).toBeGreaterThan(0);
-        }
-      }
-    }
+    const svg = page.locator("svg");
+    await expect(svg).toBeVisible({ timeout: 5000 });
+    const circles = svg.locator("circle");
+    const circleCount = await circles.count();
+    expect(circleCount).toBeGreaterThan(0);
 
     await expect(page).not.toHaveURL(/login/);
   });
@@ -77,31 +61,23 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
+    const regionHeader = page.locator("[data-region-id]").first();
+    await expect(regionHeader).toBeVisible({ timeout: 5000 });
+    await regionHeader.click();
+    await page.waitForTimeout(300);
 
-        const regionHeader = page.locator("[data-region-id]").first();
-        if (
-          await regionHeader.isVisible({ timeout: 3000 }).catch(() => false)
-        ) {
-          await regionHeader.click();
-          await page.waitForTimeout(300);
-
-          expect(typeof (await regionHeader.isVisible())).toBe("boolean");
-        }
-      }
-    }
+    await expect(regionHeader).toBeVisible();
 
     await expect(page).not.toHaveURL(/login/);
   });
@@ -110,29 +86,23 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
+    const node = page.locator("[data-node-id]").first();
+    await expect(node).toBeVisible({ timeout: 5000 });
+    await node.click();
+    await page.waitForTimeout(300);
 
-        const node = page.locator("[data-node-id]").first();
-        if (await node.isVisible({ timeout: 3000 }).catch(() => false)) {
-          await node.click();
-          await page.waitForTimeout(300);
-
-          expect(typeof (await node.isVisible())).toBe("boolean");
-        }
-      }
-    }
+    await expect(node).toBeVisible();
 
     await expect(page).not.toHaveURL(/login/);
   });
@@ -141,39 +111,34 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
+
+    const origin = page.locator("[data-origin]");
+    await expect(origin).toBeVisible({ timeout: 5000 });
+    const boundingBox = await origin.boundingBox();
+    expect(boundingBox).not.toBeNull();
+    if (boundingBox) {
+      await page.mouse.move(
+        boundingBox.x + boundingBox.width / 2,
+        boundingBox.y + boundingBox.height / 2,
       );
+      await page.mouse.down();
+      await page.mouse.move(
+        boundingBox.x + boundingBox.width / 2 + 50,
+        boundingBox.y + boundingBox.height / 2 + 50,
+      );
+      await page.mouse.up();
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
-
-        const origin = page.locator("[data-origin]");
-        if (await origin.isVisible({ timeout: 3000 }).catch(() => false)) {
-          const boundingBox = await origin.boundingBox();
-          if (boundingBox) {
-            await page.mouse.move(
-              boundingBox.x + boundingBox.width / 2,
-              boundingBox.y + boundingBox.height / 2,
-            );
-            await page.mouse.down();
-            await page.mouse.move(
-              boundingBox.x + boundingBox.width / 2 + 50,
-              boundingBox.y + boundingBox.height / 2 + 50,
-            );
-            await page.mouse.up();
-
-            expect(typeof (await origin.isVisible())).toBe("boolean");
-          }
-        }
-      }
+      await expect(origin).toBeVisible();
     }
 
     await expect(page).not.toHaveURL(/login/);
@@ -183,44 +148,36 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
+    const zoomIndicator = page.locator("text=/缩放.*%/");
+    await expect(zoomIndicator).toBeVisible({ timeout: 5000 });
 
-        const zoomIndicator = page.locator("text=/缩放.*%/");
-        if (
-          await zoomIndicator.isVisible({ timeout: 3000 }).catch(() => false)
-        ) {
-          const buttons = page.locator("button").filter({
-            has: page.locator("svg"),
-          });
-          const buttonCount = await buttons.count();
+    const buttons = page.locator("button").filter({
+      has: page.locator("svg"),
+    });
+    const buttonCount = await buttons.count();
+    expect(buttonCount).toBeGreaterThanOrEqual(3);
 
-          if (buttonCount >= 3) {
-            await buttons.nth(0).click();
-            await page.waitForTimeout(200);
+    await buttons.nth(0).click();
+    await page.waitForTimeout(200);
 
-            await buttons.nth(1).click();
-            await page.waitForTimeout(200);
+    await buttons.nth(1).click();
+    await page.waitForTimeout(200);
 
-            await buttons.nth(2).click();
-            await page.waitForTimeout(200);
+    await buttons.nth(2).click();
+    await page.waitForTimeout(200);
 
-            expect(typeof (await zoomIndicator.isVisible())).toBe("boolean");
-          }
-        }
-      }
-    }
+    await expect(zoomIndicator).toBeVisible();
 
     await expect(page).not.toHaveURL(/login/);
   });
@@ -229,39 +186,34 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
+
+    const svg = page.locator("svg");
+    await expect(svg).toBeVisible({ timeout: 5000 });
+    const boundingBox = await svg.boundingBox();
+    expect(boundingBox).not.toBeNull();
+    if (boundingBox) {
+      await page.mouse.move(
+        boundingBox.x + boundingBox.width / 2,
+        boundingBox.y + boundingBox.height / 2,
       );
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
+      await page.mouse.wheel(0, -100);
+      await page.waitForTimeout(200);
 
-        const svg = page.locator("svg");
-        if (await svg.isVisible({ timeout: 3000 }).catch(() => false)) {
-          const boundingBox = await svg.boundingBox();
-          if (boundingBox) {
-            await page.mouse.move(
-              boundingBox.x + boundingBox.width / 2,
-              boundingBox.y + boundingBox.height / 2,
-            );
+      await page.mouse.wheel(0, 100);
+      await page.waitForTimeout(200);
 
-            await page.mouse.wheel(0, -100);
-            await page.waitForTimeout(200);
-
-            await page.mouse.wheel(0, 100);
-            await page.waitForTimeout(200);
-
-            expect(typeof (await svg.isVisible())).toBe("boolean");
-          }
-        }
-      }
+      await expect(svg).toBeVisible();
     }
 
     await expect(page).not.toHaveURL(/login/);
@@ -271,36 +223,31 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
+    const svg = page.locator("svg");
+    await expect(svg).toBeVisible({ timeout: 5000 });
+    const boundingBox = await svg.boundingBox();
+    expect(boundingBox).not.toBeNull();
+    if (boundingBox) {
+      const startX = boundingBox.x + 100;
+      const startY = boundingBox.y + 100;
 
-        const svg = page.locator("svg");
-        if (await svg.isVisible({ timeout: 3000 }).catch(() => false)) {
-          const boundingBox = await svg.boundingBox();
-          if (boundingBox) {
-            const startX = boundingBox.x + 100;
-            const startY = boundingBox.y + 100;
+      await page.mouse.move(startX, startY);
+      await page.mouse.down();
+      await page.mouse.move(startX + 100, startY + 100);
+      await page.mouse.up();
 
-            await page.mouse.move(startX, startY);
-            await page.mouse.down();
-            await page.mouse.move(startX + 100, startY + 100);
-            await page.mouse.up();
-
-            expect(typeof (await svg.isVisible())).toBe("boolean");
-          }
-        }
-      }
+      await expect(svg).toBeVisible();
     }
 
     await expect(page).not.toHaveURL(/login/);
@@ -310,31 +257,25 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
+    const nodes = page.locator("[data-node-id]");
+    const nodeCount = await nodes.count();
+    expect(nodeCount).toBeGreaterThan(0);
 
-        const nodes = page.locator("[data-node-id]");
-        const nodeCount = await nodes.count();
-
-        if (nodeCount > 0) {
-          const firstNode = nodes.first();
-          const circle = firstNode.locator("circle");
-          const hasCircle = await circle.count();
-          expect(hasCircle).toBeGreaterThan(0);
-        }
-      }
-    }
+    const firstNode = nodes.first();
+    const circle = firstNode.locator("circle");
+    const hasCircle = await circle.count();
+    expect(hasCircle).toBeGreaterThan(0);
 
     await expect(page).not.toHaveURL(/login/);
   });
@@ -343,36 +284,25 @@ test.describe("象限视图测试", () => {
     await graphPage.navigateToHome();
 
     const graphLink = page.locator('a[href^="/graph/"]').first();
-    if (await graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await graphLink.click();
-      await page.waitForLoadState("networkidle");
+    await expect(graphLink).toBeVisible({ timeout: 5000 });
+    await graphLink.click();
+    await page.waitForLoadState("networkidle");
 
-      const viewModeSelector = page.locator(
-        'button:has-text("象限"), [data-view-mode="quadrant"]',
-      );
+    const viewModeSelector = page.locator(
+      'button:has-text("象限"), [data-view-mode="quadrant"]',
+    );
+    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
+    await viewModeSelector.click();
+    await page.waitForTimeout(500);
 
-      if (
-        await viewModeSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await viewModeSelector.click();
-        await page.waitForTimeout(500);
+    const mindmapSelector = page.locator(
+      'button:has-text("思维导图"), button:has-text("脑图"), [data-view-mode="mindmap"]',
+    );
+    await expect(mindmapSelector).toBeVisible({ timeout: 5000 });
+    await mindmapSelector.click();
+    await page.waitForTimeout(500);
 
-        const mindmapSelector = page.locator(
-          'button:has-text("思维导图"), button:has-text("脑图"), [data-view-mode="mindmap"]',
-        );
-
-        if (
-          await mindmapSelector.isVisible({ timeout: 3000 }).catch(() => false)
-        ) {
-          await mindmapSelector.click();
-          await page.waitForTimeout(500);
-
-          expect(typeof (await page.locator("svg").isVisible())).toBe(
-            "boolean",
-          );
-        }
-      }
-    }
+    await expect(page.locator("svg")).toBeVisible({ timeout: 5000 });
 
     await expect(page).not.toHaveURL(/login/);
   });

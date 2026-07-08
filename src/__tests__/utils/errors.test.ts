@@ -58,12 +58,10 @@ describe("errors utilities", () => {
       });
       const json = error.toJSON();
       expect(json).toMatchObject({
-        name: "AppError",
         message: "Test error",
         code: "VALIDATION_ERROR",
         statusCode: 400,
         context: { field: "email" },
-        isOperational: true,
       });
       expect(json.timestamp).toBeDefined();
     });

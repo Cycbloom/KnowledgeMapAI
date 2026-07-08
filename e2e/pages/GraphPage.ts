@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { Page, Locator, expect } from "@playwright/test";
 
 export class GraphPage {
   readonly page: Page;
@@ -52,11 +52,8 @@ export class GraphPage {
       const templateSelector = this.page.locator(
         `button:has-text("${templateType}"), [data-template="${templateType}"]`,
       );
-      if (
-        await templateSelector.isVisible({ timeout: 3000 }).catch(() => false)
-      ) {
-        await templateSelector.click();
-      }
+      await expect(templateSelector).toBeVisible({ timeout: 3000 });
+      await templateSelector.click();
     }
 
     await this.createGraphButton.click();
@@ -65,10 +62,9 @@ export class GraphPage {
 
   async openFirstGraph() {
     await this.page.waitForLoadState("networkidle");
-    if (await this.graphLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await this.graphLink.click();
-      await this.page.waitForLoadState("networkidle");
-    }
+    await expect(this.graphLink).toBeVisible({ timeout: 5000 });
+    await this.graphLink.click();
+    await this.page.waitForLoadState("networkidle");
   }
 
   async selectNode(nodeTitle: string) {
@@ -80,9 +76,8 @@ export class GraphPage {
   async openNodeEdit(nodeTitle: string) {
     await this.selectNode(nodeTitle);
     const editButton = this.page.locator('button:has-text("编辑")').first();
-    if (await editButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await editButton.click();
-    }
+    await expect(editButton).toBeVisible({ timeout: 3000 });
+    await editButton.click();
   }
 
   async isBackboneNodeTitleReadOnly(): Promise<boolean> {
@@ -102,31 +97,29 @@ export class GraphPage {
   }
 
   async hasCompatibilityChecker(): Promise<boolean> {
-    return await this.compatibilityChecker
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
+    await expect(this.compatibilityChecker).toBeVisible({ timeout: 5000 });
+    return true;
   }
 
   async autoFixCompatibility() {
-    if (await this.hasCompatibilityChecker()) {
-      await this.autoFixButton.click();
-      await this.page.waitForTimeout(2000);
-    }
+    await this.hasCompatibilityChecker();
+    await this.autoFixButton.click();
+    await this.page.waitForTimeout(2000);
   }
 
   async ignoreCompatibility() {
-    if (await this.hasCompatibilityChecker()) {
-      await this.ignoreButton.click();
-    }
+    await this.hasCompatibilityChecker();
+    await this.ignoreButton.click();
   }
 
   async getToastMessage(): Promise<string | null> {
     const toast = this.page
       .locator('[role="alert"], .toast, [data-testid="message"]')
       .first();
-    if (await toast.isVisible({ timeout: 3000 }).catch(() => false)) {
-      return await toast.textContent();
+    const visible = await toast.isVisible({ timeout: 3000 });
+    if (!visible) {
+      return null;
     }
-    return null;
+    return await toast.textContent();
   }
 }

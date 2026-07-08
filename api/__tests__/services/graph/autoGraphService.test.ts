@@ -7,24 +7,103 @@ import { asyncTaskService } from "../../../services/asyncTaskService";
 vi.mock("../../../services/graph/graphNodeService");
 vi.mock("../../../services/graph/edgeService");
 vi.mock("../../../services/asyncTaskService");
-vi.mock("../../../utils/logger", () => ({
-  logger: {
+vi.mock("../../../services/graph/autoGraphMergeService", () => ({
+  autoGraphMergeService: {
+    deduplicateNodes: vi.fn().mockImplementation(async (
+      _supabase: unknown,
+      _graphId: string,
+      nodes: AINodeData[],
+    ) => ({
+      nodesToCreate: nodes,
+      reusedKpIds: new Map<string, string>(),
+      mergedCount: 0,
+    })),
+  },
+}));
+vi.mock("../../../services/ai/aiService", () => {
+  const mockAiService = {
+    generateEmbeddingsBatch: vi.fn().mockResolvedValue([]),
+  };
+  return {
+    aiService: mockAiService,
+    // ragSearchService 等模块通过 new AIService() 创建实例,需导出构造函数
+    AIService: vi.fn().mockImplementation(function () {
+      return mockAiService;
+    }),
+    bindChatService: vi.fn(),
+  };
+});
+// transactionExecutor 默认 isAvailable()=true(DATABASE_URL 已设),会走真实 SQL 事务路径。
+// mock 为 false 以强制走非事务路径(使用 mock supabase)。
+vi.mock("../../../database/transactionExecutor", () => ({
+  transactionExecutor: {
+    isAvailable: vi.fn().mockReturnValue(false),
+    executeInTransaction: vi.fn(),
+    query: vi.fn(),
+    close: vi.fn(),
+  },
+}));
+vi.mock("../../../utils/logger", () => {
+  const mockLogger = {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    debug: vi.fn(),
+  };
+  return {
+    logger: mockLogger,
+    // scraper.ts 等模块通过 new Logger("Scraper") 创建实例,
+    // 需导出 Logger 构造函数(须用 function 而非箭头函数以支持 new),
+    // 使其返回与 logger 相同的 mock 方法集
+    Logger: vi.fn().mockImplementation(function () {
+      return mockLogger;
+    }),
+  };
+});
 
+/**
+ * 创建 mock Supabase client。
+ *
+ * queryChain 同时是链式对象和 thenable(PromiseLike):
+ * - 链式方法(select/eq/in/is/insert/update)返回 queryChain 自身,支持 .select().eq() 链式调用
+ * - thenable: `await queryChain` 通过 .then 解析为 queuedResults 队首或 defaultResult
+ * - 终端方法(single/maybeSingle)返回 Promise<{data, error}>
+ *
+ * 测试通过 mockChainResult(result) 入队 await 结果,按 await 顺序消费。
+ */
 const createMockSupabase = () => {
-  const queryChain: any = {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    is: vi.fn().mockReturnThis(),
-    single: vi.fn(),
-    maybeSingle: vi.fn(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
+  const queuedResults: Array<{ data: unknown; error: unknown }> = [];
+  const defaultResult: { data: unknown; error: unknown } = { data: null, error: null };
+
+  const queryChain: Record<string, ReturnType<typeof vi.fn>> & {
+    then: (
+      onFulfilled?: (v: unknown) => unknown | PromiseLike<unknown>,
+      onRejected?: (r: unknown) => unknown | PromiseLike<unknown>,
+    ) => Promise<unknown>;
+    mockChainResult: (result: { data: unknown; error: unknown }) => void;
+  } = {};
+
+  // 链式方法:返回 queryChain 自身以支持链式调用
+  for (const method of ["select", "eq", "in", "is", "insert", "update"]) {
+    queryChain[method] = vi.fn().mockReturnValue(queryChain);
+  }
+
+  // 终端方法:返回 Promise<{ data, error }>
+  queryChain.single = vi.fn().mockResolvedValue(defaultResult);
+  queryChain.maybeSingle = vi.fn().mockResolvedValue(defaultResult);
+
+  // thenable:使 `await queryChain` 解析为队列结果或默认结果
+  queryChain.then = (
+    onFulfilled?: (v: unknown) => unknown | PromiseLike<unknown>,
+    onRejected?: (r: unknown) => unknown | PromiseLike<unknown>,
+  ): Promise<unknown> =>
+    Promise.resolve(
+      queuedResults.length > 0 ? queuedResults.shift() : defaultResult,
+    ).then(onFulfilled, onRejected);
+
+  // 测试辅助:入队下一次 `await chain` 的结果
+  queryChain.mockChainResult = (result: { data: unknown; error: unknown }) => {
+    queuedResults.push(result);
   };
 
   return {
@@ -64,6 +143,7 @@ describe("AutoGraphService", () => {
         edgeCount: 0,
         graphNodeIds: [],
         nodeMapping: {},
+        mergedCount: 0,
       });
     });
 
@@ -115,7 +195,8 @@ describe("AutoGraphService", () => {
       const kpId = "kp-1";
       const graphNodeId = "gn-1";
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // createKnowledgePointsBatch: await insert().select() → KP 创建结果
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: kpId }],
         error: null,
       });
@@ -179,15 +260,32 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert
-        .mockResolvedValueOnce({
-          data: [{ id: parentKpId }, { id: childKpId }],
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
+        data: [{ id: parentKpId }, { id: childKpId }],
+        error: null,
+      });
+      // 2. createEdgesBatch: await notDeleted(select().eq()) → 现有 edges 查询
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 3. createEdgesBatch: await insert(edgeRecords) → edge 批量插入
+      mockSupabase.queryChain.mockChainResult({
+        error: null,
+      });
+      // 4. edge verification: await notDeleted(select().in().in().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: "edge-1",
+            source_knowledge_point_id: parentKpId,
+            target_knowledge_point_id: childKpId,
+            relationship_type: "contains",
+          },
+        ],
+        error: null,
+      });
 
       vi.mocked(graphNodeService.addToGraph)
         .mockResolvedValueOnce({
@@ -204,23 +302,6 @@ describe("AutoGraphService", () => {
         } as any);
 
       vi.mocked(edgeService.create).mockResolvedValue({} as any);
-
-      mockSupabase.queryChain.select.mockReturnThis();
-      mockSupabase.queryChain.in.mockReturnThis();
-      mockSupabase.queryChain.eq.mockReturnThis();
-      mockSupabase.queryChain.is.mockReturnThis();
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [
-          {
-            id: "edge-1",
-            source_knowledge_point_id: parentKpId,
-            target_knowledge_point_id: childKpId,
-            relationship_type: "contains",
-          },
-        ],
-        error: null,
-      });
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -251,8 +332,35 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: childKpId }],
+        error: null,
+      });
+      // 2. parent lookup: await select().eq().eq().single() — 终端方法,用 single mock
+      mockSupabase.queryChain.single.mockResolvedValueOnce({
+        data: { knowledge_point_id: existingParentKpId },
+        error: null,
+      });
+      // 3. createEdgesBatch: await notDeleted(select().eq()) → 现有 edges
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 4. createEdgesBatch: await insert(edgeRecords)
+      mockSupabase.queryChain.mockChainResult({
+        error: null,
+      });
+      // 5. edge verification: await notDeleted(select().in().in().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: "edge-1",
+            source_knowledge_point_id: existingParentKpId,
+            target_knowledge_point_id: childKpId,
+            relationship_type: "contains",
+          },
+        ],
         error: null,
       });
 
@@ -262,25 +370,6 @@ describe("AutoGraphService", () => {
         graph_id: graphId,
         title: "Child Node",
       } as any);
-
-      mockSupabase.queryChain.select
-        .mockResolvedValueOnce({
-          data: { knowledge_point_id: existingParentKpId },
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: [
-            {
-              id: "edge-1",
-              source_knowledge_point_id: existingParentKpId,
-              target_knowledge_point_id: childKpId,
-              relationship_type: "contains",
-            },
-          ],
-          error: null,
-        });
-
-      mockSupabase.queryChain.eq.mockReturnThis();
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -319,15 +408,32 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert
-        .mockResolvedValueOnce({
-          data: [{ id: parentKpId }, { id: childKpId }],
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
+        data: [{ id: parentKpId }, { id: childKpId }],
+        error: null,
+      });
+      // 2. createEdgesBatch: await notDeleted(select().eq()) → 现有 edges
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 3. createEdgesBatch: await insert(edgeRecords) → 插入失败以触发 edgeService.create 回退
+      mockSupabase.queryChain.mockChainResult({
+        error: { message: "Batch insert failed" },
+      });
+      // 4. edge verification: await notDeleted(select().in().in().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: "edge-1",
+            source_knowledge_point_id: parentKpId,
+            target_knowledge_point_id: childKpId,
+            relationship_type: "contains",
+          },
+        ],
+        error: null,
+      });
 
       vi.mocked(graphNodeService.addToGraph)
         .mockResolvedValueOnce({
@@ -342,18 +448,6 @@ describe("AutoGraphService", () => {
         } as any);
 
       vi.mocked(edgeService.create).mockResolvedValue({} as any);
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [
-          {
-            id: "edge-1",
-            source_knowledge_point_id: parentKpId,
-            target_knowledge_point_id: childKpId,
-            relationship_type: "contains",
-          },
-        ],
-        error: null,
-      });
 
       await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -386,9 +480,15 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: childKpId }],
         error: null,
+      });
+      // 2. parent lookup: await select().eq().eq().single() — 未找到父节点
+      mockSupabase.queryChain.single.mockResolvedValueOnce({
+        data: null,
+        error: { message: "Not found" },
       });
 
       vi.mocked(graphNodeService.addToGraph).mockResolvedValue({
@@ -396,16 +496,6 @@ describe("AutoGraphService", () => {
         knowledge_point_id: childKpId,
         graph_id: graphId,
       } as any);
-
-      mockSupabase.queryChain.select
-        .mockResolvedValueOnce({
-          data: null,
-          error: { message: "Not found" },
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -440,8 +530,34 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: childKpId }],
+        error: null,
+      });
+      // 2. parent lookup: await select().eq().eq().single()
+      mockSupabase.queryChain.single.mockResolvedValueOnce({
+        data: { knowledge_point_id: backboneKpId },
+        error: null,
+      });
+      // 3. createEdgesBatch: await notDeleted(select().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 4. createEdgesBatch: await insert(edgeRecords)
+      mockSupabase.queryChain.mockChainResult({
+        error: null,
+      });
+      // 5. edge verification: await notDeleted(select().in().in().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: "edge-1",
+            source_knowledge_point_id: backboneKpId,
+            target_knowledge_point_id: childKpId,
+          },
+        ],
         error: null,
       });
 
@@ -450,22 +566,6 @@ describe("AutoGraphService", () => {
         knowledge_point_id: childKpId,
         graph_id: graphId,
       } as any);
-
-      mockSupabase.queryChain.select
-        .mockResolvedValueOnce({
-          data: { knowledge_point_id: backboneKpId },
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: [
-            {
-              id: "edge-1",
-              source_knowledge_point_id: backboneKpId,
-              target_knowledge_point_id: childKpId,
-            },
-          ],
-          error: null,
-        });
 
       await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -495,9 +595,15 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: childKpId }],
         error: null,
+      });
+      // 2. parent lookup: await select().eq().eq().single() — 数据库错误
+      mockSupabase.queryChain.single.mockResolvedValueOnce({
+        data: null,
+        error: { message: "Database error", code: "PGRST116" },
       });
 
       vi.mocked(graphNodeService.addToGraph).mockResolvedValue({
@@ -505,16 +611,6 @@ describe("AutoGraphService", () => {
         knowledge_point_id: childKpId,
         graph_id: graphId,
       } as any);
-
-      mockSupabase.queryChain.select
-        .mockResolvedValueOnce({
-          data: null,
-          error: { message: "Database error", code: "PGRST116" },
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -569,15 +665,38 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert
-        .mockResolvedValueOnce({
-          data: [{ id: parentKpId }, { id: childKpId + "-1" }, { id: childKpId + "-2" }],
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
+        data: [{ id: parentKpId }, { id: childKpId + "-1" }, { id: childKpId + "-2" }],
+        error: null,
+      });
+      // 2. createEdgesBatch: await notDeleted(select().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 3. createEdgesBatch: await insert(edgeRecords)
+      mockSupabase.queryChain.mockChainResult({
+        error: null,
+      });
+      // 4. edge verification: await notDeleted(select().in().in().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: "edge-1",
+            source_knowledge_point_id: parentKpId,
+            target_knowledge_point_id: childKpId + "-1",
+            relationship_type: "contains",
+          },
+          {
+            id: "edge-2",
+            source_knowledge_point_id: parentKpId,
+            target_knowledge_point_id: childKpId + "-2",
+            relationship_type: "references",
+          },
+        ],
+        error: null,
+      });
 
       vi.mocked(graphNodeService.addToGraph)
         .mockResolvedValueOnce({
@@ -597,24 +716,6 @@ describe("AutoGraphService", () => {
         } as any);
 
       vi.mocked(edgeService.create).mockResolvedValue({} as any);
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [
-          {
-            id: "edge-1",
-            source_knowledge_point_id: parentKpId,
-            target_knowledge_point_id: childKpId + "-1",
-            relationship_type: "contains",
-          },
-          {
-            id: "edge-2",
-            source_knowledge_point_id: parentKpId,
-            target_knowledge_point_id: childKpId + "-2",
-            relationship_type: "references",
-          },
-        ],
-        error: null,
-      });
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -642,7 +743,8 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: kpId }],
         error: null,
       });
@@ -652,11 +754,6 @@ describe("AutoGraphService", () => {
         knowledge_point_id: kpId,
         graph_id: graphId,
       } as any);
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [],
-        error: null,
-      });
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -685,7 +782,8 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: kpId }],
         error: null,
       });
@@ -695,11 +793,6 @@ describe("AutoGraphService", () => {
         knowledge_point_id: kpId,
         graph_id: graphId,
       } as any);
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [],
-        error: null,
-      });
 
       const result = await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -737,7 +830,13 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createEdgesBatch: await notDeleted(select().eq()) → 现有 edges
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 2. createEdgesBatch: await insert(edgeRecords)
+      mockSupabase.queryChain.mockChainResult({
         error: null,
       });
 
@@ -756,7 +855,13 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createEdgesBatch: await notDeleted(select().eq()) → 现有 edges
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 2. createEdgesBatch: await insert(edgeRecords) → 插入失败,触发 edgeService.create 回退
+      mockSupabase.queryChain.mockChainResult({
         error: { message: "Batch insert failed" },
       });
 
@@ -800,15 +905,32 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert
-        .mockResolvedValueOnce({
-          data: [{ id: parentKpId }, { id: childKpId }],
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
+        data: [{ id: parentKpId }, { id: childKpId }],
+        error: null,
+      });
+      // 2. createEdgesBatch: await notDeleted(select().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [],
+        error: null,
+      });
+      // 3. createEdgesBatch: await insert(edgeRecords)
+      mockSupabase.queryChain.mockChainResult({
+        error: null,
+      });
+      // 4. edge verification: await notDeleted(select().in().in().eq())
+      mockSupabase.queryChain.mockChainResult({
+        data: [
+          {
+            id: "edge-1",
+            source_knowledge_point_id: parentKpId,
+            target_knowledge_point_id: childKpId,
+            relationship_type: "contains",
+          },
+        ],
+        error: null,
+      });
 
       vi.mocked(graphNodeService.addToGraph)
         .mockResolvedValueOnce({
@@ -823,18 +945,6 @@ describe("AutoGraphService", () => {
         } as any);
 
       vi.mocked(edgeService.create).mockResolvedValue({} as any);
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [
-          {
-            id: "edge-1",
-            source_knowledge_point_id: parentKpId,
-            target_knowledge_point_id: childKpId,
-            relationship_type: "contains",
-          },
-        ],
-        error: null,
-      });
 
       await autoGraphService.processAINodes(
         mockSupabase as any,
@@ -867,7 +977,8 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: kpId }],
         error: null,
       });
@@ -877,11 +988,6 @@ describe("AutoGraphService", () => {
         knowledge_point_id: kpId,
         graph_id: graphId,
       } as any);
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [],
-        error: null,
-      });
 
       vi.mocked(asyncTaskService.createTask).mockResolvedValue({} as any);
 
@@ -916,7 +1022,8 @@ describe("AutoGraphService", () => {
         },
       ];
 
-      mockSupabase.queryChain.insert.mockResolvedValue({
+      // 1. createKnowledgePointsBatch: await insert().select()
+      mockSupabase.queryChain.mockChainResult({
         data: [{ id: kpId }],
         error: null,
       });
@@ -926,11 +1033,6 @@ describe("AutoGraphService", () => {
         knowledge_point_id: kpId,
         graph_id: graphId,
       } as any);
-
-      mockSupabase.queryChain.select.mockResolvedValue({
-        data: [],
-        error: null,
-      });
 
       vi.mocked(asyncTaskService.createTask).mockRejectedValue(new Error("Task creation failed"));
 

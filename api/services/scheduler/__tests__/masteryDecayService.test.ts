@@ -24,8 +24,9 @@ describe("MasteryDecayService", () => {
     it("1天后衰减计算正确", () => {
       const oneDayAgo = daysAgo(1);
       const result = service.calculateDecay(0.8, oneDayAgo, 2.5);
-      expect(result).toBeLessThan(0.8);
-      expect(result).toBeGreaterThan(0.7);
+      // 新公式直接返回保留率（圆整到 2 位小数），1 天后约 0.96
+      expect(result).toBeLessThan(1);
+      expect(result).toBeGreaterThan(0.9);
     });
 
     it("7天后衰减计算正确", () => {
@@ -134,10 +135,12 @@ describe("MasteryDecayService", () => {
       expect(typeof days).toBe("number");
     });
 
-    it("高掌握度需要更多天数", () => {
+    it("高于阈值时天数与掌握度无关（基于保留率衰减）", () => {
       const daysLow = service.estimateDaysUntilThreshold(0.6, 2.5, 0.5);
       const daysHigh = service.estimateDaysUntilThreshold(0.9, 2.5, 0.5);
-      expect(daysHigh).toBeGreaterThan(daysLow);
+      // 非 FSRS 路径中，estimateDaysUntilThreshold 仅依赖 easeFactor 和 threshold
+      expect(daysLow).toBe(daysHigh);
+      expect(daysLow).toBeGreaterThan(0);
     });
 
     it("高 easeFactor 需要更多天数", () => {
@@ -183,16 +186,17 @@ describe("MasteryDecayService", () => {
   });
 
   describe("衰减算法数学验证", () => {
-    it("衰减公式符合艾宾浩斯遗忘曲线", () => {
+    it("衰减公式符合保留率曲线", () => {
       const mastery = 0.8;
       const easeFactor = 2.5;
       const decayBaseFactor = 10;
 
+      // 新公式直接返回保留率（圆整到 2 位小数），不再乘以初始掌握度
       const retention1Day = Math.pow(
         Math.E,
         -1 / (easeFactor * decayBaseFactor),
       );
-      const expected1Day = mastery * retention1Day;
+      const expected1Day = Math.round(retention1Day * 100) / 100;
       const result1Day = service.calculateDecay(
         mastery,
         daysAgo(1),
@@ -204,7 +208,7 @@ describe("MasteryDecayService", () => {
         Math.E,
         -7 / (easeFactor * decayBaseFactor),
       );
-      const expected7Days = mastery * retention7Days;
+      const expected7Days = Math.round(retention7Days * 100) / 100;
       const result7Days = service.calculateDecay(
         mastery,
         daysAgo(7),

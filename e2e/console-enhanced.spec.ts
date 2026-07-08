@@ -105,13 +105,14 @@ test.describe('控制台日志折叠功能测试', () => {
       await page.waitForTimeout(100);
     }
     
-    while (await page.locator('text=向上滚动查看更多历史记录').isVisible().catch(() => false)) {
-      const loadMoreButton = page.locator('text=向上滚动查看更多历史记录');
+    const loadMoreButton = page.locator('text=向上滚动查看更多历史记录');
+    for (let i = 0; i < 20; i++) {
+      if ((await loadMoreButton.count()) === 0) break;
       await loadMoreButton.click();
       await page.waitForTimeout(300);
     }
-    
-    await expect(page.locator('text=向上滚动查看更多历史记录')).not.toBeVisible({ timeout: 3000 });
+
+    await expect(loadMoreButton).toHaveCount(0, { timeout: 3000 });
   });
 
   test('新日志添加时应该自动滚动到底部', async ({ page }) => {
@@ -488,12 +489,12 @@ test.describe('控制台主题切换测试', () => {
   });
 
   test('日志折叠功能在深色模式下正常工作', async ({ page }) => {
+    test.skip(true, 'theme-toggle 元素在源码中不存在，无法测试深色模式切换');
     const themeToggle = page.locator('[data-testid="theme-toggle"]').first();
-    
-    if (await themeToggle.isVisible()) {
-      await themeToggle.click();
-      await page.waitForTimeout(300);
-    }
+
+    await expect(themeToggle).toBeVisible({ timeout: 5000 });
+    await themeToggle.click();
+    await page.waitForTimeout(300);
     
     const input = page.locator('input[placeholder*="输入命令"]');
     
@@ -512,12 +513,12 @@ test.describe('控制台主题切换测试', () => {
   });
 
   test('历史导航在深色模式下正常工作', async ({ page }) => {
+    test.skip(true, 'theme-toggle 元素在源码中不存在，无法测试深色模式切换');
     const themeToggle = page.locator('[data-testid="theme-toggle"]').first();
-    
-    if (await themeToggle.isVisible()) {
-      await themeToggle.click();
-      await page.waitForTimeout(300);
-    }
+
+    await expect(themeToggle).toBeVisible({ timeout: 5000 });
+    await themeToggle.click();
+    await page.waitForTimeout(300);
     
     const input = page.locator('input[placeholder*="输入命令"]');
     

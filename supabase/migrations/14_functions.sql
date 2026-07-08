@@ -1642,3 +1642,18 @@ BEGIN
   LIMIT p_max_suggestions;
 END;
 $$;
+
+-- ============================================================
+-- Test Utility: Truncate Table (for integration test cleanup)
+-- ============================================================
+-- Used by tests/helpers/testDb.ts cleanTable() to reset tables between tests.
+-- SECURITY DEFINER allows truncating any table regardless of caller privileges.
+-- Execution is revoked from PUBLIC/anon/authenticated so only the service role
+-- (which connects as the postgres superuser) can invoke it.
+CREATE OR REPLACE FUNCTION truncate_table(table_name TEXT)
+RETURNS void AS $$
+BEGIN
+  EXECUTE format('TRUNCATE TABLE %I CASCADE', table_name);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+REVOKE EXECUTE ON FUNCTION truncate_table(TEXT) FROM PUBLIC, anon, authenticated;

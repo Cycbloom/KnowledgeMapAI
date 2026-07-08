@@ -329,4 +329,280 @@ describe("mergeOperations", () => {
       expect(result[0]).toEqual(single);
     });
   });
+
+  describe("边界情况：空数据与缺失字段", () => {
+    it("create 空数据 + update 带数据 → 合并为带数据的 create", () => {
+      const create = makeOp("create", "graphs", "g1", {}, "2026-01-01T00:00:00Z");
+      const update = makeOp(
+        "update",
+        "graphs",
+        "g1",
+        { name: "图谱" },
+        "2026-01-02T00:00:00Z",
+      );
+
+      const result = mergeOperations([create, update]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].action).toBe("create");
+      expect(result[0].data).toEqual({ name: "图谱" });
+    });
+
+    it("create 带数据 + update 空数据 → 保留 create 数据", () => {
+      const create = makeOp(
+        "create",
+        "graphs",
+        "g1",
+        { name: "图谱" },
+        "2026-01-01T00:00:00Z",
+      );
+      const update = makeOp("update", "graphs", "g1", {}, "2026-01-02T00:00:00Z");
+
+      const result = mergeOperations([create, update]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].action).toBe("create");
+      // 空对象合并不改变原数据
+      expect(result[0].data).toEqual({ name: "图谱" });
+      // timestamp 仍取后者
+      expect(result[0].timestamp).toBe("2026-01-02T00:00:00Z");
+    });
+
+    it("update 空数据 + update 带数据 → 合并为带数据的 update", () => {
+      const update1 = makeOp("update", "graphs", "g1", {}, "2026-01-01T00:00:00Z");
+      const update2 = makeOp(
+        "update",
+        "graphs",
+        "g1",
+        { name: "图谱" },
+        "2026-01-02T00:00:00Z",
+      );
+
+      const result = mergeOperations([update1, update2]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].data).toEqual({ name: "图谱" });
+    });
+
+    it("delete 空数据 + create 带数据 → 保留 create 数据", () => {
+      const del = makeOp("delete", "graphs", "g1", {}, "2026-01-01T00:00:00Z");
+      const create = makeOp(
+        "create",
+        "graphs",
+        "g1",
+        { name: "图谱" },
+        "2026-01-02T00:00:00Z",
+      );
+
+      const result = mergeOperations([del, create]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].action).toBe("create");
+      expect(result[0].data).toEqual({ name: "图谱" });
+    });
+  });
+
+  describe("边界情况：同时间戳与顺序", () => {
+    it("相同 timestamp 的 create + update 仍按数组顺序合并", () => {
+      const ts = "2026-01-01T00:00:00Z";
+      const create = makeOp("create", "graphs", "g1", { name: "原" }, ts);
+      const update = makeOp("update", "graphs", "g1", { name: "改" }, ts);
+
+      const result = mergeOperations([create, update]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].action).toBe("create");
+      expect(result[0].data).toEqual({ name: "改" });
+      expect(result[0].timestamp).toBe(ts);
+    });
+
+    it("相同 timestamp 的 update + update → 后者字段覆盖", () => {
+      const ts = "2026-01-01T00:00:00Z";
+      const u1 = makeOp("update", "graphs", "g1", { name: "一" }, ts);
+      const u2 = makeOp("update", "graphs", "g1", { name: "二" }, ts);
+
+      const result = mergeOperations([u1, u2]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].data).toEqual({ name: "二" });
+    });
+
+    it("update 字段不相交时顺序不影响最终字段集合", () => {
+      // u1 改 name，u2 改 color，字段不相交
+      const u1 = makeOp(
+        "update",
+        "graphs",
+        "g1",
+        { name: "图谱" },
+        "2026-01-01T00:00:00Z",
+      );
+      const u2 = makeOp(
+        "update",
+        "graphs",
+        "g1",
+        { color: "red" },
+        "2026-01-02T00:00:00Z",
+      );
+
+      const r1 = mergeOperations([u1, u2]);
+      const r2 = mergeOperations([u2, u1]);
+
+      // 字段集合相同（顺序不影响最终拥有的字段）
+      expect(r1[0].data).toHaveProperty("name");
+      expect(r1[0].data).toHaveProperty("color");
+      expect(r2[0].data).toHaveProperty("name");
+      expect(r2[0].data).toHaveProperty("color");
+    });
+
+    it("update 字段相交时数组顺序决定覆盖方向", () => {
+      // 同字段 color，后写入者覆盖
+      const u1 = makeOp(
+        "update",
+        "graphs",
+        "g1",
+        { color: "red" },
+        "2026-01-01T00:00:00Z",
+      );
+      const u2 = makeOp(
+        "update",
+        "graphs",
+        "g1",
+        { color: "blue" },
+        "2026-01-02T00:00:00Z",
+      );
+
+      const r1 = mergeOperations([u1, u2]);
+      const r2 = mergeOperations([u2, u1]);
+
+      // [u1, u2]: u2 覆盖 → blue
+      expect(r1[0].data.color).toBe("blue");
+      // [u2, u1]: u1 覆盖 → red
+      expect(r2[0].data.color).toBe("red");
+    });
+  });
+
+  describe("边界情况：大规模与性能", () => {
+    it("1000 条不同记录的 create 可在合理时间内合并", () => {
+      const ops = Array.from({ length: 1000 }, (_, i) =>
+        makeOp("create", "graphs", `g${i}`, { name: `图谱${i}` }),
+      );
+
+      const result = mergeOperations(ops);
+
+      expect(result).toHaveLength(1000);
+    });
+
+    it("同记录 1000 次 update 合并为 1 条", () => {
+      const ops = Array.from({ length: 1000 }, (_, i) =>
+        makeOp(
+          "update",
+          "graphs",
+          "g1",
+          { v: i },
+          `2026-01-01T00:00:${String(i).padStart(2, "0")}Z`,
+        ),
+      );
+
+      const result = mergeOperations(ops);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].action).toBe("update");
+      // 最后一次 v=999 覆盖
+      expect(result[0].data.v).toBe(999);
+    });
+
+    it("多记录各多操作混合不丢失记录", () => {
+      // 10 条记录，每条 5 次 update
+      const ops: SyncOperation[] = [];
+      for (let r = 0; r < 10; r++) {
+        for (let v = 0; v < 5; v++) {
+          ops.push(
+            makeOp(
+              "update",
+              "graphs",
+              `g${r}`,
+              { v },
+              `2026-01-0${v + 1}T00:00:00Z`,
+            ),
+          );
+        }
+      }
+
+      const result = mergeOperations(ops);
+
+      expect(result).toHaveLength(10);
+      // 每条记录的 v 都应为 4（最后一次）
+      for (const op of result) {
+        expect(op.data.v).toBe(4);
+      }
+    });
+  });
+
+  describe("边界情况：并发独立编辑", () => {
+    it("不同 table 的同 recordId 操作互不干扰", () => {
+      const ops = [
+        makeOp("create", "graphs", "shared-id", { name: "图谱" }),
+        makeOp("create", "nodes", "shared-id", { title: "节点" }),
+        makeOp("update", "graphs", "shared-id", { color: "red" }),
+        makeOp("update", "nodes", "shared-id", { level: 1 }, "2026-01-02T00:00:00Z"),
+      ];
+
+      const result = mergeOperations(ops);
+
+      expect(result).toHaveLength(2);
+      const graphOp = result.find((o) => o.table === "graphs");
+      const nodeOp = result.find((o) => o.table === "nodes");
+      expect(graphOp?.action).toBe("create");
+      expect(graphOp?.data).toEqual({ name: "图谱", color: "red" });
+      expect(nodeOp?.action).toBe("create");
+      expect(nodeOp?.data).toEqual({ title: "节点", level: 1 });
+    });
+
+    it("不同记录的链式操作各自独立合并", () => {
+      // g1: create→update→delete（最终空）
+      // g2: update→create→update（最终 create 带合并数据）
+      // g3: delete→create（最终 create）
+      const ops = [
+        makeOp("create", "graphs", "g1", { name: "g1" }, "2026-01-01T00:00:00Z"),
+        makeOp("update", "graphs", "g2", { x: 1 }, "2026-01-01T00:00:00Z"),
+        makeOp("delete", "graphs", "g3", {}, "2026-01-01T00:00:00Z"),
+        makeOp("update", "graphs", "g1", { v: 2 }, "2026-01-02T00:00:00Z"),
+        makeOp("create", "graphs", "g2", { name: "g2" }, "2026-01-02T00:00:00Z"),
+        makeOp("create", "graphs", "g3", { name: "g3" }, "2026-01-02T00:00:00Z"),
+        makeOp("delete", "graphs", "g1", {}, "2026-01-03T00:00:00Z"),
+        makeOp("update", "graphs", "g2", { name: "g2-v2" }, "2026-01-03T00:00:00Z"),
+      ];
+
+      const result = mergeOperations(ops);
+
+      // g1: create+update→create, create+delete→移除
+      // g2: update+create→create, create+update→合并 create
+      // g3: delete+create→create
+      const ids = result.map((o) => o.recordId).sort();
+      expect(ids).toEqual(["g2", "g3"]);
+      const g2 = result.find((o) => o.recordId === "g2");
+      const g3 = result.find((o) => o.recordId === "g3");
+      expect(g2?.action).toBe("create");
+      // create 数据被后续 update 覆盖
+      expect(g2?.data).toEqual({ name: "g2-v2" });
+      expect(g2?.timestamp).toBe("2026-01-03T00:00:00Z");
+      expect(g3?.action).toBe("create");
+      expect(g3?.data).toEqual({ name: "g3" });
+    });
+
+    it("空对象 data 不影响其他记录合并", () => {
+      const ops = [
+        makeOp("create", "graphs", "g1", {}),
+        makeOp("create", "graphs", "g2", { name: "g2" }),
+      ];
+
+      const result = mergeOperations(ops);
+
+      expect(result).toHaveLength(2);
+      const g1 = result.find((o) => o.recordId === "g1");
+      const g2 = result.find((o) => o.recordId === "g2");
+      expect(g1?.data).toEqual({});
+      expect(g2?.data).toEqual({ name: "g2" });
+    });
+  });
 });

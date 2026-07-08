@@ -126,19 +126,13 @@ class CalendarPageObject {
     );
   }
 
-  async isSubtaskDetailModalVisible(): Promise<boolean> {
-    const modal = await this.getSubtaskDetailModal();
-    return modal.isVisible({ timeout: 3000 }).catch(() => false);
-  }
-
   async closeModal() {
     const closeButton = this.page
       .locator('button[aria-label="关闭"], button:has-text("关闭")')
       .first();
-    if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await closeButton.click();
-      await this.page.waitForTimeout(300);
-    }
+    await expect(closeButton).toBeVisible({ timeout: 5000 });
+    await closeButton.click();
+    await this.page.waitForTimeout(300);
   }
 
   async navigateToDate(date: Date) {
@@ -191,9 +185,8 @@ class CalendarPageObject {
       const descInput = this.page
         .locator('textarea[name="description"], textarea[placeholder*="描述"]')
         .first();
-      if (await descInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await descInput.fill(description);
-      }
+      await expect(descInput).toBeVisible({ timeout: 5000 });
+      await descInput.fill(description);
     }
 
     const submitButton = this.page
@@ -242,10 +235,9 @@ class CalendarPageObject {
     const expandButton = this.page
       .locator('button:has-text("更多"), button:has-text("+")')
       .first();
-    if (await expandButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await expandButton.click();
-      await this.page.waitForTimeout(300);
-    }
+    await expect(expandButton).toBeVisible({ timeout: 5000 });
+    await expandButton.click();
+    await this.page.waitForTimeout(300);
   }
 }
 
@@ -314,7 +306,7 @@ test.describe("子任务显示开关测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const isActive = await calendarPage.isSubtaskToggleActive();
-    expect(isActive).toBeTruthy();
+    expect(isActive).toBe(true);
   });
 
   test("应该能够隐藏子任务", async ({ page }) => {
@@ -322,12 +314,7 @@ test.describe("子任务显示开关测试", () => {
     await calendarPage.toggleSubtasks(false);
 
     const subtaskStack = await calendarPage.getSubtaskStack();
-    const isVisible = await subtaskStack
-      .first()
-      .isVisible({ timeout: 3000 })
-      .catch(() => false);
-
-    expect(isVisible).toBeFalsy();
+    await expect(subtaskStack).toHaveCount(0);
   });
 });
 
@@ -347,11 +334,7 @@ test.describe("日历子任务堆叠显示测试", () => {
     const eventWithSubtasks = page
       .locator('[data-has-subtasks="true"], .has-subtasks')
       .first();
-    const hasEventWithSubtasks = await eventWithSubtasks
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof hasEventWithSubtasks).toBe("boolean");
+    await expect(eventWithSubtasks).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在周视图中显示子任务堆叠", async ({ page }) => {
@@ -359,12 +342,7 @@ test.describe("日历子任务堆叠显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskStack = await calendarPage.getSubtaskStack();
-    const hasSubtaskStack = await subtaskStack
-      .first()
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof hasSubtaskStack).toBe("boolean");
+    await expect(subtaskStack.first()).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在日视图中显示子任务堆叠", async ({ page }) => {
@@ -372,28 +350,15 @@ test.describe("日历子任务堆叠显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskStack = await calendarPage.getSubtaskStack();
-    const hasSubtaskStack = await subtaskStack
-      .first()
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof hasSubtaskStack).toBe("boolean");
+    await expect(subtaskStack.first()).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在日程视图中显示子任务堆叠", async ({ page }) => {
-    const scheduleButton = await calendarPage.getScheduleViewButton();
-    if (await scheduleButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await calendarPage.switchToScheduleView();
-      await calendarPage.toggleSubtasks(true);
+    await calendarPage.switchToScheduleView();
+    await calendarPage.toggleSubtasks(true);
 
-      const subtaskStack = await calendarPage.getSubtaskStack();
-      const hasSubtaskStack = await subtaskStack
-        .first()
-        .isVisible({ timeout: 5000 })
-        .catch(() => false);
-
-      expect(typeof hasSubtaskStack).toBe("boolean");
-    }
+    const subtaskStack = await calendarPage.getSubtaskStack();
+    await expect(subtaskStack.first()).toBeVisible({ timeout: 5000 });
   });
 
   test("应该限制显示的子任务数量", async ({ page }) => {
@@ -401,11 +366,7 @@ test.describe("日历子任务堆叠显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const moreButton = page.locator("text=/\\+\\d+.*更多|更多子任务/").first();
-    const hasMoreButton = await moreButton
-      .isVisible({ timeout: 3000 })
-      .catch(() => false);
-
-    expect(typeof hasMoreButton).toBe("boolean");
+    await expect(moreButton).toBeVisible({ timeout: 5000 });
   });
 
   test("应该显示子任务完成进度", async ({ page }) => {
@@ -413,7 +374,7 @@ test.describe("日历子任务堆叠显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const progress = await calendarPage.getSubtaskProgress();
-    expect(progress).toBeDefined();
+    expect(progress).not.toBeNull();
   });
 });
 
@@ -431,18 +392,11 @@ test.describe("子任务详情查看测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskItem = await calendarPage.getSubtaskItems();
-    const count = await subtaskItem.count();
+    await expect(subtaskItem.first()).toBeVisible({ timeout: 5000 });
+    await subtaskItem.first().click();
 
-    if (count > 0) {
-      await subtaskItem.first().click();
-
-      const modal = await calendarPage.getSubtaskDetailModal();
-      const isModalVisible = await modal
-        .isVisible({ timeout: 5000 })
-        .catch(() => false);
-
-      expect(typeof isModalVisible).toBe("boolean");
-    }
+    const modal = await calendarPage.getSubtaskDetailModal();
+    await expect(modal).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在详情弹窗中显示子任务标题", async ({ page }) => {
@@ -450,17 +404,15 @@ test.describe("子任务详情查看测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskItem = await calendarPage.getSubtaskItems();
-    const count = await subtaskItem.count();
+    await expect(subtaskItem.first()).toBeVisible({ timeout: 5000 });
+    const subtaskTitle = (await subtaskItem.first().textContent()) ?? "";
+    await subtaskItem.first().click();
 
-    if (count > 0) {
-      const subtaskTitle = await subtaskItem.first().textContent();
-      await subtaskItem.first().click();
+    const modal = await calendarPage.getSubtaskDetailModal();
+    await expect(modal).toBeVisible({ timeout: 5000 });
 
-      if (await calendarPage.isSubtaskDetailModalVisible()) {
-        const modalTitle = page.locator(`text="${subtaskTitle}"`).first();
-        await expect(modalTitle).toBeVisible({ timeout: 5000 });
-      }
-    }
+    const modalTitle = page.locator(`text="${subtaskTitle}"`).first();
+    await expect(modalTitle).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在详情弹窗中显示学习状态", async ({ page }) => {
@@ -468,16 +420,14 @@ test.describe("子任务详情查看测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskItem = await calendarPage.getSubtaskItems();
-    const count = await subtaskItem.count();
+    await expect(subtaskItem.first()).toBeVisible({ timeout: 5000 });
+    await subtaskItem.first().click();
 
-    if (count > 0) {
-      await subtaskItem.first().click();
+    const modal = await calendarPage.getSubtaskDetailModal();
+    await expect(modal).toBeVisible({ timeout: 5000 });
 
-      if (await calendarPage.isSubtaskDetailModalVisible()) {
-        const stateBadge = page.locator("text=/学习|复习|练习|测验/").first();
-        await expect(stateBadge).toBeVisible({ timeout: 5000 });
-      }
-    }
+    const stateBadge = page.locator("text=/学习|复习|练习|测验/").first();
+    await expect(stateBadge).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在详情弹窗中显示掌握度", async ({ page }) => {
@@ -485,16 +435,14 @@ test.describe("子任务详情查看测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskItem = await calendarPage.getSubtaskItems();
-    const count = await subtaskItem.count();
+    await expect(subtaskItem.first()).toBeVisible({ timeout: 5000 });
+    await subtaskItem.first().click();
 
-    if (count > 0) {
-      await subtaskItem.first().click();
+    const modal = await calendarPage.getSubtaskDetailModal();
+    await expect(modal).toBeVisible({ timeout: 5000 });
 
-      if (await calendarPage.isSubtaskDetailModalVisible()) {
-        const masteryDisplay = page.locator("text=/掌握度|\\d+%/").first();
-        await expect(masteryDisplay).toBeVisible({ timeout: 5000 });
-      }
-    }
+    const masteryDisplay = page.locator("text=/掌握度|\\d+%/").first();
+    await expect(masteryDisplay).toBeVisible({ timeout: 5000 });
   });
 
   test("应该能够关闭详情弹窗", async ({ page }) => {
@@ -502,22 +450,14 @@ test.describe("子任务详情查看测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskItem = await calendarPage.getSubtaskItems();
-    const count = await subtaskItem.count();
+    await expect(subtaskItem.first()).toBeVisible({ timeout: 5000 });
+    await subtaskItem.first().click();
 
-    if (count > 0) {
-      await subtaskItem.first().click();
+    const modal = await calendarPage.getSubtaskDetailModal();
+    await expect(modal).toBeVisible({ timeout: 5000 });
 
-      if (await calendarPage.isSubtaskDetailModalVisible()) {
-        await calendarPage.closeModal();
-
-        const modal = await calendarPage.getSubtaskDetailModal();
-        const isModalVisible = await modal
-          .isVisible({ timeout: 2000 })
-          .catch(() => false);
-
-        expect(isModalVisible).toBeFalsy();
-      }
-    }
+    await calendarPage.closeModal();
+    await expect(modal).toBeHidden();
   });
 });
 
@@ -537,11 +477,7 @@ test.describe("子任务状态显示测试", () => {
     const stateBadge = page
       .locator('[data-testid="learning-state-badge"], .learning-state-badge')
       .first();
-    const isVisible = await stateBadge
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(stateBadge).toBeVisible({ timeout: 5000 });
   });
 
   test("应该显示子任务的掌握度百分比", async ({ page }) => {
@@ -549,11 +485,7 @@ test.describe("子任务状态显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const masteryText = page.locator("text=/\\d+%/").first();
-    const isVisible = await masteryText
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(masteryText).toBeVisible({ timeout: 5000 });
   });
 
   test("应该根据状态显示不同颜色", async ({ page }) => {
@@ -561,12 +493,9 @@ test.describe("子任务状态显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskItem = await calendarPage.getSubtaskItems();
-    const count = await subtaskItem.count();
-
-    if (count > 0) {
-      const className = await subtaskItem.first().getAttribute("class");
-      expect(className).toBeDefined();
-    }
+    await expect(subtaskItem.first()).toBeVisible({ timeout: 5000 });
+    const className = await subtaskItem.first().getAttribute("class");
+    expect(className).not.toBeNull();
   });
 });
 
@@ -585,11 +514,7 @@ test.describe("日历事件与子任务关联测试", () => {
     const eventWithSubtasks = page
       .locator('[data-has-subtasks="true"], .has-subtasks')
       .first();
-    const hasEventWithSubtasks = await eventWithSubtasks
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof hasEventWithSubtasks).toBe("boolean");
+    await expect(eventWithSubtasks).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在事件卡片上显示子任务数量", async ({ page }) => {
@@ -598,11 +523,7 @@ test.describe("日历事件与子任务关联测试", () => {
     const subtaskCountBadge = page
       .locator("text=/\\d+\\/\\d+/, [data-subtask-count]")
       .first();
-    const isVisible = await subtaskCountBadge
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(subtaskCountBadge).toBeVisible({ timeout: 5000 });
   });
 
   test("应该点击事件时显示关联的子任务", async ({ page }) => {
@@ -611,16 +532,11 @@ test.describe("日历事件与子任务关联测试", () => {
     const eventCard = page
       .locator('[data-testid="calendar-event"], .calendar-event')
       .first();
-    if (await eventCard.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await eventCard.click();
+    await expect(eventCard).toBeVisible({ timeout: 5000 });
+    await eventCard.click();
 
-      const subtaskSection = page.locator("text=/子任务|subtask/i").first();
-      const hasSubtaskSection = await subtaskSection
-        .isVisible({ timeout: 5000 })
-        .catch(() => false);
-
-      expect(typeof hasSubtaskSection).toBe("boolean");
-    }
+    const subtaskSection = page.locator("text=/子任务|subtask/i").first();
+    await expect(subtaskSection).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -644,12 +560,7 @@ test.describe("移动端日历子任务显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskStack = await calendarPage.getSubtaskStack();
-    const hasSubtaskStack = await subtaskStack
-      .first()
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof hasSubtaskStack).toBe("boolean");
+    await expect(subtaskStack.first()).toBeVisible({ timeout: 5000 });
   });
 
   test("应该在移动端能够展开子任务详情", async ({ page }) => {
@@ -657,17 +568,10 @@ test.describe("移动端日历子任务显示测试", () => {
     await calendarPage.toggleSubtasks(true);
 
     const subtaskItem = await calendarPage.getSubtaskItems();
-    const count = await subtaskItem.count();
+    await expect(subtaskItem.first()).toBeVisible({ timeout: 5000 });
+    await subtaskItem.first().click();
 
-    if (count > 0) {
-      await subtaskItem.first().click();
-
-      const modal = await calendarPage.getSubtaskDetailModal();
-      const isModalVisible = await modal
-        .isVisible({ timeout: 5000 })
-        .catch(() => false);
-
-      expect(typeof isModalVisible).toBe("boolean");
-    }
+    const modal = await calendarPage.getSubtaskDetailModal();
+    await expect(modal).toBeVisible({ timeout: 5000 });
   });
 });

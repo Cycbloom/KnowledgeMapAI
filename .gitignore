@@ -76,6 +76,10 @@ backups/
 test-results/
 playwright-report/
 playwright/.cache/
+blob-report/
+
+# Vitest coverage output
+coverage/
 
 # Electron
 *.blockmap

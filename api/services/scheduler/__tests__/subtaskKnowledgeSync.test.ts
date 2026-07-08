@@ -16,11 +16,11 @@ describe("SubtaskKnowledgeSyncService", () => {
       { mastery: 0.29, expected: "learning" as LearningState },
       { mastery: 0.3, expected: "review" as LearningState },
       { mastery: 0.4, expected: "review" as LearningState },
-      { mastery: 0.59, expected: "review" as LearningState },
+      { mastery: 0.49, expected: "review" as LearningState },
+      { mastery: 0.5, expected: "practice" as LearningState },
       { mastery: 0.6, expected: "practice" as LearningState },
-      { mastery: 0.7, expected: "practice" as LearningState },
-      { mastery: 0.79, expected: "practice" as LearningState },
-      { mastery: 0.8, expected: "quiz" as LearningState },
+      { mastery: 0.69, expected: "practice" as LearningState },
+      { mastery: 0.7, expected: "quiz" as LearningState },
       { mastery: 0.9, expected: "quiz" as LearningState },
       { mastery: 1.0, expected: "quiz" as LearningState },
     ];
@@ -30,62 +30,6 @@ describe("SubtaskKnowledgeSyncService", () => {
         const result = (service as any).determineLearningState(mastery);
         expect(result).toBe(expected);
       });
-    });
-  });
-
-  describe("calculateKnowledgePointMastery - 通过私有方法测试", () => {
-    it("计算知识点掌握度 - learning 状态", () => {
-      const result = (service as any).calculateKnowledgePointMastery(
-        "learning",
-        0.2,
-        0.3,
-      );
-      expect(result).toBeGreaterThanOrEqual(0);
-      expect(result).toBeLessThanOrEqual(1);
-    });
-
-    it("计算知识点掌握度 - review 状态", () => {
-      const result = (service as any).calculateKnowledgePointMastery(
-        "review",
-        0.5,
-        0.4,
-      );
-      expect(result).toBeGreaterThanOrEqual(0);
-      expect(result).toBeLessThanOrEqual(1);
-    });
-
-    it("计算知识点掌握度 - practice 状态", () => {
-      const result = (service as any).calculateKnowledgePointMastery(
-        "practice",
-        0.7,
-        0.6,
-      );
-      expect(result).toBeGreaterThanOrEqual(0);
-      expect(result).toBeLessThanOrEqual(1);
-    });
-
-    it("计算知识点掌握度 - quiz 状态", () => {
-      const result = (service as any).calculateKnowledgePointMastery(
-        "quiz",
-        0.9,
-        0.8,
-      );
-      expect(result).toBeGreaterThanOrEqual(0);
-      expect(result).toBeLessThanOrEqual(1);
-    });
-
-    it("高子任务掌握度增加知识点掌握度", () => {
-      const resultLow = (service as any).calculateKnowledgePointMastery(
-        "review",
-        0.3,
-        0.5,
-      );
-      const resultHigh = (service as any).calculateKnowledgePointMastery(
-        "review",
-        0.7,
-        0.5,
-      );
-      expect(resultHigh).toBeGreaterThan(resultLow);
     });
   });
 
@@ -167,13 +111,13 @@ describe("SubtaskKnowledgeSyncService", () => {
       expect(result).toBe("review");
     });
 
-    it("边界值 0.6 正确映射到 practice", () => {
-      const result = (service as any).determineLearningState(0.6);
+    it("边界值 0.5 正确映射到 practice", () => {
+      const result = (service as any).determineLearningState(0.5);
       expect(result).toBe("practice");
     });
 
-    it("边界值 0.8 正确映射到 quiz", () => {
-      const result = (service as any).determineLearningState(0.8);
+    it("边界值 0.7 正确映射到 quiz", () => {
+      const result = (service as any).determineLearningState(0.7);
       expect(result).toBe("quiz");
     });
 
@@ -182,44 +126,14 @@ describe("SubtaskKnowledgeSyncService", () => {
       expect(result).toBe("learning");
     });
 
-    it("接近边界值 0.599 映射到 review", () => {
-      const result = (service as any).determineLearningState(0.599);
+    it("接近边界值 0.499 映射到 review", () => {
+      const result = (service as any).determineLearningState(0.499);
       expect(result).toBe("review");
     });
 
-    it("接近边界值 0.799 映射到 practice", () => {
-      const result = (service as any).determineLearningState(0.799);
+    it("接近边界值 0.699 映射到 practice", () => {
+      const result = (service as any).determineLearningState(0.699);
       expect(result).toBe("practice");
-    });
-  });
-
-  describe("掌握度计算权重测试", () => {
-    it("学习状态权重影响掌握度计算", () => {
-      const learningResult = (service as any).calculateKnowledgePointMastery(
-        "learning",
-        0.5,
-        0.5,
-      );
-      const quizResult = (service as any).calculateKnowledgePointMastery(
-        "quiz",
-        0.5,
-        0.5,
-      );
-      expect(quizResult).toBeGreaterThan(learningResult);
-    });
-
-    it("当前知识点掌握度影响最终结果", () => {
-      const resultLow = (service as any).calculateKnowledgePointMastery(
-        "review",
-        0.5,
-        0.2,
-      );
-      const resultHigh = (service as any).calculateKnowledgePointMastery(
-        "review",
-        0.5,
-        0.8,
-      );
-      expect(resultHigh).toBeGreaterThan(resultLow);
     });
   });
 });

@@ -50,32 +50,28 @@ class MasteryPageObject {
     const addSubtaskButton = this.page
       .locator('button:has-text("添加子任务"), button:has-text("新建子任务")')
       .first();
-    if (
-      await addSubtaskButton.isVisible({ timeout: 3000 }).catch(() => false)
-    ) {
-      await addSubtaskButton.click();
+    await expect(addSubtaskButton).toBeVisible({ timeout: 5000 });
+    await addSubtaskButton.click();
 
-      const titleInput = this.page
-        .locator('input[placeholder*="子任务标题"], input[name="subtaskTitle"]')
-        .first();
-      await titleInput.fill(subtaskTitle);
+    const titleInput = this.page
+      .locator('input[placeholder*="子任务标题"], input[name="subtaskTitle"]')
+      .first();
+    await titleInput.fill(subtaskTitle);
 
-      const submitButton = this.page
-        .locator(
-          'button[type="submit"]:has-text("添加"), button:has-text("确定")',
-        )
-        .first();
-      await submitButton.click();
+    const submitButton = this.page
+      .locator(
+        'button[type="submit"]:has-text("添加"), button:has-text("确定")',
+      )
+      .first();
+    await submitButton.click();
 
-      await this.page.waitForTimeout(500);
-    }
+    await this.page.waitForTimeout(500);
   }
 
   async setSubtaskMastery(masteryLevel: number) {
     const masteryInput = this.page.locator('input[type="range"]').first();
-    if (await masteryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await masteryInput.fill(String(masteryLevel));
-    }
+    await expect(masteryInput).toBeVisible({ timeout: 5000 });
+    await masteryInput.fill(String(masteryLevel));
   }
 
   async getMasteryLevel(): Promise<number> {
@@ -111,10 +107,9 @@ class MasteryPageObject {
         `button:has-text("${quality}"), button[data-quality="${quality}"]`,
       )
       .first();
-    if (await qualityButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await qualityButton.click();
-      await this.page.waitForTimeout(500);
-    }
+    await expect(qualityButton).toBeVisible({ timeout: 5000 });
+    await qualityButton.click();
+    await this.page.waitForTimeout(500);
   }
 
   async openKnowledgePointDetail(kpTitle: string) {
@@ -135,10 +130,9 @@ class MasteryPageObject {
     const decayButton = this.page
       .locator('button:has-text("计算衰减"), button:has-text("刷新掌握度")')
       .first();
-    if (await decayButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await decayButton.click();
-      await this.page.waitForTimeout(1000);
-    }
+    await expect(decayButton).toBeVisible({ timeout: 5000 });
+    await decayButton.click();
+    await this.page.waitForTimeout(1000);
   }
 
   async waitForSubtaskToAppear(subtaskTitle: string) {
@@ -181,22 +175,10 @@ test.describe("掌握度衰减测试", () => {
   test("应该根据掌握度显示不同颜色", async ({ page }) => {
     await masteryPage.navigateToKnowledgePoints();
 
-    const lowMastery = page
-      .locator('.mastery-low, [data-mastery="low"]')
-      .first();
-    const mediumMastery = page
-      .locator('.mastery-medium, [data-mastery="medium"]')
-      .first();
-    const highMastery = page
-      .locator('.mastery-high, [data-mastery="high"]')
-      .first();
-
-    const hasMasteryIndicator =
-      (await lowMastery.isVisible({ timeout: 2000 }).catch(() => false)) ||
-      (await mediumMastery.isVisible({ timeout: 2000 }).catch(() => false)) ||
-      (await highMastery.isVisible({ timeout: 2000 }).catch(() => false));
-
-    expect(hasMasteryIndicator).toBeTruthy();
+    const masteryIndicators = page.locator(
+      '.mastery-low, [data-mastery="low"], .mastery-medium, [data-mastery="medium"], .mastery-high, [data-mastery="high"]',
+    );
+    await expect(masteryIndicators.first()).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -229,14 +211,10 @@ test.describe("复习提醒触发测试", () => {
   test("应该区分逾期和今日复习任务", async ({ page }) => {
     await masteryPage.navigateToReview();
 
-    const overdueSection = page.locator("text=/逾期|overdue/i").first();
-    const todaySection = page.locator("text=/今天|today/i").first();
-
-    const hasOverdueOrToday =
-      (await overdueSection.isVisible({ timeout: 3000 }).catch(() => false)) ||
-      (await todaySection.isVisible({ timeout: 3000 }).catch(() => false));
-
-    expect(hasOverdueOrToday).toBeTruthy();
+    const overdueOrTodaySection = page
+      .locator("text=/逾期|overdue|今天|today/i")
+      .first();
+    await expect(overdueOrTodaySection).toBeVisible({ timeout: 5000 });
   });
 
   test("应该显示复习任务的紧迫程度", async ({ page }) => {
@@ -279,11 +257,7 @@ test.describe("SM2 算法测试", () => {
     await masteryPage.navigateToReview();
 
     const easeFactorInfo = page.locator("text=/EF|易遗忘因子|ease/i").first();
-    const isVisible = await easeFactorInfo
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(easeFactorInfo).toBeVisible({ timeout: 5000 });
   });
 
   test("应该能够完成复习并更新间隔", async ({ page }) => {
@@ -292,27 +266,21 @@ test.describe("SM2 算法测试", () => {
     const reviewCard = page
       .locator('[data-testid="review-task-card"], .review-task-card')
       .first();
-    if (await reviewCard.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await reviewCard.click();
+    await expect(reviewCard).toBeVisible({ timeout: 5000 });
+    await reviewCard.click();
 
-      const qualityButton = page
-        .locator(
-          'button:has-text("良好"), button:has-text("good"), button[data-quality="good"]',
-        )
-        .first();
-      if (await qualityButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await qualityButton.click();
+    const qualityButton = page
+      .locator(
+        'button:has-text("良好"), button:has-text("good"), button[data-quality="good"]',
+      )
+      .first();
+    await expect(qualityButton).toBeVisible({ timeout: 5000 });
+    await qualityButton.click();
 
-        const successMessage = page.locator(
-          "text=/复习完成|completed|更新成功/i",
-        );
-        await expect(successMessage.first())
-          .toBeVisible({ timeout: 5000 })
-          .catch(() => {});
-      }
-    }
-
-    await expect(page).not.toHaveURL(/login/);
+    const successMessage = page.locator(
+      "text=/复习完成|completed|更新成功/i",
+    );
+    await expect(successMessage.first()).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -341,9 +309,8 @@ test.describe("掌握度与子任务同步测试", () => {
     const saveButton = page
       .locator('button:has-text("保存"), button:has-text("更新")')
       .first();
-    if (await saveButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await saveButton.click();
-    }
+    await expect(saveButton).toBeVisible({ timeout: 5000 });
+    await saveButton.click();
 
     const masteryDisplay = page.locator("text=/80%/");
     await expect(masteryDisplay.first()).toBeVisible({ timeout: 5000 });
@@ -355,25 +322,18 @@ test.describe("掌握度与子任务同步测试", () => {
     const knowledgePointCard = page
       .locator('[data-testid="knowledge-point-card"], .knowledge-point-card')
       .first();
-    if (
-      await knowledgePointCard.isVisible({ timeout: 3000 }).catch(() => false)
-    ) {
-      await knowledgePointCard.click();
+    await expect(knowledgePointCard).toBeVisible({ timeout: 5000 });
+    await knowledgePointCard.click();
 
-      const masteryInput = page.locator('input[type="range"]').first();
-      if (await masteryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await masteryInput.fill("60");
+    const masteryInput = page.locator('input[type="range"]').first();
+    await expect(masteryInput).toBeVisible({ timeout: 5000 });
+    await masteryInput.fill("60");
 
-        const saveButton = page
-          .locator('button:has-text("保存"), button:has-text("更新")')
-          .first();
-        if (await saveButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await saveButton.click();
-        }
-      }
-    }
-
-    await expect(page).not.toHaveURL(/login/);
+    const saveButton = page
+      .locator('button:has-text("保存"), button:has-text("更新")')
+      .first();
+    await expect(saveButton).toBeVisible({ timeout: 5000 });
+    await saveButton.click();
   });
 });
 
@@ -391,11 +351,7 @@ test.describe("掌握度衰减计算测试", () => {
     const lastStudyInfo = page
       .locator("text=/上次学习|last study|\\d+天前/i")
       .first();
-    const isVisible = await lastStudyInfo
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(lastStudyInfo).toBeVisible({ timeout: 5000 });
   });
 
   test("应该标记需要复习的知识点", async ({ page }) => {
@@ -406,11 +362,7 @@ test.describe("掌握度衰减计算测试", () => {
         '[data-testid="needs-review"], .needs-review, text=/需要复习|needs review/i',
       )
       .first();
-    const isVisible = await needsReviewBadge
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(needsReviewBadge).toBeVisible({ timeout: 5000 });
   });
 
   test("应该显示预计遗忘时间", async ({ page }) => {
@@ -419,11 +371,7 @@ test.describe("掌握度衰减计算测试", () => {
     const forgetPrediction = page
       .locator("text=/预计遗忘|forget prediction|\\d+天后/i")
       .first();
-    const isVisible = await forgetPrediction
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(forgetPrediction).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -441,20 +389,13 @@ test.describe("批量复习操作测试", () => {
     const startReviewButton = page
       .locator('button:has-text("开始复习"), button:has-text("start review")')
       .first();
-    if (
-      await startReviewButton.isVisible({ timeout: 3000 }).catch(() => false)
-    ) {
-      await startReviewButton.click();
+    await expect(startReviewButton).toBeVisible({ timeout: 5000 });
+    await startReviewButton.click();
 
-      const reviewInterface = page
-        .locator('[data-testid="review-interface"], .review-interface')
-        .first();
-      await expect(reviewInterface)
-        .toBeVisible({ timeout: 5000 })
-        .catch(() => {});
-    }
-
-    await expect(page).not.toHaveURL(/login/);
+    const reviewInterface = page
+      .locator('[data-testid="review-interface"], .review-interface')
+      .first();
+    await expect(reviewInterface).toBeVisible({ timeout: 5000 });
   });
 
   test("应该能够跳过当前复习项", async ({ page }) => {
@@ -463,18 +404,14 @@ test.describe("批量复习操作测试", () => {
     const reviewCard = page
       .locator('[data-testid="review-task-card"], .review-task-card')
       .first();
-    if (await reviewCard.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await reviewCard.click();
+    await expect(reviewCard).toBeVisible({ timeout: 5000 });
+    await reviewCard.click();
 
-      const skipButton = page
-        .locator('button:has-text("跳过"), button:has-text("skip")')
-        .first();
-      if (await skipButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await skipButton.click();
-      }
-    }
-
-    await expect(page).not.toHaveURL(/login/);
+    const skipButton = page
+      .locator('button:has-text("跳过"), button:has-text("skip")')
+      .first();
+    await expect(skipButton).toBeVisible({ timeout: 5000 });
+    await skipButton.click();
   });
 
   test("应该显示复习统计信息", async ({ page }) => {
@@ -483,10 +420,6 @@ test.describe("批量复习操作测试", () => {
     const statsSection = page
       .locator("text=/统计|statistics|复习次数/i")
       .first();
-    const isVisible = await statsSection
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    expect(typeof isVisible).toBe("boolean");
+    await expect(statsSection).toBeVisible({ timeout: 5000 });
   });
 });

@@ -29,9 +29,8 @@ class SubtaskPageObject {
       const descInput = this.page
         .locator('textarea[name="description"], textarea[placeholder*="描述"]')
         .first();
-      if (await descInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await descInput.fill(description);
-      }
+      await expect(descInput).toBeVisible({ timeout: 2000 });
+      await descInput.fill(description);
     }
 
     const submitButton = this.page
@@ -54,25 +53,22 @@ class SubtaskPageObject {
     const addSubtaskButton = this.page
       .locator('button:has-text("添加子任务"), button:has-text("新建子任务")')
       .first();
-    if (
-      await addSubtaskButton.isVisible({ timeout: 3000 }).catch(() => false)
-    ) {
-      await addSubtaskButton.click();
+    await expect(addSubtaskButton).toBeVisible({ timeout: 3000 });
+    await addSubtaskButton.click();
 
-      const titleInput = this.page
-        .locator('input[placeholder*="子任务标题"], input[name="subtaskTitle"]')
-        .first();
-      await titleInput.fill(title);
+    const titleInput = this.page
+      .locator('input[placeholder*="子任务标题"], input[name="subtaskTitle"]')
+      .first();
+    await titleInput.fill(title);
 
-      const submitButton = this.page
-        .locator(
-          'button[type="submit"]:has-text("添加"), button:has-text("确定")',
-        )
-        .first();
-      await submitButton.click();
+    const submitButton = this.page
+      .locator(
+        'button[type="submit"]:has-text("添加"), button:has-text("确定")',
+      )
+      .first();
+    await submitButton.click();
 
-      await this.page.waitForTimeout(500);
-    }
+    await this.page.waitForTimeout(500);
   }
 
   async openSubtaskDetail(subtaskTitle: string) {
@@ -113,10 +109,9 @@ class SubtaskPageObject {
     const stateButton = this.page
       .locator(`button:has-text("${this.getStateLabel(toState)}")`)
       .first();
-    if (await stateButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await stateButton.click();
-      await this.page.waitForTimeout(500);
-    }
+    await expect(stateButton).toBeVisible({ timeout: 3000 });
+    await stateButton.click();
+    await this.page.waitForTimeout(500);
   }
 
   private getStateLabel(state: string): string {
@@ -133,19 +128,17 @@ class SubtaskPageObject {
     const masteryInput = this.page
       .locator('input[type="range"], input[name="masteryLevel"]')
       .first();
-    if (await masteryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await masteryInput.fill(String(level));
-    }
+    await expect(masteryInput).toBeVisible({ timeout: 2000 });
+    await masteryInput.fill(String(level));
   }
 
   async closeModal() {
     const closeButton = this.page
       .locator('button[aria-label="关闭"], button:has-text("关闭")')
       .first();
-    if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await closeButton.click();
-      await this.page.waitForTimeout(300);
-    }
+    await expect(closeButton).toBeVisible({ timeout: 2000 });
+    await closeButton.click();
+    await this.page.waitForTimeout(300);
   }
 
   async waitForSubtaskToAppear(subtaskTitle: string) {
@@ -172,8 +165,7 @@ test.describe("子任务状态转换流程测试", () => {
 
     const subtaskExists = await page
       .locator(`text="${testSubtaskTitle}"`)
-      .isVisible({ timeout: 2000 })
-      .catch(() => false);
+      .isVisible({ timeout: 2000 });
     if (!subtaskExists) {
       await subtaskPage.createSubtask(testSubtaskTitle);
     }
@@ -451,16 +443,14 @@ test.describe("子任务掌握度更新测试", () => {
     await subtaskPage.openSubtaskDetail(subtaskTitle);
 
     const masteryInput = page.locator('input[type="range"]').first();
-    if (await masteryInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await masteryInput.fill("75");
+    await expect(masteryInput).toBeVisible({ timeout: 3000 });
+    await masteryInput.fill("75");
 
-      const saveButton = page
-        .locator('button:has-text("保存"), button:has-text("更新")')
-        .first();
-      if (await saveButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await saveButton.click();
-      }
-    }
+    const saveButton = page
+      .locator('button:has-text("保存"), button:has-text("更新")')
+      .first();
+    await expect(saveButton).toBeVisible({ timeout: 2000 });
+    await saveButton.click();
 
     const masteryDisplay = page.locator("text=/75%/");
     await expect(masteryDisplay.first()).toBeVisible({ timeout: 5000 });
@@ -509,13 +499,12 @@ test.describe("子任务状态历史记录测试", () => {
     await subtaskPage.transitionSubtaskState("review", 20);
 
     const historySection = page.locator("text=状态历史, text=历史记录").first();
-    if (await historySection.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await expect(
-        page.locator("text=learning").or(page.locator("text=学习")),
-      ).toBeVisible({ timeout: 3000 });
-      await expect(
-        page.locator("text=review").or(page.locator("text=复习")),
-      ).toBeVisible({ timeout: 3000 });
-    }
+    await expect(historySection).toBeVisible({ timeout: 3000 });
+    await expect(
+      page.locator("text=learning").or(page.locator("text=学习")),
+    ).toBeVisible({ timeout: 3000 });
+    await expect(
+      page.locator("text=review").or(page.locator("text=复习")),
+    ).toBeVisible({ timeout: 3000 });
   });
 });

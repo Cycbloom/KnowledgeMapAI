@@ -1,0 +1,13 @@
+# Flaky tests are quarantined here.
+#
+# playwright.config.ts has `exclude: /quarantine\//`, so any spec file placed
+# in this directory is excluded from ALL Playwright runs (including the weekly
+# flaky-detection CI job and `npm run test:flaky`).
+#
+# Workflow:
+#   1. The flaky-detection CI job (runs weekly on Sun 02:00 UTC, or via
+#      manual `workflow_dispatch`) reports tests that fail intermittently.
+#   2. Move the offending spec from e2e/<name>.spec.ts to
+#      e2e/quarantine/<name>.spec.ts so it stops blocking PRs.
+#   3. Investigate root cause and fix.
+#   4. Move the file back out to e2e/ to re-enable it.

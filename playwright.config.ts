@@ -2,14 +2,18 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  // Exclude quarantined (flaky) tests from ALL runs (including test:flaky).
+  // To re-run a quarantined test, move it back out of e2e/quarantine/.
+  exclude: /quarantine\//,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [
-    ['list'],
-    ['html', { open: 'never', outputFolder: 'playwright-report' }],
-  ],
+  // In CI: produce blob reports per shard (merged by merge-reports job) + final HTML.
+  // Locally: list + HTML report.
+  reporter: process.env.CI
+    ? [['list'], ['blob'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
+    : [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',

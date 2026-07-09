@@ -29,10 +29,35 @@ export const test = base.extend<CustomFixtures>({
    *
    * 使用 UI 登录流程（与 utils/auth.loginAsTestUser 一致）以贴近真实用户场景。
    * 登录后等待网络空闲,确保后续断言稳定。
+   *
+   * 额外等待 Supabase session 写入 localStorage,防止页面导航后 React 应用
+   * 在 session 恢复完成前发出无 Authorization header 的 API 请求（401 竞态）。
    */
   authenticatedPage: async ({ page }, use) => {
     await loginAsTestUser(page);
     await page.waitForLoadState("networkidle");
+    // 等待 Supabase session 持久化到 localStorage，确保后续页面导航时
+    // React 应用能立即恢复 auth 状态，避免 401 竞态条件
+    await page.waitForFunction(
+      () => {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.includes("auth-token")) {
+            try {
+              const value = localStorage.getItem(key);
+              if (value) {
+                const parsed = JSON.parse(value);
+                if (parsed.access_token) return true;
+              }
+            } catch {
+              // 忽略解析错误，继续检查下一个 key
+            }
+          }
+        }
+        return false;
+      },
+      { timeout: 10000 },
+    );
     await use(page);
   },
 

@@ -127,11 +127,16 @@ jobs:
           echo "SERVICE_KEY prefix: ${SERVICE_KEY:0:15}"
 
           # 从 Docker 容器提取 JWT_SECRET（新 CLI 不在 status 输出中显示）
+          # 遍历所有运行中的容器，找到包含 JWT_SECRET 环境变量的容器
           JWT_SECRET=""
-          AUTH_CONTAINER=$(docker ps --filter "name=supabase_auth" --format "{{.Names}}" 2>/dev/null | head -1)
-          if [ -n "$AUTH_CONTAINER" ]; then
-            JWT_SECRET=$(docker exec "$AUTH_CONTAINER" printenv JWT_SECRET 2>/dev/null || echo "")
-          fi
+          for container in $(docker ps --format "{{.Names}}"); do
+            secret=$(docker exec "$container" printenv JWT_SECRET 2>/dev/null || echo "")
+            if [ -n "$secret" ]; then
+              JWT_SECRET="$secret"
+              echo "Found JWT_SECRET in container: $container"
+              break
+            fi
+          done
           if [ -n "$JWT_SECRET" ]; then
             echo "JWT_SECRET length: ${#JWT_SECRET}"
           else
@@ -256,11 +261,16 @@ jobs:
           echo "SERVICE_KEY prefix: ${SERVICE_KEY:0:15}"
 
           # 从 Docker 容器提取 JWT_SECRET（新 CLI 不在 status 输出中显示）
+          # 遍历所有运行中的容器，找到包含 JWT_SECRET 环境变量的容器
           JWT_SECRET=""
-          AUTH_CONTAINER=$(docker ps --filter "name=supabase_auth" --format "{{.Names}}" 2>/dev/null | head -1)
-          if [ -n "$AUTH_CONTAINER" ]; then
-            JWT_SECRET=$(docker exec "$AUTH_CONTAINER" printenv JWT_SECRET 2>/dev/null || echo "")
-          fi
+          for container in $(docker ps --format "{{.Names}}"); do
+            secret=$(docker exec "$container" printenv JWT_SECRET 2>/dev/null || echo "")
+            if [ -n "$secret" ]; then
+              JWT_SECRET="$secret"
+              echo "Found JWT_SECRET in container: $container"
+              break
+            fi
+          done
           if [ -n "$JWT_SECRET" ]; then
             echo "JWT_SECRET length: ${#JWT_SECRET}"
           else

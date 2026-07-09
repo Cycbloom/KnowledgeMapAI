@@ -15,3 +15,10 @@ CREATE TYPE user_role AS ENUM ('user', 'admin');
 CREATE TYPE collaborator_role AS ENUM ('owner', 'editor', 'viewer');
 CREATE TYPE graph_event_type AS ENUM ('node_created', 'node_updated', 'node_deleted', 'edge_created', 'edge_updated', 'edge_deleted', 'graph_updated', 'graph_rollback', 'graph_branch_created', 'graph_merged');
 CREATE TYPE graph_snapshot_type AS ENUM ('auto', 'manual', 'pre_rollback', 'pre_ai_expand', 'pre_batch_delete');
+
+-- service_role bypasses RLS but still needs explicit table privileges.
+-- Set default privileges so all tables/sequences created in future migrations
+-- automatically grant permissions to service_role.
+-- This must be set BEFORE any CREATE TABLE statements (in migrations 01+).
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;

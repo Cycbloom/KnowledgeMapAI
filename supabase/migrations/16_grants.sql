@@ -2,6 +2,14 @@
 -- Knowledge Map - Grants
 -- =====================================================
 
+-- service_role bypasses RLS but still needs explicit table/sequence/function privileges.
+-- ALTER DEFAULT PRIVILEGES in 00_extensions_and_types.sql covers tables created
+-- after that migration, but this blanket grant is a safety net for any tables
+-- that might have been created before default privileges were set.
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
+
 -- Core tables
 GRANT ALL PRIVILEGES ON users TO authenticated;
 GRANT SELECT ON knowledge_graphs TO authenticated;

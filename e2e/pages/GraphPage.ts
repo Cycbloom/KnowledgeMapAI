@@ -1,4 +1,5 @@
 import { Page, Locator, expect } from "@playwright/test";
+import { waitForAuthReady } from "../utils/auth";
 
 export class GraphPage {
   readonly page: Page;
@@ -41,7 +42,7 @@ export class GraphPage {
 
   async navigateToHome() {
     await this.page.goto("/");
-    await this.page.waitForLoadState("networkidle");
+    await waitForAuthReady(this.page);
   }
 
   async createGraph(title: string, templateType?: string) {

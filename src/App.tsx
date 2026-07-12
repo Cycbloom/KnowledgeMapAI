@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useMemo } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
@@ -74,6 +74,12 @@ function App() {
   const storeToken = useStore((state) => state.token);
   const storeRefreshToken = useStore((state) => state.refreshToken);
 
+  // Supabase 模式下，应用启动时阻塞渲染直到 restoreSession() 完成，
+  // 避免子组件在 token 恢复前发出 API 请求导致 401 竞态。
+  const [isRestoringSession, setIsRestoringSession] = useState(
+    authConfig.isSupabase() && isSupabaseConfigured(),
+  );
+
   const publicRoutes = useKernelRoutes("public");
   const protectedRoutes = useKernelRoutes("protected");
 
@@ -85,38 +91,29 @@ function App() {
     if (!client) return;
 
     const restoreSession = async () => {
-      const {
-        data: { session },
-      } = await client.auth.getSession();
+      try {
+        const {
+          data: { session },
+        } = await client.auth.getSession();
 
-      if (session?.user) {
-        setUser(
-          toUser(session.user),
-          session.access_token,
-          session.refresh_token,
-        );
-      } else {
-        const isDev =
-          authConfig.supabase.url.includes("127.0.0.1") ||
-          authConfig.supabase.url.includes("localhost");
-        if (isDev) {
-          try {
-            const testEmail = "test@example.com";
-            const testPassword = "test123456";
-            const { data } = await client.auth.signInWithPassword({
-              email: testEmail,
-              password: testPassword,
-            });
-            if (data.session?.user) {
-              setUser(
-                toUser(data.session.user),
-                data.session.access_token,
-                data.session.refresh_token,
-              );
-            }
-          } catch {
+        if (session?.user) {
+          setUser(
+            toUser(session.user),
+            session.access_token,
+            session.refresh_token,
+          );
+        } else {
+          const isDev =
+            authConfig.supabase.url.includes("127.0.0.1") ||
+            authConfig.supabase.url.includes("localhost");
+          if (isDev) {
             try {
-              const { data } = await client.auth.signInAnonymously();
+              const testEmail = "test@example.com";
+              const testPassword = "test123456";
+              const { data } = await client.auth.signInWithPassword({
+                email: testEmail,
+                password: testPassword,
+              });
               if (data.session?.user) {
                 setUser(
                   toUser(data.session.user),
@@ -125,12 +122,27 @@ function App() {
                 );
               }
             } catch {
-              // auto auth failed
+              try {
+                const { data } = await client.auth.signInAnonymously();
+                if (data.session?.user) {
+                  setUser(
+                    toUser(data.session.user),
+                    data.session.access_token,
+                    data.session.refresh_token,
+                  );
+                }
+              } catch {
+                // auto auth failed
+              }
             }
+          } else if (storeToken || storeRefreshToken) {
+            clearAuth();
           }
-        } else if (storeToken || storeRefreshToken) {
-          clearAuth();
         }
+      } finally {
+        // 无论 getSession 成功或失败，都解除渲染阻塞。
+        // onAuthStateChange 也会在 INITIAL_SESSION 事件时解除阻塞（双保险）。
+        setIsRestoringSession(false);
       }
     };
 
@@ -139,6 +151,8 @@ function App() {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((event, session) => {
+      // onAuthStateChange 触发时说明 Supabase 已初始化完成，解除阻塞。
+      setIsRestoringSession(false);
       if (session?.user) {
         setUser(
           toUser(session.user),
@@ -158,6 +172,12 @@ function App() {
       subscription.unsubscribe();
     };
   }, [setUser, clearAuth, storeToken, storeRefreshToken]);
+
+  // 会话恢复期间渲染 Loading 占位，不渲染受保护路由树，避免子组件
+  // 在 token 写入 Zustand 前发出 API 请求（E2E 401 竞态根因）。
+  if (isRestoringSession) {
+    return <LoadingFallback />;
+  }
 
   return (
     <ErrorBoundary>

@@ -5,6 +5,7 @@ import { message } from "../../utils/messageHelper";
 import { isElectron } from "../../config/electronConfig";
 import { updateSupabaseConfig } from "../../config/authConfig";
 import { resetSupabaseClient } from "../../lib/supabase";
+import { useStore } from "../../store/useStore";
 import {
   Database,
   Save,
@@ -29,6 +30,7 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
   sectionRef,
 }: DatabaseSettingsProps) {
   const { t } = useTranslation();
+  const token = useStore((state) => state.token);
 
   const [databaseConfig, setDatabaseConfig] = useState<DatabaseConfig>({
     configured: false,
@@ -95,9 +97,10 @@ export const DatabaseSettings = React.memo(function DatabaseSettings({
   };
 
   useEffect(() => {
+    if (!token) return;
     fetchDatabaseConfig();
     fetchSchemaStatus();
-  }, []);
+  }, [token]);
 
   const handleSaveDatabaseConfig = async () => {
     if (!dbForm.url.trim() || !dbForm.anonKey.trim()) {

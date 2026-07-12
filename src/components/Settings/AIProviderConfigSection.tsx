@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import { PROVIDER_DEFAULTS } from "./settingsConstants";
 import type { ProviderConfig, ProviderFormData } from "./settingsConstants";
+import { useStore } from "../../store/useStore";
 
 export const AIProviderConfigSection = React.memo(function AIProviderConfigSection() {
   const { t } = useTranslation();
+  const token = useStore((state) => state.token);
 
   const [providerConfigs, setProviderConfigs] = useState<
     Record<string, ProviderConfig>
@@ -81,8 +83,9 @@ export const AIProviderConfigSection = React.memo(function AIProviderConfigSecti
   };
 
   useEffect(() => {
+    if (!token) return;
     fetchProviderConfigs();
-  }, []);
+  }, [token]);
 
   const handleSaveProviderConfig = async (provider: string) => {
     const form = providerForms[provider];

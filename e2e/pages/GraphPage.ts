@@ -1,5 +1,5 @@
 import { Page, Locator, expect } from "@playwright/test";
-import { waitForAuthReady } from "../utils/auth";
+import { navigateAndWaitForAuth } from "../utils/auth";
 
 export class GraphPage {
   readonly page: Page;
@@ -41,8 +41,7 @@ export class GraphPage {
   }
 
   async navigateToHome() {
-    await this.page.goto("/");
-    await waitForAuthReady(this.page);
+    await navigateAndWaitForAuth(this.page, "/");
   }
 
   async createGraph(title: string, templateType?: string) {

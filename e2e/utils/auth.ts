@@ -28,23 +28,37 @@ export async function ensureAuthenticated(page: Page) {
  * 不携带 Authorization header（401 竞态）。此函数等待任意一个需要认证的
  * API 请求返回 200，确认 session 已恢复后再返回。
  *
- * 应在 page.goto / page.reload 之后、与页面交互之前调用。
+ * 使用 Promise.all 模式：在 page.goto 之前设置 waitForResponse，
+ * 避免错过已到达的响应。
  */
-export async function waitForAuthReady(page: Page, timeout = 10000): Promise<void> {
+export async function navigateAndWaitForAuth(
+  page: Page,
+  url: string,
+  timeout = 10000,
+): Promise<void> {
+  // 在导航前设置 response 监听器，避免错过已到达的响应
+  const responsePromise = page
+    .waitForResponse(
+      async (response) => {
+        const reqUrl = response.url();
+        if (
+          !reqUrl.includes('/api/') ||
+          reqUrl.includes('/api/csrf-token') ||
+          reqUrl.includes('/api/health')
+        ) {
+          return false;
+        }
+        return response.status() === 200;
+      },
+      { timeout },
+    )
+    .catch(() => {
+      // 超时不阻塞测试：session 可能已通过其他方式恢复
+    });
+
+  await page.goto(url);
+  await responsePromise;
   await page.waitForLoadState('networkidle');
-  // 等待任意需要认证的 API 请求返回 200（而非 401），表示 session 已恢复
-  await page.waitForResponse(
-    async (response) => {
-      const url = response.url();
-      // 只检查需要认证的 API 端点（排除 csrf-token 等公开端点）
-      if (!url.includes('/api/') || url.includes('/api/csrf-token') || url.includes('/api/health')) {
-        return false;
-      }
-      return response.status() === 200;
-    },
-    { timeout },
-  ).catch(() => {
-    // 超时不阻塞测试：session 可能已通过其他方式恢复
-  });
 }
+
 

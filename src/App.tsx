@@ -138,14 +138,18 @@ function App() {
 
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange((_event, session) => {
+    } = client.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUser(
           toUser(session.user),
           session.access_token,
           session.refresh_token,
         );
-      } else {
+      } else if (event === "SIGNED_OUT") {
+        // 仅在显式登出时清除 token。
+        // INITIAL_SESSION 事件在 getSession() 完成前可能触发，此时 session
+        // 为 null 但 token 可能仍有效（从 localStorage 恢复）。如果在此处
+        // 清除 token，会导致页面加载时短暂的 401 竞态条件。
         setUser(null, null, null);
       }
     });

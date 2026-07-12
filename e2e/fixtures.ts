@@ -1,5 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
-import { loginAsTestUser, waitForAuthReady } from "./utils/auth";
+import { loginAsTestUser } from "./utils/auth";
 
 /**
  * 测试图谱数据（由 testGraph fixture 通过 API 创建）。
@@ -29,14 +29,10 @@ export const test = base.extend<CustomFixtures>({
    *
    * 使用 UI 登录流程（与 utils/auth.loginAsTestUser 一致）以贴近真实用户场景。
    * 登录后等待网络空闲,确保后续断言稳定。
-   *
-   * 额外等待 auth session 恢复完成（通过 waitForAuthReady 轮询认证 API），
-   * 防止后续页面导航时 React 应用在 session 恢复前发出无 Authorization
-   * header 的 API 请求（401 竞态）。
    */
   authenticatedPage: async ({ page }, use) => {
     await loginAsTestUser(page);
-    await waitForAuthReady(page);
+    await page.waitForLoadState("networkidle");
     await use(page);
   },
 

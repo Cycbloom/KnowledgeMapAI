@@ -288,7 +288,8 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        // 允许通过 API_PORT 环境变量覆盖 API 服务器端口（Windows Hyper-V 可能保留 3001）。
+        target: `http://localhost:${process.env.API_PORT || '3001'}`,
         changeOrigin: true,
         ws: true,
         secure: false,

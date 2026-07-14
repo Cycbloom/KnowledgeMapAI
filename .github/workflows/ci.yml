@@ -301,6 +301,10 @@ jobs:
           DISABLE_RATE_LIMIT: 'true'
           TEST_USER_EMAIL: test@example.com
           TEST_USER_PASSWORD: test123456
+          # 可选：配置真实 AI key 以运行 @integration 标记的深度集成测试
+          # 未配置时，E2E 测试使用 Playwright route mock（e2e/helpers/aiMock.ts）
+          # ALIYUN_API_KEY: ${{ secrets.ALIYUN_API_KEY }}
+          # EMBEDDING_PROVIDER: aliyun
 
       - name: Upload Blob Report (Shard ${{ matrix.shardIndex }})
         if: always()

@@ -7,7 +7,8 @@ import { PluginStoreService } from './services/kernel/PluginStoreService';
 import type { Server } from 'http';
 import { setupRealtimeSTT } from './routes/ai/stt-realtime';
 
-const PORT = process.env.PORT || 3001;
+// API_PORT 优先于 PORT（不受 .env.development override:true 覆盖），用于 E2E 测试时绕过 Windows Hyper-V 端口保留。
+const PORT = process.env.API_PORT || process.env.PORT || 3001;
 
 interface HealthStatus {
   service: string;

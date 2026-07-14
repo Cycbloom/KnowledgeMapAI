@@ -392,8 +392,11 @@ export class NodesService {
       };
     }
 
-    const kpArray = existingNode.knowledge_points as KnowledgePointData[] | null;
-    const kp = kpArray?.[0];
+    const kpRaw = existingNode.knowledge_points as
+      | KnowledgePointData
+      | KnowledgePointData[]
+      | null;
+    const kp = Array.isArray(kpRaw) ? kpRaw[0] : kpRaw;
     const isBackboneNode =
       kp?.properties?.backboneModule &&
       Object.values(BackboneModule).includes(kp.properties.backboneModule as BackboneModule);

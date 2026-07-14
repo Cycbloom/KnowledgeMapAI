@@ -522,6 +522,67 @@ describe('app IPC handlers', () => {
 
 ---
 
+## 10. AI Mock 策略
+
+E2E 测试中依赖 AI 服务（概念提取、嵌入向量生成）的测试有三种 mock 策略，按场景选用：
+
+### 方案 1：Playwright route 拦截（推荐，E2E 默认）
+
+通过 `e2e/helpers/aiMock.ts` 的 `setupAIMocks(page)` 拦截 AI 相关后端 API，返回确定性 mock 响应。适用于验证前端交互流程，不依赖真实 AI key。
+
+```typescript
+import { setupAIMocks } from "./helpers/aiMock";
+
+test("应该支持确认添加概念", async ({ page, testGraph }) => {
+  await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+  // 注册 AI mock（拦截 /api/literature/extract 和 /api/literature/apply）
+  await setupAIMocks(page);
+  await extractPage.openPanel();
+  // ... 后续测试步骤
+});
+```
+
+- `mockLiteratureExtract(page)`：返回 6 个概念，覆盖全部 6 个 backbone module
+- `mockLiteratureApply(page)`：返回 `success: true`，`addedCount: 6`，`nodeMapping` 含 6 个条目
+- `setupAIMocks(page)`：同时注册上述两个拦截器
+
+### 方案 2：CI 配置真实 AI key（可选，深度集成）
+
+通过 GitHub Secrets 配置 `ALIYUN_API_KEY` 和 `EMBEDDING_PROVIDER`，运行 `@integration` 标记的测试。适用于验证真实 AI 集成，有成本和速率限制。
+
+在 `.github/workflows/ci.yml` 的 E2E 测试步骤添加：
+```yaml
+env:
+  ALIYUN_API_KEY: ${{ secrets.ALIYUN_API_KEY }}
+  EMBEDDING_PROVIDER: aliyun
+```
+
+未配置 AI key 时，`@integration` 标记的测试应通过 `test.skip` 跳过。
+
+### 方案 3：单元测试 mock provider（已有）
+
+通过 `tests/helpers/mockFactories.ts` 的 `createMockProvider` mock `AIProvider`。适用于 Vitest 单元/集成测试。
+
+```typescript
+import { createMockProvider } from "../tests/helpers/mockFactories";
+
+const mockProvider = createMockProvider();
+mockProvider.client.embeddings.create.mockResolvedValue({
+  data: [{ embedding: [0.1, 0.2, 0.3] }],
+});
+vi.mocked(factory.getAIProviderForTask).mockResolvedValue(mockProvider);
+```
+
+### 选型建议
+
+| 场景 | 推荐方案 |
+|------|---------|
+| E2E 测试前端交互流程 | 方案 1（Playwright route） |
+| E2E 测试真实 AI 集成（定期/手动） | 方案 2（CI AI key） |
+| 单元测试 AI 服务逻辑 | 方案 3（mock provider） |
+
+---
+
 ## 参考
 
 - 测试套件审计报告：`tests/AUDIT.md`

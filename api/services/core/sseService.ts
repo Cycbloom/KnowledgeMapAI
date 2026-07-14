@@ -3,7 +3,11 @@ import { logger } from '../../utils/logger';
 
 class SSEService {
   private clients: Map<string, Response[]> = new Map();
-  private maxConnectionsPerUser: number = 5;
+  // 允许通过环境变量配置单用户 SSE 最大连接数（E2E 并行测试需提高上限）。未设置时默认 5。
+  private maxConnectionsPerUser: number = Number.parseInt(
+    process.env.SSE_MAX_CONNECTIONS_PER_USER ?? '',
+    10,
+  ) || 5;
   private maxWriteFailures: number = 3;
   private writeFailures: Map<Response, number> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;

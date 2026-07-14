@@ -141,7 +141,9 @@ function App() {
         }
       } finally {
         // 无论 getSession 成功或失败，都解除渲染阻塞。
-        // onAuthStateChange 也会在 INITIAL_SESSION 事件时解除阻塞（双保险）。
+        // 这是解除 isRestoringSession 的唯一路径——onAuthStateChange 不再
+        // 负责解除阻塞，因为 INITIAL_SESSION 事件可能在 getSession() 完成
+        // 前触发，此时 session 可能为 null 或 token 已过期。
         setIsRestoringSession(false);
       }
     };
@@ -151,8 +153,11 @@ function App() {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((event, session) => {
-      // onAuthStateChange 触发时说明 Supabase 已初始化完成，解除阻塞。
-      setIsRestoringSession(false);
+      // 注意：此处不调用 setIsRestoringSession(false)。
+      // INITIAL_SESSION 事件在 getSession() 完成前触发，此时 session 可能为
+      // null 或 token 已过期，过早解除阻塞会导致子组件在 token 写入 Zustand
+      // 前发出 API 请求（401 竞态）。解除阻塞的唯一路径是 restoreSession()
+      // 的 finally 块。
       if (session?.user) {
         setUser(
           toUser(session.user),

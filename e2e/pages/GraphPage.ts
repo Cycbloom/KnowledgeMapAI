@@ -61,10 +61,10 @@ export class GraphPage {
   }
 
   async openFirstGraph() {
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("load");
     await expect(this.graphLink).toBeVisible({ timeout: 5000 });
     await this.graphLink.click();
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("load");
   }
 
   async selectNode(nodeTitle: string) {

@@ -1,5 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
-import { loginAsTestUser } from "./utils/auth";
+import { authedRequest, loginAsTestUser } from "./utils/auth";
 
 /**
  * 测试图谱数据（由 testGraph fixture 通过 API 创建）。
@@ -11,59 +11,124 @@ type TestGraph = {
 
 /**
  * 自定义 Fixtures 类型。
- *
- * - `authenticatedPage`:已登录测试用户的 Page（复用 utils/auth 的 UI 登录流程）。
- * - `testGraph`:通过 API 创建的测试图谱（App Action 模式,比 UI 创建更快）,
- *   测试结束自动永久删除。
- * - `cleanDb`:占位 fixture,预留给需要清理全局状态的测试。
  */
 type CustomFixtures = {
   authenticatedPage: Page;
   testGraph: TestGraph;
+  topicResearchGraph: TestGraph;
   cleanDb: void;
 };
+
+/**
+ * 专题研究图谱的骨干节点标准标题。
+ */
+const BACKBONE_NODE_TITLES = [
+  "研究背景",
+  "文献综述",
+  "研究方法",
+  "核心概念",
+  "应用领域",
+  "未来方向",
+];
+
+/**
+ * 通过 API 创建带骨干节点的专题研究图谱。
+ *
+ * 1. POST /api/graphs（template_type: "topic_research"）创建图谱 + 模块配置
+ * 2. POST /api/auto-graph/save-nodes 保存 root + 6 个 core 骨干节点
+ */
+async function createTopicResearchGraph(
+  page: Page,
+  title: string,
+): Promise<TestGraph> {
+  // 步骤 1: 创建图谱
+  const createRes = await authedRequest(page, "POST", "/api/graphs", {
+    title,
+    template_type: "topic_research",
+  });
+  expect(
+    createRes.ok,
+    `创建专题研究图谱失败: HTTP ${createRes.status}`,
+  ).toBe(true);
+  const graph = createRes.body as TestGraph;
+
+  // 步骤 2: 保存骨干节点（1 root + 6 core）
+  const rootId = crypto.randomUUID();
+  const nodes = [
+    { id: rootId, title, level: "root", content: `${title}的根节点` },
+    ...BACKBONE_NODE_TITLES.map((nodeTitle) => ({
+      title: nodeTitle,
+      level: "core" as const,
+      content: `${nodeTitle}的内容`,
+      parentId: rootId,
+    })),
+  ];
+
+  const saveRes = await authedRequest(
+    page,
+    "POST",
+    "/api/auto-graph/save-nodes",
+    { graph_id: graph.id, nodes },
+  );
+  expect(
+    saveRes.ok,
+    `保存骨干节点失败: HTTP ${saveRes.status}`,
+  ).toBe(true);
+
+  return graph;
+}
 
 export const test = base.extend<CustomFixtures>({
   /**
    * 已登录的 Page。
    *
-   * 使用 UI 登录流程（与 utils/auth.loginAsTestUser 一致）以贴近真实用户场景。
-   * 登录后等待网络空闲,确保后续断言稳定。
+   * 通过导航到 `/` 触发 App.tsx 开发模式自动认证，等待认证 API 请求返回 200。
    */
   authenticatedPage: async ({ page }, use) => {
     await loginAsTestUser(page);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     await use(page);
   },
 
   /**
-   * 通过 API 创建的测试图谱。
+   * 通过 API 创建的测试图谱（无模板）。
    *
    * App Action 模式:用 API 做准备（快），用 UI 做断言（真实）。
-   * 依赖 `authenticatedPage` 以复用登录后的 cookie（page.request 共享 page 的 cookie）。
+   * 依赖 `authenticatedPage` 以复用登录后的 token。
    *
    * 测试结束后永久删除图谱,避免污染测试库。
    */
   testGraph: async ({ authenticatedPage: page }, use) => {
     const title = `测试图谱_${Date.now()}`;
-    const response = await page.request.post("/api/graphs", {
-      data: { title },
+    const response = await authedRequest(page, "POST", "/api/graphs", {
+      title,
     });
     expect(
-      response.ok(),
-      `创建测试图谱失败: HTTP ${response.status()}`,
+      response.ok,
+      `创建测试图谱失败: HTTP ${response.status}`,
     ).toBe(true);
-    const graph = (await response.json()) as TestGraph;
+    const graph = response.body as TestGraph;
     await use(graph);
     // 清理:永久删除（DELETE /api/graphs/:id/permanent 直接物理删除）。
-    await page.request.delete(`/api/graphs/${graph.id}/permanent`);
+    await authedRequest(page, "DELETE", `/api/graphs/${graph.id}/permanent`);
+  },
+
+  /**
+   * 通过 API 创建的专题研究图谱（含骨干节点）。
+   *
+   * App Action 模式:用 API 创建图谱 + 骨干节点,跳过 UI 创建流程。
+   * 测试结束后永久删除图谱。
+   */
+  topicResearchGraph: async ({ authenticatedPage: page }, use) => {
+    const title = `专题研究测试_${Date.now()}`;
+    const graph = await createTopicResearchGraph(page, title);
+    await use(graph);
+    // 清理:永久删除图谱（关联的节点和模块通过 CASCADE 自动删除）。
+    await authedRequest(page, "DELETE", `/api/graphs/${graph.id}/permanent`);
   },
 
   /**
    * 占位 fixture:当前开发环境不自动清库。
-   *
-   * 需要清库的测试可显式依赖此 fixture,后续可在内部实现全局清理逻辑
-   * （例如调用 /api/data/reset 或批量删除测试用户数据）。
    */
   cleanDb: async ({}, use) => {
     await use(undefined);

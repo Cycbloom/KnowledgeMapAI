@@ -214,7 +214,7 @@ export class GraphService {
       domains?: Array<{ domain_id: string; is_primary?: boolean }>;
     },
   ) {
-    if (!options?.skipDuplicateCheck) {
+    if (!options?.skipDuplicateCheck && process.env.SKIP_DUPLICATE_TOPIC_CHECK !== 'true') {
       const duplicateCheck = await checkDuplicateGraphTopic(
         supabase,
         userId,
@@ -382,7 +382,7 @@ export class GraphService {
       learning_guide?: string;
     },
   ) {
-    if (updates.title) {
+    if (updates.title && process.env.SKIP_DUPLICATE_TOPIC_CHECK !== 'true') {
       const duplicateCheck = await checkDuplicateGraphTopic(
         supabase,
         userId,

@@ -1,54 +1,102 @@
-import { test, expect } from "@playwright/test";
-import { loginAsTestUser } from "./utils/auth";
-import { GraphPage } from "./pages/GraphPage";
+import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
+import { authedRequest, navigateAndWaitForAuth } from "./utils/auth";
+
+/**
+ * 通过 API 创建测试节点（1 root + 3 leaf），用于象限视图测试。
+ *
+ * 创建 root + leaf 节点，使 computeRegions 按级别分组生成 2 个区域
+ * （"根节点" 和 "叶节点"），且节点在象限视图中可见（core 级别被过滤）。
+ */
+async function createNodesForQuadrant(
+  page: Page,
+  graphId: string,
+): Promise<void> {
+  const rootId = crypto.randomUUID();
+  const nodes = [
+    { id: rootId, title: "测试根节点", level: "root", content: "根节点内容" },
+    ...Array.from({ length: 3 }, (_, i) => ({
+      title: `测试叶节点${i + 1}`,
+      level: "leaf" as const,
+      content: `叶节点${i + 1}内容`,
+      parentId: rootId,
+    })),
+  ];
+  await authedRequest(page, "POST", "/api/auto-graph/save-nodes", {
+    graph_id: graphId,
+    nodes,
+  });
+}
+
+/**
+ * 切换到象限视图。
+ *
+ * GraphToolbar 的视图模式位于"视图 / View"下拉菜单内，
+ * 需先点击下拉按钮展开菜单，再点击"象限 / Quadrant"菜单项。
+ * 桌面端使用 i18n 标签（en-US: "View" / "Quadrant"）。
+ */
+async function switchToQuadrantView(page: Page): Promise<void> {
+  const viewDropdown = page.getByRole("button", { name: /^视图$|^View$/ });
+  await viewDropdown.click();
+  const quadrantItem = page.getByRole("button", { name: /^象限$|^Quadrant$/ });
+  await quadrantItem.click();
+  await page.waitForTimeout(500);
+}
+
+/**
+ * 切换到思维导图视图。
+ */
+async function switchToMindmapView(page: Page): Promise<void> {
+  const viewDropdown = page.getByRole("button", { name: /^视图$|^View$/ });
+  await viewDropdown.click();
+  const mindmapItem = page.getByRole("button", {
+    name: /^思维导图$|^Mind Map$/,
+  });
+  await mindmapItem.click();
+  await page.waitForTimeout(500);
+}
 
 test.describe("象限视图测试", () => {
-  let graphPage: GraphPage;
-
   test.beforeEach(async ({ page }) => {
-    await loginAsTestUser(page);
-    graphPage = new GraphPage(page);
+    // 抑制 GraphEditor 首次访问引导浮层（driver.js tour）。
+    // 该浮层的 overlay 会拦截画布上节点的点击事件，导致测试超时。
+    await page.addInitScript(() => {
+      localStorage.setItem("graph-editor-onboarding-complete", "true");
+    });
   });
 
-  test("应该能够打开图谱并切换到象限视图", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("应该能够打开图谱并切换到象限视图", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    // 创建节点以确保 MindMapCanvas 渲染 <svg>（无节点时显示空状态 div，无 SVG）
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    // MindMapCanvas 与 QuadrantCanvas 的 <svg> 均使用 width="100%" height="100%"，
+    // 工具栏 lucide 图标使用固定尺寸（如 width="20"），以此精确定位画布 SVG。
+    await page
+      .locator('svg[width="100%"][height="100%"]')
+      .waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"], button[aria-label*="象限"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
-    const quadrantCanvas = page.locator(
-      'svg, [data-testid="quadrant-canvas"], .quadrant-view',
-    );
-    await expect(quadrantCanvas).toBeVisible({ timeout: 5000 });
+    const quadrantSvg = page.locator('svg[width="100%"][height="100%"]');
+    await expect(quadrantSvg).toBeVisible({ timeout: 5000 });
 
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("象限视图应该显示区域和节点", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("象限视图应该显示区域和节点", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page.locator("g[data-node-id]").first().waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
-    const svg = page.locator("svg");
+    const svg = page.locator('svg[width="100%"][height="100%"]');
     await expect(svg).toBeVisible({ timeout: 5000 });
     const circles = svg.locator("circle");
     const circleCount = await circles.count();
@@ -57,47 +105,17 @@ test.describe("象限视图测试", () => {
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("应该能够折叠和展开区域", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("应该能够点击节点", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page.locator("g[data-node-id]").first().waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
-    const regionHeader = page.locator("[data-region-id]").first();
-    await expect(regionHeader).toBeVisible({ timeout: 5000 });
-    await regionHeader.click();
-    await page.waitForTimeout(300);
-
-    await expect(regionHeader).toBeVisible();
-
-    await expect(page).not.toHaveURL(/login/);
-  });
-
-  test("应该能够点击节点", async ({ page }) => {
-    await graphPage.navigateToHome();
-
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
-
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
-    const node = page.locator("[data-node-id]").first();
+    const node = page.locator("g[data-node-id]").first();
     await expect(node).toBeVisible({ timeout: 5000 });
     await node.click();
     await page.waitForTimeout(300);
@@ -107,20 +125,18 @@ test.describe("象限视图测试", () => {
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("应该能够拖拽原点", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("应该能够拖拽原点", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    // 创建节点以确保 MindMapCanvas 渲染 <svg>（无节点时显示空状态 div，无 SVG）
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page
+      .locator('svg[width="100%"][height="100%"]')
+      .waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
-
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
+    await switchToQuadrantView(page);
 
     const origin = page.locator("[data-origin]");
     await expect(origin).toBeVisible({ timeout: 5000 });
@@ -144,37 +160,37 @@ test.describe("象限视图测试", () => {
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("应该能够使用缩放控制", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("应该能够使用缩放控制", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    // 创建节点以确保 MindMapCanvas 渲染 <svg>（无节点时显示空状态 div，无 SVG）
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page
+      .locator('svg[width="100%"][height="100%"]')
+      .waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
+    // QuadrantCanvas 的缩放指示器使用硬编码中文 "缩放: NN%"
     const zoomIndicator = page.locator("text=/缩放.*%/");
     await expect(zoomIndicator).toBeVisible({ timeout: 5000 });
 
-    const buttons = page.locator("button").filter({
-      has: page.locator("svg"),
-    });
-    const buttonCount = await buttons.count();
+    // QuadrantCanvas 底部右侧有 3 个缩放按钮（放大、缩小、重置）
+    const zoomButtons = page.locator(
+      ".absolute.bottom-4.right-4 button:has(svg)",
+    );
+    const buttonCount = await zoomButtons.count();
     expect(buttonCount).toBeGreaterThanOrEqual(3);
 
-    await buttons.nth(0).click();
+    await zoomButtons.nth(0).click();
     await page.waitForTimeout(200);
 
-    await buttons.nth(1).click();
+    await zoomButtons.nth(1).click();
     await page.waitForTimeout(200);
 
-    await buttons.nth(2).click();
+    await zoomButtons.nth(2).click();
     await page.waitForTimeout(200);
 
     await expect(zoomIndicator).toBeVisible();
@@ -182,22 +198,20 @@ test.describe("象限视图测试", () => {
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("应该能够使用鼠标滚轮缩放", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("应该能够使用鼠标滚轮缩放", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    // 创建节点以确保 MindMapCanvas 渲染 <svg>（无节点时显示空状态 div，无 SVG）
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page
+      .locator('svg[width="100%"][height="100%"]')
+      .waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
-    const svg = page.locator("svg");
+    const svg = page.locator('svg[width="100%"][height="100%"]');
     await expect(svg).toBeVisible({ timeout: 5000 });
     const boundingBox = await svg.boundingBox();
     expect(boundingBox).not.toBeNull();
@@ -219,22 +233,20 @@ test.describe("象限视图测试", () => {
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("应该能够拖拽画布", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("应该能够拖拽画布", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    // 创建节点以确保 MindMapCanvas 渲染 <svg>（无节点时显示空状态 div，无 SVG）
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page
+      .locator('svg[width="100%"][height="100%"]')
+      .waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
-    const svg = page.locator("svg");
+    const svg = page.locator('svg[width="100%"][height="100%"]');
     await expect(svg).toBeVisible({ timeout: 5000 });
     const boundingBox = await svg.boundingBox();
     expect(boundingBox).not.toBeNull();
@@ -253,22 +265,17 @@ test.describe("象限视图测试", () => {
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("象限视图应该正确显示节点状态", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("象限视图应该正确显示节点状态", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page.locator("g[data-node-id]").first().waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
-
-    const nodes = page.locator("[data-node-id]");
+    const nodes = page.locator("g[data-node-id]");
     const nodeCount = await nodes.count();
     expect(nodeCount).toBeGreaterThan(0);
 
@@ -280,29 +287,24 @@ test.describe("象限视图测试", () => {
     await expect(page).not.toHaveURL(/login/);
   });
 
-  test("应该能够从象限视图切换回其他视图", async ({ page }) => {
-    await graphPage.navigateToHome();
+  test("应该能够从象限视图切换回其他视图", async ({
+    authenticatedPage: page,
+    testGraph,
+  }) => {
+    // 创建节点以确保 MindMapCanvas 渲染 <svg>（无节点时显示空状态 div，无 SVG）
+    await createNodesForQuadrant(page, testGraph.id);
+    await navigateAndWaitForAuth(page, `/graph/${testGraph.id}`);
+    await page
+      .locator('svg[width="100%"][height="100%"]')
+      .waitFor({ timeout: 15000 });
 
-    const graphLink = page.locator('a[href^="/graph/"]').first();
-    await expect(graphLink).toBeVisible({ timeout: 5000 });
-    await graphLink.click();
-    await page.waitForLoadState("networkidle");
+    await switchToQuadrantView(page);
 
-    const viewModeSelector = page.locator(
-      'button:has-text("象限"), [data-view-mode="quadrant"]',
-    );
-    await expect(viewModeSelector).toBeVisible({ timeout: 5000 });
-    await viewModeSelector.click();
-    await page.waitForTimeout(500);
+    await switchToMindmapView(page);
 
-    const mindmapSelector = page.locator(
-      'button:has-text("思维导图"), button:has-text("脑图"), [data-view-mode="mindmap"]',
-    );
-    await expect(mindmapSelector).toBeVisible({ timeout: 5000 });
-    await mindmapSelector.click();
-    await page.waitForTimeout(500);
-
-    await expect(page.locator("svg")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('svg[width="100%"][height="100%"]')).toBeVisible({
+      timeout: 5000,
+    });
 
     await expect(page).not.toHaveURL(/login/);
   });

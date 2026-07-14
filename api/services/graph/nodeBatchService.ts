@@ -218,8 +218,11 @@ export class NodeBatchService {
         };
       }
 
-      const kpArray = graphNode.knowledge_points as KnowledgePointWithProperties[] | null;
-      const kp = kpArray?.[0];
+      const kpRaw = graphNode.knowledge_points as
+        | KnowledgePointWithProperties
+        | KnowledgePointWithProperties[]
+        | null;
+      const kp = Array.isArray(kpRaw) ? kpRaw[0] : kpRaw;
       const isBackboneNode =
         kp?.properties?.backboneModule &&
         Object.values(BackboneModule).includes(kp.properties.backboneModule as BackboneModule);

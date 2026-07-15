@@ -30,7 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { useStore } from "../../store/useStore";
-import { useTheme } from "../../hooks";
+import { useTheme, useIsMobile } from "../../hooks";
 import { useNotesList, type NoteView } from "../../hooks/queries";
 import {
   useCreateNoteMutation,
@@ -217,6 +217,7 @@ const NoteCard = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile(768);
   const isBusy = pendingAction === note.id;
 
   const handleClick = () => {
@@ -247,7 +248,7 @@ const NoteCard = ({
           handleClick();
         }
       }}
-      className={`p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${
+      className={`group p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${
         isSelectMode && isSelected
           ? "bg-primary-50/40 dark:bg-primary-900/10"
           : ""
@@ -314,57 +315,63 @@ const NoteCard = ({
           <TagChips tags={note.tags} onTagClick={onTagClick} />
         </div>
 
-        <div
-          className="flex items-center gap-1 flex-shrink-0"
-          onClick={stop}
-        >
-          <button
-            type="button"
-            onClick={() => onPin(note)}
-            disabled={isBusy}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-md transition-colors disabled:opacity-50"
-            title={note.isPinned ? t("notes.actions.unpin") : t("notes.actions.pin")}
-            aria-label={note.isPinned ? t("notes.actions.unpin") : t("notes.actions.pin")}
+        {!isSelectMode && (
+          <div
+            className={`flex items-center gap-1 flex-shrink-0 transition-opacity ${
+              !isMobile
+                ? "opacity-0 group-hover:opacity-100"
+                : "opacity-100"
+            }`}
+            onClick={stop}
           >
-            {note.isPinned ? <PinOff size={16} /> : <Pin size={16} />}
-          </button>
-          <button
-            type="button"
-            onClick={() => onArchive(note)}
-            disabled={isBusy}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors disabled:opacity-50"
-            title={
-              note.isArchived
-                ? t("notes.actions.unarchive")
-                : t("notes.actions.archive")
-            }
-            aria-label={
-              note.isArchived
-                ? t("notes.actions.unarchive")
-                : t("notes.actions.archive")
-            }
-          >
-            {note.isArchived ? (
-              <ArchiveRestore size={16} />
-            ) : (
-              <Archive size={16} />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(note)}
-            disabled={isBusy}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-50"
-            title={t("notes.actions.delete")}
-            aria-label={t("notes.actions.delete")}
-          >
-            {isBusy ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Trash2 size={16} />
-            )}
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => onPin(note)}
+              disabled={isBusy}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-md transition-colors disabled:opacity-50"
+              title={note.isPinned ? t("notes.actions.unpin") : t("notes.actions.pin")}
+              aria-label={note.isPinned ? t("notes.actions.unpin") : t("notes.actions.pin")}
+            >
+              {note.isPinned ? <PinOff size={16} /> : <Pin size={16} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onArchive(note)}
+              disabled={isBusy}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md transition-colors disabled:opacity-50"
+              title={
+                note.isArchived
+                  ? t("notes.actions.unarchive")
+                  : t("notes.actions.archive")
+              }
+              aria-label={
+                note.isArchived
+                  ? t("notes.actions.unarchive")
+                  : t("notes.actions.archive")
+              }
+            >
+              {note.isArchived ? (
+                <ArchiveRestore size={16} />
+              ) : (
+                <Archive size={16} />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(note)}
+              disabled={isBusy}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-50"
+              title={t("notes.actions.delete")}
+              aria-label={t("notes.actions.delete")}
+            >
+              {isBusy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Trash2 size={16} />
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

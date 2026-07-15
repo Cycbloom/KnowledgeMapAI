@@ -31,7 +31,21 @@
     "restoreFailed": "恢复笔记失败",
     "hardDeleteNotAvailable": "暂不支持笔记彻底删除，将在后续迭代支持",
     "hardDeleteHint": "笔记彻底删除暂未支持；可先恢复后再次删除管理",
-    "updatedAt": "更新时间"
+    "updatedAt": "更新时间",
+    "batch": {
+      "toolbar": "批量管理",
+      "selectAll": "全选",
+      "deselectAll": "取消全选",
+      "selected": "已选 {{count}} 条",
+      "batchRestore": "批量恢复",
+      "restoring": "恢复中...",
+      "clearSelection": "取消选择",
+      "exit": "退出选择模式",
+      "enterSelectMode": "批量管理",
+      "restored": "已恢复 {{count}} 条笔记",
+      "partialFailed": "部分恢复失败，请重试",
+      "hardDeleteTooltip": "永久删除暂未上线"
+    }
   },
   "confirmDelete": {
     "title": "永久删除图谱",

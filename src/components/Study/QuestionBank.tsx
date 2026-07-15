@@ -2,13 +2,14 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/mutations';
-import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
 import { StudyCardPreview } from './StudyCardPreview';
 import { StudyCardDetailModal } from './StudyCardDetailModal';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
+import { EmptyState } from '@/components/common/EmptyState';
 
 interface QuestionBankProps {
   cards: StudyCard[];
@@ -175,15 +176,26 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
+            <input
               type="text"
               placeholder={t('study.questionBank.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+              className={`w-full pl-10 pr-10 py-2 rounded-lg border ${
                 isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-gray-50 border-gray-200'
               }`}
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                aria-label="清除"
+                title="清除"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <select 
             value={selectedType}
@@ -339,12 +351,14 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
       {/* Card Grid */}
       <div className="p-4">
         {filteredCards.length === 0 ? (
-          <div className="p-16 text-center flex flex-col items-center justify-center gap-4 text-gray-500">
-             <div className={`p-4 rounded-full ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                <Search size={32} className="opacity-50" />
-             </div>
-             <p>{t('study.questionBank.noQuestionsFound')}</p>
-          </div>
+          <EmptyState
+            icon={<Search size={32} className="opacity-50" />}
+            title={t('study.questionBank.noQuestionsFound')}
+            action={{
+              label: t('study.questionBank.newQuestion'),
+              onClick: startCreating,
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {paginatedCards.map(card => (

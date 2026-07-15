@@ -188,8 +188,9 @@ export function formatDate(dateStr: DateInput, format: DateFormat = 'full'): str
     if (minutes < 1) return i18next.t('common.date.justNow');
     if (minutes < 60) return i18next.t('common.date.minutesAgo', { count: minutes });
     if (hours < 24) return i18next.t('common.date.hoursAgo', { count: hours });
-    if (days < 7) return i18next.t('common.date.daysAgo', { count: days });
-    // 超过7天，回退到完整日期
+    if (days < 30) return i18next.t('common.date.daysAgo', { count: days });
+    if (days < 365) return i18next.t('common.date.monthsAgo', { count: Math.floor(days / 30) });
+    // 超过365天，回退到完整日期
     return i18next.t('common.date.fullDate', {
       year: date.getFullYear(),
       month: date.getMonth() + 1,

@@ -53,6 +53,7 @@ export const RecycleBin = () => {
 
   const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearchQuery } = useDebouncedSearch();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
 
   // 资源分类：默认展示图谱回收站
   const [category, setCategory] = useState<RecycleBinCategory>("graphs");
@@ -112,6 +113,12 @@ export const RecycleBin = () => {
     filteredGraphs.some((g) => selectedIds.has(g.id)) && !isAllSelected;
   const selectedCount = selectedIds.size;
 
+  // 笔记批量选择状态
+  const isAllNotesSelected =
+    filteredNotes.length > 0 && selectedNoteIds.size === filteredNotes.length;
+  const isPartialNotesSelected =
+    selectedNoteIds.size > 0 && selectedNoteIds.size < filteredNotes.length;
+
   const toggleSelect = (id: string) => {
     const newSet = new Set(selectedIds);
     if (newSet.has(id)) {
@@ -134,11 +141,37 @@ export const RecycleBin = () => {
     setSelectedIds(new Set());
   };
 
-  // 切换分类时清空图谱的选择状态，避免跨分类残留
+  // 笔记批量选择操作
+  const toggleNoteSelect = (id: string) => {
+    setSelectedNoteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllNotes = () => {
+    if (isAllNotesSelected) {
+      setSelectedNoteIds(new Set());
+    } else {
+      setSelectedNoteIds(new Set(filteredNotes.map((n) => n.id)));
+    }
+  };
+
+  const clearNoteSelection = () => {
+    setSelectedNoteIds(new Set());
+  };
+
+  // 切换分类时清空图谱与笔记的选择状态，避免跨分类残留
   const handleCategoryChange = (next: RecycleBinCategory) => {
     if (next === category) return;
     setCategory(next);
     setSelectedIds(new Set());
+    setSelectedNoteIds(new Set());
   };
 
   // 笔记恢复：调用 restore 后提示"挂载关系不自动恢复，需重新编辑笔记保存以重建"
@@ -156,16 +189,6 @@ export const RecycleBin = () => {
       const message = err instanceof Error ? err.message : t("recycleBin.notes.restoreFailed");
       frontendEventBus.publish("message_show", { type: "error", content: message });
     }
-  };
-
-  // 笔记彻底删除：后端 notesService.delete 仅支持软删除，无永久删除端点。
-  // 本任务约束"不修改后端"，故降级为提示"暂不支持彻底删除，将在后续迭代支持"。
-  const handleHardDeleteNote = () => {
-    frontendEventBus.publish("message_show", {
-      type: "info",
-      content: t("recycleBin.notes.hardDeleteNotAvailable"),
-      duration: 5000,
-    });
   };
 
   const handleRestore = async (id: string) => {
@@ -200,6 +223,29 @@ export const RecycleBin = () => {
       const message = err instanceof Error ? err.message : t("recycleBin.messages.batchRestoreFailed");
       frontendEventBus.publish("message_show", { type: "error", content: message });
     }
+  };
+
+  // 笔记批量恢复：useRestoreNoteMutation 已失效 ["notes"] 前缀，
+  // 每次 restore 成功后会自动刷新回收站笔记列表，无需手动 invalidate。
+  const handleBatchRestoreNotes = async () => {
+    if (selectedNoteIds.size === 0) return;
+    const ids = Array.from(selectedNoteIds);
+    const results = await Promise.allSettled(
+      ids.map((id) => restoreNoteMutation.mutateAsync(id)),
+    );
+    const failed = results.filter((r) => r.status === "rejected");
+    if (failed.length === 0) {
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: t("recycleBin.notes.batch.restored", { count: ids.length }),
+      });
+    } else {
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("recycleBin.notes.batch.partialFailed"),
+      });
+    }
+    setSelectedNoteIds(new Set());
   };
 
   const handleDelete = (id: string, title: string) => {
@@ -552,7 +598,7 @@ export const RecycleBin = () => {
                 <div
                   className={`pt-4 border-t text-xs ${isDark ? "border-slate-700 text-slate-500" : "border-gray-50 text-gray-400"}`}
                 >
-                  {t("recycleBin.deletedAt")}: {new Date(((graph as unknown) as { deleted_at?: string }).deleted_at ?? new Date().toISOString()).toLocaleString()}
+                  {t("recycleBin.deletedAt")}: {formatDate((graph as { deleted_at?: string }).deleted_at, "full-datetime")}
                 </div>
               </div>
             ))
@@ -563,6 +609,69 @@ export const RecycleBin = () => {
 
         {category === "notes" && (
           <>
+            {filteredNotes.length > 0 && (
+              <div
+                className={`flex items-center gap-4 p-3 rounded-xl ${isDark ? "bg-slate-800" : "bg-white border border-gray-200"}`}
+              >
+                <button
+                  type="button"
+                  onClick={toggleSelectAllNotes}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+                    isDark
+                      ? "hover:bg-slate-700 text-slate-300"
+                      : "hover:bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {isAllNotesSelected ? (
+                    <CheckSquare className="w-5 h-5 text-primary-500" />
+                  ) : isPartialNotesSelected ? (
+                    <div className="w-5 h-5 rounded border-2 border-primary-500 bg-primary-500/30 flex items-center justify-center">
+                      <div className="w-2.5 h-0.5 bg-primary-500 rounded" />
+                    </div>
+                  ) : (
+                    <Square className="w-5 h-5" />
+                  )}
+                  <span className="text-sm">
+                    {isAllNotesSelected ? t("recycleBin.notes.batch.deselectAll") : t("recycleBin.notes.batch.selectAll")}
+                  </span>
+                </button>
+
+                {selectedNoteIds.size > 0 && (
+                  <>
+                    <span
+                      className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                    >
+                      {t("recycleBin.notes.batch.selected", { count: selectedNoteIds.size })}
+                    </span>
+                    <div className="flex-1" />
+                    <button
+                      type="button"
+                      onClick={handleBatchRestoreNotes}
+                      disabled={restoreNoteMutation.isPending}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        isDark
+                          ? "bg-green-900/30 text-green-400 hover:bg-green-900/50"
+                          : "bg-green-50 text-green-600 hover:bg-green-100"
+                      } disabled:opacity-50`}
+                    >
+                      <RefreshCw size={16} />
+                      {t("recycleBin.notes.batch.batchRestore")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearNoteSelection}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isDark
+                          ? "hover:bg-slate-700 text-slate-400"
+                          : "hover:bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      <X size={16} />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             {filteredNotes.length === 0 ? (
               <div
                 className={`col-span-full flex flex-col items-center justify-center py-20 rounded-3xl border-2 border-dashed ${
@@ -595,21 +704,35 @@ export const RecycleBin = () => {
                   <div
                     key={note.id}
                     className={`group relative rounded-2xl p-6 border transition-all duration-300 ${
-                      isDark
-                        ? "bg-slate-800 border-slate-700 hover:border-purple-900/50"
-                        : "bg-white border-gray-100 hover:border-purple-100 shadow-sm"
+                      selectedNoteIds.has(note.id)
+                        ? isDark
+                          ? "bg-primary-900/20 border-primary-700"
+                          : "bg-primary-50 border-primary-300"
+                        : isDark
+                          ? "bg-slate-800 border-slate-700 hover:border-purple-900/50"
+                          : "bg-white border-gray-100 hover:border-purple-100 shadow-sm"
                     }`}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div
-                        className={`p-3.5 rounded-xl ${
-                          isDark
-                            ? "bg-purple-900/20 text-purple-400"
-                            : "bg-purple-50 text-purple-500"
+                      <button
+                        type="button"
+                        onClick={() => toggleNoteSelect(note.id)}
+                        className={`p-3.5 rounded-xl transition-colors ${
+                          selectedNoteIds.has(note.id)
+                            ? isDark
+                              ? "bg-primary-900/40 text-primary-400"
+                              : "bg-primary-100 text-primary-600"
+                            : isDark
+                              ? "bg-purple-900/20 text-purple-400 hover:bg-primary-900/20 hover:text-primary-400"
+                              : "bg-purple-50 text-purple-500 hover:bg-primary-50 hover:text-primary-600"
                         }`}
                       >
-                        <NotebookPen size={24} />
-                      </div>
+                        {selectedNoteIds.has(note.id) ? (
+                          <CheckSquare size={24} />
+                        ) : (
+                          <NotebookPen size={24} />
+                        )}
+                      </button>
 
                       <div className="flex gap-2">
                         <button
@@ -629,13 +752,14 @@ export const RecycleBin = () => {
                           )}
                         </button>
                         <button
-                          onClick={handleHardDeleteNote}
-                          className={`p-2 rounded-lg transition-colors ${
+                          type="button"
+                          disabled
+                          className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                             isDark
-                              ? "text-red-400 hover:bg-red-900/30"
-                              : "text-red-500 hover:bg-red-50"
+                              ? "text-red-400"
+                              : "text-red-500"
                           }`}
-                          title={t("recycleBin.notes.hardDeleteNotAvailable")}
+                          title={t("recycleBin.notes.batch.hardDeleteTooltip")}
                         >
                           <AlertTriangle size={18} />
                         </button>

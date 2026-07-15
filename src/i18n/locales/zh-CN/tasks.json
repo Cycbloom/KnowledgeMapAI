@@ -72,5 +72,8 @@
   "batchDeletePartial": "删除完成：成功 {{success}} 个，失败 {{fail}} 个",
   "cancelSelection": "取消选择",
   "emptyDesc": "任务创建后将显示在这里",
-  "taskIdNotExist": "任务ID不存在"
+  "taskIdNotExist": "任务ID不存在",
+  "copy": {
+    "idCopied": "已复制任务 ID"
+  }
 }

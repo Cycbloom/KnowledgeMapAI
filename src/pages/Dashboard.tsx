@@ -17,6 +17,7 @@ import { Network, Star, Clock } from "lucide-react";
 import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
+import { formatDate } from "@/utils/formatters";
 import { ConfirmationModal, SkeletonCard } from "../components/common";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
@@ -33,29 +34,6 @@ import {
   DashboardCardContextMenu,
 } from "../components/Dashboard";
 import type { Graph } from "@shared/types";
-
-function formatRelativeTime(dateStr: string, t: (key: string, options?: Record<string, unknown>) => string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-
-  if (diffMs < 0) return t("dashboard.recent.justNow");
-
-  const seconds = Math.floor(diffMs / 1000);
-  if (seconds < 60) return t("dashboard.recent.justNow");
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return t("dashboard.recent.minutesAgo", { count: minutes });
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return t("dashboard.recent.hoursAgo", { count: hours });
-
-  const days = Math.floor(hours / 24);
-  if (days < 30) return t("dashboard.recent.daysAgo", { count: days });
-
-  const months = Math.floor(days / 30);
-  return t("dashboard.recent.monthsAgo", { count: months });
-}
 
 export const Dashboard = () => {
   const { t } = useTranslation();
@@ -417,7 +395,7 @@ export const Dashboard = () => {
                     </span>
                   </div>
                   <span className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>
-                    {formatRelativeTime(graph.updated_at, t)}
+                    {formatDate(graph.updated_at, "relative")}
                   </span>
                 </button>
               ))}

@@ -12,6 +12,8 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal, Skeleton } from "../components/common";
 import { EmptyState } from "@/components/common/EmptyState";
 import { asyncConfirm } from "../utils/asyncConfirm";
+import { formatDate } from "@/utils/formatters";
+import { copyToClipboard } from "@/utils/clipboard";
 import {
   CheckCircle2,
   XCircle,
@@ -30,13 +32,6 @@ import {
   Square,
   X,
 } from "lucide-react";
-
-const formatTime = (iso?: string) => {
-  if (!iso) return "-";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleString();
-};
 
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
@@ -140,6 +135,28 @@ export const Tasks = () => {
     limit,
     (page - 1) * limit,
   );
+
+  const { data: allData } = useTasks(!!token, "all", 1, 0);
+  const { data: pendingData } = useTasks(!!token, "pending", 1, 0);
+  const { data: inProgressData } = useTasks(!!token, "in_progress", 1, 0);
+  const { data: completedData } = useTasks(!!token, "completed", 1, 0);
+  const { data: cancelledData } = useTasks(!!token, "cancelled", 1, 0);
+
+  const statusCounts = useMemo(() => {
+    const getCount = (d: typeof allData): number | undefined => {
+      if (d && typeof d === "object" && "total" in d) {
+        return typeof d.total === "number" ? d.total : 0;
+      }
+      return undefined;
+    };
+    return {
+      all: getCount(allData),
+      pending: getCount(pendingData),
+      in_progress: getCount(inProgressData),
+      completed: getCount(completedData),
+      cancelled: getCount(cancelledData),
+    } as Record<string, number | undefined>;
+  }, [allData, pendingData, inProgressData, completedData, cancelledData]);
 
   useEffect(() => {
     if (error) {
@@ -390,30 +407,35 @@ export const Tasks = () => {
           value="all"
           current={filter}
           onClick={handleFilterChange}
+          count={statusCounts.all}
         />
         <FilterTab
           label={t("tasks.inProgress")}
           value="in_progress"
           current={filter}
           onClick={handleFilterChange}
+          count={statusCounts.in_progress}
         />
         <FilterTab
           label={t("tasks.completed")}
           value="completed"
           current={filter}
           onClick={handleFilterChange}
+          count={statusCounts.completed}
         />
         <FilterTab
           label={t("tasks.failed")}
           value="cancelled"
           current={filter}
           onClick={handleFilterChange}
+          count={statusCounts.cancelled}
         />
         <FilterTab
           label={t("tasks.pending")}
           value="pending"
           current={filter}
           onClick={handleFilterChange}
+          count={statusCounts.pending}
         />
         <div className="relative ml-auto flex-shrink-0">
           <Search
@@ -425,8 +447,19 @@ export const Tasks = () => {
             placeholder={t("tasks.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all w-48 bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
+            className="pl-9 pr-10 py-2 rounded-lg text-sm border focus:ring-2 focus:ring-primary-500 outline-none transition-all w-48 bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              aria-label="清除"
+              title="清除"
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -530,21 +563,27 @@ export const Tasks = () => {
                             <span className="font-semibold text-gray-900 dark:text-gray-100">
                               {task.title || getTypeLabel(task.task_type, t)}
                             </span>
-                            <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(task.id, t("tasks.copy.idCopied"))}
+                              className="text-xs text-gray-400 dark:text-gray-500 font-mono hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer transition-colors"
+                              title={t("common.copy.idTooltip")}
+                              aria-label={t("common.copy.idTooltip")}
+                            >
                               #{task.id.slice(0, 8)}
-                            </span>
+                            </button>
                           </div>
 
                           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 pl-1">
                             <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Clock size={12} /> {t("tasks.created")}{" "}
-                                {formatTime(task.created_at)}
+                                {formatDate(task.created_at, "short-datetime")}
                               </span>
                               {task.updated_at !== task.created_at && (
                                 <span>
                                   {t("tasks.updated")}{" "}
-                                  {formatTime(task.updated_at)}
+                                  {formatDate(task.updated_at, "relative")}
                                 </span>
                               )}
                             </div>

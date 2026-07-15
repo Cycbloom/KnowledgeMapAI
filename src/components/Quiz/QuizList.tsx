@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Layers,
   FileQuestion,
+  XCircle,
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { SkeletonCard } from "../../components/common";
@@ -156,12 +157,23 @@ export const QuizList: React.FC<QuizListProps> = ({
               placeholder={t('study.quizList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+              className={`w-full pl-10 pr-10 py-2 rounded-lg border ${
                 isDark
                   ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
                   : 'bg-gray-50 border-gray-200 text-gray-900'
               }`}
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                aria-label="清除"
+                title="清除"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <button

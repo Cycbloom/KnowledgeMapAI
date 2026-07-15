@@ -13,6 +13,7 @@ import {
   Trash2,
   Search,
   X,
+  XCircle,
   Route,
   Clock,
   Target,
@@ -231,12 +232,23 @@ export const LearningPaths = () => {
               placeholder={t("learningPaths.search.placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
+              className={`w-full pl-10 pr-10 py-2.5 rounded-xl border outline-none transition-all ${
                 isDark
                   ? "bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                   : "bg-white border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
               }`}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                aria-label="清除"
+                title="清除"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -371,7 +383,7 @@ export const LearningPaths = () => {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <TrendingUp size={14} />
-                    <span>{t("learningPaths.card.dailyMinutes", { count: path.daily_minutes_target })}</span>
+                    <span>{formatDurationMinutes(path.daily_minutes_target, { emptyText: '0分钟' })}</span>
                   </div>
                   {path.target_date && (
                     <div className="flex items-center gap-2 text-xs text-gray-500">

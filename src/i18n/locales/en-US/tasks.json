@@ -72,5 +72,8 @@
   "batchDeletePartial": "Deletion complete: {{success}} succeeded, {{fail}} failed",
   "cancelSelection": "Cancel Selection",
   "emptyDesc": "Tasks will appear here once created",
-  "taskIdNotExist": "Task ID does not exist"
+  "taskIdNotExist": "Task ID does not exist",
+  "copy": {
+    "idCopied": "Task ID copied"
+  }
 }

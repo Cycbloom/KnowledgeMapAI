@@ -31,7 +31,21 @@
     "restoreFailed": "Failed to restore note",
     "hardDeleteNotAvailable": "Permanent deletion of notes is not supported yet; it will arrive in a future iteration",
     "hardDeleteHint": "Permanent deletion of notes is not yet supported; restore and delete again to manage",
-    "updatedAt": "Updated At"
+    "updatedAt": "Updated At",
+    "batch": {
+      "toolbar": "Batch Manage",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "selected": "{{count}} selected",
+      "batchRestore": "Batch Restore",
+      "restoring": "Restoring...",
+      "clearSelection": "Clear Selection",
+      "exit": "Exit Select Mode",
+      "enterSelectMode": "Batch Manage",
+      "restored": "Restored {{count}} notes",
+      "partialFailed": "Some restores failed, please retry",
+      "hardDeleteTooltip": "Permanent delete not yet available"
+    }
   },
   "confirmDelete": {
     "title": "Permanently Delete Graph",

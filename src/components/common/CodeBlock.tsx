@@ -75,7 +75,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           ) : (
             <>
               <Copy size={14} />
-              <span>{t('common.copy')}</span>
+              <span>{t('common.copy.label')}</span>
             </>
           )}
         </button>

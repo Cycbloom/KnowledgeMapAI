@@ -1,6 +1,4 @@
 export { studyService } from "./studyService";
-export { studyProgressService } from "./studyProgressService";
-export { reviewService } from "./reviewService";
 export { learningPathService } from "./learningPathService";
 export type { LearningPath, LearningPathResult } from "./learningPathService";
 export { LearningPathNodeService } from "./learningPathNodeService";

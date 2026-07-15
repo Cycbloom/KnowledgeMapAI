@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS user_tasks (
   deadline TIMESTAMPTZ,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'paused', 'completed', 'cancelled', 'failed')),
   tags TEXT[] DEFAULT '{}',
-  knowledge_point_id UUID,
+  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
   priority INTEGER DEFAULT 0,
   task_type TEXT DEFAULT 'one_time',
   total_duration INTEGER,
@@ -296,30 +296,6 @@ CREATE TABLE IF NOT EXISTS task_reviews (
 COMMENT ON TABLE task_reviews IS 'Task review records for reflection and improvement';
 COMMENT ON COLUMN task_reviews.review_type IS 'Review type: daily, task, weekly';
 COMMENT ON COLUMN task_reviews.mood IS 'Mood during review: great, good, neutral, tired, stressed';
-
--- Knowledge review tasks table (SM-2 spaced repetition)
-CREATE TABLE IF NOT EXISTS knowledge_review_tasks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
-  task_id UUID NOT NULL REFERENCES user_tasks(id) ON DELETE CASCADE,
-  interval_days INTEGER NOT NULL DEFAULT 1,
-  ease_factor DECIMAL(3,2) NOT NULL DEFAULT 2.5,
-  repetitions INTEGER NOT NULL DEFAULT 0,
-  next_review_date TIMESTAMPTZ NOT NULL,
-  last_review_date TIMESTAMPTZ,
-  last_quality_score INTEGER CHECK (last_quality_score BETWEEN 0 AND 5),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(knowledge_point_id, user_id)
-);
-
-COMMENT ON TABLE knowledge_review_tasks IS 'SM-2 间隔重复算法的复习任务记录 [DEPRECATED: 推荐使用 study_cards (FSRS) 替代]';
-COMMENT ON COLUMN knowledge_review_tasks.interval_days IS '[DEPRECATED] 当前复习间隔（天），推荐使用 study_cards (FSRS) 替代 SM2 算法';
-COMMENT ON COLUMN knowledge_review_tasks.ease_factor IS '[DEPRECATED] 易遗忘因子 (EF)，默认 2.5，最小 1.3，推荐使用 study_cards (FSRS) 替代 SM2 算法';
-COMMENT ON COLUMN knowledge_review_tasks.repetitions IS '[DEPRECATED] 连续成功复习次数，推荐使用 study_cards (FSRS) 替代 SM2 算法';
-COMMENT ON COLUMN knowledge_review_tasks.next_review_date IS '下次复习日期';
-COMMENT ON COLUMN knowledge_review_tasks.last_quality_score IS '上次复习评分 (0-5)';
 
 ALTER TABLE knowledge_graphs ADD COLUMN IF NOT EXISTS task_id UUID REFERENCES user_tasks(id) ON DELETE SET NULL;
 

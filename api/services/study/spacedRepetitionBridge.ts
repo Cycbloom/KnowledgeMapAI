@@ -9,7 +9,6 @@ import { applyTopologyPriority } from "./topologyScheduler";
  * Spaced Repetition Bridge - FSRS-only review queue and processing.
  *
  * All review operations use the FSRS algorithm via study_cards.
- * SM2 (knowledge_review_tasks) is deprecated and no longer merged.
  */
 
 interface UnifiedReviewItem {

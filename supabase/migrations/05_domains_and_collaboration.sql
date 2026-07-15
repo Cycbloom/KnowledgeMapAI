@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS graph_collaborators (
   invitation_expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(graph_id, user_id)
+  UNIQUE(graph_id, user_id),
+  UNIQUE(invitation_token)
 );
 
 COMMENT ON TABLE graph_collaborators IS '图谱协作者关系表，存储图谱与用户的协作权限';

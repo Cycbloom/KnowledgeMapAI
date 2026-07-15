@@ -66,6 +66,7 @@ data/*.db-wal
 .vercel.env
 .env.*.local
 .jwt_secret
+.env.check
 
 # Vercel
 .vercel/
@@ -77,6 +78,10 @@ test-results/
 playwright-report/
 playwright/.cache/
 blob-report/
+
+# Test output snapshots and one-off debug scripts
+test-output*.txt
+tmp_*.js
 
 # Vitest coverage output
 coverage/

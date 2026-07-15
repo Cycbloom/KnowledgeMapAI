@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS learning_paths (
   goal TEXT,
   target_date DATE,
   source_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
-  domain_id UUID,
+  domain_id UUID REFERENCES domains(id) ON DELETE SET NULL,
   path_type VARCHAR(20) DEFAULT 'single_graph' CHECK (path_type IN ('single_graph', 'cross_graph')),
   total_estimated_time INTEGER DEFAULT 0,
   ai_generated BOOLEAN DEFAULT FALSE,

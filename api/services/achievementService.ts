@@ -1,13 +1,10 @@
 import { getSupabaseAdmin } from '../supabase';
 import { logger } from '../utils/logger';
-import { periodicTaskService } from './scheduler/periodicTaskService';
 import { focusService } from './scheduler/focusService';
 import { transactionExecutor } from '../database/transactionExecutor';
-import { notDeleted } from './common/softDeleteHelper';
 import type {
   Achievement,
   UserAchievement,
-  AchievementCheckResult,
   FocusSession,
 } from '@shared/types/scheduler';
 import type {
@@ -303,45 +300,6 @@ export class AchievementService {
     await this.checkAndUnlock(userId, 'streak_days', streak);
   }
 
-  /** @deprecated Use event-driven approach via achievementEngine */
-  async updateFocusStats(userId: string): Promise<void> {
-    const { error: _error } = await getSupabaseAdmin()
-      .from('focus_sessions')
-      .select('duration')
-      .eq('user_id', userId)
-      .eq('completed', true)
-      .gte('started_at', new Date().toISOString().split('T')[0]);
-
-    const today = new Date().toISOString().split('T')[0];
-    const todaySessions = await getSupabaseAdmin()
-      .from('focus_sessions')
-      .select('duration')
-      .eq('user_id', userId)
-      .eq('completed', true)
-      .gte('started_at', today);
-
-    const todayMinutes =
-      (todaySessions?.data as Pick<FocusSessionRow, 'duration'>[] | null)?.reduce(
-        (acc, curr) => acc + (curr.duration || 0),
-        0
-      ) || 0;
-
-    await this.updateDailyTaskProgress(userId, 'focus_time', todayMinutes);
-
-    const { data: allSessions } = await getSupabaseAdmin()
-      .from('focus_sessions')
-      .select('duration')
-      .eq('user_id', userId)
-      .eq('completed', true);
-
-    const totalMinutes = allSessions?.reduce((acc: number, curr: Pick<FocusSessionRow, 'duration'>) => acc + (curr.duration || 0), 0) || 0;
-    await this.checkAndUnlock(userId, 'focus_minutes', totalMinutes);
-
-    await periodicTaskService.updatePeriodicTaskProgress(userId, 'focus', totalMinutes);
-
-    await this.updateStudyStreak(userId);
-  }
-
   async updateDailyTaskProgress(userId: string, type: string, currentTotal: number): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     const { data: task } = await getSupabaseAdmin()
@@ -369,47 +327,6 @@ export class AchievementService {
     }
   }
 
-  /** @deprecated Use event-driven approach via achievementEngine */
-  async updateMasteredStats(userId: string): Promise<void> {
-    const { count, error } = await getSupabaseAdmin()
-      .from('study_cards')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gt('fsrs_stability', 21);
-
-    if (!error) {
-      await this.checkAndUnlock(userId, 'cards_mastered', count || 0);
-      await periodicTaskService.updatePeriodicTaskProgress(userId, 'study', count || 0);
-    }
-
-    await this.updateDailyTask(userId, 'study_cards', 1);
-  }
-
-  /** @deprecated Use event-driven approach via achievementEngine */
-  async updateCreationStats(userId: string): Promise<void> {
-    const { count: graphCount, error: graphError } = await getSupabaseAdmin()
-      .from('graphs')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    if (!graphError) {
-      await this.checkAndUnlock(userId, 'graphs_created', graphCount || 0);
-    }
-
-    await this.updateDailyTask(userId, 'create_node', 1);
-
-    const { count: nodeCount, error: nodeError } = await notDeleted(getSupabaseAdmin()
-      .from('graph_nodes')
-      .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
-      .eq('knowledge_graphs.user_id', userId)
-      );
-
-    if (!nodeError) {
-      await this.checkAndUnlock(userId, 'nodes_created', nodeCount || 0);
-      await periodicTaskService.updatePeriodicTaskProgress(userId, 'create', nodeCount || 0);
-    }
-  }
-
   async getAllAchievements(): Promise<Achievement[]> {
     const { data, error } = await getSupabaseAdmin()
       .from('achievements')
@@ -430,163 +347,6 @@ export class AchievementService {
 
     if (error) throw new Error(`Failed to fetch user achievements: ${error.message}`);
     return data as (UserAchievement & { achievement: Achievement })[];
-  }
-
-  /** @deprecated Use achievementEngine.evaluateAchievements() instead */
-  async checkAndUnlockAchievements(userId: string): Promise<AchievementCheckResult> {
-    const stats = await focusService.getUserFocusStats(getSupabaseAdmin(), userId);
-    const allAchievements = await this.getAllAchievements();
-    const userAchievements = await this.getUserAchievements(userId);
-    const unlockedCodes = new Set(userAchievements.map(ua => ua.achievement.code));
-
-    const unlocked: Achievement[] = [];
-    const progress: AchievementCheckResult['progress'] = [];
-
-    for (const achievement of allAchievements) {
-      if (unlockedCodes.has(achievement.code)) continue;
-
-      let current = 0;
-      switch (achievement.condition_type) {
-        case 'focus_sessions':
-          current = stats.total_sessions;
-          break;
-        case 'total_focus_hours':
-          current = Math.floor(stats.total_focus_seconds / 3600);
-          break;
-        case 'consecutive_days':
-          current = stats.current_streak;
-          break;
-        case 'tasks_completed':
-          current = stats.total_tasks_completed;
-          break;
-        case 'pomodoros_completed':
-          current = stats.total_pomodoros;
-          break;
-        case 'daily_focus_hours': {
-          const todayStats = await focusService.getDailyFocusStats(getSupabaseAdmin(), userId);
-          current = Math.floor(todayStats.total_duration / 3600);
-          break;
-        }
-        case 'streak_days': {
-          const { data: streakSessions } = await getSupabaseAdmin()
-            .from('focus_sessions')
-            .select('started_at')
-            .eq('user_id', userId)
-            .eq('completed', true)
-            .order('started_at', { ascending: false });
-          if (streakSessions && streakSessions.length > 0) {
-            const streakSessionsTyped = streakSessions as Pick<FocusSessionRow, 'started_at'>[];
-            const streakDates = new Set(streakSessionsTyped.map((s) => s.started_at.split('T')[0]));
-            const sortedStreakDates = Array.from(streakDates).sort(
-              (a, b) => new Date(b).getTime() - new Date(a).getTime()
-            );
-            const todayStr = new Date().toISOString().split('T')[0];
-            const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-            if (sortedStreakDates[0] === todayStr || sortedStreakDates[0] === yesterdayStr) {
-              const checkDate = new Date();
-              if (!streakDates.has(checkDate.toISOString().split('T')[0])) {
-                checkDate.setDate(checkDate.getDate() - 1);
-              }
-              let streakCount = 0;
-              while (streakDates.has(checkDate.toISOString().split('T')[0])) {
-                streakCount++;
-                checkDate.setDate(checkDate.getDate() - 1);
-              }
-              current = streakCount;
-            }
-          }
-          break;
-        }
-        case 'focus_minutes':
-          current = Math.floor(stats.total_focus_seconds / 60);
-          break;
-        case 'cards_mastered': {
-          const { count: masteredCount } = await getSupabaseAdmin()
-            .from('study_cards')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .gt('fsrs_stability', 21);
-          current = masteredCount || 0;
-          break;
-        }
-        case 'graphs_created': {
-          const { count: graphCount } = await notDeleted(getSupabaseAdmin()
-            .from('knowledge_graphs')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            );
-          current = graphCount || 0;
-          break;
-        }
-        case 'nodes_created': {
-          const { count: nodeCount } = await notDeleted(getSupabaseAdmin()
-            .from('graph_nodes')
-            .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
-            .eq('knowledge_graphs.user_id', userId)
-            );
-          current = nodeCount || 0;
-          break;
-        }
-        case 'weekly_streak':
-        case 'monthly_streak':
-        case 'quarterly_streak':
-        case 'daily_task_streak': {
-          const { data: focusStatsRow } = await getSupabaseAdmin()
-            .from('user_focus_stats')
-            .select('weekly_streak, monthly_streak, quarterly_streak, daily_task_streak')
-            .eq('user_id', userId)
-            .single();
-          if (focusStatsRow) {
-            switch (achievement.condition_type) {
-              case 'weekly_streak':
-                current = focusStatsRow.weekly_streak || 0;
-                break;
-              case 'monthly_streak':
-                current = focusStatsRow.monthly_streak || 0;
-                break;
-              case 'quarterly_streak':
-                current = focusStatsRow.quarterly_streak || 0;
-                break;
-              case 'daily_task_streak':
-                current = focusStatsRow.daily_task_streak || 0;
-                break;
-            }
-          }
-          break;
-        }
-        case 'special_condition':
-          continue;
-        default:
-          logger.warn('Unrecognized achievement condition_type', { condition_type: achievement.condition_type, achievement_code: achievement.code });
-          continue;
-      }
-
-      const percentage = Math.min(100, Math.round((current / achievement.condition_value) * 100));
-
-      if (current >= achievement.condition_value) {
-        const { error: insertError } = await getSupabaseAdmin()
-          .from('user_achievements')
-          .insert({
-            user_id: userId,
-            achievement_id: achievement.id,
-            progress: 100,
-            metadata: { unlocked_value: current },
-          });
-
-        if (!insertError) {
-          unlocked.push(achievement);
-        }
-      } else {
-        progress.push({
-          achievement,
-          current,
-          target: achievement.condition_value,
-          percentage,
-        });
-      }
-    }
-
-    return { unlocked, progress };
   }
 
   async checkPerfectionist(userId: string): Promise<void> {

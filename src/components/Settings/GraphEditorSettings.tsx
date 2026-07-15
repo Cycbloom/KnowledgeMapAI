@@ -24,9 +24,6 @@ import { useGraphEditorPreferencesStore } from "../../store/useGraphEditorPrefer
 
 export type SearchNodeNavigateTarget = UserSettingsSearchNodeNavigateTarget;
 
-// Backwards-compat alias; the canonical type lives in shared/types.
-export type GraphEditorPreferences = UserSettingsGraphEditor;
-
 const VIEW_MODES: Array<{
   mode: GraphViewMode;
   labelKey: string;
@@ -78,9 +75,9 @@ export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
   );
   const reset = useGraphEditorPreferencesStore((state) => state.reset);
 
-  const updatePreference = <K extends keyof GraphEditorPreferences>(
+  const updatePreference = <K extends keyof UserSettingsGraphEditor>(
     key: K,
-    value: GraphEditorPreferences[K],
+    value: UserSettingsGraphEditor[K],
   ): void => {
     updatePreferences({ [key]: value });
   };

@@ -64,10 +64,6 @@ CREATE TRIGGER periodic_passes_updated_at
   BEFORE UPDATE ON periodic_passes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER knowledge_review_tasks_updated_at
-  BEFORE UPDATE ON knowledge_review_tasks
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER user_efficiency_profile_updated_at
   BEFORE UPDATE ON user_efficiency_profile
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -16,10 +16,8 @@ export {
   searchService,
 } from "./ai/index";
 export { focusService } from "./scheduler/focusService";
-export { studyProgressService } from "./study/studyProgressService";
 export { studyService } from "./study/studyService";
 export { asyncTaskService } from "./asyncTaskService";
-export { reviewService } from "./study/reviewService";
 export { periodicTaskService } from "./scheduler/periodicTaskService";
 export { taskAnalyticsService } from "./scheduler/taskAnalyticsService";
 export { taskRecommendationService } from "./scheduler/taskRecommendationService";

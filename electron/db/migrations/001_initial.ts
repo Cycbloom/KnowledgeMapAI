@@ -122,7 +122,6 @@ export function getInitialMigration(): string[] {
     "task_knowledge_points",
     "task_templates",
     "task_reviews",
-    "knowledge_review_tasks",
     "scheduler_weight_profiles",
 
     // 08_learning_paths - depends on users, knowledge_graphs, knowledge_points, user_tasks

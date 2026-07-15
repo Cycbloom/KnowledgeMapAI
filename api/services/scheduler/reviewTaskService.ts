@@ -2,7 +2,6 @@
  * 复习任务服务 (FSRS)
  *
  * 所有复习任务统一使用 FSRS 算法，数据存储在 study_cards 表。
- * 旧的 knowledge_review_tasks (SM2) 已废弃。
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";

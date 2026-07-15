@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS focus_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  task_id UUID,
+  task_id UUID REFERENCES user_tasks(id) ON DELETE SET NULL,
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   ended_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   duration INTEGER NOT NULL,

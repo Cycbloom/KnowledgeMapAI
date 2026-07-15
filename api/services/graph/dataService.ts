@@ -822,7 +822,6 @@ export class DataService {
         { table: 'periodic_tasks', column: 'user_id' },
         { table: 'task_reviews', column: 'user_id' },
         { table: 'path_node_tasks', column: 'user_id' },
-        { table: 'knowledge_review_tasks', column: 'user_id' },
         { table: 'quiz_set_cards', column: 'user_id' },
         { table: 'study_cards', column: 'user_id' },
         { table: 'study_progress', column: 'user_id' },

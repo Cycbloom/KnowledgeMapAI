@@ -1084,34 +1084,6 @@ const taskReviewsTable: TableDef = {
   hasUpdatedAt: true,
 };
 
-const knowledgeReviewTasksTable: TableDef = {
-  name: 'knowledge_review_tasks',
-  columns: [
-    idColumn(),
-    fkRequiredColumn('user_id'),
-    fkRequiredColumn('knowledge_point_id'),
-    fkRequiredColumn('task_id'),
-    integerColumn('interval_days', false, '1'),
-    realColumn('ease_factor', false, '2.5'),
-    integerColumn('repetitions', false, '0'),
-    timestampColumn('next_review_date', false),
-    timestampColumn('last_review_date'),
-    integerColumn('last_quality_score'),
-    timestampColumn('created_at', false),
-    timestampColumn('updated_at', false),
-    syncStatusColumn(),
-    localUpdatedAtColumn(),
-  ],
-  primaryKey: ['id'],
-  indexes: [
-    { name: 'idx_knowledge_review_user_id', columns: ['user_id'] },
-    { name: 'idx_knowledge_review_kp_user', columns: ['knowledge_point_id', 'user_id'], unique: true },
-  ],
-  syncEnabled: true,
-  userColumn: 'user_id',
-  hasUpdatedAt: true,
-};
-
 const schedulerWeightProfilesTable: TableDef = {
   name: 'scheduler_weight_profiles',
   columns: [
@@ -1853,7 +1825,6 @@ export const TABLES: Record<string, TableDef> = {
   task_knowledge_points: taskKnowledgePointsTable,
   task_templates: taskTemplatesTable,
   task_reviews: taskReviewsTable,
-  knowledge_review_tasks: knowledgeReviewTasksTable,
   scheduler_weight_profiles: schedulerWeightProfilesTable,
 
   // 08_learning_paths

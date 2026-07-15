@@ -61,7 +61,6 @@ import { useStore } from "@/store/useStore";
  *  - voice          → api.tts / api.stt (server: /ai/tts/*, /ai/stt/*)
  *  - database       → apiClient "/ai/config/database" (server)
  *  - plugins        → api.plugins (server: /plugins/*)
- *  - gestures       → TODO (Task 6 decides fate; no store yet)
  */
 export const settingsService = {
   /**
@@ -396,12 +395,4 @@ export const settingsService = {
     rate: api.plugins.rate,
   },
 
-  /**
-   * Gesture settings. TODO: Task 6 decides whether to migrate the raw
-   * localStorage "gesture-settings" to a `createPersistedStore` or delete
-   * `GestureSettingsPanel`. No methods are exposed until then.
-   */
-  gestures: {
-    // TODO: wire to actual storage once Task 6 is resolved.
-  },
 };

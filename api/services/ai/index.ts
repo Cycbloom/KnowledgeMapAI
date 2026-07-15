@@ -60,12 +60,14 @@ export {
 export {
   templateGeneratorService,
   TemplateGeneratorService,
-  type GeneratedTemplateNode,
-  type GeneratedTemplateEdge,
-  type GeneratedTemplateScheme,
   type GenerateTemplatesOptions,
   type GenerateTemplatesResult,
 } from "./templateGeneratorService";
+export {
+  type GeneratedTemplateNode,
+  type GeneratedTemplateEdge,
+  type GeneratedTemplateScheme,
+} from "./templateValidationService";
 export {
   validateNode,
   validateEdge,

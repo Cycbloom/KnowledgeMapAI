@@ -154,18 +154,10 @@ CREATE POLICY "Users can update pending actions of their own sessions"
 
 -- Triggers
 -- 自动更新 updated_at
-CREATE OR REPLACE FUNCTION update_agent_session_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE TRIGGER trg_agent_sessions_updated_at
   BEFORE UPDATE ON agent_sessions
   FOR EACH ROW
-  EXECUTE FUNCTION update_agent_session_updated_at();
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- Grants
 -- Service role has full access (for backend API)

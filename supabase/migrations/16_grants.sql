@@ -91,8 +91,6 @@ GRANT ALL PRIVILEGES ON user_time_slots TO authenticated;
 GRANT SELECT ON user_time_slots TO authenticated;
 
 -- Knowledge & Efficiency
-GRANT ALL PRIVILEGES ON knowledge_review_tasks TO authenticated;
-GRANT SELECT ON knowledge_review_tasks TO authenticated;
 GRANT ALL PRIVILEGES ON user_efficiency_profile TO authenticated;
 GRANT SELECT ON user_efficiency_profile TO authenticated;
 GRANT ALL PRIVILEGES ON scheduler_weight_profiles TO authenticated;

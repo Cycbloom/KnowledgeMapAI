@@ -200,7 +200,7 @@ const createDbRow = (
   overrides: Partial<Record<string, unknown>> = {},
 ): Record<string, unknown> => ({
   id: "log-1",
-  timestamp: 1700000000000,
+  created_at: new Date(1700000000000).toISOString(),
   operation: "chat",
   session_id: null,
   model: "test-model",
@@ -252,7 +252,7 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
   });
 
   describe("getLogs(query) - 直接查 DB", () => {
-    it("调用 from('ai_performance_logs') 并按 timestamp DESC 排序", async () => {
+    it("调用 from('ai_performance_logs') 并按 created_at DESC 排序", async () => {
       mockState.queryResult = { data: [], count: 0, error: null };
 
       await performanceMonitor.getLogs();
@@ -263,7 +263,7 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
       expect(q.selectColumns).toBe("*");
       expect(q.selectOptions).toEqual({ count: "exact" });
       expect(q.orders).toContainEqual({
-        column: "timestamp",
+        column: "created_at",
         ascending: false,
       });
     });
@@ -283,8 +283,8 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
       expect(q.eqFilters).toContainEqual(["operation", "chat"]);
       expect(q.eqFilters).toContainEqual(["provider", "openai"]);
       expect(q.eqFilters).toContainEqual(["success", true]);
-      expect(q.gteFilters).toContainEqual(["timestamp", 1000]);
-      expect(q.lteFilters).toContainEqual(["timestamp", 2000]);
+      expect(q.gteFilters).toContainEqual(["created_at", new Date(1000).toISOString()]);
+      expect(q.lteFilters).toContainEqual(["created_at", new Date(2000).toISOString()]);
     });
 
     it("使用 limit/offset 通过 range 分页", async () => {
@@ -407,7 +407,7 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
 
       const q = captured.queries[0];
       expect(q.eqFilters).toContainEqual(["operation", "embedding"]);
-      expect(q.gteFilters).toContainEqual(["timestamp", 5000]);
+      expect(q.gteFilters).toContainEqual(["created_at", new Date(5000).toISOString()]);
     });
 
     it("DB 返回空时返回零值 stats（不抛出）", async () => {
@@ -459,9 +459,9 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
       expect(payload.session_id).toBe("session-1");
       expect(payload.user_id).toBe("user-1");
       expect(payload.metadata).toEqual({ graphId: "graph-1", userId: "user-1" });
-      // 自动生成 id 与 timestamp
+      // 自动生成 id（timestamp 不再写入 DB，由 created_at 自动生成）
       expect(typeof payload.id).toBe("string");
-      expect(typeof payload.timestamp).toBe("number");
+      expect(payload.timestamp).toBeUndefined();
     });
 
     it("不再写入内存 buffer（无 this.logs 数组）", async () => {
@@ -505,7 +505,7 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
       const q = captured.queries[0];
       expect(q.eqFilters).toContainEqual(["session_id", "session-xyz"]);
       expect(q.orders).toContainEqual({
-        column: "timestamp",
+        column: "created_at",
         ascending: false,
       });
     });
@@ -538,7 +538,7 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
   });
 
   describe("clearLogs() - 基于 DB 删除", () => {
-    it("传 beforeTimestamp：调用 delete().lt('timestamp', before) 并返回删除条数", async () => {
+    it("传 beforeTimestamp：调用 delete().lt('created_at', before) 并返回删除条数", async () => {
       mockState.queryResult = {
         data: [{ id: "a" }, { id: "b" }, { id: "c" }],
         error: null,
@@ -549,7 +549,7 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
       expect(mockClient.from).toHaveBeenCalledWith("ai_performance_logs");
       const q = captured.queries[0];
       expect(q.isDelete).toBe(true);
-      expect(q.ltFilters).toContainEqual(["timestamp", 1700000000000]);
+      expect(q.ltFilters).toContainEqual(["created_at", new Date(1700000000000).toISOString()]);
       expect(q.selectColumns).toBe("id");
       expect(deleted).toBe(3);
     });
@@ -566,7 +566,8 @@ describe("PerformanceMonitor - 多实例化（DB-backed）", () => {
       expect(q.isDelete).toBe(true);
       // 验证 cutoff 在 [before-30d, after-30d] 范围内
       expect(q.ltFilters).toHaveLength(1);
-      const cutoff = q.ltFilters[0][1] as number;
+      const cutoffStr = q.ltFilters[0][1] as string;
+      const cutoff = new Date(cutoffStr).getTime();
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
       expect(cutoff).toBeGreaterThanOrEqual(before - thirtyDaysMs);
       expect(cutoff).toBeLessThanOrEqual(after - thirtyDaysMs);

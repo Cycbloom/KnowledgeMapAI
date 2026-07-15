@@ -316,26 +316,18 @@ INSERT INTO story_templates (template_code, name, name_zh, description, category
 -- Triggers: 自动更新 updated_at 字段
 -- =====================================================
 
-CREATE OR REPLACE FUNCTION update_story_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE TRIGGER story_structures_updated_at
   BEFORE UPDATE ON story_structures
-  FOR EACH ROW EXECUTE FUNCTION update_story_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER story_characters_updated_at
   BEFORE UPDATE ON story_characters
-  FOR EACH ROW EXECUTE FUNCTION update_story_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER story_character_relationships_updated_at
   BEFORE UPDATE ON story_character_relationships
-  FOR EACH ROW EXECUTE FUNCTION update_story_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER story_scene_details_updated_at
   BEFORE UPDATE ON story_scene_details
-  FOR EACH ROW EXECUTE FUNCTION update_story_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -8,6 +8,5 @@ export { MobileAISettings } from "./MobileAISettings";
 export { StudyStrategySettings } from "./StudyStrategySettings";
 export { StudyAlgorithmSettings } from "./StudyAlgorithmSettings";
 export { GraphEditorSettings } from "./GraphEditorSettings";
-export type { GraphEditorPreferences } from "./GraphEditorSettings";
 export { ShortcutSettings } from "./ShortcutSettings";
 export { NotificationSettings } from "./NotificationSettings";

@@ -52,7 +52,6 @@ COMMENT ON COLUMN ai_actions.variables IS '变量定义 JSON';
 -- AI performance logs table
 CREATE TABLE IF NOT EXISTS ai_performance_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  timestamp BIGINT NOT NULL,
   operation VARCHAR(100) NOT NULL,
   session_id UUID,
   model VARCHAR(100) NOT NULL,
@@ -76,7 +75,6 @@ CREATE TABLE IF NOT EXISTS ai_performance_logs (
 
 COMMENT ON TABLE ai_performance_logs IS 'AI服务性能监控日志，记录所有AI API调用的详细指标';
 COMMENT ON COLUMN ai_performance_logs.user_id IS '关联用户ID（NULL 表示系统级日志，如定时任务），用于 RLS 按用户隔离';
-COMMENT ON COLUMN ai_performance_logs.timestamp IS '[DEPRECATED] 使用 created_at (TIMESTAMPTZ) 替代此字段。此列仅保留向后兼容，新代码应使用 created_at。';
 COMMENT ON COLUMN ai_performance_logs.operation IS '操作类型标识';
 COMMENT ON COLUMN ai_performance_logs.session_id IS '会话ID，用于关联同一场对话中的多个AI调用';
 COMMENT ON COLUMN ai_performance_logs.cached_input_tokens IS '缓存命中的输入Token数';

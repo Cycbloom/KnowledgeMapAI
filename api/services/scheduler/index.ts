@@ -112,18 +112,6 @@ export type {
 } from "./pathTaskService";
 
 export {
-  smartSchedulerService,
-  SmartSchedulerService,
-} from "./smartSchedulerService";
-export type {
-  TimeSlotRecommendation,
-  MasteryBasedPriority,
-  DependencyAwareTask,
-  TaskTypeTimeMatch,
-  SmartRecommendation,
-} from "./smartSchedulerService";
-
-export {
   subtaskQuizIntegrationService,
   SubtaskQuizIntegrationService,
 } from "./subtaskQuizIntegration";
@@ -136,20 +124,6 @@ export type {
   QuizCompletionResult,
 } from "./subtaskQuizIntegration";
 
-export {
-  adaptiveSchedulerService,
-  AdaptiveSchedulerService,
-} from "./adaptiveSchedulerService";
-export type {
-  SchedulerWeights,
-  TaskTypeTimeMap,
-  AdaptiveRecommendation,
-  AdaptiveSchedulerResult,
-} from "./adaptiveSchedulerService";
-export {
-  DEFAULT_SCHEDULER_WEIGHTS,
-  DEFAULT_TASK_TYPE_TIME_MAP,
-} from "./adaptiveSchedulerService";
 export { activityService } from "./activityService";
 export type { ActivityType, UserActivity, RecordActivityData, DailyActivityStats } from "./activityService";
 export { autoTaskGenerator } from "./autoTaskGenerator";

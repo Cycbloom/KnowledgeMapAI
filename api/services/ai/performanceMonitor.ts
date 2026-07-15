@@ -12,7 +12,7 @@ const MAX_LOGS = 1000;
 
 interface DatabaseLogRow {
   id: string;
-  timestamp: number;
+  created_at: string;
   operation: string;
   session_id?: string | null;
   model: string;
@@ -38,7 +38,7 @@ interface DatabaseLogRow {
  */
 const mapRowToLog = (row: DatabaseLogRow): AIPerformanceLog => ({
   id: row.id,
-  timestamp: row.timestamp,
+  timestamp: new Date(row.created_at).getTime(),
   operation: row.operation,
   sessionId: row.session_id || undefined,
   model: row.model,
@@ -112,7 +112,6 @@ class PerformanceMonitor {
       const userId = log.metadata?.userId ?? null;
       const { error } = await getSupabaseAdmin().from("ai_performance_logs").insert({
         id: log.id,
-        timestamp: log.timestamp,
         operation: log.operation,
         session_id: log.sessionId || null,
         model: log.model,
@@ -154,7 +153,7 @@ class PerformanceMonitor {
     let dbQuery = getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("*", { count: "exact" })
-      .order("timestamp", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (query.operation) {
       dbQuery = dbQuery.eq("operation", query.operation);
@@ -166,10 +165,10 @@ class PerformanceMonitor {
       dbQuery = dbQuery.eq("success", query.success);
     }
     if (query.startTime !== undefined) {
-      dbQuery = dbQuery.gte("timestamp", query.startTime);
+      dbQuery = dbQuery.gte("created_at", new Date(query.startTime).toISOString());
     }
     if (query.endTime !== undefined) {
-      dbQuery = dbQuery.lte("timestamp", query.endTime);
+      dbQuery = dbQuery.lte("created_at", new Date(query.endTime).toISOString());
     }
 
     const offset = query.offset || 0;
@@ -201,11 +200,11 @@ class PerformanceMonitor {
     let dbQuery = getSupabaseAdmin()
       .from("ai_performance_logs")
       .select("*", { count: "exact" })
-      .order("timestamp", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (query.days) {
       const startTime = Date.now() - query.days * 24 * 60 * 60 * 1000;
-      dbQuery = dbQuery.gte("timestamp", startTime);
+      dbQuery = dbQuery.gte("created_at", new Date(startTime).toISOString());
     }
     if (query.operation) {
       dbQuery = dbQuery.eq("operation", query.operation);
@@ -362,7 +361,7 @@ class PerformanceMonitor {
       .from("ai_performance_logs")
       .select("*")
       .eq("session_id", sessionId)
-      .order("timestamp", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(MAX_LOGS);
 
     if (error) {
@@ -411,7 +410,7 @@ class PerformanceMonitor {
       const { data, error } = await getSupabaseAdmin()
         .from("ai_performance_logs")
         .delete()
-        .lt("timestamp", cutoff)
+        .lt("created_at", new Date(cutoff).toISOString())
         .select("id");
 
       if (error) {
@@ -449,15 +448,15 @@ class PerformanceMonitor {
 
     const { data: oldest } = await getSupabaseAdmin()
       .from("ai_performance_logs")
-      .select("timestamp")
-      .order("timestamp", { ascending: true })
+      .select("created_at")
+      .order("created_at", { ascending: true })
       .limit(1)
       .single();
 
     const { data: newest } = await getSupabaseAdmin()
       .from("ai_performance_logs")
-      .select("timestamp")
-      .order("timestamp", { ascending: false })
+      .select("created_at")
+      .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
@@ -479,10 +478,10 @@ class PerformanceMonitor {
     return {
       totalRecords: totalRecords || 0,
       oldestRecord: oldest
-        ? new Date((oldest as { timestamp: number }).timestamp).toISOString()
+        ? (oldest as { created_at: string }).created_at
         : null,
       newestRecord: newest
-        ? new Date((newest as { timestamp: number }).timestamp).toISOString()
+        ? (newest as { created_at: string }).created_at
         : null,
       totalCost,
       totalTokens,

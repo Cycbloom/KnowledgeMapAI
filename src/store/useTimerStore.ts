@@ -32,12 +32,6 @@ interface TimerActions {
   complete: () => Promise<void>;
   /** Skip to the next phase in the Pomodoro cycle, saving current progress. */
   skipToNext: () => void;
-  /**
-   * @deprecated Use skipToNext() instead. Manual mode switching resets the timer
-   * and loses progress, which is a poor UX. The Pomodoro cycle should progress
-   * naturally via complete() or skipToNext().
-   */
-  setMode: (newMode: TimerMode) => void;
   switchTask: (
     newTaskId: string,
     duration: number,
@@ -305,30 +299,6 @@ const useTimerStore = create<TimerState & TimerActions>()(
         });
 
         startInterval();
-      },
-
-      setMode: (newMode) => {
-        clearTimerInterval();
-
-        const {
-          focusDuration: fd,
-          shortBreakDuration: sbd,
-          longBreakDuration: lbd,
-        } = useFocusStore.getState();
-        let duration = fd;
-        if (newMode === "shortBreak") duration = sbd;
-        if (newMode === "longBreak") duration = lbd;
-
-        const totalTime = duration * 60;
-        set({
-          mode: newMode,
-          timeLeft: totalTime,
-          totalTime,
-          isActive: false,
-          isPaused: false,
-          startTimeRef: null,
-          progress: 0,
-        });
       },
 
       reset: () => {

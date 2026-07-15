@@ -82,7 +82,7 @@ supabase status       # 查看状态
 
 ### 本地数据库
 
-- **Schema 文件**：`supabase/migrations/` 目录下按业务域组织的模块化 SQL 文件（00-16 为 Schema，17-25 为 Seed）
+- **Schema 文件**：`supabase/migrations/` 目录下按业务域组织的模块化 SQL 文件（00-35 为 Schema，50-99 为 Seed（编号留有间隔便于后续插入））
 - **Seed 文件**：`supabase/migrations/` 目录下按数据类型组织的模块化 SQL 文件
 - **测试用户**：`test@example.com` / `test123456`（每次 `npm run db:local:reset` 后自动创建）
 - **迁移文件管理**：所有变更直接修改对应的模块化文件，不创建新的增量迁移文件

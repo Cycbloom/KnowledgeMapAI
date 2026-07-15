@@ -3,11 +3,10 @@
 -- =====================================================
 
 -- Users
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+-- (idx_users_role removed: low-cardinality, only user/admin)
 
 -- Knowledge graphs
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_id ON knowledge_graphs(user_id);
-CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_is_public ON knowledge_graphs(is_public);
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_title_trgm ON knowledge_graphs USING gin (title gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_graphs_deleted_at ON knowledge_graphs(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_last_used_at ON knowledge_graphs(last_used_at DESC);
@@ -40,14 +39,11 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_point_versions_changed_by ON knowledge_
 -- Graph nodes
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_graph_id ON graph_nodes(graph_id);
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_knowledge_point_id ON graph_nodes(knowledge_point_id);
-CREATE INDEX IF NOT EXISTS idx_graph_nodes_level ON graph_nodes(level);
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_deleted_at ON graph_nodes(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_graph_deleted ON graph_nodes(graph_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_kp_graph ON graph_nodes(knowledge_point_id, graph_id);
 
 -- Edges
-CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_knowledge_point_id);
-CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_knowledge_point_id);
 CREATE INDEX IF NOT EXISTS idx_edges_graph_id ON edges(graph_id);
 CREATE INDEX IF NOT EXISTS idx_edges_deleted_at ON edges(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_edges_source_graph ON edges(source_knowledge_point_id, graph_id);
@@ -74,7 +70,6 @@ CREATE INDEX IF NOT EXISTS idx_quiz_set_cards_card_id ON quiz_set_cards(card_id)
 CREATE INDEX IF NOT EXISTS idx_quiz_set_cards_order ON quiz_set_cards(quiz_set_id, display_order);
 
 -- Study progress
-CREATE INDEX IF NOT EXISTS idx_study_progress_user ON study_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_progress_graph_id ON study_progress(graph_id);
 CREATE INDEX IF NOT EXISTS idx_study_progress_user_graph ON study_progress(user_id, graph_id);
 
@@ -99,7 +94,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_actions_graph ON ai_actions(graph_id);
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_date ON focus_sessions(user_id, started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_completed ON focus_sessions(user_id, completed) WHERE completed = true;
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_task ON focus_sessions(task_id) WHERE task_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_id ON focus_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_created_at ON focus_sessions(created_at);
 
 -- Achievements
@@ -250,13 +244,6 @@ CREATE INDEX IF NOT EXISTS idx_learning_path_progress_user_path ON learning_path
 CREATE INDEX IF NOT EXISTS idx_learning_path_progress_node ON learning_path_progress(node_id);
 CREATE INDEX IF NOT EXISTS idx_learning_path_progress_status ON learning_path_progress(user_id, status);
 
--- Knowledge review tasks
-CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_user ON knowledge_review_tasks(user_id);
-CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_kp ON knowledge_review_tasks(knowledge_point_id);
-CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_task ON knowledge_review_tasks(task_id);
-CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_next_review ON knowledge_review_tasks(user_id, next_review_date);
-CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_due ON knowledge_review_tasks(user_id, next_review_date) WHERE next_review_date IS NOT NULL;
-
 -- User efficiency profile
 CREATE INDEX IF NOT EXISTS idx_user_efficiency_profile_user ON user_efficiency_profile(user_id);
 
@@ -290,7 +277,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created
 CREATE INDEX IF NOT EXISTS idx_notification_settings_user_id ON notification_settings(user_id);
 
 -- AI performance logs
-CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_timestamp ON ai_performance_logs(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_operation ON ai_performance_logs(operation);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_provider ON ai_performance_logs(provider);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_model ON ai_performance_logs(model);
@@ -299,7 +285,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_created_at ON ai_performance_logs(cr
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_session_id ON ai_performance_logs(session_id);
 CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_user_id ON ai_performance_logs(user_id);
 
--- Composite indexes for session-based queries with timestamp ordering
-CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_session_ts ON ai_performance_logs(session_id, timestamp DESC);
+-- Composite indexes for session-based queries with created_at ordering
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_session_created ON ai_performance_logs(session_id, created_at DESC);
 
 

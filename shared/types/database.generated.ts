@@ -34,6 +34,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      _schema_versions: {
+        Row: {
+          checksum: string | null
+          executed_at: string | null
+          id: number
+          version: string
+        }
+        Insert: {
+          checksum?: string | null
+          executed_at?: string | null
+          id?: number
+          version: string
+        }
+        Update: {
+          checksum?: string | null
+          executed_at?: string | null
+          id?: number
+          version?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           category: string
@@ -327,7 +348,6 @@ export type Database = {
           reasoning_tokens: number | null
           session_id: string | null
           success: boolean
-          timestamp: number
           total_tokens: number
           uncached_input_tokens: number | null
           user_id: string | null
@@ -350,7 +370,6 @@ export type Database = {
           reasoning_tokens?: number | null
           session_id?: string | null
           success?: boolean
-          timestamp: number
           total_tokens?: number
           uncached_input_tokens?: number | null
           user_id?: string | null
@@ -373,7 +392,6 @@ export type Database = {
           reasoning_tokens?: number | null
           session_id?: string | null
           success?: boolean
-          timestamp?: number
           total_tokens?: number
           uncached_input_tokens?: number | null
           user_id?: string | null
@@ -649,7 +667,15 @@ export type Database = {
           user_id?: string
           white_noise_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "focus_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "user_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       graph_backbone_modules: {
         Row: {
@@ -1247,66 +1273,6 @@ export type Database = {
           },
         ]
       }
-      knowledge_review_tasks: {
-        Row: {
-          created_at: string | null
-          ease_factor: number
-          id: string
-          interval_days: number
-          knowledge_point_id: string
-          last_quality_score: number | null
-          last_review_date: string | null
-          next_review_date: string
-          repetitions: number
-          task_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          ease_factor?: number
-          id?: string
-          interval_days?: number
-          knowledge_point_id: string
-          last_quality_score?: number | null
-          last_review_date?: string | null
-          next_review_date: string
-          repetitions?: number
-          task_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          ease_factor?: number
-          id?: string
-          interval_days?: number
-          knowledge_point_id?: string
-          last_quality_score?: number | null
-          last_review_date?: string | null
-          next_review_date?: string
-          repetitions?: number
-          task_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "knowledge_review_tasks_knowledge_point_id_fkey"
-            columns: ["knowledge_point_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_points"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "knowledge_review_tasks_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "user_tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       learning_loops: {
         Row: {
           config: Json | null
@@ -1601,6 +1567,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "learning_paths_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "learning_paths_source_graph_id_fkey"
             columns: ["source_graph_id"]
@@ -4186,6 +4159,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "user_tasks_knowledge_point_id_fkey"
+            columns: ["knowledge_point_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_points"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_tasks_parent_task_id_fkey"
             columns: ["parent_task_id"]
             isOneToOne: false
@@ -4278,9 +4258,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      pg_all_foreign_keys: {
+        Row: {
+          fk_columns: unknown[] | null
+          fk_constraint_name: unknown
+          fk_schema_name: unknown
+          fk_table_name: unknown
+          fk_table_oid: unknown
+          is_deferrable: boolean | null
+          is_deferred: boolean | null
+          match_type: string | null
+          on_delete: string | null
+          on_update: string | null
+          pk_columns: unknown[] | null
+          pk_constraint_name: unknown
+          pk_index_name: unknown
+          pk_schema_name: unknown
+          pk_table_name: unknown
+          pk_table_oid: unknown
+        }
+        Relationships: []
+      }
+      tap_funky: {
+        Row: {
+          args: string | null
+          is_definer: boolean | null
+          is_strict: boolean | null
+          is_visible: boolean | null
+          kind: unknown
+          langoid: unknown
+          name: unknown
+          oid: unknown
+          owner: unknown
+          returns: string | null
+          returns_set: boolean | null
+          schema: unknown
+          volatility: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      _cleanup: { Args: never; Returns: boolean }
+      _contract_on: { Args: { "": string }; Returns: unknown }
+      _currtest: { Args: never; Returns: number }
+      _db_privs: { Args: never; Returns: unknown[] }
+      _extensions: { Args: never; Returns: unknown[] }
+      _get: { Args: { "": string }; Returns: number }
+      _get_latest: { Args: { "": string }; Returns: number[] }
+      _get_note: { Args: { "": string }; Returns: string }
+      _is_verbose: { Args: never; Returns: boolean }
+      _prokind: { Args: { p_oid: unknown }; Returns: unknown }
+      _query: { Args: { "": string }; Returns: string }
+      _refine_vol: { Args: { "": string }; Returns: string }
+      _retval: { Args: { "": string }; Returns: string }
+      _table_privs: { Args: never; Returns: unknown[] }
+      _temptypes: { Args: { "": string }; Returns: string }
+      _todo: { Args: never; Returns: string }
       batch_permanent_delete_graphs: {
         Args: { p_graph_ids: string[]; p_user_id: string }
         Returns: Json
@@ -4315,6 +4349,42 @@ export type Database = {
           similarity: number
         }[]
       }
+      col_is_null:
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              schema_name: unknown
+              table_name: unknown
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              table_name: unknown
+            }
+            Returns: string
+          }
+      col_not_null:
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              schema_name: unknown
+              table_name: unknown
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              table_name: unknown
+            }
+            Returns: string
+          }
       complete_task_with_execution: {
         Args: { p_task_id: string; p_user_id: string }
         Returns: {
@@ -4351,6 +4421,26 @@ export type Database = {
         }
         Returns: Json
       }
+      diag:
+        | {
+            Args: { msg: unknown }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { msg: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+      diag_test_name: { Args: { "": string }; Returns: string }
+      do_tap:
+        | { Args: never; Returns: string[] }
+        | { Args: { "": string }; Returns: string[] }
+      fail:
+        | { Args: never; Returns: string }
+        | { Args: { "": string }; Returns: string }
       find_missing_connections: {
         Args: { p_graph_id: string; p_max_suggestions?: number }
         Returns: {
@@ -4361,6 +4451,9 @@ export type Database = {
           target_level: string
         }[]
       }
+      findfuncs: { Args: { "": string }; Returns: string[] }
+      finish: { Args: { exception_on_failure?: boolean }; Returns: string[] }
+      format_type_string: { Args: { "": string }; Returns: string }
       get_accessible_knowledge_points: {
         Args: { p_user_id: string }
         Returns: {
@@ -4447,10 +4540,15 @@ export type Database = {
         Args: { p_knowledge_point_id: string; p_user_id: string }
         Returns: Json
       }
+      has_unique: { Args: { "": string }; Returns: string }
+      in_todo: { Args: never; Returns: boolean }
+      is_empty: { Args: { "": string }; Returns: string }
       is_graph_collaborator: {
         Args: { p_graph_id: string; p_user_id: string }
         Returns: boolean
       }
+      isnt_empty: { Args: { "": string }; Returns: string }
+      lives_ok: { Args: { "": string }; Returns: string }
       match_document_chunks: {
         Args: {
           match_count: number
@@ -4511,10 +4609,19 @@ export type Database = {
           title: string
         }[]
       }
+      no_plan: { Args: never; Returns: boolean[] }
+      num_failed: { Args: never; Returns: number }
+      os_name: { Args: never; Returns: string }
+      pass:
+        | { Args: never; Returns: string }
+        | { Args: { "": string }; Returns: string }
       permanent_delete_graph: {
         Args: { p_graph_id: string; p_user_id: string }
         Returns: Json
       }
+      pg_version: { Args: never; Returns: string }
+      pg_version_num: { Args: never; Returns: number }
+      pgtap_version: { Args: never; Returns: number }
       remove_node_with_edges: {
         Args: { p_graph_id: string; p_graph_node_id: string }
         Returns: Json
@@ -4523,6 +4630,9 @@ export type Database = {
         Args: { p_queue_level: number; p_task_ids: string[]; p_user_id: string }
         Returns: number
       }
+      runtests:
+        | { Args: never; Returns: string[] }
+        | { Args: { "": string }; Returns: string[] }
       search_similar_graphs: {
         Args: {
           p_exclude_graph_id?: string
@@ -4555,6 +4665,9 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      skip:
+        | { Args: { "": string }; Returns: string }
+        | { Args: { how_many: number; why: string }; Returns: string }
       soft_delete_graph_node: {
         Args: { p_graph_node_id: string; p_user_id: string }
         Returns: boolean
@@ -4573,6 +4686,17 @@ export type Database = {
           task_status: string
         }[]
       }
+      throws_ok: { Args: { "": string }; Returns: string }
+      todo:
+        | { Args: { how_many: number }; Returns: boolean[] }
+        | { Args: { how_many: number; why: string }; Returns: boolean[] }
+        | { Args: { why: string }; Returns: boolean[] }
+        | { Args: { how_many: number; why: string }; Returns: boolean[] }
+      todo_end: { Args: never; Returns: boolean[] }
+      todo_start:
+        | { Args: never; Returns: boolean[] }
+        | { Args: { "": string }; Returns: boolean[] }
+      truncate_table: { Args: { table_name: string }; Returns: undefined }
     }
     Enums: {
       collaborator_role: "owner" | "editor" | "viewer"
@@ -4598,7 +4722,9 @@ export type Database = {
       user_role: "user" | "admin"
     }
     CompositeTypes: {
-      [_ in never]: never
+      _time_trial_type: {
+        a_time: number | null
+      }
     }
   }
 }

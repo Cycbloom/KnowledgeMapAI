@@ -94,16 +94,6 @@ export const cacheService = {
     return cacheStore.delMany(keys);
   },
 
-  /** @deprecated Use delByTags instead for better performance */
-  delByPrefix: async (prefix: string): Promise<number> => {
-    const allKeys = await cacheStore.keys();
-    const keysToDelete = allKeys.filter(key => key.startsWith(prefix));
-    if (keysToDelete.length > 0) {
-      return cacheService.del(keysToDelete);
-    }
-    return 0;
-  },
-
   flush: async (): Promise<void> => {
     await cacheStore.clear();
   },

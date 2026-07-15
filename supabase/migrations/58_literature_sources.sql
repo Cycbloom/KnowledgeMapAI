@@ -102,16 +102,8 @@ CREATE POLICY "Users can delete literature sources for their own graphs"
   );
 
 -- Auto-update timestamp trigger
-CREATE OR REPLACE FUNCTION update_literature_sources_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS on_update_literature_sources ON literature_sources;
 CREATE TRIGGER on_update_literature_sources
   BEFORE UPDATE ON literature_sources
   FOR EACH ROW
-  EXECUTE FUNCTION update_literature_sources_updated_at();
+  EXECUTE FUNCTION update_updated_at_column();

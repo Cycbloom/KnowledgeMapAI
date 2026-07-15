@@ -67,18 +67,10 @@ export type {
 // Legacy (deprecated) types
 export type {
   ReviewTask,
-  FSRSReviewTask,
   CreateReviewTaskData,
   UpdateReviewTaskData,
   ReviewTaskStats,
   PendingReviewTask,
-  TaskStatus,
-  ScheduledTask,
-  TaskDetail,
-  TaskStats,
-  TaskFilters,
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
 } from "./scheduler-legacy";
 
 // Study types

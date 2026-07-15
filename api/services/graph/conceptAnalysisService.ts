@@ -1,8 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import {
-  conceptAggregationService,
-  type ConceptWithEmbedding,
-} from "./conceptAggregationService";
+import { conceptAggregationService } from "./conceptAggregationService";
+import { type ConceptWithEmbedding } from "./conceptSimilarityService";
 import { hierarchyRecognitionService } from "../ai/hierarchyRecognitionService";
 import { cacheService, CacheKeys } from "../common/cacheService";
 import { logger } from "../../utils/logger";

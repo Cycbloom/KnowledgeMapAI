@@ -506,13 +506,6 @@ CREATE POLICY "Users can insert own learning loops" ON learning_loops FOR INSERT
 CREATE POLICY "Users can update own learning loops" ON learning_loops FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own learning loops" ON learning_loops FOR DELETE USING (auth.uid() = user_id);
 
--- Knowledge review tasks
-ALTER TABLE knowledge_review_tasks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own review tasks" ON knowledge_review_tasks FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own review tasks" ON knowledge_review_tasks FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own review tasks" ON knowledge_review_tasks FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own review tasks" ON knowledge_review_tasks FOR DELETE USING (auth.uid() = user_id);
-
 -- User efficiency profile
 ALTER TABLE user_efficiency_profile ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own efficiency profile" ON user_efficiency_profile FOR SELECT USING (auth.uid() = user_id);

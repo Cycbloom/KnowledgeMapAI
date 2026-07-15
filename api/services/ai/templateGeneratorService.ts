@@ -36,13 +36,6 @@ import type {
 } from "./templateValidationService";
 import { storyTemplateService } from "./storyTemplateService";
 
-// Re-export types for backward compatibility
-export type {
-  GeneratedTemplateNode,
-  GeneratedTemplateEdge,
-  GeneratedTemplateScheme,
-};
-
 export interface GenerateTemplatesOptions {
   topic: string;
   context?: string;

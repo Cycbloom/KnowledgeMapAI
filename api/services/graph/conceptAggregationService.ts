@@ -136,9 +136,6 @@ export function normalizeTitle(title: string): string {
   return normalized;
 }
 
-// Re-export types from sub-services for backward compatibility
-export type { SimilarityResult, ConceptWithEmbedding };
-
 export interface AggregationResult {
   mergedCount: number;
   upgradedNodes: Array<{

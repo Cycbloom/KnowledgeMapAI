@@ -38,18 +38,6 @@ describe('Cache Service', () => {
       expect(CacheKeys.USER_GRAPHS('456')).toBe('user_graphs_456');
       expect(CacheKeys.STUDY_CARDS('789')).toBe('study_cards_789');
     });
-
-    it('should delete by prefix', async () => {
-      await cacheService.set('prefix_1', 'val1');
-      await cacheService.set('prefix_2', 'val2');
-      await cacheService.set('other_1', 'val3');
-
-      await cacheService.delByPrefix('prefix_');
-
-      expect(await cacheService.get('prefix_1')).toBeUndefined();
-      expect(await cacheService.get('prefix_2')).toBeUndefined();
-      expect(await cacheService.get('other_1')).toBe('val3');
-    });
   });
 
   describe('TTL Configuration', () => {

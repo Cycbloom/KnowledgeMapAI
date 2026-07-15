@@ -71,8 +71,3 @@ export const ColorModeLegend: React.FC<ColorModeLegendProps> = ({ coloringMode, 
     </div>
   );
 };
-
-// Keep backward compatibility alias
-export const HeatmapLegend: React.FC<Omit<ColorModeLegendProps, 'coloringMode'> & { coloringMode?: GraphColorMode }> = (props) => {
-  return <ColorModeLegend {...props} coloringMode={props.coloringMode ?? 'heatmap'} />;
-};

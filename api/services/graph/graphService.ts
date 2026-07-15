@@ -317,6 +317,18 @@ export class GraphService {
       }
     }
 
+    // 同步创建 knowledge_graph_contents 记录（1:1 子表）
+    try {
+      await supabase
+        .from("knowledge_graph_contents")
+        .insert({ graph_id: data.id });
+    } catch (e) {
+      logger.warn(
+        "[GraphService] Failed to create knowledge_graph_contents record:",
+        e,
+      );
+    }
+
     if (options?.templateType === "topic_research") {
       const preset = options?.presetId
         ? PRESET_MAP[options.presetId]
@@ -380,6 +392,7 @@ export class GraphService {
       reference_books?: unknown;
       external_links?: unknown;
       learning_guide?: string;
+      podcast_script?: string;
     },
   ) {
     if (updates.title && process.env.SKIP_DUPLICATE_TOPIC_CHECK !== 'true') {
@@ -403,8 +416,21 @@ export class GraphService {
       }
     }
 
+    // 分离内容性字段（写入 knowledge_graph_contents）和元数据字段（写入 knowledge_graphs）
+    const contentFields: Record<string, unknown> = {};
+    const metadataUpdates: Record<string, unknown> = {};
+    const contentFieldKeys = ['reference_books', 'external_links', 'learning_guide', 'podcast_script'];
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (contentFieldKeys.includes(key)) {
+        contentFields[key] = value;
+      } else {
+        metadataUpdates[key] = value;
+      }
+    }
+
     const updateData: Record<string, unknown> = {
-      ...updates,
+      ...metadataUpdates,
       updated_at: new Date().toISOString(),
     };
 
@@ -428,6 +454,22 @@ export class GraphService {
       .single();
 
     if (error) throw error;
+
+    // 如果涉及内容性字段，UPSERT 到 knowledge_graph_contents
+    if (Object.keys(contentFields).length > 0) {
+      const contentUpsert: Record<string, unknown> = {
+        graph_id: graphId,
+        ...contentFields,
+        updated_at: new Date().toISOString(),
+      };
+      const { error: contentError } = await supabase
+        .from("knowledge_graph_contents")
+        .upsert(contentUpsert, { onConflict: 'graph_id' });
+
+      if (contentError) {
+        logger.warn("[GraphService] Failed to update knowledge_graph_contents:", contentError);
+      }
+    }
 
     await cacheService.invalidateGraphCache(userId, graphId);
 

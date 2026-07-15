@@ -215,7 +215,9 @@ export class GraphQueryService {
   ) {
     const { data, error } = await notDeleted(supabase
       .from("knowledge_graphs")
-      .select("*")
+      .select(
+        "*, knowledge_graph_contents(podcast_script, reference_books, external_links, learning_guide)",
+      )
       .eq("id", graphId)
       )
       .maybeSingle();
@@ -225,7 +227,18 @@ export class GraphQueryService {
       throw error;
     }
 
-    return data;
+    if (!data) return data;
+
+    // 将 knowledge_graph_contents 子表字段平铺到顶层，保持调用方兼容
+    const content = data.knowledge_graph_contents;
+    const { knowledge_graph_contents: _omitted, ...graphData } = data;
+    return {
+      ...graphData,
+      podcast_script: content?.podcast_script ?? null,
+      reference_books: content?.reference_books ?? null,
+      external_links: content?.external_links ?? null,
+      learning_guide: content?.learning_guide ?? null,
+    };
   }
 
   async updateLastUsedAt(

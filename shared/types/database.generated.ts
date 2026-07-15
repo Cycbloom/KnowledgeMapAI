@@ -1055,16 +1055,12 @@ export type Database = {
           description: string | null
           domain: string | null
           embedding: string | null
-          external_links: Json | null
           id: string
           is_branch: boolean | null
           is_favorite: boolean | null
           is_public: boolean | null
           last_used_at: string | null
-          learning_guide: string | null
           parent_graph_id: string | null
-          podcast_script: string | null
-          reference_books: Json | null
           settings: Json | null
           task_id: string | null
           template_type: string | null
@@ -1080,16 +1076,12 @@ export type Database = {
           description?: string | null
           domain?: string | null
           embedding?: string | null
-          external_links?: Json | null
           id?: string
           is_branch?: boolean | null
           is_favorite?: boolean | null
           is_public?: boolean | null
           last_used_at?: string | null
-          learning_guide?: string | null
           parent_graph_id?: string | null
-          podcast_script?: string | null
-          reference_books?: Json | null
           settings?: Json | null
           task_id?: string | null
           template_type?: string | null
@@ -1105,16 +1097,12 @@ export type Database = {
           description?: string | null
           domain?: string | null
           embedding?: string | null
-          external_links?: Json | null
           id?: string
           is_branch?: boolean | null
           is_favorite?: boolean | null
           is_public?: boolean | null
           last_used_at?: string | null
-          learning_guide?: string | null
           parent_graph_id?: string | null
-          podcast_script?: string | null
-          reference_books?: Json | null
           settings?: Json | null
           task_id?: string | null
           template_type?: string | null
@@ -1142,6 +1130,41 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "user_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_graph_contents: {
+        Row: {
+          graph_id: string
+          podcast_script: string | null
+          reference_books: Json | null
+          external_links: Json | null
+          learning_guide: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          graph_id: string
+          podcast_script?: string | null
+          reference_books?: Json | null
+          external_links?: Json | null
+          learning_guide?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          graph_id?: string
+          podcast_script?: string | null
+          reference_books?: Json | null
+          external_links?: Json | null
+          learning_guide?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_graph_contents_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: true
+            referencedRelation: "knowledge_graphs"
             referencedColumns: ["id"]
           },
         ]
@@ -1579,6 +1602,130 @@ export type Database = {
             columns: ["source_graph_id"]
             isOneToOne: false
             referencedRelation: "knowledge_graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_session_results: {
+        Row: {
+          card_id: string
+          correct: boolean
+          created_at: string | null
+          id: string
+          session_id: string
+          time_spent: number | null
+          user_answer: string | null
+        }
+        Insert: {
+          card_id: string
+          correct: boolean
+          created_at?: string | null
+          id?: string
+          session_id: string
+          time_spent?: number | null
+          user_answer?: string | null
+        }
+        Update: {
+          card_id?: string
+          correct?: boolean
+          created_at?: string | null
+          id?: string
+          session_id?: string
+          time_spent?: number | null
+          user_answer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_session_results_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "study_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_session_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "learning_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_sessions: {
+        Row: {
+          card_ids: string[] | null
+          completed_at: string | null
+          correct_count: number | null
+          created_at: string | null
+          id: string
+          knowledge_point_id: string
+          quiz_set_id: string | null
+          score: number | null
+          session_type: string
+          started_at: string
+          status: string | null
+          subtask_id: string
+          total_count: number | null
+          total_time_spent: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          card_ids?: string[] | null
+          completed_at?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          id?: string
+          knowledge_point_id: string
+          quiz_set_id?: string | null
+          score?: number | null
+          session_type: string
+          started_at?: string
+          status?: string | null
+          subtask_id: string
+          total_count?: number | null
+          total_time_spent?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          card_ids?: string[] | null
+          completed_at?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          id?: string
+          knowledge_point_id?: string
+          quiz_set_id?: string | null
+          score?: number | null
+          session_type?: string
+          started_at?: string
+          status?: string | null
+          subtask_id?: string
+          total_count?: number | null
+          total_time_spent?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_sessions_knowledge_point_id_fkey"
+            columns: ["knowledge_point_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_sessions_quiz_set_id_fkey"
+            columns: ["quiz_set_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_sessions_subtask_id_fkey"
+            columns: ["subtask_id"]
+            isOneToOne: false
+            referencedRelation: "task_subtasks"
             referencedColumns: ["id"]
           },
         ]
@@ -2173,117 +2320,6 @@ export type Database = {
         }
         Relationships: []
       }
-      practice_results: {
-        Row: {
-          card_id: string
-          correct: boolean
-          created_at: string | null
-          id: string
-          practice_session_id: string
-          time_spent: number | null
-          user_answer: string | null
-        }
-        Insert: {
-          card_id: string
-          correct: boolean
-          created_at?: string | null
-          id?: string
-          practice_session_id: string
-          time_spent?: number | null
-          user_answer?: string | null
-        }
-        Update: {
-          card_id?: string
-          correct?: boolean
-          created_at?: string | null
-          id?: string
-          practice_session_id?: string
-          time_spent?: number | null
-          user_answer?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "practice_results_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "study_cards"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "practice_results_practice_session_id_fkey"
-            columns: ["practice_session_id"]
-            isOneToOne: false
-            referencedRelation: "practice_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      practice_sessions: {
-        Row: {
-          accuracy: number | null
-          card_ids: string[] | null
-          completed_at: string | null
-          correct_count: number | null
-          created_at: string | null
-          id: string
-          knowledge_point_id: string
-          started_at: string
-          status: string | null
-          subtask_id: string
-          total_count: number | null
-          total_time_spent: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          accuracy?: number | null
-          card_ids?: string[] | null
-          completed_at?: string | null
-          correct_count?: number | null
-          created_at?: string | null
-          id?: string
-          knowledge_point_id: string
-          started_at?: string
-          status?: string | null
-          subtask_id: string
-          total_count?: number | null
-          total_time_spent?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          accuracy?: number | null
-          card_ids?: string[] | null
-          completed_at?: string | null
-          correct_count?: number | null
-          created_at?: string | null
-          id?: string
-          knowledge_point_id?: string
-          started_at?: string
-          status?: string | null
-          subtask_id?: string
-          total_count?: number | null
-          total_time_spent?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "practice_sessions_knowledge_point_id_fkey"
-            columns: ["knowledge_point_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_points"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "practice_sessions_subtask_id_fkey"
-            columns: ["subtask_id"]
-            isOneToOne: false
-            referencedRelation: "task_subtasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       prompt_templates: {
         Row: {
           code: string
@@ -2357,127 +2393,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      quiz_results: {
-        Row: {
-          answer: string | null
-          card_id: string
-          correct: boolean
-          created_at: string | null
-          id: string
-          quiz_session_id: string
-          time_spent: number | null
-        }
-        Insert: {
-          answer?: string | null
-          card_id: string
-          correct: boolean
-          created_at?: string | null
-          id?: string
-          quiz_session_id: string
-          time_spent?: number | null
-        }
-        Update: {
-          answer?: string | null
-          card_id?: string
-          correct?: boolean
-          created_at?: string | null
-          id?: string
-          quiz_session_id?: string
-          time_spent?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quiz_results_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "study_cards"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quiz_results_quiz_session_id_fkey"
-            columns: ["quiz_session_id"]
-            isOneToOne: false
-            referencedRelation: "quiz_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quiz_sessions: {
-        Row: {
-          card_ids: string[] | null
-          completed_at: string | null
-          correct_count: number | null
-          created_at: string | null
-          id: string
-          knowledge_point_id: string
-          quiz_set_id: string
-          score: number | null
-          started_at: string
-          status: string | null
-          subtask_id: string
-          total_count: number | null
-          total_time_spent: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          card_ids?: string[] | null
-          completed_at?: string | null
-          correct_count?: number | null
-          created_at?: string | null
-          id?: string
-          knowledge_point_id: string
-          quiz_set_id: string
-          score?: number | null
-          started_at?: string
-          status?: string | null
-          subtask_id: string
-          total_count?: number | null
-          total_time_spent?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          card_ids?: string[] | null
-          completed_at?: string | null
-          correct_count?: number | null
-          created_at?: string | null
-          id?: string
-          knowledge_point_id?: string
-          quiz_set_id?: string
-          score?: number | null
-          started_at?: string
-          status?: string | null
-          subtask_id?: string
-          total_count?: number | null
-          total_time_spent?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quiz_sessions_knowledge_point_id_fkey"
-            columns: ["knowledge_point_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge_points"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quiz_sessions_quiz_set_id_fkey"
-            columns: ["quiz_set_id"]
-            isOneToOne: false
-            referencedRelation: "quiz_sets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quiz_sessions_subtask_id_fkey"
-            columns: ["subtask_id"]
-            isOneToOne: false
-            referencedRelation: "task_subtasks"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       quiz_set_cards: {
         Row: {
@@ -3620,7 +3535,6 @@ export type Database = {
           last_state_change_at: string | null
           learning_path_node_id: string | null
           learning_state: string | null
-          mastery_level: number | null
           position: number | null
           priority: number | null
           state_history: Json | null
@@ -3641,7 +3555,6 @@ export type Database = {
           last_state_change_at?: string | null
           learning_path_node_id?: string | null
           learning_state?: string | null
-          mastery_level?: number | null
           position?: number | null
           priority?: number | null
           state_history?: Json | null
@@ -3662,7 +3575,6 @@ export type Database = {
           last_state_change_at?: string | null
           learning_path_node_id?: string | null
           learning_state?: string | null
-          mastery_level?: number | null
           position?: number | null
           priority?: number | null
           state_history?: Json | null
@@ -4076,6 +3988,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           estimated_duration: number | null
+          graph_id: string | null
           id: string
           knowledge_point_id: string | null
           notes: string | null
@@ -4106,6 +4019,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           estimated_duration?: number | null
+          graph_id?: string | null
           id?: string
           knowledge_point_id?: string | null
           notes?: string | null
@@ -4136,6 +4050,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           estimated_duration?: number | null
+          graph_id?: string | null
           id?: string
           knowledge_point_id?: string | null
           notes?: string | null
@@ -4158,6 +4073,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_tasks_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_graphs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_tasks_knowledge_point_id_fkey"
             columns: ["knowledge_point_id"]

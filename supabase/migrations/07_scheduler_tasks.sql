@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS user_tasks (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'paused', 'completed', 'cancelled', 'failed')),
   tags TEXT[] DEFAULT '{}',
   knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
+  graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
   priority INTEGER DEFAULT 0,
   task_type TEXT DEFAULT 'one_time',
   total_duration INTEGER,
@@ -63,19 +64,18 @@ COMMENT ON COLUMN user_tasks.total_duration IS 'Total duration in minutes for lo
 COMMENT ON COLUMN user_tasks.progress_mode IS 'Progress distribution mode: average, decreasing, increasing, custom';
 COMMENT ON COLUMN user_tasks.progress_percentage IS 'Current progress percentage (0-100)';
 COMMENT ON COLUMN user_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
+COMMENT ON COLUMN user_tasks.graph_id IS '关联的图谱ID（task_type=graph_learning 时使用），从原 context.graph_id 提升为正式列';
 COMMENT ON COLUMN user_tasks.context IS 'Task context and metadata (JSONB for flexible task-type-specific data)';
 
 -- Legacy column migration: 兼容旧 schema 版本的列类型变更
 -- 这些列在旧版本中以不同类型存在，DROP + ADD 确保类型正确
 -- 在新数据库初始化 (db reset) 时这些列从未创建，DROP IF EXISTS 是安全的空操作
-ALTER TABLE user_tasks DROP COLUMN IF EXISTS graph_id;
+-- 注: graph_id 已在表定义中作为正式列（带 FK），不再需要 DROP
 ALTER TABLE user_tasks DROP COLUMN IF EXISTS knowledge_point_count;
 ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_duration;
 ALTER TABLE user_tasks DROP COLUMN IF EXISTS auto_calculated_deadline;
 ALTER TABLE user_tasks ALTER COLUMN context TYPE JSONB USING COALESCE(context, '{}')::jsonb;
 ALTER TABLE user_tasks ALTER COLUMN context SET DEFAULT '{}'::jsonb;
-
-CREATE INDEX IF NOT EXISTS idx_user_tasks_context_graph_id ON user_tasks ((context->>'graph_id')) WHERE task_type = 'graph_learning';
 
 -- Task executions table (execution history)
 CREATE TABLE IF NOT EXISTS task_executions (
@@ -205,7 +205,6 @@ CREATE TABLE IF NOT EXISTS task_subtasks (
   learning_path_node_id UUID,
   knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
   learning_state TEXT DEFAULT 'learning' CHECK (learning_state IN ('learning', 'review', 'practice', 'quiz')),
-  mastery_level DECIMAL(5,2) DEFAULT 0.00 CHECK (mastery_level >= 0 AND mastery_level <= 1),
   last_state_change_at TIMESTAMPTZ DEFAULT NOW(),
   state_history JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -216,7 +215,6 @@ COMMENT ON TABLE task_subtasks IS 'Subtasks for breaking down main tasks, each s
 COMMENT ON COLUMN task_subtasks.learning_path_node_id IS 'Associated learning path node ID';
 COMMENT ON COLUMN task_subtasks.knowledge_point_id IS 'Associated knowledge point ID (required, one-to-one binding)';
 COMMENT ON COLUMN task_subtasks.learning_state IS 'Learning state machine: learning(once) -> review -> practice -> quiz -> review(cycle)';
-COMMENT ON COLUMN task_subtasks.mastery_level IS 'Mastery level (0.00-1.00), synced with knowledge_points.mastery_level';
 COMMENT ON COLUMN task_subtasks.last_state_change_at IS 'Timestamp of last learning state change';
 COMMENT ON COLUMN task_subtasks.state_history IS 'History of learning state transitions';
 

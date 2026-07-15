@@ -47,6 +47,10 @@ export const updateGraphSchema = z.object({
   title: z.string().min(1, "标题不能为空").optional(),
   description: z.string().optional(),
   settings: z.record(z.any()).optional(),
+  reference_books: z.any().optional(),
+  external_links: z.any().optional(),
+  learning_guide: z.string().nullable().optional(),
+  podcast_script: z.string().nullable().optional(),
 });
 
 export const shareGraphSchema = z.object({

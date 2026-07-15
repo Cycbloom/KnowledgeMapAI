@@ -177,7 +177,7 @@ export async function createBackup(
   await ensureBackupDir();
 
   const [graphsResult, studyCardsResult, studyProgressResult, focusSessionsResult, userAchievementsResult, periodicTasksResult] = await Promise.all([
-    supabase.from('knowledge_graphs').select('*').eq('user_id', userId),
+    supabase.from('knowledge_graphs').select('*, knowledge_graph_contents(podcast_script, reference_books, external_links, learning_guide)').eq('user_id', userId),
     supabase.from('study_cards').select('*').eq('user_id', userId),
     supabase.from('study_progress').select('*').eq('user_id', userId),
     supabase.from('focus_sessions').select('*').eq('user_id', userId),
@@ -185,7 +185,15 @@ export async function createBackup(
     supabase.from('periodic_tasks').select('*').eq('user_id', userId).eq('period_type', 'daily'),
   ]);
 
-  const graphs = (graphsResult.data as KnowledgeGraphRow[] | null) || [];
+  type GraphWithContent = KnowledgeGraphRow & {
+    knowledge_graph_contents?: {
+      podcast_script: string | null;
+      reference_books: unknown | null;
+      external_links: unknown | null;
+      learning_guide: string | null;
+    } | null;
+  };
+  const graphs = (graphsResult.data as GraphWithContent[] | null) || [];
   const graphIds = graphs.map((g) => g.id);
 
   let nodes: BackupNodeItem[] = [];
@@ -276,13 +284,13 @@ export async function createBackup(
         template_type: g.template_type,
         settings: g.settings,
         is_public: g.is_public,
-        reference_books: g.reference_books,
-        external_links: g.external_links,
-        learning_guide: g.learning_guide,
+        reference_books: g.knowledge_graph_contents?.reference_books ?? null,
+        external_links: g.knowledge_graph_contents?.external_links ?? null,
+        learning_guide: g.knowledge_graph_contents?.learning_guide ?? null,
         parent_graph_id: g.parent_graph_id,
         last_used_at: g.last_used_at,
         task_id: g.task_id,
-        podcast_script: g.podcast_script,
+        podcast_script: g.knowledge_graph_contents?.podcast_script ?? null,
         created_at: g.created_at,
         updated_at: g.updated_at,
       })),
@@ -543,11 +551,7 @@ export class BackupService {
         template_type: g.template_type || null,
         settings: g.settings || {},
         is_public: g.is_public || false,
-        reference_books: g.reference_books || null,
-        external_links: g.external_links || null,
-        learning_guide: g.learning_guide || null,
         last_used_at: g.last_used_at || null,
-        podcast_script: g.podcast_script || null,
       }));
 
       const { data: insertedGraphs, error: graphsError } = await supabase
@@ -561,6 +565,23 @@ export class BackupService {
         oldToNewGraphIds.set(data.graphs![i].id, g.id);
       });
       stats.graphs = insertedGraphs?.length || 0;
+
+      // 同步导入 knowledge_graph_contents 记录（1:1 子表）
+      if (insertedGraphs && insertedGraphs.length > 0) {
+        const contentsToInsert = insertedGraphs.map((g, i) => ({
+          graph_id: g.id,
+          podcast_script: data.graphs![i].podcast_script || null,
+          reference_books: data.graphs![i].reference_books || null,
+          external_links: data.graphs![i].external_links || null,
+          learning_guide: data.graphs![i].learning_guide || null,
+        }));
+        const { error: contentError } = await supabase
+          .from('knowledge_graph_contents')
+          .insert(contentsToInsert);
+        if (contentError) {
+          logger.warn('Failed to restore knowledge_graph_contents:', contentError);
+        }
+      }
     }
 
     if (data.nodes && data.nodes.length > 0) {

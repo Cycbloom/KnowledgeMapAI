@@ -48,6 +48,28 @@ export interface SubtaskWithKnowledgePoint {
 }
 
 export class SubtaskKnowledgeSyncService {
+  /**
+   * 将 JOIN 查询结果扁平化，把 knowledge_points.mastery_level 提升到顶层
+   */
+  private flattenSubtask(raw: unknown): SubtaskWithKnowledgePoint {
+    const r = raw as {
+      id: string;
+      task_id: string;
+      knowledge_point_id: string;
+      learning_state: LearningState;
+      state_history: SubtaskWithKnowledgePoint["state_history"] | null;
+      knowledge_points: { mastery_level: number | null }[] | null;
+    };
+    return {
+      id: r.id,
+      task_id: r.task_id,
+      knowledge_point_id: r.knowledge_point_id,
+      learning_state: r.learning_state,
+      mastery_level: r.knowledge_points?.[0]?.mastery_level ?? 0,
+      state_history: r.state_history ?? [],
+    };
+  }
+
   async syncSubtaskStateToKnowledgePoint(
     supabase: SupabaseClient,
     subtaskId: string,
@@ -63,7 +85,7 @@ export class SubtaskKnowledgeSyncService {
     const { data: subtask, error: subtaskError } = await supabase
       .from("task_subtasks")
       .select(
-        "id, task_id, knowledge_point_id, learning_state, mastery_level, state_history",
+        "id, task_id, knowledge_point_id, learning_state, state_history, knowledge_points(mastery_level)",
       )
       .eq("id", subtaskId)
       .single();
@@ -77,7 +99,7 @@ export class SubtaskKnowledgeSyncService {
       };
     }
 
-    const subtaskData = subtask as SubtaskWithKnowledgePoint;
+    const subtaskData = this.flattenSubtask(subtask);
     const knowledgePointId = subtaskData.knowledge_point_id;
 
     if (!knowledgePointId) {
@@ -132,11 +154,11 @@ export class SubtaskKnowledgeSyncService {
       };
     }
 
+    // mastery_level 单一来源：不写入 task_subtasks，仅更新 learning_state 和 state_history
     const { error: updateSubtaskError } = await supabase
       .from("task_subtasks")
       .update({
         learning_state: newState,
-        mastery_level: newMasteryLevel,
         last_state_change_at: now,
         updated_at: now,
         state_history: this.updateStateHistory(
@@ -192,7 +214,7 @@ export class SubtaskKnowledgeSyncService {
     const { data: subtasks, error: subtasksError } = await supabase
       .from("task_subtasks")
       .select(
-        "id, task_id, knowledge_point_id, learning_state, mastery_level, state_history",
+        "id, task_id, knowledge_point_id, learning_state, state_history, knowledge_points(mastery_level)",
       )
       .eq("knowledge_point_id", knowledgePointId);
 
@@ -214,17 +236,35 @@ export class SubtaskKnowledgeSyncService {
       };
     }
 
-    const primarySubtask = (subtasks as SubtaskWithKnowledgePoint[])[0];
+    const primarySubtask = this.flattenSubtask(subtasks[0]);
 
     const subtaskId = primarySubtask.id;
     const oldMastery = primarySubtask.mastery_level;
     const newLearningState = this.determineLearningState(newMasteryLevel);
     const now = new Date().toISOString();
 
+    // mastery_level 单一来源：写入 knowledge_points（不再写入 task_subtasks）
+    const { error: updateKpError } = await supabase
+      .from("knowledge_points")
+      .update({
+        mastery_level: newMasteryLevel,
+        updated_at: now,
+      })
+      .eq("id", knowledgePointId);
+
+    if (updateKpError) {
+      return {
+        success: false,
+        subtask_id: subtaskId,
+        knowledge_point_id: knowledgePointId,
+        old_mastery: oldMastery,
+        error: `Failed to update knowledge point mastery: ${updateKpError.message}`,
+      };
+    }
+
     const { error: updateSubtaskError } = await supabase
       .from("task_subtasks")
       .update({
-        mastery_level: newMasteryLevel,
         learning_state: newLearningState,
         last_state_change_at: now,
         updated_at: now,
@@ -333,7 +373,7 @@ export class SubtaskKnowledgeSyncService {
 
     const { data: subtask, error: subtaskError } = await supabase
       .from("task_subtasks")
-      .select("id, task_id, knowledge_point_id, mastery_level")
+      .select("id, task_id, knowledge_point_id, knowledge_points(mastery_level)")
       .eq("id", subtaskId)
       .single();
 
@@ -349,8 +389,9 @@ export class SubtaskKnowledgeSyncService {
       id: string;
       task_id: string;
       knowledge_point_id: string;
-      mastery_level: number;
+      knowledge_points: { mastery_level: number | null }[] | null;
     };
+    const subtaskMastery = subtaskData.knowledge_points?.[0]?.mastery_level ?? 0;
 
     const { data: task, error: taskError } = await supabase
       .from("user_tasks")
@@ -373,12 +414,12 @@ export class SubtaskKnowledgeSyncService {
       {
         userId: taskData.user_id,
         type: "review_reminder",
-        message: `知识点需要复习：掌握度已降至 ${Math.round((subtaskData.mastery_level ?? 0) * 100)}%`,
+        message: `知识点需要复习：掌握度已降至 ${Math.round(subtaskMastery * 100)}%`,
         data: {
           subtaskId: subtaskData.id,
           taskId: taskData.id,
           knowledgePointId: subtaskData.knowledge_point_id,
-          masteryLevel: subtaskData.mastery_level,
+          masteryLevel: subtaskMastery,
         },
       },
       taskData.user_id,
@@ -468,7 +509,7 @@ export class SubtaskKnowledgeSyncService {
     const { data: subtasks, error } = await supabase
       .from("task_subtasks")
       .select(
-        "id, task_id, knowledge_point_id, learning_state, mastery_level, state_history",
+        "id, task_id, knowledge_point_id, learning_state, state_history, knowledge_points(mastery_level)",
       )
       .eq("knowledge_point_id", knowledgePointId);
 
@@ -478,7 +519,7 @@ export class SubtaskKnowledgeSyncService {
       });
     }
 
-    return (subtasks as SubtaskWithKnowledgePoint[]) ?? [];
+    return (subtasks ?? []).map((s) => this.flattenSubtask(s));
   }
 
   async checkAndTriggerReviews(

@@ -1,11 +1,23 @@
 import { withClient } from "../utils/clientHelper";
 import type { TaskSubtask } from "@shared/types";
 
+type SubtaskWithJoin = Omit<TaskSubtask, "mastery_level"> & {
+  knowledge_points: { mastery_level: number | null }[] | null;
+};
+
+function flattenSubtask(raw: SubtaskWithJoin): TaskSubtask {
+  const { knowledge_points, ...rest } = raw;
+  return {
+    ...rest,
+    mastery_level: knowledge_points?.[0]?.mastery_level ?? 0,
+  } as TaskSubtask;
+}
+
 export const getSubtasks = async (taskId: string): Promise<TaskSubtask[]> => {
   return withClient(async (client) => {
     const { data, error } = await client
       .from("task_subtasks")
-      .select("*")
+      .select("*, knowledge_points(mastery_level)")
       .eq("task_id", taskId)
       .order("position", { ascending: true });
 
@@ -13,7 +25,7 @@ export const getSubtasks = async (taskId: string): Promise<TaskSubtask[]> => {
       throw new Error(error.message);
     }
 
-    return (data as TaskSubtask[] | null) ?? [];
+    return ((data ?? []) as SubtaskWithJoin[]).map(flattenSubtask);
   });
 };
 
@@ -30,14 +42,14 @@ export const createSubtask = async (
         description: data.description,
         status: "pending",
       })
-      .select()
+      .select("*, knowledge_points(mastery_level)")
       .single();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return result as TaskSubtask;
+    return flattenSubtask(result as SubtaskWithJoin);
   });
 };
 
@@ -56,14 +68,14 @@ export const updateSubtask = async (
       .from("task_subtasks")
       .update(updateData)
       .eq("id", subtaskId)
-      .select()
+      .select("*, knowledge_points(mastery_level)")
       .single();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return result as TaskSubtask;
+    return flattenSubtask(result as SubtaskWithJoin);
   });
 };
 

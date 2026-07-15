@@ -14,6 +14,8 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 GRANT ALL PRIVILEGES ON users TO authenticated;
 GRANT SELECT ON knowledge_graphs TO authenticated;
 GRANT ALL PRIVILEGES ON knowledge_graphs TO authenticated;
+GRANT SELECT ON knowledge_graph_contents TO authenticated;
+GRANT ALL PRIVILEGES ON knowledge_graph_contents TO authenticated;
 GRANT SELECT ON knowledge_points TO authenticated;
 GRANT ALL PRIVILEGES ON knowledge_points TO authenticated;
 GRANT SELECT ON knowledge_point_versions TO authenticated;
@@ -32,6 +34,10 @@ GRANT SELECT ON quiz_set_cards TO authenticated;
 GRANT ALL PRIVILEGES ON quiz_set_cards TO authenticated;
 GRANT SELECT ON study_progress TO authenticated;
 GRANT ALL PRIVILEGES ON study_progress TO authenticated;
+GRANT SELECT ON learning_sessions TO authenticated;
+GRANT ALL PRIVILEGES ON learning_sessions TO authenticated;
+GRANT SELECT ON learning_session_results TO authenticated;
+GRANT ALL PRIVILEGES ON learning_session_results TO authenticated;
 
 -- Templates & Settings
 GRANT SELECT ON templates TO authenticated;

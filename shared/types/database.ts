@@ -7,6 +7,7 @@ import type { Database, Json } from './database.generated';
 // 保留原类型名作为别名以保持下游引用兼容
 
 export type KnowledgeGraphRow = Database['public']['Tables']['knowledge_graphs']['Row'];
+export type KnowledgeGraphContentRow = Database['public']['Tables']['knowledge_graph_contents']['Row'];
 export type GraphNodeRow = Database['public']['Tables']['graph_nodes']['Row'];
 export type StudyCardRow = Database['public']['Tables']['study_cards']['Row'];
 export type GraphRelationRow = Database['public']['Tables']['graph_relations']['Row'];
@@ -86,7 +87,6 @@ export function toGraph(row: KnowledgeGraphRow): Graph {
     settings: validateGraphSettings(row.settings),
     created_at: row.created_at ?? '',
     updated_at: row.updated_at ?? undefined,
-    podcast_script: row.podcast_script ?? undefined,
     is_favorite: row.is_favorite ?? undefined,
   };
 }
@@ -156,6 +156,7 @@ export function toUserTask(row: UserTaskRow): UserTask {
     progress_mode: toProgressMode(row.progress_mode),
     progress_percentage: row.progress_percentage ?? undefined,
     parent_task_id: row.parent_task_id ?? undefined,
+    graph_id: row.graph_id ?? undefined,
     context: row.context ? JSON.stringify(row.context) : undefined,
   };
 }

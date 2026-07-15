@@ -39,7 +39,6 @@ export interface DecayConfig {
 interface SubtaskData {
   id: string;
   knowledge_point_id: string;
-  mastery_level: number;
   last_state_change_at: string;
   task_id: string;
 }
@@ -103,10 +102,10 @@ export class MasteryDecayService {
       let query = supabase.from("task_subtasks").select(`
           id,
           knowledge_point_id,
-          mastery_level,
           last_state_change_at,
           task_id,
-          tasks!inner(user_id)
+          tasks!inner(user_id),
+          knowledge_points(mastery_level)
         `);
 
       if (userId) {
@@ -153,12 +152,12 @@ export class MasteryDecayService {
 
       const results: DecayResult[] = [];
 
-      for (const subtask of subtasks as SubtaskData[]) {
+      for (const raw of subtasks as Array<SubtaskData & { knowledge_points: { mastery_level: number | null }[] | null }>) {
         const easeFactor =
-          easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
-        const lastStudyAt = new Date(subtask.last_state_change_at);
-        const oldMastery = subtask.mastery_level;
-        const fsrsStability = stabilityMap.get(subtask.knowledge_point_id);
+          easeFactorMap.get(raw.knowledge_point_id) || DEFAULT_EASE_FACTOR;
+        const lastStudyAt = new Date(raw.last_state_change_at);
+        const oldMastery = raw.knowledge_points?.[0]?.mastery_level ?? 0;
+        const fsrsStability = stabilityMap.get(raw.knowledge_point_id);
         const newMastery = this.calculateDecay(
           oldMastery,
           lastStudyAt,
@@ -173,8 +172,8 @@ export class MasteryDecayService {
 
         if (Math.abs(newMastery - oldMastery) > 0.01 || needsReview) {
           results.push({
-            knowledge_point_id: subtask.knowledge_point_id,
-            subtask_id: subtask.id,
+            knowledge_point_id: raw.knowledge_point_id,
+            subtask_id: raw.id,
             old_mastery: oldMastery,
             new_mastery: newMastery,
             days_since_study: daysSinceStudy,
@@ -224,9 +223,9 @@ export class MasteryDecayService {
           `
           id,
           knowledge_point_id,
-          mastery_level,
           last_state_change_at,
-          task_id
+          task_id,
+          knowledge_points(mastery_level)
         `,
         )
         .eq("tasks.user_id", userId);
@@ -268,13 +267,14 @@ export class MasteryDecayService {
 
       const pointsNeedingReview: KnowledgePointForReview[] = [];
 
-      for (const subtask of subtasks as SubtaskData[]) {
+      for (const raw of subtasks as Array<SubtaskData & { knowledge_points: { mastery_level: number | null }[] | null }>) {
         const easeFactor =
-          easeFactorMap.get(subtask.knowledge_point_id) || DEFAULT_EASE_FACTOR;
-        const lastStudyAt = new Date(subtask.last_state_change_at);
-        const fsrsStability = stabilityMap.get(subtask.knowledge_point_id);
+          easeFactorMap.get(raw.knowledge_point_id) || DEFAULT_EASE_FACTOR;
+        const lastStudyAt = new Date(raw.last_state_change_at);
+        const fsrsStability = stabilityMap.get(raw.knowledge_point_id);
+        const masteryLevel = raw.knowledge_points?.[0]?.mastery_level ?? 0;
         const currentMastery = this.calculateDecay(
-          subtask.mastery_level,
+          masteryLevel,
           lastStudyAt,
           easeFactor,
           fsrsStability,
@@ -282,8 +282,8 @@ export class MasteryDecayService {
 
         if (this.needsReview(currentMastery, reviewThreshold)) {
           pointsNeedingReview.push({
-            knowledge_point_id: subtask.knowledge_point_id,
-            subtask_id: subtask.id,
+            knowledge_point_id: raw.knowledge_point_id,
+            subtask_id: raw.id,
             current_mastery: currentMastery,
             last_study_at: lastStudyAt,
             ease_factor: easeFactor,
@@ -318,13 +318,14 @@ export class MasteryDecayService {
     });
 
     try {
+      // mastery_level 单一来源：写入 knowledge_points（不再写入 task_subtasks）
       const { error } = await supabase
-        .from("task_subtasks")
+        .from("knowledge_points")
         .update({
           mastery_level: newMasteryLevel,
           updated_at: new Date().toISOString(),
         })
-        .eq("knowledge_point_id", knowledgePointId);
+        .eq("id", knowledgePointId);
 
       if (error) {
         logger.error("Failed to apply decay", {

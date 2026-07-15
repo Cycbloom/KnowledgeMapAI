@@ -625,25 +625,39 @@ export class GraphVersionService {
   ): Promise<{ graphId: string; snapshotId: string }> {
     const snapshot = await this.autoSnapshot(supabase, graphId, 'auto', operatorId);
 
-    const { data: originalGraph, error: graphError } = await supabase
+    const { data: originalGraphRaw, error: graphError } = await supabase
       .from('knowledge_graphs')
-      .select('user_id, title, description, domain, settings, reference_books, external_links, learning_guide, podcast_script, template_type')
+      .select('user_id, title, description, domain, settings, template_type, knowledge_graph_contents(podcast_script, reference_books, external_links, learning_guide)')
       .eq('id', graphId)
       .single();
 
-    if (graphError || !originalGraph) {
+    if (graphError || !originalGraphRaw) {
       logger.error('Get original graph for branch error:', graphError);
       throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
+
+    // 平铺 knowledge_graph_contents 子表字段，保持后续代码兼容
+    // 注意：类型系统可能将 1:1 嵌套查询推断为数组，运行时实际返回单个对象
+    const originalContentRaw = originalGraphRaw.knowledge_graph_contents;
+    const originalContent = Array.isArray(originalContentRaw)
+      ? originalContentRaw[0]
+      : originalContentRaw;
+    const originalGraph = {
+      ...originalGraphRaw,
+      reference_books: originalContent?.reference_books ?? null,
+      external_links: originalContent?.external_links ?? null,
+      learning_guide: originalContent?.learning_guide ?? null,
+      podcast_script: originalContent?.podcast_script ?? null,
+    };
 
     let newGraphId: string;
 
     if (transactionExecutor.isAvailable()) {
       newGraphId = await transactionExecutor.executeInTransaction(async (client) => {
-        // 创建新图谱
+        // 创建新图谱（内容性字段已迁移到 knowledge_graph_contents）
         const { rows: newGraphRows } = await client.query(
-          `INSERT INTO knowledge_graphs (user_id, title, description, domain, settings, reference_books, external_links, learning_guide, podcast_script, template_type, is_branch, parent_graph_id, branch_name, branch_source_snapshot_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          `INSERT INTO knowledge_graphs (user_id, title, description, domain, settings, template_type, is_branch, parent_graph_id, branch_name, branch_source_snapshot_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            RETURNING id`,
           [
             originalGraph.user_id,
@@ -651,10 +665,6 @@ export class GraphVersionService {
             originalGraph.description,
             originalGraph.domain,
             JSON.stringify(originalGraph.settings),
-            originalGraph.reference_books ? JSON.stringify(originalGraph.reference_books) : null,
-            originalGraph.external_links ? JSON.stringify(originalGraph.external_links) : null,
-            originalGraph.learning_guide ? JSON.stringify(originalGraph.learning_guide) : null,
-            originalGraph.podcast_script ? JSON.stringify(originalGraph.podcast_script) : null,
             originalGraph.template_type,
             true,
             graphId,
@@ -664,6 +674,19 @@ export class GraphVersionService {
         );
 
         const createdGraphId = newGraphRows[0].id as string;
+
+        // 复制 knowledge_graph_contents 记录（1:1 子表）
+        await client.query(
+          `INSERT INTO knowledge_graph_contents (graph_id, podcast_script, reference_books, external_links, learning_guide)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            createdGraphId,
+            originalGraph.podcast_script ?? null,
+            originalGraph.reference_books ? JSON.stringify(originalGraph.reference_books) : null,
+            originalGraph.external_links ? JSON.stringify(originalGraph.external_links) : null,
+            originalGraph.learning_guide ?? null,
+          ],
+        );
 
         // 复制知识点（创建独立副本）
         const { rows: sourceKps } = await client.query(
@@ -745,10 +768,6 @@ export class GraphVersionService {
           description: originalGraph.description,
           domain: originalGraph.domain,
           settings: originalGraph.settings,
-          reference_books: originalGraph.reference_books,
-          external_links: originalGraph.external_links,
-          learning_guide: originalGraph.learning_guide,
-          podcast_script: originalGraph.podcast_script,
           template_type: originalGraph.template_type,
           is_branch: true,
           parent_graph_id: graphId,
@@ -764,6 +783,21 @@ export class GraphVersionService {
       }
 
       newGraphId = newGraph.id;
+
+      // 复制 knowledge_graph_contents 记录（1:1 子表）
+      try {
+        await supabase
+          .from('knowledge_graph_contents')
+          .upsert({
+            graph_id: newGraphId,
+            podcast_script: originalGraph.podcast_script ?? null,
+            reference_books: originalGraph.reference_books ?? null,
+            external_links: originalGraph.external_links ?? null,
+            learning_guide: originalGraph.learning_guide ?? null,
+          }, { onConflict: 'graph_id' });
+      } catch (contentInsertError) {
+        logger.warn('Failed to copy knowledge_graph_contents for branch:', contentInsertError);
+      }
 
       // 复制知识点（创建独立副本）
       const { data: sourceKps, error: kpsError } = await notDeleted(supabase

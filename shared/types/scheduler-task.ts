@@ -52,6 +52,7 @@ export interface UserTask {
   progress_mode?: ProgressMode;
   progress_percentage?: number;
   parent_task_id?: string;
+  graph_id?: string;
   context?: Record<string, unknown> | string;
   dependencies?: TaskDependency[];
   subtask_count?: number;

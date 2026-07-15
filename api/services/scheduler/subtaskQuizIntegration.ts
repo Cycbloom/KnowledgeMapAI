@@ -99,10 +99,8 @@ interface SubtaskWithTaskId {
   mastery_level?: number;
 }
 
-const PRACTICE_SESSIONS_TABLE = "practice_sessions";
-const QUIZ_SESSIONS_TABLE = "quiz_sessions";
-const PRACTICE_RESULTS_TABLE = "practice_results";
-const QUIZ_RESULTS_TABLE = "quiz_results";
+const LEARNING_SESSIONS_TABLE = "learning_sessions";
+const LEARNING_SESSION_RESULTS_TABLE = "learning_session_results";
 
 export class SubtaskQuizIntegrationService {
   private aiProviderService: IAIProviderService | null = null;
@@ -245,9 +243,10 @@ export class SubtaskQuizIntegrationService {
     const now = new Date().toISOString();
 
     const { error: insertError } = await supabase
-      .from(PRACTICE_SESSIONS_TABLE)
+      .from(LEARNING_SESSIONS_TABLE)
       .insert({
         id: sessionId,
+        session_type: "practice",
         subtask_id: subtaskId,
         knowledge_point_id: knowledgePointId,
         user_id: subtask.user_id,
@@ -295,8 +294,9 @@ export class SubtaskQuizIntegrationService {
     const subtask = await this.getSubtaskData(supabase, subtaskId);
 
     const { data: session, error: sessionError } = await supabase
-      .from(PRACTICE_SESSIONS_TABLE)
+      .from(LEARNING_SESSIONS_TABLE)
       .select("*")
+      .eq("session_type", "practice")
       .eq("subtask_id", subtaskId)
       .eq("status", "in_progress")
       .order("started_at", { ascending: false })
@@ -329,7 +329,7 @@ export class SubtaskQuizIntegrationService {
     const now = new Date().toISOString();
 
     const resultsToInsert = results.map((r) => ({
-      practice_session_id: session.id,
+      session_id: session.id,
       card_id: r.card_id,
       correct: r.correct,
       time_spent: r.time_spent,
@@ -338,7 +338,7 @@ export class SubtaskQuizIntegrationService {
     }));
 
     const { error: resultsError } = await supabase
-      .from(PRACTICE_RESULTS_TABLE)
+      .from(LEARNING_SESSION_RESULTS_TABLE)
       .insert(resultsToInsert);
 
     if (resultsError) {
@@ -349,11 +349,11 @@ export class SubtaskQuizIntegrationService {
     }
 
     await supabase
-      .from(PRACTICE_SESSIONS_TABLE)
+      .from(LEARNING_SESSIONS_TABLE)
       .update({
         status: "completed",
         completed_at: now,
-        accuracy,
+        score: accuracy,
         correct_count: correctCount,
         total_count: totalCount,
       })
@@ -466,9 +466,10 @@ export class SubtaskQuizIntegrationService {
     const now = new Date().toISOString();
 
     const { error: insertError } = await supabase
-      .from(QUIZ_SESSIONS_TABLE)
+      .from(LEARNING_SESSIONS_TABLE)
       .insert({
         id: sessionId,
+        session_type: "quiz",
         subtask_id: subtaskId,
         knowledge_point_id: knowledgePointId,
         quiz_set_id: quizSet.id,
@@ -519,8 +520,9 @@ export class SubtaskQuizIntegrationService {
     const subtask = await this.getSubtaskData(supabase, subtaskId);
 
     const { data: session, error: sessionError } = await supabase
-      .from(QUIZ_SESSIONS_TABLE)
+      .from(LEARNING_SESSIONS_TABLE)
       .select("*")
+      .eq("session_type", "quiz")
       .eq("subtask_id", subtaskId)
       .eq("status", "in_progress")
       .order("started_at", { ascending: false })
@@ -550,16 +552,16 @@ export class SubtaskQuizIntegrationService {
     const now = new Date().toISOString();
 
     const resultsToInsert = results.map((r) => ({
-      quiz_session_id: session.id,
+      session_id: session.id,
       card_id: r.card_id,
       correct: r.correct,
-      answer: r.answer,
+      user_answer: r.answer,
       time_spent: r.time_spent,
       created_at: now,
     }));
 
     const { error: resultsError } = await supabase
-      .from(QUIZ_RESULTS_TABLE)
+      .from(LEARNING_SESSION_RESULTS_TABLE)
       .insert(resultsToInsert);
 
     if (resultsError) {
@@ -570,7 +572,7 @@ export class SubtaskQuizIntegrationService {
     }
 
     await supabase
-      .from(QUIZ_SESSIONS_TABLE)
+      .from(LEARNING_SESSIONS_TABLE)
       .update({
         status: "completed",
         completed_at: now,
@@ -936,7 +938,7 @@ export class SubtaskQuizIntegrationService {
   ): Promise<SubtaskData> {
     const { data: subtask, error } = await supabase
       .from("task_subtasks")
-      .select("id, task_id, knowledge_point_id, learning_state, mastery_level")
+      .select("id, task_id, knowledge_point_id, learning_state, knowledge_points(mastery_level)")
       .eq("id", subtaskId)
       .single();
 
@@ -953,8 +955,15 @@ export class SubtaskQuizIntegrationService {
       .eq("id", (subtask as SubtaskWithTaskId).task_id)
       .single();
 
+    const raw = subtask as SubtaskWithTaskId & {
+      knowledge_points?: { mastery_level: number | null }[] | null;
+    };
     return {
-      ...subtask,
+      id: raw.id,
+      task_id: raw.task_id,
+      knowledge_point_id: raw.knowledge_point_id,
+      learning_state: raw.learning_state as LearningState,
+      mastery_level: raw.knowledge_points?.[0]?.mastery_level ?? 0,
       user_id: task?.user_id ?? "",
     } as SubtaskData;
   }

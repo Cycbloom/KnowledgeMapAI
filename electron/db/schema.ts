@@ -284,16 +284,12 @@ const knowledgeGraphsTable: TableDef = {
     jsonbColumn('settings', "'{}'"),
     booleanColumn('is_public', '0'),
     booleanColumn('is_favorite', '0'),
-    textColumn('podcast_script'),
     fkColumn('parent_graph_id'),
     timestampColumn('last_used_at'),
     vectorColumn('embedding'),
     timestampColumn('deleted_at'),
     timestampColumn('created_at', false),
     timestampColumn('updated_at', false),
-    jsonbArrayColumn('reference_books', "'[]'"),
-    jsonbArrayColumn('external_links', "'[]'"),
-    textColumn('learning_guide'),
     varcharColumn('template_type'),
     fkColumn('task_id'),
     syncStatusColumn(),
@@ -308,6 +304,25 @@ const knowledgeGraphsTable: TableDef = {
   syncEnabled: true,
   userColumn: 'user_id',
   hasDeletedAt: true,
+  hasUpdatedAt: true,
+};
+
+const knowledgeGraphContentsTable: TableDef = {
+  name: 'knowledge_graph_contents',
+  columns: [
+    fkRequiredColumn('graph_id'),
+    textColumn('podcast_script'),
+    jsonbArrayColumn('reference_books', "'[]'"),
+    jsonbArrayColumn('external_links', "'[]'"),
+    textColumn('learning_guide'),
+    timestampColumn('updated_at', false),
+    syncStatusColumn(),
+    localUpdatedAtColumn(),
+  ],
+  primaryKey: ['graph_id'],
+  indexes: [],
+  syncEnabled: true,
+  userColumn: undefined, // Derived from knowledge_graphs -> user_id
   hasUpdatedAt: true,
 };
 
@@ -745,6 +760,7 @@ const userTasksTable: TableDef = {
     { name: 'status', type: 'TEXT', pgType: 'TEXT', nullable: false, defaultValue: "'pending'" },
     pgArrayColumn('tags', 'TEXT', "'[]'"),
     fkColumn('knowledge_point_id'),
+    fkColumn('graph_id'),
     integerColumn('priority', false, '0'),
     { name: 'task_type', type: 'TEXT', pgType: 'TEXT', nullable: false, defaultValue: "'one_time'" },
     integerColumn('total_duration'),
@@ -768,7 +784,7 @@ const userTasksTable: TableDef = {
     { name: 'idx_user_tasks_queue_id', columns: ['queue_id'] },
     { name: 'idx_user_tasks_status', columns: ['status'] },
     { name: 'idx_user_tasks_parent_task_id', columns: ['parent_task_id'] },
-    { name: 'idx_user_tasks_context_graph_id', columns: ['context'] },
+    { name: 'idx_user_tasks_graph_id', columns: ['graph_id'] },
     { name: 'idx_user_tasks_deleted_at', columns: ['deleted_at'] },
   ],
   syncEnabled: true,
@@ -958,7 +974,6 @@ const taskSubtasksTable: TableDef = {
     fkColumn('learning_path_node_id'),
     fkRequiredColumn('knowledge_point_id'),
     { name: 'learning_state', type: 'TEXT', pgType: 'TEXT', nullable: false, defaultValue: "'learning'" },
-    realColumn('mastery_level', false, '0'),
     timestampColumn('last_state_change_at', false),
     jsonbArrayColumn('state_history', "'[]'"),
     timestampColumn('created_at', false),
@@ -1787,6 +1802,7 @@ export const TABLES: Record<string, TableDef> = {
 
   // 02_knowledge_graph
   knowledge_graphs: knowledgeGraphsTable,
+  knowledge_graph_contents: knowledgeGraphContentsTable,
 
   // 03_knowledge_points
   knowledge_points: knowledgePointsTable,

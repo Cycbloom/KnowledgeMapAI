@@ -76,6 +76,10 @@ CREATE TRIGGER knowledge_graphs_updated_at
   BEFORE UPDATE ON knowledge_graphs
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER knowledge_graph_contents_updated_at
+  BEFORE UPDATE ON knowledge_graph_contents
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER knowledge_points_updated_at
   BEFORE UPDATE ON knowledge_points
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -138,6 +142,10 @@ CREATE TRIGGER quiz_sets_updated_at
 
 CREATE TRIGGER quiz_set_cards_updated_at
   BEFORE UPDATE ON quiz_set_cards
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER learning_sessions_updated_at
+  BEFORE UPDATE ON learning_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- study_cards: keep updated_at in sync on review (fsrs_*/last_reviewed/next_review changes)

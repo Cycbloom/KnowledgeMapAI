@@ -69,8 +69,8 @@ export class GraphTaskService {
       .update({
         estimated_duration: metrics.estimatedDuration,
         deadline: metrics.deadline,
+        graph_id: graphId,
         context: JSON.stringify({
-          graph_id: graphId,
           graph_title: graph?.title || "",
           knowledge_point_count: metrics.knowledgePointCount,
           auto_calculated_duration: true,
@@ -174,8 +174,8 @@ export class GraphTaskService {
         task_type: "graph_learning",
         estimated_duration: metrics.estimatedDuration,
         deadline: metrics.deadline,
+        graph_id: graphId,
         context: JSON.stringify({
-          graph_id: graphId,
           graph_title: graph?.title || "",
           knowledge_point_count: metrics.knowledgePointCount,
           auto_calculated_duration: true,
@@ -253,9 +253,9 @@ export class GraphTaskService {
 
     const { data: graphTasks, error: fetchError } = await notDeleted(supabase
       .from("user_tasks")
-      .select("id, context")
+      .select("id, graph_id")
       .eq("task_type", "graph_learning")
-      .not("context->>graph_id", "is", null)
+      .not("graph_id", "is", null)
       );
 
     if (fetchError) {
@@ -277,7 +277,7 @@ export class GraphTaskService {
 
     for (const task of graphTasks) {
       try {
-        const graphId = (typeof task.context === 'object' ? task.context : null)?.graph_id as string | undefined;
+        const graphId = task.graph_id;
         if (graphId) {
           await this.updateTaskForGraph(supabase, task.id, graphId);
         }

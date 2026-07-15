@@ -180,7 +180,7 @@ export class MasteryCalculationService {
 
   /**
    * 批量更新多个知识点的 mastery_level 到数据库
-   * 同时同步到关联的 task_subtasks
+   * mastery_level 单一来源：仅写入 knowledge_points（task_subtasks 通过 JOIN 读取）
    */
   async batchUpdateMasteryLevels(
     supabase: SupabaseClient,
@@ -190,7 +190,7 @@ export class MasteryCalculationService {
     const now = new Date().toISOString();
 
     for (const [kpId, masteryLevel] of masteryMap) {
-      // 更新 knowledge_points
+      // 更新 knowledge_points（单一来源，不再同步到 task_subtasks）
       const { error: kpError } = await supabase
         .from("knowledge_points")
         .update({
@@ -203,22 +203,6 @@ export class MasteryCalculationService {
         logger.error("Failed to update knowledge point mastery", {
           knowledgePointId: kpId,
           error: kpError.message,
-        });
-      }
-
-      // 同步到 task_subtasks
-      const { error: subtaskError } = await supabase
-        .from("task_subtasks")
-        .update({
-          mastery_level: masteryLevel,
-          updated_at: now,
-        })
-        .eq("knowledge_point_id", kpId);
-
-      if (subtaskError) {
-        logger.error("Failed to sync mastery to subtasks", {
-          knowledgePointId: kpId,
-          error: subtaskError.message,
         });
       }
     }

@@ -150,12 +150,16 @@ export const getDetail = async (id: string): Promise<UserTaskDetail> => {
           .order("started_at", { ascending: false }),
         client
           .from("task_subtasks")
-          .select("*")
+          .select("*, knowledge_points(mastery_level)")
           .eq("task_id", id)
           .order("position", { ascending: true }),
       ]);
 
-    const subtaskRows = (subtasksResult.data || []) as TaskSubtaskRow[];
+    const subtaskRows = (subtasksResult.data || []) as Array<
+      TaskSubtaskRow & {
+        knowledge_points: { mastery_level: number | null }[] | null;
+      }
+    >;
     const subtaskCount = subtaskRows.length;
     const subtaskCompleted = subtaskRows.filter((s) => s.status === "completed").length;
 
@@ -232,7 +236,7 @@ export const getDetail = async (id: string): Promise<UserTaskDetail> => {
         learning_path_node_id: s.learning_path_node_id ?? undefined,
         knowledge_point_id: s.knowledge_point_id,
         learning_state: s.learning_state as TaskSubtask["learning_state"],
-        mastery_level: s.mastery_level,
+        mastery_level: s.knowledge_points?.[0]?.mastery_level ?? 0,
         last_state_change_at: s.last_state_change_at,
         state_history: s.state_history as unknown as TaskSubtask["state_history"],
         created_at: s.created_at,

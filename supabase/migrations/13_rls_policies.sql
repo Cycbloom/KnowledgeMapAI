@@ -33,6 +33,42 @@ CREATE POLICY "Users can insert own graphs" ON knowledge_graphs FOR INSERT WITH 
 CREATE POLICY "Users can update own graphs" ON knowledge_graphs FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own graphs" ON knowledge_graphs FOR DELETE USING (auth.uid() = user_id);
 
+-- Knowledge Graph Contents (1:1 子表，权限跟随 knowledge_graphs)
+ALTER TABLE knowledge_graph_contents ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view accessible graph contents" ON knowledge_graph_contents;
+CREATE POLICY "Users can view accessible graph contents" ON knowledge_graph_contents FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = knowledge_graph_contents.graph_id
+    AND (
+      knowledge_graphs.user_id = auth.uid()
+      OR knowledge_graphs.is_public = true
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
+    )
+  )
+);
+CREATE POLICY "Users can insert own graph contents" ON knowledge_graph_contents FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = knowledge_graph_contents.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can update own graph contents" ON knowledge_graph_contents FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = knowledge_graph_contents.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+CREATE POLICY "Users can delete own graph contents" ON knowledge_graph_contents FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs
+    WHERE knowledge_graphs.id = knowledge_graph_contents.graph_id
+    AND knowledge_graphs.user_id = auth.uid()
+  )
+);
+
 -- Knowledge Points
 ALTER TABLE knowledge_points ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view public knowledge points" ON knowledge_points FOR SELECT USING (visibility = 'public');

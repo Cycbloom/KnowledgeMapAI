@@ -801,7 +801,7 @@ export class TaskRecommendationService {
       const { data: subtasks } = await client
         .from("task_subtasks")
         .select(
-          "id, title, status, learning_state, mastery_level, position, estimated_duration",
+          "id, title, status, learning_state, position, estimated_duration, knowledge_points(mastery_level)",
         )
         .eq("task_id", recommendedTask.task.id)
         .order("position", { ascending: true });
@@ -818,7 +818,12 @@ export class TaskRecommendationService {
               id: pendingSubtasks[0].id,
               title: pendingSubtasks[0].title,
               learning_state: pendingSubtasks[0].learning_state,
-              mastery_level: pendingSubtasks[0].mastery_level,
+              mastery_level:
+                (
+                  pendingSubtasks[0] as {
+                    knowledge_points?: { mastery_level: number | null }[] | null;
+                  }
+                ).knowledge_points?.[0]?.mastery_level ?? 0,
               position: pendingSubtasks[0].position,
               estimated_duration: pendingSubtasks[0].estimated_duration,
             }

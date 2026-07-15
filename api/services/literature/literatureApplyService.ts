@@ -741,13 +741,14 @@ class LiteratureApplyService {
         description: `从${literature.type === "paper" ? "论文" : literature.type === "book" ? "书籍" : "文献"}中提取了 ${concepts.length} 个概念`,
       };
 
-      const { data: currentGraph } = await supabase
-        .from("graphs")
+      // 读取 knowledge_graph_contents 子表中的 reference_books
+      const { data: currentContent } = await supabase
+        .from("knowledge_graph_contents")
         .select("reference_books")
-        .eq("id", graphId)
-        .single();
+        .eq("graph_id", graphId)
+        .maybeSingle();
 
-      const currentReferenceBooks = (currentGraph?.reference_books ||
+      const currentReferenceBooks = (currentContent?.reference_books ||
         []) as ReferenceBook[];
       const existingBookIndex = currentReferenceBooks.findIndex(
         (book) =>
@@ -761,13 +762,14 @@ class LiteratureApplyService {
         currentReferenceBooks.push(referenceBook);
       }
 
+      // UPSERT 到 knowledge_graph_contents 子表
       await supabase
-        .from("graphs")
-        .update({
+        .from("knowledge_graph_contents")
+        .upsert({
+          graph_id: graphId,
           reference_books: currentReferenceBooks,
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", graphId);
+        }, { onConflict: "graph_id" });
 
       await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
       await cacheService.del(CacheKeys.GRAPH_NODES("public", graphId));

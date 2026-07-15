@@ -249,7 +249,6 @@ class SmartTaskLinker {
       estimated_duration: 15,
       knowledge_point_id: node.id,
       learning_state: "learning",
-      mastery_level: 0,
       last_state_change_at: new Date().toISOString(),
       state_history: [],
     }));

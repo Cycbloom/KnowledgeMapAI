@@ -168,7 +168,7 @@ class SubtaskStateMachine {
   ): Promise<TransitionResult> {
     const { data: subtask, error: fetchError } = await supabase
       .from("task_subtasks")
-      .select("*")
+      .select("*, knowledge_points(mastery_level)")
       .eq("id", subtaskId)
       .single();
 
@@ -184,7 +184,7 @@ class SubtaskStateMachine {
     }
 
     const fromState = subtask.learning_state as LearningState;
-    const masteryBefore = subtask.mastery_level ?? 0;
+    const masteryBefore = this.readMasteryFromJoin(subtask);
 
     if (!this.canTransition(fromState, toState)) {
       const validTransitions = this.getValidTransitions(fromState);
@@ -214,17 +214,30 @@ class SubtaskStateMachine {
     const now = new Date().toISOString();
     const updateData = {
       learning_state: toState,
-      mastery_level: masteryLevel,
       state_history: stateHistory,
       last_state_change_at: now,
       updated_at: now,
     };
 
+    // mastery_level 单一来源：写入 knowledge_points（不再写入 task_subtasks）
+    if (subtask.knowledge_point_id) {
+      const { error: kpError } = await supabase
+        .from("knowledge_points")
+        .update({ mastery_level: masteryLevel, updated_at: now })
+        .eq("id", subtask.knowledge_point_id);
+      if (kpError) {
+        logger.error(
+          "[SubtaskStateMachine] Failed to update knowledge point mastery:",
+          kpError,
+        );
+      }
+    }
+
     const { data: updatedSubtask, error: updateError } = await supabase
       .from("task_subtasks")
       .update(updateData)
       .eq("id", subtaskId)
-      .select()
+      .select("*, knowledge_points(mastery_level)")
       .single();
 
     if (updateError || !updatedSubtask) {
@@ -244,8 +257,32 @@ class SubtaskStateMachine {
 
     return {
       success: true,
-      subtask: updatedSubtask as TaskSubtask,
+      subtask: this.flattenSubtaskMastery(updatedSubtask) as TaskSubtask,
     };
+  }
+
+  /**
+   * 从 JOIN 查询结果中读取 mastery_level（单一来源：knowledge_points）
+   */
+  private readMasteryFromJoin(raw: unknown): number {
+    const r = raw as { knowledge_points?: { mastery_level: number | null }[] | null };
+    return r.knowledge_points?.[0]?.mastery_level ?? 0;
+  }
+
+  /**
+   * 将 JOIN 查询结果扁平化，把 knowledge_points.mastery_level 提升到顶层
+   */
+  private flattenSubtaskMastery<T extends Record<string, unknown>>(
+    raw: T | null,
+  ): T & { mastery_level: number } {
+    const r = (raw ?? {}) as T & {
+      knowledge_points?: { mastery_level: number | null }[] | null;
+    };
+    const { knowledge_points, ...rest } = r;
+    return {
+      ...rest,
+      mastery_level: knowledge_points?.[0]?.mastery_level ?? 0,
+    } as T & { mastery_level: number };
   }
 
   recordStateHistory(

@@ -137,6 +137,7 @@ CREATE INDEX IF NOT EXISTS idx_user_tasks_queue_id ON user_tasks(queue_id) WHERE
 CREATE INDEX IF NOT EXISTS idx_user_tasks_task_type ON user_tasks(user_id, task_type) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_user_tasks_parent_task ON user_tasks(parent_task_id) WHERE parent_task_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_user_tasks_scheduled_start ON user_tasks(user_id, scheduled_start) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_user_tasks_graph_id ON user_tasks(graph_id) WHERE graph_id IS NOT NULL;
 
 -- Task executions
 CREATE INDEX IF NOT EXISTS idx_task_executions_task ON task_executions(task_id);

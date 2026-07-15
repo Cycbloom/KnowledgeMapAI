@@ -1,6 +1,8 @@
 {
   "title": "我的知识图谱",
   "subtitle": "构建、可视化并探索您的个性化知识网络。",
+  "loadError": "加载图谱失败",
+  "retry": "重试",
   "stats": {
     "graphs": "个图谱",
     "nodes": "节点",

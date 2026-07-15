@@ -173,6 +173,17 @@ export const Login = () => {
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({
+    email: false,
+    password: false,
+  });
+
+  const validateEmail = (value: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  };
+  const validatePassword = (value: string): boolean => {
+    return value.trim().length > 0;
+  };
 
   useEffect(() => {
     loadSavedConfig();
@@ -370,6 +381,7 @@ export const Login = () => {
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({ email: true, password: true });
     if (!authForm.email.trim() || !authForm.password.trim()) return;
 
     setAuthenticating(true);
@@ -1099,18 +1111,37 @@ export const Login = () => {
               onChange={(e) =>
                 setAuthForm((prev) => ({ ...prev, email: e.target.value }))
               }
+              onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
               placeholder={t("configPage.email")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
+            {touched.email && !authForm.email.trim() && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {t("configPage.validation.emailRequired")}
+              </p>
+            )}
+            {touched.email &&
+              authForm.email.trim() &&
+              !validateEmail(authForm.email) && (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {t("configPage.validation.emailInvalid")}
+                </p>
+              )}
             <input
               type="password"
               value={authForm.password}
               onChange={(e) =>
                 setAuthForm((prev) => ({ ...prev, password: e.target.value }))
               }
+              onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
               placeholder={t("configPage.password")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
+            {touched.password && !validatePassword(authForm.password) && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {t("configPage.validation.passwordRequired")}
+              </p>
+            )}
             {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button
               type="submit"
@@ -1355,18 +1386,37 @@ export const Login = () => {
               onChange={(e) =>
                 setAuthForm((prev) => ({ ...prev, email: e.target.value }))
               }
+              onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
               placeholder={t("configPage.email")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
+            {touched.email && !authForm.email.trim() && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {t("configPage.validation.emailRequired")}
+              </p>
+            )}
+            {touched.email &&
+              authForm.email.trim() &&
+              !validateEmail(authForm.email) && (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {t("configPage.validation.emailInvalid")}
+                </p>
+              )}
             <input
               type="password"
               value={authForm.password}
               onChange={(e) =>
                 setAuthForm((prev) => ({ ...prev, password: e.target.value }))
               }
+              onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
               placeholder={t("configPage.password")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
+            {touched.password && !validatePassword(authForm.password) && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {t("configPage.validation.passwordRequired")}
+              </p>
+            )}
             {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button
               type="submit"

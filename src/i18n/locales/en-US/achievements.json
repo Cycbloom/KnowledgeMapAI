@@ -63,5 +63,7 @@
   "dailyTasks": "Daily Tasks",
   "periodicTasks": "Periodic Tasks",
   "passTitle": "Pass",
-  "lifetimeAchievements": "Lifetime Achievements"
+  "lifetimeAchievements": "Lifetime Achievements",
+  "loadError": "Failed to load achievements",
+  "retry": "Retry"
 }

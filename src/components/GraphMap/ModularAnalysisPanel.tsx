@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Play, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Sparkles, Play, CheckCircle2, AlertCircle, Loader2, Layers } from 'lucide-react';
 import type { ModularAnalysisPanelProps, AnalysisModuleId } from './types';
 import { AnalysisModuleCard } from './AnalysisModuleCard';
 import { PromptEditor } from '../GraphEditor/panels/PromptEditor';
@@ -8,6 +9,7 @@ import { MODULE_TO_SCENARIO } from './types';
 import { getScenarioById } from '../PromptConfig';
 import { api } from '../../services/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { EmptyState } from '../common/EmptyState';
 
 export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
   isOpen,
@@ -21,6 +23,7 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
 }) => {
   const [editingPromptModule, setEditingPromptModule] = useState<AnalysisModuleId | null>(null);
   const [promptTemplates, setPromptTemplates] = useState<Record<string, string>>({});
+  const { t } = useTranslation();
   const selectedModules = useMemo(
     () => modules.filter(m => m.selected),
     [modules]
@@ -197,12 +200,10 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
             </div>
 
             {modules.length === 0 && (
-              <div className="text-center py-12">
-                <Sparkles className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  暂无可用的分析模块
-                </p>
-              </div>
+              <EmptyState
+                icon={<Layers size={32} />}
+                title={t('graphMap.empty.modules')}
+              />
             )}
           </div>
 

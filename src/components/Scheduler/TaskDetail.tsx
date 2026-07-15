@@ -15,10 +15,13 @@ import {
   Star,
   Timer,
   TrendingUp,
+  ListChecks,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { UserTask, TaskExecution } from "@shared/types";
-import { formatDurationMinutes } from "../../utils/formatters";
+import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import { asyncConfirm } from "../../utils/asyncConfirm";
+import { EmptyState } from "../common/EmptyState";
 import { TASK_DETAIL_QUEUE_CONFIG, TASK_DETAIL_STATUS_CONFIG } from "@/constants/scheduler";
 
 interface TaskDetailProps {
@@ -64,6 +67,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
     TASK_DETAIL_QUEUE_CONFIG[task.queue_level as keyof typeof TASK_DETAIL_QUEUE_CONFIG] ||
     TASK_DETAIL_QUEUE_CONFIG[2];
   const statusConfig = TASK_DETAIL_STATUS_CONFIG[task.status as keyof typeof TASK_DETAIL_STATUS_CONFIG] || TASK_DETAIL_STATUS_CONFIG.pending;
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,17 +81,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const formatDateTime = (dateStr?: string) => {
-    if (!dateStr) return "--";
-    const date = new Date(dateStr);
-    return date.toLocaleString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDateTime = (dateStr?: string) => formatDate(dateStr, 'short-datetime');
 
   const formatExecutionDuration = (seconds?: number) => {
     if (!seconds) return "--";
@@ -239,9 +233,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               </div>
 
               {executions.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center py-4">
-                  暂无执行记录
-                </p>
+                <EmptyState icon={<ListChecks size={32} />} title={t('scheduler.empty.executionRecords')} />
               ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {executions.map((execution, index) => {

@@ -6,13 +6,16 @@ import {
   Code,
   Trash2,
   Link as LinkIcon,
+  Link2,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { TaskLink } from "../../../types";
 import { message as messageHelper } from "../../../utils/messageHelper";
 import { asyncConfirm } from "../../../utils/asyncConfirm";
+import { EmptyState } from "../../common/EmptyState";
 
 interface TaskLinksProps {
   taskId: string;
@@ -53,6 +56,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const { t } = useTranslation();
   const [newLink, setNewLink] = useState({
     link_type: "web" as "web" | "file" | "api",
     title: "",
@@ -304,16 +308,11 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
             })}
 
             {links.length === 0 && !isAdding && (
-              <div className="text-center py-6 text-slate-400 dark:text-slate-500">
-                <LinkIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>暂无链接</p>
-                <button
-                  onClick={() => setIsAdding(true)}
-                  className="mt-2 text-sm text-primary-500 hover:text-primary-600"
-                >
-                  添加第一个链接
-                </button>
-              </div>
+              <EmptyState
+                icon={<Link2 size={32} />}
+                title={t('scheduler.empty.links')}
+                action={{ label: '添加第一个链接', onClick: () => setIsAdding(true) }}
+              />
             )}
           </div>
         </>

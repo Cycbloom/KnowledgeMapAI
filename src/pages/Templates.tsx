@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTemplates } from "../hooks/queries";
@@ -44,7 +44,7 @@ export const Templates = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { data: templates = [], isLoading } = useTemplates();
+  const { data: templates, isLoading } = useTemplates();
   const createTemplateMutation = useCreateTemplateMutation();
   const updateTemplateMutation = useUpdateTemplateMutation();
   const deleteTemplateMutation = useDeleteTemplateMutation();
@@ -62,7 +62,7 @@ export const Templates = () => {
   const [newTemplateCategory, setNewTemplateCategory] =
     useState<TemplateCategory>("knowledge");
 
-  const filteredTemplates = templates.filter((t) => {
+  const filteredTemplates = (templates ?? []).filter((t) => {
     const matchesSearch =
       t.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
       (t.description &&
@@ -71,6 +71,17 @@ export const Templates = () => {
       selectedCategory === "all" || t.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const categoryCounts = useMemo(() => {
+    if (!templates) return {} as Record<string, number>;
+    const counts: Record<string, number> = {};
+    counts.all = templates.length;
+    for (const template of templates) {
+      const cat = template.category;
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    return counts;
+  }, [templates]);
 
   const handleCreateTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,9 +318,16 @@ export const Templates = () => {
                           : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    {cat === "all"
-                      ? t("templates.filter.all")
-                      : t(`templates.category.${cat}`)}
+                    <span>
+                      {cat === "all"
+                        ? t("templates.filter.all")
+                        : t(`templates.category.${cat}`)}
+                    </span>
+                    {!isLoading && categoryCounts[cat] !== undefined && (
+                      <span className="ml-1 text-xs opacity-70">
+                        ({categoryCounts[cat]})
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>

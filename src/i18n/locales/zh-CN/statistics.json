@@ -1,6 +1,7 @@
 {
   "title": "学习统计中心",
   "subtitle": "全面分析您的学习和任务完成情况",
+  "loadError": "加载统计失败",
   "tabs": {
     "learning": "学习统计",
     "tasks": "任务统计"

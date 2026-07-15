@@ -8,11 +8,14 @@ import {
   ChevronDown,
   ChevronRight,
   BookOpen,
+  ListTodo,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { TaskSubtask } from "../../../types";
 import { message as messageHelper } from "../../../utils/messageHelper";
 import { asyncConfirm } from "../../../utils/asyncConfirm";
+import { EmptyState } from "../../common/EmptyState";
 import { LearningStateBadge } from "../LearningStateBadge";
 import { MasteryProgressBar } from "../MasteryProgressBar";
 
@@ -37,6 +40,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const { t } = useTranslation();
   const [newSubtask, setNewSubtask] = useState({
     title: "",
     description: "",
@@ -376,15 +380,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
             ))}
 
             {subtasks.length === 0 && !isAdding && (
-              <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-                <p>暂无子任务</p>
-                <button
-                  onClick={() => setIsAdding(true)}
-                  className="mt-2 text-sm text-primary-500 hover:text-primary-600"
-                >
-                  添加第一个子任务
-                </button>
-              </div>
+              <EmptyState
+                icon={<ListTodo size={32} />}
+                title={t('scheduler.empty.subtasks')}
+                action={{ label: '添加第一个子任务', onClick: () => setIsAdding(true) }}
+              />
             )}
           </div>
         </>

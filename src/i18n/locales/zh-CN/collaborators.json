@@ -3,5 +3,12 @@
     "title": "分享与协作",
     "inviteCollaborator": "邀请协作者",
     "generateLink": "生成分享链接"
+  },
+  "invite": {
+    "validation": {
+      "emailInvalid": "邮箱格式不正确"
+    },
+    "inviting": "邀请中...",
+    "invite": "邀请"
   }
 }

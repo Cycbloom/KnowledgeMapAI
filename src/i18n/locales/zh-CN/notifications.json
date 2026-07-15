@@ -6,5 +6,9 @@
   "deleteFailed": "删除通知失败",
   "markAllRead": "全部已读",
   "deleteRead": "删除已读通知",
-  "settings": "通知设置"
+  "settings": "通知设置",
+  "empty": "暂无通知",
+  "emptyHint": "新的通知会显示在这里",
+  "loadError": "加载通知失败",
+  "retry": "重试"
 }

@@ -11,6 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import type { Graph } from "@shared/types";
+import { formatDate } from "@/utils/formatters";
 
 const TEMPLATE_TYPE_CONFIG: Record<
   string,
@@ -182,7 +183,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
                 <Calendar size={12} />
                 <span>
                   {graph.created_at
-                    ? new Date(graph.created_at).toLocaleDateString("zh-CN")
+                    ? formatDate(graph.created_at, 'short')
                     : "-"}
                 </span>
               </div>
@@ -338,7 +339,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
           <Calendar size={14} />
           <span>
             {graph.created_at
-              ? new Date(graph.created_at).toLocaleDateString("zh-CN")
+              ? formatDate(graph.created_at, 'short')
               : "-"}
           </span>
         </div>
@@ -350,7 +351,7 @@ export const DashboardGraphListItem: React.FC<DashboardGraphListItemProps> = ({
           <Clock size={14} />
           <span>
             {graph.updated_at
-              ? new Date(graph.updated_at).toLocaleDateString("zh-CN")
+              ? formatDate(graph.updated_at, 'short')
               : "-"}
           </span>
         </div>

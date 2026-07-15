@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   History,
   Camera,
@@ -8,6 +9,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
+import { formatDate } from "../../../utils/formatters";
 import { useSnapshots } from "../../../hooks/queries/useGraphVersionQueries";
 import {
   useCreateSnapshot,
@@ -16,6 +18,7 @@ import {
 } from "../../../hooks/mutations/useGraphVersionMutations";
 import type { GraphSnapshot, GraphSnapshotType } from "@shared/types/graphVersion";
 import { BranchManagePanel } from "./BranchManagePanel";
+import { EmptyState } from "../../common/EmptyState";
 
 interface VersionHistoryPanelProps {
   graphId: string;
@@ -65,7 +68,7 @@ function formatRelativeTime(dateStr: string): string {
   if (diffHours < 24) return `${diffHours}小时前`;
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 30) return `${diffDays}天前`;
-  return date.toLocaleDateString("zh-CN");
+  return formatDate(date, "short");
 }
 
 type DialogType = "createSnapshot" | "rollback" | "createBranch" | null;
@@ -81,6 +84,7 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
   const [snapshotDescription, setSnapshotDescription] = useState("");
   const [branchName, setBranchName] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"snapshots" | "branches">("snapshots");
 
   const pageSize = 20;
@@ -194,11 +198,10 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
               </div>
             ) : snapshots.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-slate-500">
-                <Camera size={40} className="mb-3 opacity-50" />
-                <p className="text-sm">暂无快照</p>
-                <p className="text-xs mt-1">创建快照以保存图谱版本</p>
-              </div>
+              <EmptyState
+                icon={<Camera size={32} />}
+                title={t('graphEditor.empty.snapshots')}
+              />
             ) : (
               <div className="py-2">
                 {snapshots.map((snapshot: GraphSnapshot, index: number) => (

@@ -11,7 +11,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { formatDuration } from '../../utils/formatters';
+import { formatDuration, formatDate } from '../../utils/formatters';
 import type {WeeklyFocusStats} from '@shared/types';
 
 interface WeeklyReportProps {
@@ -190,7 +190,7 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
               <div>
                 <p className="text-sm text-slate-600 dark:text-slate-300">最佳表现日</p>
                 <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                  {WEEKDAYS[new Date(stats.best_day.date).getDay()]} · {new Date(stats.best_day.date).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}
+                  {WEEKDAYS[new Date(stats.best_day.date).getDay()]} · {formatDate(stats.best_day.date, 'month-day')}
                 </p>
               </div>
             </div>

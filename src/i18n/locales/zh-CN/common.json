@@ -10,6 +10,7 @@
   "create": "创建",
   "search": "搜索",
   "noData": "暂无数据",
+  "empty": "暂无数据",
   "retry": "重试",
   "view": "查看",
   "more": "更多",
@@ -70,5 +71,22 @@
     "message": "抱歉，此页面加载时发生错误。请尝试重试或返回首页。",
     "retry": "重试",
     "goHome": "返回首页"
+  },
+  "aria": {
+    "prevDay": "前一天",
+    "nextDay": "后一天",
+    "prevPeriod": "上一个",
+    "nextPeriod": "下一个",
+    "settings": "设置",
+    "minimize": "最小化",
+    "startTask": "开始任务",
+    "pauseTask": "暂停任务",
+    "completeTask": "完成任务",
+    "deleteTask": "删除任务",
+    "editTask": "编辑任务",
+    "close": "关闭",
+    "refresh": "刷新",
+    "invite": "邀请",
+    "linkKnowledgePoint": "关联知识点"
   }
 }

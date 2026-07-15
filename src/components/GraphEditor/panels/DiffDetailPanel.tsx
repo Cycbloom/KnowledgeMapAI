@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   X,
   Plus,
@@ -19,6 +20,7 @@ import type {
   SnapshotEdgeData,
   DiffChangeType,
 } from "@shared/types/graphVersion";
+import { EmptyState } from "../../common/EmptyState";
 
 interface DiffDetailPanelProps {
   graphId: string;
@@ -271,6 +273,7 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
 }: DiffDetailPanelProps) {
   const [diff, setDiff] = useState<DiffResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -442,10 +445,10 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
         ) : diff ? (
           <div className="py-2">
             {diff.summary.totalChanges === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-slate-500">
-                <GitCompare size={40} className="mb-3 opacity-50" />
-                <p className="text-sm">两个版本之间没有差异</p>
-              </div>
+              <EmptyState
+                icon={<GitCompare size={32} />}
+                title={t('graphEditor.empty.diffs')}
+              />
             ) : (
               <>
                 <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800">

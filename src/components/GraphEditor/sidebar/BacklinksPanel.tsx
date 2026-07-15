@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useBacklinks } from "../../../hooks";
+import { formatDate } from "../../../utils/formatters";
 import { Skeleton } from "../../common/Skeleton";
 import { EmptyState } from "../../common/EmptyState";
 import type { BacklinkItem } from "@shared/types";
@@ -103,7 +104,7 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
               </p>
             )}
             <span className="text-xs text-gray-400 dark:text-gray-500">
-              {new Date(item.createdAt).toLocaleDateString()}
+              {formatDate(item.createdAt, "short")}
             </span>
           </button>
         );

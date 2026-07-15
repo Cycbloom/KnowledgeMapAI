@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
-import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, Network } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TaskDependency, UserTask } from '../../types';
+import { EmptyState } from '../common/EmptyState';
 
 interface TaskDependencyGraphProps {
   taskId: string;
@@ -34,6 +36,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
   allTasks = [],
   onTaskClick,
 }) => {
+  const { t } = useTranslation();
   const { nodes, edges } = useMemo(() => {
     const nodeMap = new Map<string, GraphNode>();
     const edgeList: GraphEdge[] = [];
@@ -132,10 +135,7 @@ export const TaskDependencyGraph: React.FC<TaskDependencyGraphProps> = ({
 
   if (nodes.length <= 1) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-        <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>暂无依赖关系</p>
-      </div>
+      <EmptyState icon={<Network size={32} />} title={t('scheduler.empty.dependencies')} />
     );
   }
 

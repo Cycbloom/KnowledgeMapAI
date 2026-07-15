@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Tag, Eye, Play, Trash2, Edit2, CheckSquare, Square } from 'lucide-react';
 import { StudyCard } from '../../types';
+import { formatDate } from '../../utils/formatters';
 
 interface StudyCardPreviewProps {
   card: StudyCard;
@@ -72,7 +73,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
           
           <div className={`flex items-center gap-1 text-[10px] ml-auto ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
             <Calendar size={10} />
-            <span>{card.next_review ? new Date(card.next_review).toLocaleDateString() : '尚未开始'}</span>
+            <span>{card.next_review ? formatDate(card.next_review, 'short') : '尚未开始'}</span>
           </div>
         </div>
         

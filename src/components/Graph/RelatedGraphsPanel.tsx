@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import { motion } from 'framer-motion';
-import { 
-  FolderOpen, 
-  ExternalLink, 
-  Trash2, 
+import {
+  FolderOpen,
+  ExternalLink,
+  Trash2,
   BookOpen,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Network
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useError } from "../../hooks";
+import { EmptyState } from '../common/EmptyState';
 
 interface GraphRelation {
   id: string;
@@ -44,7 +47,8 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [_showAddModal, _setShowAddModal] = useState(false);
-  
+
+  const { t } = useTranslation();
   const { handleError } = useError();
 
   const fetchRelations = async () => {
@@ -114,11 +118,10 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
       </div>
 
       {!hasRelations ? (
-        <div className="text-center py-6 text-gray-400 text-sm">
-          <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p>暂无关联图谱</p>
-          <p className="text-xs mt-1">在学习路径规划中可创建前置知识图谱</p>
-        </div>
+        <EmptyState
+          icon={<Network size={32} />}
+          title={t('graphMap.empty.relatedGraphs')}
+        />
       ) : (
         <div className="space-y-4">
           {relations?.prerequisites && relations.prerequisites.length > 0 && (

@@ -35,5 +35,7 @@
     "graph2": "Graph 2",
     "interGraphRelations": "Inter-graph relations",
     "relationsCount": "{{count}}"
-  }
+  },
+  "loadError": "Failed to load combined graph data",
+  "retry": "Retry"
 }

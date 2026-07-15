@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { Link2, Sparkles, Loader2, Check, X, RefreshCw, Network } from 'lucide-react';
+import { useTranslation } from "react-i18next";
+import { Link2, Sparkles, Loader2, X, RefreshCw, Network, Lightbulb } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { Node, Edge } from '../../types';
+import { EmptyState } from '../common/EmptyState';
 
 interface SuggestedConnection {
   sourceId: string;
@@ -27,6 +29,7 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
   selectedNodeId
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<SuggestedConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set());
@@ -275,11 +278,10 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
           })}
         </div>
       ) : (
-        <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-          <Check size={32} className="mx-auto mb-2 text-green-500" />
-          <p>暂无新的关联建议</p>
-          <p className="text-xs mt-1">所有可能的关联都已建立或已忽略</p>
-        </div>
+        <EmptyState
+          icon={<Lightbulb size={32} />}
+          title={t('graphMap.empty.connectionDiscovery')}
+        />
       )}
     </div>
   );

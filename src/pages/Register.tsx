@@ -15,6 +15,12 @@ export const Register = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [touched, setTouched] = useState<{ email: boolean; password: boolean; confirmPassword: boolean }>({
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
   const navigate = useNavigate();
   const setUser = useStore(state => state.setUser);
   const registerMutation = useRegisterMutation();
@@ -38,6 +44,26 @@ export const Register = () => {
         setErrors([errorMessage]);
       }
     }
+  };
+
+  const validateEmail = (value: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  };
+  const validatePassword = (value: string): boolean => {
+    return value.length >= 8;
+  };
+  const validateConfirmPassword = (pw: string, confirm: string): boolean => {
+    return pw === confirm;
+  };
+  const getPasswordStrength = (pw: string): "weak" | "medium" | "strong" => {
+    if (!pw) return "weak";
+    if (pw.length < 8) return "weak";
+    const hasLetter = /[a-zA-Z]/.test(pw);
+    const hasDigit = /\d/.test(pw);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
+    if (hasLetter && hasDigit && hasSpecial) return "strong";
+    if (hasLetter && hasDigit) return "medium";
+    return "weak";
   };
 
   return (
@@ -76,9 +102,13 @@ export const Register = () => {
               autoComplete="username"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
               className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               required
             />
+            {touched.email && !validateEmail(email) && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.emailInvalid')}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.password')}</label>
@@ -88,9 +118,48 @@ export const Register = () => {
               autoComplete="new-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
               className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               required
             />
+            {touched.password && !validatePassword(password) && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.passwordTooShort')}</p>
+            )}
+            {password && (
+              <div className="mt-2">
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => {
+                    const strength = getPasswordStrength(password);
+                    const active = i <= (strength === "weak" ? 0 : strength === "medium" ? 1 : 2);
+                    const color = strength === "weak" ? "bg-red-500" : strength === "medium" ? "bg-yellow-500" : "bg-green-500";
+                    return (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${active ? color : "bg-gray-200 dark:bg-slate-700"}`}
+                      />
+                    );
+                  })}
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {t(`register.passwordStrength.${getPasswordStrength(password)}`)}
+                </p>
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.confirmPassword') ?? '确认密码'}</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
+              className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
+            />
+            {touched.confirmPassword && !validateConfirmPassword(password, confirmPassword) && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.passwordMismatch')}</p>
+            )}
           </div>
           <button
             type="submit"

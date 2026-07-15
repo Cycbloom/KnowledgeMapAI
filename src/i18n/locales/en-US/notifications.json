@@ -6,5 +6,9 @@
   "deleteFailed": "Failed to delete notification",
   "markAllRead": "Mark all as read",
   "deleteRead": "Delete read notifications",
-  "settings": "Notification settings"
+  "settings": "Notification settings",
+  "empty": "No notifications",
+  "emptyHint": "New notifications will appear here",
+  "loadError": "Failed to load notifications",
+  "retry": "Retry"
 }

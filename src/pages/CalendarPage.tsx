@@ -14,6 +14,7 @@ import { CalendarHeader } from "../components/Calendar/CalendarHeader";
 import { CalendarContent } from "../components/Calendar/CalendarContent";
 import { CalendarTaskModal } from "../components/Calendar/CalendarTaskModal";
 import { CalendarExportModal } from "../components/Calendar/CalendarExportModal";
+import { Skeleton } from "../components/common";
 import { api } from "../services/api";
 import { message } from "../utils/messageHelper";
 import type { CalendarEvent, EventDropInfo, CalendarMode } from "../types/calendar";
@@ -150,8 +151,17 @@ export const CalendarPage: React.FC = () => {
 
       <div className="flex-1 overflow-hidden p-4">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+          <div className="h-full flex flex-col">
+            <div className="grid grid-cols-7 mb-2 gap-1">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton key={i} variant="rectangular" className="h-8" />
+              ))}
+            </div>
+            <div className="grid grid-cols-7 flex-1 gap-1">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <Skeleton key={i} variant="rectangular" className="min-h-[80px]" />
+              ))}
+            </div>
           </div>
         ) : (
           <CalendarContent

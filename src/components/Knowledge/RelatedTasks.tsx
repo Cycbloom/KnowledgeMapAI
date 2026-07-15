@@ -12,11 +12,14 @@ import {
   Loader2,
   AlertCircle,
   ListTodo,
+  ClipboardList,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useSchedulerTasks } from "../../hooks";
-import { formatDurationMinutes } from "../../utils/formatters";
+import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import type { UserTask, UserTaskStatus } from "@shared/types";
 import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
+import { EmptyState } from "../common/EmptyState";
 
 interface RelatedTasksProps {
   knowledgePointId: string;
@@ -35,7 +38,7 @@ const formatDeadline = (date?: string): { text: string; color: string } | null =
   if (days === 0) return { text: "今天", color: "text-amber-500 dark:text-amber-400" };
   if (days === 1) return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
   if (days <= 7) return { text: `${days}天后`, color: "text-primary-500 dark:text-primary-400" };
-  return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
+  return { text: formatDate(date, "short"), color: "text-slate-500 dark:text-slate-400" };
 };
 
 const getStatusIcon = (status: UserTaskStatus) => {
@@ -57,6 +60,7 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
   onCreateTask,
 }) => {
   const { data: tasksData, isLoading, error, refetch } = useSchedulerTasks();
+  const { t } = useTranslation();
 
   const relatedTasks = React.useMemo(() => {
     if (!tasksData?.data) return [];
@@ -159,24 +163,11 @@ export const RelatedTasks: React.FC<RelatedTasksProps> = ({
 
       <AnimatePresence mode="popLayout">
         {relatedTasks.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400"
-          >
-            <ListTodo size={40} className="mb-3 opacity-50" />
-            <p className="text-sm">暂无关联任务</p>
-            {onCreateTask && (
-              <button
-                onClick={onCreateTask}
-                className="mt-3 text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
-              >
-                <Plus size={14} />
-                创建新任务
-              </button>
-            )}
-          </motion.div>
+          <EmptyState
+            icon={<ClipboardList size={32} />}
+            title={t('scheduler.empty.tasks')}
+            action={onCreateTask ? { label: '创建新任务', onClick: onCreateTask } : undefined}
+          />
         ) : (
           <div className="space-y-2">
             {relatedTasks.map((task: UserTask, index: number) => {

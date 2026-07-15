@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { formatDate } from "@/utils/formatters";
 import { PromptEditor } from "./PromptEditor";
 import {
   Edit,
@@ -474,9 +475,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
                           {effective.updated_at && (
                             <span className="text-gray-400">
                               更新于:{" "}
-                              {new Date(
-                                effective.updated_at,
-                              ).toLocaleDateString()}
+                              {formatDate(effective.updated_at, "short")}
                             </span>
                           )}
                         </div>

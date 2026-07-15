@@ -333,7 +333,7 @@ export const ListView: React.FC<ListViewProps> = ({
         color: "text-primary-500 dark:text-primary-400",
       };
     return {
-      text: d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" }),
+      text: formatDateUtil(d, 'short'),
       color: "text-slate-500 dark:text-slate-400",
     };
   };

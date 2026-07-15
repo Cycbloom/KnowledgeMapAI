@@ -10,6 +10,7 @@
   "create": "Create",
   "search": "Search",
   "noData": "No data",
+  "empty": "No data",
   "retry": "Retry",
   "view": "View",
   "more": "More",
@@ -70,5 +71,22 @@
     "message": "Sorry, an error occurred while loading this page. Please retry or go home.",
     "retry": "Retry",
     "goHome": "Go Home"
+  },
+  "aria": {
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "prevPeriod": "Previous",
+    "nextPeriod": "Next",
+    "settings": "Settings",
+    "minimize": "Minimize",
+    "startTask": "Start task",
+    "pauseTask": "Pause task",
+    "completeTask": "Complete task",
+    "deleteTask": "Delete task",
+    "editTask": "Edit task",
+    "close": "Close",
+    "refresh": "Refresh",
+    "invite": "Invite",
+    "linkKnowledgePoint": "Link knowledge point"
   }
 }

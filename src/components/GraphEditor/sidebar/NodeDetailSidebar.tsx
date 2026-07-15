@@ -8,6 +8,7 @@ import {
 } from "../../../config/learningStatusColors";
 import { getLevel } from "../../../lib/graphUtils";
 import { preprocessMarkdown } from "../../../utils/markdownPreprocessor";
+import { formatDate } from "../../../utils/formatters";
 import {
   preprocessWikiLinks,
   WikiLinkRenderer,
@@ -246,7 +247,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               <Calendar size={14} className="mr-1.5 text-gray-400" />
               <span>
                 {node.created_at
-                  ? new Date(node.created_at).toLocaleDateString()
+                  ? formatDate(node.created_at, "short")
                   : t("nodeDetail.unknownDate")}
               </span>
             </div>

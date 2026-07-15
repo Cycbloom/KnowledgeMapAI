@@ -1,6 +1,7 @@
 {
   "title": "闯关学习",
   "selectCourse": "请选择课程章节",
+  "empty": "暂无学习节点",
   "loading": "加载中...",
   "aiTutor": "AI 助教",
   "online": "在线",

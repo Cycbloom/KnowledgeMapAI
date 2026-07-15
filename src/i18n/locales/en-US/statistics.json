@@ -1,6 +1,7 @@
 {
   "title": "Learning Statistics Analysis",
   "subtitle": "Comprehensive overview of your learning progress and knowledge base status",
+  "loadError": "Failed to load statistics",
   "tabs": {
     "learning": "Learning Statistics",
     "tasks": "Task Statistics"

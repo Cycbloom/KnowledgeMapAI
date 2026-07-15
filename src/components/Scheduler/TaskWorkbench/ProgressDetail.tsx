@@ -10,11 +10,14 @@ import {
   SkipForward,
   Edit3,
   Trash2,
+  CalendarRange,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { TaskProgressPlan } from "../../../types";
 import { formatDate as formatDateUtil } from "../../../utils/formatters";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { EmptyState } from "../../common/EmptyState";
 
 interface ProgressDetailProps {
   taskId: string;
@@ -45,6 +48,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
     null,
   );
   const [analysis, setAnalysis] = useState<ProgressAnalysis | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadProgressPlans();
@@ -123,7 +127,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
       plannedProgress,
       avgDailyProgress: avgDaily,
       daysRemaining,
-      estimatedCompletionDate: estimatedDate.toLocaleDateString("zh-CN"),
+      estimatedCompletionDate: formatDateUtil(estimatedDate, 'short'),
       suggestions,
     });
   };
@@ -388,10 +392,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
           </table>
 
           {plans.length === 0 && (
-            <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-              <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>暂无进度计划</p>
-            </div>
+            <EmptyState icon={<CalendarRange size={32} />} title={t('scheduler.empty.progressPlans')} />
           )}
         </div>
       </div>
@@ -722,7 +723,7 @@ const ProgressChart: React.FC<{
       <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-slate-400 dark:text-slate-500 px-1">
         {dataPoints.slice(0, 5).map((d) => (
           <span key={d.date}>
-            {new Date(d.date).toLocaleDateString("zh-CN", { day: "numeric" })}
+            {formatDateUtil(d.date, 'short')}
           </span>
         ))}
       </div>

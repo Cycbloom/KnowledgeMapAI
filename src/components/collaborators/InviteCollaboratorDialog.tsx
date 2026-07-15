@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { CollaboratorRole, COLLABORATOR_ROLE_LABELS } from "@shared/types";
 
 interface InviteCollaboratorDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onInvite: (email: string, role: CollaboratorRole) => void;
+  onInvite: (email: string, role: CollaboratorRole) => Promise<void>;
 }
 
 export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
@@ -13,18 +14,31 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
   onClose,
   onInvite,
 }) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<CollaboratorRole>("viewer");
+  const [touched, setTouched] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateEmail = (value: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      onInvite(email, role);
+    setTouched(true);
+    if (!validateEmail(email)) return;
+    setSubmitting(true);
+    try {
+      await onInvite(email, role);
       setEmail("");
       setRole("viewer");
+      setTouched(false);
       onClose();
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -52,10 +66,16 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched(true)}
                 className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="user@example.com"
                 required
               />
+              {touched && !validateEmail(email) && (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {t("collaborators.invite.validation.emailInvalid")}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -81,9 +101,12 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95"
+              disabled={submitting}
+              className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              邀请
+              {submitting
+                ? t("collaborators.invite.inviting")
+                : t("collaborators.invite.invite")}
             </button>
           </div>
         </form>

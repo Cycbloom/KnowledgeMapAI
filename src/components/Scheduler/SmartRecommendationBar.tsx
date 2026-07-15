@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
+import { formatDate } from "../../utils/formatters";
 
 interface SmartRecommendation {
   recommendedTask: {
@@ -247,7 +248,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
             ? "已超过截止日期"
             : hoursUntil < 24
               ? `截止时间临近 (${hoursUntil}小时)`
-              : `截止时间: ${deadline.toLocaleDateString("zh-CN")}`,
+              : `截止时间: ${formatDate(deadline, 'short')}`,
       });
     }
 

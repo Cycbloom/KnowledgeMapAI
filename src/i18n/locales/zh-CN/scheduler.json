@@ -336,5 +336,18 @@
     "continueWork": "继续工作",
     "dealWithLater": "稍后处理",
     "markComplete": "标记完成"
-  }
+  },
+  "empty": {
+    "executionRecords": "暂无执行记录",
+    "links": "暂无链接",
+    "subtasks": "暂无子任务",
+    "progressPlans": "暂无进度计划",
+    "dependencies": "暂无依赖关系",
+    "recommendations": "暂无待办任务",
+    "tasks": "暂无任务",
+    "timeAnalysis": "暂无专注数据",
+    "achievements": "没有找到匹配的成就",
+    "content": "暂无内容"
+  },
+  "loadError": "加载调度数据失败"
 }

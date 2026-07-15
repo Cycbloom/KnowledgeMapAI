@@ -13,7 +13,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
-import { BookOpen, Brain, Clock, TrendingUp, LucideIcon } from 'lucide-react';
+import { AlertCircle, BookOpen, Brain, Clock, TrendingUp, LucideIcon } from 'lucide-react';
 import type { Graph } from '../types';
 import { formatNumber } from '../utils/formatters';
 import { Skeleton } from '../components/common';
@@ -191,7 +191,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, t, isDark }: {
 export const Statistics = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { data: stats, isLoading, error } = useStatistics() as unknown as {
+  const { data: stats, isLoading, error, refetch } = useStatistics() as unknown as {
     data?: {
       distribution: Array<{ name: string; value: number; color: string }>;
       metrics: { learning: number; dueToday: number; totalCards: number; avgStability: number };
@@ -201,6 +201,7 @@ export const Statistics = () => {
     } | null;
     isLoading: boolean;
     error: Error | null;
+    refetch: () => Promise<unknown>;
   };
   const { data: userData } = useUser();
   const { data: graphsData } = useGraphs();
@@ -253,8 +254,26 @@ export const Statistics = () => {
       </div>
     );
   }
-  if (error) return <div className="p-8 text-center text-red-500">{t('statistics.loadError')}</div>;
-  if (!stats) return null;
+  if (error) return (
+    <div className="p-8 flex flex-col items-center justify-center text-center">
+      <AlertCircle size={48} className="text-red-500 mb-4" />
+      <p className="text-red-600 dark:text-red-400 mb-4">{t('statistics.loadError')}</p>
+      <button
+        type="button"
+        onClick={() => { void refetch(); }}
+        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+      >
+        {t('common.retry')}
+      </button>
+    </div>
+  );
+  if (!stats) {
+    return (
+      <div className="h-full flex items-center justify-center p-8 bg-slate-50 dark:bg-slate-900">
+        <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto p-8 bg-slate-50 dark:bg-slate-900">

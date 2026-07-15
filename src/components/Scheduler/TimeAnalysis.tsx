@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Sun, Moon, Coffee, Sunset } from 'lucide-react';
+import { Clock, Sun, Moon, Coffee, Sunset, BarChart3 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { formatDuration } from '../../utils/formatters';
+import { EmptyState } from '../common/EmptyState';
 import type {TaskExecution} from '@shared/types';
 
 interface TimeAnalysisProps {
@@ -28,6 +30,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
 }) => {
   const [executions, setExecutions] = useState<TaskExecution[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadData();
@@ -116,12 +119,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500" />
         </div>
       ) : executions.length === 0 ? (
-        <div className="h-48 flex items-center justify-center text-slate-400">
-          <div className="text-center">
-            <Clock size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">暂无专注数据</p>
-          </div>
-        </div>
+        <EmptyState icon={<BarChart3 size={32} />} title={t('scheduler.empty.timeAnalysis')} />
       ) : (
         <>
           <div className="mb-6">

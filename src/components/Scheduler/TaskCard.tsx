@@ -25,7 +25,7 @@ import { UserTask, TaskSubtask } from "@shared/types";
 import { QUEUE_COLORS, STATUS_CONFIG, type QueueLevel } from "@/constants/scheduler";
 import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
-import { formatDurationMinutes } from "../../utils/formatters";
+import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 interface TaskCardProps {
@@ -150,7 +150,7 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
     if (days <= 7)
       return { text: t("scheduler.taskCard.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
     return {
-      text: d.toLocaleDateString(),
+      text: formatDate(d, 'short'),
       color: "text-slate-500 dark:text-slate-400",
     };
   };

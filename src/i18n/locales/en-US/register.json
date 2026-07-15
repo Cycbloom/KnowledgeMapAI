@@ -3,9 +3,20 @@
   "name": "Name",
   "email": "Email",
   "password": "Password",
+  "confirmPassword": "Confirm Password",
   "submit": "Register",
   "alreadyHaveAccount": "Already have an account?",
   "login": "Login",
   "switchToLight": "Switch to Light Mode",
-  "switchToDark": "Switch to Dark Mode"
+  "switchToDark": "Switch to Dark Mode",
+  "validation": {
+    "emailInvalid": "Invalid email format",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "medium": "Medium",
+    "strong": "Strong"
+  }
 }

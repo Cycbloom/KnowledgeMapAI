@@ -292,5 +292,16 @@
     "searchHint": "Type to search nodes",
     "contextLabel": "Context",
     "inCurrentGraph": "Current graph"
-  }
+  },
+  "empty": {
+    "branches": "No branches",
+    "diffs": "No differences between versions",
+    "connectionSuggestions": "No connection suggestions",
+    "snapshots": "No snapshots",
+    "versionHistory": "No version history",
+    "commandPaletteNoResult": "No results found",
+    "nodeEmptyContent": "No content yet, please enter edit mode..."
+  },
+  "loadError": "Failed to load graph editor data",
+  "retry": "Retry"
 }

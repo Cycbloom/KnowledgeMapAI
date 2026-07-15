@@ -17,7 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs } from "@/hooks/queries";
-import { formatDurationMs as formatDuration } from "@/utils/formatters";
+import { formatDurationMs as formatDuration, formatDate } from "@/utils/formatters";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import type { AIPerformanceLog, AIProviderType } from "@shared/types";
 
@@ -40,13 +40,7 @@ const formatTokens = (tokens: number): string => {
 };
 
 const formatTimestamp = (timestamp: number): string => {
-  const date = new Date(timestamp);
-  return date.toLocaleString("zh-CN", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDate(timestamp, "short-datetime");
 };
 
 const StatCard: React.FC<{

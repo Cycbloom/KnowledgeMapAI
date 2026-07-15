@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../hooks";
 import { useTranslation } from "react-i18next";
+import { formatDate } from "../../utils/formatters";
 
 interface CombinedNodeDetailSidebarProps {
   node: Node;
@@ -148,7 +149,7 @@ export const CombinedNodeDetailSidebar: React.FC<
               <Calendar size={14} className="mr-1.5 text-gray-400" />
               <span>
                 {node.created_at
-                  ? new Date(node.created_at).toLocaleDateString()
+                  ? formatDate(node.created_at, "short")
                   : t("nodeDetail.unknownDate")}
               </span>
             </div>

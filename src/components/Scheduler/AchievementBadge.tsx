@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Lock, Sparkles } from "lucide-react";
 import { Achievement } from "@shared/types";
+import { formatDate } from "../../utils/formatters";
 
 interface AchievementBadgeProps {
   achievement: Achievement;
@@ -73,13 +74,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
     ? Math.min(100, (progress / conditionValue) * 100)
     : progress;
 
-  const formatUnlockedDate = (date: string) => {
-    return new Date(date).toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const formatUnlockedDate = (date: string) => formatDate(date, 'short');
 
   return (
     <motion.div

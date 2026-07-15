@@ -8,15 +8,16 @@ import {
   Clock,
   BarChart3,
   ListTodo,
-  Sparkles,
   CheckSquare,
   Square,
   X,
   Loader2,
 } from "lucide-react";
 import { NodeStatus } from "../../services/api/learningPaths";
+import { useTranslation } from "react-i18next";
 import type { LearningPathDetail, LearningPathNode } from "./types";
 import { STATUS_CONFIG } from "./types";
+import { EmptyState } from "../common/EmptyState";
 
 interface PathNodeListSectionProps {
   pathDetail: LearningPathDetail;
@@ -56,6 +57,7 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
   onConvertToTask,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
@@ -145,24 +147,12 @@ const PathNodeListSection: React.FC<PathNodeListSectionProps> = ({
             )}
             <div className="px-6 pb-4 space-y-2 max-h-[600px] overflow-y-auto">
               {pathDetail.nodes.length === 0 ? (
-                <div className="text-center py-12">
-                  <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    暂无学习节点
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    您可以添加学习节点，或从知识图谱生成学习路径
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      onClick={() => navigate("/graphs")}
-                      className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      从图谱生成
-                    </button>
-                  </div>
-                </div>
+                <EmptyState
+                  icon={<BookOpen size={32} />}
+                  title={t('learning.empty')}
+                  description="您可以添加学习节点，或从知识图谱生成学习路径"
+                  action={{ label: '从图谱生成', onClick: () => navigate("/graphs") }}
+                />
               ) : (
                 pathDetail.nodes.map((node, index) => (
                   <motion.div

@@ -3,5 +3,12 @@
     "title": "Share & Collaborate",
     "inviteCollaborator": "Invite Collaborator",
     "generateLink": "Generate Share Link"
+  },
+  "invite": {
+    "validation": {
+      "emailInvalid": "Invalid email format"
+    },
+    "inviting": "Inviting...",
+    "invite": "Invite"
   }
 }

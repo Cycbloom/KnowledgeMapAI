@@ -150,12 +150,14 @@ export const FocusTimer: React.FC = () => {
               >
                 <button
                   onClick={() => setShowSettings(!showSettings)}
+                  aria-label={t("common.aria.settings")}
                   className="p-1.5 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg text-gray-500"
                 >
                   <Settings2 size={16} />
                 </button>
                 <button
                   onClick={() => setIsExpanded(false)}
+                  aria-label={t("common.aria.minimize")}
                   className="p-1.5 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg text-gray-500"
                 >
                   <Minimize2 size={16} />

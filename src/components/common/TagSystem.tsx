@@ -1,8 +1,10 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { Tag, X, Plus, Hash, Filter, Sparkles, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
 import { cn } from '@/lib/utils';
 import { Node } from '../../types';
+import { EmptyState } from './EmptyState';
 
 interface TagData {
   name: string;
@@ -60,6 +62,7 @@ export const TagCloud: React.FC<TagCloudProps> = ({
   maxTags = 30
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const tagData = useMemo(() => {
     const tagMap = new Map<string, TagData>();
@@ -145,10 +148,7 @@ export const TagCloud: React.FC<TagCloudProps> = ({
       </div>
       
       {tagData.length === 0 && (
-        <div className={cn('text-center py-8', isDark ? 'text-slate-400' : 'text-gray-500')}>
-          <Tag size={32} className="mx-auto mb-2 opacity-50" />
-          <p>暂无标签</p>
-        </div>
+        <EmptyState icon={<Tag size={32} />} title={t('common.empty')} />
       )}
     </div>
   );
@@ -160,6 +160,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   onTagChange
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const allTags = useMemo(() => {
@@ -255,9 +256,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
           </div>
           
           {allTags.length === 0 && (
-            <div className={cn('p-4 text-center text-sm', isDark ? 'text-slate-400' : 'text-gray-500')}>
-              暂无标签
-            </div>
+            <EmptyState icon={<Tag size={24} />} title={t('common.empty')} className="min-h-0 py-4" />
           )}
         </div>
       )}

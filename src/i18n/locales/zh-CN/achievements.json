@@ -63,5 +63,7 @@
   "dailyTasks": "每日任务",
   "periodicTasks": "周期任务",
   "passTitle": "通行证",
-  "lifetimeAchievements": "终身成就"
+  "lifetimeAchievements": "终身成就",
+  "loadError": "加载成就数据失败",
+  "retry": "重试"
 }

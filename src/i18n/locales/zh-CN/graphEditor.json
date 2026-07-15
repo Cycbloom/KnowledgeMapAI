@@ -292,5 +292,16 @@
     "searchHint": "输入节点名称搜索",
     "contextLabel": "上下文",
     "inCurrentGraph": "当前图谱"
-  }
+  },
+  "empty": {
+    "branches": "暂无分支",
+    "diffs": "两个版本之间没有差异",
+    "connectionSuggestions": "暂无连接建议",
+    "snapshots": "暂无快照",
+    "versionHistory": "暂无版本历史",
+    "commandPaletteNoResult": "未找到相关结果",
+    "nodeEmptyContent": "暂无内容，请先在编辑模式输入..."
+  },
+  "loadError": "加载图谱编辑器数据失败",
+  "retry": "重试"
 }

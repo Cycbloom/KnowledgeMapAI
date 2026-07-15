@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -18,7 +19,9 @@ import {
   FolderOpen,
   ExternalLink,
   RefreshCw,
+  Map,
 } from 'lucide-react';
+import { EmptyState } from '../common/EmptyState';
 
 export interface RecommendedGraph {
   title: string;
@@ -112,6 +115,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   onExpandDomain,
 }) => {
   const [mode, setMode] = useState<GenerationMode>('new');
+  const { t } = useTranslation();
   const [domain, setDomain] = useState('');
   const [expandDomain, setExpandDomain] = useState('');
   const [graphCount, setGraphCount] = useState(10);
@@ -488,8 +492,11 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                           ))}
                         </select>
                       ) : (
-                        <div className="py-2.5 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-sm text-gray-500 dark:text-gray-400">
-                          暂无可选领域，请先为图谱设置领域。                        </div>
+                        <EmptyState
+                          icon={<Map size={32} />}
+                          title={t('graphMap.empty.domains')}
+                          className="min-h-0 py-6"
+                        />
                       )}
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         选择领域后，AI 会将该领域内的所有图谱信息纳入推荐参考。                      </p>

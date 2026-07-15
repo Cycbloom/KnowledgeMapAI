@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Clock, Trash2, CheckCircle, XCircle, Search } from 'lucide-react';
 import type { CommandHistoryItem } from '@/services/console';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { formatDate } from '@/utils/formatters';
 import { EmptyState } from '@/components/common/EmptyState';
 
 interface ConsoleHistoryProps {
@@ -26,12 +27,7 @@ const formatTime = (timestamp: number): string => {
   if (diffHours < 24) return `${diffHours}小时前`;
   if (diffDays < 7) return `${diffDays}天前`;
 
-  return date.toLocaleDateString('zh-CN', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatDate(timestamp, 'short-datetime');
 };
 
 export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({

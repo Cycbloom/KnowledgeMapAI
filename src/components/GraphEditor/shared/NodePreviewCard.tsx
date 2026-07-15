@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { Node, Edge } from '../../../types';
 import { getLearningStatus, getStatusColors } from '../../../config/learningStatusColors';
 import { getLevel, getLevelLabel } from '../../../lib/graphUtils';
+import { formatDate } from '../../../utils/formatters';
 import { useTheme } from "../../../hooks";
 import { 
   Check, 
@@ -170,7 +171,7 @@ export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
           {nextReview && (
             <div className="flex items-center gap-1.5">
               <Clock size={12} />
-              <span>{new Date(nextReview).toLocaleDateString()}</span>
+              <span>{formatDate(nextReview, 'short')}</span>
             </div>
           )}
         </div>

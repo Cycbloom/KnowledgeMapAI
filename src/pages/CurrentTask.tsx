@@ -36,7 +36,7 @@ import {
 } from "../hooks";
 import { Skeleton } from "../components/common";
 import { message } from "../utils/messageHelper";
-import { formatDurationMinutes, formatTimeFromSeconds } from "../utils/formatters";
+import { formatDurationMinutes, formatTimeFromSeconds, formatDate } from "../utils/formatters";
 import { useTimerStore } from "../store/useTimerStore";
 import type { UserTask, TaskSettings } from "@shared/types";
 
@@ -589,7 +589,7 @@ export const CurrentTask: React.FC = () => {
                       className="text-red-500 dark:text-red-400"
                     />
                     <span className="text-red-500 dark:text-red-400">
-                      {t("scheduler.currentTask.deadline")} {new Date(currentTask.deadline).toLocaleDateString()}
+                      {t("scheduler.currentTask.deadline")} {formatDate(currentTask.deadline, 'short')}
                     </span>
                   </div>
                 )}

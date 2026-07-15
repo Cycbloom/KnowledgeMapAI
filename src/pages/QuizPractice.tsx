@@ -11,12 +11,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Flag,
+  Layers,
 } from 'lucide-react';
 import { useTheme } from '../hooks';
 import { useQuizSet } from '../hooks/queries';
 import { QuizProgressBar } from '../components/Quiz/QuizProgressBar';
 import { QuizResult } from '../components/Quiz/QuizResult';
 import { Skeleton } from '../components/common';
+import { EmptyState } from '@/components/common/EmptyState';
 import type { StudyCard } from '@shared/types/common';
 
 interface AnswerRecord {
@@ -418,17 +420,18 @@ export const QuizPractice: React.FC = () => {
   if (cards.length === 0) {
     return (
       <div
-        className={`min-h-full flex flex-col items-center justify-center p-8 ${
+        className={`min-h-full flex items-center justify-center p-8 ${
           isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-50 text-gray-500'
         }`}
       >
-        <p className="mb-4">{t('study.quizPractice.noCards')}</p>
-        <button
-          onClick={handleBack}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-        >
-          {t('study.quizPractice.backToList')}
-        </button>
+        <EmptyState
+          icon={<Layers size={32} />}
+          title={t('study.quizPractice.noCards')}
+          action={{
+            label: t('study.quizPractice.backToList'),
+            onClick: handleBack,
+          }}
+        />
       </div>
     );
   }

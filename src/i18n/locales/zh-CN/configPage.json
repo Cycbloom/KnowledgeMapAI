@@ -43,5 +43,10 @@
   "noSupabaseClient": "Supabase 客户端不可用",
   "confirmEmail": "请查看您的邮箱以确认您的账户",
   "switchToLightMode": "切换到亮色模式",
-  "switchToDarkMode": "切换到暗色模式"
+  "switchToDarkMode": "切换到暗色模式",
+  "validation": {
+    "emailRequired": "请输入邮箱",
+    "passwordRequired": "请输入密码",
+    "emailInvalid": "邮箱格式不正确"
+  }
 }

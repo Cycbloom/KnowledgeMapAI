@@ -43,5 +43,10 @@
   "noSupabaseClient": "Supabase client not available",
   "confirmEmail": "Please check your email to confirm your account",
   "switchToLightMode": "Switch to light mode",
-  "switchToDarkMode": "Switch to dark mode"
+  "switchToDarkMode": "Switch to dark mode",
+  "validation": {
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "emailInvalid": "Invalid email format"
+  }
 }

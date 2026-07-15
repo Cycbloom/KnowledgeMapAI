@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { useCombinedGraphAIOperations } from '../hooks/graphAI';
 import { useBatchGraphStatus } from '../hooks/queries/useGraphQueries';
@@ -38,7 +39,7 @@ export const CombinedGraphView: React.FC = () => {
     return { ...(s1 || {}), ...(s2 || {}) };
   }, [graphStatusData, id1, id2]);
   
-  const { data: graph1Data, isLoading: isLoading1, error: error1 } = useQuery<GraphDataResponse>({
+  const { data: graph1Data, isLoading: isLoading1, error: error1, refetch: refetch1 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id1],
     queryFn: async () => {
       if (!id1) return { nodes: [], edges: [] };
@@ -50,8 +51,8 @@ export const CombinedGraphView: React.FC = () => {
     },
     enabled: !!id1,
   });
-  
-  const { data: graph2Data, isLoading: isLoading2, error: error2 } = useQuery<GraphDataResponse>({
+
+  const { data: graph2Data, isLoading: isLoading2, error: error2, refetch: refetch2 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id2],
     queryFn: async () => {
       if (!id2) return { nodes: [], edges: [] };
@@ -63,8 +64,8 @@ export const CombinedGraphView: React.FC = () => {
     },
     enabled: !!id2,
   });
-  
-  const { data: graph1Meta } = useQuery({
+
+  const { data: graph1Meta, error: error3, refetch: refetch3 } = useQuery({
     queryKey: ['graph', id1],
     queryFn: () => {
       if (!id1) return null;
@@ -72,8 +73,8 @@ export const CombinedGraphView: React.FC = () => {
     },
     enabled: !!id1,
   });
-  
-  const { data: graph2Meta } = useQuery({
+
+  const { data: graph2Meta, error: error4, refetch: refetch4 } = useQuery({
     queryKey: ['graph', id2],
     queryFn: () => {
       if (!id2) return null;
@@ -81,8 +82,8 @@ export const CombinedGraphView: React.FC = () => {
     },
     enabled: !!id2,
   });
-  
-  const { data: mapData } = useQuery({
+
+  const { data: mapData, error: error5, refetch: refetch5 } = useQuery({
     queryKey: ['graphMap'],
     queryFn: () => api.graphs.getMap(),
   });
@@ -256,8 +257,8 @@ export const CombinedGraphView: React.FC = () => {
   }, []);
 
   const isLoading = isLoading1 || isLoading2;
-  const hasError = error1 || error2;
-  
+  const hasError = error1 || error2 || error3 || error4 || error5;
+
   if (!id1 || !id2) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
@@ -277,13 +278,15 @@ export const CombinedGraphView: React.FC = () => {
   if (hasError) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
-        <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">{t('combinedViewPage.page.loadGraphDataFailed')}</p>
+        <div className="p-8 flex flex-col items-center justify-center text-center">
+          <AlertCircle size={48} className="text-red-500 mb-4" />
+          <p className="text-red-600 dark:text-red-400 mb-4">{t('combinedViewPage.loadError')}</p>
           <button
-            onClick={handleBack}
-            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+            type="button"
+            onClick={() => { void refetch1(); void refetch2(); void refetch3(); void refetch4(); void refetch5(); }}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
-            {t('combinedViewPage.page.backToGraphMap')}
+            {t('combinedViewPage.retry')}
           </button>
         </div>
       </div>

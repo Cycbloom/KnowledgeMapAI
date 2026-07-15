@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Cloud, Monitor, Check } from 'lucide-react';
+import { formatDate } from '../../utils/formatters';
 
 interface ConflictItem {
   id: string;
@@ -51,7 +52,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
             <div key={conflict.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                 表: {conflict.tableName} | 记录 ID: {conflict.recordId.slice(0, 8)}... |
-                时间: {new Date(conflict.createdAt).toLocaleString()}
+                时间: {formatDate(conflict.createdAt, 'short-datetime')}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

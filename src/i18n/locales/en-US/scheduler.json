@@ -336,5 +336,18 @@
     "continueWork": "Continue Work",
     "dealWithLater": "Deal with later",
     "markComplete": "Mark Complete"
-  }
+  },
+  "empty": {
+    "executionRecords": "No execution records",
+    "links": "No links",
+    "subtasks": "No subtasks",
+    "progressPlans": "No progress plans",
+    "dependencies": "No dependencies",
+    "recommendations": "No pending tasks",
+    "tasks": "No tasks",
+    "timeAnalysis": "No focus data",
+    "achievements": "No matching achievements",
+    "content": "No content"
+  },
+  "loadError": "Failed to load scheduler data"
 }

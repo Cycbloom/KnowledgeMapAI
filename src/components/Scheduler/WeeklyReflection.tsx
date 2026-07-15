@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { taskReviewApi, TaskReview, Mood } from '../../services/api/review';
 import { api } from '../../services/api';
-import { formatDuration } from '../../utils/formatters';
+import { formatDuration, formatDate } from '../../utils/formatters';
 import type {UserTaskStats} from '@shared/types';
 
 interface WeeklyReflectionProps {
@@ -165,7 +165,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                   <div>
                     <h2 className="text-xl font-bold">周反思</h2>
                     <p className="text-sm text-white/80">
-                      {weekRange.startObj.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })} - {weekRange.endObj.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                      {formatDate(weekRange.startObj, 'short')} - {formatDate(weekRange.endObj, 'short')}
                     </p>
                   </div>
                 </div>

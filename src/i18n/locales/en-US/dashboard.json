@@ -1,6 +1,8 @@
 {
   "title": "My Knowledge Graphs",
   "subtitle": "Build, visualize, and explore your personalized knowledge network.",
+  "loadError": "Failed to load graphs",
+  "retry": "Retry",
   "stats": {
     "graphs": "graphs",
     "nodes": "nodes",

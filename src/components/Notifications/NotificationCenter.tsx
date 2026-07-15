@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { message } from '@/utils/messageHelper';
+import { formatDate } from '@/utils/formatters';
+import { EmptyState } from '../common/EmptyState';
 import { useNotificationsStore } from '../../store/useNotificationsStore';
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
@@ -25,7 +27,7 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
 export const NotificationCenter: React.FC = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -45,7 +47,7 @@ export const NotificationCenter: React.FC = () => {
     if (diffMins < 60) return t('common.timeAgo.minutesAgo', { count: diffMins });
     if (diffHours < 24) return t('common.timeAgo.hoursAgo', { count: diffHours });
     if (diffDays < 7) return t('common.timeAgo.daysAgo', { count: diffDays });
-    return date.toLocaleDateString(i18n.language);
+    return formatDate(dateString, 'short');
   };
 
   const loadNotifications = useCallback(async () => {
@@ -308,10 +310,11 @@ export const NotificationCenter: React.FC = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                 </div>
               ) : visibleNotifications.length === 0 ? (
-                <div className={`text-center py-10 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  <Bell size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>暂无通知</p>
-                </div>
+                <EmptyState
+                  icon={<Bell size={32} />}
+                  title={t('notifications.empty')}
+                  description={t('notifications.emptyHint')}
+                />
               ) : (
                 <>
                   {/* Unread notifications */}

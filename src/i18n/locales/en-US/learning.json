@@ -1,6 +1,7 @@
 {
   "title": "Challenge Learning",
   "selectCourse": "Select a course chapter",
+  "empty": "No learning nodes",
   "loading": "Loading...",
   "aiTutor": "AI Tutor",
   "online": "Online",

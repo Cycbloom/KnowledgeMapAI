@@ -33,6 +33,7 @@
     "createSnapshot": "Create Snapshot",
     "creating": "Creating...",
     "noSnapshots": "No snapshots yet. System will create automatically or click the button above to create manually",
+    "noSnapshotsHint": "Click the 'Create Snapshot' button above to back up your data",
     "graphsAndNodes": "{{graphs}} graphs, {{nodes}} nodes",
     "restoreSnapshot": "Restore this snapshot",
     "deleteSnapshot": "Delete this snapshot",

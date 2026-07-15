@@ -9,6 +9,8 @@ import { LogOut, User, Settings as SettingsIcon, ExternalLink, Database, Downloa
 import { backupApi, BackupSnapshot } from '../services/api/backup';
 import { queryClient } from '../main';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { formatDate } from '@/utils/formatters';
+import { EmptyState } from '@/components/common/EmptyState';
 
 export const Profile = () => {
   const { t } = useTranslation();
@@ -368,9 +370,11 @@ export const Profile = () => {
             {isLoadingSnapshots ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('profile.accountInfo.loading')}</div>
             ) : snapshots.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-                {t('profile.backup.noSnapshots')}
-              </div>
+              <EmptyState
+                icon={<Database size={32} />}
+                title={t('profile.backup.noSnapshots')}
+                description={t('profile.backup.noSnapshotsHint')}
+              />
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {snapshots.map((snapshot) => (
@@ -392,7 +396,7 @@ export const Profile = () => {
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {new Date(snapshot.created_at).toLocaleString('zh-CN')} · {formatFileSize(snapshot.file_size)}
+                        {formatDate(snapshot.created_at, 'short-datetime')} · {formatFileSize(snapshot.file_size)}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 ml-2">

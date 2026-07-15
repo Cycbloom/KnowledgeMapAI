@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } fro
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, Layers, Loader2, RefreshCw } from "lucide-react";
+import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, Layers, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
@@ -337,7 +337,8 @@ export const GraphMap = () => {
   const {
     data: mapData,
     isLoading,
-    refetch,
+    error,
+    refetch: refetchMap,
   } = useQuery({
     queryKey: ["graphMap"],
     queryFn: () => api.graphs.getMap(),
@@ -345,6 +346,8 @@ export const GraphMap = () => {
 
   const {
     data: domainTreeRaw,
+    error: domainTreeError,
+    refetch: refetchDomainTree,
   } = useQuery({
     queryKey: ["domainTree"],
     queryFn: () => domainsApi.getTree(),
@@ -1055,12 +1058,26 @@ export const GraphMap = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  if (error || domainTreeError) return (
+    <div className="p-8 flex flex-col items-center justify-center text-center">
+      <AlertCircle size={48} className="text-red-500 mb-4" />
+      <p className="text-red-600 dark:text-red-400 mb-4">{t('graphMap.loadError')}</p>
+      <button
+        type="button"
+        onClick={() => { void refetchMap(); void refetchDomainTree(); }}
+        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+      >
+        {t('graphMap.retry')}
+      </button>
+    </div>
+  );
+
   return (
     <>
     <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
       <GraphMapToolbar
         onBack={() => navigate("/dashboard")}
-        onRefresh={() => refetch()}
+        onRefresh={() => { void refetchMap(); }}
         onCreateRelation={() => setIsCreatePanelOpen(true)}
         onCreateGraph={() => {
           setCreateGraphRelationType(undefined);

@@ -28,6 +28,7 @@ import {
 } from "../components/Workbench";
 import type { KnowledgePointWithStatus } from "../components/Workbench/KnowledgePointCard";
 import { api } from "../services/api";
+import { formatDate } from "@/utils/formatters";
 import type {
   QueueData,
   PendingReviewTask,
@@ -219,7 +220,7 @@ export const UnifiedWorkbench: React.FC = () => {
     if (days === 0) return { text: t("unifiedWorkbench.status.today"), color: "text-amber-500 dark:text-amber-400" };
     if (days === 1) return { text: t("unifiedWorkbench.status.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
     if (days <= 7) return { text: t("unifiedWorkbench.status.daysLater", { count: days }), color: "text-primary-500 dark:text-primary-400" };
-    return { text: d.toLocaleDateString(), color: "text-slate-500 dark:text-slate-400" };
+    return { text: formatDate(d, 'short'), color: "text-slate-500 dark:text-slate-400" };
   }, [t]);
 
   const handleKnowledgePointSearchChange = useCallback((value: string) => {

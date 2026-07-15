@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Link2, TrendingUp, Activity, X } from 'lucide-react';
+import { useTranslation } from "react-i18next";
+import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Lightbulb, TrendingUp, Activity, X } from 'lucide-react';
 import { api } from '../../../services/api';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Node } from '../../../types';
+import { EmptyState } from '../../common/EmptyState';
 
 interface GraphAnalysis {
   nodeCount: number;
@@ -51,6 +53,7 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
   const [analysis, setAnalysis] = useState<GraphAnalysis | null>(null);
   const [missingConnections, setMissingConnections] = useState<MissingConnection[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'overview' | 'structure' | 'connections'>('overview');
 
   useEffect(() => {
@@ -315,10 +318,10 @@ export const GraphAnalysisPanel = React.memo(function GraphAnalysisPanel({
                   {activeTab === 'connections' && (
                     <div className="space-y-3">
                       {missingConnections.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                          <Link2 className="mx-auto mb-2 opacity-50" size={32} />
-                          <p>暂无连接建议</p>
-                        </div>
+                        <EmptyState
+                          icon={<Lightbulb size={32} />}
+                          title={t('graphEditor.empty.connectionSuggestions')}
+                        />
                       ) : (
                         missingConnections.map((conn, idx) => (
                           <div

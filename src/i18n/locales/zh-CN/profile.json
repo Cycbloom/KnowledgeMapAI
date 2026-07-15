@@ -33,6 +33,7 @@
     "createSnapshot": "创建快照",
     "creating": "创建中...",
     "noSnapshots": "暂无快照，系统会自动创建或点击上方按钮手动创建",
+    "noSnapshotsHint": "点击上方'创建快照'按钮备份您的数据",
     "graphsAndNodes": "{{graphs}} 个图谱，{{nodes}} 个节点",
     "restoreSnapshot": "恢复此快照",
     "deleteSnapshot": "删除此快照",

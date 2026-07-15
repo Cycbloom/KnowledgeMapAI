@@ -9,6 +9,7 @@ import {
   Info,
 } from "lucide-react";
 import type { FsrsParams, FsrsOptimizeResult } from "./settingsConstants";
+import { formatDate } from "../../utils/formatters";
 
 export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings() {
   const [fsrsParams, setFsrsParams] = useState<FsrsParams | null>(null);
@@ -88,7 +89,7 @@ export const StudyAlgorithmSettings = React.memo(function StudyAlgorithmSettings
           </div>
           {fsrsParams?.last_optimized_at && (
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              上次优化: {new Date(fsrsParams.last_optimized_at).toLocaleString()}
+              上次优化: {formatDate(fsrsParams.last_optimized_at, 'short-datetime')}
             </p>
           )}
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { GitBranch, CheckCircle, Lock, Unlock } from "lucide-react";
+import { GitBranch, CheckCircle, Lock, Unlock, Network } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { UserTask } from "@shared/types";
+import { EmptyState } from "../common/EmptyState";
 
 interface DependencyGraphProps {
   tasks: UserTask[];
@@ -23,6 +25,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   onTaskClick,
 }) => {
   const [nodes, setNodes] = useState<TaskNode[]>([]);
+  const { t } = useTranslation();
 
   const calculateLayout = () => {
     const taskMap = new Map<string, UserTask>();
@@ -110,12 +113,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
       </div>
 
       {nodes.length === 0 ? (
-        <div className="h-48 flex items-center justify-center text-slate-400">
-          <div className="text-center">
-            <GitBranch size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">暂无任务依赖关系</p>
-          </div>
-        </div>
+        <EmptyState icon={<Network size={32} />} title={t('scheduler.empty.dependencies')} />
       ) : (
         <div className="relative overflow-x-auto">
           <svg

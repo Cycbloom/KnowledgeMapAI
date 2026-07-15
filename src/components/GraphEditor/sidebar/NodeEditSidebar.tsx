@@ -19,6 +19,7 @@ import {
   Code,
   Eye,
   Pencil,
+  FileText,
 } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
@@ -36,6 +37,7 @@ import { NodeLinkSelector } from "./NodeLinkSelector";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { NotesPanel } from "../../Notes/NotesPanel";
 import { NodeBlockRefsPanel } from "../../Notes/NodeBlockRefsPanel";
+import { EmptyState } from "../../common/EmptyState";
 
 interface NodeFormState {
   title: string;
@@ -981,9 +983,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   </ReactMarkdown>
                 </div>
               ) : (
-                <p className="text-gray-400 dark:text-gray-500 text-sm italic">
-                  暂无内容，请先在编辑模式输入...
-                </p>
+                <EmptyState
+                  icon={<FileText size={32} />}
+                  title={t('graphEditor.empty.nodeEmptyContent')}
+                />
               )}
             </div>
           )}

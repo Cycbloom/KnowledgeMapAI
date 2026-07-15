@@ -1,6 +1,7 @@
 import React from 'react';
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, AlertCircle, Inbox } from 'lucide-react';
+import { X, Loader2, AlertCircle, BarChart3 } from 'lucide-react';
 import type {
   AnalysisModuleId,
   AnalysisModuleState,
@@ -13,6 +14,7 @@ import { RelationsResultSection } from './RelationsResultSection';
 import { CrossDomainInsightsSection } from './CrossDomainInsightsSection';
 import { LearningPathSuggestionsSection } from './LearningPathSuggestionsSection';
 import { KnowledgeGapsSection } from './KnowledgeGapsSection';
+import { EmptyState } from '../common/EmptyState';
 
 interface AnalysisResultViewerProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
   onCreateRelation,
   onCreateGraph,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen || !module) return null;
 
   const renderContent = () => {
@@ -67,13 +70,10 @@ export const AnalysisResultViewer: React.FC<AnalysisResultViewerProps> = ({
 
     if (module.status === 'idle' || !module.result) {
       return (
-        <div className="flex flex-col items-center justify-center py-16">
-          <Inbox className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">暂无分析结果</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            请先执行分析
-          </p>
-        </div>
+        <EmptyState
+          icon={<BarChart3 size={32} />}
+          title={t('graphMap.empty.analysisResults')}
+        />
       );
     }
 

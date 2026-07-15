@@ -35,5 +35,7 @@
     "graph2": "图谱 2",
     "interGraphRelations": "图谱间关系",
     "relationsCount": "{{count}} 条"
-  }
+  },
+  "loadError": "加载合并图谱数据失败",
+  "retry": "重试"
 }

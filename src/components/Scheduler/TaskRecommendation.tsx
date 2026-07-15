@@ -1,9 +1,12 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, AlertTriangle, CheckCircle, Zap, TrendingUp, Calendar, Tag } from 'lucide-react';
+import { Clock, AlertTriangle, Zap, TrendingUp, Calendar, Tag, ClipboardList } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TaskRecommendation as TaskRecommendationType } from '../../services/api/taskRecommendation';
 import { UserTask } from '@shared/types';
 import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
+import { formatDate } from '../../utils/formatters';
+import { EmptyState } from '../common/EmptyState';
 
 interface TaskRecommendationProps {
   recommendations: TaskRecommendationType[];
@@ -49,6 +52,8 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
   onStartTask,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
@@ -63,10 +68,8 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
 
   if (recommendations.length === 0) {
     return (
-      <div className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center">
-        <CheckCircle className="w-12 h-12 mx-auto text-emerald-500 dark:text-emerald-400 mb-3" />
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">暂无待办任务</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400">所有任务都已完成，干得漂亮！</p>
+      <div className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+        <EmptyState icon={<ClipboardList size={32} />} title={t('scheduler.empty.recommendations')} />
       </div>
     );
   }
@@ -132,7 +135,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
                     {rec.task.deadline && (
                       <span className="flex items-center gap-1">
                         <Calendar size={12} />
-                        {new Date(rec.task.deadline).toLocaleDateString()}
+                        {formatDate(rec.task.deadline, 'short')}
                       </span>
                     )}
                     {rec.task.tags && rec.task.tags.length > 0 && (

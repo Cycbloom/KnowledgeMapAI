@@ -3,9 +3,20 @@
   "name": "姓名",
   "email": "邮箱",
   "password": "密码",
+  "confirmPassword": "确认密码",
   "submit": "注册",
   "alreadyHaveAccount": "已有账号?",
   "login": "登录",
   "switchToLight": "切换到亮色模式",
-  "switchToDark": "切换到暗色模式"
+  "switchToDark": "切换到暗色模式",
+  "validation": {
+    "emailInvalid": "邮箱格式不正确",
+    "passwordTooShort": "密码至少 8 位",
+    "passwordMismatch": "两次密码不一致"
+  },
+  "passwordStrength": {
+    "weak": "弱",
+    "medium": "中",
+    "strong": "强"
+  }
 }

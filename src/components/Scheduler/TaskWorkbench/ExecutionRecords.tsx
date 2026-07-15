@@ -10,7 +10,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { api } from "../../../services/api";
-import { formatDuration } from "../../../utils/formatters";
+import { formatDuration, formatDate } from "../../../utils/formatters";
 import { TaskExecution } from "../../../types";
 
 interface ExecutionRecordsProps {
@@ -71,14 +71,11 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
     } else if (date.toDateString() === yesterday.toDateString()) {
       return "昨日";
     }
-    return date.toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
+    return formatDate(date, 'month-day');
   };
 
   const formatTime = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleTimeString("zh-CN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDate(dateStr, 'time');
   };
 
   const getStatusIcon = (status: string) => {

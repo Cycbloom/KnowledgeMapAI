@@ -3,7 +3,12 @@
   "empty": {
     "noGraphs": "No Graphs",
     "createFirst": "Create your first knowledge graph to start exploring",
-    "loading": "Loading graph map..."
+    "loading": "Loading graph map...",
+    "relatedGraphs": "No related graphs",
+    "connectionDiscovery": "No new connection suggestions",
+    "domains": "No available domains, please set domains for the graph first",
+    "modules": "No available analysis modules",
+    "analysisResults": "No analysis results"
   },
   "filter": {
     "all": "All",
@@ -202,5 +207,7 @@
   "skillSelector": {
     "selectedForAnalysis": "{{count}} graphs selected for analysis",
     "selectType": "Select Analysis Type"
-  }
+  },
+  "loadError": "Failed to load graph map data",
+  "retry": "Retry"
 }

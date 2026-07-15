@@ -6,6 +6,7 @@ import { Network, FileText, Sparkles, ChevronRight, Clock, Layers, BookOpen, Not
 import type { SearchResult, SearchNodeResult } from '../../services/api/search';
 import { type SearchNodeNavigateTarget } from '../Settings/GraphEditorSettings';
 import { useGraphEditorPreferencesStore } from '../../store/useGraphEditorPreferencesStore';
+import { formatDate } from '@/utils/formatters';
 
 /** Get the node ID from a search result, handling both keyword (id) and semantic (knowledge_point_id) formats */
 const getNodeId = (node: SearchNodeResult): string =>
@@ -220,7 +221,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                       {graph.updated_at && (
                         <span className="flex items-center gap-0.5">
                           <Clock className="w-2.5 h-2.5" />
-                          {new Date(graph.updated_at).toLocaleDateString()}
+                          {formatDate(graph.updated_at, 'short')}
                         </span>
                       )}
                     </div>
@@ -273,7 +274,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                       {node.updated_at && (
                         <span className="flex items-center gap-0.5 flex-shrink-0">
                           <Clock className="w-2.5 h-2.5" />
-                          {new Date(node.updated_at).toLocaleDateString()}
+                          {formatDate(node.updated_at, 'short')}
                         </span>
                       )}
                     </div>
@@ -352,7 +353,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                       {note.updated_at && (
                         <span className="flex items-center gap-0.5 flex-shrink-0">
                           <Clock className="w-2.5 h-2.5" />
-                          {new Date(note.updated_at).toLocaleDateString()}
+                          {formatDate(note.updated_at, 'short')}
                         </span>
                       )}
                     </div>

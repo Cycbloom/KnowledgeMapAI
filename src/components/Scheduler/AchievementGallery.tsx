@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Award,
-  Lock,
   Search,
   Trophy,
   Target,
@@ -10,8 +9,11 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import type { Achievement, UserAchievement } from "@shared/types";
+import { formatDate } from "../../utils/formatters";
+import { EmptyState } from "../common/EmptyState";
 import {
   AchievementBadge,
   AchievementBadgeNotification,
@@ -78,6 +80,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
   const [selectedAchievement, setSelectedAchievement] =
     useState<Achievement | null>(null);
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -369,14 +372,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
       </div>
 
       {filteredAchievements.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12 text-slate-500 dark:text-slate-400"
-        >
-          <Lock size={48} className="mx-auto mb-3 opacity-30" />
-          <p>没有找到匹配的成就</p>
-        </motion.div>
+        <EmptyState icon={<Trophy size={32} />} title={t('scheduler.empty.achievements')} />
       )}
 
       <AnimatePresence>
@@ -455,14 +451,11 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
                 {userAchievementMap.has(selectedAchievement.id) && (
                   <p className="mt-4 text-xs text-slate-400">
                     解锁于{" "}
-                    {new Date(
+                    {formatDate(
                       userAchievementMap.get(selectedAchievement.id)!
                         .unlocked_at,
-                    ).toLocaleDateString("zh-CN", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                      'short',
+                    )}
                   </p>
                 )}
               </div>

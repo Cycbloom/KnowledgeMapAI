@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { X, History, RotateCcw, GitCompare, Loader2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { useTranslation } from "react-i18next";
+import { X, History, RotateCcw, GitCompare, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { knowledgePointsApi } from '../../../services/api/knowledgePoints';
 import type { KnowledgePointVersionWithDiff, KnowledgePointVersionDiff } from '../../../types';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { formatDate as formatDateUtil } from '../../../utils/formatters';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { ModalShell } from '../../common';
+import { EmptyState } from '../../common/EmptyState';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ export const VersionHistoryModal = ({
 }: VersionHistoryModalProps) => {
   const [versions, setVersions] = useState<KnowledgePointVersionWithDiff[]>([]);
   const [total, setTotal] = useState(0);
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<KnowledgePointVersionWithDiff | null>(null);
   const [compareMode, setCompareMode] = useState(false);
@@ -355,10 +358,10 @@ export const VersionHistoryModal = ({
           ) : (
             <div>
               {versions.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  <FileText size={48} className="mx-auto mb-3 opacity-50" />
-                  <p>暂无版本历史</p>
-                </div>
+                <EmptyState
+                  icon={<History size={32} />}
+                  title={t('graphEditor.empty.versionHistory')}
+                />
               ) : (
                 <div className="space-y-3">
                   {versions.map((version) => (

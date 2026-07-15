@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { 
+import { useTranslation } from "react-i18next";
+import {
   Search, Command,
-  FileText
+  FileText,
+  SearchX
 } from 'lucide-react';
 import { useTheme } from "../../../hooks";
 import { Node } from '../../../types';
+import { EmptyState } from '../../common/EmptyState';
 
 export interface CommandItem {
   id: string;
@@ -32,6 +35,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onNodeSelect
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -176,9 +180,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           className="max-h-[60vh] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700"
         >
           {filteredCommands.length === 0 ? (
-            <div className="py-8 text-center text-gray-500 dark:text-slate-400">
-              <p>未找到相关结果</p>
-            </div>
+            <EmptyState
+              icon={<SearchX size={24} />}
+              title={t('graphEditor.empty.commandPaletteNoResult')}
+              className="py-4"
+            />
           ) : (
             Object.entries(groupedCommands).map(([category, items]) => (
               <div key={category} className="mb-2 last:mb-0">

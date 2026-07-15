@@ -13,7 +13,7 @@ import {
   useBatchRestoreGraphsMutation,
 } from "../hooks/mutations";
 import { useQueryClient } from "@tanstack/react-query";
-import { Network, Star, Clock } from "lucide-react";
+import { Network, Star, Clock, AlertCircle } from "lucide-react";
 import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
@@ -41,7 +41,7 @@ export const Dashboard = () => {
   const { isMobile, isTablet } = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: graphsData, isLoading, error } = useGraphs();
+  const { data: graphsData, isLoading, error, refetch } = useGraphs();
   const { data: statsData } = useDashboardStats();
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
@@ -322,8 +322,16 @@ export const Dashboard = () => {
     );
   if (error)
     return (
-      <div className="p-8 text-red-600">
-        错误: {(error as Error).message || "加载图谱失败"}
+      <div className="p-8 flex flex-col items-center justify-center text-center">
+        <AlertCircle size={48} className="text-red-500 mb-4" />
+        <p className="text-red-600 dark:text-red-400 mb-4">{t('dashboard.loadError')}</p>
+        <button
+          type="button"
+          onClick={() => { void refetch(); }}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          {t('dashboard.retry')}
+        </button>
       </div>
     );
 

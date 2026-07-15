@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Clock,
@@ -49,6 +50,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
   showSubtasks = false,
   onSubtaskClick,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [hoveredSlot, setHoveredSlot] = useState<{
     hour: number;
@@ -246,6 +248,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={goToPrevDay}
+                aria-label={t("common.aria.prevDay")}
                 className={`p-1.5 rounded-lg transition-colors ${
                   isDark
                     ? "hover:bg-slate-700 text-slate-400"
@@ -261,6 +264,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               </h3>
               <button
                 onClick={goToNextDay}
+                aria-label={t("common.aria.nextDay")}
                 className={`p-1.5 rounded-lg transition-colors ${
                   isDark
                     ? "hover:bg-slate-700 text-slate-400"

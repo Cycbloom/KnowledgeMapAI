@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { X, RefreshCw, Clock, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 import type { SyncStatus } from '../../../shared/types/ipc';
+import { formatDate } from '../../utils/formatters';
 
 interface SyncDetailPanelProps {
   status: SyncStatus | null;
@@ -33,7 +34,7 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
           <Clock className="w-4 h-4" />
           <span>
             {status?.lastSyncAt
-              ? `上次同步: ${new Date(status.lastSyncAt).toLocaleString()}`
+              ? `上次同步: ${formatDate(status.lastSyncAt, 'short-datetime')}`
               : '尚未同步'}
           </span>
         </div>

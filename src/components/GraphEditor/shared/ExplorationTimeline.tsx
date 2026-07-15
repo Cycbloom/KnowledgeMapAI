@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ExplorationPathItem, BranchSuggestion } from '../../../types';
+import { formatDate } from '../../../utils/formatters';
 import { Clock, ArrowRight, ChevronRight, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
 
 interface ExplorationTimelineProps {
@@ -57,7 +58,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
     if (seconds < 60) return '刚刚';
     if (minutes < 60) return `${minutes} 分钟前`;
     if (hours < 24) return `${hours} 小时前`;
-    return dateObj.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    return formatDate(dateObj, 'short');
   };
 
   const getCurrentItem = () => {

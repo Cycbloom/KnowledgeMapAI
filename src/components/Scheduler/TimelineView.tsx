@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { UserTask } from '@shared/types';
 import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 import { TaskCard } from './TaskCard';
+import { formatDate } from '../../utils/formatters';
 
 interface TimelineViewProps {
   tasks: UserTask[];
@@ -104,7 +105,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           <h3 className="text-base sm:text-lg font-semibold text-slate-800 dark:text-white">{t('scheduler.timeline.viewTitle')}</h3>
           <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             <Calendar size={14} />
-            <span>{currentDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}</span>
+            <span>{formatDate(currentDate, 'month-year')}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">

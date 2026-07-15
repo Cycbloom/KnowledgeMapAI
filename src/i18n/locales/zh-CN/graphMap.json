@@ -3,7 +3,12 @@
   "empty": {
     "noGraphs": "暂无图谱",
     "createFirst": "创建你的第一个知识图谱开始探索",
-    "loading": "正在加载图谱地图..."
+    "loading": "正在加载图谱地图...",
+    "relatedGraphs": "暂无关联图谱",
+    "connectionDiscovery": "暂无新的关联建议",
+    "domains": "暂无可选领域，请先为图谱设置领域",
+    "modules": "暂无可用的分析模块",
+    "analysisResults": "暂无分析结果"
   },
   "filter": {
     "all": "全部",
@@ -202,5 +207,7 @@
   "skillSelector": {
     "selectedForAnalysis": "已选择 {{count}} 个图谱进行分析",
     "selectType": "选择分析类型"
-  }
+  },
+  "loadError": "加载图谱地图数据失败",
+  "retry": "重试"
 }

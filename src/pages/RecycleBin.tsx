@@ -483,32 +483,14 @@ export const RecycleBin = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGraphs.length === 0 ? (
-            <div
-              className={`col-span-full flex flex-col items-center justify-center py-20 rounded-3xl border-2 border-dashed ${
-                isDark
-                  ? "border-slate-800 bg-slate-800/30"
-                  : "border-gray-200 bg-gray-50"
-              }`}
-            >
-              <div
-                className={`p-6 rounded-full mb-4 ${isDark ? "bg-slate-800 text-slate-600" : "bg-white text-gray-300"}`}
-              >
-                <Trash2 size={48} />
-              </div>
-              <h3
-                className={`text-xl font-bold mb-2 ${isDark ? "text-slate-300" : "text-gray-900"}`}
-              >
-                {searchQuery ? t("recycleBin.noResults") : t("recycleBin.empty")}
-              </h3>
-              <p
-                className={`text-center max-w-md ${isDark ? "text-slate-500" : "text-gray-500"}`}
-              >
-                {searchQuery
-                  ? t("recycleBin.noResultsHint")
-                  : t("recycleBin.emptyHint")}
-              </p>
+            <div className="col-span-full">
+              <EmptyState
+                icon={<Trash2 size={48} />}
+                title={searchQuery ? t("recycleBin.noResults") : t("recycleBin.empty")}
+                description={searchQuery ? t("recycleBin.noResultsHint") : t("recycleBin.emptyHint")}
+              />
               {!searchQuery && (
-                <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1.5 mt-2">
+                <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center justify-center gap-1.5 mt-2">
                   <Info size={14} />
                   {t("recycleBin.autoCleanupHint")}
                 </p>

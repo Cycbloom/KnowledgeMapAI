@@ -4,13 +4,14 @@ import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Achievement as BaseAchievement, DailyTask } from '../types';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '@/utils/formatters';
 
 interface Achievement extends BaseAchievement {
   unlocked_at?: string;
 }
-import { 
-  Trophy, Medal, Target, Flame, Zap, Crown, Timer, Brain, 
-  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar, Ticket, LucideIcon
+import {
+  Trophy, Medal, Target, Flame, Zap, Crown, Timer, Brain,
+  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar, Ticket, LucideIcon, AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PeriodicTaskList } from '../components/Achievements/PeriodicTaskList';
@@ -44,22 +45,22 @@ export const Achievements = () => {
     { key: 'achievements', label: t('achievements.tabs.achievements'), icon: Trophy },
   ];
   
-  const { data: achievements, isLoading: loadingAchievements } = useQuery({
+  const { data: achievements, isLoading: loadingAchievements, error: achievementsError, refetch: refetchAchievements } = useQuery({
     queryKey: ['achievements'],
     queryFn: () => api.achievements.list()
   });
 
-  const { data: dailyTasks, isLoading: loadingTasks } = useQuery({
+  const { data: dailyTasks, isLoading: loadingTasks, error: dailyTasksError, refetch: refetchDailyTasks } = useQuery({
     queryKey: ['daily-tasks'],
     queryFn: () => api.achievements.getDailyTasks()
   });
 
-  const { data: periodicTasks, isLoading: loadingPeriodicTasks } = useQuery({
+  const { data: periodicTasks, isLoading: loadingPeriodicTasks, error: periodicTasksError, refetch: refetchPeriodicTasks } = useQuery({
     queryKey: ['periodic-tasks'],
     queryFn: () => api.periodicTasks.list()
   });
 
-  const { data: passData, isLoading: loadingPass } = useQuery({
+  const { data: passData, isLoading: loadingPass, error: passDataError, refetch: refetchPassData } = useQuery({
     queryKey: ['pass-progress'],
     queryFn: () => api.periodicTasks.getPass()
   });
@@ -74,6 +75,7 @@ export const Achievements = () => {
   });
 
   const isLoading = loadingAchievements || loadingTasks;
+  const hasError = achievementsError || dailyTasksError || periodicTasksError || passDataError;
 
   const unlockedCount = achievements?.filter((a: Achievement) => a.unlocked_at).length || 0;
   const totalCount = achievements?.length || 0;
@@ -128,6 +130,20 @@ export const Achievements = () => {
       </div>
     );
   }
+
+  if (hasError) return (
+    <div className="p-8 flex flex-col items-center justify-center text-center">
+      <AlertCircle size={48} className="text-red-500 mb-4" />
+      <p className="text-red-600 dark:text-red-400 mb-4">{t('achievements.loadError')}</p>
+      <button
+        type="button"
+        onClick={() => { void refetchAchievements(); void refetchDailyTasks(); void refetchPeriodicTasks(); void refetchPassData(); }}
+        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+      >
+        {t('achievements.retry')}
+      </button>
+    </div>
+  );
 
   const groupedAchievements = achievements?.reduce((acc: Record<string, Achievement[]>, curr: Achievement) => {
     if (!acc[curr.category]) acc[curr.category] = [];
@@ -400,7 +416,7 @@ export const Achievements = () => {
                                 </span>
                                 {ach.unlocked_at && (
                                   <span className="text-[10px] text-slate-400">
-                                    {new Date(ach.unlocked_at).toLocaleDateString()}
+                                    {formatDate(ach.unlocked_at, 'short')}
                                   </span>
                                 )}
                               </div>

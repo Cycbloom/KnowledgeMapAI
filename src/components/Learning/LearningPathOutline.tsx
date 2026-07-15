@@ -16,7 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useLearningPath } from "../../hooks/queries/useLearningPathQueries";
 import { NodeStatus } from "../../services/api/learningPaths";
-import { formatDurationMinutes } from "../../utils/formatters";
+import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 
 interface LearningPathNodeItem {
   id: string;
@@ -183,9 +183,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
             <Target className="w-3 h-3" />
             <span>
               {t("learning.pathOutline.targetDate")}
-              {new Date(pathDetail.target_completion_date).toLocaleDateString(
-                "zh-CN",
-              )}
+              {formatDate(pathDetail.target_completion_date, "short")}
             </span>
           </div>
         )}

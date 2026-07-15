@@ -34,6 +34,7 @@ import {
 import { useTheme } from "../../hooks";
 import { api } from '../../services/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { formatDate } from "../../utils/formatters";
 
 interface LearningPathNode {
   id: string;
@@ -410,7 +411,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                   {learningPath.target_completion_date && (
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4 text-primary-500" />
-                      {new Date(learningPath.target_completion_date).toLocaleDateString()}
+                      {formatDate(learningPath.target_completion_date, 'short')}
                     </span>
                   )}
                 </div>

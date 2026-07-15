@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Save, Eye, Edit3, Maximize2, Minimize2 } from "lucide-react";
+import { Save, Eye, Edit3, Maximize2, Minimize2, FileText } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { EmptyState } from "../../common/EmptyState";
 
 interface MarkdownEditorProps {
   value: string;
@@ -20,6 +22,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [localValue, setLocalValue] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLocalValue(value);
@@ -193,9 +196,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               {localValue ? (
                 renderPreview()
               ) : (
-                <p className="text-slate-400 dark:text-slate-500 italic">
-                  暂无内容
-                </p>
+                <EmptyState icon={<FileText size={32} />} title={t('scheduler.empty.content')} className="min-h-0 py-4" />
               )}
             </div>
           )}

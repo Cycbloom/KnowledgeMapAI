@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
@@ -29,6 +29,7 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { SkeletonCard } from "@/components/common";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 
 type PathStatus = LearningPathStatus | "all";
@@ -90,7 +91,7 @@ export const LearningPaths = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { data: paths = [], isLoading } = useLearningPaths();
+  const { data: paths, isLoading } = useLearningPaths();
   const createMutation = useCreateLearningPathMutation();
   const updateMutation = useUpdateLearningPathMutation();
   const deleteMutation = useDeleteLearningPathMutation();
@@ -104,7 +105,7 @@ export const LearningPaths = () => {
   const [newPathDailyMinutes, setNewPathDailyMinutes] = useState(30);
   const [newPathTargetDate, setNewPathTargetDate] = useState("");
 
-  const filteredPaths = (paths as LearningPathItem[]).filter((path) => {
+  const filteredPaths = (paths as LearningPathItem[] | undefined)?.filter((path) => {
     const matchesSearch =
       path.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
       (path.description &&
@@ -113,7 +114,17 @@ export const LearningPaths = () => {
     const matchesStatus =
       selectedStatus === "all" || path.status === selectedStatus;
     return matchesSearch && matchesStatus;
-  });
+  }) ?? [];
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (paths) {
+      for (const path of paths as LearningPathItem[]) {
+        counts[path.status] = (counts[path.status] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [paths]);
 
   const handleCreatePath = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,14 +277,19 @@ export const LearningPaths = () => {
               >
                 {statusConfig[status].icon}
                 <span>{t(statusConfig[status].labelKey)}</span>
+                {!isLoading && statusCounts[status] !== undefined && (
+                  <span className="ml-1 text-xs opacity-70">({statusCounts[status]})</span>
+                )}
               </button>
             ))}
           </div>
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
         ) : filteredPaths.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">

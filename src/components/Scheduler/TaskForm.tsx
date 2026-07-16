@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -39,7 +39,8 @@ import {
   PrioritySuggestion,
 } from "../../services/api/taskRecommendation";
 import { TemplateSelector } from "./TemplateSelector";
-import { asyncConfirm } from "../../utils/asyncConfirm";
+import { useFormDraft, useBeforeUnload } from "../../hooks";
+import { ConfirmationModal } from "../common/ConfirmationModal";
 
 interface TaskFormProps {
   task?: UserTask;
@@ -50,8 +51,6 @@ interface TaskFormProps {
   availableTasks?: UserTask[];
   timeSliceSettings?: TaskSettings | null;
 }
-
-const TASK_DRAFT_KEY = "task_form_draft";
 
 interface TaskDraft {
   title: string;
@@ -68,34 +67,6 @@ interface TaskDraft {
   context: string;
 }
 
-const loadDraft = (): TaskDraft | null => {
-  try {
-    const saved = localStorage.getItem(TASK_DRAFT_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch (e) {
-    console.error("Failed to load draft:", e);
-  }
-  return null;
-};
-
-const saveDraft = (draft: TaskDraft) => {
-  try {
-    localStorage.setItem(TASK_DRAFT_KEY, JSON.stringify(draft));
-  } catch (e) {
-    console.error("Failed to save draft:", e);
-  }
-};
-
-const clearDraft = () => {
-  try {
-    localStorage.removeItem(TASK_DRAFT_KEY);
-  } catch (e) {
-    console.error("Failed to clear draft:", e);
-  }
-};
-
 export const TaskForm: React.FC<TaskFormProps> = ({
   task,
   onSubmit,
@@ -108,8 +79,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isEditing = !!task;
-  // 用于在草稿检测确认完成前阻止 saveDraft 覆盖 localStorage 中的草稿
-  const draftCheckComplete = useRef(false);
 
   const DURATION_OPTIONS = [
     { value: 15, label: t("scheduler.taskForm.duration15min") },
@@ -158,7 +127,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     t("scheduler.taskForm.tagRest"),
   ];
 
-  const getInitialState = () => {
+  const getInitialDraft = (): TaskDraft => {
     if (isEditing) {
       return {
         title: task?.title || "",
@@ -174,10 +143,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         totalDuration: task?.total_duration || 0,
         progressMode: task?.progress_mode || "average",
         context: typeof task?.context === "string" ? task.context : "",
-        status: task?.status || "pending",
       };
     }
-    // 新建任务时不直接应用草稿，由 draft check 流程询问用户后再应用
     return {
       title: "",
       description: "",
@@ -194,40 +161,52 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     };
   };
 
-  const initialState = getInitialState();
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<TaskDraft>({
+    key: "task_form_draft",
+    initialValue: getInitialDraft(),
+  });
 
-  const [title, setTitle] = useState(initialState.title);
-  const [description, setDescription] = useState(initialState.description);
-  const [estimatedDuration, setEstimatedDuration] = useState(
-    initialState.estimatedDuration,
+  const {
+    title,
+    description,
+    estimatedDuration,
+    deadline,
+    tags,
+    knowledgePointId,
+    priority,
+    queueLevel,
+    taskType,
+    totalDuration,
+    progressMode,
+    context,
+  } = formData;
+
+  const [status, setStatus] = useState<UserTaskStatus>(
+    task?.status || "pending",
   );
-  const [deadline, setDeadline] = useState(initialState.deadline);
-  const [tags, setTags] = useState<string[]>(initialState.tags);
   const [customTag, setCustomTag] = useState("");
-  const [knowledgePointId, setKnowledgePointId] = useState(
-    initialState.knowledgePointId,
-  );
-  const [priority, setPriority] = useState(initialState.priority);
-  const [queueLevel, setQueueLevel] = useState(initialState.queueLevel);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [prioritySuggestion, setPrioritySuggestion] =
     useState<PrioritySuggestion | null>(null);
   const [showPrioritySuggestion, setShowPrioritySuggestion] = useState(false);
-  const [taskType, setTaskType] = useState<TaskType>(initialState.taskType);
-  const [totalDuration, setTotalDuration] = useState(
-    initialState.totalDuration,
-  );
-  const [progressMode, setProgressMode] = useState<ProgressMode>(
-    initialState.progressMode,
-  );
-  const [context, setContext] = useState(initialState.context);
-  const [status, setStatus] = useState(initialState.status || "pending");
   const [selectedDependencies, setSelectedDependencies] = useState<string[]>(
     [],
   );
   const [showDependencySelector, setShowDependencySelector] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+
+  // Warn user before leaving when there are unsaved changes
+  const isDirty =
+    JSON.stringify(formData) !== JSON.stringify(getInitialDraft());
+  useBeforeUnload(isDirty, t("common.unsavedChanges"));
 
   const handleTemplateSelect = (data: {
     title: string;
@@ -236,11 +215,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     tags: string[];
     priority: number;
   }) => {
-    setTitle(data.title);
-    if (data.description) setDescription(data.description);
-    setEstimatedDuration(data.estimated_duration);
-    setTags(data.tags);
-    setPriority(data.priority);
+    setFormData((prev) => ({
+      ...prev,
+      title: data.title,
+      description: data.description ?? prev.description,
+      estimatedDuration: data.estimated_duration,
+      tags: data.tags,
+      priority: data.priority,
+    }));
   };
 
   const analyzePriority = useCallback(
@@ -274,84 +256,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     return () => clearTimeout(timer);
   }, [title, description, analyzePriority]);
 
-  // 初始化时检测 localStorage 草稿，询问用户是否恢复
-  useEffect(() => {
-    if (isEditing) {
-      draftCheckComplete.current = true;
-      return;
-    }
-    const checkDraft = async () => {
-      const draft = loadDraft();
-      if (draft) {
-        const confirmed = await asyncConfirm({
-          title: t("scheduler.taskForm.draftDetected"),
-          message: t("scheduler.taskForm.draftDetectedMessage"),
-          confirmText: t("scheduler.taskForm.restoreDraft"),
-          cancelText: t("scheduler.taskForm.discardDraft"),
-          isDangerous: false,
-        });
-        draftCheckComplete.current = true;
-        if (confirmed) {
-          setTitle(draft.title || "");
-          setDescription(draft.description || "");
-          setEstimatedDuration(draft.estimatedDuration || 25);
-          setDeadline(draft.deadline || "");
-          setTags(draft.tags || []);
-          setKnowledgePointId(draft.knowledgePointId || "");
-          setPriority(draft.priority || 2);
-          setQueueLevel(draft.queueLevel ?? defaultQueueLevel);
-          setTaskType(draft.taskType || "one_time");
-          setTotalDuration(draft.totalDuration || 0);
-          setProgressMode(draft.progressMode || "average");
-          setContext(draft.context || "");
-        } else {
-          clearDraft();
-        }
-      } else {
-        draftCheckComplete.current = true;
-      }
-    };
-    void checkDraft();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!isEditing && draftCheckComplete.current) {
-      saveDraft({
-        title,
-        description,
-        estimatedDuration,
-        deadline,
-        tags,
-        knowledgePointId,
-        priority,
-        queueLevel,
-        taskType,
-        totalDuration,
-        progressMode,
-        context,
-      });
-    }
-  }, [
-    title,
-    description,
-    estimatedDuration,
-    deadline,
-    tags,
-    knowledgePointId,
-    priority,
-    queueLevel,
-    taskType,
-    totalDuration,
-    progressMode,
-    context,
-    isEditing,
-  ]);
-
   const applyPrioritySuggestion = () => {
     if (prioritySuggestion) {
-      setPriority(prioritySuggestion.suggestedPriority);
-      setQueueLevel(prioritySuggestion.suggestedQueue);
+      setFormData((prev) => ({
+        ...prev,
+        priority: prioritySuggestion.suggestedPriority,
+        queueLevel: prioritySuggestion.suggestedQueue,
+      }));
       setShowPrioritySuggestion(false);
     }
   };
@@ -385,12 +296,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
       if (result) {
         if (result.description) {
-          setDescription(result.description);
+          setFormData((prev) => ({ ...prev, description: result.description }));
         }
         if (result.tags && result.tags.length > 0) {
-          setTags((prev) => {
-            const newTags = [...new Set([...prev, ...result.tags])];
-            return newTags.slice(0, 5);
+          setFormData((prev) => {
+            const newTags = [...new Set([...prev.tags, ...result.tags])];
+            return { ...prev, tags: newTags.slice(0, 5) };
           });
         }
         if (result.estimated_duration) {
@@ -400,13 +311,19 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               ? curr
               : prev,
           );
-          setEstimatedDuration(closest.value);
+          setFormData((prev) => ({
+            ...prev,
+            estimatedDuration: closest.value,
+          }));
         }
         if (result.priority) {
-          setPriority(result.priority);
+          setFormData((prev) => ({ ...prev, priority: result.priority }));
         }
         if (result.suggested_queue !== undefined) {
-          setQueueLevel(result.suggested_queue);
+          setFormData((prev) => ({
+            ...prev,
+            queueLevel: result.suggested_queue,
+          }));
         }
       }
     } catch (error) {
@@ -464,21 +381,23 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const handleReset = () => {
     if (!isEditing) {
       clearDraft();
-      setTitle("");
-      setDescription("");
-      setEstimatedDuration(25);
-      setDeadline("");
-      setTags([]);
-      setKnowledgePointId("");
-      setPriority(2);
-      setQueueLevel(defaultQueueLevel);
+      setFormData({
+        title: "",
+        description: "",
+        estimatedDuration: 25,
+        deadline: "",
+        tags: [],
+        knowledgePointId: "",
+        priority: 2,
+        queueLevel: defaultQueueLevel,
+        taskType: "one_time" as TaskType,
+        totalDuration: 0,
+        progressMode: "average" as ProgressMode,
+        context: "",
+      });
       setErrors({});
       setPrioritySuggestion(null);
       setShowPrioritySuggestion(false);
-      setTaskType("one_time");
-      setTotalDuration(0);
-      setProgressMode("average");
-      setContext("");
       setSelectedDependencies([]);
     }
   };
@@ -489,13 +408,16 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const addTag = (tag: string) => {
     if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
+      setFormData((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
     }
     setCustomTag("");
   };
 
   const removeTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
+    }));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -558,7 +480,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, title: e.target.value }))
+                }
                 placeholder={t("scheduler.taskForm.titlePlaceholder")}
                 className={`
                   flex-1 input-mobile rounded-xl
@@ -605,7 +529,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               placeholder={t("scheduler.taskForm.descriptionPlaceholder")}
               rows={3}
               className="
@@ -625,7 +554,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </label>
             <select
               value={taskType}
-              onChange={(e) => setTaskType(e.target.value as TaskType)}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  taskType: e.target.value as TaskType,
+                }))
+              }
               className="
                 w-full select-mobile rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
@@ -669,7 +603,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 type="number"
                 value={totalDuration || ""}
                 onChange={(e) =>
-                  setTotalDuration(parseInt(e.target.value) || 0)
+                  setFormData((prev) => ({
+                    ...prev,
+                    totalDuration: parseInt(e.target.value) || 0,
+                  }))
                 }
                 placeholder={t("scheduler.taskForm.totalDurationPlaceholder")}
                 min={0}
@@ -701,7 +638,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               <select
                 value={progressMode}
                 onChange={(e) =>
-                  setProgressMode(e.target.value as ProgressMode)
+                  setFormData((prev) => ({
+                    ...prev,
+                    progressMode: e.target.value as ProgressMode,
+                  }))
                 }
                 className="
                   w-full select-mobile rounded-xl
@@ -875,7 +815,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 return (
                   <textarea
                     value={context}
-                    onChange={(e) => setContext(e.target.value)}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        context: e.target.value,
+                      }))
+                    }
                     placeholder={t("scheduler.taskForm.contextPlaceholder")}
                     rows={3}
                     maxLength={2000}
@@ -1073,7 +1018,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               return (
                 <textarea
                   value={context}
-                  onChange={(e) => setContext(e.target.value)}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      context: e.target.value,
+                    }))
+                  }
                   placeholder={t("scheduler.taskForm.contextPlaceholder")}
                   rows={3}
                   maxLength={2000}
@@ -1100,7 +1050,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               </label>
               <select
                 value={estimatedDuration}
-                onChange={(e) => setEstimatedDuration(Number(e.target.value))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    estimatedDuration: Number(e.target.value),
+                  }))
+                }
                 className="
                   w-full select-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
@@ -1125,7 +1080,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               <input
                 type="datetime-local"
                 value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, deadline: e.target.value }))
+                }
                 className="
                   w-full input-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
@@ -1148,7 +1105,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setPriority(opt.value)}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, priority: opt.value }))
+                    }
                     className={`
                       flex-1 py-2 rounded-lg text-sm font-medium transition-all
                       ${
@@ -1220,7 +1179,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   <button
                     key={level}
                     type="button"
-                    onClick={() => setQueueLevel(level)}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, queueLevel: level }))
+                    }
                     className={`
                       flex-1 py-2 rounded-lg text-sm font-medium transition-all
                       ${
@@ -1325,7 +1286,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               </label>
               <select
                 value={knowledgePointId}
-                onChange={(e) => setKnowledgePointId(e.target.value)}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    knowledgePointId: e.target.value,
+                  }))
+                }
                 className="
                   w-full select-mobile rounded-xl
                   bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
@@ -1384,6 +1350,27 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           />
         )}
       </AnimatePresence>
+
+      {!isEditing && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t("common.draft.restoreTitle", {
+            defaultValue: "Restore unsaved draft?",
+          })}
+          message={t("common.draft.restoreMessage", {
+            defaultValue:
+              "We found an unsaved draft from a previous session. Would you like to restore it?",
+          })}
+          confirmText={t("common.draft.restore", {
+            defaultValue: "Restore",
+          })}
+          cancelText={t("common.draft.discard", {
+            defaultValue: "Discard",
+          })}
+        />
+      )}
     </motion.div>
   );
 };

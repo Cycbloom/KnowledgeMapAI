@@ -7,6 +7,7 @@ import { message } from '../../utils/messageHelper';
 import { levelLabels } from '../../config/graphConfig';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import { UseMutationResult } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 interface GraphNodeMutations {
   createNodeMutation: UseMutationResult<Node, Error, CreateNodeData, unknown>;
@@ -35,12 +36,13 @@ export const useGraphNodeOperations = ({
   record
 }: UseGraphNodeOperationsProps) => {
   const asyncHandler = createAsyncHandler();
-  const { 
-    nodeForm, setNodeForm, 
-    sidebarMode, setSidebarMode, 
-    selectedNode, setSelectedNode, 
-    selectedNodeIds, setSelectedNodeIds, 
-    setLoading, setConfirmModal 
+  const { t } = useTranslation();
+  const {
+    nodeForm, setNodeForm,
+    sidebarMode, setSidebarMode,
+    selectedNode, setSelectedNode,
+    selectedNodeIds, setSelectedNodeIds,
+    setLoading, setConfirmModal
   } = state;
   const {
     createNodeMutation,
@@ -224,15 +226,15 @@ export const useGraphNodeOperations = ({
               handleCloseSidebar();
             }
             if (hardDelete && data?.affected_graphs?.length) {
-              message.success(`知识点已从 ${data.affected_graphs.length} 个图谱中彻底删除`);
+              message.success(t('graphEditor.nodeDeletedFromGraphs', { count: data.affected_graphs.length }));
             } else {
-              message.success('节点已删除');
+              message.success(t('graphEditor.nodeDeleted'));
             }
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           },
           onError: (err: unknown) => {
             console.error(err);
-            message.error('删除失败');
+            message.error(t('graphEditor.nodeDeleteFailed'));
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           }
         });

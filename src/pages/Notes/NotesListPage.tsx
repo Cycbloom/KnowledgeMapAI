@@ -46,6 +46,7 @@ import { NotesListSortDropdown, type SortBy } from "../../components/Notes/Notes
 import { NotesBatchActions } from "../../components/Notes/NotesBatchActions";
 import { asyncConfirm } from "../../utils/asyncConfirm";
 import { formatDate } from "../../utils/formatters";
+import { message } from "../../utils/messageHelper";
 import type { Note, NoteType } from "@shared/types/note";
 
 const PAGE_SIZE = 20;
@@ -538,9 +539,9 @@ export const NotesListPage = () => {
       typeof window !== "undefined" &&
       window.localStorage.getItem(jumpFlagKey) === "1";
 
-    createDailyMutation
-      .mutateAsync()
-      .then((note: Note) => {
+    void (async () => {
+      try {
+        const note = await createDailyMutation.mutateAsync();
         // 无论是否跳转,都标记今日已处理自动流程,避免同日重复进入时再次判断
         if (typeof window !== "undefined") {
           window.localStorage.setItem(jumpFlagKey, "1");
@@ -548,10 +549,11 @@ export const NotesListPage = () => {
         if (!alreadyHandledToday && isJustCreated(note)) {
           navigate(`/notes/${note.id}`);
         }
-      })
-      .catch(() => {
-        // 静默失败:不阻塞列表查看,用户可手动点击"新建 Daily"按钮
-      });
+      } catch (err: unknown) {
+        console.error("Failed to create daily note:", err);
+        message.error(t("notes.createDailyFailed"));
+      }
+    })();
     // 仅在 token 就绪后触发一次;mutation/navigate 故意不进依赖以防重复执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);

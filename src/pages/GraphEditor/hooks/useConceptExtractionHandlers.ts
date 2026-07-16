@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { QueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { message } from "../../../utils/messageHelper";
 import type { ExtractedConcept } from "../../../types";
 import type { UseGraphEditorPanelStateReturn } from "../../../hooks/graphEditor/useGraphEditorPanelState";
@@ -27,6 +28,7 @@ export const useConceptExtractionHandlers = ({
   panelState,
   queryClient,
 }: UseConceptExtractionHandlersParams) => {
+  const { t } = useTranslation();
   const handleLiteratureExtractComplete = useCallback(
     (result: { concepts?: ExtractedConcept[] }) => {
       if (result.concepts && result.concepts.length > 0) {
@@ -34,10 +36,10 @@ export const useConceptExtractionHandlers = ({
         panelState.setIsConceptPreviewOpen(true);
         panelState.setIsLiteratureExtractOpen(false);
       } else {
-        message.info("未从文献中提取到概念");
+        message.info(t("graphEditor.noConceptExtracted"));
       }
     },
-    [panelState],
+    [panelState, t],
   );
 
   const handleConfirmConcepts = useCallback(
@@ -65,13 +67,13 @@ export const useConceptExtractionHandlers = ({
         }
       } catch (error) {
         console.error("Failed to apply concepts:", error);
-        message.error("添加概念失败");
+        message.error(t("graphEditor.addConceptFailed"));
       } finally {
         panelState.setIsConceptPreviewOpen(false);
         panelState.setExtractedConcepts([]);
       }
     },
-    [id, queryClient, panelState],
+    [id, queryClient, panelState, t],
   );
 
   return {

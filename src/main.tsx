@@ -10,6 +10,7 @@ import { initErrorReporter, destroyErrorReporter, setUserContext } from './utils
 import { initCsrf } from './services/api'
 import { preloadMobileApi } from './services/api/adapter'
 import { asyncConfirm } from './utils/asyncConfirm'
+import i18n from './i18n'
 import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
 import { useStore } from './store/useStore'
 import { migrateLegacyKeys } from './store/createPersistedStore'
@@ -58,8 +59,8 @@ if (import.meta.env.PROD && !isElectron) {
   registerServiceWorker({
     onUpdate: async (registration) => {
       const shouldUpdate = await asyncConfirm({
-        title: '发现新版本',
-        message: '是否立即更新？',
+        title: i18n.t('common.confirm.newVersionTitle'),
+        message: i18n.t('common.confirm.newVersionMessage'),
         confirmText: '立即更新',
         cancelText: '稍后',
       })

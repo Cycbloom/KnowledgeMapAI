@@ -8,8 +8,11 @@ import {
   ChevronDown,
   ChevronRight,
   Calendar,
+  History,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
+import { EmptyState } from "../../common/EmptyState";
 import { formatDuration, formatDate } from "../../../utils/formatters";
 import { TaskExecution } from "../../../types";
 
@@ -26,6 +29,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   taskId,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [executions, setExecutions] = useState<TaskExecution[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -178,11 +182,10 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
 
       {/* 按日期分组的执行记录 */}
       {Object.keys(groupedExecutions).length === 0 ? (
-        <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-          <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>暂无执行记录</p>
-          <p className="text-sm mt-1">开始任务后将自动记录</p>
-        </div>
+        <EmptyState
+          icon={<History size={32} />}
+          title={t('scheduler.empty.executionRecordsEmpty')}
+        />
       ) : (
         <div className="space-y-3">
           {Object.entries(groupedExecutions).map(([date, execs]) => (

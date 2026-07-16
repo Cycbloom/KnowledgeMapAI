@@ -16,7 +16,10 @@ import {
   Tag,
   Copy,
   Check,
+  ClipboardList,
 } from "lucide-react";
+import { EmptyState } from "../common/EmptyState";
+import { SkeletonCard } from "../common";
 import {
   taskTemplatesApi,
   TaskTemplate,
@@ -273,14 +276,18 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : filteredTemplates.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-          <p className="text-lg mb-2">{t("templates.empty.noTemplates")}</p>
-          <p className="text-sm">{t("templates.empty.noTemplatesHint")}</p>
-        </div>
+        <EmptyState
+          icon={<ClipboardList size={32} />}
+          title={t("templates.empty.noTemplates")}
+          description={t("templates.empty.noTemplatesHint")}
+          action={{ label: t("templates.createTemplate"), onClick: handleOpenCreateModal }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTemplates.map((template) => (

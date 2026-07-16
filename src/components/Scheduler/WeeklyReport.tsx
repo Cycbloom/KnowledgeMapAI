@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Calendar, 
-  Clock, 
-  Target, 
-  TrendingUp, 
-  Flame, 
+import {
+  Calendar,
+  CalendarClock,
+  Clock,
+  Target,
+  TrendingUp,
+  Flame,
   Award,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
+import { EmptyState } from '../common/EmptyState';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {WeeklyFocusStats} from '@shared/types';
 
@@ -22,6 +25,7 @@ interface WeeklyReportProps {
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className = '' }) => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<WeeklyFocusStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -251,11 +255,13 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-6 text-center py-8 text-slate-500 dark:text-slate-400"
+          className="mt-6"
         >
-          <Calendar size={48} className="mx-auto mb-3 opacity-30" />
-          <p>这周还没有专注记录</p>
-          <p className="text-sm mt-1">开始专注来追踪你的进度</p>
+          <EmptyState
+            icon={<CalendarClock className="w-12 h-12 text-gray-400" />}
+            title={t('scheduler.weeklyReport.empty')}
+            description={t('scheduler.weeklyReport.emptyHint')}
+          />
         </motion.div>
       )}
     </div>

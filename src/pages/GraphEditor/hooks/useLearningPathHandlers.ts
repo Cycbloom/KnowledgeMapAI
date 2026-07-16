@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { message } from "../../../utils/messageHelper";
 import { learningPathsApi } from "../../../services/api/learningPaths";
 import type { Node as GraphNode, GraphViewMode } from "../../../types";
@@ -45,6 +46,7 @@ interface UseLearningPathHandlersParams {
  * Extracted from GraphEditor.tsx (P1-13).
  */
 export const useLearningPathHandlers = (params: UseLearningPathHandlersParams) => {
+  const { t } = useTranslation();
   const {
     nodes,
     viewMode,
@@ -100,15 +102,15 @@ export const useLearningPathHandlers = (params: UseLearningPathHandlersParams) =
         }
       } catch (error) {
         console.error("Failed to fetch learning path:", error);
-        message.error("获取学习路径失败");
+        message.error(t("graphEditor.loadPathFailed"));
       }
     },
-    [],
+    [t],
   );
 
   const handleStartNarrative = useCallback(() => {
     if (!selectedLearningPathId || learningPathNodeIds.size === 0) {
-      message.warning("请先选择学习路径");
+      message.warning(t("graphEditor.selectPathFirst"));
       return;
     }
 
@@ -119,7 +121,7 @@ export const useLearningPathHandlers = (params: UseLearningPathHandlersParams) =
     const path = orderedEntries.map(([nodeId]) => nodeId);
 
     if (path.length === 0) {
-      message.warning("学习路径中没有节点");
+      message.warning(t("graphEditor.pathEmpty"));
       return;
     }
 
@@ -154,6 +156,7 @@ export const useLearningPathHandlers = (params: UseLearningPathHandlersParams) =
     setFocusedLinkIds,
     startNarrative,
     graphRef,
+    t,
   ]);
 
   const handleExitNarrative = useCallback(() => {

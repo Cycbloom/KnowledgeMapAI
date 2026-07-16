@@ -37,5 +37,8 @@
     "relationsCount": "{{count}} 条"
   },
   "loadError": "加载合并图谱数据失败",
-  "retry": "重试"
+  "retry": "重试",
+  "empty": {
+    "sameKnowledgePoints": "两个图谱之间没有相同的知识点"
+  }
 }

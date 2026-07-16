@@ -11,6 +11,7 @@ import { queryClient } from '../main';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { formatDate } from '@/utils/formatters';
 import { EmptyState } from '@/components/common/EmptyState';
+import { message } from '@/utils/messageHelper';
 
 export const Profile = () => {
   const { t } = useTranslation();
@@ -46,6 +47,7 @@ export const Profile = () => {
       setSnapshots(data);
     } catch (e) {
       console.error(e);
+      message.error(t('profile.snapshotFailed'));
     } finally {
       setIsLoadingSnapshots(false);
     }
@@ -66,6 +68,7 @@ export const Profile = () => {
       await logoutMutation.mutateAsync();
     } catch (e) {
       console.error(e);
+      message.error(t('profile.logoutFailed'));
     }
     setUser(null, null);
     frontendEventBus.publish("message_show", { type: 'success', content: t('profile.messages.logoutSuccess') });
@@ -374,6 +377,7 @@ export const Profile = () => {
                 icon={<Database size={32} />}
                 title={t('profile.backup.noSnapshots')}
                 description={t('profile.backup.noSnapshotsHint')}
+                action={{ label: t('profile.createSnapshot'), onClick: handleCreateSnapshot }}
               />
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">

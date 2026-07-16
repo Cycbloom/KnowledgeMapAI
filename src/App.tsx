@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop } from "./components/common";
+import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton } from "./components/common";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
@@ -18,7 +18,12 @@ frontendKernel.activateAll().catch((err: unknown) => {
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    <div className="w-full max-w-md p-6 space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6" />
+      <Skeleton className="h-4 w-2/3" />
+    </div>
   </div>
 );
 

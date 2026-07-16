@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { message as msgHelper } from "../utils/messageHelper";
+import { asyncConfirm } from "../utils/asyncConfirm";
 import {
   useTheme,
   useNetworkStatus,
@@ -419,6 +420,12 @@ export const LearningMode = () => {
     if (ids.length === 0) { msgHelper.warning(t("learning.batch.selectNodes")); return; }
 
     if (action === "delete") {
+      const confirmed = await asyncConfirm({
+        title: t("learning.batch.deleteTitle"),
+        message: t("learning.batch.deleteConfirm", { count: ids.length }),
+        isDangerous: true,
+      });
+      if (!confirmed) return;
       try {
         await api.nodes.batchDelete(ids);
         msgHelper.success(t("learning.batch.deleteSuccess", { count: ids.length }));

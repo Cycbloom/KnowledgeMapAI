@@ -15,5 +15,10 @@
   "stateActive": "Active",
   "stateInactive": "Inactive",
   "stateError": "Error",
-  "unknownPlugin": "Unknown Plugin"
+  "unknownPlugin": "Unknown Plugin",
+  "installFailed": "Installation failed, please try again later",
+  "uninstallFailed": "Uninstallation failed, please try again later",
+  "activateFailed": "Activation failed, please try again later",
+  "deactivateFailed": "Deactivation failed, please try again later",
+  "loadFailed": "Failed to load plugins, please try again later"
 }

@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import type { Achievement, UserAchievement } from "@shared/types";
 import { formatDate } from "../../utils/formatters";
@@ -81,6 +82,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
     useState<Achievement | null>(null);
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement | null>(null);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -372,7 +374,14 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
       </div>
 
       {filteredAchievements.length === 0 && (
-        <EmptyState icon={<Trophy size={32} />} title={t('scheduler.empty.achievements')} />
+        <EmptyState
+          icon={<Trophy size={32} />}
+          title={t('scheduler.empty.achievements')}
+          action={{
+            label: t('scheduler.browseTasks'),
+            onClick: () => navigate('/scheduler'),
+          }}
+        />
       )}
 
       <AnimatePresence>

@@ -24,6 +24,7 @@ import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { Skeleton, EmptyState } from "../../components/common";
 import { asyncConfirm } from "../../utils/asyncConfirm";
 import type { NoteTemplate } from "@shared/types/note";
+import { useFocusTrap } from "@/hooks/common";
 
 /**
  * 支持的变量占位列表(供编辑器提示)。
@@ -499,6 +500,8 @@ const TemplateEditDialog = ({
 }: TemplateEditDialogProps) => {
   const { t } = useTranslation();
 
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+
   // Esc 关闭
   useEffect(() => {
     if (!isOpen) return;
@@ -527,7 +530,7 @@ const TemplateEditDialog = ({
       aria-labelledby={titleId}
       onClick={handleOverlayClick}
     >
-      <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[90dvh] flex flex-col">
+      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[90dvh] flex flex-col">
         {/* 标题区 */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b dark:border-slate-700">
           <h3

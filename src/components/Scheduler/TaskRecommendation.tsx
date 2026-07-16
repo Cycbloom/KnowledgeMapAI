@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertTriangle, Zap, TrendingUp, Calendar, Tag, ClipboardList } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { TaskRecommendation as TaskRecommendationType } from '../../services/api/taskRecommendation';
 import { UserTask } from '@shared/types';
 import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
@@ -53,6 +54,7 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
   isLoading = false,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -69,7 +71,11 @@ export const TaskRecommendation: React.FC<TaskRecommendationProps> = ({
   if (recommendations.length === 0) {
     return (
       <div className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-        <EmptyState icon={<ClipboardList size={32} />} title={t('scheduler.empty.recommendations')} />
+        <EmptyState
+          icon={<ClipboardList size={32} />}
+          title={t('scheduler.empty.recommendations')}
+          action={{ label: t('scheduler.browseTasks'), onClick: () => navigate('/scheduler') }}
+        />
       </div>
     );
   }

@@ -28,6 +28,7 @@ import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 import { formatDate } from "../utils/formatters";
+import { message } from "@/utils/messageHelper";
 import type { Note, NoteType } from "@shared/types/note";
 
 /** 回收站资源分类：graphs 图谱 / notes 笔记 */
@@ -186,8 +187,9 @@ export const RecycleBin = () => {
       });
     } catch (err: unknown) {
       console.error(err);
-      const message = err instanceof Error ? err.message : t("recycleBin.notes.restoreFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      message.error(t("recycleBin.restoreFailed"));
+      const errorMessage = err instanceof Error ? err.message : t("recycleBin.notes.restoreFailed");
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -197,8 +199,9 @@ export const RecycleBin = () => {
       frontendEventBus.publish("message_show", { type: "success", content: t("recycleBin.messages.restoreSuccess") });
     } catch (err: unknown) {
       console.error(err);
-      const message = err instanceof Error ? err.message : t("recycleBin.messages.restoreFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      message.error(t("recycleBin.restoreFailed"));
+      const errorMessage = err instanceof Error ? err.message : t("recycleBin.messages.restoreFailed");
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -220,8 +223,9 @@ export const RecycleBin = () => {
       setSelectedIds(new Set());
     } catch (err: unknown) {
       console.error(err);
-      const message = err instanceof Error ? err.message : t("recycleBin.messages.batchRestoreFailed");
-      frontendEventBus.publish("message_show", { type: "error", content: message });
+      message.error(t("recycleBin.restoreFailed"));
+      const errorMessage = err instanceof Error ? err.message : t("recycleBin.messages.batchRestoreFailed");
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -468,6 +472,7 @@ export const RecycleBin = () => {
                 </button>
                 <button
                   onClick={clearSelection}
+                  aria-label={t('common.aria.close')}
                   className={`p-1.5 rounded-lg transition-colors ${
                     isDark
                       ? "hover:bg-slate-700 text-slate-400"
@@ -642,6 +647,7 @@ export const RecycleBin = () => {
                     <button
                       type="button"
                       onClick={clearNoteSelection}
+                      aria-label={t('common.aria.close')}
                       className={`p-1.5 rounded-lg transition-colors ${
                         isDark
                           ? "hover:bg-slate-700 text-slate-400"

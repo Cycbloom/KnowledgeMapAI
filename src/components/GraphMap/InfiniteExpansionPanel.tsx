@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2 } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
@@ -30,6 +31,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
   isRunning = false,
   onEditPrompt,
 }) => {
+  const { t } = useTranslation();
   const [maxDepth, setMaxDepth] = useState(2);
   const [maxGraphsPerLevel, setMaxGraphsPerLevel] = useState(3);
   const [selectedRelationTypes, setSelectedRelationTypes] = useState<GraphRelationType[]>(['prerequisite', 'extension', 'related']);
@@ -106,6 +108,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                   onClick={onEditPrompt}
                   className="p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded transition-colors"
                   title="编辑提示词"
+                  aria-label={t('common.aria.editPrompt')}
                 >
                   <Settings2 className="w-4 h-4" />
                 </button>

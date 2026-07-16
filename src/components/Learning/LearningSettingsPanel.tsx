@@ -71,6 +71,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           onClick={onClose}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
+          aria-label={t('common.aria.close')}
           className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
         >
           <X size={20} />

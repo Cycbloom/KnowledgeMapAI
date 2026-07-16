@@ -311,7 +311,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
               <BookOpen size={24} />
               <h3 id="node-selector-modal-title" className="text-xl font-bold">{t('nodeSelector.title')}</h3>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
+            <button onClick={onClose} aria-label={t('common.aria.close')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
               <X size={20} />
             </button>
           </div>

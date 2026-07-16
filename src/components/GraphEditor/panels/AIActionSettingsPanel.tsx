@@ -77,7 +77,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
 
   const handleDelete = async (id: string) => {
     if (await asyncConfirm({
-      title: '确认删除',
+      title: t('common.confirm.confirmTitle'),
       message: t('aiAction.confirmDelete'),
       isDangerous: true,
     })) {

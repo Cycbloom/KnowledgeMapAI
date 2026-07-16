@@ -31,10 +31,12 @@ import {
   Calendar,
   Timer
 } from 'lucide-react';
-import { useTheme } from "../../hooks";
+import { useTranslation } from 'react-i18next';
+import { useTheme, useBeforeUnload } from "../../hooks";
 import { api } from '../../services/api';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { formatDate } from "../../utils/formatters";
+import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface LearningPathNode {
   id: string;
@@ -213,7 +215,8 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
   onClose
 }) => {
   const { isDark } = useTheme();
-  
+  const { t } = useTranslation();
+
   const [pathNodes, setPathNodes] = useState<LearningPathNode[]>(learningPath?.nodes || []);
   const [isAddingNode, setIsAddingNode] = useState(false);
   const [selectedNewNode, setSelectedNewNode] = useState<string>('');
@@ -232,6 +235,11 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       setPathNodes(learningPath.nodes);
     }
   }, [learningPath]);
+
+  // Warn user before leaving when there are unsaved reorder changes
+  const isDirty =
+    JSON.stringify(pathNodes) !== JSON.stringify(learningPath?.nodes ?? []);
+  useBeforeUnload(isDirty, t("common.unsavedChanges"));
 
   const availableNodes = useMemo(() => {
     const pathNodeIds = new Set(pathNodes.map(pn => pn.node_id));
@@ -258,24 +266,31 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       setPathNodes(prev => prev.map(pn => 
         pn.id === nodeRefId ? { ...pn, status } : pn
       ));
-      frontendEventBus.publish("message_show", { type: 'success', content: '状态已更新' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.nodeUpdated') });
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '更新状态失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.nodeUpdateFailed') });
     }
-  }, [learningPath]);
+  }, [learningPath, t]);
 
   const handleRemoveNode = useCallback(async (nodeRefId: string) => {
     if (!learningPath) return;
-    
+
+    const confirmed = await asyncConfirm({
+      title: t('learning.path.removeNodeConfirm.title'),
+      message: t('learning.path.removeNodeConfirm.message'),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
+
     try {
       await api.learningPaths.removeNode(learningPath.id, nodeRefId);
       setPathNodes(prev => prev.filter(pn => pn.id !== nodeRefId));
-      frontendEventBus.publish("message_show", { type: 'success', content: '节点已从路径中移除' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.nodeRemoved') });
       onRefresh();
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '移除节点失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.nodeRemoveFailed') });
     }
-  }, [learningPath, onRefresh]);
+  }, [learningPath, onRefresh, t]);
 
   const handleAddNode = useCallback(async () => {
     if (!learningPath || !selectedNewNode) return;
@@ -289,14 +304,14 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       });
       setSelectedNewNode('');
       setIsAddingNode(false);
-      frontendEventBus.publish("message_show", { type: 'success', content: '节点已添加到路径' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.nodeAdded') });
       onRefresh();
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '添加节点失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.nodeAddFailed') });
     } finally {
       setIsSaving(false);
     }
-  }, [learningPath, selectedNewNode, onRefresh]);
+  }, [learningPath, selectedNewNode, onRefresh, t]);
 
   const handleSaveOrder = useCallback(async () => {
     if (!learningPath) return;
@@ -304,14 +319,14 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
     setIsSaving(true);
     try {
       await api.learningPaths.reorderNodes(learningPath.id, pathNodes.map(pn => pn.id));
-      frontendEventBus.publish("message_show", { type: 'success', content: '顺序已保存' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.pathSaved') });
       onRefresh();
     } catch (_error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '保存顺序失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.pathSaveFailed') });
     } finally {
       setIsSaving(false);
     }
-  }, [learningPath, pathNodes, onRefresh]);
+  }, [learningPath, pathNodes, onRefresh, t]);
 
   const handleGeneratePath = useCallback(async () => {
     setIsGenerating(true);
@@ -349,18 +364,18 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
           nodes,
         });
         
-        frontendEventBus.publish("message_show", { type: 'success', content: 'AI 学习路径已生成！' });
+        frontendEventBus.publish("message_show", { type: 'success', content: t('learning.path.generated') });
         onRefresh();
       } else {
-        frontendEventBus.publish("message_show", { type: 'warning', content: '无法生成学习路径，请检查图谱是否有节点' });
+        frontendEventBus.publish("message_show", { type: 'warning', content: t('learning.path.generateFailedNoNodes') });
       }
     } catch (error) {
       console.error('Generate path error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '生成学习路径失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('learning.path.generateFailed') });
     } finally {
       setIsGenerating(false);
     }
-  }, [graphId, learningPath, onRefresh]);
+  }, [graphId, learningPath, onRefresh, t]);
 
   if (!isOpen) return null;
 

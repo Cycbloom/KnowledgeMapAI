@@ -31,7 +31,7 @@ export const useQuoteShortcut = ({
           }
 
           msgHelper.success(t("learning.quoteAdded"));
-          navigator.clipboard.writeText(text).catch(() => {});
+          navigator.clipboard.writeText(text).catch((err) => { console.error(err); });
 
           setTimeout(() => {
             inputRef?.current?.focus();

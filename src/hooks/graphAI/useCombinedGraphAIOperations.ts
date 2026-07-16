@@ -7,6 +7,7 @@ import { queryKeys } from '../queries/config';
 import { useAIExpandMutation, useAIGenerateCardsMutation, useCreateCardsBatchMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from '../mutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import {
   processExpandSuggestions,
@@ -32,6 +33,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   const queryClient = useQueryClient();
   const asyncHandler = createAsyncHandler();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
@@ -59,18 +61,18 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleExpandNode = async (prompt?: string) => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
       return null;
     }
     
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '无法确定节点所属图谱' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.cannotDetermineGraph') });
       return null;
     }
     
     if (!selectedNode.title) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '节点标题不能为空' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.nodeTitleEmpty') });
       return null;
     }
     
@@ -119,29 +121,29 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
       {
         onSuccess: (result) => {
           if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
-            frontendEventBus.publish("message_show", { type: 'success', content: `拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线` });
+            frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.mergeGraphs.expandComplete', { nodesCount: result.newNodesCount, edgesCount: result.newEdgesCount }) });
           } else {
-            frontendEventBus.publish("message_show", { type: 'info', content: '未发现新的关联' });
+            frontendEventBus.publish("message_show", { type: 'info', content: t('graphAI.mergeGraphs.noNewRelations') });
           }
         },
-        errorMessage: '拓展失败'
+        errorMessage: t('graphAI.mergeGraphs.expandFailed')
       }
     );
   };
   
   const handleGenerateContent = async (prompt?: string) => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
       return null;
     }
     
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '无法确定节点所属图谱' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.cannotDetermineGraph') });
       return null;
     }
     
-    frontendEventBus.publish("message_show", { content: 'AI 内容生成任务已开始...', type: 'info' });
+    frontendEventBus.publish("message_show", { content: t('graphAI.content.started'), type: 'info' });
     
     return await asyncHandler(
       async () => {
@@ -173,21 +175,21 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         return generatedContent;
       },
       {
-        successMessage: 'AI 内容生成完成',
-        errorMessage: 'AI 生成失败'
+        successMessage: t('graphAI.content.completed'),
+        errorMessage: t('graphAI.content.failed')
       }
     );
   };
   
   const handleGenerateCards = async () => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
       return null;
     }
     
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '无法确定节点所属图谱' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.cannotDetermineGraph') });
       return null;
     }
     
@@ -207,7 +209,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         }));
         
         if (cards.length === 0) {
-          frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未能生成有效的卡片' });
+          frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.batchGenerate.noCardsGenerated') });
           return null;
         }
         
@@ -217,11 +219,11 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         return cards.length;
       },
       {
-        successMessage: '成功生成并保存了复习卡片！',
-        errorMessage: '生成卡片失败',
+        successMessage: t('graphAI.batchGenerate.success'),
+        errorMessage: t('graphAI.batchGenerate.failed'),
         onSuccess: (result) => {
           if (result && typeof result === 'number') {
-            frontendEventBus.publish("message_show", { type: 'success', content: `成功生成并保存了 ${result} 张复习卡片！` });
+            frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.batchGenerate.successWithCount', { count: result }) });
           }
         }
       }
@@ -230,7 +232,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleStartLevelTest = () => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
       return;
     }
     
@@ -240,7 +242,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleStartLearningMode = () => {
     if (!selectedNode) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.mergeGraphs.selectNodeFirst') });
       return;
     }
     
@@ -271,8 +273,8 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         return result;
       },
       {
-        successMessage: '跨图谱连接分析完成',
-        errorMessage: '跨图谱连接分析失败'
+        successMessage: t('graphAI.analyzeCrossDomain.analysisComplete'),
+        errorMessage: t('graphAI.analyzeCrossDomain.analysisFailed')
       }
     );
   };

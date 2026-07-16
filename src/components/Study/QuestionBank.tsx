@@ -10,6 +10,7 @@ import { StudyCardPreview } from './StudyCardPreview';
 import { StudyCardDetailModal } from './StudyCardDetailModal';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { EmptyState } from '@/components/common/EmptyState';
+import { message } from '@/utils/messageHelper';
 
 interface QuestionBankProps {
   cards: StudyCard[];
@@ -123,31 +124,46 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   };
 
   const handleBatchDelete = async () => {
-    if (await asyncConfirm({ title: '批量删除', message: t('study.questionBank.deleteConfirm', { count: selectedIds.size }), isDangerous: true })) {
-      await deleteBatchMutation.mutateAsync(Array.from(selectedIds));
-      setSelectedIds(new Set());
+    if (await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t('study.questionBank.deleteConfirm', { count: selectedIds.size }), isDangerous: true })) {
+      try {
+        await deleteBatchMutation.mutateAsync(Array.from(selectedIds));
+        setSelectedIds(new Set());
+      } catch (err: unknown) {
+        console.error('Failed to batch delete:', err);
+        message.error(t('study.batchDeleteFailed'));
+      }
     }
   };
 
   const handleFormSubmit = async (data: QuestionFormData) => {
     if (editingCard) {
-      await updateCardMutation.mutateAsync({
-        id: editingCard.id,
-        data: {
-          question: data.question,
-          answer: data.answer,
-          explanation: data.explanation,
-          options: data.options,
-          card_type: data.card_type as any
-        }
-      });
-      setEditingCard(null);
+      try {
+        await updateCardMutation.mutateAsync({
+          id: editingCard.id,
+          data: {
+            question: data.question,
+            answer: data.answer,
+            explanation: data.explanation,
+            options: data.options,
+            card_type: data.card_type as any
+          }
+        });
+        setEditingCard(null);
+      } catch (err: unknown) {
+        console.error('Failed to update card:', err);
+        message.error(t('study.updateFailed'));
+      }
     } else {
-      await createCardsMutation.mutateAsync([{
-        ...data,
-        card_type: data.card_type as any
-      }]);
-      setIsCreating(false);
+      try {
+        await createCardsMutation.mutateAsync([{
+          ...data,
+          card_type: data.card_type as any
+        }]);
+        setIsCreating(false);
+      } catch (err: unknown) {
+        console.error('Failed to create cards:', err);
+        message.error(t('study.createCardsFailed'));
+      }
     }
   };
 
@@ -355,7 +371,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             icon={<Search size={32} className="opacity-50" />}
             title={t('study.questionBank.noQuestionsFound')}
             action={{
-              label: t('study.questionBank.newQuestion'),
+              label: t('study.generateQuestions'),
               onClick: startCreating,
             }}
           />
@@ -369,7 +385,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                   onPreview={setPreviewCard}
                   onEdit={startEditing}
                   onDelete={async (c) => {
-                    if(await asyncConfirm({ title: '删除卡片', message: t('study.questionBank.deleteCardConfirm'), isDangerous: true })) await deleteCardMutation.mutateAsync(c.id);
+                    if(await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t('study.questionBank.deleteCardConfirm'), isDangerous: true })) await deleteCardMutation.mutateAsync(c.id);
                   }}
                   onSelect={(c) => toggleSelect(c.id)}
                   selected={selectedIds.has(card.id)}

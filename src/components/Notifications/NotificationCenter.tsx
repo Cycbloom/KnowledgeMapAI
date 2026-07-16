@@ -11,6 +11,7 @@ import { asyncConfirm } from '@/utils/asyncConfirm';
 import { message } from '@/utils/messageHelper';
 import { formatDate } from '@/utils/formatters';
 import { EmptyState } from '../common/EmptyState';
+import { SkeletonList } from '../common';
 import { useNotificationsStore } from '../../store/useNotificationsStore';
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
@@ -159,8 +160,8 @@ export const NotificationCenter: React.FC = () => {
     if (readIds.length === 0) return;
 
     const confirmed = await asyncConfirm({
-      title: '删除已读通知',
-      message: `确定要删除所有已读通知吗？共 ${readIds.length} 条，此操作无法撤销。`,
+      title: t('common.confirm.deleteReadNotificationsTitle'),
+      message: t('common.confirm.deleteReadNotificationsMessage', { count: readIds.length }),
       confirmText: '删除',
       cancelText: '取消',
       isDangerous: true,
@@ -306,9 +307,7 @@ export const NotificationCenter: React.FC = () => {
             {/* Content */}
             <div className="max-h-[400px] overflow-y-auto">
               {loading ? (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
-                </div>
+                <SkeletonList items={5} hasAvatar />
               ) : visibleNotifications.length === 0 ? (
                 <EmptyState
                   icon={<Bell size={32} />}
@@ -353,6 +352,7 @@ export const NotificationCenter: React.FC = () => {
                             </div>
                             <button
                               onClick={(e) => handleDelete(notification.id, e)}
+                              aria-label={t('common.aria.close')}
                               className={`p-1 rounded transition-colors ${
                                 isDark
                                   ? 'hover:bg-slate-600 text-slate-500 hover:text-slate-300'
@@ -410,6 +410,7 @@ export const NotificationCenter: React.FC = () => {
                             </div>
                             <button
                               onClick={(e) => handleDelete(notification.id, e)}
+                              aria-label={t('common.aria.close')}
                               className={`p-1 rounded transition-colors ${
                                 isDark
                                   ? 'hover:bg-slate-600 text-slate-600 hover:text-slate-400'

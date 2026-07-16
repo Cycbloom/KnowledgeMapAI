@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Sun,
   Moon,
@@ -18,6 +19,17 @@ import { taskReviewApi, TaskReview, Mood } from "../../services/api/review";
 import { api } from "../../services/api";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import type { UserTask } from "@shared/types";
+import { Skeleton } from "../common";
+import { useFormDraft } from "../../hooks";
+import { ConfirmationModal } from "../common/ConfirmationModal";
+
+interface DailyReviewDraft {
+  mood: Mood | null;
+  content: string;
+  difficulties: string;
+  improvements: string;
+  learnings: string;
+}
 
 interface DailyReviewProps {
   isOpen: boolean;
@@ -68,11 +80,24 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
   date,
   onSave,
 }) => {
-  const [mood, setMood] = useState<Mood | null>(null);
-  const [content, setContent] = useState("");
-  const [difficulties, setDifficulties] = useState("");
-  const [improvements, setImprovements] = useState("");
-  const [learnings, setLearnings] = useState("");
+  const { t } = useTranslation();
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<DailyReviewDraft>({
+    key: 'dailyReview_draft',
+    initialValue: {
+      mood: null,
+      content: "",
+      difficulties: "",
+      improvements: "",
+      learnings: "",
+    },
+  });
   const [completedTasks, setCompletedTasks] = useState<UserTask[]>([]);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -96,11 +121,13 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
 
       if (review) {
         setExistingReview(review);
-        setMood(review.mood || null);
-        setContent(review.content || "");
-        setDifficulties(review.difficulties || "");
-        setImprovements(review.improvements || "");
-        setLearnings(review.learnings || "");
+        setFormData({
+          mood: review.mood || null,
+          content: review.content || "",
+          difficulties: review.difficulties || "",
+          improvements: review.improvements || "",
+          learnings: review.learnings || "",
+        });
       }
 
       const todayTasks = tasks.filter((t: UserTask) => {
@@ -123,11 +150,11 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
     try {
       const reviewData = {
         review_type: "daily" as const,
-        mood: mood || undefined,
-        content: content || undefined,
-        difficulties: difficulties || undefined,
-        improvements: improvements || undefined,
-        learnings: learnings || undefined,
+        mood: formData.mood || undefined,
+        content: formData.content || undefined,
+        difficulties: formData.difficulties || undefined,
+        improvements: formData.improvements || undefined,
+        learnings: formData.learnings || undefined,
       };
 
       let review: TaskReview;
@@ -137,6 +164,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
         review = await taskReviewApi.createReview(reviewData);
       }
 
+      clearDraft();
       setExistingReview(review);
       onSave?.(review);
     } catch (error) {
@@ -187,8 +215,18 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
             </div>
 
             {loading ? (
-              <div className="p-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
+              <div className="p-6 space-y-6">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div key={i} className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
+                        <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                        <Skeleton className="h-3 w-16 mx-auto" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Skeleton className="h-32 w-full" />
               </div>
             ) : (
               <div className="p-6 space-y-6">
@@ -221,11 +259,11 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   <div className="flex gap-2 flex-wrap">
                     {(Object.keys(MOOD_CONFIG) as Mood[]).map((moodKey) => {
                       const config = MOOD_CONFIG[moodKey];
-                      const isSelected = mood === moodKey;
+                      const isSelected = formData.mood === moodKey;
                       return (
                         <motion.button
                           key={moodKey}
-                          onClick={() => setMood(moodKey)}
+                          onClick={() => setFormData(prev => ({ ...prev, mood: moodKey }))}
                           className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
                             isSelected
                               ? config.bg
@@ -258,8 +296,8 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     今日心得
                   </h3>
                   <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    value={formData.content}
+                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                     placeholder="记录今天的收获和感受..."
                     className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
@@ -272,8 +310,8 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                       遇到的困难
                     </h3>
                     <textarea
-                      value={difficulties}
-                      onChange={(e) => setDifficulties(e.target.value)}
+                      value={formData.difficulties}
+                      onChange={(e) => setFormData(prev => ({ ...prev, difficulties: e.target.value }))}
                       placeholder="今天遇到了什么困难？"
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -284,8 +322,8 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                       改进方向
                     </h3>
                     <textarea
-                      value={improvements}
-                      onChange={(e) => setImprovements(e.target.value)}
+                      value={formData.improvements}
+                      onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
                       placeholder="明天可以怎么改进？"
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -298,8 +336,8 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     学到了什么
                   </h3>
                   <textarea
-                    value={learnings}
-                    onChange={(e) => setLearnings(e.target.value)}
+                    value={formData.learnings}
+                    onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
                     placeholder="记录今天学到的新知识或技能..."
                     className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
@@ -333,6 +371,16 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
             )}
           </motion.div>
         </motion.div>
+      )}
+      {isOpen && !loading && !existingReview && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t('common.restoreDraftTitle')}
+          message={t('common.restoreDraftMessage')}
+          isDangerous={false}
+        />
       )}
     </AnimatePresence>
   );

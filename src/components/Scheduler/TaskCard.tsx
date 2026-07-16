@@ -27,6 +27,7 @@ import { api } from "../../services/api";
 import { message } from "../../utils/messageHelper";
 import { formatDurationMinutes, formatDate } from "../../utils/formatters";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import { Skeleton } from "../common";
 
 interface TaskCardProps {
   task: UserTask;
@@ -344,8 +345,13 @@ const TaskCardInner: React.FC<TaskCardProps> = ({
                 >
                   <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
                     {loadingSubtasks ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500" />
+                      <div className="py-2 space-y-1">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="flex items-center gap-2 p-1.5">
+                            <Skeleton variant="circular" width={16} height={16} />
+                            <Skeleton className="h-3 flex-1" />
+                          </div>
+                        ))}
                       </div>
                     ) : subtasks.length > 0 ? (
                       subtasks.slice(0, 5).map((subtask) => (

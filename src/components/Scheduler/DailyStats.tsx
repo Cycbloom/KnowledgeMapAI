@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
+  CalendarClock,
   Clock,
   Target,
   CheckCircle,
@@ -8,7 +9,9 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from '../../services/api';
+import { EmptyState } from '../common/EmptyState';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {DailyFocusStats} from '@shared/types';
 
@@ -68,6 +71,7 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
   date,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<DailyFocusStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -220,11 +224,13 @@ export const DailyStats: React.FC<DailyStatsProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-6 text-center py-8 text-slate-500 dark:text-slate-400"
+          className="mt-6"
         >
-          <Clock size={48} className="mx-auto mb-3 opacity-30" />
-          <p>今天还没有专注记录</p>
-          <p className="text-sm mt-1">开始一个专注会话来记录你的进度</p>
+          <EmptyState
+            icon={<CalendarClock className="w-12 h-12 text-gray-400" />}
+            title={t('scheduler.dailyStats.empty')}
+            description={t('scheduler.dailyStats.emptyHint')}
+          />
         </motion.div>
       )}
     </div>

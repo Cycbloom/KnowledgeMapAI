@@ -286,13 +286,8 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({
     if (canReset && effective.id) {
       if (
         await asyncConfirm({
-          title: '确认重置',
-          message: t("profile.promptSettings.confirmReset", {
-            scope:
-              scope === "graph"
-                ? t("profile.promptSettings.graphScope")
-                : t("profile.promptSettings.userScope"),
-          }),
+          title: t('common.confirm.resetTitle'),
+          message: t('common.confirm.resetMessage'),
           isDangerous: true,
         })
       ) {

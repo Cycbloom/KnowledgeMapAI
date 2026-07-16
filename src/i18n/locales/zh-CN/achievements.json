@@ -65,5 +65,6 @@
   "passTitle": "通行证",
   "lifetimeAchievements": "终身成就",
   "loadError": "加载成就数据失败",
-  "retry": "重试"
+  "retry": "重试",
+  "claimFailed": "领取奖励失败，请稍后重试"
 }

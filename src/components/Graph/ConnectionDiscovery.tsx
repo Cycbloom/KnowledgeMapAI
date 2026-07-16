@@ -262,10 +262,11 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
                     </button>
                     <button
                       onClick={() => handleDismiss(suggestion)}
+                      aria-label={t('common.aria.close')}
                       className={`
                         p-1.5 rounded-lg transition-colors
-                        ${isDark 
-                          ? 'text-slate-400 hover:bg-slate-600' 
+                        ${isDark
+                          ? 'text-slate-400 hover:bg-slate-600'
                           : 'text-gray-400 hover:bg-gray-200'}
                       `}
                     >

@@ -53,10 +53,10 @@ export const ConsoleHistory: React.FC<ConsoleHistoryProps> = ({
   }, [onSelect]);
 
   const handleClearClick = useCallback(async () => {
-    if (await asyncConfirm({ title: '清空历史记录', message: '确定要清空所有历史记录吗？', isDangerous: true })) {
+    if (await asyncConfirm({ title: t('common.confirm.clearTitle'), message: t('common.confirm.clearMessage'), isDangerous: true })) {
       onClear();
     }
-  }, [onClear]);
+  }, [onClear, t]);
 
   return (
     <div className={`h-full flex flex-col ${isDark ? 'bg-slate-800' : 'bg-gray-50'}`}>

@@ -15,6 +15,7 @@ import {
   FileText,
   Bookmark,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { UserTaskDetail } from "../../../types";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../../../utils/formatters";
@@ -27,6 +28,7 @@ import { ExecutionRecords } from "./ExecutionRecords";
 import { ProgressDetail } from "./ProgressDetail";
 import { NotesTab } from "./NotesTab";
 import { SaveAsTemplateModal } from "../SaveAsTemplateModal";
+import { Skeleton, SkeletonCard } from "@/components/common";
 
 type WorkTab = "notes" | "subtasks" | "executions" | "progress";
 
@@ -45,6 +47,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<WorkTab>("notes");
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadTaskDetail();
@@ -59,7 +62,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       }
     } catch (error) {
       console.error("Failed to load task detail:", error);
-      messageHelper.error("加载任务详情失败");
+      messageHelper.error(t('scheduler.taskWorkbench.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -69,10 +72,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.start(task.id);
-      messageHelper.success("任务已开始");
+      messageHelper.success(t('scheduler.taskWorkbench.taskStarted'));
       loadTaskDetail();
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "开始任务失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.taskStartFailed');
       messageHelper.error(errMsg);
     }
   };
@@ -81,10 +84,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.pause(task.id);
-      messageHelper.success("任务已暂停");
+      messageHelper.success(t('scheduler.taskWorkbench.taskPaused'));
       loadTaskDetail();
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "暂停任务失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.taskPauseFailed');
       messageHelper.error(errMsg);
     }
   };
@@ -93,23 +96,23 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.complete(task.id);
-      messageHelper.success("任务已完成");
+      messageHelper.success(t('scheduler.taskWorkbench.taskCompleted'));
       loadTaskDetail();
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "完成任务失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.taskCompleteFailed');
       messageHelper.error(errMsg);
     }
   };
 
   const handleDeleteTask = async () => {
     if (!task) return;
-    if (!await asyncConfirm({ title: '删除任务', message: '确定要删除这个任务吗？此操作不可撤销。', isDangerous: true })) return;
+    if (!await asyncConfirm({ title: t('scheduler.confirmDeleteTaskTitle'), message: t('scheduler.confirmDeleteTaskMessage'), isDangerous: true })) return;
     try {
       await api.scheduler.delete(task.id);
-      messageHelper.success("任务已删除");
+      messageHelper.success(t('scheduler.taskWorkbench.taskDeleted'));
       onBack();
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "删除任务失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.taskDeleteFailed');
       messageHelper.error(errMsg);
     }
   };
@@ -121,11 +124,11 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
         await api.scheduler.updateNotes(task.id, notes);
         setTask({ ...task, notes });
       } catch (error: unknown) {
-        const errMsg = error instanceof Error ? error.message : "保存笔记失败";
+        const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.notesSaveFailed');
         messageHelper.error(errMsg);
       }
     },
-    [task],
+    [task, t],
   );
 
   const getStatusColor = (status: string) => {
@@ -220,8 +223,33 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
+      <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            <Skeleton variant="rectangular" width={32} height={32} className="rounded-lg" />
+            <Skeleton variant="text" width="40%" height={20} />
+          </div>
+          <div className="flex items-center gap-1.5 mt-2">
+            <Skeleton variant="rectangular" width={80} height={20} className="rounded-full" />
+            <Skeleton variant="rectangular" width={60} height={20} className="rounded-full" />
+            <Skeleton variant="rectangular" width={70} height={20} className="rounded-full" />
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden flex">
+          <div className="w-[360px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 p-4 space-y-4">
+            <Skeleton variant="text" width="30%" />
+            <div className="grid grid-cols-2 gap-2">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          </div>
+          <div className="flex-1 p-4 space-y-3">
+            <Skeleton variant="rectangular" height={40} className="w-full" />
+            <Skeleton variant="rectangular" height={200} className="w-full" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -540,7 +568,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           }}
           onClose={() => setShowSaveAsTemplate(false)}
           onSuccess={() => {
-            messageHelper.success("模板保存成功!");
+            messageHelper.success(t('scheduler.taskWorkbench.templateSaved'));
           }}
         />
       )}

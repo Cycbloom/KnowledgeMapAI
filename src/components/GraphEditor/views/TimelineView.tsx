@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
 import { MindMapNode } from '../canvas/MindMapNode';
 import { MindMapLink } from '../canvas/MindMapLink';
@@ -52,6 +53,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   rightPanelWidth = 0
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
@@ -427,15 +429,17 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             <button
               onClick={handleReset}
               className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
-              title="重置"
+              title={t('common.aria.reset')}
+              aria-label={t('common.aria.reset')}
             >
               <RotateCcw className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
             </button>
-            
+
             <button
               onClick={handleStepBack}
               className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
-              title="上一步"
+              title={t('common.aria.prevStep')}
+              aria-label={t('common.aria.prevStep')}
             >
               <SkipBack className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
             </button>
@@ -455,7 +459,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             <button
               onClick={handleStepForward}
               className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
-              title="下一步"
+              title={t('common.aria.nextStep')}
+              aria-label={t('common.aria.nextStep')}
             >
               <SkipForward className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`} />
             </button>

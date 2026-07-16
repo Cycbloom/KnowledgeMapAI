@@ -3,6 +3,7 @@ import { ArrowLeft, Sparkles, RefreshCw, Info, Route, GraduationCap } from "luci
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HighlightedReader } from "./HighlightedReader";
+import { Skeleton } from "../common";
 import type { Keyword } from "../../types";
 import type { LinkedTask } from "../../hooks/useLinkedTask";
 import type { StudyMode } from "@shared/types/scheduler";
@@ -115,22 +116,22 @@ export const LearningArticleReader = ({
       className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}
     >
       {isGenerating ? (
-        <div
-          className={`flex flex-col items-center justify-center h-full space-y-6 text-center ${isMobile ? "pt-8" : ""}`}
-        >
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles size={24} className="text-primary-600 animate-pulse" />
+        <div className="w-full">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-7 w-64" />
             </div>
           </div>
-          <div>
-            <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-              {t("learning.material.generating")}
-            </h3>
-            <p className={isDark ? "text-slate-400" : "text-gray-500"}>
-              {t("learning.material.generatingTopic", { title: nodeTitle })}
-            </p>
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <div className="h-4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
           </div>
         </div>
       ) : (

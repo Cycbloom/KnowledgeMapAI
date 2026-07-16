@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { X, RefreshCw, Clock, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 import type { SyncStatus } from '../../../shared/types/ipc';
 import { formatDate } from '../../utils/formatters';
@@ -10,6 +11,7 @@ interface SyncDetailPanelProps {
 }
 
 export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProps) {
+  const { t } = useTranslation();
   const handleSync = async () => {
     await onSync();
   };
@@ -23,7 +25,7 @@ export function SyncDetailPanel({ status, onSync, onClose }: SyncDetailPanelProp
     >
       <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">同步状态</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+        <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
           <X className="w-4 h-4" />
         </button>
       </div>

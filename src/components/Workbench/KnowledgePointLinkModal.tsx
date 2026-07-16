@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link2, BookOpen } from "lucide-react";
 import type { KnowledgePoint } from "@shared/types";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
 interface KnowledgePointLinkModalProps {
   linkingTaskId: string | null;
@@ -23,6 +24,10 @@ export const KnowledgePointLinkModal: React.FC<KnowledgePointLinkModalProps> = (
 }) => {
   const { t } = useTranslation();
 
+  const isOpen = !!linkingTaskId;
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
+
   return (
     <AnimatePresence>
       {linkingTaskId && (
@@ -34,6 +39,7 @@ export const KnowledgePointLinkModal: React.FC<KnowledgePointLinkModalProps> = (
           onClick={onClose}
         >
           <motion.div
+            ref={containerRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}

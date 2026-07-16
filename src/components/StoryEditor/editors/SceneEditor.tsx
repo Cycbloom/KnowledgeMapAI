@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { storyCreationHttpApi } from "../../../services/api/storyCreation";
 import { message } from "../../../utils/messageHelper";
 import type { StoryStructure, StoryCharacter, StorySceneDetail } from "../../../services/api/storyCreation";
+import { useFormDraft, useBeforeUnload } from "../../../hooks";
+import { ConfirmationModal } from "../../common/ConfirmationModal";
 
 interface SceneEditorProps {
   graphId: string;
@@ -13,6 +15,29 @@ interface SceneEditorProps {
 }
 
 type SceneRole = "protagonist" | "antagonist" | "supporting" | "minor" | "mentioned";
+
+type WritingStatus = "draft" | "revising" | "complete";
+
+interface SceneDraft {
+  synopsis: string;
+  content: string;
+  povCharacterId: string;
+  locationName: string;
+  timeSetting: string;
+  writingStatus: WritingStatus;
+  // Map<string, { checked: boolean; role: SceneRole }> serialized as Record for draft storage
+  appearances: Record<string, { checked: boolean; role: SceneRole }>;
+}
+
+const EMPTY_SCENE_DRAFT: SceneDraft = {
+  synopsis: "",
+  content: "",
+  povCharacterId: "",
+  locationName: "",
+  timeSetting: "",
+  writingStatus: "draft",
+  appearances: {},
+};
 
 export const SceneEditor: React.FC<SceneEditorProps> = ({
   graphId,
@@ -26,20 +51,39 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [synopsis, setSynopsis] = useState("");
-  const [content, setContent] = useState("");
-  const [povCharacterId, setPovCharacterId] = useState<string>("");
-  const [locationName, setLocationName] = useState("");
-  const [timeSetting, setTimeSetting] = useState("");
-  const [writingStatus, setWritingStatus] = useState<"draft" | "revising" | "complete">("draft");
-  const [appearances, setAppearances] = useState<Map<string, { checked: boolean; role: SceneRole }>>(new Map());
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<SceneDraft>({
+    key: "scene_editor_draft",
+    initialValue: EMPTY_SCENE_DRAFT,
+  });
 
   // Track original appearances to detect changes for persistence
   const originalAppearancesRef = useRef<Map<string, { checked: boolean; role: SceneRole }>>(new Map());
 
+  // Track the last loaded/saved form data to detect unsaved changes
+  const lastSavedDataRef = useRef<SceneDraft>(EMPTY_SCENE_DRAFT);
+
   useEffect(() => {
     loadSceneData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [structure.id]);
+
+  // Sync lastSavedDataRef when sceneData changes (after loadSceneData completes)
+  useEffect(() => {
+    lastSavedDataRef.current = sceneData ? { ...formData } : EMPTY_SCENE_DRAFT;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sceneData]);
+
+  // Warn user before leaving when there are unsaved changes
+  const isDirty =
+    JSON.stringify(formData) !== JSON.stringify(lastSavedDataRef.current);
+  useBeforeUnload(isDirty, t("common.unsavedChanges"));
 
   const loadSceneData = async () => {
     try {
@@ -47,37 +91,33 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
       const result = await storyCreationHttpApi.scenes.get(graphId, structure.id);
       if (result.scene) {
         setSceneData(result.scene);
-        setSynopsis(result.scene.synopsis || "");
-        setContent(result.scene.content || "");
-        setPovCharacterId(result.scene.pov_character_id || "");
-        setLocationName(result.scene.location_name || "");
-        setTimeSetting(result.scene.time_setting || "");
-        setWritingStatus(result.scene.writing_status || "draft");
 
+        const appearanceRecord: Record<string, { checked: boolean; role: SceneRole }> = {};
         if (result.scene.appearances) {
-          const appearanceMap = new Map<string, { checked: boolean; role: SceneRole }>();
           result.scene.appearances.forEach((appearance: { character_id: string; role_in_scene: string }) => {
-            appearanceMap.set(appearance.character_id, {
+            appearanceRecord[appearance.character_id] = {
               checked: true,
               role: appearance.role_in_scene as SceneRole,
-            });
+            };
           });
-          setAppearances(appearanceMap);
-          originalAppearancesRef.current = new Map(appearanceMap);
+          originalAppearancesRef.current = new Map(Object.entries(appearanceRecord));
         } else {
-          setAppearances(new Map());
           originalAppearancesRef.current = new Map();
         }
+
+        setFormData({
+          synopsis: result.scene.synopsis || "",
+          content: result.scene.content || "",
+          povCharacterId: result.scene.pov_character_id || "",
+          locationName: result.scene.location_name || "",
+          timeSetting: result.scene.time_setting || "",
+          writingStatus: (result.scene.writing_status as WritingStatus) || "draft",
+          appearances: appearanceRecord,
+        });
       } else {
         // No scene data yet, reset form
         setSceneData(null);
-        setSynopsis("");
-        setContent("");
-        setPovCharacterId("");
-        setLocationName("");
-        setTimeSetting("");
-        setWritingStatus("draft");
-        setAppearances(new Map());
+        setFormData(EMPTY_SCENE_DRAFT);
         originalAppearancesRef.current = new Map();
       }
     } catch (error) {
@@ -97,24 +137,24 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
       // Save scene content
       if (currentSceneData) {
         await storyCreationHttpApi.scenes.update(graphId, currentSceneData.id, {
-          synopsis,
-          content,
-          pov_character_id: povCharacterId || null,
-          location_name: locationName || null,
-          time_setting: timeSetting || null,
-          writing_status: writingStatus,
-          word_count: content.length,
+          synopsis: formData.synopsis,
+          content: formData.content,
+          pov_character_id: formData.povCharacterId || null,
+          location_name: formData.locationName || null,
+          time_setting: formData.timeSetting || null,
+          writing_status: formData.writingStatus,
+          word_count: formData.content.length,
         });
       } else {
         const newScene = await storyCreationHttpApi.scenes.create(graphId, {
           structure_id: structure.id,
-          synopsis,
-          content,
-          pov_character_id: povCharacterId || undefined,
-          location_name: locationName || undefined,
-          time_setting: timeSetting || undefined,
-          writing_status: writingStatus,
-          word_count: content.length,
+          synopsis: formData.synopsis,
+          content: formData.content,
+          pov_character_id: formData.povCharacterId || undefined,
+          location_name: formData.locationName || undefined,
+          time_setting: formData.timeSetting || undefined,
+          writing_status: formData.writingStatus,
+          word_count: formData.content.length,
         });
         setSceneData(newScene);
         currentSceneData = newScene;
@@ -123,7 +163,8 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
       // Persist appearance changes
       if (currentSceneData) {
         const original = originalAppearancesRef.current;
-        const current = appearances;
+        // Convert Record back to Map for diffing logic
+        const current = new Map(Object.entries(formData.appearances));
 
         // Find newly added appearances (in current but not in original)
         const addedPromises: Promise<unknown>[] = [];
@@ -178,6 +219,8 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
       }
 
       onSave();
+      clearDraft();
+      lastSavedDataRef.current = { ...formData };
       message.success(t("storyEditor.sceneSaved"));
     } catch (error) {
       console.error("Failed to save scene:", error);
@@ -188,29 +231,32 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
   };
 
   const handleAppearanceToggle = (characterId: string) => {
-    setAppearances(prev => {
-      const next = new Map(prev);
-      if (next.has(characterId)) {
-        next.delete(characterId);
+    setFormData(prev => {
+      const next = { ...prev.appearances };
+      if (next[characterId]) {
+        delete next[characterId];
       } else {
-        next.set(characterId, { checked: true, role: "supporting" });
+        next[characterId] = { checked: true, role: "supporting" };
       }
-      return next;
+      return { ...prev, appearances: next };
     });
   };
 
   const handleRoleChange = (characterId: string, role: SceneRole) => {
-    setAppearances(prev => {
-      const next = new Map(prev);
-      const existing = next.get(characterId);
-      if (existing) {
-        next.set(characterId, { ...existing, role });
-      }
-      return next;
+    setFormData(prev => {
+      const existing = prev.appearances[characterId];
+      if (!existing) return prev;
+      return {
+        ...prev,
+        appearances: {
+          ...prev.appearances,
+          [characterId]: { ...existing, role },
+        },
+      };
     });
   };
 
-  const wordCount = content.length;
+  const wordCount = formData.content.length;
 
   if (loading) {
     return (
@@ -252,8 +298,10 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
             {t("storyEditor.synopsis")}
           </label>
           <textarea
-            value={synopsis}
-            onChange={(e) => setSynopsis(e.target.value)}
+            value={formData.synopsis}
+            onChange={(e) =>
+              setFormData({ ...formData, synopsis: e.target.value })
+            }
             placeholder={t("storyEditor.synopsisPlaceholder")}
             className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             rows={3}
@@ -267,8 +315,10 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
             {t("storyEditor.content")}
           </label>
           <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            value={formData.content}
+            onChange={(e) =>
+              setFormData({ ...formData, content: e.target.value })
+            }
             placeholder={t("storyEditor.contentPlaceholder")}
             className="w-full px-3 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono leading-relaxed"
             rows={15}
@@ -293,8 +343,10 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
               {t("storyEditor.povCharacter")}
             </label>
             <select
-              value={povCharacterId}
-              onChange={(e) => setPovCharacterId(e.target.value)}
+              value={formData.povCharacterId}
+              onChange={(e) =>
+                setFormData({ ...formData, povCharacterId: e.target.value })
+              }
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="">{t("storyEditor.noPov")}</option>
@@ -314,8 +366,10 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
             </label>
             <input
               type="text"
-              value={locationName}
-              onChange={(e) => setLocationName(e.target.value)}
+              value={formData.locationName}
+              onChange={(e) =>
+                setFormData({ ...formData, locationName: e.target.value })
+              }
               placeholder={t("storyEditor.locationPlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
@@ -329,8 +383,10 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
             </label>
             <input
               type="text"
-              value={timeSetting}
-              onChange={(e) => setTimeSetting(e.target.value)}
+              value={formData.timeSetting}
+              onChange={(e) =>
+                setFormData({ ...formData, timeSetting: e.target.value })
+              }
               placeholder={t("storyEditor.timePlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
@@ -349,9 +405,14 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
               ].map(status => (
                 <button
                   key={status.value}
-                  onClick={() => setWritingStatus(status.value as typeof writingStatus)}
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      writingStatus: status.value as WritingStatus,
+                    })
+                  }
                   className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors
-                    ${writingStatus === status.value
+                    ${formData.writingStatus === status.value
                       ? `${status.color} ring-2 ring-offset-1`
                       : "bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300"
                     }`}
@@ -374,8 +435,9 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
           ) : (
             <div className="space-y-2">
               {characters.map(character => {
-                const isChecked = appearances.has(character.id);
-                const currentRole = appearances.get(character.id)?.role || "supporting";
+                const appearanceEntry = formData.appearances[character.id];
+                const isChecked = !!appearanceEntry;
+                const currentRole = appearanceEntry?.role || "supporting";
 
                 return (
                   <div
@@ -415,6 +477,16 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
           )}
         </div>
       </div>
+      {!loading && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t("common.restoreDraftTitle")}
+          message={t("common.restoreDraftMessage")}
+          isDangerous={false}
+        />
+      )}
     </div>
   );
 };

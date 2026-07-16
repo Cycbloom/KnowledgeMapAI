@@ -123,5 +123,15 @@
     "deletedMany": "已删除 {{count}} 个图谱",
     "restored": "已恢复",
     "restoreFailed": "恢复失败，请前往回收站手动恢复"
-  }
+  },
+  "batchDeleteFailed": "批量删除失败",
+  "deleteFailed": "删除失败",
+  "favoriteAdded": "收藏成功",
+  "favoriteRemoved": "已取消收藏",
+  "operationFailed": "操作失败",
+  "formatError": "格式错误",
+  "importSuccess": "导入成功！",
+  "importFailed": "导入失败: {{message}}",
+  "nodesGenerated": "成功生成 {{count}} 个节点！",
+  "deleteGraphTitle": "删除图谱"
 }

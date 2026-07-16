@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BranchSuggestion, Node } from '../../../types';
 import { Sparkles, TrendingUp, Clock } from 'lucide-react';
 
@@ -17,6 +18,7 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
   onClose,
   isDark
 }) => {
+  const { t } = useTranslation();
   const [hoveredBranch, setHoveredBranch] = useState<string | null>(null);
 
   const getPriorityColor = (priority: string) => {
@@ -156,13 +158,14 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
             className={`
               w-10 h-10 rounded-full flex items-center justify-center
               transition-all duration-200
-              ${isDark 
-                ? 'bg-red-900/90 hover:bg-red-800 text-white border-2 border-red-700' 
+              ${isDark
+                ? 'bg-red-900/90 hover:bg-red-800 text-white border-2 border-red-700'
                 : 'bg-red-500 hover:bg-red-600 text-white border-2 border-red-600'
               }
               shadow-xl
             `}
             title="关闭分支预览"
+            aria-label={t('common.aria.closeBranchPreview')}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />

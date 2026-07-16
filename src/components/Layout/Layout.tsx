@@ -40,6 +40,7 @@ import { api } from "../../services/api";
 import { Console } from "../Console/Console";
 import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 import { useNetworkStatus } from "../../hooks/common/useNetworkStatus";
+import { useSkipToContent } from "../../hooks/common/useSkipToContent";
 import { apiClient } from "../../services/api/createApiClient";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
@@ -93,6 +94,7 @@ export const Layout = () => {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
+  const { mainRef, handleSkip } = useSkipToContent();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -277,13 +279,13 @@ export const Layout = () => {
         }
 
         await importGraphMutation.mutateAsync(importData);
-        message.success(`导入成功: ${importData.graph_title}`);
+        message.success(t('layout.importSuccess', { title: importData.graph_title }));
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : "格式错误";
-        message.error(`导入失败: ${errorMessage}`);
+        message.error(t('layout.importFailed', { message: errorMessage }));
       }
     }
-  }, [navigate, importGraphMutation]);
+  }, [navigate, importGraphMutation, t]);
 
   const hasSetUserRef = useRef(false);
 
@@ -360,6 +362,13 @@ export const Layout = () => {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded"
+        onKeyDown={handleSkip}
+      >
+        {t('common.skipToContent')}
+      </a>
       {/* Global Drop Zone Overlay */}
       {isDragOver && (
         <div className="fixed inset-0 z-[9999] bg-primary-500/10 border-2 border-dashed border-primary-400 flex flex-col items-center justify-center backdrop-blur-sm">
@@ -430,7 +439,7 @@ export const Layout = () => {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col w-full relative">
+        <main id="main-content" ref={mainRef} tabIndex={-1} className="flex-1 overflow-y-auto custom-scrollbar flex flex-col w-full relative focus:outline-none">
           {!isFullScreenPage && (
             <header
               className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${
@@ -554,7 +563,7 @@ export const Layout = () => {
               isMinimized={isConsoleMinimized}
             />
           )}
-        </div>
+        </main>
       </div>
     </div>
   );

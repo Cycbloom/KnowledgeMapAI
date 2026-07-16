@@ -6,7 +6,7 @@ import { CodeBlock } from "../../common";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { useTheme } from "../../../hooks";
+import { useTheme, useFocusTrap, useEscapeKey } from "../../../hooks";
 
 interface ActionResultModalProps {
   isOpen: boolean;
@@ -22,12 +22,15 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({
   content,
 }) => {
   const { isDark } = useTheme();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div
+        ref={containerRef}
         className={`w-full max-w-3xl max-h-[80vh] flex flex-col rounded-xl shadow-2xl ${
           isDark ? "bg-gray-800 text-white" : "bg-white text-gray-900"
         }`}

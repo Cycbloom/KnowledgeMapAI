@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, Download, Link2 } from "lucide-react";
-import { useTheme } from "../../hooks";
+import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import {
   isElectronProduction,
   getElectronApiUrl,
@@ -21,6 +21,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
 
   const handleExportICS = async () => {
     try {
@@ -66,6 +68,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={containerRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}

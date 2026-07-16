@@ -70,13 +70,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       await api.graphs.togglePublic(graphId, newStatus);
       setIsPublic(newStatus);
       onPublicChange(newStatus);
-      frontendEventBus.publish("message_show", { 
-        type: 'success', 
-        content: newStatus ? '图谱已公开，任何人均可访问' : '图谱已设为私有' 
+      frontendEventBus.publish("message_show", {
+        type: 'success',
+        content: newStatus ? t('graphEditor.share.madePublic') : t('graphEditor.share.madePrivate')
       });
     } catch (error: unknown) {
       console.error(error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '设置失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.toggleFailed') });
     } finally {
       setLoading(false);
     }
@@ -103,16 +103,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       });
       
       if (response.ok) {
-        frontendEventBus.publish("message_show", { type: 'success', content: '邀请已发送' });
+        frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.share.inviteSent') });
         setInviteEmail('');
         fetchCollaborators();
       } else {
         const data = await response.json();
-        frontendEventBus.publish("message_show", { type: 'error', content: data.error || '邀请失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: data.error || t('graphEditor.share.inviteFailed') });
       }
     } catch (error) {
       console.error('邀请失败:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '邀请失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.inviteFailedRetry') });
     } finally {
       setInviteLoading(false);
     }
@@ -120,8 +120,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleRemoveCollaborator = async (collaboratorUserId: string) => {
     if (!await asyncConfirm({
-      title: '移除协作者',
-      message: '确定要移除此协作者吗？',
+      title: t('common.confirm.removeCollaboratorTitle'),
+      message: t('common.confirm.removeCollaboratorMessage'),
       isDangerous: true,
     })) return;
     
@@ -132,15 +132,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       });
       
       if (response.ok) {
-        frontendEventBus.publish("message_show", { type: 'success', content: '已移除协作者' });
+        frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.share.collaboratorRemoved') });
         fetchCollaborators();
       } else {
         const data = await response.json();
-        frontendEventBus.publish("message_show", { type: 'error', content: data.error || '移除失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: data.error || t('graphEditor.share.removeFailed') });
       }
     } catch (error) {
       console.error('移除失败:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '移除失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.removeFailedRetry') });
     }
   };
 
@@ -156,14 +156,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       if (response.ok) {
         const data = await response.json();
         setShareToken(data.invitationToken);
-        frontendEventBus.publish("message_show", { type: 'success', content: '分享链接已生成' });
+        frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.share.linkGenerated') });
       } else {
         const data = await response.json();
-        frontendEventBus.publish("message_show", { type: 'error', content: data.error || '生成链接失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: data.error || t('graphEditor.share.linkGenerateFailed') });
       }
     } catch (error) {
       console.error('生成链接失败:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '生成链接失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.share.linkGenerateFailedRetry') });
     }
   };
 
@@ -187,7 +187,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white">分享图谱</h2>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <button onClick={onClose} aria-label={t('common.aria.close')} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <X size={20} className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>

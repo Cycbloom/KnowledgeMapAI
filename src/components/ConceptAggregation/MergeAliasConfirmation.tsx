@@ -1,6 +1,9 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, GitMerge, CheckSquare, Square, AlertCircle } from 'lucide-react';
 import { Button } from '../common/Button';
+import { EmptyState } from '../common/EmptyState';
+import { useFocusTrap, useEscapeKey } from '@/hooks/common';
 
 interface MergeAliasConfirmationProps {
   targetTitle: string;
@@ -17,9 +20,13 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const [selectedAliases, setSelectedAliases] = useState<Set<string>>(
     new Set(suggestedAliases)
   );
+
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
+  useEscapeKey(() => onCancel(), true);
 
   const handleToggleAlias = useCallback((alias: string) => {
     setSelectedAliases((prev) => {
@@ -50,6 +57,7 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
+        ref={containerRef}
         className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -156,10 +164,10 @@ export const MergeAliasConfirmation: React.FC<MergeAliasConfirmationProps> = ({
             </div>
 
             {sourceTitles.length === 0 && (
-              <div className="flex flex-col items-center py-6 text-slate-400 dark:text-slate-500">
-                <AlertCircle size={24} className="mb-2 opacity-50" />
-                <p className="text-sm">没有可合并的概念</p>
-              </div>
+              <EmptyState
+                icon={<GitMerge className="w-12 h-12 text-gray-400" />}
+                title={t('conceptAggregation.mergeAlias.empty')}
+              />
             )}
           </div>
 

@@ -2,6 +2,7 @@ import { Node, Edge, NodeStatus } from '../../types';
 import { GraphEditorState } from './index';
 import { message } from "../../utils/messageHelper";
 import { findShortestPath } from '../../lib/graphUtils';
+import { useTranslation } from 'react-i18next';
 
 interface UseGraphInteractionProps {
   nodes: Node[];
@@ -18,8 +19,9 @@ export const useGraphInteraction = ({
   state,
   handleDeleteNode
 }: UseGraphInteractionProps) => {
-  const { 
-    isDeleteMode, 
+  const { t } = useTranslation();
+  const {
+    isDeleteMode,
     isPathfindingMode,
     pathStartNode, setPathStartNode,
     pathEndNode, setPathEndNode,
@@ -38,22 +40,22 @@ export const useGraphInteraction = ({
     }
 
     if (nodeStatus && nodeStatus[node.id]?.locked) {
-      message.warning('此节点尚未解锁！请先学习前置知识点。');
+      message.warning(`${t('graphEditor.interaction.nodeLocked')}${t('graphEditor.interaction.nodeLockedHint')}`);
       return;
     }
 
     if (isPathfindingMode) {
       if (!pathStartNode) {
         setPathStartNode(node);
-        message.info('请选择终点节点');
+        message.info(t('graphEditor.interaction.selectEndNode'));
       } else if (!pathEndNode) {
         setPathEndNode(node);
         const path = findShortestPath(nodes, edges, pathStartNode.id, node.id);
         if (path.nodes.size > 0) {
           setHighlightedPath(path);
-          message.success(`找到路径，长度: ${path.nodes.size - 1} 步`);
+          message.success(t('graphEditor.interaction.pathFound', { count: path.nodes.size - 1 }));
         } else {
-          message.error('未找到路径');
+          message.error(t('graphEditor.interaction.pathNotFound'));
         }
       } else {
         setPathStartNode(node);

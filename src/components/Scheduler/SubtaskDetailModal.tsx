@@ -17,7 +17,7 @@ import { MasteryProgressBar } from "./MasteryProgressBar";
 import { subtasksApi, type ValidTransitionsResult } from "../../services/api/modules/scheduler/subtasks";
 import { knowledgePointsApi, type TaskKnowledgePoint } from "../../services/api/modules/scheduler/knowledgePoints";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { useTheme } from "../../hooks";
+import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { formatDate as formatDateUtil } from "../../utils/formatters";
 import type {
   TaskSubtask,
@@ -57,6 +57,8 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
   onMasteryUpdate,
 }) => {
   const { isDark } = useTheme();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
   const [loading, setLoading] = useState(false);
   const [knowledgePoint, setKnowledgePoint] = useState<TaskKnowledgePoint | null>(null);
   const [validTransitions, setValidTransitions] = useState<ValidTransitionsResult | null>(null);
@@ -180,6 +182,7 @@ export const SubtaskDetailModal: React.FC<SubtaskDetailModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={containerRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}

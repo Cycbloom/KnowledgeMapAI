@@ -282,7 +282,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               {onDelete && (
                 <button
                   onClick={async () => {
-                    if (!await asyncConfirm({ title: '删除任务', message: '确定要删除这个任务吗？此操作不可撤销。', isDangerous: true })) return;
+                    if (!await asyncConfirm({ title: t('scheduler.confirmDeleteTaskTitle'), message: t('scheduler.confirmDeleteTaskMessage'), isDangerous: true })) return;
                     onDelete();
                   }}
                   className="p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"

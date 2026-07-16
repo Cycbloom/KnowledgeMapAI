@@ -13,7 +13,9 @@ import {
   Tag,
   Loader2,
   Plus,
+  FileQuestion,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   taskTemplatesApi,
   TaskTemplate,
@@ -24,6 +26,7 @@ import {
   getCategoryTextClass,
 } from "../../services/api/taskTemplates";
 import { useTheme } from "../../hooks";
+import { EmptyState } from "../common/EmptyState";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   study: <BookOpen size={16} />,
@@ -61,6 +64,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   showGrouped = false,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [categories, setCategories] = useState<TemplateCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,9 +281,10 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   <Loader2 className="animate-spin text-primary-500" size={24} />
                 </div>
               ) : filteredTemplates.length === 0 ? (
-                <div className="text-center py-10 text-slate-400">
-                  <p>没有找到模板</p>
-                </div>
+                <EmptyState
+                  icon={<FileQuestion className="w-12 h-12 text-gray-400" />}
+                  title={t('scheduler.templateSelector.empty')}
+                />
               ) : showGrouped ? (
                 <div className="p-2 space-y-4">
                   {Object.entries(groupedTemplates).map(([category, categoryTemplates]) => (

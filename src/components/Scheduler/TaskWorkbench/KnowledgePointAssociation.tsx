@@ -9,8 +9,11 @@ import {
   ChevronRight,
   Search,
   BookOpen,
+  Link,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
+import { EmptyState } from "../../common/EmptyState";
 import { TaskKnowledgePoint } from "../../../types";
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 
@@ -23,6 +26,7 @@ export const KnowledgePointAssociation: React.FC<
   KnowledgePointAssociationProps
 > = ({ taskId, className = "" }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [associations, setAssociations] = useState<TaskKnowledgePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -315,16 +319,11 @@ export const KnowledgePointAssociation: React.FC<
             ))}
 
             {associations.length === 0 && !isAdding && (
-              <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-                <BookOpen size={32} className="mx-auto mb-2 opacity-50" />
-                <p>暂无关联的知识点</p>
-                <button
-                  onClick={() => setIsAdding(true)}
-                  className="mt-2 text-sm text-primary-500 hover:text-primary-600"
-                >
-                  添加知识点关联
-                </button>
-              </div>
+              <EmptyState
+                icon={<Link size={32} />}
+                title={t('scheduler.empty.associationEmpty')}
+                action={{ label: '添加知识点关联', onClick: () => setIsAdding(true) }}
+              />
             )}
           </div>
         </>

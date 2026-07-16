@@ -17,6 +17,7 @@ import { api } from "../../services/api";
 import { getScenarioById } from "../PromptConfig/promptScenarios";
 import type { TemplateType, TemplateCategory } from "@shared/types/graph";
 import { TEMPLATE_CATEGORY_TYPES } from "@shared/types/graph";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
 interface PromptTemplate {
   id: string;
@@ -204,6 +205,9 @@ export const TemplatePromptConfigPanel: React.FC<
     onClose();
   };
 
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => handleClose(), isOpen);
+
   if (!isOpen) return null;
 
   const selectedScenario = selectedType
@@ -212,7 +216,7 @@ export const TemplatePromptConfigPanel: React.FC<
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
+      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary-600 dark:text-primary-400" />

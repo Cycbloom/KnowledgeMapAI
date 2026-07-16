@@ -62,7 +62,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (await asyncConfirm({ title: '删除', message: t("storyEditor.confirmDelete"), isDangerous: true })) {
+    if (await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t("storyEditor.confirmDelete"), isDangerous: true })) {
       onDelete(id);
     }
   };

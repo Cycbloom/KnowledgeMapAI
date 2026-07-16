@@ -65,5 +65,8 @@
   "dropZone": {
     "title": "Drop files to create graph",
     "subtitle": "Supports JSON, Markdown, OPML formats"
-  }
+  },
+  "importSuccess": "Import successful: {{title}}",
+  "importFailed": "Import failed: {{message}}",
+  "skipToMain": "Skip to main content"
 }

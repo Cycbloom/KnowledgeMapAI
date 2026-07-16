@@ -25,6 +25,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
 import { api } from '../../services/api';
+import { Skeleton } from "../common";
 
 interface TaskAnalyticsResponse {
   overview: {
@@ -714,8 +715,17 @@ export const TaskStatsTab: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      <div className="space-y-6 py-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-gray-200 dark:border-slate-700 p-4">
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }

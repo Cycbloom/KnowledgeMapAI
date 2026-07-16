@@ -532,6 +532,8 @@
   },
   "batch": {
     "selectNodes": "请先选择节点",
+    "deleteTitle": "批量删除",
+    "deleteConfirm": "确定要删除选中的 {{count}} 个知识点吗？此操作无法撤销。",
     "deleteSuccess": "已删除 {{count}} 个节点",
     "deleteFailed": "批量删除失败，请重试",
     "expandSuccess": "已提交 {{count}} 个节点的扩展任务",
@@ -578,6 +580,23 @@
   },
   "path": {
     "title": "学习路径",
-    "aiDriven": "AI 驱动"
+    "aiDriven": "AI 驱动",
+    "nodeAdded": "节点已添加到路径",
+    "nodeAddFailed": "添加节点失败",
+    "nodeRemoved": "节点已从路径中移除",
+    "nodeRemoveFailed": "移除节点失败",
+    "nodeUpdated": "状态已更新",
+    "nodeUpdateFailed": "更新状态失败",
+    "pathSaved": "顺序已保存",
+    "pathSaveFailed": "保存顺序失败",
+    "pathPublished": "学习路径已发布",
+    "pathPublishFailed": "发布学习路径失败",
+    "generated": "AI 学习路径已生成！",
+    "generateFailedNoNodes": "无法生成学习路径，请检查图谱是否有节点",
+    "generateFailed": "生成学习路径失败",
+    "removeNodeConfirm": {
+      "title": "移除节点",
+      "message": "确定要将该节点从学习路径中移除吗？"
+    }
   }
 }

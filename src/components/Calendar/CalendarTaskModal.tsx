@@ -2,12 +2,22 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, Calendar, Clock, Tag } from "lucide-react";
-import { useTheme } from "../../hooks";
+import { useTheme, useFocusTrap, useEscapeKey, useFormDraft } from "../../hooks";
+import { ConfirmationModal } from "../common/ConfirmationModal";
 
 interface QuickTaskFormData {
   title: string;
   description: string;
   deadline: Date;
+  estimated_duration: number;
+  priority: number;
+  tags: string[];
+}
+
+interface CalendarTaskDraft {
+  title: string;
+  description: string;
+  deadline: string;
   estimated_duration: number;
   priority: number;
   tags: string[];
@@ -38,14 +48,26 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
   const [saving, setSaving] = useState(false);
-  const [taskForm, setTaskForm] = useState<QuickTaskFormData>({
-    title: "",
-    description: "",
-    deadline: defaultDate,
-    estimated_duration: 30,
-    priority: 2,
-    tags: [],
+  const {
+    value: taskForm,
+    setValue: setTaskForm,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<CalendarTaskDraft>({
+    key: 'calendarTaskModal_draft',
+    initialValue: {
+      title: "",
+      description: "",
+      deadline: defaultDate.toISOString().slice(0, 16),
+      estimated_duration: 30,
+      priority: 2,
+      tags: [],
+    },
   });
   const [newTag, setNewTag] = useState("");
 
@@ -55,7 +77,11 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
     }
     setSaving(true);
     try {
-      await onCreateTask(taskForm);
+      await onCreateTask({
+        ...taskForm,
+        deadline: new Date(taskForm.deadline),
+      });
+      clearDraft();
       onClose();
     } finally {
       setSaving(false);
@@ -91,6 +117,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={containerRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -172,11 +199,11 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                 </label>
                 <input
                   type="datetime-local"
-                  value={taskForm.deadline.toISOString().slice(0, 16)}
+                  value={taskForm.deadline}
                   onChange={(e) =>
                     setTaskForm({
                       ...taskForm,
-                      deadline: new Date(e.target.value),
+                      deadline: e.target.value,
                     })
                   }
                   className={`w-full px-3 py-2 rounded-lg border ${
@@ -290,6 +317,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                         {tag}
                         <button
                           onClick={() => removeTag(tag)}
+                          aria-label={t('common.aria.close')}
                           className="hover:text-red-500 p-1 min-h-[32px] min-w-[32px]"
                         >
                           <X size={14} />
@@ -356,6 +384,16 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
             </div>
           </motion.div>
         </motion.div>
+      )}
+      {isOpen && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t('common.restoreDraftTitle')}
+          message={t('common.restoreDraftMessage')}
+          isDangerous={false}
+        />
       )}
     </AnimatePresence>
   );

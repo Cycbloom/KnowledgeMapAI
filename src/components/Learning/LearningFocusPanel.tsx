@@ -395,6 +395,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 
               <motion.button
                 onClick={handleClose}
+                aria-label={t('common.aria.close')}
                 className="p-2 rounded-lg bg-slate-200 hover:bg-red-100 text-slate-600 hover:text-red-500 dark:bg-slate-700 dark:hover:bg-red-500/30 dark:text-slate-300 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -724,6 +725,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 />
                                 <button
                                   onClick={() => removeNoise(noise.type)}
+                                  aria-label={t('common.aria.close')}
                                   className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-colors"
                                 >
                                   <X size={14} />

@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Check, ChevronDown, ChevronRight, Layers, Loader2, Network } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
+import { EmptyState } from '../common/EmptyState';
 import { useGraphs, useGraphData } from '../../hooks/queries';
 import type { Node, Graph } from '../../types';
 
@@ -41,6 +43,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
   onChange,
   onGraphChange,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [selectedGraphId, setSelectedGraphId] = useState<string>(initialGraphId || '');
   const [searchTerm, setSearchTerm] = useState('');
@@ -364,10 +367,10 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
               ) : treeData.length > 0 ? (
                 <div className="space-y-0.5">{treeData.map((node) => renderTreeNode(node))}</div>
               ) : (
-                <div className={`text-center py-8 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                  <Network size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>该图谱暂无知识点</p>
-                </div>
+                <EmptyState
+                  icon={<Network size={32} />}
+                  title={t('quiz.empty.noKnowledgePoints')}
+                />
               )}
             </div>
           </div>

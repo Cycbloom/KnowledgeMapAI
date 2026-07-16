@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles, Save, Variable } from "lucide-react";
 import { api } from "../../../services/api";
+import { useAutoSave, useBeforeUnload } from "../../../hooks";
 import { message } from "@/utils/messageHelper";
 
 interface PromptEditorProps {
@@ -26,10 +27,22 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   const [showOptimizeInput, setShowOptimizeInput] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const { status: autoSaveStatus } = useAutoSave<string>({
+    value: content,
+    onSave: async (v) => {
+      await onSave(v);
+    },
+    delay: 3000,
+    enabled: true,
+  });
+
   // Update content if initialContent changes
   useEffect(() => {
     setContent(initialContent);
   }, [initialContent]);
+
+  // Warn user before leaving when there are unsaved changes
+  useBeforeUnload(content !== initialContent, t("common.unsavedChanges"));
 
   const handleInsertVariable = (variable: string) => {
     const textarea = document.getElementById(
@@ -178,7 +191,14 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
 
       {/* Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {autoSaveStatus !== "idle" && (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {autoSaveStatus === "saving" && t("common.saving")}
+              {autoSaveStatus === "saved" && t("common.saved")}
+              {autoSaveStatus === "error" && t("common.saveFailed")}
+            </span>
+          )}
           {!showOptimizeInput && (
             <button
               onClick={() => setShowOptimizeInput(true)}

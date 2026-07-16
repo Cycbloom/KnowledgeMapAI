@@ -51,6 +51,9 @@ import textToGraph from './textToGraph.json';
 import collaborators from './collaborators.json';
 import notifications from './notifications.json';
 import notes from './notes.json';
+import graphAI from './graphAI.json';
+import quiz from './quiz.json';
+import conceptAggregation from './conceptAggregation.json';
 
 const zhCN = {
   dashboard,
@@ -106,6 +109,9 @@ const zhCN = {
   collaborators,
   notifications,
   notes,
+  graphAI,
+  quiz,
+  conceptAggregation,
 };
 
 export default zhCN;

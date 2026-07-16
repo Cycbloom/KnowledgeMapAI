@@ -17,12 +17,46 @@ import { useTranslation } from "react-i18next";
 import { storyCreationHttpApi } from "../../../services/api/storyCreation";
 import { message } from "../../../utils/messageHelper";
 import type { StoryCharacter } from "../../../services/api/storyCreation";
+import { useFormDraft, useBeforeUnload } from "../../../hooks";
+import { ConfirmationModal } from "../../common/ConfirmationModal";
+
+interface CharacterDraft {
+  name: string;
+  roleType: StoryCharacter["role_type"];
+  archetype: string;
+  appearance: string;
+  age: string;
+  gender: string;
+  motivation: string;
+  fear: string;
+  desire: string;
+  flaw: string;
+  backstory: string;
+  arcStart: string;
+  arcEnd: string;
+}
 
 interface CharacterEditorProps {
   graphId: string;
   character: StoryCharacter;
   onSave: (updatedCharacter: StoryCharacter) => void;
 }
+
+const getInitialCharacterData = (character: StoryCharacter): CharacterDraft => ({
+  name: character.name,
+  roleType: character.role_type,
+  archetype: character.archetype || "",
+  appearance: character.appearance || "",
+  age: character.age || "",
+  gender: character.gender || "",
+  motivation: character.motivation || "",
+  fear: character.fear || "",
+  desire: character.desire || "",
+  flaw: character.flaw || "",
+  backstory: character.backstory || "",
+  arcStart: character.arc_start || "",
+  arcEnd: character.arc_end || "",
+});
 
 export const CharacterEditor: React.FC<CharacterEditorProps> = ({
   graphId,
@@ -33,39 +67,21 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
 
   const [saving, setSaving] = useState(false);
 
-  const [name, setName] = useState(character.name);
-  const [roleType, setRoleType] = useState<StoryCharacter["role_type"]>(
-    character.role_type,
-  );
-  const [archetype, setArchetype] = useState(character.archetype || "");
-  const [appearance, setAppearance] = useState(character.appearance || "");
-  const [age, setAge] = useState(character.age || "");
-  const [gender, setGender] = useState(character.gender || "");
-
-  const [motivation, setMotivation] = useState(character.motivation || "");
-  const [fear, setFear] = useState(character.fear || "");
-  const [desire, setDesire] = useState(character.desire || "");
-  const [flaw, setFlaw] = useState(character.flaw || "");
-
-  const [backstory, setBackstory] = useState(character.backstory || "");
-  const [arcStart, setArcStart] = useState(character.arc_start || "");
-  const [arcEnd, setArcEnd] = useState(character.arc_end || "");
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<CharacterDraft>({
+    key: "character_editor_draft",
+    initialValue: getInitialCharacterData(character),
+  });
 
   // Reset form when character changes
   useEffect(() => {
-    setName(character.name);
-    setRoleType(character.role_type);
-    setArchetype(character.archetype || "");
-    setAppearance(character.appearance || "");
-    setAge(character.age || "");
-    setGender(character.gender || "");
-    setMotivation(character.motivation || "");
-    setFear(character.fear || "");
-    setDesire(character.desire || "");
-    setFlaw(character.flaw || "");
-    setBackstory(character.backstory || "");
-    setArcStart(character.arc_start || "");
-    setArcEnd(character.arc_end || "");
+    setFormData(getInitialCharacterData(character));
   }, [
     character.id,
     character.name,
@@ -81,7 +97,13 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
     character.backstory,
     character.arc_start,
     character.arc_end,
+    setFormData,
   ]);
+
+  // Warn user before leaving when there are unsaved changes
+  const isDirty =
+    JSON.stringify(formData) !== JSON.stringify(getInitialCharacterData(character));
+  useBeforeUnload(isDirty, t("common.unsavedChanges"));
 
   const handleSave = async () => {
     try {
@@ -90,22 +112,23 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
         graphId,
         character.id,
         {
-          name,
-          role_type: roleType,
-          archetype: archetype || null,
-          appearance: appearance || null,
-          age: age || null,
-          gender: gender || null,
-          motivation: motivation || null,
-          fear: fear || null,
-          desire: desire || null,
-          flaw: flaw || null,
-          backstory: backstory || null,
-          arc_start: arcStart || null,
-          arc_end: arcEnd || null,
+          name: formData.name,
+          role_type: formData.roleType,
+          archetype: formData.archetype || null,
+          appearance: formData.appearance || null,
+          age: formData.age || null,
+          gender: formData.gender || null,
+          motivation: formData.motivation || null,
+          fear: formData.fear || null,
+          desire: formData.desire || null,
+          flaw: formData.flaw || null,
+          backstory: formData.backstory || null,
+          arc_start: formData.arcStart || null,
+          arc_end: formData.arcEnd || null,
         },
       );
       onSave(updatedCharacter);
+      clearDraft();
       message.success(t("storyEditor.characterSaved"));
     } catch (error) {
       console.error("Failed to save character:", error);
@@ -154,8 +177,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               placeholder={t("storyEditor.namePlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
@@ -196,10 +221,13 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
                 <button
                   key={role.value}
                   onClick={() =>
-                    setRoleType(role.value as StoryCharacter["role_type"])
+                    setFormData({
+                      ...formData,
+                      roleType: role.value as StoryCharacter["role_type"],
+                    })
                   }
                   className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                    roleType === role.value
+                    formData.roleType === role.value
                       ? `${role.color} ring-2 ring-offset-1`
                       : "bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300"
                   }`}
@@ -217,8 +245,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
             </label>
             <input
               type="text"
-              value={archetype}
-              onChange={(e) => setArchetype(e.target.value)}
+              value={formData.archetype}
+              onChange={(e) =>
+                setFormData({ ...formData, archetype: e.target.value })
+              }
               placeholder={t("storyEditor.archetypePlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
@@ -232,8 +262,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               </label>
               <input
                 type="text"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
+                value={formData.age}
+                onChange={(e) =>
+                  setFormData({ ...formData, age: e.target.value })
+                }
                 placeholder="25"
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -244,8 +276,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               </label>
               <input
                 type="text"
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
+                value={formData.gender}
+                onChange={(e) =>
+                  setFormData({ ...formData, gender: e.target.value })
+                }
                 placeholder={t("storyEditor.genderPlaceholder")}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -256,8 +290,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               </label>
               <input
                 type="text"
-                value={appearance}
-                onChange={(e) => setAppearance(e.target.value)}
+                value={formData.appearance}
+                onChange={(e) =>
+                  setFormData({ ...formData, appearance: e.target.value })
+                }
                 placeholder={t("storyEditor.appearancePlaceholder")}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -279,8 +315,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               {t("storyEditor.motivation")}
             </label>
             <textarea
-              value={motivation}
-              onChange={(e) => setMotivation(e.target.value)}
+              value={formData.motivation}
+              onChange={(e) =>
+                setFormData({ ...formData, motivation: e.target.value })
+              }
               placeholder={t("storyEditor.motivationPlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               rows={2}
@@ -294,8 +332,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               {t("storyEditor.fear")}
             </label>
             <textarea
-              value={fear}
-              onChange={(e) => setFear(e.target.value)}
+              value={formData.fear}
+              onChange={(e) =>
+                setFormData({ ...formData, fear: e.target.value })
+              }
               placeholder={t("storyEditor.fearPlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               rows={2}
@@ -309,8 +349,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               {t("storyEditor.desire")}
             </label>
             <textarea
-              value={desire}
-              onChange={(e) => setDesire(e.target.value)}
+              value={formData.desire}
+              onChange={(e) =>
+                setFormData({ ...formData, desire: e.target.value })
+              }
               placeholder={t("storyEditor.desirePlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               rows={2}
@@ -324,8 +366,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               {t("storyEditor.flaw")}
             </label>
             <textarea
-              value={flaw}
-              onChange={(e) => setFlaw(e.target.value)}
+              value={formData.flaw}
+              onChange={(e) =>
+                setFormData({ ...formData, flaw: e.target.value })
+              }
               placeholder={t("storyEditor.flawPlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               rows={2}
@@ -340,8 +384,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
             {t("storyEditor.backstory")}
           </h4>
           <textarea
-            value={backstory}
-            onChange={(e) => setBackstory(e.target.value)}
+            value={formData.backstory}
+            onChange={(e) =>
+              setFormData({ ...formData, backstory: e.target.value })
+            }
             placeholder={t("storyEditor.backstoryPlaceholder")}
             className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             rows={4}
@@ -362,8 +408,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               </label>
               <input
                 type="text"
-                value={arcStart}
-                onChange={(e) => setArcStart(e.target.value)}
+                value={formData.arcStart}
+                onChange={(e) =>
+                  setFormData({ ...formData, arcStart: e.target.value })
+                }
                 placeholder={t("storyEditor.arcStartPlaceholder")}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -374,8 +422,10 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
               </label>
               <input
                 type="text"
-                value={arcEnd}
-                onChange={(e) => setArcEnd(e.target.value)}
+                value={formData.arcEnd}
+                onChange={(e) =>
+                  setFormData({ ...formData, arcEnd: e.target.value })
+                }
                 placeholder={t("storyEditor.arcEndPlaceholder")}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -412,6 +462,14 @@ export const CharacterEditor: React.FC<CharacterEditorProps> = ({
           </div>
         </section>
       </div>
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        isDangerous={false}
+      />
     </div>
   );
 };

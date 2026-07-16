@@ -519,7 +519,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
               <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-between">
                 <button
                   onClick={async () => {
-                    if (await asyncConfirm({ title: '删除进度计划', message: '确定要删除这个进度计划吗？', isDangerous: true })) {
+                    if (await asyncConfirm({ title: t('common.confirm.deleteProgressTitle'), message: t('common.confirm.deleteProgressMessage'), isDangerous: true })) {
                       handleUpdatePlan(selectedPlan.id, { status: "skipped" });
                     }
                   }}

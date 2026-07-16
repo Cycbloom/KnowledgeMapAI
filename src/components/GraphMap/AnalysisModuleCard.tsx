@@ -1,10 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { 
-  Check, 
-  Loader2, 
-  AlertCircle, 
-  Clock, 
+import {
+  Check,
+  Loader2,
+  AlertCircle,
+  Clock,
   Eye,
   GitBranch,
   Layers,
@@ -55,6 +56,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
   onEditPrompt,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const Icon = moduleIcons[module.id];
   const colors = moduleColors[module.id];
   const isLoading = module.status === 'loading';
@@ -104,7 +106,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
                 }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
                 title="编辑提示词"
-                aria-label="编辑提示词"
+                aria-label={t('common.aria.editPrompt')}
               >
                 <Settings size={16} />
               </button>
@@ -161,7 +163,7 @@ export const AnalysisModuleCard: React.FC<AnalysisModuleCardProps> = ({
               ${colors.bg} hover:opacity-80
             `}
             title="查看结果"
-            aria-label="查看结果"
+            aria-label={t('common.aria.viewResult')}
           >
             <Eye className={`w-4 h-4 ${colors.icon}`} />
           </button>

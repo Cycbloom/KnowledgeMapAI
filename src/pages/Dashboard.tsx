@@ -21,6 +21,7 @@ import { formatDate } from "@/utils/formatters";
 import { ConfirmationModal, SkeletonCard } from "../components/common";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { useDashboardFilters } from "../hooks/useDashboardFilters";
 import { useRecentGraphs } from "../hooks/useRecentGraphs";
 import {
@@ -65,6 +66,9 @@ export const Dashboard = () => {
   });
 
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
+
+  const aiGeneratorRef = useFocusTrap<HTMLDivElement>({ enabled: isAIGeneratorOpen });
+  useEscapeKey(() => setIsAIGeneratorOpen(false), isAIGeneratorOpen);
 
   const [contextMenuGraph, setContextMenuGraph] = useState<Graph | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{
@@ -160,7 +164,7 @@ export const Dashboard = () => {
       },
       onError: (err: unknown) => {
         console.error(err);
-        const errorMessage = err instanceof Error ? err.message : "批量删除失败";
+        const errorMessage = err instanceof Error ? err.message : t("dashboard.batchDeleteFailed");
         message.error(errorMessage);
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
       },
@@ -192,7 +196,7 @@ export const Dashboard = () => {
         },
         onError: (err: unknown) => {
           console.error(err);
-          const errorMessage = err instanceof Error ? err.message : "删除失败";
+          const errorMessage = err instanceof Error ? err.message : t("dashboard.deleteFailed");
           message.error(errorMessage);
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
@@ -207,11 +211,11 @@ export const Dashboard = () => {
       { id, is_favorite: !currentFavorite },
       {
         onSuccess: () => {
-          message.success(currentFavorite ? "已取消收藏" : "收藏成功");
+          message.success(currentFavorite ? t("dashboard.favoriteRemoved") : t("dashboard.favoriteAdded"));
         },
         onError: (err: unknown) => {
           console.error(err);
-          const errorMessage = err instanceof Error ? err.message : "操作失败";
+          const errorMessage = err instanceof Error ? err.message : t("dashboard.operationFailed");
           message.error(errorMessage);
         },
       },
@@ -261,11 +265,11 @@ export const Dashboard = () => {
         }
 
         await importGraphMutation.mutateAsync(importData);
-        message.success("导入成功!");
+        message.success(t("dashboard.importSuccess"));
       } catch (err: unknown) {
         console.error(err);
-        const errorMessage = err instanceof Error ? err.message : "格式错误";
-        message.error(`导入失败: ${errorMessage}`);
+        const errorMessage = err instanceof Error ? err.message : t("dashboard.formatError");
+        message.error(t("dashboard.importFailed", { message: errorMessage }));
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
@@ -428,6 +432,7 @@ export const Dashboard = () => {
             className={`fixed inset-0 z-50 flex ${isMobile ? "" : "items-center justify-center"} p-4 bg-black/50 backdrop-blur-sm`}
           >
             <div
+              ref={aiGeneratorRef}
               className={`w-full ${isMobile ? "h-full" : "max-w-2xl max-h-[90vh]"} overflow-y-auto ${isMobile ? "rounded-none" : "rounded-2xl"} shadow-2xl`}
             >
               <AutoGraphGenerator
@@ -438,7 +443,7 @@ export const Dashboard = () => {
                   queryClient.invalidateQueries({
                     queryKey: ["dashboardStats"],
                   });
-                  message.success(`成功生成 ${nodes.length} 个节点！`);
+                  message.success(t("dashboard.nodesGenerated", { count: nodes.length }));
                 }}
               />
             </div>
@@ -632,7 +637,7 @@ export const Dashboard = () => {
 
         <ConfirmationModal
           isOpen={deleteConfirm.isOpen}
-          title="删除图谱"
+          title={t("dashboard.deleteGraphTitle")}
           message={`确定要删除图谱 "${deleteConfirm.title}" 吗？此操作将永久删除所有相关的节点和关系，无法撤销。`}
           onConfirm={handleConfirmDelete}
           onClose={() =>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { PieChart, Tag } from "lucide-react";
+import { PieChart, BarChart3 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from '../../services/api';
+import { EmptyState } from '../common/EmptyState';
 import type {UserTask} from '@shared/types';
 
 interface TaskDistributionProps {
@@ -32,6 +34,7 @@ const TAG_COLORS = [
 export const TaskDistribution: React.FC<TaskDistributionProps> = ({
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -176,12 +179,10 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
         </div>
       ) : distribution.length === 0 ? (
-        <div className="h-48 flex items-center justify-center text-slate-400">
-          <div className="text-center">
-            <Tag size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">暂无任务数据</p>
-          </div>
-        </div>
+        <EmptyState
+          icon={<BarChart3 size={32} />}
+          title={t('scheduler.empty.distributionEmpty')}
+        />
       ) : (
         <div className="flex items-center gap-6">
           <div className="flex-shrink-0">{renderPieChart()}</div>

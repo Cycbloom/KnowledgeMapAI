@@ -11,7 +11,7 @@ import {
   Settings,
   ArrowLeft,
 } from 'lucide-react';
-import { useTheme } from "../../hooks";
+import { useTheme, useFormDraft } from "../../hooks";
 import {
   useCreateQuizSetMutation,
   useGenerateQuizMutation,
@@ -30,6 +30,7 @@ import type { QuizSetConfig } from '@shared/types/quiz';
 import type { User } from '@shared/types/user';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { ModalShell } from '../common';
+import { ConfirmationModal } from '../common/ConfirmationModal';
 
 interface LearningPathStageNode {
   knowledge_point_id?: string;
@@ -63,6 +64,16 @@ const defaultConfig: QuizSetConfig = {
   },
 };
 
+interface QuizDraft {
+  selectedGraphId: string | null;
+  selectedPathId: string | null;
+  title: string;
+  description: string;
+  config: QuizSetConfig;
+  selectedKnowledgePoints: string[];
+  customPrompt: string;
+}
+
 export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   open,
   onClose,
@@ -74,13 +85,36 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   const { token } = useStore();
   const { data: userData } = useUser(!!token);
 
-  const [selectedGraphId, setSelectedGraphId] = useState<string | null>(initialGraphId || null);
-  const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [config, setConfig] = useState<QuizSetConfig>(defaultConfig);
-  const [selectedKnowledgePoints, setSelectedKnowledgePoints] = useState<string[]>([]);
-  const [customPrompt, setCustomPrompt] = useState('');
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<QuizDraft>({
+    key: "quiz_generation_draft",
+    initialValue: {
+      selectedGraphId: initialGraphId || null,
+      selectedPathId: null,
+      title: "",
+      description: "",
+      config: defaultConfig,
+      selectedKnowledgePoints: [],
+      customPrompt: "",
+    },
+  });
+
+  const {
+    selectedGraphId,
+    selectedPathId,
+    title,
+    description,
+    config,
+    selectedKnowledgePoints,
+    customPrompt,
+  } = formData;
+
   const [taskId, setTaskId] = useState<string | null>(null);
   const [createdQuizSetId, setCreatedQuizSetId] = useState<string | null>(null);
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
@@ -116,27 +150,29 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   }, [title, config.cardTypes, selectedKnowledgePoints, totalQuestions]);
 
   const resetForm = useCallback(() => {
-    setSelectedGraphId(initialGraphId || null);
-    setSelectedPathId(null);
-    setTitle('');
-    setDescription('');
-    setConfig(defaultConfig);
-    setSelectedKnowledgePoints([]);
-    setCustomPrompt('');
+    setFormData({
+      selectedGraphId: initialGraphId || null,
+      selectedPathId: null,
+      title: "",
+      description: "",
+      config: defaultConfig,
+      selectedKnowledgePoints: [],
+      customPrompt: "",
+    });
     setTaskId(null);
     setCreatedQuizSetId(null);
     setIsGeneratingTitle(false);
     setShowPromptConfig(false);
-  }, [initialGraphId]);
+  }, [initialGraphId, setFormData]);
 
   const handleClose = useCallback(async () => {
     if (isGenerating) {
-      if (!await asyncConfirm({ title: '取消生成', message: '测验正在生成中，确定要取消吗？' })) {
+      if (!await asyncConfirm({ title: t('common.confirm.cancelGenerateTitle'), message: t('common.confirm.cancelGenerateMessage') })) {
         return;
       }
     }
     onClose();
-  }, [isGenerating, onClose]);
+  }, [isGenerating, onClose, t]);
 
   useEffect(() => {
     if (!open) {
@@ -146,37 +182,46 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
 
   useEffect(() => {
     if (open && promptConfigs?.quiz_generation) {
-      setCustomPrompt(promptConfigs.quiz_generation);
+      setFormData(prev => ({ ...prev, customPrompt: promptConfigs.quiz_generation }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, promptConfigs?.quiz_generation]);
 
   useEffect(() => {
     if (progress?.status === 'completed' && createdQuizSetId) {
-      frontendEventBus.publish("message_show", { type: 'success', content: '测验生成完成！' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('quiz.generation.completed') });
+      clearDraft();
       onComplete(createdQuizSetId);
       handleClose();
     } else if (progress?.status === 'failed') {
-      frontendEventBus.publish("message_show", { type: 'error', content: progress.error || '测验生成失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: progress.error || t('quiz.generation.failed') });
       setTaskId(null);
     }
-  }, [progress, createdQuizSetId, onComplete, handleClose]);
+  }, [progress, createdQuizSetId, onComplete, handleClose, t, clearDraft]);
 
   const handleGraphChange = (graphId: string) => {
-    setSelectedGraphId(graphId || null);
-    setSelectedPathId(null);
-    setSelectedKnowledgePoints([]);
+    setFormData(prev => ({
+      ...prev,
+      selectedGraphId: graphId || null,
+      selectedPathId: null,
+      selectedKnowledgePoints: [],
+    }));
   };
 
   const handlePathSelect = (pathId: string | null) => {
-    setSelectedPathId(pathId);
+    setFormData(prev => ({ ...prev, selectedPathId: pathId }));
   };
 
   const handleConfigChange = (partialConfig: Partial<QuizSetConfig>) => {
-    setConfig((prev) => ({ ...prev, ...partialConfig }));
+    setFormData(prev => ({ ...prev, config: { ...prev.config, ...partialConfig } }));
   };
 
   const handleTitleChange = (newTitle: string) => {
-    setTitle(newTitle);
+    setFormData(prev => ({ ...prev, title: newTitle }));
+  };
+
+  const handleKnowledgePointsChange = (points: string[]) => {
+    setFormData(prev => ({ ...prev, selectedKnowledgePoints: points }));
   };
 
   const handleGenerate = async () => {
@@ -206,10 +251,10 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       });
 
       setTaskId(result.task_id);
-      frontendEventBus.publish("message_show", { type: 'info', content: '测验生成任务已开始...' });
+      frontendEventBus.publish("message_show", { type: 'info', content: t('quiz.generation.started') });
     } catch (error: unknown) {
       console.error('Failed to generate quiz:', error);
-      const message = error instanceof Error ? error.message : "创建测验失败";
+      const message = error instanceof Error ? error.message : t('quiz.generation.createFailed');
       frontendEventBus.publish("message_show", { type: 'error', content: message });
     }
   };
@@ -330,9 +375,9 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                           onClick={() => {
                             handlePathSelect(isSelected ? null : stage.id || null);
                             if (!isSelected) {
-                              setSelectedKnowledgePoints(stageKnowledgePoints);
+                              handleKnowledgePointsChange(stageKnowledgePoints);
                             } else {
-                              setSelectedKnowledgePoints([]);
+                              handleKnowledgePointsChange([]);
                             }
                           }}
                           disabled={isGenerating}
@@ -379,7 +424,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                 <KnowledgePointSelector
                   graphId={selectedGraphId || undefined}
                   selectedIds={selectedKnowledgePoints}
-                  onChange={setSelectedKnowledgePoints}
+                  onChange={handleKnowledgePointsChange}
                   onGraphChange={handleGraphChange}
                 />
               </div>
@@ -431,7 +476,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                   </label>
                   <textarea
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="测验的简要描述..."
                     disabled={isGenerating}
                     rows={2}
@@ -567,6 +612,14 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
             </div>
           </>
         )}
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        isDangerous={false}
+      />
     </ModalShell>
   );
 };

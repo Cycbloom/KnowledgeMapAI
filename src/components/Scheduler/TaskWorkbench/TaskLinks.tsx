@@ -83,7 +83,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
 
   const handleAddLink = async () => {
     if (!newLink.url.trim()) {
-      messageHelper.error("请输入链接地址");
+      messageHelper.error(t('scheduler.taskWorkbench.linkUrlRequired'));
       return;
     }
 
@@ -98,24 +98,24 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
         setLinks([...links, response.data]);
         setNewLink({ link_type: "web", title: "", url: "", description: "" });
         setIsAdding(false);
-        messageHelper.success("链接已添加");
+        messageHelper.success(t('scheduler.taskWorkbench.linkAdded'));
       }
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "添加链接失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.linkAddFailed');
       messageHelper.error(errMsg);
     }
   };
 
   const handleDeleteLink = async (linkId: string) => {
-    if (!await asyncConfirm({ title: '删除链接', message: '确定要删除这个链接吗？', isDangerous: true })) return;
+    if (!await asyncConfirm({ title: t('common.confirm.deleteLinkTitle'), message: t('common.confirm.deleteLinkMessage'), isDangerous: true })) return;
     try {
       const response = await api.scheduler.deleteLink(taskId, linkId);
       if (response.success) {
         setLinks(links.filter((l) => l.id !== linkId));
-        messageHelper.success("链接已删除");
+        messageHelper.success(t('scheduler.taskWorkbench.linkDeleted'));
       }
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "删除链接失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.linkDeleteFailed');
       messageHelper.error(errMsg);
     }
   };

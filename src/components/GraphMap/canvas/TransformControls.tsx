@@ -1,4 +1,5 @@
 import React, { memo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 interface TransformControlsProps {
   fromGraphId?: string | null;
@@ -31,6 +32,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
   graphsCount,
   relationsCount,
 }) => {
+  const { t } = useTranslation();
   const handleReturnClick = useCallback(() => {
     onReturnToGraph?.();
   }, [onReturnToGraph]);
@@ -101,7 +103,8 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
           <button
             onClick={handleZoomInClick}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-            title="放大"
+            title={t('common.aria.zoomIn')}
+            aria-label={t('common.aria.zoomIn')}
           >
             <svg
               width="20"
@@ -122,7 +125,8 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
           <button
             onClick={handleZoomOutClick}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-            title="缩小"
+            title={t('common.aria.zoomOut')}
+            aria-label={t('common.aria.zoomOut')}
           >
             <svg
               width="20"
@@ -143,7 +147,8 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
           <button
             onClick={handleResetClick}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-            title="重置视角"
+            title={t('common.aria.resetView')}
+            aria-label={t('common.aria.resetView')}
           >
             <svg
               width="20"

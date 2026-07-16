@@ -18,6 +18,15 @@ import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { EmptyState } from "../../common/EmptyState";
 import { LearningStateBadge } from "../LearningStateBadge";
 import { MasteryProgressBar } from "../MasteryProgressBar";
+import { useFormDraft } from "../../../hooks";
+import { ConfirmationModal } from "../../common/ConfirmationModal";
+
+interface SubtaskDraft {
+  title: string;
+  description: string;
+  estimated_duration: number | undefined;
+  knowledge_point_id: string;
+}
 
 interface SubtaskListProps {
   taskId: string;
@@ -41,11 +50,21 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const { t } = useTranslation();
-  const [newSubtask, setNewSubtask] = useState({
-    title: "",
-    description: "",
-    estimated_duration: undefined as number | undefined,
-    knowledge_point_id: defaultKnowledgePointId || "",
+  const {
+    value: newSubtask,
+    setValue: setNewSubtask,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<SubtaskDraft>({
+    key: 'subtaskList_draft',
+    initialValue: {
+      title: "",
+      description: "",
+      estimated_duration: undefined,
+      knowledge_point_id: defaultKnowledgePointId || "",
+    },
   });
 
   useEffect(() => {
@@ -84,12 +103,12 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const handleAddSubtask = async () => {
     if (!newSubtask.title.trim()) {
-      messageHelper.error("请输入子任务标题");
+      messageHelper.error(t('scheduler.taskWorkbench.subtaskTitleRequired'));
       return;
     }
 
     if (!newSubtask.knowledge_point_id) {
-      messageHelper.error("请选择关联的知识点");
+      messageHelper.error(t('scheduler.taskWorkbench.subtaskKnowledgePointRequired'));
       return;
     }
 
@@ -102,6 +121,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
       });
       if (response.success) {
         setSubtasks([...subtasks, response.data]);
+        clearDraft();
         setNewSubtask({
           title: "",
           description: "",
@@ -109,10 +129,10 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           knowledge_point_id: defaultKnowledgePointId || "",
         });
         setIsAdding(false);
-        messageHelper.success("子任务已添加");
+        messageHelper.success(t('scheduler.taskWorkbench.subtaskAdded'));
       }
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "添加子任务失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskAddFailed');
       messageHelper.error(errMsg);
     }
   };
@@ -129,21 +149,21 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         );
       }
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "更新状态失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskUpdateFailed');
       messageHelper.error(errMsg);
     }
   };
 
   const handleDeleteSubtask = async (subtaskId: string) => {
-    if (!await asyncConfirm({ title: '删除子任务', message: '确定要删除这个子任务吗？', isDangerous: true })) return;
+    if (!await asyncConfirm({ title: t('common.confirm.deleteSubtaskTitle'), message: t('common.confirm.deleteSubtaskMessage'), isDangerous: true })) return;
     try {
       const response = await api.scheduler.deleteSubtask(taskId, subtaskId);
       if (response.success) {
         setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
-        messageHelper.success("子任务已删除");
+        messageHelper.success(t('scheduler.taskWorkbench.subtaskDeleted'));
       }
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "删除子任务失败";
+      const errMsg = error instanceof Error ? error.message : t('scheduler.taskWorkbench.subtaskDeleteFailed');
       messageHelper.error(errMsg);
     }
   };
@@ -388,6 +408,16 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
             )}
           </div>
         </>
+      )}
+      {isAdding && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t('common.restoreDraftTitle')}
+          message={t('common.restoreDraftMessage')}
+          isDangerous={false}
+        />
       )}
     </div>
   );

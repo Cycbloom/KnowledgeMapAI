@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, Sun, Moon, 
+import { useTranslation } from 'react-i18next';
+import {
+  ArrowLeft, Sun, Moon,
   Download, List, Layers, Activity, FileJson, Image
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
@@ -49,11 +50,12 @@ const Button: React.FC<ButtonProps> = ({
   }
 
   return (
-    <button 
+    <button
       onClick={onClick}
       disabled={disabled}
       className={className}
       title={title}
+      aria-label={title}
     >
       <Icon size={18} />
     </button>
@@ -86,6 +88,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
   selectedNode
 }) => {
   const { isDark, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   const themeClasses = {
@@ -111,7 +114,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
     <div 
       className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border ${themeClasses.container}`}
     >
-      <Button onClick={onBack} icon={ArrowLeft} title="返回图谱地图" buttonClasses={themeClasses.button} isDark={isDark} />
+      <Button onClick={onBack} icon={ArrowLeft} title={t('common.aria.back')} buttonClasses={themeClasses.button} isDark={isDark} />
       <Divider className={themeClasses.divider} />
       
       <div className="flex items-center gap-2 px-2">

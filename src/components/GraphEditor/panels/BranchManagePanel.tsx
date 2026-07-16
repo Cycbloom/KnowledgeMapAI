@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
 import { formatDate } from "../../../utils/formatters";
+import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { useBranches, useGraphDiff, useMergePreview } from "../../../hooks/queries/useGraphVersionQueries";
 import { useMergeBranch, useDeleteBranch } from "../../../hooks/mutations/useGraphVersionMutations";
 import type { MergeConflict } from "@shared/types/graphVersion";
@@ -112,14 +113,21 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
     setDeleteTarget(null);
   }, []);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
+    const branchName = deleteTarget.title || deleteTarget.branch_name;
+    const confirmed = await asyncConfirm({
+      title: t('graphEditor.confirmDeleteBranchTitle'),
+      message: t('graphEditor.confirmDeleteBranchMessage', { name: branchName }),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
     deleteBranchMutation.mutate(deleteTarget.id, {
       onSuccess: () => {
         closeDeleteDialog();
       },
     });
-  }, [deleteTarget, deleteBranchMutation, closeDeleteDialog]);
+  }, [deleteTarget, deleteBranchMutation, closeDeleteDialog, t]);
 
   const toggleConflictExpand = (entityId: string) => {
     setExpandedConflicts((prev) => {

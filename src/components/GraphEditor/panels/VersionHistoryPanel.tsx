@@ -19,6 +19,7 @@ import {
 import type { GraphSnapshot, GraphSnapshotType } from "@shared/types/graphVersion";
 import { BranchManagePanel } from "./BranchManagePanel";
 import { EmptyState } from "../../common/EmptyState";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
 interface VersionHistoryPanelProps {
   graphId: string;
@@ -201,6 +202,7 @@ export const VersionHistoryPanel = React.memo(function VersionHistoryPanel({
               <EmptyState
                 icon={<Camera size={32} />}
                 title={t('graphEditor.empty.snapshots')}
+                action={{ label: t('graphEditor.createSnapshot'), onClick: handleCreateSnapshot }}
               />
             ) : (
               <div className="py-2">
@@ -454,12 +456,16 @@ interface DialogOverlayProps {
 }
 
 const DialogOverlay: React.FC<DialogOverlayProps> = ({ onClose, children }) => {
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
+  useEscapeKey(() => onClose(), true);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
       <div
+        ref={containerRef}
         onClick={(e) => e.stopPropagation()}
         className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm mx-4 overflow-hidden"
       >

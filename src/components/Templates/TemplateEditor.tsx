@@ -15,7 +15,9 @@ import {
   ChevronRight,
   GripVertical,
 } from "lucide-react";
-import { useTheme, useIsMobile } from "../../hooks";
+import { useTheme, useIsMobile, useFormDraft } from "../../hooks";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
+import { ConfirmationModal } from "../common/ConfirmationModal";
 
 interface TemplateEditorProps {
   template: Template;
@@ -299,80 +301,126 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
 
-  const [name, setName] = useState(template.name);
-  const [description, setDescription] = useState(template.description || "");
-  const [category, setCategory] = useState<TemplateCategory>(template.category);
-  const [nodes, setNodes] = useState<TemplateNode[]>(template.nodes || []);
-  const [edges, setEdges] = useState<TemplateEdge[]>(template.edges || []);
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<{
+    name: string;
+    description: string;
+    category: TemplateCategory;
+    nodes: TemplateNode[];
+    edges: TemplateEdge[];
+  }>({
+    key: "template_editor_draft",
+    initialValue: {
+      name: template.name,
+      description: template.description || "",
+      category: template.category,
+      nodes: template.nodes || [],
+      edges: template.edges || [],
+    },
+  });
+
+  const { name, description, category, nodes, edges } = formData;
+
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
+  useEscapeKey(() => onCancel(), true);
 
   const rootNodes = useMemo(() => nodes.filter((n) => !n.parentId), [nodes]);
 
   const handleUpdateNode = useCallback(
     (id: string, updates: Partial<TemplateNode>) => {
-      setNodes((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, ...updates } : n)),
-      );
+      setFormData((prev) => ({
+        ...prev,
+        nodes: prev.nodes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
+      }));
     },
-    [],
+    [setFormData],
   );
 
-  const handleDeleteNode = useCallback((id: string) => {
-    setNodes((prev) => {
-      const idsToDelete = new Set<string>();
-      const collectChildren = (parentId: string) => {
-        idsToDelete.add(parentId);
-        prev
-          .filter((n) => n.parentId === parentId)
-          .forEach((n) => collectChildren(n.id));
+  const handleDeleteNode = useCallback(
+    (id: string) => {
+      setFormData((prev) => {
+        const idsToDelete = new Set<string>();
+        const collectChildren = (parentId: string) => {
+          idsToDelete.add(parentId);
+          prev.nodes
+            .filter((n) => n.parentId === parentId)
+            .forEach((n) => collectChildren(n.id));
+        };
+        collectChildren(id);
+        return {
+          ...prev,
+          nodes: prev.nodes.filter((n) => !idsToDelete.has(n.id)),
+          edges: prev.edges.filter(
+            (e) => e.source !== id && e.target !== id,
+          ),
+        };
+      });
+    },
+    [setFormData],
+  );
+
+  const handleAddNode = useCallback(
+    (parentId?: string) => {
+      const newNode: TemplateNode = {
+        id: generateId(),
+        title: "",
+        description: "",
+        level: parentId ? "sub" : "core",
+        parentId,
       };
-      collectChildren(id);
-      return prev.filter((n) => !idsToDelete.has(n.id));
-    });
+      setFormData((prev) => ({ ...prev, nodes: [...prev.nodes, newNode] }));
+    },
+    [setFormData],
+  );
 
-    setEdges((prev) => prev.filter((e) => e.source !== id && e.target !== id));
-  }, []);
-
-  const handleAddNode = useCallback((parentId?: string) => {
-    const newNode: TemplateNode = {
-      id: generateId(),
-      title: "",
-      description: "",
-      level: parentId ? "sub" : "core",
-      parentId,
-    };
-    setNodes((prev) => [...prev, newNode]);
-  }, []);
-
-  const handleAddChildNode = useCallback((parentId: string) => {
-    const newNode: TemplateNode = {
-      id: generateId(),
-      title: "",
-      description: "",
-      level: "sub",
-      parentId,
-    };
-    setNodes((prev) => [...prev, newNode]);
-  }, []);
+  const handleAddChildNode = useCallback(
+    (parentId: string) => {
+      const newNode: TemplateNode = {
+        id: generateId(),
+        title: "",
+        description: "",
+        level: "sub",
+        parentId,
+      };
+      setFormData((prev) => ({ ...prev, nodes: [...prev.nodes, newNode] }));
+    },
+    [setFormData],
+  );
 
   const handleUpdateEdge = useCallback(
     (index: number, updates: Partial<TemplateEdge>) => {
-      setEdges((prev) =>
-        prev.map((e, i) => (i === index ? { ...e, ...updates } : e)),
-      );
+      setFormData((prev) => ({
+        ...prev,
+        edges: prev.edges.map((e, i) =>
+          i === index ? { ...e, ...updates } : e,
+        ),
+      }));
     },
-    [],
+    [setFormData],
   );
 
-  const handleDeleteEdge = useCallback((index: number) => {
-    setEdges((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  const handleDeleteEdge = useCallback(
+    (index: number) => {
+      setFormData((prev) => ({
+        ...prev,
+        edges: prev.edges.filter((_, i) => i !== index),
+      }));
+    },
+    [setFormData],
+  );
 
   const handleAddEdge = useCallback(() => {
-    setEdges((prev) => [
+    setFormData((prev) => ({
       ...prev,
-      { source: "", target: "", relationship_type: "" },
-    ]);
-  }, []);
+      edges: [...prev.edges, { source: "", target: "", relationship_type: "" }],
+    }));
+  }, [setFormData]);
 
   const handleSave = useCallback(() => {
     const updatedTemplate: Template = {
@@ -384,7 +432,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       edges,
     };
     onSave(updatedTemplate);
-  }, [template, name, description, category, nodes, edges, onSave]);
+    clearDraft();
+  }, [template, name, description, category, nodes, edges, onSave, clearDraft]);
 
   const isValid = useMemo(() => {
     return (
@@ -400,6 +449,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm`}
     >
       <div
+        ref={containerRef}
         className={`w-full ${
           isMobile ? "h-full rounded-none" : "max-w-4xl rounded-2xl"
         } shadow-2xl ${isMobile ? "max-h-full" : "max-h-[90vh]"} flex flex-col ${
@@ -460,7 +510,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder={t("templates.form.name")}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all ${
                       isDark
@@ -479,7 +531,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   </label>
                   <textarea
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     placeholder={t("templates.form.description")}
                     rows={2}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all resize-none ${
@@ -500,7 +554,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   <select
                     value={category}
                     onChange={(e) =>
-                      setCategory(e.target.value as TemplateCategory)
+                      setFormData({
+                        ...formData,
+                        category: e.target.value as TemplateCategory,
+                      })
                     }
                     className={`w-full px-3 py-2 rounded-lg border outline-none ${
                       isDark
@@ -671,6 +728,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           </button>
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        isDangerous={false}
+      />
     </div>
   );
 };

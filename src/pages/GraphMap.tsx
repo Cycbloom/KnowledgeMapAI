@@ -9,7 +9,7 @@ import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useStore } from "../store/useStore";
 import { queryKeys } from "../hooks/queries/config";
 import { useIsMobile } from "../hooks/common/useIsMobile";
-import { ErrorBoundary } from "../components/common";
+import { ErrorBoundary, Skeleton, SkeletonCard } from "../components/common";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { domainsApi, graphDomainsApi } from "../services/api/domains";
 import type { DomainTreeNode, Domain } from "@shared/types/graph";
@@ -101,8 +101,10 @@ const AgentAnalysisPanel = lazy(() =>
 );
 
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center p-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+    {Array.from({ length: 3 }).map((_, i) => (
+      <SkeletonCard key={i} />
+    ))}
   </div>
 );
 
@@ -187,6 +189,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
           </h3>
           <button
             onClick={onClose}
+            aria-label={t('common.aria.close')}
             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -194,8 +197,13 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
         </div>
 
         {isSetting ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+          <div className="space-y-2 py-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2.5">
+                <Skeleton variant="circular" width={12} height={12} />
+                <Skeleton variant="rectangular" className="flex-1 h-5" />
+              </div>
+            ))}
           </div>
         ) : (
           <>
@@ -369,7 +377,7 @@ export const GraphMap = () => {
     if (hasCheckedUncategorized.current) return;
     if (domainTree && !domainTree.some((d: DomainTreeNode) => d.name === '未分类')) {
       hasCheckedUncategorized.current = true;
-      domainsApi.ensureUncategorized().catch(() => {});
+      domainsApi.ensureUncategorized().catch((err) => { console.error(err); });
     }
   }, [domainTree]);
 
@@ -1253,6 +1261,7 @@ export const GraphMap = () => {
                         </div>
                         <button
                           onClick={() => setSelectedGraphId(null)}
+                          aria-label={t('common.aria.close')}
                           className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                         >
                           <X className="w-5 h-5" />
@@ -2011,8 +2020,13 @@ export const GraphMap = () => {
               {t('graphMap.domainPicker.batchDesc', { count: multiSelectedGraphIds.size })}
             </p>
             {isBatchSettingDomain ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+              <div className="space-y-2 py-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2.5">
+                    <Skeleton variant="circular" width={12} height={12} />
+                    <Skeleton variant="rectangular" className="flex-1 h-5" />
+                  </div>
+                ))}
               </div>
             ) : (
               <>
@@ -2097,7 +2111,17 @@ export const GraphMap = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-5">
-              <Suspense fallback={<LoadingFallback />}>
+              <Suspense fallback={
+                <div className="space-y-4">
+                  <Skeleton variant="rectangular" className="w-full h-32" />
+                  <Skeleton variant="rectangular" className="w-full h-24" />
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} variant="rectangular" className="w-full h-16" />
+                    ))}
+                  </div>
+                </div>
+              }>
                 <CrossDomainInsightsSection
                   result={crossDomainResult}
                   onGraphClick={(graphId) => {

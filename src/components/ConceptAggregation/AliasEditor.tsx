@@ -200,7 +200,7 @@ export const AliasEditor: React.FC<AliasEditorProps> = ({
             <button
               onClick={() => handleRemoveAlias(alias)}
               className="ml-0.5 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-              aria-label={`删除别名 ${alias}`}
+              aria-label={t('common.aria.close')}
             >
               <X size={10} />
             </button>

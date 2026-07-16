@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { formatDuration } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
+import { Skeleton } from '../common';
 import type {TaskExecution} from '@shared/types';
 
 interface TimeAnalysisProps {
@@ -115,9 +116,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
       </div>
 
       {loading ? (
-        <div className="h-48 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500" />
-        </div>
+        <Skeleton className="h-48 w-full" />
       ) : executions.length === 0 ? (
         <EmptyState icon={<BarChart3 size={32} />} title={t('scheduler.empty.timeAnalysis')} />
       ) : (

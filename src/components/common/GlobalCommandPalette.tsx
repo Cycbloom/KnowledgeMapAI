@@ -14,7 +14,7 @@ import {
   BookOpen,
   Clock,
 } from "lucide-react";
-import { useTheme } from "../../hooks";
+import { useTheme, useFocusTrap } from "../../hooks";
 import { frontendKernel } from "../../App";
 import { iconMap } from "../../utils/iconMap";
 import {
@@ -73,6 +73,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
 
   const { getRecentGraphs } = useRecentGraphs();
   const { recentNodes } = useRecentNodes();
@@ -310,6 +311,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
 
       {/* Modal */}
       <div
+        ref={containerRef}
         className={`relative w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col transform transition-all duration-200 scale-100 opacity-100 ${
           isDark
             ? "bg-slate-900 border border-slate-700 text-white"

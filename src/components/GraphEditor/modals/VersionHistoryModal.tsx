@@ -53,7 +53,7 @@ export const VersionHistoryModal = ({
       setTotal(result.total);
     } catch (error) {
       console.error('Failed to load versions:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '加载版本历史失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.versionHistory.loadFailed') });
     } finally {
       setLoading(false);
     }
@@ -61,8 +61,8 @@ export const VersionHistoryModal = ({
 
   const handleRollback = async (versionNumber: number) => {
     if (!await asyncConfirm({
-      title: '确认回滚',
-      message: `确定要回滚到版本 ${versionNumber} 吗？当前内容将被新版本覆盖。`,
+      title: t('common.confirm.rollbackTitle'),
+      message: t('common.confirm.rollbackMessage', { version: versionNumber }),
       isDangerous: true,
     })) {
       return;
@@ -71,12 +71,12 @@ export const VersionHistoryModal = ({
     setRollbackLoading(true);
     try {
       await knowledgePointsApi.rollbackVersion(knowledgePointId, versionNumber);
-      frontendEventBus.publish("message_show", { type: 'success', content: `已成功回滚到版本 ${versionNumber}` });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.versionHistory.rollbackSuccess', { version: versionNumber }) });
       loadVersions();
       onRollback?.();
     } catch (error) {
       console.error('Rollback failed:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '回滚失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.versionHistory.rollbackFailed') });
     } finally {
       setRollbackLoading(false);
     }
@@ -105,7 +105,7 @@ export const VersionHistoryModal = ({
       setCompareResult(result);
     } catch (error) {
       console.error('Compare failed:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '版本对比失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.versionHistory.compareFailed') });
     } finally {
       setLoading(false);
     }

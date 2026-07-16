@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { QUEUE_COLORS, type QueueLevel } from '@/constants/scheduler';
 import { formatDate } from '../utils/formatters';
+import { Skeleton } from '../components/common';
 
 const TechCard = ({ children, className = '', glow = false }: { children: React.ReactNode; className?: string; glow?: boolean }) => (
   <div className={`
@@ -602,10 +603,22 @@ export const SchedulerStats = () => {
 
   if (statsLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">{t('schedulerStats.loading')}</p>
+      <div className="h-full overflow-y-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+        <div className="mb-8">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 space-y-3"
+            >
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
         </div>
       </div>
     );

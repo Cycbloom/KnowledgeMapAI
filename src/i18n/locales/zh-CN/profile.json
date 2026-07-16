@@ -81,5 +81,9 @@
     "snapshotDeleteFailed": "删除快照失败",
     "confirmRestore": "确定要恢复此快照吗？这将覆盖当前所有数据。",
     "confirmDelete": "确定要删除此快照吗？"
-  }
+  },
+  "createSnapshot": "创建快照",
+  "snapshotFailed": "快照操作失败，请稍后重试",
+  "restoreFailed": "恢复失败，请稍后重试",
+  "logoutFailed": "登出失败，请稍后重试"
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Keyboard, X } from 'lucide-react';
-import { HOTKEY_LIST } from "../../hooks";
+import { HOTKEY_LIST, useFocusTrap, useEscapeKey } from "../../hooks";
 
 interface HotkeyHelpProps {
   isOpen: boolean;
@@ -9,6 +9,9 @@ interface HotkeyHelpProps {
 }
 
 export const HotkeyHelp: React.FC<HotkeyHelpProps> = ({ isOpen, onClose }) => {
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -20,6 +23,7 @@ export const HotkeyHelp: React.FC<HotkeyHelpProps> = ({ isOpen, onClose }) => {
           onClick={onClose}
         >
           <motion.div
+            ref={containerRef}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}

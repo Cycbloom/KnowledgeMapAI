@@ -1,4 +1,5 @@
 import { message } from './messageHelper';
+import i18n from '../i18n';
 
 /**
  * 复制文本到剪贴板，统一处理错误反馈
@@ -12,7 +13,7 @@ export async function copyToClipboard(
 ): Promise<boolean> {
   try {
     if (!navigator?.clipboard?.writeText) {
-      message.error('剪贴板不可用');
+      message.error(i18n.t('common.clipboard.unavailable'));
       return false;
     }
     await navigator.clipboard.writeText(text);
@@ -22,7 +23,7 @@ export async function copyToClipboard(
     return true;
   } catch (error) {
     console.error('Failed to copy to clipboard:', error);
-    message.error('复制失败');
+    message.error(i18n.t('common.clipboard.copyFailed'));
     return false;
   }
 }

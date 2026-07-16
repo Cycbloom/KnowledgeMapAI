@@ -7,15 +7,17 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
-  HelpCircle,
+  FileQuestion,
   CheckSquare,
   ToggleLeft,
   FileText,
   MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { StudyCard } from '@shared/types/common';
 import { useTheme } from "../../hooks";
+import { EmptyState } from '../common/EmptyState';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 
 interface QuestionListProps {
@@ -55,6 +57,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   readOnly = false,
 }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const isDark = theme === 'dark';
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<CardType>>(
@@ -209,19 +212,10 @@ export const QuestionList: React.FC<QuestionListProps> = ({
 
   if (cards.length === 0) {
     return (
-      <div
-        className={`p-12 text-center rounded-xl border ${
-          isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-gray-50 border-gray-200'
-        }`}
-      >
-        <HelpCircle size={48} className={`mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-gray-300'}`} />
-        <p className={`text-lg font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-          暂无题目
-        </p>
-        <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-          点击上方"添加题目"按钮创建新题目
-        </p>
-      </div>
+      <EmptyState
+        icon={<FileQuestion size={32} />}
+        title={t('quiz.empty.noQuestions')}
+      />
     );
   }
 
@@ -360,7 +354,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                                     </button>
                                     <button
                                       onClick={async () => {
-                                        if (await asyncConfirm({ title: '删除题目', message: '确定要删除这道题目吗？', isDangerous: true })) {
+                                        if (await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t('common.confirm.deleteMessage'), isDangerous: true })) {
                                           onDelete(card.id);
                                         }
                                       }}

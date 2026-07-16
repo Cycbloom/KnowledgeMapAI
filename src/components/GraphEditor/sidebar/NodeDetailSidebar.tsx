@@ -14,7 +14,7 @@ import {
   WikiLinkRenderer,
 } from "../../../utils/wikiLinkRemarkPlugin";
 import { backlinksApi } from "../../../services/api/backlinks";
-import { TermTooltip, CodeBlock, Mermaid, LazyImage } from "../../common";
+import { TermTooltip, CodeBlock, Mermaid, LazyImage, Skeleton } from "../../common";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -566,8 +566,14 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           {showRelatedSection && (
             <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-2 min-h-[60px]">
               {isRelatedLoading ? (
-                <div className="flex justify-center py-2">
-                  <Loader2 className="animate-spin text-primary-400" size={16} />
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      variant="rectangular"
+                      className="h-6 w-20"
+                    />
+                  ))}
                 </div>
               ) : relatedNodes.length > 0 ? (
                 <div className="flex flex-wrap gap-2">

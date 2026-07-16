@@ -45,11 +45,14 @@ export const TermTooltip: React.FC<TermTooltipProps> = ({ term, explanation }) =
 
   return (
     <>
-      <span 
+      <span
         ref={triggerRef}
-        className="cursor-help inline-block border-b border-gray-400 border-dashed hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-sm px-0.5"
+        className="cursor-help inline-block border-b border-gray-400 border-dashed hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 rounded-sm px-0.5"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onFocus={handleMouseEnter}
+        onBlur={handleMouseLeave}
+        tabIndex={0}
       >
         {term}
       </span>

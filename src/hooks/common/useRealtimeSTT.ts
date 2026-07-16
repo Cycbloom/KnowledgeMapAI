@@ -74,7 +74,7 @@ export const useRealtimeSTT = (): UseRealtimeSTTReturn => {
       mediaStreamRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current.close().catch((err) => { console.error(err); });
       audioContextRef.current = null;
     }
     if (wsRef.current) {

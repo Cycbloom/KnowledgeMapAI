@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   CheckCircle,
   X,
@@ -14,6 +15,15 @@ import {
 import { taskReviewApi, TaskReview } from "../../services/api/review";
 import { formatDurationMinutes } from "../../utils/formatters";
 import { UserTask } from "@shared/types";
+import { useFormDraft } from "../../hooks";
+import { ConfirmationModal } from "../common/ConfirmationModal";
+
+interface TaskRetrospectDraft {
+  content: string;
+  difficulties: string;
+  improvements: string;
+  learnings: string;
+}
 
 interface TaskRetrospectProps {
   isOpen: boolean;
@@ -30,11 +40,25 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
   onSave,
   onSkip,
 }) => {
-  const [content, setContent] = useState("");
-  const [difficulties, setDifficulties] = useState("");
-  const [improvements, setImprovements] = useState("");
-  const [learnings, setLearnings] = useState("");
+  const { t } = useTranslation();
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<TaskRetrospectDraft>({
+    key: 'taskRetrospect_draft',
+    initialValue: {
+      content: "",
+      difficulties: "",
+      improvements: "",
+      learnings: "",
+    },
+  });
   const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
 
   useEffect(() => {
@@ -49,19 +73,25 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
       const review = await taskReviewApi.getTaskReview(task.id);
       if (review) {
         setExistingReview(review);
-        setContent(review.content || "");
-        setDifficulties(review.difficulties || "");
-        setImprovements(review.improvements || "");
-        setLearnings(review.learnings || "");
+        setFormData({
+          content: review.content || "",
+          difficulties: review.difficulties || "",
+          improvements: review.improvements || "",
+          learnings: review.learnings || "",
+        });
       } else {
-        setContent("");
-        setDifficulties("");
-        setImprovements("");
-        setLearnings("");
+        setFormData({
+          content: "",
+          difficulties: "",
+          improvements: "",
+          learnings: "",
+        });
         setExistingReview(null);
       }
     } catch (error) {
       console.error("Failed to load task review:", error);
+    } finally {
+      setLoaded(true);
     }
   };
 
@@ -72,10 +102,10 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
       const reviewData = {
         task_id: task.id,
         review_type: "task" as const,
-        content: content || undefined,
-        difficulties: difficulties || undefined,
-        improvements: improvements || undefined,
-        learnings: learnings || undefined,
+        content: formData.content || undefined,
+        difficulties: formData.difficulties || undefined,
+        improvements: formData.improvements || undefined,
+        learnings: formData.learnings || undefined,
       };
 
       let review: TaskReview;
@@ -85,6 +115,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
         review = await taskReviewApi.createReview(reviewData);
       }
 
+      clearDraft();
       setExistingReview(review);
       onSave?.(review);
       onClose();
@@ -161,8 +192,8 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   完成心得
                 </label>
                 <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  value={formData.content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="这个任务完成得怎么样？有什么感受？"
                   className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -175,8 +206,8 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     遇到的困难
                   </label>
                   <textarea
-                    value={difficulties}
-                    onChange={(e) => setDifficulties(e.target.value)}
+                    value={formData.difficulties}
+                    onChange={(e) => setFormData(prev => ({ ...prev, difficulties: e.target.value }))}
                     placeholder="有什么阻碍？"
                     className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
@@ -187,8 +218,8 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                     解决方案
                   </label>
                   <textarea
-                    value={improvements}
-                    onChange={(e) => setImprovements(e.target.value)}
+                    value={formData.improvements}
+                    onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
                     placeholder="如何解决的？"
                     className="w-full h-16 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
@@ -201,8 +232,8 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   学到了什么
                 </label>
                 <textarea
-                  value={learnings}
-                  onChange={(e) => setLearnings(e.target.value)}
+                  value={formData.learnings}
+                  onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
                   placeholder="从这个任务中学到了什么新知识或技能？"
                   className="w-full h-16 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -234,6 +265,16 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
             </div>
           </motion.div>
         </motion.div>
+      )}
+      {isOpen && loaded && !existingReview && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t('common.restoreDraftTitle')}
+          message={t('common.restoreDraftMessage')}
+          isDangerous={false}
+        />
       )}
     </AnimatePresence>
   );

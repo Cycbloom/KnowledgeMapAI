@@ -103,7 +103,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                <BrainCircuit size={24} />
                <h3 id="generate-cards-modal-title" className="text-xl font-bold">{t('learning.generateCards.title')}</h3>
              </div>
-             <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
+             <button onClick={onClose} aria-label={t('common.aria.close')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
                <X size={20} />
              </button>
           </div>

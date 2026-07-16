@@ -532,6 +532,8 @@
   },
   "batch": {
     "selectNodes": "Please select nodes first",
+    "deleteTitle": "Batch Delete",
+    "deleteConfirm": "Are you sure you want to delete the selected {{count}} knowledge points? This action cannot be undone.",
     "deleteSuccess": "Deleted {{count}} nodes",
     "deleteFailed": "Batch delete failed, please try again",
     "expandSuccess": "Submitted expansion task for {{count}} nodes",
@@ -578,6 +580,23 @@
   },
   "path": {
     "title": "Path",
-    "aiDriven": "AI Driven"
+    "aiDriven": "AI Driven",
+    "nodeAdded": "Node added to path",
+    "nodeAddFailed": "Failed to add node",
+    "nodeRemoved": "Node removed from path",
+    "nodeRemoveFailed": "Failed to remove node",
+    "nodeUpdated": "Status updated",
+    "nodeUpdateFailed": "Failed to update status",
+    "pathSaved": "Order saved",
+    "pathSaveFailed": "Failed to save order",
+    "pathPublished": "Learning path published",
+    "pathPublishFailed": "Failed to publish learning path",
+    "generated": "AI learning path generated!",
+    "generateFailedNoNodes": "Cannot generate learning path, please check if the graph has nodes",
+    "generateFailed": "Failed to generate learning path",
+    "removeNodeConfirm": {
+      "title": "Remove Node",
+      "message": "Are you sure you want to remove this node from the learning path?"
+    }
   }
 }

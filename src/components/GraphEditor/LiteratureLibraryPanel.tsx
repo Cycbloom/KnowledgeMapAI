@@ -18,6 +18,7 @@ import {
   BACKBONE_MODULE_COLORS,
 } from "@shared/types/graph";
 import { graphsApi } from "../../services/api/graphs";
+import { EmptyState } from "../common/EmptyState";
 
 interface LiteratureItem {
   title: string;
@@ -194,15 +195,10 @@ export const LiteratureLibraryPanel: React.FC<LiteratureLibraryPanelProps> = ({
             )}
 
             {!isLoading && (!data || data.literature.length === 0) && (
-              <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500">
-                <BookOpen size={48} className="mb-3 opacity-50" />
-                <p className="text-sm">
-                  {t(
-                    "graphEditor.literatureLibrary.noLiterature",
-                    "暂无文献数据",
-                  )}
-                </p>
-              </div>
+              <EmptyState
+                icon={<BookOpen size={32} />}
+                title={t('graphEditor.empty.literatureEmpty')}
+              />
             )}
 
             {!isLoading && data && data.literature.length > 0 && (

@@ -14,9 +14,11 @@ import {
   Target,
   ListTodo,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { UserTask } from "@shared/types";
 import { TaskCard } from "./TaskCard";
 import { formatDurationMinutes } from "../../utils/formatters";
+import { EmptyState } from "../common/EmptyState";
 
 interface QueueColumnProps {
   level: number;
@@ -91,6 +93,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
   void _onTaskClick;
   void _onTaskMove;
   void _onReorder;
+  const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const config =
     QUEUE_CONFIG[level as keyof typeof QUEUE_CONFIG] || QUEUE_CONFIG[2];
@@ -213,26 +216,13 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
           >
             <div className="p-3 space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar">
               {pendingTasks.length === 0 && inProgressTasks.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 dark:text-slate-500 min-h-[100px]">
-                  <IconComponent
-                    size={32}
-                    className="mx-auto mb-2 opacity-40 dark:opacity-30"
-                  />
-                  <p className="text-sm">暂无任务</p>
-                  {isOver && (
-                    <p className="text-xs mt-2 text-primary-500 dark:text-primary-400">
-                      释放以放置任务
-                    </p>
-                  )}
-                  {onAddTask && (
-                    <button
-                      onClick={onAddTask}
-                      className={`mt-3 text-sm ${config.accentColor} hover:underline`}
-                    >
-                      + 添加任务
-                    </button>
-                  )}
-                </div>
+                <EmptyState
+                  icon={<ListTodo size={32} />}
+                  title={t('scheduler.empty.queueEmpty')}
+                  description={isOver ? '释放以放置任务' : undefined}
+                  action={onAddTask ? { label: '+ 添加任务', onClick: onAddTask } : undefined}
+                  className="min-h-[100px] py-8"
+                />
               ) : (
                 <SortableContext
                   items={taskIds}

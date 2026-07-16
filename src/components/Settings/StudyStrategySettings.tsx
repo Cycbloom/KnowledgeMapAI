@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Brain } from "lucide-react";
 import {
@@ -10,6 +10,7 @@ import {
 } from "./settingsConstants";
 import { AvailableModels } from "../../types";
 import { useUpdateProfileMutation } from "../../hooks/mutations";
+import { useAutoSave } from "../../hooks";
 import { message } from "../../utils/messageHelper";
 
 interface StudyStrategySettingsProps {
@@ -30,10 +31,10 @@ export const StudyStrategySettings = React.memo(
       const [semanticScheduling, setSemanticScheduling] = useState(true);
 
       // Refs hold the latest unstable values (mutation object, translation fn,
-      // and the settings prop) so the debounced save effect below can depend
-      // ONLY on the editable local state. Without this, the mutation object
-      // changes identity on every render and re-triggers the effect, causing an
-      // infinite save → refetch → save loop.
+      // and the settings prop) so the onSave callback below can read them
+      // without capturing stale closures. Without this, the mutation object
+      // changes identity on every render, which previously re-triggered the
+      // save effect and caused an infinite save → refetch → save loop.
       const settingsRef = useRef(settings);
       const mutationRef = useRef(updateProfileMutation);
       const tRef = useRef(t);
@@ -46,7 +47,7 @@ export const StudyStrategySettings = React.memo(
       // Tracks whether the user has actually changed a value. Auto-save only
       // fires when this is true, so mounting / loading from props / parent
       // re-renders (e.g. availableModels identity change) never trigger a save.
-      const isDirtyRef = useRef(false);
+      const [isDirty, setIsDirty] = useState(false);
 
       useLayoutEffect(() => {
         if (settings) {
@@ -64,15 +65,44 @@ export const StudyStrategySettings = React.memo(
             setSemanticScheduling(settings.semantic_scheduling as boolean);
           // Loading values from the profile does not mark the form dirty;
           // auto-save should only fire on explicit user interaction.
-          isDirtyRef.current = false;
+          setIsDirty(false);
         }
       }, [settings]);
 
-      useEffect(() => {
-        if (!isDirtyRef.current) return;
-        const timer = setTimeout(() => {
-          mutationRef.current
-            .mutateAsync({
+      // Combined value object for useAutoSave. Memoized so it only changes
+      // identity when one of the editable values actually changes, matching
+      // the original effect's dependency array.
+      const settingsValue = useMemo(
+        () => ({
+          retention,
+          maxInterval,
+          defaultStudyMode,
+          masteryThresholds,
+          schedulerWeights,
+          semanticScheduling,
+          availableModels,
+        }),
+        [
+          retention,
+          maxInterval,
+          defaultStudyMode,
+          masteryThresholds,
+          schedulerWeights,
+          semanticScheduling,
+          availableModels,
+        ],
+      );
+
+      // Auto-save: 800ms debounce via useAutoSave. The enabled flag is tied
+      // to isDirty so saves only fire after explicit user interaction.
+      // onSave resolves on both success and error (error is caught and shown
+      // via toast), preserving the original behavior where no error status
+      // is tracked in the UI.
+      useAutoSave({
+        value: settingsValue,
+        onSave: async () => {
+          try {
+            await mutationRef.current.mutateAsync({
               settings: {
                 ...settingsRef.current,
                 request_retention: Number(retention),
@@ -83,28 +113,19 @@ export const StudyStrategySettings = React.memo(
                 semantic_scheduling: semanticScheduling,
                 available_models: availableModels,
               },
-            })
-            .then(() => {
-              isDirtyRef.current = false;
-              message.success(tRef.current("settings.saveSuccess"));
-            })
-            .catch(() => {
-              message.error(tRef.current("settings.saveFailed"));
             });
-        }, 800);
-        return () => clearTimeout(timer);
-      }, [
-        retention,
-        maxInterval,
-        defaultStudyMode,
-        masteryThresholds,
-        schedulerWeights,
-        semanticScheduling,
-        availableModels,
-      ]);
+            setIsDirty(false);
+            message.success(tRef.current("settings.saveSuccess"));
+          } catch {
+            message.error(tRef.current("settings.saveFailed"));
+          }
+        },
+        delay: 800,
+        enabled: isDirty,
+      });
 
       const handleStudyModeChange = (mode: string) => {
-        isDirtyRef.current = true;
+        setIsDirty(true);
         setDefaultStudyMode(mode);
         const preset = STUDY_MODE_PRESETS[mode];
         if (preset) {
@@ -114,7 +135,7 @@ export const StudyStrategySettings = React.memo(
       };
 
       const handleResetStudyStrategyDefaults = () => {
-        isDirtyRef.current = true;
+        setIsDirty(true);
         setDefaultStudyMode(STUDY_STRATEGY_DEFAULTS.defaultStudyMode);
         setRetention(STUDY_STRATEGY_DEFAULTS.requestRetention);
         setMaxInterval(STUDY_STRATEGY_DEFAULTS.maximumInterval);
@@ -181,7 +202,7 @@ export const StudyStrategySettings = React.memo(
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         if (!isNaN(val) && val >= 0.7 && val <= 0.99) {
-                          isDirtyRef.current = true;
+                          setIsDirty(true);
                           setRetention(val);
                         }
                       }}
@@ -195,7 +216,7 @@ export const StudyStrategySettings = React.memo(
                     step="0.01"
                     value={retention}
                     onChange={(e) => {
-                      isDirtyRef.current = true;
+                      setIsDirty(true);
                       setRetention(Number(e.target.value));
                     }}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
@@ -218,7 +239,7 @@ export const StudyStrategySettings = React.memo(
                       onChange={(e) => {
                         const val = parseInt(e.target.value);
                         if (!isNaN(val) && val >= 1 && val <= 36500) {
-                          isDirtyRef.current = true;
+                          setIsDirty(true);
                           setMaxInterval(val);
                         }
                       }}
@@ -232,7 +253,7 @@ export const StudyStrategySettings = React.memo(
                     step="10"
                     value={maxInterval}
                     onChange={(e) => {
-                      isDirtyRef.current = true;
+                      setIsDirty(true);
                       setMaxInterval(Number(e.target.value));
                     }}
                     className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
@@ -265,7 +286,7 @@ export const StudyStrategySettings = React.memo(
                     step="0.05"
                     value={masteryThresholds.learningReview}
                     onChange={(e) => {
-                      isDirtyRef.current = true;
+                      setIsDirty(true);
                       setMasteryThresholds((prev) => ({
                         ...prev,
                         learningReview: Number(e.target.value),
@@ -294,7 +315,7 @@ export const StudyStrategySettings = React.memo(
                     step="0.05"
                     value={masteryThresholds.reviewPractice}
                     onChange={(e) => {
-                      isDirtyRef.current = true;
+                      setIsDirty(true);
                       setMasteryThresholds((prev) => ({
                         ...prev,
                         reviewPractice: Number(e.target.value),
@@ -323,7 +344,7 @@ export const StudyStrategySettings = React.memo(
                     step="0.05"
                     value={masteryThresholds.practiceQuiz}
                     onChange={(e) => {
-                      isDirtyRef.current = true;
+                      setIsDirty(true);
                       setMasteryThresholds((prev) => ({
                         ...prev,
                         practiceQuiz: Number(e.target.value),
@@ -376,7 +397,7 @@ export const StudyStrategySettings = React.memo(
                       step="0.05"
                       value={schedulerWeights[item.key]}
                       onChange={(e) => {
-                        isDirtyRef.current = true;
+                        setIsDirty(true);
                         setSchedulerWeights((prev) => ({
                           ...prev,
                           [item.key]: Number(e.target.value),
@@ -409,7 +430,7 @@ export const StudyStrategySettings = React.memo(
                     semanticScheduling ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700"
                   }`}
                   onClick={() => {
-                    isDirtyRef.current = true;
+                    setIsDirty(true);
                     setSemanticScheduling(!semanticScheduling);
                   }}
                 >

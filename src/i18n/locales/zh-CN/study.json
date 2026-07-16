@@ -378,12 +378,20 @@
     "deleteConfirmMessage": "确定要删除测验 \"{{title}}\" 吗？此操作不可恢复。",
     "deleteCardFailed": "删除题目失败",
     "regenerateCardFailed": "重新生成题目失败",
-    "saveCardFailed": "保存题目失败"
+    "saveCardFailed": "保存题目失败",
+    "deleteCardConfirm": {
+      "title": "删除题目",
+      "message": "确定要删除这道题目吗？此操作无法撤销。"
+    }
   },
   "quizGeneration": {
     "title": "创建测验",
     "promptConfigTitle": "Prompt 配置管理",
     "subtitle": "AI 自动生成测验题目",
     "promptConfigDesc": "管理测验生成的提示词模板"
-  }
+  },
+  "generateQuestions": "生成题目",
+  "batchDeleteFailed": "批量删除失败",
+  "updateFailed": "更新失败",
+  "createCardsFailed": "创建题目失败"
 }

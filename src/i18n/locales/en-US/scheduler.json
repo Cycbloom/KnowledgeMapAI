@@ -339,15 +339,72 @@
   },
   "empty": {
     "executionRecords": "No execution records",
+    "executionRecordsEmpty": "No execution records",
     "links": "No links",
     "subtasks": "No subtasks",
     "progressPlans": "No progress plans",
     "dependencies": "No dependencies",
     "recommendations": "No pending tasks",
     "tasks": "No tasks",
+    "queueEmpty": "No tasks",
+    "distributionEmpty": "No task data",
+    "associationEmpty": "No associated knowledge points",
     "timeAnalysis": "No focus data",
     "achievements": "No matching achievements",
     "content": "No content"
   },
-  "loadError": "Failed to load scheduler data"
+  "loadError": "Failed to load scheduler data",
+  "confirmDeleteTaskTitle": "Delete Task",
+  "confirmDeleteTaskMessage": "Are you sure you want to delete task \"{{title}}\"? This action cannot be undone.",
+  "browseTasks": "Browse Tasks",
+  "taskWorkbench": {
+    "loadFailed": "Failed to load task details",
+    "taskStarted": "Task started",
+    "taskStartFailed": "Failed to start task",
+    "taskPaused": "Task paused",
+    "taskPauseFailed": "Failed to pause task",
+    "taskCompleted": "Task completed",
+    "taskCompleteFailed": "Failed to complete task",
+    "taskDeleted": "Task deleted",
+    "taskDeleteFailed": "Failed to delete task",
+    "notesSaveFailed": "Failed to save notes",
+    "templateSaved": "Template saved successfully!",
+    "subtaskTitleRequired": "Please enter a subtask title",
+    "subtaskKnowledgePointRequired": "Please select a linked knowledge point",
+    "subtaskAdded": "Subtask added",
+    "subtaskAddFailed": "Failed to add subtask",
+    "subtaskUpdateFailed": "Failed to update status",
+    "subtaskDeleted": "Subtask deleted",
+    "subtaskDeleteFailed": "Failed to delete subtask",
+    "linkUrlRequired": "Please enter a link URL",
+    "linkAdded": "Link added",
+    "linkAddFailed": "Failed to add link",
+    "linkDeleted": "Link deleted",
+    "linkDeleteFailed": "Failed to delete link"
+  },
+  "templateSelector": {
+    "empty": "No templates found"
+  },
+  "weeklyReport": {
+    "empty": "No focus records this week yet",
+    "emptyHint": "Start a focus session to track your progress"
+  },
+  "dailyStats": {
+    "empty": "No focus records today yet",
+    "emptyHint": "Start a focus session to record your progress"
+  },
+  "monthlyReport": {
+    "empty": "No focus records this month yet",
+    "emptyHint": "Start a focus session to track your progress"
+  },
+  "focusHeatmap": {
+    "empty": "No focus records in {{year}} yet",
+    "emptyHint": "Start a focus session to fill your heatmap"
+  },
+  "taskActions": {
+    "deleteTaskConfirm": {
+      "title": "Delete Task",
+      "message": "Are you sure you want to delete task \"{{title}}\"? This action cannot be undone."
+    }
+  }
 }

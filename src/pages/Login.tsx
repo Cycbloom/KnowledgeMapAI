@@ -9,7 +9,8 @@ import {
 } from "../config/authConfig";
 import { getSupabaseClient, resetSupabaseClient } from "../lib/supabase";
 import { useStore } from "../store/useStore";
-import { useTheme } from "../hooks";
+import { useTheme, useFormDraft } from "../hooks";
+import { ConfirmationModal } from "../components/common/ConfirmationModal";
 import { isElectron } from "../config/electronConfig";
 import type { AIProviderType } from "@shared/types/ai";
 import {
@@ -112,8 +113,22 @@ export const Login = () => {
   const setUser = useStore((state) => state.setUser);
   const { isDark, toggleTheme } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<"quick" | "manual">("quick");
-  const [quickStep, setQuickStep] = useState(1);
+  const {
+    value: draft,
+    setValue: setDraft,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<{
+    email: string;
+    step: number;
+    activeTab: "quick" | "manual";
+  }>({
+    key: "login_draft",
+    initialValue: { email: "", step: 1, activeTab: "quick" },
+    storage: "sessionStorage",
+  });
   const [pat, setPat] = useState("");
   const [showPat, setShowPat] = useState(false);
   const [patVerifying, setPatVerifying] = useState(false);
@@ -169,7 +184,7 @@ export const Login = () => {
     ConfiguredProvider[]
   >([]);
 
-  const [authForm, setAuthForm] = useState({ email: "", password: "" });
+  const [password, setPassword] = useState("");
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -355,6 +370,7 @@ export const Login = () => {
           sessionData.session.access_token,
           sessionData.session.refresh_token,
         );
+        clearDraft();
         navigate("/");
         return;
       }
@@ -367,6 +383,7 @@ export const Login = () => {
           anonData.session.access_token,
           anonData.session.refresh_token,
         );
+        clearDraft();
         navigate("/");
         return;
       }
@@ -382,7 +399,7 @@ export const Login = () => {
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ email: true, password: true });
-    if (!authForm.email.trim() || !authForm.password.trim()) return;
+    if (!draft.email.trim() || !password.trim()) return;
 
     setAuthenticating(true);
     setAuthError("");
@@ -395,15 +412,15 @@ export const Login = () => {
       }
 
       const { data, error } = await client.auth.signUp({
-        email: authForm.email,
-        password: authForm.password,
+        email: draft.email,
+        password: password,
       });
 
       if (error) {
         const { data: signInData, error: signInError } =
           await client.auth.signInWithPassword({
-            email: authForm.email,
-            password: authForm.password,
+            email: draft.email,
+            password: password,
           });
         if (signInError) {
           setAuthError(signInError.message);
@@ -415,6 +432,7 @@ export const Login = () => {
             signInData.session.access_token,
             signInData.session.refresh_token,
           );
+          clearDraft();
           navigate("/");
         }
         return;
@@ -426,6 +444,7 @@ export const Login = () => {
           data.session.access_token,
           data.session.refresh_token,
         );
+        clearDraft();
         navigate("/");
       } else {
         setAuthError(t("configPage.confirmEmail"));
@@ -550,7 +569,7 @@ export const Login = () => {
       )) as Array<{ id: string; name: string; slug: string }>;
       if (Array.isArray(response) && response.length > 0) {
         setOrganizations(response);
-        setQuickStep(2);
+        setDraft((prev) => ({ ...prev, step: 2 }));
       } else {
         setPatError(t("quickSetup.patInvalid"));
       }
@@ -576,10 +595,10 @@ export const Login = () => {
   }, [pat]);
 
   useEffect(() => {
-    if (quickStep === 3 && regions.length === 0) {
+    if (draft.step === 3 && regions.length === 0) {
       loadRegions();
     }
-  }, [quickStep, regions.length, loadRegions]);
+  }, [draft.step, regions.length, loadRegions]);
 
   const handleCreateProject = async () => {
     if (!selectedOrg || !dbPassword || !selectedRegion) return;
@@ -646,7 +665,7 @@ export const Login = () => {
       timers.forEach(clearTimeout);
 
       setTimeout(() => {
-        setQuickStep(5);
+        setDraft((prev) => ({ ...prev, step: 5 }));
         setCreating(false);
       }, 500);
     } catch (err: unknown) {
@@ -676,6 +695,7 @@ export const Login = () => {
           sessionData.session.access_token,
           sessionData.session.refresh_token,
         );
+        clearDraft();
         navigate("/");
         return;
       }
@@ -688,6 +708,7 @@ export const Login = () => {
           anonData.session.access_token,
           anonData.session.refresh_token,
         );
+        clearDraft();
         navigate("/");
         return;
       }
@@ -731,19 +752,19 @@ export const Login = () => {
         <div key={step} className="flex items-center">
           <div
             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${
-              step === quickStep
+              step === draft.step
                 ? "bg-primary-500 text-white scale-110 shadow-lg shadow-primary-500/30"
-                : step < quickStep
+                : step < draft.step
                   ? "bg-primary-500/20 text-primary-600 dark:text-primary-400"
                   : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
             }`}
           >
-            {step < quickStep ? <Check className="w-3.5 h-3.5" /> : step}
+            {step < draft.step ? <Check className="w-3.5 h-3.5" /> : step}
           </div>
           {step < 5 && (
             <div
               className={`w-4 h-0.5 mx-0.5 transition-colors duration-300 ${
-                step < quickStep
+                step < draft.step
                   ? "bg-primary-500"
                   : "bg-gray-200 dark:bg-slate-700"
               }`}
@@ -865,7 +886,7 @@ export const Login = () => {
       </div>
 
       <button
-        onClick={() => setQuickStep(3)}
+        onClick={() => setDraft((prev) => ({ ...prev, step: 3 }))}
         disabled={!selectedOrg}
         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -1042,7 +1063,7 @@ export const Login = () => {
                 {t("quickSetup.retry")}
               </button>
               <button
-                onClick={() => setActiveTab("manual")}
+                onClick={() => setDraft((prev) => ({ ...prev, activeTab: "manual" }))}
                 className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
               >
                 {t("quickSetup.switchToManual")}
@@ -1107,37 +1128,35 @@ export const Login = () => {
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             <input
               type="email"
-              value={authForm.email}
+              value={draft.email}
               onChange={(e) =>
-                setAuthForm((prev) => ({ ...prev, email: e.target.value }))
+                setDraft((prev) => ({ ...prev, email: e.target.value }))
               }
               onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
               placeholder={t("configPage.email")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.email && !authForm.email.trim() && (
+            {touched.email && !draft.email.trim() && (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                 {t("configPage.validation.emailRequired")}
               </p>
             )}
             {touched.email &&
-              authForm.email.trim() &&
-              !validateEmail(authForm.email) && (
+              draft.email.trim() &&
+              !validateEmail(draft.email) && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                   {t("configPage.validation.emailInvalid")}
                 </p>
               )}
             <input
               type="password"
-              value={authForm.password}
-              onChange={(e) =>
-                setAuthForm((prev) => ({ ...prev, password: e.target.value }))
-              }
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
               placeholder={t("configPage.password")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.password && !validatePassword(authForm.password) && (
+            {touched.password && !validatePassword(password) && (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                 {t("configPage.validation.passwordRequired")}
               </p>
@@ -1183,11 +1202,11 @@ export const Login = () => {
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
       {renderStepIndicator()}
 
-      {quickStep === 1 && renderQuickStep1()}
-      {quickStep === 2 && renderQuickStep2()}
-      {quickStep === 3 && renderQuickStep3()}
-      {quickStep === 4 && renderQuickStep4()}
-      {quickStep === 5 && renderQuickStep5()}
+      {draft.step === 1 && renderQuickStep1()}
+      {draft.step === 2 && renderQuickStep2()}
+      {draft.step === 3 && renderQuickStep3()}
+      {draft.step === 4 && renderQuickStep4()}
+      {draft.step === 5 && renderQuickStep5()}
     </div>
   );
 
@@ -1382,37 +1401,35 @@ export const Login = () => {
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             <input
               type="email"
-              value={authForm.email}
+              value={draft.email}
               onChange={(e) =>
-                setAuthForm((prev) => ({ ...prev, email: e.target.value }))
+                setDraft((prev) => ({ ...prev, email: e.target.value }))
               }
               onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
               placeholder={t("configPage.email")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.email && !authForm.email.trim() && (
+            {touched.email && !draft.email.trim() && (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                 {t("configPage.validation.emailRequired")}
               </p>
             )}
             {touched.email &&
-              authForm.email.trim() &&
-              !validateEmail(authForm.email) && (
+              draft.email.trim() &&
+              !validateEmail(draft.email) && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                   {t("configPage.validation.emailInvalid")}
                 </p>
               )}
             <input
               type="password"
-              value={authForm.password}
-              onChange={(e) =>
-                setAuthForm((prev) => ({ ...prev, password: e.target.value }))
-              }
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
               placeholder={t("configPage.password")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
-            {touched.password && !validatePassword(authForm.password) && (
+            {touched.password && !validatePassword(password) && (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                 {t("configPage.validation.passwordRequired")}
               </p>
@@ -1592,9 +1609,9 @@ export const Login = () => {
           <div className="flex justify-center mb-6">
             <div className="inline-flex rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1">
               <button
-                onClick={() => setActiveTab("quick")}
+                onClick={() => setDraft((prev) => ({ ...prev, activeTab: "quick" }))}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "quick"
+                  draft.activeTab === "quick"
                     ? "bg-primary-600 text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
@@ -1603,9 +1620,9 @@ export const Login = () => {
                 {t("quickSetup.quickSetup")}
               </button>
               <button
-                onClick={() => setActiveTab("manual")}
+                onClick={() => setDraft((prev) => ({ ...prev, activeTab: "manual" }))}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "manual"
+                  draft.activeTab === "manual"
                     ? "bg-primary-600 text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
@@ -1616,16 +1633,16 @@ export const Login = () => {
             </div>
           </div>
 
-          {activeTab === "quick" && renderQuickSetup()}
+          {draft.activeTab === "quick" && renderQuickSetup()}
 
-          {activeTab === "manual" && (
+          {draft.activeTab === "manual" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {renderSupabaseCard()}
               {renderAICard()}
             </div>
           )}
 
-          {activeTab === "quick" && (
+          {draft.activeTab === "quick" && (
             <div className="mt-6">{renderAICard()}</div>
           )}
         </div>
@@ -1642,6 +1659,16 @@ export const Login = () => {
       >
         {isDark ? <Sun size={20} /> : <Moon size={20} />}
       </button>
+
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        confirmText={t("common.restore")}
+        cancelText={t("common.discard")}
+      />
     </div>
   );
 };

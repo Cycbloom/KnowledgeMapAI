@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Node } from '../../types';
 import { X, ArrowLeft, Save } from 'lucide-react';
+import { useFormDraft } from '../../hooks';
+import { ConfirmationModal } from '../common/ConfirmationModal';
 
 interface NodeFormState {
   title: string;
@@ -22,6 +25,8 @@ interface CombinedNodeEditSidebarProps {
   prevSidebarMode: 'outline' | 'detail' | 'edit' | 'connections';
 }
 
+const COMBINED_NODE_EDIT_DRAFT_KEY = 'combined_node_edit_draft';
+
 export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = ({
   graphColor,
   graphTitle,
@@ -32,6 +37,49 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
   onBack,
   prevSidebarMode
 }) => {
+  const { t } = useTranslation();
+
+  const {
+    setValue: setDraft,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<NodeFormState>({
+    key: COMBINED_NODE_EDIT_DRAFT_KEY,
+    initialValue: nodeForm,
+  });
+
+  // Persist current form state to draft (debounced via useFormDraft)
+  useEffect(() => {
+    setDraft(nodeForm);
+  }, [nodeForm, setDraft]);
+
+  // On restore, apply draft values to parent
+  const handleRestore = useCallback(() => {
+    try {
+      const raw = window.localStorage.getItem(COMBINED_NODE_EDIT_DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw) as NodeFormState;
+        setNodeForm({
+          title: draft.title ?? '',
+          content: draft.content ?? '',
+          summary: draft.summary ?? '',
+          level: draft.level ?? 'normal',
+          tags: draft.tags ?? [],
+        });
+      }
+    } catch {
+      // ignore parse errors
+    }
+    onRestore();
+  }, [onRestore, setNodeForm]);
+
+  const handleSave = useCallback(() => {
+    clearDraft();
+    onSave();
+  }, [clearDraft, onSave]);
+
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex justify-between items-center mb-6">
@@ -49,7 +97,7 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
           <div className="w-3 h-3 rounded-full bg-primary-500"></div>
           <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">编辑节点</h3>
         </div>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+        <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
           <X size={20} />
         </button>
       </div>
@@ -131,11 +179,11 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
 
       <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-900 z-10">
         <button
-          onClick={onSave}
+          onClick={handleSave}
           disabled={!nodeForm.title.trim()}
           className={`w-full py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all ${
-            !nodeForm.title.trim() 
-              ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed' 
+            !nodeForm.title.trim()
+              ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
               : 'bg-gradient-to-r from-primary-600 to-primary-600 hover:shadow-primary-200 dark:hover:shadow-primary-900/30 active:scale-[0.99]'
           }`}
         >
@@ -143,6 +191,14 @@ export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = (
           保存节点
         </button>
       </div>
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={handleRestore}
+        title={t('common.restoreDraftTitle')}
+        message={t('common.restoreDraftMessage')}
+        isDangerous={false}
+      />
     </div>
   );
 };

@@ -19,7 +19,6 @@ import {
   Clock,
   Zap,
   AlertCircle,
-  Sparkles,
   Calendar,
   Route,
   Filter,
@@ -39,9 +38,12 @@ import {
 } from "../hooks";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { message } from "../utils/messageHelper";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import { UserTask, CreateUserTaskData, QueueData } from "@shared/types";
 import { api } from "../services/api";
+import { SkeletonCard } from "../components/common";
 
 const HorizontalQueueView = lazy(() =>
   import("../components/Scheduler/HorizontalQueueView").then((module) => ({
@@ -92,8 +94,12 @@ const SmartRecommendationBar = lazy(() =>
 );
 
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center p-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+  <div className="max-w-7xl mx-auto p-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
   </div>
 );
 
@@ -114,6 +120,8 @@ export const Scheduler: React.FC = () => {
   const [editingTask, setEditingTask] = useState<UserTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
   const [showSettings, setShowSettings] = useState(false);
+  const settingsModalRef = useFocusTrap<HTMLDivElement>({ enabled: showSettings });
+  useEscapeKey(() => setShowSettings(false), showSettings);
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     return (localStorage.getItem("scheduler-view") as ViewType) || "queue";
   });
@@ -304,6 +312,12 @@ export const Scheduler: React.FC = () => {
   }, [editingTask, updateTaskMutation, t]);
 
   const handleDeleteTask = useCallback(async (task: UserTask) => {
+    const confirmed = await asyncConfirm({
+      title: t("scheduler.confirmDeleteTaskTitle"),
+      message: t("scheduler.confirmDeleteTaskMessage", { title: task.title }),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteTaskMutation.mutateAsync(task.id);
       message.success(t("scheduler.taskDeleted"));
@@ -636,18 +650,13 @@ export const Scheduler: React.FC = () => {
 
         <main ref={mainRef} className="flex-1 min-h-0 flex flex-col p-3 sm:p-6">
           {isLoading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-primary-500/30 rounded-full animate-spin border-t-primary-500" />
-                  <Sparkles
-                    size={24}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500 dark:text-primary-400"
-                  />
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="max-w-7xl mx-auto p-3 sm:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
                 </div>
-                <p className="text-slate-500 dark:text-slate-400">
-                  {t("scheduler.loadingQueues")}
-                </p>
               </div>
             </div>
           ) : (
@@ -757,6 +766,7 @@ export const Scheduler: React.FC = () => {
               }}
             >
               <motion.div
+                ref={settingsModalRef}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}

@@ -63,5 +63,6 @@
     "batchDeleteSuccess": "{{count}} graphs permanently deleted",
     "batchDeleteFailed": "Batch delete failed",
     "view": "View"
-  }
+  },
+  "restoreFailed": "Restore failed, please try again later"
 }

@@ -86,6 +86,9 @@ export const BlockReferenceNodeView: React.FC<NodeViewProps> = ({
         as="span"
         contentEditable={false}
         onClick={handleClick}
+        onFocus={() => setShowTooltip(true)}
+        onBlur={() => setShowTooltip(false)}
+        tabIndex={0}
         data-selected={selected}
       >
         <AlertCircle className="w-3 h-3" />

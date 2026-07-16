@@ -283,7 +283,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                今天
+                {t("calendar.today")}
               </button>
             )}
           </div>

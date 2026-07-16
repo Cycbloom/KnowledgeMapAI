@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   GitMerge,
   EyeOff,
@@ -296,6 +297,7 @@ export const AggregationResultsView: React.FC<AggregationResultsViewProps> = ({
   onSplit,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const summaryData = useMemo(() => {
     const totalConcepts = similarGroups.reduce(
       (sum, group) => sum + group.members.length,
@@ -331,8 +333,8 @@ export const AggregationResultsView: React.FC<AggregationResultsViewProps> = ({
         <SummaryPanel {...summaryData} />
         
         <EmptyState
-          illustration="empty"
-          title="暂无聚合结果"
+          icon={<Layers size={32} />}
+          title={t('graphEditor.empty.aggregationEmpty')}
           description="系统未发现可合并的相似概念，或分析尚未完成"
         />
       </div>

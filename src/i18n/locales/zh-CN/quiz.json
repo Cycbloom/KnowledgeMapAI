@@ -1,0 +1,12 @@
+{
+  "empty": {
+    "noQuestions": "暂无题目",
+    "noKnowledgePoints": "该图谱暂无知识点"
+  },
+  "generation": {
+    "started": "测验生成任务已开始...",
+    "completed": "测验生成完成！",
+    "failed": "测验生成失败",
+    "createFailed": "创建测验失败"
+  }
+}

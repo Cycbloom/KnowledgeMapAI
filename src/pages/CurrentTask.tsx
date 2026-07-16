@@ -39,6 +39,7 @@ import { message } from "../utils/messageHelper";
 import { formatDurationMinutes, formatTimeFromSeconds, formatDate } from "../utils/formatters";
 import { useTimerStore } from "../store/useTimerStore";
 import type { UserTask, TaskSettings } from "@shared/types";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
 interface QueueConfig {
   name: string;
@@ -133,6 +134,9 @@ export const CurrentTask: React.FC = () => {
   );
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
   const [glowOffset, setGlowOffset] = useState(0);
+
+  const timeUpModalRef = useFocusTrap<HTMLDivElement>({ enabled: showTimeUpModal });
+  useEscapeKey(() => setShowTimeUpModal(false), showTimeUpModal);
 
   const glowAnimationRef = useRef<number | null>(null);
 
@@ -692,6 +696,7 @@ export const CurrentTask: React.FC = () => {
               className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/70 backdrop-blur-sm"
             >
               <motion.div
+                ref={timeUpModalRef}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}

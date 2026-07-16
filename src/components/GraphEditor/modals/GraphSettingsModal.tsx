@@ -1,4 +1,5 @@
 import { useState, useLayoutEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gauge, MessageSquare } from 'lucide-react';
 import { useGraph } from '../../../hooks/queries';
 import { useUpdateGraphMutation } from '../../../hooks/mutations';
@@ -15,6 +16,7 @@ interface GraphSettingsModalProps {
 }
 
 export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsModalProps) => {
+  const { t } = useTranslation();
   const { data: graph } = useGraph(graphId);
   const updateGraphMutation = useUpdateGraphMutation();
   const { quality, setQuality, showStats, toggleStats } = usePerformanceStore();
@@ -48,10 +50,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
           }
         }
       });
-      frontendEventBus.publish("message_show", { type: 'success', content: '设置已保存' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.settings.saved') });
       onClose();
     } catch (error) {
-      frontendEventBus.publish("message_show", { type: 'error', content: '保存失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.settings.saveFailed') });
     }
   };
 
@@ -73,7 +75,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             </div>
             <h2 id="graph-settings-modal-title" className="text-xl font-bold text-gray-800 dark:text-gray-100">图谱设置</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target">
+          <button onClick={onClose} aria-label={t('common.aria.close')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target">
             <X size={24} />
           </button>
         </div>

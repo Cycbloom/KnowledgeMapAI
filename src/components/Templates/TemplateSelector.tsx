@@ -6,6 +6,8 @@ import { TemplatePreview } from "./TemplatePreview";
 import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTemplates } from "../../hooks/queries";
 import { useTheme, useIsMobile } from "../../hooks";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
+import { SkeletonList } from "../common";
 
 interface TemplateSelectorProps {
   onSelectTemplate: (template: Template | null) => void;
@@ -37,6 +39,9 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   );
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 6;
+
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
+  useEscapeKey(() => onCancel(), true);
 
   const filteredTemplates = useMemo(() => {
     const query = searchQuery.toLowerCase();
@@ -97,6 +102,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div
+        ref={containerRef}
         className={`w-full ${isMobile ? "h-full rounded-none" : "max-w-5xl rounded-2xl"} shadow-2xl ${isMobile ? "max-h-full" : "max-h-[90vh]"} flex flex-col ${
           isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
         }`}
@@ -172,16 +178,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             className={`flex-1 ${isMobile ? "p-3" : "p-6"} overflow-y-auto ${isDark ? "bg-slate-800" : ""}`}
           >
             {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                  <p
-                    className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}
-                  >
-                    {t("common.loading")}
-                  </p>
-                </div>
-              </div>
+              <SkeletonList items={5} />
             ) : filteredTemplates.length === 0 ? (
               <div
                 className={`flex flex-col items-center justify-center h-full ${isDark ? "text-slate-500" : "text-gray-500"}`}

@@ -25,6 +25,7 @@ import { api } from "../../services/api";
 import type { GeneratedTemplate } from "../../services/api/autoGraph";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useError, useIsMobile, useTheme } from "../../hooks";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import type {
   TemplateCategory,
   LayoutSuggestion,
@@ -179,6 +180,9 @@ const TemplatePreviewModal: React.FC<{
   t: (key: string, options?: Record<string, unknown>) => string;
   onClose: () => void;
 }> = ({ template, isMobile, isDark, t, onClose }) => {
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
+  useEscapeKey(() => onClose(), true);
+
   const nodeMap = useMemo(() => {
     const map = new Map<string, GeneratedTemplate["nodes"][number]>();
     template.nodes.forEach((node) => map.set(node.id, node));
@@ -221,6 +225,7 @@ const TemplatePreviewModal: React.FC<{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div
+        ref={containerRef}
         className={`w-full ${
           isMobile ? "h-full rounded-none" : "max-w-2xl max-h-[80vh]"
         } rounded-2xl shadow-2xl flex flex-col ${

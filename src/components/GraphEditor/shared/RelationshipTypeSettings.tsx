@@ -6,6 +6,7 @@ import {
 } from '../../../types';
 import { request } from '../../../services/api';
 import { asyncConfirm } from '@/utils/asyncConfirm';
+import { useTranslation } from 'react-i18next';
 
 interface RelationshipTypeSettingsProps {
   isOpen: boolean;
@@ -73,6 +74,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
   isOpen,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [relationshipTypes, setRelationshipTypes] = useState<RelationshipTypeConfig[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<RelationshipCategory | 'all'>('all');
   const [editingType, setEditingType] = useState<RelationshipTypeConfig | null>(null);
@@ -161,8 +163,8 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
 
   const deleteRelationshipType = async (id: string) => {
     if (!await asyncConfirm({
-      title: '删除关系类型',
-      message: '确定要删除此关系类型吗？',
+      title: t('graphEditor.confirmDeleteRelationshipTitle'),
+      message: t('graphEditor.confirmDeleteRelationshipMessage'),
       isDangerous: true,
     })) return;
     setLoading(true);

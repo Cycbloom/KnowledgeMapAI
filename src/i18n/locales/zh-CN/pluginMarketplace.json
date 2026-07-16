@@ -15,5 +15,10 @@
   "stateActive": "已启用",
   "stateInactive": "已停用",
   "stateError": "错误",
-  "unknownPlugin": "未知插件"
+  "unknownPlugin": "未知插件",
+  "installFailed": "安装失败，请稍后重试",
+  "uninstallFailed": "卸载失败，请稍后重试",
+  "activateFailed": "激活失败，请稍后重试",
+  "deactivateFailed": "停用失败，请稍后重试",
+  "loadFailed": "加载插件失败，请稍后重试"
 }

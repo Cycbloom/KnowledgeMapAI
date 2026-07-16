@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
+  CalendarClock,
   Clock,
   Target,
   TrendingUp,
@@ -11,7 +12,9 @@ import {
   ChevronRight,
   BarChart3,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from '../../services/api';
+import { EmptyState } from '../common/EmptyState';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {MonthlyFocusStats} from '@shared/types';
 
@@ -41,6 +44,7 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
   month,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<MonthlyFocusStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -348,11 +352,13 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
-          className="mt-6 text-center py-8 text-slate-500 dark:text-slate-400"
+          className="mt-6"
         >
-          <Calendar size={48} className="mx-auto mb-3 opacity-30" />
-          <p>这个月还没有专注记录</p>
-          <p className="text-sm mt-1">开始专注来追踪你的进度</p>
+          <EmptyState
+            icon={<CalendarClock className="w-12 h-12 text-gray-400" />}
+            title={t('scheduler.monthlyReport.empty')}
+            description={t('scheduler.monthlyReport.emptyHint')}
+          />
         </motion.div>
       )}
     </div>

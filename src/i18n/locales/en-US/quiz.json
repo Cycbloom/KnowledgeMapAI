@@ -1,0 +1,12 @@
+{
+  "empty": {
+    "noQuestions": "No questions yet",
+    "noKnowledgePoints": "No knowledge points in this graph"
+  },
+  "generation": {
+    "started": "Quiz generation started...",
+    "completed": "Quiz generation complete!",
+    "failed": "Quiz generation failed",
+    "createFailed": "Failed to create quiz"
+  }
+}

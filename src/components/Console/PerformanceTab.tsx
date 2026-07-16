@@ -20,6 +20,7 @@ import { useAiPerformanceLogs, useAiPerformanceStats, useClearAiPerformanceLogs 
 import { formatDurationMs as formatDuration, formatDate } from "@/utils/formatters";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import type { AIPerformanceLog, AIProviderType } from "@shared/types";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
 interface PerformanceTabProps {
   isDark: boolean;
@@ -332,6 +333,9 @@ const LogDetailModal: React.FC<{
 }> = ({ log, isDark, onClose }) => {
   const { t } = useTranslation();
 
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
+  useEscapeKey(() => onClose(), true);
+
   const getOperationLabel = (operation: string): string => {
     const key = `console.performance.operations.${operation}`;
     const translated = t(key);
@@ -439,6 +443,7 @@ const LogDetailModal: React.FC<{
       onClick={onClose}
     >
       <motion.div
+        ref={containerRef}
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -894,7 +899,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   }, [loadData]);
 
   const handleClearLogs = useCallback(async () => {
-    if (await asyncConfirm({ title: '清空日志', message: t("console.performance.clearConfirm"), isDangerous: true })) {
+    if (await asyncConfirm({ title: t('common.confirm.clearTitle'), message: t("console.performance.clearConfirm"), isDangerous: true })) {
       await clearLogsMutate(undefined);
       // mutation 的 onSuccess 已自动失效缓存，无需手动 loadData
     }

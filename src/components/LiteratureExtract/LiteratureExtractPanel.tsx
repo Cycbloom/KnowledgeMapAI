@@ -24,7 +24,7 @@ import {
   Download,
   Copy,
 } from "lucide-react";
-import { useError, useIsMobile } from "../../hooks";
+import { useError, useIsMobile, useFormDraft } from "../../hooks";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { literatureApi } from "../../services/api/literature";
 import {
@@ -39,6 +39,7 @@ import {
   type LiteratureMetadata,
 } from "./LiteratureMetadataForm";
 import { copyToClipboard } from "@/utils/clipboard";
+import { ConfirmationModal } from "../common/ConfirmationModal";
 
 type InputMode = "text" | "file" | "url";
 
@@ -136,6 +137,35 @@ const getFileSizeDisplay = (bytes: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+interface LiteratureDraft {
+  inputMode: InputMode;
+  textContent: string;
+  urlInput: string;
+  metadata: Partial<LiteratureMetadata>;
+  selectedConceptTypes: ConceptType[];
+}
+
+const DEFAULT_CONCEPT_TYPES: ConceptType[] = [
+  "concept",
+  "method",
+  "mechanism",
+  "technology",
+  "tool",
+  "operation",
+  "theory",
+  "finding",
+  "trend",
+  "challenge",
+];
+
+const EMPTY_DRAFT: LiteratureDraft = {
+  inputMode: "text",
+  textContent: "",
+  urlInput: "",
+  metadata: {},
+  selectedConceptTypes: DEFAULT_CONCEPT_TYPES,
+};
+
 export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   graphId,
   onExtractComplete,
@@ -158,9 +188,21 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     return () => darkQuery.removeEventListener("change", handler);
   }, []);
 
-  const [inputMode, setInputMode] = useState<InputMode>("text");
-  const [textContent, setTextContent] = useState("");
-  const [urlInput, setUrlInput] = useState("");
+  const {
+    value: draft,
+    setValue: setDraft,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<LiteratureDraft>({
+    key: "literature_extract_draft",
+    initialValue: EMPTY_DRAFT,
+  });
+
+  const { inputMode, textContent, urlInput, metadata, selectedConceptTypes } =
+    draft;
+
   const [fileState, setFileState] = useState<FileUploadState>({
     file: null,
     uploading: false,
@@ -174,20 +216,6 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const [extractedResult, setExtractedResult] =
     useState<LiteratureExtractResponse | null>(null);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [selectedConceptTypes, setSelectedConceptTypes] = useState<
-    ConceptType[]
-  >([
-    "concept",
-    "method",
-    "mechanism",
-    "technology",
-    "tool",
-    "operation",
-    "theory",
-    "finding",
-    "trend",
-    "challenge",
-  ]);
   const savedSettings = loadLiteratureExtractSettings();
   const [maxConcepts, setMaxConcepts] = useState(savedSettings.maxConcepts);
   const [preferredCount, setPreferredCount] = useState(
@@ -196,7 +224,6 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
   const [similarityThreshold, setSimilarityThreshold] = useState(
     savedSettings.similarityThreshold,
   );
-  const [metadata, setMetadata] = useState<Partial<LiteratureMetadata>>({});
   const [isDetectingMetadata, setIsDetectingMetadata] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showInputSection, setShowInputSection] = useState(true);
@@ -272,7 +299,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
           keywords: result.metadata.keywords,
         };
 
-        setMetadata(detectedMetadata);
+        setDraft((prev) => ({ ...prev, metadata: detectedMetadata }));
 
         frontendEventBus.publish("message_show", {
           type: "success",
@@ -291,7 +318,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         setIsDetectingMetadata(false);
       }
     },
-    [handleError, t],
+    [handleError, t, setDraft],
   );
 
   const extractTitleFromFileName = useCallback((fileName: string): string => {
@@ -343,13 +370,13 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
 
       const inferredTitle = extractTitleFromFileName(file.name);
       if (inferredTitle && !metadata.title) {
-        setMetadata((prev) => ({
+        setDraft((prev) => ({
           ...prev,
-          title: inferredTitle,
+          metadata: { ...prev.metadata, title: inferredTitle },
         }));
       }
     },
-    [t, extractTitleFromFileName, metadata.title],
+    [t, extractTitleFromFileName, metadata.title, setDraft],
   );
 
   const handleDrop = useCallback(
@@ -397,11 +424,17 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     }
   }, []);
 
-  const handleToggleConceptType = useCallback((type: ConceptType) => {
-    setSelectedConceptTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
-    );
-  }, []);
+  const handleToggleConceptType = useCallback(
+    (type: ConceptType) => {
+      setDraft((prev) => ({
+        ...prev,
+        selectedConceptTypes: prev.selectedConceptTypes.includes(type)
+          ? prev.selectedConceptTypes.filter((t) => t !== type)
+          : [...prev.selectedConceptTypes, type],
+      }));
+    },
+    [setDraft],
+  );
 
   const validateInput = useCallback((): boolean => {
     switch (inputMode) {
@@ -534,7 +567,10 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
           detectedMetadata.journal = result.literature.journal;
 
         if (Object.keys(detectedMetadata).length > 0) {
-          setMetadata((prev) => ({ ...prev, ...detectedMetadata }));
+          setDraft((prev) => ({
+            ...prev,
+            metadata: { ...prev.metadata, ...detectedMetadata },
+          }));
         }
       }
 
@@ -568,11 +604,13 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     urlInput,
     selectedConceptTypes,
     maxConcepts,
+    preferredCount,
     similarityThreshold,
     metadata,
     handleError,
     t,
     onExtractComplete,
+    setDraft,
   ]);
 
   const handleSave = useCallback(async () => {
@@ -599,6 +637,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         addedCount: result.addedCount,
         mergedCount: result.mergedCount,
       });
+      clearDraft();
       onClose?.();
     } catch (error) {
       handleError(error, {
@@ -608,36 +647,21 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [extractedResult, graphId, handleError, t, onClose, onConceptsSaved]);
+  }, [extractedResult, graphId, handleError, t, onClose, onConceptsSaved, clearDraft]);
 
   const handleReset = useCallback(() => {
     setExtractedResult(null);
-    setInputMode("text");
-    setTextContent("");
-    setUrlInput("");
+    setDraft(EMPTY_DRAFT);
     setFileState({ file: null, uploading: false, progress: 0, error: null });
-    setMetadata({});
     setShowInputSection(true);
     setSearchText("");
     setSelectedFilterType("all");
     setShowAllRelations(false);
     setShowAdvancedOptions(false);
-    setSelectedConceptTypes([
-      "concept",
-      "method",
-      "mechanism",
-      "technology",
-      "tool",
-      "operation",
-      "theory",
-      "finding",
-      "trend",
-      "challenge",
-    ]);
     setMaxConcepts(DEFAULT_SETTINGS.maxConcepts);
     setPreferredCount(DEFAULT_SETTINGS.preferredCount);
     setSimilarityThreshold(DEFAULT_SETTINGS.similarityThreshold);
-  }, []);
+  }, [setDraft]);
 
   const handleExport = useCallback(() => {
     if (!extractedResult) return;
@@ -699,8 +723,11 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
     try {
       const clipboardText = await navigator.clipboard.readText();
       if (clipboardText.trim()) {
-        setInputMode("text");
-        setTextContent(clipboardText);
+        setDraft((prev) => ({
+          ...prev,
+          inputMode: "text",
+          textContent: clipboardText,
+        }));
         frontendEventBus.publish("message_show", {
           type: "success",
           content: t("literatureExtract.success.pasted"),
@@ -712,7 +739,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         content: t("literatureExtract.errors.pasteFailed"),
       });
     }
-  }, [t]);
+  }, [t, setDraft]);
 
   const renderInputModeSelector = () => (
     <div
@@ -727,7 +754,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       ).map(({ mode, icon: Icon, labelKey }) => (
         <button
           key={mode}
-          onClick={() => setInputMode(mode)}
+          onClick={() => setDraft((prev) => ({ ...prev, inputMode: mode }))}
           disabled={isProcessing}
           className={`${isMobile ? "p-2" : "p-3"} rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
             inputMode === mode
@@ -766,7 +793,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       </label>
       <textarea
         value={textContent}
-        onChange={(e) => setTextContent(e.target.value)}
+        onChange={(e) => setDraft((prev) => ({ ...prev, textContent: e.target.value }))}
         placeholder={t("literatureExtract.textInput.placeholder")}
         className={`w-full ${isMobile ? "px-3 py-2 text-sm" : "px-4 py-3"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? "min-h-[150px]" : "min-h-[200px]"} resize-y focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
         disabled={isProcessing}
@@ -874,7 +901,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
         <input
           type="url"
           value={urlInput}
-          onChange={(e) => setUrlInput(e.target.value)}
+          onChange={(e) => setDraft((prev) => ({ ...prev, urlInput: e.target.value }))}
           placeholder={t("literatureExtract.urlInput.placeholder")}
           className={`w-full ${isMobile ? "pl-9 pr-3 py-2 text-sm" : "pl-10 pr-4 py-3"} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
           disabled={isProcessing}
@@ -1530,7 +1557,7 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
       <div className="space-y-4">
         <LiteratureMetadataForm
           metadata={metadata}
-          onMetadataChange={setMetadata}
+          onMetadataChange={(newMetadata) => setDraft((prev) => ({ ...prev, metadata: newMetadata }))}
           onAutoDetect={handleAutoDetectMetadata}
           isDetecting={isDetectingMetadata}
           isDark={false}
@@ -1589,6 +1616,14 @@ export const LiteratureExtractPanel: React.FC<LiteratureExtractPanelProps> = ({
           </>
         )}
       </div>
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        isDangerous={false}
+      />
     </div>
   );
 };

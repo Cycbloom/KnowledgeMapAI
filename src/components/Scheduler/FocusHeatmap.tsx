@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { Calendar, CalendarClock, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from '../../services/api';
+import { EmptyState } from '../common/EmptyState';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {HeatmapData} from '@shared/types';
 
@@ -107,6 +109,7 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
   year,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [data, setData] = useState<HeatmapData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -355,11 +358,13 @@ export const FocusHeatmap: React.FC<FocusHeatmapProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="mt-6 text-center py-8 text-slate-500 dark:text-slate-400"
+          className="mt-6"
         >
-          <Calendar size={48} className="mx-auto mb-3 opacity-30" />
-          <p>{currentYear}年还没有专注记录</p>
-          <p className="text-sm mt-1">开始专注来填充你的热力图</p>
+          <EmptyState
+            icon={<CalendarClock className="w-12 h-12 text-gray-400" />}
+            title={t('scheduler.focusHeatmap.empty', { year: currentYear })}
+            description={t('scheduler.focusHeatmap.emptyHint')}
+          />
         </motion.div>
       )}
     </div>

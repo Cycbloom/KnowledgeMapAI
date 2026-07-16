@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { ModalShell } from '../../common';
 
@@ -23,6 +24,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
   selectedNodeIds,
   onSuccess
 }) => {
+  const { t } = useTranslation();
   const [types, setTypes] = useState<string[]>(['qa', 'choice']);
   const [count, setCount] = useState(3);
   const [isLoading] = useState(false);
@@ -63,11 +65,11 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
                     setIsLoading(false);
                     onSuccess?.();
                     onClose();
-                    message.success(`生成完成！共生成 ${task.result.totalCards} 道题目`);
+                    message.success(t('graphEditor.batchGenerateSuccess', { count: task.result.totalCards }));
                 } else if (task.status === 'failed') {
                     setTaskId(null);
                     setIsLoading(false);
-                    message.error(`生成失败: ${task.error}`);
+                    message.error(t('graphEditor.batchGenerateFailed', { message: task.error }));
                 } else if (task.status === 'processing' && task.result) {
                     setProgress({
                         current: task.result.progress || 0,
@@ -109,9 +111,9 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
                <Sparkles size={20} />
-               <h3 id="batch-generate-dialog-title" className="text-lg font-semibold">批量生成题目</h3>
+               <h3 id="batch-generate-dialog-title" className="text-lg font-semibold">{t('graphEditor.outline.batchGenerateQuestions')}</h3>
              </div>
-             <button onClick={onClose} className="text-slate-400 hover:text-slate-500">
+             <button onClick={onClose} aria-label={t('common.aria.close')} className="text-slate-400 hover:text-slate-500">
                <X size={20} />
              </button>
           </div>

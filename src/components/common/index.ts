@@ -15,6 +15,8 @@ export { Skeleton } from "./Skeleton";
 export type { SkeletonProps, SkeletonVariant } from "./Skeleton";
 export { SkeletonCard } from "./SkeletonCard";
 export type { SkeletonCardProps } from "./SkeletonCard";
+export { SkeletonList } from "./SkeletonList";
+export type { SkeletonListProps } from "./SkeletonList";
 export { EmptyState } from "./EmptyState";
 export { CodeBlock, createCodeComponent } from "./CodeBlock";
 export { LazyImage, LazyBackground } from "./LazyImage";

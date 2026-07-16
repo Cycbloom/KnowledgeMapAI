@@ -2,7 +2,8 @@ import React, { useState, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { CheckSquare, Plus, X } from 'lucide-react';
-import { useTheme } from "../../hooks";
+import { useTheme, useFormDraft, useBeforeUnload } from "../../hooks";
+import { ConfirmationModal } from '../common/ConfirmationModal';
 
 export interface QuestionFormData {
   question: string;
@@ -50,7 +51,17 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const [formData, setFormData] = useState<QuestionFormData>(() => getInitialFormData(initialData));
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<QuestionFormData>({
+    key: 'questionForm_draft',
+    initialValue: getInitialFormData(initialData),
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const prevInitialDataRef = useRef(initialData);
 
@@ -77,6 +88,11 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     }
   }, [initialData]);
 
+  // Warn user before leaving when there are unsaved changes
+  const isDirty =
+    JSON.stringify(formData) !== JSON.stringify(getInitialFormData(initialData));
+  useBeforeUnload(isDirty, t("common.unsavedChanges"));
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.question.trim()) newErrors.question = t('study.questionForm.validation.questionRequired');
@@ -99,6 +115,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   const handleSubmit = async () => {
     if (!validate()) return;
     await onSubmit(formData);
+    clearDraft();
   };
 
   // Option Handlers
@@ -238,7 +255,11 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                 className={`flex-1 p-3 border rounded-lg text-base min-h-[44px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
                                 placeholder={t('study.questionForm.optionN', { n: idx + 1 })}
                             />
-                            <button onClick={() => removeOption(idx)} className="text-gray-400 hover:text-red-500 p-2 touch-target">
+                            <button
+                                onClick={() => removeOption(idx)}
+                                aria-label={t('common.aria.removeOption')}
+                                className="text-gray-400 hover:text-red-500 p-2 touch-target"
+                            >
                                 <X size={18} />
                             </button>
                         </div>
@@ -323,6 +344,16 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           </button>
         </div>
       </div>
+      {!initialData && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t('common.restoreDraftTitle')}
+          message={t('common.restoreDraftMessage')}
+          isDangerous={false}
+        />
+      )}
     </div>
   );
 };

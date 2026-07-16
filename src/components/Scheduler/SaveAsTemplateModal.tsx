@@ -11,9 +11,11 @@ import {
   Clock,
   Tag,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { taskTemplatesApi } from "../../services/api/taskTemplates";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { useTheme } from "../../hooks";
+import { useTheme, useFocusTrap, useEscapeKey, useFormDraft } from "../../hooks";
+import { ConfirmationModal } from "../common/ConfirmationModal";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   study: <BookOpen size={18} />,
@@ -50,23 +52,45 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   onSuccess,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: true });
+  useEscapeKey(() => onClose());
   const [loading, setLoading] = useState(false);
-
-  const [name, setName] = useState(task.title);
-  const [description, setDescription] = useState(task.description || "");
-  const [category, setCategory] = useState<
-    "study" | "work" | "life" | "health" | "custom"
-  >("custom");
-  const [titleTemplate, setTitleTemplate] = useState(task.title);
-  const [descriptionTemplate, setDescriptionTemplate] = useState(
-    task.description || "",
-  );
-  const [estimatedDuration, setEstimatedDuration] = useState(
-    task.estimated_duration || 25,
-  );
-  const [tags, setTags] = useState<string[]>(task.tags || []);
-  const [priority, setPriority] = useState(task.priority || 2);
   const [newTag, setNewTag] = useState("");
+
+  interface SaveAsTemplateDraft {
+    name: string;
+    description: string;
+    category: "study" | "work" | "life" | "health" | "custom";
+    titleTemplate: string;
+    descriptionTemplate: string;
+    estimatedDuration: number;
+    tags: string[];
+    priority: number;
+  }
+
+  const initialDraft: SaveAsTemplateDraft = {
+    name: task.title,
+    description: task.description || "",
+    category: "custom",
+    titleTemplate: task.title,
+    descriptionTemplate: task.description || "",
+    estimatedDuration: task.estimated_duration || 25,
+    tags: task.tags || [],
+    priority: task.priority || 2,
+  };
+
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<SaveAsTemplateDraft>({
+    key: "saveAsTemplate_draft",
+    initialValue: initialDraft,
+  });
 
   const extractVariables = (text: string): string[] => {
     const matches = text.match(/\{\{([^}]+)\}\}/g) || [];
@@ -82,12 +106,12 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         `{{topic${index > 0 ? index : ""}}}`,
       );
     });
-    setTitleTemplate(suggestedTitle);
+    setFormData((prev) => ({ ...prev, titleTemplate: suggestedTitle }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !titleTemplate) {
+    if (!formData.name || !formData.titleTemplate) {
       frontendEventBus.publish("message_show", { type: "error", content: "请填写模板名称和标题模板" });
       return;
     }
@@ -95,15 +119,16 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
     setLoading(true);
     try {
       await taskTemplatesApi.createTemplate({
-        name,
-        description,
-        category,
-        title_template: titleTemplate,
-        description_template: descriptionTemplate,
-        estimated_duration: estimatedDuration,
-        tags,
-        priority,
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        title_template: formData.titleTemplate,
+        description_template: formData.descriptionTemplate,
+        estimated_duration: formData.estimatedDuration,
+        tags: formData.tags,
+        priority: formData.priority,
       });
+      clearDraft();
       frontendEventBus.publish("message_show", { type: "success", content: "模板保存成功!" });
       onSuccess?.();
       onClose();
@@ -116,14 +141,14 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   };
 
   const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
+    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+      setFormData((prev) => ({ ...prev, tags: [...prev.tags, newTag.trim()] }));
       setNewTag("");
     }
   };
 
   const removeTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
+    setFormData((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== tag) }));
   };
 
   return (
@@ -135,6 +160,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
       onClick={onClose}
     >
       <motion.div
+        ref={containerRef}
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -165,8 +191,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formData.name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="模板名称"
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
@@ -181,8 +207,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               描述
             </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={formData.description}
+              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               placeholder="模板描述（可选）"
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
@@ -203,9 +229,9 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                   <button
                     key={cat}
                     type="button"
-                    onClick={() => setCategory(cat)}
+                    onClick={() => setFormData((prev) => ({ ...prev, category: cat }))}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      category === cat
+                      formData.category === cat
                         ? "bg-primary-600 text-white"
                         : isDark
                           ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
@@ -235,8 +261,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             </div>
             <input
               type="text"
-              value={titleTemplate}
-              onChange={(e) => setTitleTemplate(e.target.value)}
+              value={formData.titleTemplate}
+              onChange={(e) => setFormData((prev) => ({ ...prev, titleTemplate: e.target.value }))}
               placeholder="例如：学习：{{topic}}"
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
@@ -255,8 +281,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               描述模板
             </label>
             <textarea
-              value={descriptionTemplate}
-              onChange={(e) => setDescriptionTemplate(e.target.value)}
+              value={formData.descriptionTemplate}
+              onChange={(e) => setFormData((prev) => ({ ...prev, descriptionTemplate: e.target.value }))}
               placeholder="描述模板（可选）"
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
@@ -275,9 +301,9 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               </label>
               <input
                 type="number"
-                value={estimatedDuration}
+                value={formData.estimatedDuration}
                 onChange={(e) =>
-                  setEstimatedDuration(parseInt(e.target.value) || 25)
+                  setFormData((prev) => ({ ...prev, estimatedDuration: parseInt(e.target.value) || 25 }))
                 }
                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                   isDark
@@ -291,8 +317,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 优先级
               </label>
               <select
-                value={priority}
-                onChange={(e) => setPriority(parseInt(e.target.value))}
+                value={formData.priority}
+                onChange={(e) => setFormData((prev) => ({ ...prev, priority: parseInt(e.target.value) }))}
                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                   isDark
                     ? "bg-slate-900 border-slate-700 text-white focus:border-primary-500"
@@ -335,9 +361,9 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 添加
               </button>
             </div>
-            {tags.length > 0 && (
+            {formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {tags.map((tag) => (
+                {formData.tags.map((tag) => (
                   <span
                     key={tag}
                     className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
@@ -371,18 +397,18 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             <p
               className={`font-medium ${isDark ? "text-white" : "text-slate-900"}`}
             >
-              {titleTemplate}
+              {formData.titleTemplate}
             </p>
-            {descriptionTemplate && (
+            {formData.descriptionTemplate && (
               <p
                 className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}
               >
-                {descriptionTemplate}
+                {formData.descriptionTemplate}
               </p>
             )}
-            {extractVariables(titleTemplate).length > 0 && (
+            {extractVariables(formData.titleTemplate).length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {extractVariables(titleTemplate).map((v) => (
+                {extractVariables(formData.titleTemplate).map((v) => (
                   <span
                     key={v}
                     className="px-2 py-0.5 bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 rounded text-xs"
@@ -421,6 +447,16 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           </button>
         </div>
       </motion.div>
+      {showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t("common.restoreDraftTitle")}
+          message={t("common.restoreDraftMessage")}
+          isDangerous={false}
+        />
+      )}
     </motion.div>
   );
 };

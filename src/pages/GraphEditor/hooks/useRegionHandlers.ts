@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { message } from "../../../utils/messageHelper";
 import type { CustomRegion } from "@shared/types/graph";
 
@@ -9,6 +10,7 @@ import type { CustomRegion } from "@shared/types/graph";
  * useState, so this hook takes no parameters.
  */
 export const useRegionHandlers = () => {
+  const { t } = useTranslation();
   const [customRegions, setCustomRegions] = useState<CustomRegion[]>([]);
   const [originPosition, setOriginPosition] = useState({ x: 400, y: 300 });
   const [collapsedRegions, setCollapsedRegions] = useState<string[]>([]);
@@ -22,9 +24,9 @@ export const useRegionHandlers = () => {
         updatedAt: new Date().toISOString(),
       };
       setCustomRegions((prev) => [...prev, newRegion]);
-      message.success(`区域「${region.name}」创建成功`);
+      message.success(t('graphEditor.regionCreated', { name: region.name }));
     },
-    [],
+    [t],
   );
 
   const handleOriginMove = useCallback((position: { x: number; y: number }) => {

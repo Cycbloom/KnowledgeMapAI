@@ -18,6 +18,7 @@ import { notificationApi } from '../../services/api/notification';
 import { NotificationSettings } from '@shared/types';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useTheme } from "../../hooks";
+import { Skeleton } from '../common';
 
 export const NotificationSettingsPanel: React.FC = () => {
   const { isDark } = useTheme();
@@ -75,8 +76,19 @@ export const NotificationSettingsPanel: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-10">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      <div className="space-y-6 py-6">
+        <Skeleton className="h-6 w-48" />
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-slate-700">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton variant="circular" width={24} height={24} />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

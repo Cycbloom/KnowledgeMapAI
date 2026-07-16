@@ -18,6 +18,7 @@ import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { Button } from "../common/Button";
 import { EmptyState } from "../common/EmptyState";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import type {
   AnalysisResult,
   ConceptGroup,
@@ -51,6 +52,10 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
     hierarchyThreshold: 0.7,
   });
   const { t } = useTranslation();
+
+  const isModalOpen = isOpen && !embedded;
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isModalOpen });
+  useEscapeKey(() => onClose(), isModalOpen);
 
   const loadLatestResults = useCallback(async () => {
     try {
@@ -497,6 +502,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
           onClick={onClose}
         >
           <motion.div
+            ref={containerRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}

@@ -110,13 +110,13 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 if (first.status === "pending") {
                   api.scheduler
                     .updateSubtask(task.id, first.id, { status: "in_progress" })
-                    .catch(() => {});
+                    .catch((err) => { console.error(err); });
                 }
               }
             }
           }
         })
-        .catch(() => {});
+        .catch((err) => { console.error(err); });
     }
   }, [task.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -146,7 +146,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
         .updateSubtask(task.id, activeSubtaskId, {
           actual_duration: newDuration,
         })
-        .catch(() => {});
+        .catch((err) => { console.error(err); });
     });
 
     return () => {
@@ -385,13 +385,13 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                         .updateSubtask(task.id, activeSubtaskId, {
                           actual_duration: totalActual,
                         })
-                        .catch(() => {});
+                        .catch((err) => { console.error(err); });
                     }
                     // 同时更新大任务级别
                     if (elapsedMinutes > 0) {
                       api.scheduler
                         .tickExecution(task.id, elapsedMinutes)
-                        .catch(() => {});
+                        .catch((err) => { console.error(err); });
                     }
                   }
                   useTimerStore.getState().reset();

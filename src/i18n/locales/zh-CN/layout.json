@@ -65,5 +65,8 @@
   "dropZone": {
     "title": "拖入文件以创建图谱",
     "subtitle": "支持 JSON、Markdown、OPML 格式"
-  }
+  },
+  "importSuccess": "导入成功: {{title}}",
+  "importFailed": "导入失败: {{message}}",
+  "skipToMain": "跳到主内容"
 }

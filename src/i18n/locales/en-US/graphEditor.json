@@ -20,7 +20,21 @@
     "hideGrid": "Hide grid",
     "exporting": "Exporting...",
     "exportBtn": "Export",
-    "notSupported": "Current view does not support image export"
+    "notSupported": "Current view does not support image export",
+    "jsonSuccess": "JSON exported successfully",
+    "exportFailed": "Export failed",
+    "markdownSuccess": "Markdown exported successfully",
+    "markdownFailed": "Markdown export failed",
+    "ankiGenerating": "Generating Anki cards...",
+    "noCards": "No review cards in this graph",
+    "ankiSuccess": "Anki exported successfully",
+    "ankiFailed": "Anki export failed",
+    "graphDeleted": "Graph deleted",
+    "deleteFailed": "Delete failed",
+    "deleteGraphConfirm": {
+      "title": "Delete Graph",
+      "message": "Are you sure you want to delete the current graph \"{{title}}\"? This action cannot be undone."
+    }
   },
   "graphMap": {
     "relationDiscovery": {
@@ -300,8 +314,86 @@
     "snapshots": "No snapshots",
     "versionHistory": "No version history",
     "commandPaletteNoResult": "No results found",
-    "nodeEmptyContent": "No content yet, please enter edit mode..."
+    "nodeEmptyContent": "No content yet, please enter edit mode...",
+    "literatureEmpty": "No literature data",
+    "aggregationEmpty": "No aggregation results"
   },
+  "interaction": {
+    "nodeLocked": "This node is not yet unlocked!",
+    "nodeLockedHint": "Please study the prerequisite knowledge points first.",
+    "selectEndNode": "Please select the end node",
+    "pathFound": "Path found, length: {{count}} steps",
+    "pathNotFound": "No path found"
+  },
+  "nodeDeleted": "Node deleted",
+  "nodeDeleteFailed": "Delete failed",
+  "nodeDeletedFromGraphs": "Knowledge point completely deleted from {{count}} graphs",
+  "regionCreated": "Region \"{{name}}\" created successfully",
+  "loadPathFailed": "Failed to load learning path",
+  "selectPathFirst": "Please select a learning path first",
+  "pathEmpty": "No nodes in the learning path",
+  "noConceptExtracted": "No concepts extracted from literature",
+  "addConceptFailed": "Failed to add concept",
+  "confirmDeleteBranchTitle": "Delete Branch",
+  "confirmDeleteBranchMessage": "Are you sure you want to delete branch \"{{name}}\"? This action cannot be undone.",
+  "confirmBatchDeleteNodesTitle": "Batch Delete Nodes",
+  "confirmBatchDeleteNodesMessage": "Are you sure you want to delete the selected {{count}} nodes? This action cannot be undone.",
   "loadError": "Failed to load graph editor data",
-  "retry": "Retry"
+  "retry": "Retry",
+  "connectionCreated": "Connection created",
+  "connectionCreateFailed": "Failed to create connection: {{message}}",
+  "nodeStatusUpdated": "Node status updated",
+  "loadingData": "Loading data...",
+  "confirmDeleteRelationshipTitle": "Delete Relationship Type",
+  "confirmDeleteRelationshipMessage": "Are you sure you want to delete this relationship type? This action cannot be undone.",
+  "confirmRemoveParentTitle": "Remove Parent Node",
+  "confirmRemoveParentMessage": "Are you sure you want to remove this parent relationship?",
+  "createSnapshot": "Create Snapshot",
+  "batchGenerateSuccess": "Generation complete! {{count}} questions generated",
+  "batchGenerateFailed": "Generation failed: {{message}}",
+  "commands": {
+    "backToHome": "Back to Home",
+    "graphList": "Graph List",
+    "mindmapView": "Mindmap View",
+    "timelineView": "Timeline View",
+    "treeView": "Tree View",
+    "openSidebar": "Open Sidebar",
+    "closeSidebar": "Close Sidebar",
+    "switchToLight": "Switch to Light Mode",
+    "switchToDark": "Switch to Dark Mode",
+    "enterFocusMode": "Enter Focus Mode",
+    "exitFocusMode": "Exit Focus Mode",
+    "newSubnode": "New Subnode",
+    "deleteNode": "Delete Node",
+    "selectNodeFirst": "Please select a node first"
+  },
+  "share": {
+    "madePublic": "Graph is now public, anyone can access it",
+    "madePrivate": "Graph is now private",
+    "toggleFailed": "Failed to update, please retry",
+    "inviteSent": "Invitation sent",
+    "inviteFailed": "Invitation failed",
+    "inviteFailedRetry": "Invitation failed, please retry",
+    "collaboratorRemoved": "Collaborator removed",
+    "removeFailed": "Failed to remove",
+    "removeFailedRetry": "Failed to remove, please retry",
+    "linkGenerated": "Share link generated",
+    "linkGenerateFailed": "Failed to generate link",
+    "linkGenerateFailedRetry": "Failed to generate link, please retry"
+  },
+  "versionHistory": {
+    "loadFailed": "Failed to load version history",
+    "rollbackSuccess": "Successfully rolled back to version {{version}}",
+    "rollbackFailed": "Rollback failed",
+    "compareFailed": "Version comparison failed"
+  },
+  "layout": {
+    "noNodes": "No nodes to arrange",
+    "organized": "Node positions organized",
+    "organizeFailed": "Failed to organize node positions"
+  },
+  "settings": {
+    "saved": "Settings saved",
+    "saveFailed": "Failed to save"
+  }
 }

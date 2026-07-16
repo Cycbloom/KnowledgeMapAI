@@ -9,6 +9,7 @@ import { useBatchGraphStatus } from '../hooks/queries/useGraphQueries';
 import { MindMapCanvas } from '../components/GraphEditor/canvas/MindMapCanvas';
 import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
 import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';
+import { Skeleton } from '../components/common';
 import type { GraphRelation, Node, Edge, GraphColorMode, CrossGraphNodeConnection, CrossGraphRelationData } from '../types';
 
 const GRAPH_SPACING = 400;
@@ -313,11 +314,9 @@ export const CombinedGraphView: React.FC = () => {
       
       <div className="flex-1 relative overflow-hidden">
         {isLoading ? (
-          <div className="h-full flex items-center justify-center bg-white dark:bg-slate-800">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
-            </div>
+          <div className="h-full w-full bg-white dark:bg-slate-800 p-6 space-y-4">
+            <Skeleton variant="rectangular" className="h-16 w-full" />
+            <Skeleton variant="rectangular" className="h-64 w-full" />
           </div>
         ) : (
           <>

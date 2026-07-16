@@ -112,6 +112,7 @@ export const CombinedNodeDetailSidebar: React.FC<
         </div>
         <button
           onClick={onClose}
+          aria-label={t('common.aria.close')}
           className="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-full transition-colors"
         >
           <X size={20} />

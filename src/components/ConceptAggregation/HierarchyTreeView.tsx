@@ -131,6 +131,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   onConfirmRelation,
   onRejectRelation,
 }) => {
+  const { t } = useTranslation();
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedNodeId === node.id;
   const hasChildren = node.children !== undefined && node.children.length > 0;
@@ -154,6 +155,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         onClick={() => onNodeClick(node.id)}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
+        onFocus={() => setShowTooltip(true)}
+        onBlur={() => setShowTooltip(false)}
+        tabIndex={0}
       >
         {hasChildren ? (
           <button
@@ -301,7 +305,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 }}
                 className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
                 title="拒绝关系"
-                aria-label="拒绝关系"
+                aria-label={t('common.aria.close')}
               >
                 <X size={12} />
               </button>

@@ -81,5 +81,9 @@
     "snapshotDeleteFailed": "Failed to delete snapshot",
     "confirmRestore": "Are you sure you want to restore this snapshot? This will overwrite all current data.",
     "confirmDelete": "Are you sure you want to delete this snapshot?"
-  }
+  },
+  "createSnapshot": "Create Snapshot",
+  "snapshotFailed": "Snapshot operation failed, please try again later",
+  "restoreFailed": "Restore failed, please try again later",
+  "logoutFailed": "Logout failed, please try again later"
 }

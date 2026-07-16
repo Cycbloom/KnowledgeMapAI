@@ -4,6 +4,7 @@ import { X, Sparkles } from "lucide-react";
 import { Achievement } from "@shared/types";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type { AchievementUnlockedPayload } from "../../services/FrontendEventTypes";
+import { useFocusTrap, useEscapeKey } from "../../hooks";
 
 interface NotificationItem {
   id: string;
@@ -176,6 +177,8 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
   onClose,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -214,6 +217,7 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={containerRef}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}

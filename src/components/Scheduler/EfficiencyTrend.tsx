@@ -4,6 +4,7 @@ import { TrendingUp, Calendar } from "lucide-react";
 import { api } from '../../services/api';
 import { formatDuration } from '../../utils/formatters';
 import type {UserTaskStats} from '@shared/types';
+import { Skeleton } from '../common';
 
 interface EfficiencyTrendProps {
   period?: "7d" | "30d" | "90d";
@@ -98,9 +99,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
       </div>
 
       {loading ? (
-        <div className="h-40 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
-        </div>
+        <Skeleton className="h-40 w-full" />
       ) : (
         <>
           <div className="h-40 flex items-end gap-1 mb-4">

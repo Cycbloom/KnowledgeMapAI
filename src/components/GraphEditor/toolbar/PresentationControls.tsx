@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, X, Play, Pause, MonitorPlay } from 'lucide-react';
 
 interface PresentationControlsProps {
@@ -20,6 +21,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
   isPlaying = false,
   onTogglePlay
 }) => {
+  const { t } = useTranslation();
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -61,6 +63,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           disabled={currentStep === 0}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
           title="上一步 (←)"
+          aria-label={t('common.aria.prevStep')}
         >
           <ChevronLeft size={24} />
         </button>
@@ -80,6 +83,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           disabled={currentStep >= totalSteps - 1}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
           title="下一步 (→)"
+          aria-label={t('common.aria.nextStep')}
         >
           <ChevronRight size={24} />
         </button>
@@ -91,6 +95,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
         onClick={onExit}
         className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-full transition-colors"
         title="退出演示 (Esc)"
+        aria-label={t('common.aria.exitPresentation')}
       >
         <X size={20} />
       </button>

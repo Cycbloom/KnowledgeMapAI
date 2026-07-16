@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
+import { useAutoSave, useBeforeUnload } from "../../../hooks";
 import type { BackboneModule } from "@shared/types/graph";
 import { BACKBONE_MODULE_LABELS } from "@shared/types/graph";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
@@ -38,6 +39,7 @@ import { BacklinksPanel } from "./BacklinksPanel";
 import { NotesPanel } from "../../Notes/NotesPanel";
 import { NodeBlockRefsPanel } from "../../Notes/NodeBlockRefsPanel";
 import { EmptyState } from "../../common/EmptyState";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 
 interface NodeFormState {
   title: string;
@@ -182,75 +184,59 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     "content" | "backlinks" | "notes"
   >("content");
 
-  // Auto-save state
-  const [autoSaveStatus, setAutoSaveStatus] = useState<
-    "idle" | "saving" | "saved"
-  >("idle");
-  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoSaveResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const isAutoSavingRef = useRef(false);
-  const onSaveRef = useRef(onSave);
+  // Auto-save: debounced save via useAutoSave hook.
+  // onSave returns void, so we bridge the loading prop to track completion:
+  // the promise resolves when loading transitions back to false.
   const loadingRef = useRef(loading);
+  const pendingSaveResolveRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
-    onSaveRef.current = onSave;
     loadingRef.current = loading;
-  }, [onSave, loading]);
-
-  // Clear auto-save timer (used by manual save)
-  const clearAutoSaveTimer = useCallback(() => {
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-      autoSaveTimerRef.current = null;
+    if (!loading && pendingSaveResolveRef.current) {
+      const resolve = pendingSaveResolveRef.current;
+      pendingSaveResolveRef.current = null;
+      resolve();
     }
-  }, []);
-
-  // Auto-save on form change (3-second debounce)
-  useEffect(() => {
-    if (loadingRef.current) return;
-    if (!nodeForm.title.trim()) return;
-    if (mode === "create") return; // Don't auto-save for new nodes
-
-    clearAutoSaveTimer();
-
-    autoSaveTimerRef.current = setTimeout(() => {
-      isAutoSavingRef.current = true;
-      setAutoSaveStatus("saving");
-      onSaveRef.current({ exitToDetail: false });
-    }, 3000);
-
-    return () => {
-      clearAutoSaveTimer();
-    };
-  }, [nodeForm, mode, clearAutoSaveTimer]);
-
-  // Watch loading to update auto-save status
-  useEffect(() => {
-    if (!loading && isAutoSavingRef.current) {
-      isAutoSavingRef.current = false;
-      setAutoSaveStatus("saved");
-      if (autoSaveResetTimerRef.current) {
-        clearTimeout(autoSaveResetTimerRef.current);
-      }
-      autoSaveResetTimerRef.current = setTimeout(() => {
-        setAutoSaveStatus("idle");
-      }, 1500);
-    }
-    return () => {
-      if (autoSaveResetTimerRef.current) {
-        clearTimeout(autoSaveResetTimerRef.current);
-      }
-    };
   }, [loading]);
 
-  // Manual save: clear auto-save timer to avoid double-saving
+  const handleAutoSave = useCallback((): Promise<void> => {
+    return new Promise<void>((resolve) => {
+      if (!loadingRef.current) {
+        onSave({ exitToDetail: false });
+      }
+      pendingSaveResolveRef.current = resolve;
+    });
+  }, [onSave]);
+
+  const { status: autoSaveStatus, reset: resetAutoSave } = useAutoSave<NodeFormState>({
+    value: nodeForm,
+    onSave: handleAutoSave,
+    delay: 3000,
+    enabled: !!nodeForm.title.trim() && mode === "edit",
+  });
+
+  // Reset status to idle after showing "saved" for 1500ms (preserve original UX)
+  useEffect(() => {
+    if (autoSaveStatus === "saved") {
+      const timer = setTimeout(() => {
+        resetAutoSave();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoSaveStatus, resetAutoSave]);
+
+  // Warn user before leaving when there are unsaved changes (saving or save failed)
+  useBeforeUnload(
+    autoSaveStatus === "saving" || autoSaveStatus === "error",
+    t("common.unsavedChanges"),
+  );
+
+  // Manual save: cancel pending auto-save and save with exitToDetail
   const handleManualSave = useCallback(() => {
-    clearAutoSaveTimer();
-    isAutoSavingRef.current = false;
-    setAutoSaveStatus("idle");
+    pendingSaveResolveRef.current = null;
+    resetAutoSave();
     onSave({ exitToDetail: true });
-  }, [clearAutoSaveTimer, onSave]);
+  }, [onSave, resetAutoSave]);
 
   const currentNode = useMemo(() => {
     return currentNodeId ? nodes.find((n) => n.id === currentNodeId) : null;
@@ -320,6 +306,16 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
       parentNodeIds: nodeForm.parentNodeIds.filter((id) => id !== nodeId),
     });
     setParentSearch("");
+  };
+
+  const handleRemoveParent = async (parentId: string) => {
+    const confirmed = await asyncConfirm({
+      title: t("graphEditor.confirmRemoveParentTitle"),
+      message: t("graphEditor.confirmRemoveParentMessage"),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
+    removeParent(parentId);
   };
 
   const clearAllParents = () => {
@@ -817,7 +813,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     {parent.title}
                   </span>
                   <button
-                    onClick={() => removeParent(parent.id)}
+                    onClick={() => handleRemoveParent(parent.id)}
                     className={`hover:bg-primary-100 dark:hover:bg-primary-800 rounded ${isMobile ? "p-1 min-h-[32px] min-w-[32px]" : "p-0.5"}`}
                   >
                     <X size={isMobile ? 14 : 12} />

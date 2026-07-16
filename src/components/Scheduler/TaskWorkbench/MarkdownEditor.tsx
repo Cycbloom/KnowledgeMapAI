@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Save, Eye, Edit3, Maximize2, Minimize2, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "../../common/EmptyState";
+import { useFormDraft, useAutoSave, useBeforeUnload } from "../../../hooks";
+import { ConfirmationModal } from "../../common/ConfirmationModal";
 
 interface MarkdownEditorProps {
   value: string;
@@ -20,13 +22,33 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [localValue, setLocalValue] = useState(value);
+  const {
+    value: localValue,
+    setValue: setLocalValue,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<string>({
+    key: "markdown_editor_draft",
+    initialValue: value,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const { t } = useTranslation();
 
+  const { status: autoSaveStatus, save: autoSaveNow } = useAutoSave<string>({
+    value: localValue,
+    onSave: (v) => onSave?.(v),
+    delay: 3000,
+    enabled: !!localValue && !!onSave,
+  });
+
   useEffect(() => {
     setLocalValue(value);
-  }, [value]);
+  }, [value, setLocalValue]);
+
+  // Warn user before leaving when there are unsaved changes
+  useBeforeUnload(localValue !== value, t("common.unsavedChanges"));
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -34,7 +56,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       setLocalValue(newValue);
       onChange(newValue);
     },
-    [onChange],
+    [onChange, setLocalValue],
   );
 
   const handleSave = useCallback(async () => {
@@ -42,20 +64,21 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       setIsSaving(true);
       try {
         await onSave(localValue);
+        clearDraft();
       } finally {
         setIsSaving(false);
       }
     }
-  }, [onSave, localValue]);
+  }, [onSave, localValue, clearDraft]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        handleSave();
+        void autoSaveNow();
       }
     },
-    [handleSave],
+    [autoSaveNow],
   );
 
   const renderPreview = () => {
@@ -163,6 +186,13 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             </button>
           </div>
           <div className="flex items-center gap-2">
+            {onSave && autoSaveStatus !== "idle" && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {autoSaveStatus === "saving" && t("common.saving")}
+                {autoSaveStatus === "saved" && t("common.saved")}
+                {autoSaveStatus === "error" && t("common.saveFailed")}
+              </span>
+            )}
             {onSave && (
               <button
                 onClick={handleSave}
@@ -206,6 +236,14 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           支持 Markdown 语法：**粗体** *斜体* `代码` [链接](url) # 标题 - 列表
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        isDangerous={false}
+      />
     </div>
   );
 };

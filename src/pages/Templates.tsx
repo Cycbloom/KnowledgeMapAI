@@ -25,6 +25,7 @@ import {
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -61,6 +62,14 @@ export const Templates = () => {
   const [newTemplateDescription, setNewTemplateDescription] = useState("");
   const [newTemplateCategory, setNewTemplateCategory] =
     useState<TemplateCategory>("knowledge");
+
+  const createModalRef = useFocusTrap<HTMLDivElement>({ enabled: isCreating });
+  useEscapeKey(() => setIsCreating(false), isCreating);
+  const editModalRef = useFocusTrap<HTMLDivElement>({ enabled: isEditing });
+  useEscapeKey(() => {
+    setIsEditing(false);
+    setEditingTemplate(null);
+  }, isEditing);
 
   const filteredTemplates = (templates ?? []).filter((t) => {
     const matchesSearch =
@@ -460,6 +469,7 @@ export const Templates = () => {
       {isCreating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div
+            ref={createModalRef}
             className={`w-full max-w-md rounded-2xl shadow-2xl p-6 md:p-8 ${
               isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
@@ -590,6 +600,7 @@ export const Templates = () => {
       {isEditing && editingTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div
+            ref={editModalRef}
             className={`w-full max-w-md rounded-2xl shadow-2xl p-6 md:p-8 ${
               isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}

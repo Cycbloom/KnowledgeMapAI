@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Info } from 'lucide-react';
 import { StudyCard } from '../../types';
+import { useFocusTrap, useEscapeKey } from '../../hooks';
 
 interface StudyCardDetailModalProps {
   card: StudyCard | null;
@@ -18,6 +19,9 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
   onPractice,
   isDark,
 }) => {
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen && Boolean(card) });
+  useEscapeKey(() => onClose(), isOpen && Boolean(card));
+
   if (!card) return null;
 
   return (
@@ -32,6 +36,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
           <motion.div
+            ref={containerRef}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}

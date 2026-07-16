@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { CollaboratorRole, COLLABORATOR_ROLE_LABELS } from "@shared/types";
+import { useFocusTrap, useEscapeKey, useFormDraft } from "@/hooks/common";
+import { ConfirmationModal } from "../common/ConfirmationModal";
 
 interface InviteCollaboratorDialogProps {
   isOpen: boolean;
@@ -15,10 +17,23 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
   onInvite,
 }) => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<CollaboratorRole>("viewer");
+  const {
+    value: draft,
+    setValue: setDraft,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<{ email: string; role: CollaboratorRole }>({
+    key: "invite_collaborator_draft",
+    initialValue: { email: "", role: "viewer" as CollaboratorRole },
+    storage: "sessionStorage",
+  });
   const [touched, setTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
 
   if (!isOpen) return null;
 
@@ -29,12 +44,11 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (!validateEmail(email)) return;
+    if (!validateEmail(draft.email)) return;
     setSubmitting(true);
     try {
-      await onInvite(email, role);
-      setEmail("");
-      setRole("viewer");
+      await onInvite(draft.email, draft.role);
+      clearDraft();
       setTouched(false);
       onClose();
     } finally {
@@ -44,7 +58,7 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
           <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
             邀请协作者
@@ -64,14 +78,14 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
               </label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={draft.email}
+                onChange={(e) => setDraft(prev => ({ ...prev, email: e.target.value }))}
                 onBlur={() => setTouched(true)}
                 className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="user@example.com"
                 required
               />
-              {touched && !validateEmail(email) && (
+              {touched && !validateEmail(draft.email) && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                   {t("collaborators.invite.validation.emailInvalid")}
                 </p>
@@ -82,8 +96,8 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
                 角色
               </label>
               <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as CollaboratorRole)}
+                value={draft.role}
+                onChange={(e) => setDraft(prev => ({ ...prev, role: e.target.value as CollaboratorRole }))}
                 className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="editor">{COLLABORATOR_ROLE_LABELS.editor}</option>
@@ -111,6 +125,15 @@ export const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> =
           </div>
         </form>
       </div>
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        confirmText={t("common.restore")}
+        cancelText={t("common.discard")}
+      />
     </div>
   );
 };

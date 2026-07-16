@@ -1,6 +1,16 @@
 import { Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useEffect, useCallback } from "react";
 import { NodeLevel } from "../../types";
+import { useFocusTrap, useEscapeKey, useFormDraft } from "../../hooks";
+import { ConfirmationModal } from "../common/ConfirmationModal";
+
+interface CreateNodeDraft {
+  newNodeTitle: string;
+  newNodeContent: string;
+  newNodeLevel: NodeLevel;
+  selectedParentNodeId: string;
+}
 
 interface CreateNodeModalProps {
   isDark: boolean;
@@ -34,12 +44,75 @@ export const CreateNodeModal = ({
   onCreate,
 }: CreateNodeModalProps) => {
   const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
+
+  const {
+    setValue: setDraft,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<CreateNodeDraft>({
+    key: "create_node_draft",
+    initialValue: {
+      newNodeTitle,
+      newNodeContent,
+      newNodeLevel,
+      selectedParentNodeId,
+    },
+  });
+
+  // Persist current prop values to draft (debounced via useFormDraft)
+  useEffect(() => {
+    setDraft({
+      newNodeTitle,
+      newNodeContent,
+      newNodeLevel,
+      selectedParentNodeId,
+    });
+  }, [
+    newNodeTitle,
+    newNodeContent,
+    newNodeLevel,
+    selectedParentNodeId,
+    setDraft,
+  ]);
+
+  // On restore, apply draft values to parent via change callbacks
+  const handleRestore = useCallback(() => {
+    try {
+      const raw = window.localStorage.getItem("create_node_draft");
+      if (raw) {
+        const draft = JSON.parse(raw) as CreateNodeDraft;
+        onNewNodeTitleChange(draft.newNodeTitle ?? "");
+        onNewNodeContentChange(draft.newNodeContent ?? "");
+        onNewNodeLevelChange(draft.newNodeLevel ?? "normal");
+        onSelectedParentNodeIdChange(draft.selectedParentNodeId ?? "");
+      }
+    } catch {
+      // ignore parse errors
+    }
+    onRestore();
+  }, [
+    onRestore,
+    onNewNodeTitleChange,
+    onNewNodeContentChange,
+    onNewNodeLevelChange,
+    onSelectedParentNodeIdChange,
+  ]);
+
+  const handleCreate = useCallback(() => {
+    clearDraft();
+    onCreate();
+  }, [clearDraft, onCreate]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
+        ref={containerRef}
         className={`${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200"} rounded-xl shadow-2xl w-full max-w-md mx-4 border`}
       >
         <div className="p-6">
@@ -161,7 +234,7 @@ export const CreateNodeModal = ({
               {t("learning.node.cancel")}
             </button>
             <button
-              onClick={onCreate}
+              onClick={handleCreate}
               disabled={!newNodeTitle.trim()}
               className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
                 !newNodeTitle.trim()
@@ -175,6 +248,14 @@ export const CreateNodeModal = ({
           </div>
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={handleRestore}
+        title={t("common.restoreDraftTitle")}
+        message={t("common.restoreDraftMessage")}
+        isDangerous={false}
+      />
     </div>
   );
 };

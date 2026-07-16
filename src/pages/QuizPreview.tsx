@@ -23,6 +23,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { quizQueryKeys } from '../hooks/queries/useQuizQueries';
 import type { StudyCard } from '@shared/types/common';
 import { formatDate as formatDateUtil } from '../utils/formatters';
+import { useFocusTrap, useEscapeKey } from '@/hooks/common';
 import { asyncConfirm } from '@/utils/asyncConfirm';
 import { message } from '@/utils/messageHelper';
 
@@ -67,6 +68,9 @@ export const QuizPreview: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [regeneratingCardId, setRegeneratingCardId] = useState<string | null>(null);
+
+  const regeneratingModalRef = useFocusTrap<HTMLDivElement>({ enabled: !!regeneratingCardId });
+  useEscapeKey(() => setRegeneratingCardId(null), !!regeneratingCardId);
 
   const { data: quizSet, isLoading, error } = useQuizSet(quizSetId!, !!quizSetId);
   const deleteMutation = useDeleteQuizSetMutation();
@@ -125,6 +129,12 @@ export const QuizPreview: React.FC = () => {
 
   const handleDeleteCard = useCallback(async (cardId: string) => {
     if (!quizSetId) return;
+    const confirmed = await asyncConfirm({
+      title: t('study.quizPreview.deleteCardConfirm.title'),
+      message: t('study.quizPreview.deleteCardConfirm.message'),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
     try {
       await api.quiz.removeCard(quizSetId, cardId);
       await api.study.delete(cardId);
@@ -366,7 +376,7 @@ export const QuizPreview: React.FC = () => {
 
         {regeneratingCardId && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className={`p-6 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+            <div ref={regeneratingModalRef} className={`p-6 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
               <Loader2 size={32} className="animate-spin mx-auto mb-3 text-primary-500" />
               <p className={isDark ? 'text-slate-300' : 'text-gray-600'}>{t('study.quizPreview.regeneratingTitle')}</p>
             </div>

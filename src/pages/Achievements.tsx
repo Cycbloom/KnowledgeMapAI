@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { Achievement as BaseAchievement, DailyTask } from '../types';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/utils/formatters';
+import { message } from '@/utils/messageHelper';
 
 interface Achievement extends BaseAchievement {
   unlocked_at?: string;
@@ -17,7 +18,7 @@ import { motion } from 'framer-motion';
 import { PeriodicTaskList } from '../components/Achievements/PeriodicTaskList';
 import { PassProgress } from '../components/Achievements/PassProgress';
 import { StreakDisplay } from '../components/Achievements/StreakDisplay';
-import { Skeleton } from '../components/common';
+import { Skeleton, SkeletonCard } from '../components/common';
 
 const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Flame, Zap, Crown, Timer, Brain, GraduationCap, BookOpen, Trophy, Medal, Target, Star
@@ -162,7 +163,12 @@ export const Achievements = () => {
   };
 
   const handleClaimReward = async (passId: string, level: number) => {
-    await claimMutation.mutateAsync({ passId, level });
+    try {
+      await claimMutation.mutateAsync({ passId, level });
+    } catch (err: unknown) {
+      console.error('Failed to claim reward:', err);
+      message.error(t('achievements.claimFailed'));
+    }
   };
 
   return (
@@ -310,8 +316,10 @@ export const Achievements = () => {
         {activeTab === 'periodic' && (
           <div className="space-y-4">
             {loadingPeriodicTasks ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
               </div>
             ) : (
               <PeriodicTaskList tasks={periodicTasks || []} />
@@ -322,8 +330,10 @@ export const Achievements = () => {
         {activeTab === 'pass' && (
           <div className="space-y-6">
             {loadingPass ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
               </div>
             ) : (
               <>

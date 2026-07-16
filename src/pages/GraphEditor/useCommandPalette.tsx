@@ -1,5 +1,6 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Home, Network, GitBranch, Clock, 
   Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
@@ -37,11 +38,12 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
   } = options;
 
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return useMemo(() => [
     {
       id: 'nav-home',
-      label: '返回首页',
+      label: t('graphEditor.commands.backToHome'),
       icon: <Home size={18} />,
       category: 'navigation',
       action: () => navigate('/'),
@@ -49,7 +51,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'nav-graphs',
-      label: '图谱列表',
+      label: t('graphEditor.commands.graphList'),
       icon: <LayoutList size={18} />,
       category: 'navigation',
       action: () => navigate('/graphs'),
@@ -57,7 +59,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'view-mindmap',
-      label: '思维导图视图',
+      label: t('graphEditor.commands.mindmapView'),
       icon: <Network size={18} />,
       category: 'view',
       action: () => setViewMode('mindmap'),
@@ -65,7 +67,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'view-timeline',
-      label: '时间轴视图',
+      label: t('graphEditor.commands.timelineView'),
       icon: <Clock size={18} />,
       category: 'view',
       action: () => setViewMode('timeline'),
@@ -73,7 +75,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'view-tree',
-      label: '树形视图',
+      label: t('graphEditor.commands.treeView'),
       icon: <GitBranch size={18} />,
       category: 'view',
       action: () => setViewMode('tree'),
@@ -81,7 +83,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'toggle-sidebar',
-      label: sidebarMode === 'none' ? '打开侧边栏' : '关闭侧边栏',
+      label: sidebarMode === 'none' ? t('graphEditor.commands.openSidebar') : t('graphEditor.commands.closeSidebar'),
       icon: <Layout size={18} />,
       category: 'view',
       shortcut: 'Space',
@@ -93,7 +95,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'toggle-theme',
-      label: isDark ? '切换亮色模式' : '切换暗色模式',
+      label: isDark ? t('graphEditor.commands.switchToLight') : t('graphEditor.commands.switchToDark'),
       icon: isDark ? <Sun size={18} /> : <Moon size={18} />,
       category: 'view',
       action: toggleTheme,
@@ -101,7 +103,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'toggle-focus',
-      label: isFocusMode ? '退出专注模式' : '进入专注模式',
+      label: isFocusMode ? t('graphEditor.commands.exitFocusMode') : t('graphEditor.commands.enterFocusMode'),
       icon: <Focus size={18} />,
       category: 'view',
       action: () => setIsFocusMode(prev => !prev),
@@ -109,7 +111,7 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
     },
     {
       id: 'create-node',
-      label: '新建子节点',
+      label: t('graphEditor.commands.newSubnode'),
       icon: <Plus size={18} />,
       category: 'action',
       shortcut: 'Tab',
@@ -117,13 +119,13 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
         if (selectedNode) {
           addMessage({ type: 'info', content: '请使用 Tab 键创建子节点' });
         } else {
-          addMessage({ type: 'warning', content: '请先选择一个节点' });
+          addMessage({ type: 'warning', content: t('graphEditor.commands.selectNodeFirst') });
         }
       }
     },
     {
       id: 'delete-node',
-      label: '删除节点',
+      label: t('graphEditor.commands.deleteNode'),
       icon: <Trash2 size={18} />,
       category: 'action',
       shortcut: 'Del',
@@ -131,21 +133,22 @@ export const useCommandPalette = (options: UseCommandPaletteOptions): CommandIte
         if (selectedNode) {
           handleDeleteNode(selectedNode);
         } else {
-          addMessage({ type: 'warning', content: '请先选择一个节点' });
+          addMessage({ type: 'warning', content: t('graphEditor.commands.selectNodeFirst') });
         }
       }
     }
   ], [
-    navigate, 
-    setViewMode, 
-    sidebarMode, 
-    setSidebarMode, 
-    isDark, 
-    toggleTheme, 
-    isFocusMode, 
-    setIsFocusMode, 
-    selectedNode, 
-    handleDeleteNode, 
+    navigate,
+    t,
+    setViewMode,
+    sidebarMode,
+    setSidebarMode,
+    isDark,
+    toggleTheme,
+    isFocusMode,
+    setIsFocusMode,
+    selectedNode,
+    handleDeleteNode,
     addMessage
   ]);
 };

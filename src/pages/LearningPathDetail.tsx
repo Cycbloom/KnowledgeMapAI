@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Route, RefreshCw } from "lucide-react";
+import { Route } from "lucide-react";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
@@ -19,6 +19,7 @@ import type {
   LearningPathNode,
 } from "../components/LearningPath/types";
 import { asyncConfirm } from "@/utils/asyncConfirm";
+import { SkeletonCard } from "@/components/common";
 
 const LearningPathDetailPage: React.FC = () => {
   const { t } = useTranslation();
@@ -318,10 +319,20 @@ const LearningPathDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
-        <div className="text-center">
-          <RefreshCw className="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">{t("learningPaths.detail.loadingPath")}</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <SkeletonCard lines={2} className="mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <SkeletonCard lines={5} />
+              <SkeletonCard lines={3} />
+            </div>
+            <div className="space-y-6">
+              <SkeletonCard lines={4} />
+              <SkeletonCard lines={3} />
+              <SkeletonCard lines={2} />
+            </div>
+          </div>
         </div>
       </div>
     );

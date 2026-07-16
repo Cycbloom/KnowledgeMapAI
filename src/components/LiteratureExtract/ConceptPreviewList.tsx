@@ -21,6 +21,7 @@ import {
   CONCEPT_TYPE_COLORS,
   CONCEPT_TO_MODULE_MAP,
 } from "../../../shared/types/graph";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 
 export interface ConceptPreviewListProps {
   concepts: ExtractedConcept[];
@@ -401,6 +402,9 @@ export const ConceptPreviewList: React.FC<ConceptPreviewListProps> = ({
 
   const isDark = document.documentElement.classList.contains("dark");
 
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
+
   const handleToggleSelect = useCallback((index: number) => {
     setSelectedIndices((prev) => {
       const next = new Set(prev);
@@ -469,7 +473,7 @@ export const ConceptPreviewList: React.FC<ConceptPreviewListProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[90dvh] flex flex-col">
+      <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-700 max-h-[90dvh] flex flex-col">
         <div className="p-4 sm:p-6 border-b dark:border-slate-700 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div>

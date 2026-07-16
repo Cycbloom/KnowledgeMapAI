@@ -18,6 +18,7 @@ import type { RegistryPlugin, InstalledPlugin } from "../../services/api/plugins
 import { PluginCard } from "./PluginCard";
 import { useStore } from "../../store/useStore";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { message } from "@/utils/messageHelper";
 
 type Tab = "browse" | "installed";
 
@@ -88,6 +89,7 @@ export const PluginMarketplace = () => {
       setRegistryPlugins(plugins);
     } catch (err) {
       console.error("Failed to load registry:", err);
+      message.error(t("pluginMarketplace.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -100,6 +102,7 @@ export const PluginMarketplace = () => {
       setInstalledPlugins(plugins);
     } catch (err) {
       console.error("Failed to load installed plugins:", err);
+      message.error(t("pluginMarketplace.loadFailed"));
     }
   }, [token]);
 
@@ -121,6 +124,7 @@ export const PluginMarketplace = () => {
       await loadRegistry();
     } catch (err) {
       console.error("Failed to install plugin:", err);
+      message.error(t("pluginMarketplace.installFailed"));
     } finally {
       setInstalling(null);
     }
@@ -133,6 +137,7 @@ export const PluginMarketplace = () => {
       await loadRegistry();
     } catch (err) {
       console.error("Failed to uninstall plugin:", err);
+      message.error(t("pluginMarketplace.uninstallFailed"));
     }
   };
 
@@ -142,6 +147,7 @@ export const PluginMarketplace = () => {
       await loadInstalled();
     } catch (err) {
       console.error("Failed to activate plugin:", err);
+      message.error(t("pluginMarketplace.activateFailed"));
     }
   };
 
@@ -151,6 +157,7 @@ export const PluginMarketplace = () => {
       await loadInstalled();
     } catch (err) {
       console.error("Failed to deactivate plugin:", err);
+      message.error(t("pluginMarketplace.deactivateFailed"));
     }
   };
 

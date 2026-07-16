@@ -10,6 +10,7 @@ import {
 } from "./scheduler/useScheduler";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { api } from "../services/api";
+import { asyncConfirm } from "@/utils/asyncConfirm";
 import type { UserTask, CreateUserTaskData, KnowledgePoint } from "@shared/types";
 
 export interface TaskActionsState {
@@ -83,6 +84,12 @@ export const useTaskActions = (refetchQueues: () => void): TaskActions => {
   };
 
   const handleDeleteTask = async (task: UserTask) => {
+    const confirmed = await asyncConfirm({
+      title: t("scheduler.taskActions.deleteTaskConfirm.title"),
+      message: t("scheduler.taskActions.deleteTaskConfirm.message"),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteTaskMutation.mutateAsync(task.id);
       frontendEventBus.publish("message_show", { type: "success", content: t("unifiedWorkbench.messages.taskDeleted") });

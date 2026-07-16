@@ -256,7 +256,7 @@ export const createApiClient = (): AxiosInstance => {
     },
   );
 
-  initCsrf().catch(() => {});
+  initCsrf().catch((err) => { console.error(err); });
 
   return client;
 };

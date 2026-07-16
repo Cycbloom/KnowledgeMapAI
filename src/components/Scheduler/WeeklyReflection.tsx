@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Calendar, X, Save, Target, 
+import { useTranslation } from 'react-i18next';
+import {
+  Calendar, X, Save, Target,
   BarChart3, Brain, Lightbulb,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
@@ -9,6 +10,15 @@ import { taskReviewApi, TaskReview, Mood } from '../../services/api/review';
 import { api } from '../../services/api';
 import { formatDuration, formatDate } from '../../utils/formatters';
 import type {UserTaskStats} from '@shared/types';
+import { Skeleton } from '../common';
+import { useFormDraft } from '../../hooks';
+import { ConfirmationModal } from '../common/ConfirmationModal';
+
+interface WeeklyReflectionDraft {
+  content: string;
+  improvements: string;
+  learnings: string;
+}
 
 interface WeeklyReflectionProps {
   isOpen: boolean;
@@ -29,9 +39,22 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
   onClose,
   onSave,
 }) => {
-  const [content, setContent] = useState('');
-  const [improvements, setImprovements] = useState('');
-  const [learnings, setLearnings] = useState('');
+  const { t } = useTranslation();
+  const {
+    value: formData,
+    setValue: setFormData,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<WeeklyReflectionDraft>({
+    key: 'weeklyReflection_draft',
+    initialValue: {
+      content: '',
+      improvements: '',
+      learnings: '',
+    },
+  });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
@@ -83,13 +106,17 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
 
       if (existingReview) {
         setExistingReview(existingReview);
-        setContent(existingReview.content || '');
-        setImprovements(existingReview.improvements || '');
-        setLearnings(existingReview.learnings || '');
+        setFormData({
+          content: existingReview.content || '',
+          improvements: existingReview.improvements || '',
+          learnings: existingReview.learnings || '',
+        });
       } else {
-        setContent('');
-        setImprovements('');
-        setLearnings('');
+        setFormData({
+          content: '',
+          improvements: '',
+          learnings: '',
+        });
         setExistingReview(null);
       }
     } catch (error) {
@@ -104,9 +131,9 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
     try {
       const reviewData = {
         review_type: 'weekly' as const,
-        content: content || undefined,
-        improvements: improvements || undefined,
-        learnings: learnings || undefined,
+        content: formData.content || undefined,
+        improvements: formData.improvements || undefined,
+        learnings: formData.learnings || undefined,
       };
 
       let review: TaskReview;
@@ -116,6 +143,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
         review = await taskReviewApi.createReview(reviewData);
       }
 
+      clearDraft();
       setExistingReview(review);
       onSave?.(review);
     } catch (error) {
@@ -197,8 +225,16 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
             </div>
 
             {loading ? (
-              <div className="p-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
+                      <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                      <Skeleton className="h-3 w-16 mx-auto" />
+                    </div>
+                  ))}
+                </div>
+                <Skeleton className="h-40 w-full" />
               </div>
             ) : (
               <div className="p-6 space-y-6">
@@ -260,8 +296,8 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                     本周总结
                   </h3>
                   <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    value={formData.content}
+                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                     placeholder="这周整体感觉如何？有什么收获？"
                     className="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
@@ -274,8 +310,8 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                       下周改进计划
                     </h3>
                     <textarea
-                      value={improvements}
-                      onChange={(e) => setImprovements(e.target.value)}
+                      value={formData.improvements}
+                      onChange={(e) => setFormData(prev => ({ ...prev, improvements: e.target.value }))}
                       placeholder="下周想要改进什么？"
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -286,8 +322,8 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                       本周学习收获
                     </h3>
                     <textarea
-                      value={learnings}
-                      onChange={(e) => setLearnings(e.target.value)}
+                      value={formData.learnings}
+                      onChange={(e) => setFormData(prev => ({ ...prev, learnings: e.target.value }))}
                       placeholder="这周学到了什么新东西？"
                       className="w-full h-20 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -318,6 +354,16 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
             )}
           </motion.div>
         </motion.div>
+      )}
+      {isOpen && !loading && !existingReview && showRestorePrompt && (
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t('common.restoreDraftTitle')}
+          message={t('common.restoreDraftMessage')}
+          isDangerous={false}
+        />
       )}
     </AnimatePresence>
   );

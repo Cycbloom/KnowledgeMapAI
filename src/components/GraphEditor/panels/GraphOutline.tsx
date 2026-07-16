@@ -35,6 +35,7 @@ import { BatchGenerateDialog } from "../modals/BatchGenerateDialog";
 import { GraphStatsSummary } from "../shared/GraphStatsSummary";
 import { getLevelColors } from "../../../config/learningStatusColors";
 import { useTranslation } from "react-i18next";
+import { asyncConfirm } from "../../../utils/asyncConfirm";
 import { BackboneNodeIcon } from "../BackboneNodeIcon";
 import { LiteratureHoverCard } from "../LiteratureHoverCard";
 import { HIERARCHICAL_EDGE_TYPES } from '../../../config/relationshipTypes';
@@ -1131,6 +1132,16 @@ export const GraphOutline = React.memo(function GraphOutline({
     if (!isMultiSelectMode) setIsMultiSelectMode(true);
   }, [selectedNodeIds, onSelectionChange, isMultiSelectMode, nodes, edges]);
 
+  const handleBatchDelete = useCallback(async () => {
+    const confirmed = await asyncConfirm({
+      title: t('graphEditor.confirmBatchDeleteNodesTitle'),
+      message: t('graphEditor.confirmBatchDeleteNodesMessage', { count: selectedNodeIds.size }),
+      isDangerous: true,
+    });
+    if (!confirmed) return;
+    onBatchAction?.("delete");
+  }, [t, selectedNodeIds.size, onBatchAction]);
+
   // Tree Mode: Recursive Render
   const TreeNode = React.memo(
     ({
@@ -1356,7 +1367,8 @@ export const GraphOutline = React.memo(function GraphOutline({
               <button
                 onClick={() => setViewMode("module")}
                 className={`p-1.5 rounded ${viewMode === "module" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
-                title="模块视图"
+                title={t('common.aria.moduleView')}
+                aria-label={t('common.aria.moduleView')}
               >
                 <Network size={14} />
               </button>
@@ -1365,7 +1377,8 @@ export const GraphOutline = React.memo(function GraphOutline({
               <button
                 onClick={() => setViewMode("literature")}
                 className={`p-1.5 rounded ${viewMode === "literature" ? "bg-white dark:bg-slate-700 shadow-sm text-primary-600 dark:text-primary-400" : "text-slate-400 hover:text-slate-600"}`}
-                title="文献视图"
+                title={t('common.aria.literatureView')}
+                aria-label={t('common.aria.literatureView')}
               >
                 <FileText size={14} />
               </button>
@@ -1474,10 +1487,11 @@ export const GraphOutline = React.memo(function GraphOutline({
                 <Wand2 size={16} />
               </button>
               <button
-                onClick={() => onBatchAction?.("delete")}
+                onClick={handleBatchDelete}
                 disabled={selectedNodeIds.size === 0}
                 className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t("graphEditor.outline.batchDelete")}
+                aria-label={t('common.aria.batchDelete')}
               >
                 <Trash2 size={16} />
               </button>

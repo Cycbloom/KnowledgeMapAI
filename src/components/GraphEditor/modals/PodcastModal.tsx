@@ -11,7 +11,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "../../common";
-import { useTextToSpeech, useTheme } from "../../../hooks";
+import { useTextToSpeech, useTheme, useFocusTrap, useEscapeKey } from "../../../hooks";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../services/api";
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
@@ -39,6 +39,8 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
   const [_activeSegmentIndex, _setActiveSegmentIndex] = useState(-1);
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
 
   const {
     speak,
@@ -130,6 +132,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
         onClick={onClose}
       >
         <motion.div
+          ref={containerRef}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}

@@ -28,6 +28,7 @@ import {
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { formatDurationMinutes, formatDate as formatDateUtil } from "../utils/formatters";
+import { useFocusTrap, useEscapeKey } from "@/hooks/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { SkeletonCard } from "@/components/common";
 import { useDebouncedSearch } from "../hooks/useDebouncedSearch";
@@ -104,6 +105,9 @@ export const LearningPaths = () => {
   const [newPathGoal, setNewPathGoal] = useState("");
   const [newPathDailyMinutes, setNewPathDailyMinutes] = useState(30);
   const [newPathTargetDate, setNewPathTargetDate] = useState("");
+
+  const createModalRef = useFocusTrap<HTMLDivElement>({ enabled: isCreating });
+  useEscapeKey(() => setIsCreating(false), isCreating);
 
   const filteredPaths = (paths as LearningPathItem[] | undefined)?.filter((path) => {
     const matchesSearch =
@@ -456,6 +460,7 @@ export const LearningPaths = () => {
       {isCreating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div
+            ref={createModalRef}
             className={`w-full max-w-md rounded-2xl shadow-2xl p-6 md:p-8 ${
               isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}

@@ -65,5 +65,6 @@
   "passTitle": "Pass",
   "lifetimeAchievements": "Lifetime Achievements",
   "loadError": "Failed to load achievements",
-  "retry": "Retry"
+  "retry": "Retry",
+  "claimFailed": "Failed to claim reward, please try again later"
 }

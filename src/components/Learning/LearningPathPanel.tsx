@@ -265,7 +265,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   };
 
   const handleDeletePath = async (pathId: string) => {
-    if (!await asyncConfirm({ title: '删除', message: t("learning.learningPath.confirmDelete"), isDangerous: true })) return;
+    if (!await asyncConfirm({ title: t('common.confirm.deleteTitle'), message: t("learning.learningPath.confirmDelete"), isDangerous: true })) return;
 
     try {
       await deleteMutation.mutateAsync(pathId);

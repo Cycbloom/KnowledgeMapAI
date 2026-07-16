@@ -169,6 +169,7 @@ export const LearningModeRightPanel = ({
                 </div>
                 <button
                   onClick={onClose}
+                  aria-label={t('common.aria.close')}
                   className={`p-1.5 rounded-md transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
                 >
                   <X size={16} />

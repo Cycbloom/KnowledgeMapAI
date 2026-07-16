@@ -5,6 +5,7 @@ import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 import { UseMutationResult } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 interface HistoricalAlternativeBranch {
   nodeId: string;
@@ -36,6 +37,7 @@ interface UseBranchOperationsOptions {
 
 export const useBranchOperations = (options: UseBranchOperationsOptions) => {
   const { id, nodes, edges, selectedNode, state, mutations, record } = options;
+  const { t } = useTranslation();
 
   const handleGetBranchSuggestions = useCallback(async (): Promise<BranchSuggestion[]> => {
     if (!selectedNode || !id) return [];
@@ -63,12 +65,12 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
       return res.suggestions || [];
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: '获取分支建议失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.branch.getSuggestionsFailed') });
       return [];
     } finally {
       state.setLoading(false);
     }
-  }, [selectedNode, id, state, nodes, edges]);
+  }, [selectedNode, id, state, nodes, edges, t]);
 
   const handleCreateBranch = useCallback(async (suggestion: BranchSuggestion, isAccepted: boolean = true) => {
     if (!selectedNode || !id) return null;
@@ -107,16 +109,16 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
         graphId: id
       });
       record({ type: 'CREATE_EDGE', payload: newEdge });
-      frontendEventBus.publish("message_show", { type: 'success', content: `已创建分支：${suggestion.title}` });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.branch.created', { title: suggestion.title }) });
       return newNode;
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: '创建分支失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.branch.createFailed') });
       return null;
     } finally {
       state.setLoading(false);
     }
-  }, [selectedNode, id, state, mutations, record, edges]);
+  }, [selectedNode, id, state, mutations, record, edges, t]);
 
   const handleSwitchBranch = useCallback(async (pathItem: ExplorationPathItem, suggestion: BranchSuggestion) => {
     if (!id) return;
@@ -187,15 +189,15 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
           }
         ]);
 
-        frontendEventBus.publish("message_show", { type: 'success', content: `已切换分支：${suggestion.title}` });
+        frontendEventBus.publish("message_show", { type: 'success', content: t('graphAI.branch.switched', { title: suggestion.title }) });
       }
     } catch (err) {
       console.error(err);
-      frontendEventBus.publish("message_show", { type: 'error', content: '切换分支失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphAI.branch.switchFailed') });
     } finally {
       state.setLoading(false);
     }
-  }, [id, nodes, edges, state, mutations, record]);
+  }, [id, nodes, edges, state, mutations, record, t]);
 
   return {
     handleGetBranchSuggestions,

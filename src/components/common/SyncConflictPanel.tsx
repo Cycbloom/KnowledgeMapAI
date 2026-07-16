@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Cloud, Monitor, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../utils/formatters';
+import { useFocusTrap, useEscapeKey } from '../../hooks';
 
 interface ConflictItem {
   id: string;
@@ -18,6 +20,10 @@ interface SyncConflictPanelProps {
 }
 
 export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflictPanelProps) {
+  const { t } = useTranslation();
+  const hasConflicts = conflicts.length > 0;
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: hasConflicts });
+  useEscapeKey(() => onClose(), hasConflicts);
   if (conflicts.length === 0) return null;
 
   return (
@@ -29,6 +35,7 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
       onClick={onClose}
     >
       <motion.div
+        ref={containerRef}
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
@@ -42,7 +49,11 @@ export function SyncConflictPanel({ conflicts, onResolve, onClose }: SyncConflic
               同步冲突 ({conflicts.length})
             </h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button
+            onClick={onClose}
+            aria-label={t('common.aria.close')}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
             ✕
           </button>
         </div>

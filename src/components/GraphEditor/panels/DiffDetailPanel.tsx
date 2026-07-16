@@ -350,6 +350,8 @@ export const DiffDetailPanel = React.memo(function DiffDetailPanel({
     return (
       <button
         onClick={() => toggleSection(sectionKey)}
+        aria-expanded={isExpanded}
+        aria-label={isExpanded ? t('common.aria.collapse') : t('common.aria.expand')}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
       >
         {isExpanded ? (

@@ -13,7 +13,7 @@ import {
 } from "@shared/constants/backboneModulePresets";
 import { PresetCard } from "./PresetCard";
 import { CustomModuleEditor } from "./CustomModuleEditor";
-import { useTheme } from "@/hooks";
+import { useTheme, useFocusTrap, useEscapeKey } from "@/hooks";
 
 interface BackboneModuleSelectorProps {
   isOpen: boolean;
@@ -102,6 +102,9 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
     [selectedPresetId],
   );
 
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
+
   if (!isOpen) return null;
 
   return (
@@ -118,6 +121,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
         />
 
         <motion.div
+          ref={containerRef}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}

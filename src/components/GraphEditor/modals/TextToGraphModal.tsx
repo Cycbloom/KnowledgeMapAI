@@ -6,7 +6,7 @@ import { parseOpmlToGraph } from '../../../utils/opmlParser';
 import { useTextToGraphMutation, useDocumentToGraphMutation, useImageToGraphMutation } from '../../../hooks/mutations';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { api } from '../../../services/api';
-import { useNetworkStatus } from "../../../hooks";
+import { useNetworkStatus, useFocusTrap, useEscapeKey } from "../../../hooks";
 
 interface TextToGraphModalProps {
   isOpen: boolean;
@@ -37,6 +37,8 @@ interface TextToGraphResult {
 
 export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData, aiEnabled }) => {
   const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
   const [activeTab, setActiveTab] = useState<'text' | 'file' | 'url' | 'image'>('text');
   const [text, setText] = useState('');
@@ -389,7 +391,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div ref={containerRef} className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-primary-50 to-white">
           <div className="flex items-center space-x-2 text-primary-700">

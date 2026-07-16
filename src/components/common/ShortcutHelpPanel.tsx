@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw, Search, Keyboard } from 'lucide-react';
-import { useTheme } from "../../hooks";
+import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useShortcutStore } from '../../store/useShortcutStore';
 import {
   DEFAULT_SHORTCUTS,
@@ -265,6 +265,8 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
   onClose
 }) => {
   const { isDark } = useTheme();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
 
   if (!isOpen) return null;
 
@@ -275,7 +277,7 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
         onClick={onClose}
       />
 
-      <div className={cn(
+      <div ref={containerRef} className={cn(
         'relative w-full max-w-3xl max-h-[75vh] rounded-xl shadow-2xl overflow-hidden flex flex-col',
         isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white border border-gray-200 text-gray-900'
       )}>

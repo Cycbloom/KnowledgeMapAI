@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from "../../../hooks";
@@ -22,13 +23,14 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
   onLayoutUpdate
 }) => {
   const { isDark: _isDark } = useTheme();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   
   const [isApplying, setIsApplying] = useState(false);
 
   const organizeLayout = async () => {
     if (!nodes || nodes.length === 0) {
-      frontendEventBus.publish("message_show", { type: 'warning', content: '没有节点可以调整' });
+      frontendEventBus.publish("message_show", { type: 'warning', content: t('graphEditor.layout.noNodes') });
       return;
     }
 
@@ -49,10 +51,10 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
       
       queryClient.invalidateQueries({ queryKey: ['graphData', graphId] });
       
-      frontendEventBus.publish("message_show", { type: 'success', content: '节点位置已整理' });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.layout.organized') });
     } catch (error) {
       console.error('Layout organize error:', error);
-      frontendEventBus.publish("message_show", { type: 'error', content: '整理节点位置失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.layout.organizeFailed') });
     } finally {
       setIsApplying(false);
     }

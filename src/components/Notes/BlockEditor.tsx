@@ -22,7 +22,7 @@ import {
   useWritingAssistMutation,
   useRefreshDailyAggregationMutation,
 } from "@/hooks/mutations";
-import { useNoteWordCount } from "@/hooks";
+import { useNoteWordCount, useAutoSave } from "@/hooks";
 import { message } from "@/utils/messageHelper";
 import type { NoteType, WritingAssistAction } from "@shared/types/note";
 import { buildEditorExtensions } from "./editorExtensions";
@@ -87,9 +87,6 @@ interface WikiPopover {
   position: { top: number; left: number };
 }
 
-/** 自动保存防抖时长（ms）。 */
-const AUTOSAVE_DEBOUNCE_MS = 3000;
-
 export const BlockEditor: React.FC<BlockEditorProps> = ({
   noteId,
   initialContent,
@@ -104,6 +101,8 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   const writingAssistMutation = useWritingAssistMutation();
   const refreshAggregationMutation = useRefreshDailyAggregationMutation();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+  // 当前 Markdown 内容（由编辑器 onUpdate 同步），供 useAutoSave 监听变化
+  const [editorMarkdown, setEditorMarkdown] = useState<string>(initialContent);
   const [moveAvailability, setMoveAvailability] = useState({ up: false, down: false });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -164,8 +163,6 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
   const isSettingContentRef = useRef(false);
   // 上次成功保存的内容，用于跳过无变更保存
   const lastSavedContentRef = useRef<string>(initialContent);
-  // 自动保存定时器
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 扩展配置（含占位文案）
   const extensions = useMemo(
@@ -219,6 +216,8 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     });
     isSettingContentRef.current = false;
     lastSavedContentRef.current = initialContent;
+    setEditorMarkdown(initialContent);
+    resetAutoSave();
     setSaveStatus("saved");
     // 仅依赖 noteId，不依赖 initialContent（避免父组件 re-render 重置内容）
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,16 +253,15 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     [autoSave, noteId, updateMutation],
   );
 
-  const scheduleSave = useCallback(
-    (markdown: string) => {
-      if (!autoSave) return;
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        void save(markdown);
-      }, AUTOSAVE_DEBOUNCE_MS);
-    },
-    [autoSave, save],
-  );
+  // 自动保存：useAutoSave 监听 editorMarkdown 变化，3 秒防抖后调用 save。
+  // 立即保存（失焦/写作辅助/块引用）通过 resetAutoSave 取消挂起的防抖定时器，
+  // 再直接调用 save(readMarkdown(editor)) 完成。
+  const { reset: resetAutoSave } = useAutoSave<string>({
+    value: editorMarkdown,
+    onSave: save,
+    delay: 3000,
+    enabled: autoSave,
+  });
 
   // —— 图片上传与插入（Task 9） ——
   // 上传文件并在当前光标处插入 image 节点；按钮/粘贴/拖拽共用此函数。
@@ -326,13 +324,6 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
       return true;
     };
   }, [uploadAndInsertImage]);
-
-  // 卸载时清定时器
-  useEffect(() => {
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, []);
 
   // —— 斜杠命令检测 ——
   const closeSlashMenu = useCallback(() => {
@@ -581,7 +572,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
       detectSlashCommand(editor);
       detectWikiLink(editor);
       detectBlockRef(editor);
-      scheduleSave(markdown);
+      setEditorMarkdown(markdown);
       // 更新块移动可用性
       setMoveAvailability(canMoveBlock(editor));
     };
@@ -589,7 +580,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     return () => {
       editor.off("update", handler);
     };
-  }, [editor, onUpdate, detectSlashCommand, detectWikiLink, detectBlockRef, scheduleSave]);
+  }, [editor, onUpdate, detectSlashCommand, detectWikiLink, detectBlockRef, setEditorMarkdown]);
 
   // —— 键盘导航（菜单打开时拦截 Arrow/Enter/Esc） ——
   // 斜杠菜单过滤后的项
@@ -695,13 +686,10 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
 
   // —— 失焦立即保存 ——
   const handleBlur = useCallback(() => {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
+    resetAutoSave();
     const markdown = readMarkdown(editor);
     void save(markdown);
-  }, [editor, save]);
+  }, [editor, save, resetAutoSave]);
 
   // 监听编辑器失焦（focusout 冒泡，覆盖工具栏外的编辑区域）
   useEffect(() => {
@@ -829,14 +817,11 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
 
     setWritingAssistState(null);
 
-    // 采纳即落盘:清除防抖定时器并立即保存
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
+    // 采纳即落盘:取消防抖定时器并立即保存
+    resetAutoSave();
     const markdown = readMarkdown(editor);
     void save(markdown);
-  }, [editor, writingAssistState, save]);
+  }, [editor, writingAssistState, save, resetAutoSave]);
 
   // 放弃建议:仅关闭 popover
   const handleRejectWritingAssist = useCallback(() => {
@@ -868,12 +853,14 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
       });
       isSettingContentRef.current = false;
       lastSavedContentRef.current = res.note.content;
+      setEditorMarkdown(res.note.content);
+      resetAutoSave();
       setSaveStatus("saved");
       message.success(t("notes.refreshAggregation.success"));
     } catch {
       message.error(t("notes.refreshAggregation.error"));
     }
-  }, [editor, noteId, t, refreshAggregationMutation]);
+  }, [editor, noteId, t, refreshAggregationMutation, resetAutoSave]);
 
   // —— 块移动 ——
   const handleMoveUp = useCallback(() => {
@@ -938,16 +925,13 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
       message.error(t("notes.editor.blockRef.stale"));
       return;
     }
-    // 若新生成了 blockId,立即保存(清除防抖定时器)
+    // 若新生成了 blockId,立即保存(取消防抖定时器)
     if (isNew) {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
+      resetAutoSave();
       const markdown = readMarkdown(editor);
       void save(markdown);
     }
-  }, [editor, ensureCurrentBlockId, t, save]);
+  }, [editor, ensureCurrentBlockId, t, save, resetAutoSave]);
 
   // P3 Task 8.4: 嵌入此块 —— 在当前光标位置插入 !((blockId)) 块嵌入节点
   const handleEmbedBlock = useCallback(() => {
@@ -962,14 +946,11 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
     message.success(t("notes.editor.blockRef.embedded"));
     // 若新生成了 blockId,立即保存
     if (isNew) {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
+      resetAutoSave();
       const markdown = readMarkdown(editor);
       void save(markdown);
     }
-  }, [editor, ensureCurrentBlockId, t, save]);
+  }, [editor, ensureCurrentBlockId, t, save, resetAutoSave]);
 
   // —— 保存状态文案 ——
   const saveStatusText = (() => {

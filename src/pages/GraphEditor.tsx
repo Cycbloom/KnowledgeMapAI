@@ -820,13 +820,15 @@ export const GraphEditor = () => {
           graphId: id || "",
           relationship_type: "contains",
         });
-        message.success("连接已创建");
+        message.success(t("graphEditor.connectionCreated"));
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "未知错误";
-        message.error(`创建连接失败: ${errorMessage}`);
+        message.error(
+          t("graphEditor.connectionCreateFailed", { message: errorMessage }),
+        );
       }
     },
-    [mutations.createEdgeMutation, id],
+    [mutations.createEdgeMutation, id, t],
   );
 
   const handleNodeClick = useCallback(
@@ -983,11 +985,11 @@ export const GraphEditor = () => {
       await queryClient.invalidateQueries({
         queryKey: ["graphNodeStatus", id],
       });
-      message.success("节点状态已更新");
+      message.success(t("graphEditor.nodeStatusUpdated"));
     } catch (err) {
       console.error("Failed to update node status:", err);
     }
-  }, [queryClient, id]);
+  }, [queryClient, id, t]);
 
   const handleOpenDetail = useCallback(() => {
     setSidebarMode("detail");
@@ -1265,9 +1267,9 @@ export const GraphEditor = () => {
       >
         {isGraphLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">正在加载数据...</p>
+            <div className="space-y-4 p-6 w-full max-w-md">
+              <Skeleton variant="rectangular" className="h-8 w-64" />
+              <Skeleton variant="rectangular" className="h-32 w-full" />
             </div>
           </div>
         )}

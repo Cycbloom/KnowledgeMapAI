@@ -13,6 +13,7 @@ import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
 import { useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { createAsyncHandler } from '../../utils/asyncHandler';
+import { useTranslation } from 'react-i18next';
 import {
   processExpandSuggestions,
   getExistingTitles,
@@ -99,11 +100,12 @@ export const useGraphAIOperations = ({
 }: UseGraphAIOperationsProps) => {
   const queryClient = useQueryClient();
   const asyncHandler = createAsyncHandler();
-  const { 
-    nodeForm, 
-    selectedNode, 
-    selectedNodeIds, 
-    setLoading, 
+  const { t } = useTranslation();
+  const {
+    nodeForm,
+    selectedNode,
+    selectedNodeIds,
+    setLoading,
     aiPrompt, setAiPrompt
   } = state;
   const {
@@ -181,7 +183,7 @@ export const useGraphAIOperations = ({
     if (!selectedNode || !id) return;
     
     if (!selectedNode.title) {
-      message.error('节点标题不能为空');
+      message.error(t('graphAI.nodeTitleRequired'));
       return;
     }
     
@@ -227,12 +229,12 @@ export const useGraphAIOperations = ({
         loadingSetter: setLoading,
         onSuccess: (result) => {
           if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
-            message.success(`拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线`);
+            message.success(t('graphAI.expandComplete'));
           } else {
-            message.info('未发现新的关联');
+            message.info(t('graphAI.noNewRelations'));
           }
         },
-        errorMessage: '拓展失败'
+        errorMessage: t('graphAI.expandFailed')
       }
     );
   };
@@ -256,7 +258,7 @@ export const useGraphAIOperations = ({
         }));
 
         if (cards.length === 0) {
-          message.error('AI 未能生成有效的卡片');
+          message.error(t('graphAI.cardGenerateFailed'));
           return null;
         }
 
@@ -266,11 +268,10 @@ export const useGraphAIOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: '成功生成并保存了复习卡片！',
-        errorMessage: '生成卡片失败',
+        errorMessage: t('graphAI.cardGenerateFailed'),
         onSuccess: (result) => {
           if (result && typeof result === 'number') {
-            message.success(`成功生成并保存了 ${result} 张复习卡片！`);
+            message.success(t('graphAI.cardGenerateSuccess', { count: result }));
           }
         }
       }
@@ -295,10 +296,10 @@ export const useGraphAIOperations = ({
         const model = aiConfig?.model;
 
         if (type === 'batch_generate_questions') {
-          message.info(`正在提交 ${nodesToProcess.length} 个节点的题目生成任务...`, { duration: 2000 });
+          message.info(t('graphAI.submitting'), { duration: 2000 });
 
           const nodeIds = nodesToProcess.map(n => n.id);
-          
+
           const batchParams = params as BatchGenerateConfig | undefined;
           await api.ai.batchGenerateCards(nodeIds, {
             types: batchParams?.types,
@@ -308,7 +309,7 @@ export const useGraphAIOperations = ({
             model
           });
 
-          message.success(`成功提交 ${nodesToProcess.length} 个生成任务，请在任务列表中查看进度`, { duration: 3000 });
+          message.success(t('graphAI.submitSuccess'), { duration: 3000 });
           return true;
         }
 
@@ -348,10 +349,10 @@ export const useGraphAIOperations = ({
         return true;
       },
       {
-        successMessage: '任务提交成功',
-        errorMessage: '任务提交失败',
+        successMessage: t('graphAI.submitSuccess'),
+        errorMessage: t('graphAI.actionFailed'),
         onSuccess: () => {
-          message.success('任务提交成功', { duration: 3000 });
+          message.success(t('graphAI.submitSuccess'), { duration: 3000 });
         }
       }
     );
@@ -462,8 +463,8 @@ export const useGraphAIOperations = ({
       },
       {
         loadingSetter: setLoading,
-        successMessage: `已创建分支：${suggestion.title}`,
-        errorMessage: '创建分支失败'
+        successMessage: t('graphAI.branchSwitched'),
+        errorMessage: t('graphAI.expandFailed')
       }
     );
   };
@@ -553,7 +554,7 @@ export const useGraphAIOperations = ({
         errorMessage: '切换分支失败',
         onSuccess: (result) => {
           if (result) {
-            message.success(`已切换分支：${suggestion.title}`);
+            message.success(t('graphAI.branchSwitched'));
           }
         }
       }
@@ -613,7 +614,7 @@ export const useGraphAIOperations = ({
 
   const handleExecuteAction = async (action: AIAction, nodeId: string) => {
     try {
-      message.info(`正在执行动作: ${action.name}...`);
+      message.info(t('graphAI.submitting'));
       const res = await api.aiActions.execute({
         action_id: action.id,
         node_id: nodeId,
@@ -625,12 +626,12 @@ export const useGraphAIOperations = ({
           title: action.name,
           content: typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2),
         });
-        message.success(`动作执行成功`);
+        message.success(t('graphAI.actionSuccess'));
       } else {
         await queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
         await queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(id) });
 
-        let feedback = `动作执行成功: ${action.name}`;
+        let feedback = `${t('graphAI.actionSuccess')}: ${action.name}`;
         if (res.message) feedback += ` (${res.message})`;
 
         if (action.target_mode === "update_node" && res.data?.updatedFields) {
@@ -643,7 +644,7 @@ export const useGraphAIOperations = ({
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : '未知错误';
-      message.error(`执行失败: ${errorMessage}`);
+      message.error(`${t('graphAI.actionFailed')}: ${errorMessage}`);
     }
   };
 

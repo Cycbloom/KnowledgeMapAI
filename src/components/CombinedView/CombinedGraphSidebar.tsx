@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, ChevronRight, ChevronDown, X, List, Link, Sparkles } from 'lucide-react';
 import type { Node, Edge, CrossGraphNodeConnection } from '../../types';
 import { CombinedNodeDetailSidebar } from './CombinedNodeDetailSidebar';
 import { CombinedNodeEditSidebar } from './CombinedNodeEditSidebar';
+import { EmptyState } from '../common/EmptyState';
 
 type SidebarMode = 'outline' | 'detail' | 'edit' | 'connections';
 
@@ -56,6 +58,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
   aiOps,
   nodeOps
 }) => {
+  const { t } = useTranslation();
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>('outline');
   const [prevSidebarMode, setPrevSidebarMode] = useState<SidebarMode>('outline');
   const [sidebarWidth, setSidebarWidth] = useState(340);
@@ -418,6 +421,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
             </div>
             <button
               onClick={onClose}
+              aria-label={t('common.aria.close')}
               className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors text-slate-400"
             >
               <X size={16} />
@@ -549,11 +553,11 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm p-4 text-center">
-                  <div>
-                    <Link size={24} className="mx-auto mb-2 opacity-50" />
-                    <p>两个图谱之间没有相同的知识点</p>
-                  </div>
+                <div className="h-full flex items-center justify-center p-4">
+                  <EmptyState
+                    icon={<Link className="w-12 h-12 text-gray-400" />}
+                    title={t('combinedViewPage.empty.sameKnowledgePoints')}
+                  />
                 </div>
               )}
             </div>

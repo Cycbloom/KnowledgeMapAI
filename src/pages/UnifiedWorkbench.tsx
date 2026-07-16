@@ -5,7 +5,6 @@ import { AnimatePresence } from "framer-motion";
 import {
   AlertCircle,
   Zap,
-  Sparkles,
   BookOpen,
   Target,
   Brain,
@@ -29,6 +28,7 @@ import {
 import type { KnowledgePointWithStatus } from "../components/Workbench/KnowledgePointCard";
 import { api } from "../services/api";
 import { formatDate } from "@/utils/formatters";
+import { SkeletonCard } from "@/components/common";
 import type {
   QueueData,
   PendingReviewTask,
@@ -318,16 +318,18 @@ export const UnifiedWorkbench: React.FC = () => {
 
         <main className="flex-1 min-h-0 flex flex-col p-3 sm:p-6 gap-3 sm:gap-6">
           {queuesLoading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-primary-500/30 rounded-full animate-spin border-t-primary-500" />
-                  <Sparkles
-                    size={24}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500 dark:text-primary-400"
-                  />
+            <div className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-6">
+              <div className="flex-shrink-0 min-h-[280px]">
+                <div className="h-full grid grid-cols-3 gap-3 sm:gap-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <SkeletonCard key={i} lines={4} />
+                  ))}
                 </div>
-                <p className="text-slate-500 dark:text-slate-400">{t("unifiedWorkbench.messages.loadingWorkbench")}</p>
+              </div>
+              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <SkeletonCard key={i} lines={5} />
+                ))}
               </div>
             </div>
           ) : (

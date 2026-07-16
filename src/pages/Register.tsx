@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
-import { useTheme } from '../hooks';
+import { useTheme, useFormDraft } from '../hooks';
+import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { Sun, Moon, Cloud } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
 import { getAuthModeDisplay } from '../config/authConfig';
@@ -11,9 +12,19 @@ import type { User } from '@shared/types/user';
 
 export const Register = () => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
+  const {
+    value: draft,
+    setValue: setDraft,
+    clearDraft,
+    showRestorePrompt,
+    onRestore,
+    onDiscard,
+  } = useFormDraft<{ email: string; name: string }>({
+    key: 'register_draft',
+    initialValue: { email: '', name: '' },
+    storage: 'sessionStorage',
+  });
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [touched, setTouched] = useState<{ email: boolean; password: boolean; confirmPassword: boolean }>({
@@ -30,10 +41,11 @@ export const Register = () => {
     e.preventDefault();
     setErrors([]);
     try {
-      const data = await registerMutation.mutateAsync({ email, password, name });
+      const data = await registerMutation.mutateAsync({ email: draft.email, password, name: draft.name });
       if (data.error) throw new Error(data.error);
-      
+
       setUser(data.user as User | null, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
+      clearDraft();
       navigate('/');
     } catch (err: unknown) {
       if (isValidationError(err)) {
@@ -88,8 +100,8 @@ export const Register = () => {
               type="text"
               name="name"
               autoComplete="name"
-              value={name}
-              onChange={e => setName(e.target.value)}
+              value={draft.name}
+              onChange={e => setDraft(prev => ({ ...prev, name: e.target.value }))}
               className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               required
             />
@@ -100,13 +112,13 @@ export const Register = () => {
               type="email"
               name="email"
               autoComplete="username"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              value={draft.email}
+              onChange={e => setDraft(prev => ({ ...prev, email: e.target.value }))}
               onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
               className="mt-1 block w-full input-mobile rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 border transition-all"
               required
             />
-            {touched.email && !validateEmail(email) && (
+            {touched.email && !validateEmail(draft.email) && (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">{t('register.validation.emailInvalid')}</p>
             )}
           </div>
@@ -180,6 +192,16 @@ export const Register = () => {
       >
         {isDark ? <Sun size={20} /> : <Moon size={20} />}
       </button>
+
+      <ConfirmationModal
+        isOpen={showRestorePrompt}
+        onClose={onDiscard}
+        onConfirm={onRestore}
+        title={t('common.restoreDraftTitle')}
+        message={t('common.restoreDraftMessage')}
+        confirmText={t('common.restore')}
+        cancelText={t('common.discard')}
+      />
     </div>
   );
 };

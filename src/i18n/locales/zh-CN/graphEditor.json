@@ -20,7 +20,21 @@
     "hideGrid": "隐藏网格",
     "exporting": "正在导出...",
     "exportBtn": "导出",
-    "notSupported": "当前视图不支持图片导出"
+    "notSupported": "当前视图不支持图片导出",
+    "jsonSuccess": "JSON 导出成功",
+    "exportFailed": "导出失败",
+    "markdownSuccess": "Markdown 导出成功",
+    "markdownFailed": "Markdown 导出失败",
+    "ankiGenerating": "正在生成 Anki 卡片...",
+    "noCards": "当前图谱没有复习卡片",
+    "ankiSuccess": "Anki 导出成功",
+    "ankiFailed": "Anki 导出失败",
+    "graphDeleted": "图谱已删除",
+    "deleteFailed": "删除失败",
+    "deleteGraphConfirm": {
+      "title": "删除图谱",
+      "message": "确定要删除当前图谱 \"{{title}}\" 吗？此操作无法撤销。"
+    }
   },
   "graphMap": {
     "relationDiscovery": {
@@ -300,8 +314,86 @@
     "snapshots": "暂无快照",
     "versionHistory": "暂无版本历史",
     "commandPaletteNoResult": "未找到相关结果",
-    "nodeEmptyContent": "暂无内容，请先在编辑模式输入..."
+    "nodeEmptyContent": "暂无内容，请先在编辑模式输入...",
+    "literatureEmpty": "暂无文献数据",
+    "aggregationEmpty": "暂无聚合结果"
   },
+  "interaction": {
+    "nodeLocked": "此节点尚未解锁！",
+    "nodeLockedHint": "请先学习前置知识点。",
+    "selectEndNode": "请选择终点节点",
+    "pathFound": "找到路径，长度: {{count}} 步",
+    "pathNotFound": "未找到路径"
+  },
+  "nodeDeleted": "节点已删除",
+  "nodeDeleteFailed": "删除失败",
+  "nodeDeletedFromGraphs": "知识点已从 {{count}} 个图谱中彻底删除",
+  "regionCreated": "区域「{{name}}」创建成功",
+  "loadPathFailed": "获取学习路径失败",
+  "selectPathFirst": "请先选择学习路径",
+  "pathEmpty": "学习路径中没有节点",
+  "noConceptExtracted": "未从文献中提取到概念",
+  "addConceptFailed": "添加概念失败",
+  "confirmDeleteBranchTitle": "删除分支",
+  "confirmDeleteBranchMessage": "确定要删除分支「{{name}}」吗？此操作无法撤销。",
+  "confirmBatchDeleteNodesTitle": "批量删除节点",
+  "confirmBatchDeleteNodesMessage": "确定要删除选中的 {{count}} 个节点吗？此操作无法撤销。",
   "loadError": "加载图谱编辑器数据失败",
-  "retry": "重试"
+  "retry": "重试",
+  "connectionCreated": "连接已创建",
+  "connectionCreateFailed": "创建连接失败: {{message}}",
+  "nodeStatusUpdated": "节点状态已更新",
+  "loadingData": "正在加载数据...",
+  "confirmDeleteRelationshipTitle": "删除关系类型",
+  "confirmDeleteRelationshipMessage": "确定要删除此关系类型吗？此操作无法撤销。",
+  "confirmRemoveParentTitle": "移除父节点",
+  "confirmRemoveParentMessage": "确定要移除该父节点关系吗？",
+  "createSnapshot": "创建快照",
+  "batchGenerateSuccess": "生成完成！共生成 {{count}} 道题目",
+  "batchGenerateFailed": "生成失败: {{message}}",
+  "commands": {
+    "backToHome": "返回首页",
+    "graphList": "图谱列表",
+    "mindmapView": "思维导图视图",
+    "timelineView": "时间轴视图",
+    "treeView": "树形视图",
+    "openSidebar": "打开侧边栏",
+    "closeSidebar": "关闭侧边栏",
+    "switchToLight": "切换亮色模式",
+    "switchToDark": "切换暗色模式",
+    "enterFocusMode": "进入专注模式",
+    "exitFocusMode": "退出专注模式",
+    "newSubnode": "新建子节点",
+    "deleteNode": "删除节点",
+    "selectNodeFirst": "请先选择一个节点"
+  },
+  "share": {
+    "madePublic": "图谱已公开，任何人均可访问",
+    "madePrivate": "图谱已设为私有",
+    "toggleFailed": "设置失败，请重试",
+    "inviteSent": "邀请已发送",
+    "inviteFailed": "邀请失败",
+    "inviteFailedRetry": "邀请失败，请重试",
+    "collaboratorRemoved": "已移除协作者",
+    "removeFailed": "移除失败",
+    "removeFailedRetry": "移除失败，请重试",
+    "linkGenerated": "分享链接已生成",
+    "linkGenerateFailed": "生成链接失败",
+    "linkGenerateFailedRetry": "生成链接失败，请重试"
+  },
+  "versionHistory": {
+    "loadFailed": "加载版本历史失败",
+    "rollbackSuccess": "已成功回滚到版本 {{version}}",
+    "rollbackFailed": "回滚失败",
+    "compareFailed": "版本对比失败"
+  },
+  "layout": {
+    "noNodes": "没有节点可以调整",
+    "organized": "节点位置已整理",
+    "organizeFailed": "整理节点位置失败"
+  },
+  "settings": {
+    "saved": "设置已保存",
+    "saveFailed": "保存失败"
+  }
 }

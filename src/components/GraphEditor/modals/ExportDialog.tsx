@@ -3,6 +3,7 @@ import { X, FileText, Image, List, Check, Download, Loader2 } from 'lucide-react
 import { useTranslation } from 'react-i18next';
 import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { LazyImage } from "../../common";
+import { useFocusTrap, useEscapeKey } from "../../../hooks";
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ interface ExportDialogProps {
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, graphId, graphTitle, getScreenshot }) => {
   const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
+  useEscapeKey(() => onClose(), isOpen);
   const [loading, setLoading] = useState(false);
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
   const [includeStats, _setIncludeStats] = useState(true);
@@ -92,14 +95,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+      <div ref={containerRef} className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <FileText className="text-primary-600" size={20} />
             {t('graphEditor.export.title')}
           </h2>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} aria-label={t('common.aria.close')} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
             <X size={20} className="text-gray-500" />
           </button>
         </div>

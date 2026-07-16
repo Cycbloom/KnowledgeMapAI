@@ -54,7 +54,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   };
 
   const handleRemove = async (userId: string) => {
-    if (await asyncConfirm({ title: '移除协作者', message: '确定要移除此协作者吗？', isDangerous: true })) {
+    if (await asyncConfirm({ title: t('common.confirm.removeCollaboratorTitle'), message: t('common.confirm.removeCollaboratorMessage'), isDangerous: true })) {
       await removeCollaborator(graphId, userId);
     }
   };

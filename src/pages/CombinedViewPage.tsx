@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useCombinedView, useTheme } from '../hooks';
 import { CombinedViewCanvas } from '../components/CombinedView/CombinedViewCanvas';
+import { Skeleton } from '../components/common';
 import { api } from '../services/api';
 import type { Graph, CombinedViewLayoutMode, KnowledgePoint, GraphNodeWithKnowledgePoint, Edge } from '../types';
 
@@ -204,10 +205,25 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('combinedViewPage.loadingCombinedView')}</p>
+      <div className="min-h-screen bg-gray-900 flex flex-col">
+        <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton variant="rectangular" className="h-6 w-40 bg-gray-700" />
+              <Skeleton variant="text" className="w-48 h-4 bg-gray-700" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Skeleton variant="rectangular" className="h-8 w-32 bg-gray-700" />
+              <Skeleton variant="rectangular" className="h-8 w-40 bg-gray-700" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Skeleton variant="rectangular" className="h-8 w-24 rounded-full bg-gray-700" />
+            <Skeleton variant="rectangular" className="h-8 w-24 rounded-full bg-gray-700" />
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <Skeleton variant="rectangular" className="h-full w-full bg-gray-800" />
         </div>
       </div>
     );

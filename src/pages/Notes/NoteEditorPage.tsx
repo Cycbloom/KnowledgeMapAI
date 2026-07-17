@@ -11,6 +11,7 @@ import {
   Loader2,
   CalendarDays,
   NotebookPen,
+  AlertTriangle,
 } from "lucide-react";
 import { useNote } from "@/hooks/queries";
 import { useUpdateNoteMutation, useDeleteNoteMutation } from "@/hooks/mutations";
@@ -18,7 +19,7 @@ import { useError } from "@/hooks";
 import { addRecentNote } from "@/hooks/useRecentNotes";
 import { BlockEditor } from "@/components/Notes/BlockEditor";
 import { InboundBlockRefsPanel } from "@/components/Notes/InboundBlockRefsPanel";
-import { Skeleton, EmptyState } from "@/components/common";
+import { Skeleton, EmptyState, ErrorBoundary } from "@/components/common";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { message } from "@/utils/messageHelper";
 import { formatDate } from "@/utils/formatters";
@@ -319,11 +320,36 @@ const NoteEditorPage: React.FC = () => {
         <div className="h-full max-w-6xl mx-auto flex gap-4 px-4 sm:px-6 py-4">
           <div className="flex-1 min-w-0 h-full">
             <div className="max-w-4xl mx-auto h-full">
-              <BlockEditor
-                noteId={note.id}
-                initialContent={note.content}
-                noteType={note.type}
-              />
+              <ErrorBoundary
+                fallbackRender={(error, resetErrorBoundary) => (
+                  <div className="h-full flex items-center justify-center p-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-900/40 p-8 max-w-md w-full text-center">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+                        <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                      </div>
+                      <p className="text-red-600 dark:text-red-400 mb-2 font-medium">
+                        编辑器崩溃
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 font-mono break-all">
+                        {error.message}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={resetErrorBoundary}
+                        className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                      >
+                        {t("common.retry")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              >
+                <BlockEditor
+                  noteId={note.id}
+                  initialContent={note.content}
+                  noteType={note.type}
+                />
+              </ErrorBoundary>
             </div>
           </div>
           {/* P3 Task 10.2: 被引用的块侧边栏(大屏可见,移动端隐藏避免遮挡编辑器) */}

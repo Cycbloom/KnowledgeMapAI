@@ -168,6 +168,7 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
               </span>
               <input
                 type="text"
+                aria-label={t('common.aria.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('console.input.searchPlaceholder')}

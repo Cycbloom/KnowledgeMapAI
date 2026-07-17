@@ -890,6 +890,8 @@ const GraphToolbarBase: React.FC<GraphToolbarProps> = ({
       <div className="relative" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
+          aria-expanded={isBatchMenuOpen}
+          aria-haspopup="menu"
           className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
             isBatchMenuOpen
               ? "bg-primary-600 text-white"

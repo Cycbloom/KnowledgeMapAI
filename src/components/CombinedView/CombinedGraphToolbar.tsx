@@ -120,7 +120,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
       <div className="flex items-center gap-2 px-2">
         <div className="w-2 h-2 rounded-full bg-primary-500" />
         <span className="text-sm font-medium max-w-[100px] truncate">{graph1Title}</span>
-        <span className="text-gray-400">+</span>
+        <span className="text-gray-400 dark:text-gray-500">+</span>
         <div className="w-2 h-2 rounded-full bg-green-500" />
         <span className="text-sm font-medium max-w-[100px] truncate">{graph2Title}</span>
       </div>

@@ -39,6 +39,7 @@ import { CreateNodeModal } from "../components/Learning/CreateNodeModal";
 import { addQuote } from "../components/RAGChat";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
+import { useShallow } from "zustand/react/shallow";
 import { schedulerApi } from "../services/api";
 
 type OutlineMode = "graph" | "learning-path";
@@ -105,7 +106,14 @@ export const LearningMode = () => {
   } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { enterFocusMode, exitFocusMode, highlightEnabled, setHighlightEnabled } = useFocusStore();
+  const { enterFocusMode, exitFocusMode, highlightEnabled, setHighlightEnabled } = useFocusStore(
+    useShallow((s) => ({
+      enterFocusMode: s.enterFocusMode,
+      exitFocusMode: s.exitFocusMode,
+      highlightEnabled: s.highlightEnabled,
+      setHighlightEnabled: s.setHighlightEnabled,
+    })),
+  );
   const { fontSize, readingMode, contentWidthMode } = useLearningSettingsStore();
   const queryClient = useQueryClient();
 
@@ -207,6 +215,7 @@ export const LearningMode = () => {
       }
     };
     loadData();
+    // 仅在 nodeId 变化时加载学习材料；loadData 内部依赖通过闭包在触发时获取最新值
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId]);
 

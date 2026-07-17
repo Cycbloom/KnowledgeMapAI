@@ -13,12 +13,12 @@ import {
   useBatchRestoreGraphsMutation,
 } from "../hooks/mutations";
 import { useQueryClient } from "@tanstack/react-query";
-import { Network, Star, Clock, AlertCircle } from "lucide-react";
+import { Network, Star, Clock, AlertCircle, AlertTriangle } from "lucide-react";
 import { message } from "../utils/messageHelper";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { formatDate } from "@/utils/formatters";
-import { ConfirmationModal, SkeletonCard } from "../components/common";
+import { ConfirmationModal, SkeletonCard, ErrorBoundary } from "../components/common";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { useTheme, useIsMobile } from "../hooks";
 import { useFocusTrap, useEscapeKey } from "@/hooks/common";
@@ -315,7 +315,7 @@ export const Dashboard = () => {
       >
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 space-y-4 lg:space-y-6">
           <div
-            className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
+            className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"}`}
           >
             {Array.from({ length: 6 }).map((_, i) => (
               <SkeletonCard key={i} lines={3} />
@@ -435,17 +435,37 @@ export const Dashboard = () => {
               ref={aiGeneratorRef}
               className={`w-full ${isMobile ? "h-full" : "max-w-2xl max-h-[90vh]"} overflow-y-auto ${isMobile ? "rounded-none" : "rounded-2xl"} shadow-2xl`}
             >
-              <AutoGraphGenerator
-                onClose={() => setIsAIGeneratorOpen(false)}
-                onGraphGenerated={(nodes, _edges) => {
-                  setIsAIGeneratorOpen(false);
-                  queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-                  queryClient.invalidateQueries({
-                    queryKey: ["dashboardStats"],
-                  });
-                  message.success(t("dashboard.nodesGenerated", { count: nodes.length }));
-                }}
-              />
+              <ErrorBoundary
+                fallbackRender={(error, resetErrorBoundary) => (
+                  <div className="p-6 border border-red-300 rounded-2xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
+                    <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
+                      <AlertTriangle size={20} />
+                      <span>AI 生成面板出错</span>
+                    </div>
+                    <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
+                      {error.message}
+                    </p>
+                    <button
+                      onClick={resetErrorBoundary}
+                      className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                    >
+                      重试
+                    </button>
+                  </div>
+                )}
+              >
+                <AutoGraphGenerator
+                  onClose={() => setIsAIGeneratorOpen(false)}
+                  onGraphGenerated={(nodes, _edges) => {
+                    setIsAIGeneratorOpen(false);
+                    queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+                    queryClient.invalidateQueries({
+                      queryKey: ["dashboardStats"],
+                    });
+                    message.success(t("dashboard.nodesGenerated", { count: nodes.length }));
+                  }}
+                />
+              </ErrorBoundary>
             </div>
           </div>,
           document.body
@@ -467,7 +487,7 @@ export const Dashboard = () => {
 
         {/* Graphs Grid */}
         <div
-          className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
+          className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"}`}
         >
           {filters.filteredGraphs.length === 0 ? (
             <div

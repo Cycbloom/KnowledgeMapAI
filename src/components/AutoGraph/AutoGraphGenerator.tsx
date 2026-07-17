@@ -828,9 +828,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           )}
         </div>
         {isTemplateSelectorOpen ? (
-          <ChevronUp size={16} className="text-gray-400" />
+          <ChevronUp size={16} className="text-gray-400 dark:text-gray-500" />
         ) : (
-          <ChevronDown size={16} className="text-gray-400" />
+          <ChevronDown size={16} className="text-gray-400 dark:text-gray-500" />
         )}
       </button>
 
@@ -1269,7 +1269,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         className={`${isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} ${
                           style === option.value
                             ? "text-primary-500"
-                            : "text-gray-400"
+                            : "text-gray-400 dark:text-gray-500"
                         }`}
                       />
                       <span
@@ -1349,7 +1349,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                     disabled={isInitializing}
                   />
                   <p
-                    className={`${isMobile ? "text-[10px]" : "text-xs"} text-gray-400 mt-1`}
+                    className={`${isMobile ? "text-[10px]" : "text-xs"} text-gray-400 dark:text-gray-500 mt-1`}
                   >
                     {t("autoGraph.customRulesDesc")}
                   </p>
@@ -1405,7 +1405,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         {source.slice(0, 30)}...
                         <button
                           onClick={() => handleRemoveSource(index)}
-                          className="text-gray-400 hover:text-red-500"
+                          className="text-gray-400 dark:text-gray-500 hover:text-red-500"
                         >
                           ×
                         </button>

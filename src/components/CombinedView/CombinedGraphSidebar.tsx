@@ -435,6 +435,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
+                    aria-label={t('common.aria.search')}
                     placeholder="搜索节点..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -555,7 +556,7 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
               ) : (
                 <div className="h-full flex items-center justify-center p-4">
                   <EmptyState
-                    icon={<Link className="w-12 h-12 text-gray-400" />}
+                    icon={<Link className="w-12 h-12 text-gray-400 dark:text-slate-400" />}
                     title={t('combinedViewPage.empty.sameKnowledgePoints')}
                   />
                 </div>

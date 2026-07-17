@@ -55,6 +55,31 @@ const reportError = (error: ErrorReport): void => {
 };
 
 export const initErrorReporter = (): void => {
+  if (import.meta.env.DEV) {
+    // 开发环境：轻量错误捕获，仅 console 输出，不入队不上报
+    window.onerror = (message, source, lineno, colno, error) => {
+      console.error("[ErrorReporter]", {
+        message,
+        source,
+        lineno,
+        colno,
+        error,
+      });
+
+      return false;
+    };
+
+    window.onunhandledrejection = (event) => {
+      console.error(
+        "[ErrorReporter] Unhandled Promise Rejection:",
+        event.reason,
+      );
+    };
+
+    return;
+  }
+
+  // 生产环境：入队 + 定时上报
   if (flushIntervalId === null) {
     flushIntervalId = setInterval(flushErrors, FLUSH_INTERVAL);
   }
@@ -94,33 +119,29 @@ export const initErrorReporter = (): void => {
 
   if (originalConsoleError !== null) return;
 
-  // 仅在生产环境 override console.error；dev 环境保持原生行为
-  // 避免拦截 errors.ts/useError.ts 主动输出的 console.error 造成噪音
-  if (import.meta.env.PROD) {
-    originalConsoleError = console.error;
-    const savedOriginal = originalConsoleError;
-    console.error = (...args) => {
-      const message = args
-        .map((arg) =>
-          typeof arg === "object" ? JSON.stringify(arg) : String(arg),
-        )
-        .join(" ");
+  originalConsoleError = console.error;
+  const savedOriginal = originalConsoleError;
+  console.error = (...args) => {
+    const message = args
+      .map((arg) =>
+        typeof arg === "object" ? JSON.stringify(arg) : String(arg),
+      )
+      .join(" ");
 
-      if (!message.includes("[ErrorReporter]") && !message.includes("Warning:")) {
-        reportError({
-          message,
-          url: window.location.href,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          userId: getUserId(),
-          email: currentEmail,
-          metadata: { type: "console.error" },
-        });
-      }
+    if (!message.includes("[ErrorReporter]") && !message.includes("Warning:")) {
+      reportError({
+        message,
+        url: window.location.href,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        userId: getUserId(),
+        email: currentEmail,
+        metadata: { type: "console.error" },
+      });
+    }
 
-      savedOriginal.apply(console, args);
-    };
-  }
+    savedOriginal.apply(console, args);
+  };
 };
 
 export const destroyErrorReporter = (): void => {

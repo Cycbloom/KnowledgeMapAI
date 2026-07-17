@@ -1,25 +1,20 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, MousePointer2, Keyboard, Command, Sparkles, Layout } from 'lucide-react';
+import { X, MousePointer2, Keyboard, Command, Sparkles } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/common';
+import {
+  DEFAULT_SHORTCUTS,
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  formatShortcutKey,
+  ShortcutDefinition,
+  ShortcutCategory
+} from '../../config/shortcuts';
 
 interface HelpModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const KeyboardShortcut: React.FC<{ keys: string[] }> = ({ keys }) => (
-  <div className="flex gap-1 items-center flex-wrap">
-    {keys.map((key, index) => (
-      <React.Fragment key={index}>
-        <kbd className="bg-white dark:bg-slate-700 px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-xs font-mono text-gray-600 dark:text-gray-300 shadow-sm min-w-[24px] text-center">
-          {key}
-        </kbd>
-        {index < keys.length - 1 && <span className="text-gray-400 text-xs">+</span>}
-      </React.Fragment>
-    ))}
-  </div>
-);
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
@@ -50,6 +45,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     },
     [onClose]
   );
+
+  const groupedShortcuts = useMemo(() => {
+    return CATEGORY_ORDER.reduce((acc, category) => {
+      const items = DEFAULT_SHORTCUTS.filter(s => s.category === category);
+      if (items.length > 0) {
+        acc[category] = items;
+      }
+      return acc;
+    }, {} as Record<ShortcutCategory, ShortcutDefinition[]>);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -111,57 +116,31 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 md:col-span-2">
             <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-2">
               <Keyboard size={20} aria-hidden="true" />
               <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{t('helpGuide.keyboardShortcuts.title')}</h3>
             </div>
-            <div className="bg-primary-50/50 dark:bg-primary-900/20 rounded-xl p-4 space-y-3 border border-primary-100 dark:border-primary-800">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.undo')}</span>
-                <KeyboardShortcut keys={['Ctrl', 'Z']} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.redo')}</span>
-                <KeyboardShortcut keys={['Ctrl', 'Shift', 'Z']} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.focusModeToggle')}</span>
-                <KeyboardShortcut keys={['F']} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.keyboardShortcuts.exitMode')}</span>
-                <KeyboardShortcut keys={['Esc']} />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-2">
-              <Layout size={20} aria-hidden="true" />
-              <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{t('helpGuide.globalShortcuts.title', '全局快捷键')}</h3>
-            </div>
-            <div className="bg-primary-50/50 dark:bg-primary-900/20 rounded-xl p-4 space-y-3 border border-primary-100 dark:border-primary-800">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.search', '搜索')}</span>
-                <KeyboardShortcut keys={['Ctrl', 'K']} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.toggleSidebar', '切换侧边栏')}</span>
-                <KeyboardShortcut keys={['B']} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.toggleTheme', '切换主题')}</span>
-                <KeyboardShortcut keys={['Ctrl', 'D']} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.openHelp', '打开帮助')}</span>
-                <KeyboardShortcut keys={['?']} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{t('helpGuide.globalShortcuts.openConsole', '打开控制台')}</span>
-                <KeyboardShortcut keys={['Ctrl', '`']} />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {CATEGORY_ORDER.map(category => {
+                const shortcuts = groupedShortcuts[category];
+                if (!shortcuts) return null;
+                return (
+                  <div key={category} className="bg-primary-50/50 dark:bg-primary-900/20 rounded-xl p-4 space-y-2 border border-primary-100 dark:border-primary-800">
+                    <h4 className="font-semibold text-sm text-primary-700 dark:text-primary-300">{CATEGORY_LABELS[category]}</h4>
+                    <div className="space-y-2">
+                      {shortcuts.map(shortcut => (
+                        <div key={shortcut.id} className="flex justify-between items-center gap-2">
+                          <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">{shortcut.name}</span>
+                          <kbd className="bg-white dark:bg-slate-700 px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-xs font-mono text-gray-600 dark:text-gray-300 shadow-sm text-center whitespace-nowrap">
+                            {formatShortcutKey(shortcut.defaultKeys)}
+                          </kbd>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

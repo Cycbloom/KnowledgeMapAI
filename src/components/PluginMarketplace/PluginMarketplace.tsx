@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Search,
@@ -11,6 +12,7 @@ import {
   BookOpen,
   CalendarClock,
   Bot,
+  AlertTriangle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { pluginsApi } from "../../services/api/plugins";
@@ -19,6 +21,7 @@ import { PluginCard } from "./PluginCard";
 import { useStore } from "../../store/useStore";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { message } from "@/utils/messageHelper";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 
 type Tab = "browse" | "installed";
 
@@ -65,6 +68,46 @@ const pluginIconColors: Record<string, string> = {
   study: "from-orange-500 to-amber-600",
   scheduler: "from-primary-500 to-primary-600",
   agent: "from-violet-500 to-primary-600",
+};
+
+const PluginCardBoundary = ({ children }: { children: ReactNode }) => {
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
+
+  return (
+    <ErrorBoundary
+      fallbackRender={(error, resetErrorBoundary) => (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-red-200 dark:border-red-800 p-4">
+          <div className="flex items-start gap-2 mb-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-gray-100">插件加载失败</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
+                {error.message}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setDismissed(true)}
+              className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              继续浏览其他插件
+            </button>
+            <button
+              onClick={resetErrorBoundary}
+              className="px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+            >
+              重试
+            </button>
+          </div>
+        </div>
+      )}
+    >
+      {children}
+    </ErrorBoundary>
+  );
 };
 
 export const PluginMarketplace = () => {
@@ -245,14 +288,15 @@ export const PluginMarketplace = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {registryPlugins.map((plugin) => (
-                <PluginCard
-                  key={plugin.name}
-                  plugin={plugin}
-                  isInstalled={installedNames.has(plugin.name)}
-                  onInstall={() => handleInstall(plugin.name)}
-                  onUninstall={() => handleUninstall(plugin.name)}
-                  installing={installing === plugin.name}
-                />
+                <PluginCardBoundary key={plugin.name}>
+                  <PluginCard
+                    plugin={plugin}
+                    isInstalled={installedNames.has(plugin.name)}
+                    onInstall={() => handleInstall(plugin.name)}
+                    onUninstall={() => handleUninstall(plugin.name)}
+                    installing={installing === plugin.name}
+                  />
+                </PluginCardBoundary>
               ))}
             </div>
           )}

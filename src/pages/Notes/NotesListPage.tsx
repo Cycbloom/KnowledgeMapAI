@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  memo,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -41,7 +42,13 @@ import {
 } from "../../hooks/mutations";
 import { api } from "../../services/api";
 import { frontendEventBus } from "../../services/timer/FrontendEventBus";
-import { Skeleton, EmptyState, ConfirmationModal } from "../../components/common";
+import {
+  Skeleton,
+  EmptyState,
+  ConfirmationModal,
+  VirtualList,
+  ErrorBoundary,
+} from "../../components/common";
 import { NotesListSortDropdown, type SortBy } from "../../components/Notes/NotesListSortDropdown";
 import { NotesBatchActions } from "../../components/Notes/NotesBatchActions";
 import { asyncConfirm } from "../../utils/asyncConfirm";
@@ -195,7 +202,7 @@ const TagChips = ({
   );
 };
 
-const NoteCard = ({
+const NoteCard = memo(({
   note,
   onPin,
   onArchive,
@@ -376,7 +383,7 @@ const NoteCard = ({
       </div>
     </div>
   );
-};
+});
 
 const NoteListSkeleton = () => (
   <div className="space-y-3">
@@ -412,6 +419,12 @@ export const NotesListPage = () => {
   // SubTask 10.2: 客户端标签筛选(点击列表项 tag chip 时设置)。
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 虚拟列表容器高度：基于视口高度估算可用列表区域，resize 时更新。
+  const [listContainerHeight, setListContainerHeight] = useState(() =>
+    typeof window !== "undefined"
+      ? Math.max(300, window.innerHeight - 400)
+      : 600,
+  );
 
   // Task 4: 客户端列表排序,持久化到 localStorage。
   const [sortBy, setSortBy] = useState<SortBy>(() => {
@@ -462,6 +475,14 @@ export const NotesListPage = () => {
         clearTimeout(debounceTimerRef.current);
       }
     };
+  }, []);
+
+  // 虚拟列表容器高度随窗口尺寸变化重新计算。
+  useEffect(() => {
+    const updateListHeight = () =>
+      setListContainerHeight(Math.max(300, window.innerHeight - 400));
+    window.addEventListener("resize", updateListHeight);
+    return () => window.removeEventListener("resize", updateListHeight);
   }, []);
 
   // debounce 300ms 后再写入 searchKeyword;回车时立即触发(见 onKeyDown)。
@@ -854,7 +875,7 @@ export const NotesListPage = () => {
       {/* 顶部:标题 + 操作区 */}
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">
             {t("notes.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
@@ -972,6 +993,7 @@ export const NotesListPage = () => {
         />
         <input
           type="text"
+          aria-label={t("common.aria.search")}
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           onKeyDown={(e) => {
@@ -1105,22 +1127,48 @@ export const NotesListPage = () => {
                   onClearSelection={exitSelectMode}
                 />
               )}
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
-                {sortedFilteredNotes.map((note) => (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    onPin={handlePin}
-                    onArchive={handleArchive}
-                    onDelete={handleDelete}
-                    pendingAction={pendingAction}
-                    onTagClick={(tag) => setFilterTag(tag)}
-                    isSelectMode={isSelectMode}
-                    isSelected={selectedIds.has(note.id)}
-                    onToggleSelect={toggleSelect}
-                  />
-                ))}
-              </div>
+              <ErrorBoundary
+                fallbackRender={(error, resetErrorBoundary) => (
+                  <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-red-200 dark:border-red-900/40 p-8 text-center">
+                    <XCircle className="w-8 h-8 mx-auto mb-3 text-red-600 dark:text-red-400" />
+                    <p className="text-red-600 dark:text-red-400 mb-2 font-medium">
+                      笔记列表加载失败
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 font-mono break-all">
+                      {error.message}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={resetErrorBoundary}
+                      className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                    >
+                      {t("notes.retry")}
+                    </button>
+                  </div>
+                )}
+              >
+                <VirtualList
+                  items={sortedFilteredNotes}
+                  itemHeight={140}
+                  containerHeight={listContainerHeight}
+                  className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700"
+                  renderItem={(note) => (
+                    <div className="border-b border-gray-100 dark:border-slate-700">
+                      <NoteCard
+                        note={note}
+                        onPin={handlePin}
+                        onArchive={handleArchive}
+                        onDelete={handleDelete}
+                        pendingAction={pendingAction}
+                        onTagClick={(tag) => setFilterTag(tag)}
+                        isSelectMode={isSelectMode}
+                        isSelected={selectedIds.has(note.id)}
+                        onToggleSelect={toggleSelect}
+                      />
+                    </div>
+                  )}
+                />
+              </ErrorBoundary>
 
               {/* 分页 */}
               {totalPages > 1 && (

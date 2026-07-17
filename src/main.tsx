@@ -1,12 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, HashRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query'
 import App from './App'
 import { ThemeProvider } from './hooks'
 import { registerServiceWorker } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
-import { initErrorReporter, destroyErrorReporter, setUserContext } from './utils/errorReporter'
+import { initErrorReporter, destroyErrorReporter, setUserContext, captureException } from './utils/errorReporter'
 import { initCsrf } from './services/api'
 import { preloadMobileApi } from './services/api/adapter'
 import { asyncConfirm } from './utils/asyncConfirm'
@@ -29,6 +29,16 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+  queryCache: new QueryCache({
+    onError: (error) => {
+      captureException(error);
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      captureException(error);
+    },
+  }),
 })
 
 migrateLegacyKeys()
@@ -53,9 +63,10 @@ initializeEventSubscribers(queryClient)
 
 const isElectron = navigator.userAgent.toLowerCase().includes('electron')
 
+// 始终初始化错误上报：生产环境入队上报后端，开发环境仅 console 输出
+initErrorReporter()
+
 if (import.meta.env.PROD && !isElectron) {
-  initErrorReporter()
-  
   registerServiceWorker({
     onUpdate: async (registration) => {
       const shouldUpdate = await asyncConfirm({
@@ -77,7 +88,6 @@ if (import.meta.env.PROD && !isElectron) {
 }
 
 if (isElectron && import.meta.env.PROD) {
-  initErrorReporter()
   initPerformanceMonitoring()
 }
 

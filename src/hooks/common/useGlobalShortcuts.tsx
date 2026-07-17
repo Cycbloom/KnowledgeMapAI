@@ -43,7 +43,7 @@ export function useGlobalShortcuts({
           const handler = handlers[shortcut.action];
           if (handler) {
             e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
             handler();
             return;
           }

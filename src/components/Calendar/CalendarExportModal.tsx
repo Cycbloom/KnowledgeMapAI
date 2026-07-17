@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, Download, Link2 } from "lucide-react";
@@ -21,6 +21,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const titleId = useId();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
 
@@ -69,6 +70,9 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         >
           <motion.div
             ref={containerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -79,12 +83,14 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           >
             <div className="flex items-center justify-between mb-4">
               <h3
+                id={titleId}
                 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
                 {t("calendar.exportCalendar")}
               </h3>
               <button
                 onClick={onClose}
+                aria-label={t('common.aria.close')}
                 className={`p-1 rounded-lg ${isDark ? "hover:bg-slate-700" : "hover:bg-gray-100"}`}
               >
                 <X

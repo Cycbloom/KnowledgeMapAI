@@ -99,6 +99,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
     } else if (query.trim().length < minLength) {
       setResults(null);
     }
+    // search 为 useCallback，故意不进依赖避免与 query 变化形成重复触发；mode 变化由下一个 effect 处理
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, autoSearch, minLength]);
 
@@ -106,6 +107,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
     if (autoSearch && query.trim().length >= minLength) {
       search(query);
     }
+    // 仅在 mode 切换时重新触发搜索；query/autoSearch/minLength 取当前闭包值即可
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 

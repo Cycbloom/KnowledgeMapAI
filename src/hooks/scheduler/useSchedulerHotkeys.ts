@@ -15,7 +15,6 @@ export interface SchedulerHotkeysOptions {
   onStartPause?: () => void;
   onComplete?: () => void;
   onClose?: () => void;
-  onShowHelp?: () => void;
   onQueue0?: () => void;
   onQueue1?: () => void;
   onQueue2?: () => void;
@@ -30,7 +29,6 @@ export const useSchedulerHotkeys = (options: SchedulerHotkeysOptions) => {
     onStartPause,
     onComplete,
     onClose,
-    onShowHelp,
     onQueue0,
     onQueue1,
     onQueue2,
@@ -75,12 +73,6 @@ export const useSchedulerHotkeys = (options: SchedulerHotkeysOptions) => {
         return;
       }
 
-      if (event.key === '?' || (event.shiftKey && event.key === '/')) {
-        event.preventDefault();
-        onShowHelp?.();
-        return;
-      }
-
       if (event.key === '1' && !isInput) {
         event.preventDefault();
         onQueue0?.();
@@ -117,7 +109,6 @@ export const useSchedulerHotkeys = (options: SchedulerHotkeysOptions) => {
       onStartPause,
       onComplete,
       onClose,
-      onShowHelp,
       onQueue0,
       onQueue1,
       onQueue2,
@@ -140,7 +131,6 @@ export const useSchedulerHotkeys = (options: SchedulerHotkeysOptions) => {
     { key: 'Space', action: () => onStartPause?.(), description: '开始/暂停任务' },
     { key: 'C', action: () => onComplete?.(), description: '完成任务' },
     { key: 'Esc', action: () => onClose?.(), description: '关闭弹窗' },
-    { key: '?', action: () => onShowHelp?.(), description: '显示帮助' },
     { key: '1', action: () => onQueue0?.(), description: '切换到Q0队列' },
     { key: '2', action: () => onQueue1?.(), description: '切换到Q1队列' },
     { key: '3', action: () => onQueue2?.(), description: '切换到Q2队列' },
@@ -156,7 +146,6 @@ export const HOTKEY_LIST = [
   { key: 'Space', description: '开始/暂停任务' },
   { key: 'C', description: '完成任务' },
   { key: 'Esc', description: '关闭弹窗/退出专注模式' },
-  { key: '?', description: '显示快捷键帮助' },
   { key: '1', description: '切换到Q0队列视图' },
   { key: '2', description: '切换到Q1队列视图' },
   { key: '3', description: '切换到Q2队列视图' },

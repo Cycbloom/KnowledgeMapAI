@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useId } from 'react';
 import { X, RotateCcw, Search, Keyboard } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTheme, useFocusTrap, useEscapeKey } from "../../hooks";
 import { useShortcutStore } from '../../store/useShortcutStore';
 import {
@@ -22,6 +23,10 @@ interface ShortcutListContentProps {
    * 附加在根容器上的 className，便于宿主控制尺寸/高度等。
    */
   className?: string;
+  /**
+   * 模态标题 id，用于 aria-labelledby。仅浮层形态由 ShortcutHelpPanel 传入。
+   */
+  titleId?: string;
 }
 
 /**
@@ -34,8 +39,10 @@ interface ShortcutListContentProps {
 export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
   onClose,
   className,
+  titleId,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const { bindings, setBinding, resetBinding, resetAllBindings } = useShortcutStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -96,7 +103,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
       <div className={cn('flex items-center justify-between px-6 py-4 border-b', isDark ? 'border-slate-700' : 'border-gray-200')}>
         <div className="flex items-center gap-3">
           <Keyboard className="w-5 h-5 text-primary-500" />
-          <h2 className="text-lg font-semibold">快捷键设置</h2>
+          <h2 id={titleId} className="text-lg font-semibold">快捷键设置</h2>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -129,6 +136,7 @@ export const ShortcutListContent: React.FC<ShortcutListContentProps> = ({
           <Search className={cn('w-4 h-4', isDark ? 'text-slate-400' : 'text-gray-400')} />
           <input
             type="text"
+            aria-label={t('common.aria.search')}
             placeholder="搜索快捷键..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -265,6 +273,7 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
   onClose
 }) => {
   const { isDark } = useTheme();
+  const titleId = useId();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
 
@@ -277,11 +286,11 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
         onClick={onClose}
       />
 
-      <div ref={containerRef} className={cn(
+      <div ref={containerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className={cn(
         'relative w-full max-w-3xl max-h-[75vh] rounded-xl shadow-2xl overflow-hidden flex flex-col',
         isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white border border-gray-200 text-gray-900'
       )}>
-        <ShortcutListContent onClose={onClose} />
+        <ShortcutListContent onClose={onClose} titleId={titleId} />
       </div>
     </div>
   );

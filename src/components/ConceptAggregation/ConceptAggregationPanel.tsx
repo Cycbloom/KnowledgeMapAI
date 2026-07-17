@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -41,6 +41,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
   onClose,
   embedded = false,
 }) => {
+  const titleId = useId();
   const [activeTab, setActiveTab] = useState<TabType>("aggregation");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -341,7 +342,7 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
       <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
           <Sparkles className="text-primary-500" size={20} />
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+          <h2 id={titleId} className="text-lg font-semibold text-slate-800 dark:text-slate-200">
             概念聚合
           </h2>
         </div>
@@ -503,6 +504,9 @@ export const ConceptAggregationPanel: React.FC<ConceptAggregationPanelProps> = (
         >
           <motion.div
             ref={containerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}

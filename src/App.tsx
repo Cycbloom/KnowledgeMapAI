@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
 import { LoadingBar, ErrorBoundary, RouteErrorFallback, ScrollToTop, Skeleton } from "./components/common";
+import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
+import { QueryErrorResetBoundary } from "@tanstack/react-query";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig, isSupabaseConfigured } from "./config/authConfig";
@@ -190,62 +192,66 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <LoadingBar />
-      <ScrollToTop />
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          {/* Public routes (outside Layout) */}
-          {publicRoutes.map((registration) => {
-            if (registration.redirect) {
-              return (
-                <Route
-                  key={registration.path}
-                  path={registration.path}
-                  element={<Navigate to={registration.redirect} replace />}
-                />
-              );
-            }
-            return (
-              <Route
-                key={registration.path}
-                path={registration.path}
-                element={<LazyRoute registration={registration} />}
-              />
-            );
-          })}
-
-          {/* Protected routes (inside Layout) */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            {protectedRoutes.map((registration) => {
-              const isIndex = registration.options?.index === true;
-              if (registration.redirect) {
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <GlobalErrorBoundary onReset={reset}>
+          <LoadingBar />
+          <ScrollToTop />
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Public routes (outside Layout) */}
+              {publicRoutes.map((registration) => {
+                if (registration.redirect) {
+                  return (
+                    <Route
+                      key={registration.path}
+                      path={registration.path}
+                      element={<Navigate to={registration.redirect} replace />}
+                    />
+                  );
+                }
                 return (
                   <Route
                     key={registration.path}
-                    path={registration.path.replace(/^\//, "")}
-                    element={<Navigate to={registration.redirect} replace />}
+                    path={registration.path}
+                    element={<LazyRoute registration={registration} />}
                   />
                 );
-              }
-              return (
-                <Route
-                  key={registration.path}
-                  {...(isIndex ? { index: true } : { path: registration.path.replace(/^\//, "") })}
-                  element={<LazyRoute registration={registration} />}
-                />
-              );
-            })}
-          </Route>
-        </Routes>
-      </Suspense>
-    </ErrorBoundary>
+              })}
+
+              {/* Protected routes (inside Layout) */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                {protectedRoutes.map((registration) => {
+                  const isIndex = registration.options?.index === true;
+                  if (registration.redirect) {
+                    return (
+                      <Route
+                        key={registration.path}
+                        path={registration.path.replace(/^\//, "")}
+                        element={<Navigate to={registration.redirect} replace />}
+                      />
+                    );
+                  }
+                  return (
+                    <Route
+                      key={registration.path}
+                      {...(isIndex ? { index: true } : { path: registration.path.replace(/^\//, "") })}
+                      element={<LazyRoute registration={registration} />}
+                    />
+                  );
+                })}
+              </Route>
+            </Routes>
+          </Suspense>
+        </GlobalErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>
   );
 }
 

@@ -69,6 +69,7 @@ const NAVIGATE_TARGETS: Array<{
 
 export const GraphEditorSettings = React.memo(function GraphEditorSettings() {
   const { t } = useTranslation();
+  // 设置页使用全部偏好字段，store 状态很小且全部使用，保留无 selector
   const preferences = useGraphEditorPreferencesStore();
   const updatePreferences = useGraphEditorPreferencesStore(
     (state) => state.updatePreferences,

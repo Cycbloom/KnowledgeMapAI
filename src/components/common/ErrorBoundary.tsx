@@ -2,6 +2,7 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 import i18next from 'i18next';
 import { RefreshCcw, AlertTriangle, Home, Bug } from 'lucide-react';
 import { CopyButton } from './CopyButton';
+import { captureException } from '@/utils/errorReporter';
 
 interface Props {
   children: ReactNode;
@@ -51,8 +52,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
-    
+
     reportError(error, errorInfo);
+
+    captureException(error, { componentStack: errorInfo.componentStack });
 
     if (this.props.onError) {
       this.props.onError(error, errorInfo);

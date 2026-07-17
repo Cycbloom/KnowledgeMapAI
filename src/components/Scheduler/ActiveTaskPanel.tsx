@@ -232,7 +232,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   };
 
   // 番茄钟联动：任务总时长 → 预计番茄数
-  const { focusDuration } = useFocusStore();
+  const focusDuration = useFocusStore((s) => s.focusDuration);
   const estimatedMinutes = task.estimated_duration || 0;
   const totalPomodoros =
     estimatedMinutes > 0
@@ -534,7 +534,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                 {subtasks.filter((s) => s.status === "completed").length}/
                 {subtasks.length})
               </span>
-              <svg
+              <svg aria-hidden="true"
                 className={`w-3 h-3 transition-transform ${subtasksExpanded ? "rotate-180" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
@@ -574,7 +574,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                       {/* 状态指示器 */}
                       <span className="shrink-0">
                         {isCompleted ? (
-                          <svg
+                          <svg aria-hidden="true"
                             className="w-4 h-4 text-emerald-500"
                             viewBox="0 0 16 16"
                             fill="none"
@@ -594,7 +594,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
                             <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-primary-500 ring-2 ring-white dark:ring-slate-900" />
                           </span>
                         ) : (
-                          <svg
+                          <svg aria-hidden="true"
                             className="w-4 h-4 text-slate-300 dark:text-slate-600"
                             viewBox="0 0 16 16"
                             fill="none"

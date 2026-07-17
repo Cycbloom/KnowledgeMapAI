@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Loader2, Image } from "lucide-react";
 import { GraphEditorState } from "../../../hooks";
 import { GraphSettingsModal } from "./GraphSettingsModal";
-import { HelpModal } from "../../common";
 import { ExportDialog } from "./ExportDialog";
 import { ShareModal } from "./ShareModal";
 import { PodcastModal } from "./PodcastModal";
@@ -33,8 +32,6 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   const {
     isSettingsOpen,
     setIsSettingsOpen,
-    isHelpOpen,
-    setIsHelpOpen,
     isPodcastModalOpen,
     setIsPodcastModalOpen,
     isExportImageModalOpen,
@@ -81,7 +78,6 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         onClose={() => setIsSettingsOpen(false)}
         graphId={id || ""}
       />
-      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <ExportDialog
         isOpen={isExportPDFOpen}
         onClose={() => setIsExportPDFOpen(false)}

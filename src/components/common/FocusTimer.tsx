@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useFocusStore } from "../../store/useFocusStore";
+import { useShallow } from "zustand/react/shallow";
 import { useTimerStore } from "../../store/useTimerStore";
 import { PomodoroCycleBar } from "./PomodoroCycleBar";
 import {
@@ -30,7 +31,17 @@ export const FocusTimer: React.FC = () => {
     soundEnabled,
     updateSettings,
     isInFocusMode,
-  } = useFocusStore();
+  } = useFocusStore(
+    useShallow((s) => ({
+      focusDuration: s.focusDuration,
+      shortBreakDuration: s.shortBreakDuration,
+      longBreakDuration: s.longBreakDuration,
+      longBreakInterval: s.longBreakInterval,
+      soundEnabled: s.soundEnabled,
+      updateSettings: s.updateSettings,
+      isInFocusMode: s.isInFocusMode,
+    })),
+  );
 
   const timeLeft = useTimerStore((s) => s.timeLeft);
   const mode = useTimerStore((s) => s.mode);
@@ -183,7 +194,7 @@ export const FocusTimer: React.FC = () => {
                     }
                     className="w-full accent-primary-500"
                   />
-                  <div className="flex justify-between text-xs text-gray-400">
+                  <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
                     <span>1</span>
                     <span>{focusDuration}</span>
                     <span>60</span>
@@ -228,7 +239,7 @@ export const FocusTimer: React.FC = () => {
                     onClick={() =>
                       updateSettings({ soundEnabled: !soundEnabled })
                     }
-                    className={cn("p-2 rounded-lg", soundEnabled ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400")}
+                    className={cn("p-2 rounded-lg", soundEnabled ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400 dark:text-gray-500")}
                   >
                     {soundEnabled ? (
                       <Volume2 size={18} />
@@ -264,7 +275,7 @@ export const FocusTimer: React.FC = () => {
 
                 {/* Timer Display */}
                 <div className="relative mb-6">
-                  <svg className="w-48 h-48 transform -rotate-90">
+                  <svg aria-hidden="true" className="w-48 h-48 transform -rotate-90">
                     <circle
                       cx="96"
                       cy="96"
@@ -296,7 +307,7 @@ export const FocusTimer: React.FC = () => {
                     <span className="text-4xl font-bold font-mono text-gray-800 dark:text-white">
                       {formatTimeFromSeconds(timeLeft)}
                     </span>
-                    <span className="text-sm text-gray-400 mt-1">
+                    <span className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                       {isRunning
                         ? mode === "focus"
                           ? t("focusTimer.inProgress")
@@ -338,7 +349,7 @@ export const FocusTimer: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="mt-6 text-xs text-gray-400 flex items-center gap-1">
+                <div className="mt-6 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                   <CheckCircleIcon size={12} />
                   <span>
                     {t("focusTimer.sessionsCompleted", {
@@ -356,7 +367,7 @@ export const FocusTimer: React.FC = () => {
 };
 
 const CheckCircleIcon = ({ size }: { size: number }) => (
-  <svg
+  <svg aria-hidden="true"
     width={size}
     height={size}
     viewBox="0 0 24 24"

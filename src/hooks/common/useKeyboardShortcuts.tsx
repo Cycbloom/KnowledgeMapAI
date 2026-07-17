@@ -107,8 +107,8 @@ export const useKeyboardShortcuts = ({
         togglePathfindingMode();
       }
       
-      // Toggle Exploration Mode (E)
-      else if (e.key.toLowerCase() === 'e' && !isInput && !e.ctrlKey && !e.metaKey) {
+      // Toggle Exploration Mode (Shift+E)
+      else if (e.key.toLowerCase() === 'e' && !isInput && !e.ctrlKey && !e.metaKey && e.shiftKey) {
         e.preventDefault();
         toggleExplorationMode();
       }

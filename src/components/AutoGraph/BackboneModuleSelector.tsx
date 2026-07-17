@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Sparkles } from "lucide-react";
 import type {
@@ -55,6 +55,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
   initialCustomModules,
 }) => {
   const { isDark } = useTheme();
+  const titleId = useId();
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(
     initialPresetId || DEFAULT_PRESET_ID,
   );
@@ -122,6 +123,9 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
 
         <motion.div
           ref={containerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -150,7 +154,7 @@ export const BackboneModuleSelector: React.FC<BackboneModuleSelectorProps> = ({
                 />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white">
                   选择模块配置
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">

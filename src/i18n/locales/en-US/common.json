@@ -113,7 +113,11 @@
     "removeFromPath": "Remove from Path",
     "conceptAggregation": "Concept Aggregation",
     "search": "Search",
-    "removeOption": "Remove option"
+    "removeOption": "Remove option",
+    "selectColor": "Select color",
+    "selectIcon": "Select icon",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "clipboard": {
     "unavailable": "Clipboard unavailable",

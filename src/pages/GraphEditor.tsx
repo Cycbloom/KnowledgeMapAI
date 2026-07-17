@@ -12,7 +12,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../store/useStore";
 import { message } from "../utils/messageHelper";
-import { ArrowLeft, Lock, LogIn } from "lucide-react";
+import { ArrowLeft, Lock, LogIn, AlertTriangle } from "lucide-react";
 
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
 import { MindMapCanvas } from "../components/GraphEditor/canvas/MindMapCanvas";
@@ -41,7 +41,6 @@ import { useGraphAIOperations } from "../hooks/graphAI";
 import {
   useTheme,
   useIsMobile,
-  useKeyboardShortcuts,
   useGlobalShortcuts,
   useTutorOperations,
   useQuoteShortcut,
@@ -281,19 +280,6 @@ export const GraphEditor = () => {
 
   const handleCancelSelectingParent = useCallback(() => {
     setIsSelectingParentNode(false);
-  }, []);
-
-  // Command Palette Logic
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        panelState.setIsCommandPaletteOpen((prev) => !prev);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const { addRecentGraph, removeRecentGraph } = useRecentGraphs();
@@ -686,10 +672,6 @@ export const GraphEditor = () => {
   // Effects Hook
   useGraphEffects({
     state,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
     aiEnabled,
   });
 
@@ -727,32 +709,34 @@ export const GraphEditor = () => {
     collapsedRegions,
   }), [nodes, edges, graphMeta?.template_type, graphMeta?.backbone_modules, customRegions, collapsedRegions]);
 
-  // Keyboard Shortcuts
-  useKeyboardShortcuts({
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    deleteNode: nodeOps.handleDeleteNode,
-    toggleDeleteMode: () => setIsDeleteMode((prev) => !prev),
-    togglePathfindingMode: () => setIsPathfindingMode((prev) => !prev),
-    toggleExplorationMode: () => setIsExplorationMode((prev) => !prev),
-    toggleGrid: () => setShowGrid((prev) => !prev),
-    toggleFocusMode: () => setIsFocusMode((prev) => !prev),
-    toggleSidebar: () => {
-      if (sidebarMode === "none") setSidebarMode("outline");
-      else setSidebarMode("none");
-    },
-    saveNode: nodeOps.handleSaveNode,
-    sidebarMode,
-    selectedNode,
-    viewMode,
-    setViewMode,
-  });
-
-  // Global Shortcuts (new system)
+  // Global Shortcuts (single dispatcher for all keyboard shortcuts)
   useGlobalShortcuts({
     handlers: {
+      undo: () => {
+        if (canUndo) undo();
+      },
+      redo: () => {
+        if (canRedo) redo();
+      },
+      save: () => {
+        if (sidebarMode === "edit" || sidebarMode === "create") {
+          nodeOps.handleSaveNode();
+        }
+      },
+      delete: () => {
+        if (selectedNode) {
+          nodeOps.handleDeleteNode(selectedNode);
+        }
+      },
+      toggleSidebar: () => {
+        if (sidebarMode === "none") setSidebarMode("outline");
+        else setSidebarMode("none");
+      },
+      toggleGrid: () => setShowGrid((prev) => !prev),
+      toggleFocusMode: () => setIsFocusMode((prev) => !prev),
+      toggleDeleteMode: () => setIsDeleteMode((prev) => !prev),
+      togglePathfindingMode: () => setIsPathfindingMode((prev) => !prev),
+      toggleExplorationMode: () => setIsExplorationMode((prev) => !prev),
       showHelp: () => panelState.setIsShortcutHelpOpen(true),
       openCommandPalette: () => panelState.setIsCommandPaletteOpen((prev) => !prev),
       toggleTheme,
@@ -1714,37 +1698,57 @@ export const GraphEditor = () => {
       />
 
       <Suspense fallback={<ViewLoader />}>
-        <RAGChatButton
-          graphId={id}
-          currentNodeId={selectedNode?.id}
-          currentNodeTitle={selectedNode?.title}
-          onNodeClick={handleRAGChatNodeClick}
-          isOpen={panelState.isRAGChatOpen}
-          onOpenChange={panelState.setIsRAGChatOpen}
-          selectedNodeIds={Array.from(selectedNodeIds)}
-          aiEnabled={aiEnabled}
-          isTutorMode={isTutorMode}
-          tutorMode={tutorMode}
-          extractedConcepts={panelState.extractedConcepts as unknown as TutorExtractedConcept[]}
-          onToggleTutorMode={tutorOps.handleToggleTutorMode}
-          onSwitchTutorMode={setTutorMode}
-          onExtractConcepts={tutorOps.handleExtractConcepts}
-          onAddConceptToGraph={tutorOps.handleAddConceptToGraph}
-          onAddAllConcepts={tutorOps.handleAddAllConcepts}
-          onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
-          suggestedNextTopics={suggestedNextTopics}
-          onTutorChat={tutorOps.handleTutorChat}
-          width={panelState.ragChatWidth}
-          onWidthChange={panelState.setRagChatWidth}
-          isMobilePreviewMode={
-            isMobile && isMobilePreviewMode && !!selectedNode
-          }
-          selectedLearningPathId={selectedLearningPathId}
-          onPathSelect={handleSelectLearningPath}
-          onLearningPathNodeClick={handleLearningPathNodeClick}
-          onStartNarrative={handleStartNarrative}
-          enableSTT={true}
-        />
+        <ErrorBoundary
+          fallbackRender={(error, resetErrorBoundary) => (
+            <div className="p-4 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 max-w-md mx-auto mt-4">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-medium">
+                <AlertTriangle size={18} />
+                <span>AI 面板出错</span>
+              </div>
+              <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
+                {error.message}
+              </p>
+              <button
+                onClick={resetErrorBoundary}
+                className="mt-3 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+              >
+                重试
+              </button>
+            </div>
+          )}
+        >
+          <RAGChatButton
+            graphId={id}
+            currentNodeId={selectedNode?.id}
+            currentNodeTitle={selectedNode?.title}
+            onNodeClick={handleRAGChatNodeClick}
+            isOpen={panelState.isRAGChatOpen}
+            onOpenChange={panelState.setIsRAGChatOpen}
+            selectedNodeIds={Array.from(selectedNodeIds)}
+            aiEnabled={aiEnabled}
+            isTutorMode={isTutorMode}
+            tutorMode={tutorMode}
+            extractedConcepts={panelState.extractedConcepts as unknown as TutorExtractedConcept[]}
+            onToggleTutorMode={tutorOps.handleToggleTutorMode}
+            onSwitchTutorMode={setTutorMode}
+            onExtractConcepts={tutorOps.handleExtractConcepts}
+            onAddConceptToGraph={tutorOps.handleAddConceptToGraph}
+            onAddAllConcepts={tutorOps.handleAddAllConcepts}
+            onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
+            suggestedNextTopics={suggestedNextTopics}
+            onTutorChat={tutorOps.handleTutorChat}
+            width={panelState.ragChatWidth}
+            onWidthChange={panelState.setRagChatWidth}
+            isMobilePreviewMode={
+              isMobile && isMobilePreviewMode && !!selectedNode
+            }
+            selectedLearningPathId={selectedLearningPathId}
+            onPathSelect={handleSelectLearningPath}
+            onLearningPathNodeClick={handleLearningPathNodeClick}
+            onStartNarrative={handleStartNarrative}
+            enableSTT={true}
+          />
+        </ErrorBoundary>
       </Suspense>
 
       {isMobile && (
@@ -1763,13 +1767,47 @@ export const GraphEditor = () => {
       )}
       {user?.id && (
         <Suspense fallback={<ViewLoader />}>
-          <Console
-            isOpen={panelState.isConsoleOpen}
-            onClose={panelState.closeConsole}
-            context={panelState.consoleContext}
-            onToggleMinimize={panelState.toggleConsoleMinimize}
-            isMinimized={panelState.isConsoleMinimized}
-          />
+          <ErrorBoundary
+            resetKeys={[panelState.isConsoleOpen]}
+            fallbackRender={(error, resetErrorBoundary) => {
+              if (!panelState.isConsoleOpen) return null;
+              return (
+                <div className="fixed bottom-4 right-4 w-[600px] max-h-[70vh] rounded-xl shadow-2xl border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 z-50 p-4">
+                  <div className="flex items-start gap-2 mb-3">
+                    <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">控制台崩溃</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
+                        {error.message}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={panelState.closeConsole}
+                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      关闭
+                    </button>
+                    <button
+                      onClick={resetErrorBoundary}
+                      className="px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+                    >
+                      重试
+                    </button>
+                  </div>
+                </div>
+              );
+            }}
+          >
+            <Console
+              isOpen={panelState.isConsoleOpen}
+              onClose={panelState.closeConsole}
+              context={panelState.consoleContext}
+              onToggleMinimize={panelState.toggleConsoleMinimize}
+              isMinimized={panelState.isConsoleMinimized}
+            />
+          </ErrorBoundary>
         </Suspense>
       )}
 

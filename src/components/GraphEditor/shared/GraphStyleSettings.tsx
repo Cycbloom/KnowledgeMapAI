@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ColorScheme, LinkStyle, LinkAnimation, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../../types';
 import { getColorSchemeNames, COLOR_SCHEMES } from '../../../config/learningStatusColors';
@@ -64,6 +64,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   onOpenRelationshipTypeSettings
 }) => {
   const { t } = useTranslation();
+  const titleId = useId();
   const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges' | 'edgeSettings'>('colors');
 
   const commonRelationshipTypes = PRESET_RELATIONSHIP_TYPES.slice(0, 8);
@@ -86,17 +87,21 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div 
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[600px] max-h-[80vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('graphStyleSettings.title')}</h2>
+          <h2 id={titleId} className="text-xl font-semibold text-gray-900 dark:text-white">{t('graphStyleSettings.title')}</h2>
           <button
             onClick={onClose}
+            aria-label={t('common.aria.close')}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -280,7 +285,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       }`}
                     >
                       <div className="flex items-center justify-center">
-                        <svg width="100" height="40" viewBox="0 0 100 40">
+                        <svg aria-hidden="true" width="100" height="40" viewBox="0 0 100 40">
                           {style.key === 'curved' && (
                             <path d="M 10 20 Q 50 10 90 20" fill="none" stroke="currentColor" strokeWidth="2" />
                           )}
@@ -319,7 +324,7 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       }`}
                     >
                       <div className="flex items-center justify-center">
-                        <svg width="100" height="40" viewBox="0 0 100 40">
+                        <svg aria-hidden="true" width="100" height="40" viewBox="0 0 100 40">
                           <path
                             d="M 10 20 Q 50 10 90 20"
                             fill="none"

@@ -67,7 +67,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
               className="p-2 bg-primary-500 dark:bg-primary-600 rounded shadow-lg hover:bg-primary-600 dark:hover:bg-primary-700 text-white transition-colors"
               title={`返回 ${fromGraphTitle || "来源图谱"}`}
             >
-              <svg
+              <svg aria-hidden="true"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -86,7 +86,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
             title={showMiniMap ? "隐藏小地图" : "显示小地图"}
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -106,7 +106,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
             title={t('common.aria.zoomIn')}
             aria-label={t('common.aria.zoomIn')}
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -128,7 +128,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
             title={t('common.aria.zoomOut')}
             aria-label={t('common.aria.zoomOut')}
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -150,7 +150,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
             title={t('common.aria.resetView')}
             aria-label={t('common.aria.resetView')}
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -175,7 +175,7 @@ const TransformControlsComponent: React.FC<TransformControlsProps> = ({
             }`}
             title={showLegend ? "隐藏图例" : "显示关系类型图例"}
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 import { useStudyCards, useSemanticGroups, useReviewForecast } from "../hooks/queries";
 import { StudyCard } from "../types";
 import { QuestionBank } from "../components/Study/QuestionBank";
@@ -12,6 +13,7 @@ import { useQuizLogic } from "../hooks/useQuizLogic";
 import { StudyHeader } from "../components/Study/StudyHeader";
 import { CardReviewView } from "../components/Study/CardReviewView";
 import { QuizViewFinished, QuizViewActive } from "../components/Study/QuizView";
+import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import type { WeakPoint, Prediction } from "../components/Study/WeakPointAnalysis";
 
 export const Study = () => {
@@ -115,14 +117,18 @@ export const Study = () => {
   useLayoutEffect(() => {
     cardReview.resetReviewState();
     setViewState(mode === "quiz" ? "quiz" : "dashboard");
-  }, [graphId, nodeId, nodeIds, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+    // 仅在路由参数变化时重置；cardReview/setViewState 为稳定引用，无需进依赖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphId, nodeId, nodeIds, mode]);
 
   // Auto-start quiz when mode=quiz and cards loaded
   useEffect(() => {
     if (mode === "quiz" && allCards.length > 0 && cardReview.quizCards.length === 0) {
       cardReview.startCardReview(allCards);
     }
-  }, [mode, allCards, cardReview.quizCards.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    // 用 quizCards.length（数字）替代数组引用避免重复触发；startCardReview 通过 allCards 入参获取最新数据
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, allCards, cardReview.quizCards.length]);
 
   // Fetch health data
   useEffect(() => {
@@ -324,29 +330,66 @@ export const Study = () => {
 
   // --- Quiz View: Active ---
   return (
-    <QuizViewActive
-      isDark={isDark}
-      isMobile={isMobile ?? false}
-      currentCard={cardReview.currentCard}
-      currentCardIndex={cardReview.currentCardIndex}
-      quizCardsLength={cardReview.quizCards.length}
-      showAnswer={cardReview.showAnswer}
-      selectedOption={cardReview.selectedOption}
-      cardKey={cardReview.cardKey}
-      swipeDirection={cardReview.swipeDirection}
-      dragDirection={cardReview.dragDirection}
-      cardRotation={cardReview.cardRotation}
-      quizCards={cardReview.quizCards}
-      similarityWithPrev={cardReview.similarityWithPrev}
-      updateProgressMutation={cardReview.updateProgressMutation}
-      onBackToDashboard={handleBackToDashboard}
-      onRate={cardReview.handleRate}
-      onOptionClick={quizLogic.handleOptionClick}
-      onMultiOptionClick={quizLogic.handleMultiOptionClick}
-      onDragEnd={cardReview.handleDragEnd}
-      onSetShowAnswer={cardReview.setShowAnswer}
-      onSetDragDirection={cardReview.setDragDirection}
-      onSetCardRotation={cardReview.setCardRotation}
-    />
+    <ErrorBoundary
+      fallbackRender={(error, resetErrorBoundary) => (
+        <div
+          className={`min-h-full flex flex-col items-center justify-center ${isMobile ? "p-4" : "p-8"} ${isDark ? "bg-slate-900" : "bg-gray-100"}`}
+        >
+          <div
+            className={`w-full max-w-md ${isDark ? "bg-slate-800" : "bg-white"} rounded-2xl shadow-xl ${isMobile ? "p-6" : "p-8"} text-center`}
+          >
+            <div
+              className={`w-16 h-16 mx-auto mb-4 rounded-full ${isDark ? "bg-red-900/30" : "bg-red-100"} flex items-center justify-center`}
+            >
+              <AlertTriangle
+                className={`w-8 h-8 ${isDark ? "text-red-400" : "text-red-600"}`}
+              />
+            </div>
+            <h2
+              className={`text-xl font-bold mb-2 ${isDark ? "text-slate-100" : "text-gray-900"}`}
+            >
+              卡片渲染失败
+            </h2>
+            <p
+              className={`text-xs mb-4 font-mono break-all ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              {error.message}
+            </p>
+            <button
+              type="button"
+              onClick={resetErrorBoundary}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              重试
+            </button>
+          </div>
+        </div>
+      )}
+    >
+      <QuizViewActive
+        isDark={isDark}
+        isMobile={isMobile ?? false}
+        currentCard={cardReview.currentCard}
+        currentCardIndex={cardReview.currentCardIndex}
+        quizCardsLength={cardReview.quizCards.length}
+        showAnswer={cardReview.showAnswer}
+        selectedOption={cardReview.selectedOption}
+        cardKey={cardReview.cardKey}
+        swipeDirection={cardReview.swipeDirection}
+        dragDirection={cardReview.dragDirection}
+        cardRotation={cardReview.cardRotation}
+        quizCards={cardReview.quizCards}
+        similarityWithPrev={cardReview.similarityWithPrev}
+        updateProgressMutation={cardReview.updateProgressMutation}
+        onBackToDashboard={handleBackToDashboard}
+        onRate={cardReview.handleRate}
+        onOptionClick={quizLogic.handleOptionClick}
+        onMultiOptionClick={quizLogic.handleMultiOptionClick}
+        onDragEnd={cardReview.handleDragEnd}
+        onSetShowAnswer={cardReview.setShowAnswer}
+        onSetDragDirection={cardReview.setDragDirection}
+        onSetCardRotation={cardReview.setCardRotation}
+      />
+    </ErrorBoundary>
   );
 };

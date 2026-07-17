@@ -14,6 +14,7 @@ import {
 } from "@/config/electronConfig";
 import { getMobileApiBaseUrl } from "@/config/mobileApiConfig";
 import { localQuery, isCloudOnlyResource } from "./localClient";
+import { captureException } from "@/utils/errorReporter";
 
 /**
  * Shape of the error response body returned by the backend.
@@ -252,6 +253,9 @@ export const createApiClient = (): AxiosInstance => {
         }
       }
 
+      if (appError.statusCode >= 500 || !appError.statusCode) {
+        captureException(appError, { url: error.config?.url });
+      }
       return Promise.reject(appError);
     },
   );

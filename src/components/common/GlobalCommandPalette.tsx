@@ -312,6 +312,9 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
       {/* Modal */}
       <div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="全局命令面板"
         className={`relative w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col transform transition-all duration-200 scale-100 opacity-100 ${
           isDark
             ? "bg-slate-900 border border-slate-700 text-white"
@@ -331,6 +334,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
           <input
             ref={inputRef}
             type="text"
+            aria-label={t('common.aria.search')}
             className="flex-1 bg-transparent text-lg placeholder-gray-400 focus:outline-none"
             placeholder="搜索命令、最近项或操作..."
             value={query}

@@ -236,7 +236,7 @@ export const TemplatePromptConfigPanel: React.FC<
           <div className="w-64 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-3">
             {isLoading && (
               <div className="flex items-center justify-center py-4">
-                <RefreshCw className="w-5 h-5 animate-spin text-gray-400" />
+                <RefreshCw className="w-5 h-5 animate-spin text-gray-400 dark:text-gray-500" />
               </div>
             )}
 

@@ -1056,7 +1056,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
                   }`}
                 >
                   <option value="today">
@@ -1078,7 +1078,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
                   }`}
                 >
                   <option value="">
@@ -1094,7 +1094,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-md border cursor-pointer select-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
                   }`}
                 >
                   <input
@@ -1113,7 +1113,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
                   }`}
                 >
                   <option value="">
@@ -1135,7 +1135,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   className={`px-2 py-1 text-xs rounded-md border outline-none ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300"
-                      : "bg-white border-gray-200 text-gray-700"
+                      : "bg-white border-gray-200 text-gray-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300"
                   }`}
                 >
                   <option value="">{t("console.performance.allStatus")}</option>

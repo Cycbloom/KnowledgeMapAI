@@ -11,7 +11,7 @@
 
 @layer components {
   .prose-sm {
-    @apply text-slate-700;
+    @apply text-slate-700 dark:text-slate-300;
   }
   .prose-sm p {
     @apply my-2 leading-relaxed;
@@ -26,10 +26,10 @@
   .prose-sm h1,
   .prose-sm h2,
   .prose-sm h3 {
-    @apply mt-4 mb-2 font-bold text-slate-900;
+    @apply mt-4 mb-2 font-bold text-slate-900 dark:text-slate-100;
   }
   .prose-sm blockquote {
-    @apply border-l-4 border-slate-200 pl-4 italic text-slate-500 my-2;
+    @apply border-l-4 border-slate-200 pl-4 italic text-slate-500 my-2 dark:border-slate-700 dark:text-slate-400;
   }
 }
 

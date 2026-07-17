@@ -5,19 +5,11 @@ import { GraphEditorState } from './index';
 
 interface UseGraphEffectsProps {
   state: GraphEditorState;
-  undo: () => Promise<void>;
-  redo: () => Promise<void>;
-  canUndo: boolean;
-  canRedo: boolean;
   aiEnabled: boolean;
 }
 
 export const useGraphEffects = ({
   state,
-  undo,
-  redo,
-  canUndo,
-  canRedo,
   aiEnabled,
 }: UseGraphEffectsProps) => {
   const navigate = useNavigate();
@@ -25,21 +17,6 @@ export const useGraphEffects = ({
     setSelectedNode,
     setSelectedNodeIds,
   } = state;
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        if (e.shiftKey) {
-          if (canRedo) redo();
-        } else {
-          if (canUndo) undo();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, canUndo, canRedo]);
 
   const hasShownAIWarningRef = useRef(false);
   useEffect(() => {

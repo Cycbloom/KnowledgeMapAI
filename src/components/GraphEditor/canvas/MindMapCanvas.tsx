@@ -1016,7 +1016,7 @@ export const MindMapCanvas = React.memo(
             {t('graphEditor.mindMap.semanticUnavailable', '当前图谱节点缺少语义向量数据，已切换为常规布局。请确保知识点已通过 AI 功能生成向量数据。')}
           </div>
         )}
-        <svg
+        <svg aria-hidden="true"
           ref={svgRef}
           width="100%"
           height="100%"
@@ -1206,7 +1206,7 @@ export const MindMapCanvas = React.memo(
                 className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
                 title={t('graphEditor.mindMap.viewGraphMap')}
               >
-                <svg
+                <svg aria-hidden="true"
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
@@ -1235,7 +1235,7 @@ export const MindMapCanvas = React.memo(
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
               title={interaction.showMiniMap ? t('graphEditor.mindMap.hideMiniMap') : t('graphEditor.mindMap.showMiniMap')}
             >
-              <svg
+              <svg aria-hidden="true"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -1256,7 +1256,7 @@ export const MindMapCanvas = React.memo(
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
               title={t('graphEditor.mindMap.zoomIn')}
             >
-              <svg
+              <svg aria-hidden="true"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -1277,7 +1277,7 @@ export const MindMapCanvas = React.memo(
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
               title={t('graphEditor.mindMap.zoomOut')}
             >
-              <svg
+              <svg aria-hidden="true"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -1298,7 +1298,7 @@ export const MindMapCanvas = React.memo(
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
               title={t('graphEditor.mindMap.resetView')}
             >
-              <svg
+              <svg aria-hidden="true"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -1319,7 +1319,7 @@ export const MindMapCanvas = React.memo(
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
               title={t('graphEditor.mindMap.fitScreen')}
             >
-              <svg
+              <svg aria-hidden="true"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -1378,7 +1378,7 @@ export const MindMapCanvas = React.memo(
               }
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />

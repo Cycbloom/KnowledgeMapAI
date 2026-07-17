@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -185,6 +185,7 @@ function SortableDomainItem({
 
 export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
+  const titleId = useId();
   const deviceInfo = useIsMobile();
   const isMobile = deviceInfo.isMobile;
 
@@ -711,17 +712,21 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl overflow-hidden ${
             isMobile ? 'w-full h-full max-w-none rounded-none' : 'w-full max-w-2xl mx-4'
           }`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white">
               {t('graphMap.domainManager.title')}
             </h2>
             <button
               onClick={onClose}
+              aria-label={t('common.aria.close')}
               className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
             >
               <X className="w-5 h-5" />

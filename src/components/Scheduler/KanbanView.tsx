@@ -143,7 +143,7 @@ export const KanbanView: React.FC<{
 
   return (
     <div className="h-full min-h-0 overflow-x-auto custom-scrollbar">
-      <div className="flex gap-3 sm:gap-4 min-w-max h-full p-1">
+      <div className="flex gap-3 sm:gap-4 min-w-max xl:min-w-0 h-full p-1">
         <AnimatePresence>
           {columnsData.map((column, index) => {
             const IconComponent = column.icon;
@@ -158,7 +158,7 @@ export const KanbanView: React.FC<{
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.1 }}
                 className={`
-                  flex flex-col w-64 sm:w-80 flex-shrink-0 rounded-2xl border transition-all duration-300
+                  flex flex-col w-64 sm:w-80 xl:w-auto xl:grow flex-shrink-0 rounded-2xl border transition-all duration-300
                   ${isOver ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-[1.02]" : ""}
                   ${column.border}
                   bg-white dark:bg-slate-900/60 backdrop-blur-sm

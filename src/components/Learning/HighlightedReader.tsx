@@ -8,6 +8,7 @@ import { Sparkles, Loader2, Info } from "lucide-react";
 import { CodeBlock, TermTooltip } from "../common";
 import { preprocessMarkdown } from "../../utils/markdownPreprocessor";
 import { useFocusStore } from "../../store/useFocusStore";
+import { useShallow } from "zustand/react/shallow";
 
 interface HighlightRange {
   start: number;
@@ -418,7 +419,12 @@ export const HighlightedReader: React.FC<HighlightedReaderProps> = ({
   keywords,
   onKeywordClick,
 }) => {
-  const { highlightEnabled, highlightIntensity } = useFocusStore();
+  const { highlightEnabled, highlightIntensity } = useFocusStore(
+    useShallow((s) => ({
+      highlightEnabled: s.highlightEnabled,
+      highlightIntensity: s.highlightIntensity,
+    })),
+  );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [highlightRanges, setHighlightRanges] = useState<HighlightRange[]>([]);
   const [hoveredReason, setHoveredReason] = useState<string | null>(null);

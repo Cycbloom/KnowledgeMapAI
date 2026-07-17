@@ -22,6 +22,7 @@ interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  onReset?: () => void;
   resetKeys?: unknown[];
   showReportButton?: boolean;
 }
@@ -106,6 +107,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
       errorInfo: null,
       errorReported: false,
     });
+    this.props.onReset?.();
   };
 
   handleRetry = () => {

@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ColorPickerProps {
   value: string;
@@ -26,6 +27,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,6 +54,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
+        aria-label={t("common.aria.selectColor")}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className={`flex items-center justify-center w-8 h-8 border rounded-md transition-colors ${
           disabled
             ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-50"

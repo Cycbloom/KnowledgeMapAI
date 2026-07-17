@@ -77,7 +77,7 @@ const SidebarLink: React.FC<SidebarLinkProps & { isActive?: boolean }> = ({
 }) => (
   <Link
     to={to}
-    className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} p-2 hover:bg-slate-800 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset ${isActive ? "bg-slate-700" : ""}`}
+    className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} p-2.5 min-w-[44px] min-h-[44px] hover:bg-slate-800 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset ${isActive ? "bg-slate-700" : ""}`}
     title={label}
     aria-label={label}
     aria-current={isActive ? "page" : undefined}
@@ -393,7 +393,7 @@ export const Layout = () => {
               {!isCollapsed && <span className="truncate">{t('layout.appName')}</span>}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className={`p-2 hover:bg-slate-800 rounded transition-colors`}
+                className={`p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-800 rounded transition-colors`}
                 aria-label={isCollapsed ? t('layout.expandSidebar') : t('layout.collapseSidebar')}
                 aria-expanded={!isCollapsed}
               >
@@ -462,7 +462,7 @@ export const Layout = () => {
                 <NotificationCenter />
                 <button
                   onClick={toggleTheme}
-                  className={`p-1.5 rounded-full transition-colors ${
+                  className={`p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
                     isDark
                       ? "text-slate-400 hover:text-yellow-400 hover:bg-slate-800"
                       : "text-gray-500 hover:text-yellow-600 hover:bg-yellow-50"
@@ -474,7 +474,7 @@ export const Layout = () => {
                 </button>
                 <button
                   onClick={() => setIsHelpOpen(true)}
-                  className={`p-1.5 rounded-full transition-colors ${
+                  className={`p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
                     isDark
                       ? "text-slate-400 hover:text-primary-400 hover:bg-slate-800"
                       : "text-gray-500 hover:text-primary-600 hover:bg-primary-50"

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useFocusStore } from "../../store/useFocusStore";
+import { useShallow } from "zustand/react/shallow";
 import { useTimerStore } from "../../store/useTimerStore";
 import { PomodoroCycleBar } from "./PomodoroCycleBar";
 import {
@@ -24,7 +25,13 @@ const SCREEN_MARGIN = 8;
 
 export const MobileFocusTimer: React.FC = () => {
   const { t } = useTranslation();
-  const { focusDuration, isInFocusMode, longBreakInterval } = useFocusStore();
+  const { focusDuration, isInFocusMode, longBreakInterval } = useFocusStore(
+    useShallow((s) => ({
+      focusDuration: s.focusDuration,
+      isInFocusMode: s.isInFocusMode,
+      longBreakInterval: s.longBreakInterval,
+    })),
+  );
 
   const timeLeft = useTimerStore((s) => s.timeLeft);
   const mode = useTimerStore((s) => s.mode);
@@ -239,7 +246,7 @@ export const MobileFocusTimer: React.FC = () => {
               </span>
 
               <div className="relative w-32 h-32 mx-auto mb-4">
-                <svg
+                <svg aria-hidden="true"
                   className="w-full h-full transform -rotate-90"
                   viewBox="0 0 100 100"
                 >
@@ -311,7 +318,7 @@ export const MobileFocusTimer: React.FC = () => {
                   onClick={() => useTimerStore.getState().skipToNext()}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  <svg
+                  <svg aria-hidden="true"
                     width="18"
                     height="18"
                     viewBox="0 0 24 24"
@@ -376,7 +383,7 @@ export const MobileFocusTimer: React.FC = () => {
                     : "none",
                 }}
               >
-                <svg
+                <svg aria-hidden="true"
                   width="28"
                   height="52"
                   viewBox="0 0 28 52"
@@ -440,7 +447,7 @@ export const MobileFocusTimer: React.FC = () => {
                   border: `2px solid ${colors.primary}`,
                 }}
               >
-                <svg
+                <svg aria-hidden="true"
                   width={BALL_SIZE}
                   height={BALL_SIZE}
                   viewBox={`0 0 ${BALL_SIZE} ${BALL_SIZE}`}

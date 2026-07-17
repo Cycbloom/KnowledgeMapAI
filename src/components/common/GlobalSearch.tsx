@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, CheckCircle, Lock, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '../../services/api';
@@ -75,6 +76,7 @@ function saveSearchHistory(history: SearchHistoryItem[]) {
 export const GlobalSearch = () => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [searchType, setSearchType] = useState<'keyword' | 'semantic'>('keyword');
@@ -185,20 +187,13 @@ export const GlobalSearch = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsOpen(prev => !prev);
-        if (!isOpen) {
-          setTimeout(() => inputRef.current?.focus(), 100);
-        }
-      }
       if (e.key === 'Escape') {
         setIsOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, []);
 
   const handleSelect = (path: string) => {
     if (query.trim()) {
@@ -232,7 +227,9 @@ export const GlobalSearch = () => {
         <input
           ref={inputRef}
           type="text"
+          aria-label={t('common.aria.search')}
           value={query}
+          aria-expanded={isOpen}
           onChange={(e) => {
             setQuery(e.target.value);
             setIsOpen(true);
@@ -500,7 +497,7 @@ export const GlobalSearch = () => {
           )}
           
           <div className={cn("px-4 py-2 border-t flex items-center justify-between text-xs", isDark ? 'border-slate-700 text-slate-500' : 'border-gray-100 text-gray-400')}>
-            <span>按 Enter 搜索 · Ctrl+K 快捷键</span>
+            <span>按 Enter 搜索 · Ctrl+/ 快捷键</span>
             <span>{searchType === 'semantic' ? '语义搜索' : '关键词搜索'}</span>
           </div>
         </div>

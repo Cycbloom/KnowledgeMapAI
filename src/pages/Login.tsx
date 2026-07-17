@@ -727,9 +727,11 @@ export const Login = () => {
     show: boolean,
     onToggle: () => void,
     placeholder: string,
+    id: string,
   ) => (
     <div className="relative">
       <input
+        id={id}
         type={show ? "text" : "password"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -739,6 +741,7 @@ export const Login = () => {
       <button
         type="button"
         onClick={onToggle}
+        aria-label={show ? t('common.aria.hidePassword') : t('common.aria.showPassword')}
         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
       >
         {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -803,7 +806,7 @@ export const Login = () => {
       </button>
 
       <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+        <label htmlFor="pat" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
           Personal Access Token
         </label>
         {renderPasswordField(
@@ -812,6 +815,7 @@ export const Login = () => {
           showPat,
           () => setShowPat(!showPat),
           t("quickSetup.patPlaceholder"),
+          "pat",
         )}
       </div>
 
@@ -1127,6 +1131,7 @@ export const Login = () => {
           </p>
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             <input
+              id="email"
               type="email"
               value={draft.email}
               onChange={(e) =>
@@ -1134,6 +1139,7 @@ export const Login = () => {
               }
               onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
               placeholder={t("configPage.email")}
+              aria-label={t("configPage.email")}
               className="w-full input-mobile rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
             {touched.email && !draft.email.trim() && (
@@ -1248,7 +1254,7 @@ export const Login = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor="anon-key" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.anonKey")}
           </label>
           {renderPasswordField(
@@ -1257,11 +1263,12 @@ export const Login = () => {
             showAnonKey,
             () => setShowAnonKey(!showAnonKey),
             "eyJhbGciOi...",
+            "anon-key",
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor="service-role-key" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.serviceRoleKey")}
           </label>
           {renderPasswordField(
@@ -1270,6 +1277,7 @@ export const Login = () => {
             showServiceRoleKey,
             () => setShowServiceRoleKey(!showServiceRoleKey),
             "eyJhbGciOi...",
+            "service-role-key",
           )}
         </div>
 
@@ -1495,7 +1503,7 @@ export const Login = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label htmlFor="ai-api-key" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">
             {t("configPage.apiKey")}
           </label>
           {renderPasswordField(
@@ -1504,6 +1512,7 @@ export const Login = () => {
             showAiApiKey,
             () => setShowAiApiKey(!showAiApiKey),
             t("configPage.apiKeyPlaceholder"),
+            "ai-api-key",
           )}
         </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Globe, ChevronDown, Check, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { DomainTreeNode } from '@shared/types/graph';
 import { useIsMobile } from '../../hooks';
 
@@ -101,6 +102,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
   domainGraphCount,
 }) => {
   const deviceInfo = useIsMobile();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     const initial = new Set<string>();
@@ -198,6 +200,8 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         className={`flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-slate-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors`}
       >
         <Globe className="w-4 h-4" />
@@ -234,6 +238,7 @@ export const DomainFilter: React.FC<DomainFilterProps> = ({
           <div className="relative mb-1">
             <input
               type="text"
+              aria-label={t('common.aria.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索领域..."

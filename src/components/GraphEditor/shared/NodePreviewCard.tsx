@@ -26,7 +26,7 @@ interface NodePreviewCardProps {
   onMouseLeave?: () => void;
 }
 
-export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
+const NodePreviewCardComponent: React.FC<NodePreviewCardProps> = ({
   node,
   nodes,
   edges,
@@ -246,3 +246,23 @@ export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
     </div>
   );
 };
+
+function areEqual(prev: NodePreviewCardProps, next: NodePreviewCardProps): boolean {
+  // 引用比较：父组件应保持引用稳定（useMemo/useCallback）
+  if (
+    prev.node !== next.node ||
+    prev.nodes !== next.nodes ||
+    prev.edges !== next.edges ||
+    prev.nodeStatus !== next.nodeStatus ||
+    prev.onNavigateToNode !== next.onNavigateToNode ||
+    prev.onMarkMastered !== next.onMarkMastered ||
+    prev.onMouseEnter !== next.onMouseEnter ||
+    prev.onMouseLeave !== next.onMouseLeave
+  ) {
+    return false;
+  }
+  // position 每次可能为新对象，按值比较
+  return prev.position.x === next.position.x && prev.position.y === next.position.y;
+}
+
+export const NodePreviewCard = React.memo(NodePreviewCardComponent, areEqual);

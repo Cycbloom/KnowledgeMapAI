@@ -188,6 +188,8 @@ export const TagFilter: React.FC<TagFilterProps> = ({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
           selectedTags.length > 0
@@ -347,6 +349,7 @@ export const TagInput: React.FC<{
   placeholder?: string;
 }> = ({ tags, onChange, suggestions = [], placeholder = '添加标签...' }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -409,6 +412,7 @@ export const TagInput: React.FC<{
         <input
           ref={inputRef}
           type="text"
+          aria-label={t('common.aria.search')}
           value={inputValue}
           onChange={(e) => {
             setInputValue(e.target.value);

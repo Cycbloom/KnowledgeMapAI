@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, Calendar, Clock, Tag } from "lucide-react";
@@ -48,6 +48,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const titleId = useId();
   const containerRef = useFocusTrap<HTMLDivElement>({ enabled: isOpen });
   useEscapeKey(() => onClose(), isOpen);
   const [saving, setSaving] = useState(false);
@@ -118,22 +119,25 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
         >
           <motion.div
             ref={containerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className={`w-full max-w-md rounded-xl p-6 ${
-              isDark ? "bg-slate-800" : "bg-white"
-            }`}
+            className="w-full max-w-md rounded-xl p-6 bg-white dark:bg-slate-800"
           >
             <div className="flex items-center justify-between mb-4">
               <h3
+                id={titleId}
                 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
                 {t("calendar.createTask")}
               </h3>
               <button
                 onClick={onClose}
+                aria-label={t('common.aria.close')}
                 className={`p-3 rounded-lg min-h-[44px] min-w-[44px] ${isDark ? "hover:bg-slate-700" : "hover:bg-gray-100"}`}
               >
                 <X
@@ -147,7 +151,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               {/* Title */}
               <div>
                 <label
-                  className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
                   {t("calendar.taskTitle")}{" "}
                   <span className="text-red-500">*</span>
@@ -159,18 +163,14 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                     setTaskForm({ ...taskForm, title: e.target.value })
                   }
                   placeholder={t("calendar.taskTitlePlaceholder")}
-                  className={`w-full px-3 py-2 rounded-lg border ${
-                    isDark
-                      ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                  }`}
+                  className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {/* Description */}
               <div>
                 <label
-                  className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
                   {t("calendar.description")}
                 </label>
@@ -181,18 +181,14 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                   }
                   placeholder={t("calendar.descriptionPlaceholder")}
                   rows={2}
-                  className={`w-full px-3 py-2 rounded-lg border resize-none ${
-                    isDark
-                      ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                  }`}
+                  className="w-full px-3 py-2 rounded-lg border resize-none bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {/* Deadline */}
               <div>
                 <label
-                  className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
                   <Calendar size={14} className="inline mr-1" />
                   {t("calendar.deadline")}
@@ -206,11 +202,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                       deadline: e.target.value,
                     })
                   }
-                  className={`w-full px-3 py-2 rounded-lg border ${
-                    isDark
-                      ? "bg-slate-700 border-slate-600 text-white"
-                      : "bg-gray-50 border-gray-200 text-gray-900"
-                  }`}
+                  className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -218,7 +210,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label
-                    className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                    className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                   >
                     <Clock size={14} className="inline mr-1" />
                     {t("calendar.estimatedDuration")}
@@ -232,16 +224,12 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                         estimated_duration: parseInt(e.target.value) || 30,
                       })
                     }
-                    className={`w-full px-3 py-2 rounded-lg border ${
-                      isDark
-                        ? "bg-slate-700 border-slate-600 text-white"
-                        : "bg-gray-50 border-gray-200 text-gray-900"
-                    }`}
+                    className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
                   <label
-                    className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                    className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                   >
                     {t("calendar.priority")}
                   </label>
@@ -253,11 +241,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                         priority: parseInt(e.target.value),
                       })
                     }
-                    className={`w-full px-3 py-2 rounded-lg border ${
-                      isDark
-                        ? "bg-slate-700 border-slate-600 text-white"
-                        : "bg-gray-50 border-gray-200 text-gray-900"
-                    }`}
+                    className="w-full px-3 py-2 rounded-lg border bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100"
                   >
                     {priorityLabels.map((label, index) => (
                       <option key={index} value={index + 1}>
@@ -271,7 +255,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
               {/* Tags */}
               <div>
                 <label
-                  className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  className="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300"
                 >
                   <Tag size={14} className="inline mr-1" />
                   {t("calendar.tags")}
@@ -285,11 +269,7 @@ export const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({
                       e.key === "Enter" && (e.preventDefault(), addTag())
                     }
                     placeholder={t("calendar.addTag")}
-                    className={`flex-1 px-3 py-3 rounded-lg border min-h-[44px] ${
-                      isDark
-                        ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                        : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                    }`}
+                    className="flex-1 px-3 py-3 rounded-lg border min-h-[44px] bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-slate-500"
                   />
                   <button
                     type="button"

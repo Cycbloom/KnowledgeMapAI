@@ -55,7 +55,7 @@ export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
             onClick={onClose}
             className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700`}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -65,7 +65,7 @@ export const RelationshipLegend: React.FC<RelationshipLegendProps> = ({
       <div className="space-y-2">
         {usedRelationshipTypes.map(({ config, count }) => (
           <div key={config.id} className="flex items-center gap-2">
-            <svg width="50" height="20" className="flex-shrink-0">
+            <svg aria-hidden="true" width="50" height="20" className="flex-shrink-0">
               <defs>
                 {config.show_arrow && (
                   <marker

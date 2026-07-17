@@ -147,7 +147,7 @@ export const CombinedNodeDetailSidebar: React.FC<
             </div>
 
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
-              <Calendar size={14} className="mr-1.5 text-gray-400" />
+              <Calendar size={14} className="mr-1.5 text-gray-400 dark:text-gray-500" />
               <span>
                 {node.created_at
                   ? formatDate(node.created_at, "short")
@@ -302,14 +302,14 @@ export const CombinedNodeDetailSidebar: React.FC<
         <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-700">
           {parentNode && (
             <div>
-              <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
+              <div className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase mb-1 flex items-center">
                 <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.parent")} (Parent)
               </div>
               <button
                 onClick={() => onNodeClick(parentNode)}
                 className="w-full text-left p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 font-medium flex items-center transition-colors border border-gray-100 dark:border-gray-700 hover:border-primary-200 hover:text-primary-700"
               >
-                <ArrowLeft size={14} className="mr-2 text-gray-400" />
+                <ArrowLeft size={14} className="mr-2 text-gray-400 dark:text-gray-500" />
                 {parentNode.title}
               </button>
             </div>
@@ -317,7 +317,7 @@ export const CombinedNodeDetailSidebar: React.FC<
 
           {childNodes.length > 0 && (
             <div>
-              <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
+              <div className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase mb-1 flex items-center">
                 <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.children")} (Children)
               </div>
               <div className="flex flex-col gap-1.5">

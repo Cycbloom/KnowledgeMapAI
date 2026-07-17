@@ -366,6 +366,7 @@ export const RecycleBin = () => {
               />
               <input
                 type="text"
+                aria-label={t("common.aria.search")}
                 placeholder={t("recycleBin.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

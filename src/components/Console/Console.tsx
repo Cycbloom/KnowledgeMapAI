@@ -74,12 +74,6 @@ export const Console: React.FC<ConsoleProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
-        e.preventDefault();
-        if (isOpen) {
-          onClose();
-        }
-      }
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }

@@ -609,7 +609,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
         ref={containerRef}
         className="relative w-full h-full overflow-hidden"
       >
-        <svg
+        <svg aria-hidden="true"
           ref={svgRef}
           width="100%"
           height="100%"
@@ -776,7 +776,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             }}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -808,7 +808,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             }}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -829,7 +829,7 @@ export const QuadrantCanvas = forwardRef<any, QuadrantCanvasProps>(
             }}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
           >
-            <svg
+            <svg aria-hidden="true"
               width="20"
               height="20"
               viewBox="0 0 24 24"

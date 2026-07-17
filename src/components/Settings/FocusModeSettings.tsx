@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusStore, DEFAULT_SETTINGS } from "../../store/useFocusStore";
+import { useShallow } from "zustand/react/shallow";
 import {
   Timer,
   Clock,
@@ -23,7 +24,19 @@ export const FocusModeSettings = React.memo(function FocusModeSettings() {
     soundEnabled,
     notificationEnabled,
     updateSettings: updateFocusSettings,
-  } = useFocusStore();
+  } = useFocusStore(
+    useShallow((s) => ({
+      focusDuration: s.focusDuration,
+      shortBreakDuration: s.shortBreakDuration,
+      longBreakDuration: s.longBreakDuration,
+      longBreakInterval: s.longBreakInterval,
+      autoStartBreak: s.autoStartBreak,
+      autoStartPomodoro: s.autoStartPomodoro,
+      soundEnabled: s.soundEnabled,
+      notificationEnabled: s.notificationEnabled,
+      updateSettings: s.updateSettings,
+    })),
+  );
 
   const handleResetFocusDefaults = () => {
     updateFocusSettings({

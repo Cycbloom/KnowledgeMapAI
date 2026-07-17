@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import {
   X,
@@ -53,6 +53,8 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
 }: BranchManagePanelProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const mergeTitleId = useId();
+  const deleteTitleId = useId();
   const { data: branches, isLoading } = useBranches(graphId);
   const mergeBranchMutation = useMergeBranch(graphId);
   const deleteBranchMutation = useDeleteBranch(graphId);
@@ -196,11 +198,11 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
       </div>
 
       {mergeTarget && (
-        <MergeDialogOverlay onClose={closeMergeDialog}>
+        <MergeDialogOverlay onClose={closeMergeDialog} titleId={mergeTitleId}>
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
             <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
               <GitMerge size={18} className="text-primary-500" />
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              <h3 id={mergeTitleId} className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                 合并分支
               </h3>
             </div>
@@ -252,11 +254,11 @@ export const BranchManagePanel = React.memo(function BranchManagePanel({
         </MergeDialogOverlay>
       )}
       {deleteTarget && (
-        <MergeDialogOverlay onClose={closeDeleteDialog}>
+        <MergeDialogOverlay onClose={closeDeleteDialog} titleId={deleteTitleId}>
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm mx-4 overflow-hidden">
             <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
               <Trash2 size={18} className="text-red-500" />
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              <h3 id={deleteTitleId} className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                 删除分支
               </h3>
             </div>
@@ -339,18 +341,20 @@ const BranchItem: React.FC<BranchItemProps> = ({ branch, onMerge, onView, onDele
 interface MergeDialogOverlayProps {
   onClose: () => void;
   children: React.ReactNode;
+  titleId?: string;
 }
 
 const MergeDialogOverlay: React.FC<MergeDialogOverlayProps> = ({
   onClose,
   children,
+  titleId,
 }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
-      <div onClick={(e) => e.stopPropagation()}>{children}</div>
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>
   );
 };

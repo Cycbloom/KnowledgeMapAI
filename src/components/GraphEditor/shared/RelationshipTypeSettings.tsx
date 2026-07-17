@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import {
   RelationshipTypeConfig,
   RelationshipCategory,
@@ -75,6 +75,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
   onClose,
 }) => {
   const { t } = useTranslation();
+  const titleId = useId();
   const [relationshipTypes, setRelationshipTypes] = useState<RelationshipTypeConfig[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<RelationshipCategory | 'all'>('all');
   const [editingType, setEditingType] = useState<RelationshipTypeConfig | null>(null);
@@ -260,16 +261,20 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[800px] max-h-[85vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">关系类型设置</h2>
+          <h2 id={titleId} className="text-xl font-semibold text-gray-900 dark:text-white">关系类型设置</h2>
           <button
             onClick={onClose}
+            aria-label={t('common.aria.close')}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -317,7 +322,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                     onClick={handleCreate}
                     className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     新建关系类型
@@ -358,7 +363,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                     </span>
                                     {type.is_builtin && (
                                       <span title="内置类型">
-                                        <svg
+                                        <svg aria-hidden="true"
                                           width="14"
                                           height="14"
                                           viewBox="0 0 24 24"
@@ -391,7 +396,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                       className="p-1.5 text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                                       title="编辑"
                                     >
-                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                       </svg>
@@ -401,7 +406,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                                       className="p-1.5 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                       title="删除"
                                     >
-                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                       </svg>
                                     </button>
@@ -555,7 +560,7 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
                   <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">预览</p>
                     <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-                      <svg width="200" height="40" viewBox="0 0 200 40">
+                      <svg aria-hidden="true" width="200" height="40" viewBox="0 0 200 40">
                         <line
                           x1="20"
                           y1="20"

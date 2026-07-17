@@ -43,7 +43,7 @@ import { message } from "../utils/messageHelper";
 import { asyncConfirm } from "@/utils/asyncConfirm";
 import { UserTask, CreateUserTaskData, QueueData } from "@shared/types";
 import { api } from "../services/api";
-import { SkeletonCard } from "../components/common";
+import { SkeletonCard, ErrorBoundary } from "../components/common";
 
 const HorizontalQueueView = lazy(() =>
   import("../components/Scheduler/HorizontalQueueView").then((module) => ({
@@ -720,30 +720,99 @@ export const Scheduler: React.FC = () => {
                     {{
                       timeline: (
                         <Suspense fallback={<LoadingFallback />}>
-                          <TimelineView
-                            tasks={allTasks}
-                            onTaskClick={openEditTaskForm}
-                          />
+                          <ErrorBoundary
+                            fallbackRender={(error, resetErrorBoundary) => (
+                              <div className="p-6 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
+                                <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
+                                  <AlertCircle size={20} />
+                                  <span>视图加载失败</span>
+                                </div>
+                                <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
+                                  {error.message}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                  可点击下方视图切换按钮切换到其他视图
+                                </p>
+                                <button
+                                  onClick={resetErrorBoundary}
+                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                                >
+                                  重试
+                                </button>
+                              </div>
+                            )}
+                          >
+                            <TimelineView
+                              tasks={allTasks}
+                              onTaskClick={openEditTaskForm}
+                            />
+                          </ErrorBoundary>
                         </Suspense>
                       ),
                       kanban: (
                         <Suspense fallback={<LoadingFallback />}>
-                          <KanbanView
-                            tasks={allTasks}
-                            onTaskClick={openEditTaskForm}
-                          />
+                          <ErrorBoundary
+                            fallbackRender={(error, resetErrorBoundary) => (
+                              <div className="p-6 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
+                                <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
+                                  <AlertCircle size={20} />
+                                  <span>视图加载失败</span>
+                                </div>
+                                <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
+                                  {error.message}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                  可点击下方视图切换按钮切换到其他视图
+                                </p>
+                                <button
+                                  onClick={resetErrorBoundary}
+                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                                >
+                                  重试
+                                </button>
+                              </div>
+                            )}
+                          >
+                            <KanbanView
+                              tasks={allTasks}
+                              onTaskClick={openEditTaskForm}
+                            />
+                          </ErrorBoundary>
                         </Suspense>
                       ),
                       list: (
                         <Suspense fallback={<LoadingFallback />}>
-                          <ListView
-                            tasks={allTasks}
-                            onEditTask={openEditTaskForm}
-                            onDeleteTask={handleDeleteTask}
-                            onStartTask={handleStartTask}
-                            onPauseTask={handlePauseTask}
-                            onCompleteTask={handleCompleteTask}
-                          />
+                          <ErrorBoundary
+                            fallbackRender={(error, resetErrorBoundary) => (
+                              <div className="p-6 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700 text-center">
+                                <div className="flex items-center justify-center gap-2 text-red-700 dark:text-red-400 font-medium">
+                                  <AlertCircle size={20} />
+                                  <span>视图加载失败</span>
+                                </div>
+                                <p className="text-sm text-red-600 dark:text-red-300 mt-2 break-words">
+                                  {error.message}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                  可点击下方视图切换按钮切换到其他视图
+                                </p>
+                                <button
+                                  onClick={resetErrorBoundary}
+                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                                >
+                                  重试
+                                </button>
+                              </div>
+                            )}
+                          >
+                            <ListView
+                              tasks={allTasks}
+                              onEditTask={openEditTaskForm}
+                              onDeleteTask={handleDeleteTask}
+                              onStartTask={handleStartTask}
+                              onPauseTask={handlePauseTask}
+                              onCompleteTask={handleCompleteTask}
+                            />
+                          </ErrorBoundary>
                         </Suspense>
                       ),
                     }}

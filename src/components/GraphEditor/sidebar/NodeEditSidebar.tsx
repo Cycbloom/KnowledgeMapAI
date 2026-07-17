@@ -498,7 +498,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             className={`w-3 h-3 rounded-full ${mode === "create" ? "bg-green-500" : "bg-primary-500"}`}
           ></div>
           <h3
-            className={`font-bold text-gray-800 dark:text-gray-100 ${isMobile ? "text-base" : "text-lg"}`}
+            className="font-bold text-gray-800 dark:text-gray-100 text-base sm:text-lg md:text-xl"
           >
             {mode === "create" ? "创建新节点" : "编辑节点"}
           </h3>

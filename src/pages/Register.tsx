@@ -95,8 +95,9 @@ export const Register = () => {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.name')}</label>
+            <label htmlFor="register-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.name')}</label>
             <input
+              id="register-name"
               type="text"
               name="name"
               autoComplete="name"
@@ -107,8 +108,9 @@ export const Register = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.email')}</label>
+            <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.email')}</label>
             <input
+              id="register-email"
               type="email"
               name="email"
               autoComplete="username"
@@ -123,8 +125,9 @@ export const Register = () => {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.password')}</label>
+            <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.password')}</label>
             <input
+              id="register-password"
               type="password"
               name="password"
               autoComplete="new-password"
@@ -159,8 +162,9 @@ export const Register = () => {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.confirmPassword') ?? '确认密码'}</label>
+            <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('register.confirmPassword') ?? '确认密码'}</label>
             <input
+              id="register-confirm-password"
               type="password"
               name="confirmPassword"
               autoComplete="new-password"

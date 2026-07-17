@@ -88,14 +88,6 @@ describe('Console', () => {
 
       expect(defaultProps.onClose).toHaveBeenCalled();
     });
-
-    it('应该按 Ctrl+Shift+C 时调用 onClose', () => {
-      renderWithProviders(<Console {...defaultProps} />);
-
-      fireEvent.keyDown(window, { key: 'c', ctrlKey: true, shiftKey: true });
-
-      expect(defaultProps.onClose).toHaveBeenCalled();
-    });
   });
 
   describe('命令执行集成流程', () => {

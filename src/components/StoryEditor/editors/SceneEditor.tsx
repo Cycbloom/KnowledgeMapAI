@@ -71,12 +71,14 @@ export const SceneEditor: React.FC<SceneEditorProps> = ({
 
   useEffect(() => {
     loadSceneData();
+    // 仅在 structure.id 变化时重新加载场景；loadSceneData 闭包在触发时已是最新
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [structure.id]);
 
   // Sync lastSavedDataRef when sceneData changes (after loadSceneData completes)
   useEffect(() => {
     lastSavedDataRef.current = sceneData ? { ...formData } : EMPTY_SCENE_DRAFT;
+    // 仅在 sceneData 加载完成时同步基线；formData 此时已为新值，无需进依赖
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneData]);
 

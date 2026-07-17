@@ -21,6 +21,7 @@
   --scheduler-border-active: var(--primary-500);
   --scheduler-text: #1e293b;
   --scheduler-text-muted: #64748b;
+  --scheduler-meta: rgba(100, 116, 139, 0.8);
   --tech-grid: rgba(148, 163, 184, 0.08);
   --tech-bg: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
   --tech-border: rgba(148, 163, 184, 0.25);
@@ -48,6 +49,7 @@
   --scheduler-border-active: var(--primary-500);
   --scheduler-text: #e2e8f0;
   --scheduler-text-muted: #94a3b8;
+  --scheduler-meta: rgba(148, 163, 184, 0.8);
   --tech-grid: color-mix(in srgb, var(--primary-500) 3%, transparent);
   --tech-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
   --tech-border: rgba(51, 65, 85, 0.5);
@@ -162,7 +164,7 @@
    ============================================ */
 .task-card {
   position: relative;
-  background: rgba(30, 41, 59, 0.6);
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.6));
   border: 1px solid var(--tech-border);
   border-radius: 8px;
   padding: 12px 16px;
@@ -184,7 +186,7 @@
 }
 
 .task-card:hover {
-  background: rgba(30, 41, 59, 0.9);
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.9));
   border-color: var(--tech-border-active);
   transform: translateX(4px);
 }
@@ -213,7 +215,7 @@
 .task-title {
   font-size: 14px;
   font-weight: 500;
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
   margin-bottom: 4px;
 }
 
@@ -222,7 +224,7 @@
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  color: rgba(148, 163, 184, 0.8);
+  color: var(--scheduler-meta, rgba(148, 163, 184, 0.8));
 }
 
 .task-priority {
@@ -632,7 +634,7 @@
 .stat-item {
   text-align: center;
   padding: 16px;
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.5));
   border-radius: 8px;
   border: 1px solid var(--tech-border);
   transition: all 0.3s ease;
@@ -640,7 +642,7 @@
 
 .stat-item:hover {
   border-color: var(--tech-border-active);
-  background: rgba(30, 41, 59, 0.8);
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.8));
 }
 
 .stat-value {
@@ -684,7 +686,7 @@
 .chart-title {
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
   letter-spacing: 0.05em;
 }
 
@@ -771,9 +773,9 @@
 }
 
 .tech-button.ghost:hover {
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
   border-color: var(--tech-border-active);
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.5));
 }
 
 /* ============================================
@@ -782,10 +784,10 @@
 .tech-input {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(30, 41, 59, 0.6);
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.6));
   border: 1px solid var(--tech-border);
   border-radius: 8px;
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
   font-size: 14px;
   transition: all 0.3s ease;
   outline: none;
@@ -811,10 +813,10 @@
   appearance: none;
   width: 100%;
   padding: 12px 40px 12px 16px;
-  background: rgba(30, 41, 59, 0.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.6)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
   border: 1px solid var(--tech-border);
   border-radius: 8px;
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
   font-size: 14px;
   transition: all 0.3s ease;
   outline: none;
@@ -827,8 +829,8 @@
 }
 
 .tech-select option {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: var(--scheduler-card-bg, #1e293b);
+  color: var(--scheduler-text, #e2e8f0);
 }
 
 /* ============================================
@@ -893,7 +895,7 @@
 .tech-modal-title {
   font-size: 18px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
 }
 
 .tech-modal-close {
@@ -911,9 +913,9 @@
 }
 
 .tech-modal-close:hover {
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
   border-color: var(--tech-border-active);
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--scheduler-card-bg, rgba(30, 41, 59, 0.5));
 }
 
 /* ============================================
@@ -977,10 +979,10 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 8px 12px;
-  background: rgba(15, 23, 42, 0.95);
+  background: var(--scheduler-card-bg, rgba(15, 23, 42, 0.95));
   border: 1px solid var(--tech-border);
   border-radius: 6px;
-  color: #e2e8f0;
+  color: var(--scheduler-text, #e2e8f0);
   font-size: 12px;
   white-space: nowrap;
   opacity: 0;
@@ -1016,7 +1018,7 @@
 
 .empty-state-text {
   font-size: 14px;
-  color: rgba(148, 163, 184, 0.6);
+  color: var(--scheduler-meta, rgba(148, 163, 184, 0.6));
   margin-bottom: 16px;
 }
 
@@ -1110,18 +1112,16 @@
 /* ============================================
    深色模式增强
    ============================================ */
-@media (prefers-color-scheme: dark) {
-  .scheduler-container {
-    background: var(--tech-bg-dark);
-  }
+.dark .scheduler-container {
+  background: var(--tech-bg-dark);
+}
 
-  .task-card {
-    background: rgba(15, 23, 42, 0.8);
-  }
+.dark .task-card {
+  background: rgba(15, 23, 42, 0.8);
+}
 
-  .stat-item {
-    background: rgba(15, 23, 42, 0.6);
-  }
+.dark .stat-item {
+  background: rgba(15, 23, 42, 0.6);
 }
 
 /* ============================================

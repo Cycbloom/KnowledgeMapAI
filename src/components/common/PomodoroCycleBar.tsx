@@ -137,7 +137,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
     switch (type) {
       case "focus":
         return (
-          <svg
+          <svg aria-hidden="true"
             width={iconSize}
             height={iconSize}
             viewBox="0 0 24 24"
@@ -153,7 +153,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
         );
       case "shortBreak":
         return (
-          <svg
+          <svg aria-hidden="true"
             width={iconSize}
             height={iconSize}
             viewBox="0 0 24 24"
@@ -172,7 +172,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
         );
       case "longBreak":
         return (
-          <svg
+          <svg aria-hidden="true"
             width={iconSize}
             height={iconSize}
             viewBox="0 0 24 24"
@@ -269,7 +269,7 @@ export const PomodoroCycleBar: React.FC<PomodoroCycleBarProps> = ({
                   >
                     {/* Completed: checkmark */}
                     {isCompleted && (
-                      <svg
+                      <svg aria-hidden="true"
                         width={iconSize - 2}
                         height={iconSize - 2}
                         viewBox="0 0 12 12"

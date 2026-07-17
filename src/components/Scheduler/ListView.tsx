@@ -477,7 +477,8 @@ export const ListView: React.FC<ListViewProps> = ({
       </AnimatePresence>
 
       <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
-        <div className="h-full overflow-x-auto custom-scrollbar">
+        {/* Desktop: table view */}
+        <div className="hidden md:block h-full overflow-x-auto custom-scrollbar">
           <table className="w-full min-w-[900px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-50 dark:bg-slate-800/80">
@@ -895,6 +896,92 @@ export const ListView: React.FC<ListViewProps> = ({
               </AnimatePresence>
             </tbody>
           </table>
+        </div>
+        {/* Mobile: card view */}
+        <div className="md:hidden h-full overflow-y-auto custom-scrollbar p-3 space-y-3">
+          {filteredAndSortedTasks.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+              {t("scheduler.listView.noTasks")}
+            </div>
+          ) : (
+            filteredAndSortedTasks.map((task) => {
+              const queueStyle =
+                QUEUE_COLORS[task.queue_level as QueueLevel] || QUEUE_COLORS[2];
+              const statusConfig =
+                I18N_STATUS_CONFIG[task.status] || I18N_STATUS_CONFIG.pending;
+              const deadlineInfo = formatDeadline(task.deadline);
+              return (
+                <div
+                  key={task.id}
+                  className="p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/60"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-slate-800 dark:text-white truncate">
+                        {task.title}
+                      </div>
+                    </div>
+                    <span className={`px-2 py-1 rounded text-xs font-medium shrink-0 ${statusConfig.color}`}>
+                      {statusConfig.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap text-xs text-slate-500 dark:text-slate-400 mb-2">
+                    <span className={`px-1.5 py-0.5 rounded font-bold ${queueStyle.bg} ${queueStyle.text}`}>
+                      Q{task.queue_level}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      {task.priority >= 3 && <span className="text-red-500">★</span>}
+                      {task.priority || 0}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={12} />
+                      {formatDuration(task.estimated_duration)}
+                    </span>
+                    <span className={`flex items-center gap-1 ${deadlineInfo.color}`}>
+                      <Calendar size={12} />
+                      {deadlineInfo.text}
+                    </span>
+                  </div>
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {task.tags.slice(0, 3).map((tag, i) => (
+                        <span key={i} className="px-1.5 py-0.5 rounded text-xs bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                    {task.status === "pending" && onStartTask && (
+                      <button onClick={() => onStartTask(task)} className="flex items-center justify-center p-2 rounded-lg min-h-[36px] min-w-[36px] bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400">
+                        <Play size={14} />
+                      </button>
+                    )}
+                    {task.status === "in_progress" && onPauseTask && (
+                      <button onClick={() => onPauseTask(task)} className="flex items-center justify-center p-2 rounded-lg min-h-[36px] min-w-[36px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                        <Pause size={14} />
+                      </button>
+                    )}
+                    {(task.status === "pending" || task.status === "in_progress" || task.status === "paused") && onCompleteTask && (
+                      <button onClick={() => onCompleteTask(task)} className="flex items-center justify-center p-2 rounded-lg min-h-[36px] min-w-[36px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                        <Check size={14} />
+                      </button>
+                    )}
+                    {onEditTask && (
+                      <button onClick={() => onEditTask(task)} className="flex items-center justify-center p-2 rounded-lg min-h-[36px] min-w-[36px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                        <Edit2 size={14} />
+                      </button>
+                    )}
+                    {onDeleteTask && (
+                      <button onClick={() => onDeleteTask(task)} className="flex items-center justify-center p-2 rounded-lg min-h-[36px] min-w-[36px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

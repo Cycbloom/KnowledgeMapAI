@@ -210,7 +210,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div
-      className={`p-4 border-t ${isDark ? "border-slate-700" : "border-gray-200"}`}
+      className={`p-4 border-t ${isDark ? "border-slate-700" : "border-gray-200 dark:border-slate-700"}`}
     >
       <AnimatePresence>
         {showQuoteTip && (
@@ -389,7 +389,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <div className="mb-3 flex items-center gap-2">
           {onSearchModeChange && (
             <div
-              className={`flex items-center gap-0.5 rounded-xl p-1 ${isDark ? "bg-slate-800/80" : "bg-gray-100"}`}
+              className={`flex items-center gap-0.5 rounded-xl p-1 ${isDark ? "bg-slate-800/80" : "bg-gray-100 dark:bg-slate-800"}`}
             >
               {[
                 {
@@ -435,7 +435,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       : "bg-primary-50 text-primary-600 ring-1 ring-primary-200"
                     : isDark
                       ? "bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-slate-300"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-300"
                 }`}
                 title={t("aiChat.graphContext")}
               >
@@ -448,7 +448,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 className={`p-2 rounded-lg transition-all ${
                   isDark
                     ? "bg-slate-800/80 text-slate-400 hover:bg-red-900/30 hover:text-red-400"
-                    : "bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500"
+                    : "bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                 }`}
                 title={t("aiChat.clearConversation")}
               >
@@ -462,7 +462,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         className={`flex flex-col rounded-2xl border transition-all duration-200 ${
           isDark
             ? "bg-slate-800/80 border-slate-700 focus-within:border-primary-500/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
-            : "bg-white border-gray-200 focus-within:border-primary-400/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] shadow-sm"
+            : "bg-white border-gray-200 focus-within:border-primary-400/60 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] shadow-sm dark:bg-slate-800 dark:border-slate-700"
         }`}
       >
         <textarea
@@ -478,7 +478,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           className={`w-full bg-transparent resize-none outline-none focus-visible:outline-none text-sm px-4 pt-3 pb-2 ${
             isDark
               ? "text-slate-200 placeholder-slate-500"
-              : "text-gray-800 placeholder-gray-400"
+              : "text-gray-800 placeholder-gray-400 dark:text-slate-200 dark:placeholder-slate-500"
           }`}
           style={{ maxHeight: "160px", minHeight: "80px" }}
           disabled={isLoading}
@@ -493,7 +493,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/25"
                     : isDark
                       ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200"
                 }`}
                 title={t("aiChat.realtimeStt")}
               >
@@ -511,7 +511,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/25"
                         : isDark
                           ? "bg-slate-700/60 text-slate-400 hover:bg-slate-600 hover:text-slate-200"
-                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-gray-200"
                 }`}
                 title={
                   isFileTranscribing
@@ -550,7 +550,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     : "bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/25"
                   : isDark
                     ? "bg-slate-700/60 text-slate-500 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500"
               }`}
             >
               <Send size={16} />

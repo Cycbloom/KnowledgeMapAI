@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFocusStore } from "../../store/useFocusStore";
+import { useShallow } from "zustand/react/shallow";
 import { WhiteNoiseType, NoiseCategory } from "../../store/useNoiseStore";
 import { HighlightedReader } from "./HighlightedReader";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
@@ -99,7 +100,20 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
     exitFocusMode,
     currentNodeId,
     longBreakInterval,
-  } = useFocusStore();
+  } = useFocusStore(
+    useShallow((s) => ({
+      focusDuration: s.focusDuration,
+      shortBreakDuration: s.shortBreakDuration,
+      longBreakDuration: s.longBreakDuration,
+      highlightEnabled: s.highlightEnabled,
+      highlightIntensity: s.highlightIntensity,
+      setHighlightEnabled: s.setHighlightEnabled,
+      setHighlightIntensity: s.setHighlightIntensity,
+      exitFocusMode: s.exitFocusMode,
+      currentNodeId: s.currentNodeId,
+      longBreakInterval: s.longBreakInterval,
+    })),
+  );
 
   const { recordActivity } = useActivityTracker();
   const sessionStartRef = useRef<string | null>(null);
@@ -441,7 +455,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 
                       <div className="flex flex-col items-center gap-3">
                         <div className="relative">
-                          <svg className="w-24 h-24 transform -rotate-90">
+                          <svg aria-hidden="true" className="w-24 h-24 transform -rotate-90">
                             <circle
                               cx="48"
                               cy="48"
@@ -821,7 +835,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 };
 
 const CheckCircleIcon = ({ size }: { size: number }) => (
-  <svg
+  <svg aria-hidden="true"
     width={size}
     height={size}
     viewBox="0 0 24 24"

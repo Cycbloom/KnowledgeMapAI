@@ -113,7 +113,11 @@
     "removeFromPath": "从路径中移除",
     "conceptAggregation": "概念聚合",
     "search": "搜索",
-    "removeOption": "移除选项"
+    "removeOption": "移除选项",
+    "selectColor": "选择颜色",
+    "selectIcon": "选择图标",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码"
   },
   "clipboard": {
     "unavailable": "剪贴板不可用",

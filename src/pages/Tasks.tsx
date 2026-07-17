@@ -9,7 +9,7 @@ import {
 } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
 import { frontendEventBus } from "../services/timer/FrontendEventBus";
-import { ConfirmationModal, Skeleton } from "../components/common";
+import { ConfirmationModal, Skeleton, VirtualList } from "../components/common";
 import { EmptyState } from "@/components/common/EmptyState";
 import { asyncConfirm } from "../utils/asyncConfirm";
 import { formatDate } from "@/utils/formatters";
@@ -128,6 +128,12 @@ export const Tasks = () => {
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   const limit = 10;
+  // 虚拟列表容器高度：基于视口高度估算可用列表区域，resize 时更新。
+  const [listContainerHeight, setListContainerHeight] = useState(() =>
+    typeof window !== "undefined"
+      ? Math.max(300, window.innerHeight - 360)
+      : 600,
+  );
 
   const { data, isLoading, error, refetch, isFetching } = useTasks(
     !!token,
@@ -163,6 +169,14 @@ export const Tasks = () => {
       console.error("Failed to load tasks:", error);
     }
   }, [error]);
+
+  // 虚拟列表容器高度随窗口尺寸变化重新计算。
+  useEffect(() => {
+    const updateListHeight = () =>
+      setListContainerHeight(Math.max(300, window.innerHeight - 360));
+    window.addEventListener("resize", updateListHeight);
+    return () => window.removeEventListener("resize", updateListHeight);
+  }, []);
 
   const retryMutation = useRetryTaskMutation();
   const deleteMutation = useDeleteTaskMutation();
@@ -517,8 +531,12 @@ export const Tasks = () => {
 
           {!isLoading && filteredTasks.length > 0 && (
             <>
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
-                {filteredTasks.map((task) => {
+              <VirtualList
+                items={filteredTasks}
+                itemHeight={220}
+                containerHeight={listContainerHeight}
+                className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700"
+                renderItem={(task) => {
                   const context = (() => {
                     try {
                       const input = task.input_data || {};
@@ -533,8 +551,8 @@ export const Tasks = () => {
                   const nodeId = context.node_id;
 
                   return (
+                    <div className="border-b border-gray-100 dark:border-slate-700">
                     <div
-                      key={task.id}
                       className={`p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
                         selectedIds.has(task.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""
                       }`}
@@ -695,9 +713,10 @@ export const Tasks = () => {
                         </div>
                       </div>
                     </div>
+                    </div>
                   );
-                })}
-              </div>
+                }}
+              />
 
               {/* Pagination Controls */}
               {totalPages > 1 && (

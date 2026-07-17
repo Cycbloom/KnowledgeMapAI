@@ -281,7 +281,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     name: '切换探索模式',
     description: '进入或退出探索模式',
     category: 'tools',
-    defaultKeys: { key: 'e' },
+    defaultKeys: { key: 'e', shift: true },
     action: 'toggleExplorationMode',
     icon: 'Compass'
   },

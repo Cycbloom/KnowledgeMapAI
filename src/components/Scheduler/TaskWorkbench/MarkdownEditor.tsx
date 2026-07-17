@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Save, Eye, Edit3, Maximize2, Minimize2, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "../../common/EmptyState";
+import { ErrorBoundary } from "../../common/ErrorBoundary";
 import { useFormDraft, useAutoSave, useBeforeUnload } from "../../../hooks";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 
@@ -158,92 +159,119 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     : "";
 
   return (
-    <div className={`flex flex-col h-full ${containerClass} ${className}`}>
-      <div className={`flex flex-col h-full ${isFullscreen ? "p-4" : ""}`}>
-        <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-2">
+    <ErrorBoundary
+      fallbackRender={(error, resetErrorBoundary) => (
+        <div className="p-4 border border-red-300 rounded-xl bg-red-50 dark:bg-red-900/20 dark:border-red-700">
+          <p className="text-red-700 dark:text-red-400 font-medium">编辑器崩溃</p>
+          <p className="text-sm text-red-600 dark:text-red-300 mt-1 break-words">
+            {error.message}
+          </p>
+          <div className="mt-3 flex gap-2">
             <button
-              onClick={() => setIsEditing(true)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                isEditing
-                  ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
-                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+              onClick={() => {
+                void navigator.clipboard.writeText(value);
+              }}
+              className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors"
             >
-              <Edit3 size={14} className="inline mr-1" />
-              编辑
+              复制内容
             </button>
             <button
-              onClick={() => setIsEditing(false)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                !isEditing
-                  ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
-                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+              onClick={resetErrorBoundary}
+              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
             >
-              <Eye size={14} className="inline mr-1" />
-              预览
+              重试
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            {onSave && autoSaveStatus !== "idle" && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {autoSaveStatus === "saving" && t("common.saving")}
-                {autoSaveStatus === "saved" && t("common.saved")}
-                {autoSaveStatus === "error" && t("common.saveFailed")}
-              </span>
-            )}
-            {onSave && (
+        </div>
+      )}
+    >
+      <div className={`flex flex-col h-full ${containerClass} ${className}`}>
+        <div className={`flex flex-col h-full ${isFullscreen ? "p-4" : ""}`}>
+          <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2">
               <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg text-sm font-medium hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 transition-all"
+                onClick={() => setIsEditing(true)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  isEditing
+                    ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
               >
-                <Save size={14} />
-                {isSaving ? "保存中..." : "保存"}
+                <Edit3 size={14} className="inline mr-1" />
+                编辑
               </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  !isEditing
+                    ? "bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <Eye size={14} className="inline mr-1" />
+                预览
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {onSave && autoSaveStatus !== "idle" && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {autoSaveStatus === "saving" && t("common.saving")}
+                  {autoSaveStatus === "saved" && t("common.saved")}
+                  {autoSaveStatus === "error" && t("common.saveFailed")}
+                </span>
+              )}
+              {onSave && (
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-500 text-white rounded-lg text-sm font-medium hover:from-primary-600 hover:to-primary-600 disabled:opacity-50 transition-all"
+                >
+                  <Save size={14} />
+                  {isSaving ? "保存中..." : "保存"}
+                </button>
+              )}
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-hidden">
+            {isEditing ? (
+              <textarea
+                value={localValue}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                className="w-full h-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400"
+              />
+            ) : (
+              <div className="h-full overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
+                {localValue ? (
+                  renderPreview()
+                ) : (
+                  <EmptyState icon={<FileText size={32} />} title={t('scheduler.empty.content')} className="min-h-0 py-4" />
+                )}
+              </div>
             )}
-            <button
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
+          </div>
+
+          <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+            支持 Markdown 语法：**粗体** *斜体* `代码` [链接](url) # 标题 - 列表
           </div>
         </div>
-
-        <div className="flex-1 overflow-hidden">
-          {isEditing ? (
-            <textarea
-              value={localValue}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              className="w-full h-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400"
-            />
-          ) : (
-            <div className="h-full overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
-              {localValue ? (
-                renderPreview()
-              ) : (
-                <EmptyState icon={<FileText size={32} />} title={t('scheduler.empty.content')} className="min-h-0 py-4" />
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-          支持 Markdown 语法：**粗体** *斜体* `代码` [链接](url) # 标题 - 列表
-        </div>
+        <ConfirmationModal
+          isOpen={showRestorePrompt}
+          onClose={onDiscard}
+          onConfirm={onRestore}
+          title={t("common.restoreDraftTitle")}
+          message={t("common.restoreDraftMessage")}
+          isDangerous={false}
+        />
       </div>
-      <ConfirmationModal
-        isOpen={showRestorePrompt}
-        onClose={onDiscard}
-        onConfirm={onRestore}
-        title={t("common.restoreDraftTitle")}
-        message={t("common.restoreDraftMessage")}
-        isDangerous={false}
-      />
-    </div>
+    </ErrorBoundary>
   );
 };
